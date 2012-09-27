@@ -655,6 +655,7 @@ import java.util.List;
 import java.util.Vector;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
+import DWR.DMI.HydroBaseDMI.HydroBaseDataStore;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
@@ -666,7 +667,6 @@ import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
-import us.co.state.dwr.hbguest.ColoradoWaterHBGuestService;
 import us.co.state.dwr.hbguest.datastore.ColoradoWaterHBGuestDataStore;
 import us.co.state.dwr.sms.ColoradoWaterSMSAPI;
 import us.co.state.dwr.sms.datastore.ColoradoWaterSMSDataStore;
@@ -837,6 +837,7 @@ private int	_fatal_error_count = 0;
 
 /**
 HydroBase DMI instance list, to allow more than one database instance to be open at a time.
+TODO SAM 2012-09-25 Phase this out once legacy HydroBase login dialog is restructured.
 */
 private List<HydroBaseDMI> __hbdmi_Vector = new Vector();
 
@@ -905,6 +906,10 @@ which requires the working directory at that point of the workflow.
 private PropList __processor_PropList = null;
 
 // TODO SAM 2010-08-31 Evaluate extending to other databases to consolidate (HydroBase?).
+// TODO SAM 2012-09-10 During transition, HydroBase can be in a datastore (HydroBaseDataStore), which is
+// managed in this list, as well as the individual HydroBaseDMI list (above).  When requested by name,
+// the HydroBaseDataStore will take precedence given that users will have configured the data store and intend
+// that it be used.
 /**
 Data store list, to generically manage database connections.  This list is guaranteed to be
 non-null, although the individual data stores may not be opened and need to be handled appropriately.
@@ -967,6 +972,14 @@ If the implementation is detected, the TSView.addTSProductDMI() method is called
 */
 private void addTSViewTSProductDMIs ( TSViewJFrame view )
 {	// Check the HydroBase instances...
+    // First add the new datastore list
+    List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
+    HydroBaseDataStore hbds = null;
+    for ( DataStore dataStore: dataStoreList ) {
+        hbds = (HydroBaseDataStore)dataStore;
+        view.addTSProductDMI ( (HydroBaseDMI)hbds.getDMI() );
+    }
+    // Next add the legacy DMI list
 	int hsize = __hbdmi_Vector.size();
 	HydroBaseDMI hbdmi = null;
 	for ( int ih = 0; ih < hsize; ih++ ) {
@@ -1777,11 +1790,29 @@ protected String [] formatOutputHeaderComments ( List commands )
 		comments.add ( ((Command)commands.get(i)).toString() );
 	}
 	// Save information about data sources.
-	HydroBaseDMI hbdmi = null;
-	int hsize = __hbdmi_Vector.size();
+	// HydroBase datastores...
 	String db_comments[] = null;
-	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = __hbdmi_Vector.get(ih);
+    List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
+    HydroBaseDataStore hbds = null;
+    for ( DataStore dataStore: dataStoreList ) {
+        hbds = (HydroBaseDataStore)dataStore;
+        HydroBaseDMI hbdmi = (HydroBaseDMI)hbds.getDMI();
+        if ( hbdmi != null ) {
+            try {
+                db_comments = hbdmi.getVersionComments ();
+            }
+            catch ( Exception e ) {
+                db_comments = null;
+            }
+        }
+        if ( db_comments != null ) {
+            for ( int i = 0; i < db_comments.length; i++ ) {
+                comments.add(db_comments[i]);
+            }
+        }
+    }
+	// Legacy HydroBaseDMI list...
+	for ( HydroBaseDMI hbdmi : __hbdmi_Vector ) {
 		if ( hbdmi != null ) {
 			try {
 			    db_comments = hbdmi.getVersionComments ();
@@ -1883,7 +1914,9 @@ throws Exception
 }
 
 /**
-Return the HydroBaseDMI that is being used.  Use a blank input name to get the default.
+TODO SAM 2012-09-25 This returns the legacy DMI instance, but DOES NOT return the DMI associated with the datastore;
+perhaps need a boolean parameter to indicate whether the datastore should be checked.
+Return the HydroBaseDMI that corresponds to the input name.  Use a blank input name to get the default.
 @param inputName Input name for the DMI, can be blank.
 @return the HydroBaseDMI that is being used (may return null).
 */
@@ -1916,7 +1949,7 @@ protected HydroBaseDMI getHydroBaseDMI ( String inputName )
 
 /**
 Return the list of HydroBaseDMI.
-@return Vector of open HydroBaseDMI.
+@return List of open HydroBaseDMI.
 */
 protected List<HydroBaseDMI> getHydroBaseDMIList ()
 {	return __hbdmi_Vector;
@@ -2242,10 +2275,18 @@ TSProductAnnotationProvider. This is a helper method for other methods.
 protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
 {	List<TSProductAnnotationProvider> ap_Vector = new Vector();
 	// Check the HydroBase instances...
-	int hsize = __hbdmi_Vector.size();
-	HydroBaseDMI hbdmi = null;
-	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = __hbdmi_Vector.get(ih);
+    // First do the new datastores
+    List<DataStore> dataStoreList = __ts_processor.getDataStoresByType( HydroBaseDataStore.class );
+    HydroBaseDataStore hbds = null;
+    for ( DataStore dataStore: dataStoreList ) {
+        hbds = (HydroBaseDataStore)dataStore;
+        HydroBaseDMI hbdmi = (HydroBaseDMI)hbds.getDMI();
+        if ( (hbdmi != null) && (hbdmi instanceof TSProductAnnotationProvider)) {
+            ap_Vector.add ( hbdmi );
+        }
+    }
+    // Next do the legacy DMI list
+	for ( HydroBaseDMI hbdmi: __hbdmi_Vector ) {
 		if ( (hbdmi != null) &&	(hbdmi instanceof TSProductAnnotationProvider)) {
 			ap_Vector.add ( hbdmi );
 		}
@@ -4310,7 +4351,37 @@ throws Exception
             }
         }
     }
+    else if ((dataStore != null) && (dataStore instanceof HydroBaseDataStore) ) {
+        // New style TSID~dataStore
+        HydroBaseDataStore hbds = (HydroBaseDataStore)dataStore;
+        try {
+            HydroBaseDMI hbdmi = (HydroBaseDMI)hbds.getDMI();
+            if ( hbdmi == null ) {
+                Message.printWarning ( 2, routine, "Unable to get HydroBase connection for " +
+                "datastore \"" + hbds.getName() +   "\".  Unable to read time series." );
+                ts = null;
+            }
+            else {
+                // Do need to fill daily diversion records with carry forward
+                // TODO SAM 2012-05-08 Need to evaluate whether to turn on fill with diversion comments by default
+                ts = hbdmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData, null );
+            }
+            if ( Message.isDebugOn ) {
+                Message.printStatus ( 10, routine, "...done reading time series." );
+            }
+            // Update the header comments.
+            if ( ts != null ) {
+                updateHydroBaseComments(ts);
+            }
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, "Error from HydroBaseDMI.readTimeSeries (" + e + ")" );
+            Message.printWarning ( 3, routine, e );
+            ts = null;
+        }
+    }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("HydroBase") ) {
+	    // Legacy DMI (not datastore)
 		if ( Message.isDebugOn ) {
 			Message.printDebug ( 10, routine, "Reading time series..." +
 			tsidentString + "," + readStart + "," + readEnd);
@@ -5050,7 +5121,7 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
 }
 
 /**
-Set a HydroBaseDMI instance in the Vector that is being maintained for use.
+Set a HydroBaseDMI instance in the list that is being maintained for use for database queries.
 The input name in the DMI is used to lookup the instance.  If a match is found,
 the old instance is optionally closed and the new instance is set in the same
 location.  If a match is not found, the new instance is added at the end.
@@ -5090,9 +5161,9 @@ protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 
 /**
 Set the list of HydroBaseDMI (e.g., when manipulated by an openHydroBase() command.
-@param dmilist Vector of HydroBaseDMI.
+@param dmilist list of HydroBaseDMI.
 */
-protected void setHydroBaseDMIList ( List dmilist )
+protected void setHydroBaseDMIList ( List<HydroBaseDMI> dmilist )
 {	__hbdmi_Vector = dmilist;
 }
 

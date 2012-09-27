@@ -175,7 +175,7 @@ private void commitEdits ()
     String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
     String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
     String OrderBy = __OrderBy_JTextField.getText().trim();
-    String Sql = __Sql_JTextArea.getText().trim();
+    String Sql = __Sql_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
     __command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "DataStoreTable", DataStoreTable );
 	__command.setCommandParameter ( "DataStoreColumns", DataStoreColumns );

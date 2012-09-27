@@ -682,7 +682,6 @@ private void setDataTypeChoices ()
     __DataType_JComboBox.select ( 0 );
 }
 
-
 /**
 Set the input filters in response to a new data store being selected.
 */

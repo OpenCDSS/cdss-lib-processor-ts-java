@@ -302,7 +302,7 @@ private String getSelectedDataType()
 }
 
 /**
-Get the selected data store.
+Get the selected data store from the processor.
 */
 private RiversideDBDataStore getSelectedDataStore ()
 {   String routine = getClass().getName() + ".getSelectedDataStore";
@@ -412,7 +412,7 @@ private void initialize ( JFrame parent, ReadRiversideDB_Command command )
     int buffer = 3;
     Insets insets = new Insets(0,buffer,0,0);
     try {
-        // Add input filters for ReclamationHDB time series...
+        // Add input filters for RiversideDB time series...
         __inputFilter_JPanel = new RiversideDB_MeasTypeMeasLocGeoloc_InputFilter_JPanel(
             getSelectedDataStore(), __command.getNumFilterGroups() );
         JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
@@ -492,7 +492,7 @@ private void initialize ( JFrame parent, ReadRiversideDB_Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 
-	checkGUIState();
+	checkGUIState(); // FIXME SAM 2012-09-13 Probably don't need this
 	refresh();	// Sets the __path_JButton status
     __ignoreEvents = false; // After initialization of components let events happen to dynamically cause cascade
     checkGUIState(); // Do this again because it may not have happened due to the special event handling

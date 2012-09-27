@@ -344,12 +344,15 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "<html><b>This command will be phased out in the future as HydroBase datastore support is phased in.</b></html>" ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command opens a connection to a HydroBase database," +
 		" closing the previous connection with the same input name." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command is used, for example, when making connections to more "+
 		"than one HydroBase database, or running in batch mode."),

@@ -1630,15 +1630,16 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
             HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel hbpanel =
                 (HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel)panel;
             hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if ( HydroBase_Util.isGroundWaterWellTimeSeriesDataType ( hbdmi, hbMeasType) &&
-                selectedTimeStep.equalsIgnoreCase("Irregular")) {
-                matched = true;
-                Message.printStatus(2, routine, "Setting station (groundwater) input filter panel visible.");
-            }
-            else if (hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) &&
-                HydroBase_Util.isStationTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                matched = true;
-                Message.printStatus(2, routine, "Setting station input filter panel visible.");
+            if ( hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) ) {
+                if ( HydroBase_Util.isGroundWaterWellTimeSeriesDataType ( hbdmi, hbMeasType) &&
+                    selectedTimeStep.equalsIgnoreCase("Irregular")) {
+                    matched = true;
+                    Message.printStatus(2, routine, "Setting station (groundwater) input filter panel visible.");
+                }
+                else if ( HydroBase_Util.isStationTimeSeriesDataType ( hbdmi, hbMeasType) ) {
+                    matched = true;
+                    Message.printStatus(2, routine, "Setting station input filter panel visible.");
+                }
             }
         }
         else if ( panel instanceof HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel ) {
@@ -1651,7 +1652,7 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
                     !HydroBase_Util.isStructureSFUTTimeSeriesDataType ( hbdmi, hbMeasType) ) {
                     // Normal structure time series (not SFUT)
                     matched = true;
-                    Message.printStatus(2, routine, "Setting structure (not SFUT) input filter panel visible.");
+                    Message.printStatus(2, routine, "Setting structure (no SFUT) input filter panel visible.");
                 }
                 else if ( hbpanel.getIncludeSFUT() && HydroBase_Util.isStructureSFUTTimeSeriesDataType ( hbdmi, hbMeasType) ) {
                     // SFUT time series

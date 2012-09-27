@@ -64,6 +64,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {   String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreTable = parameters.getValue ( "DataStoreTable" );
+    String Sql = parameters.getValue ( "Sql" );
     String TableID = parameters.getValue ( "TableID" );
 
 	String warning = "";
@@ -79,19 +80,33 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store." ) );
     }
-    if ( (DataStoreTable == null) || (DataStoreTable.length() == 0) ) {
-        message = "The data store table must be specified.";
+    if ( ((Sql == null) || Sql.equals("")) && ((DataStoreTable == null) || (DataStoreTable.length() == 0)) ) {
+        message = "The data store table or SQL statement must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store table." ) );
+                message, "Specify the data store table or provide a SQL statement." ) );
+    }
+    if ( ((Sql != null) && !Sql.equals("")) && ((DataStoreTable != null) && (DataStoreTable.length() != 0)) ) {
+        message = "The data store table and SQL statement cannot both be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the data store table or provide a SQL statement." ) );
+    }
+    if ( (Sql != null) && !Sql.equals("") && !StringUtil.startsWithIgnoreCase(Sql, "select") ) {
+        message = "The SQL statement must start with SELECT.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Update the SQL string to start with SELECT." ) );
     }
     if ( (TableID == null) || (TableID.length() == 0) ) {
-        message = "The table identifier must be specified.";
+        message = "The output table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the table identifier." ) );
+                message, "Specify the output table identifier." ) );
     }
     
 	//  Check for invalid parameters...
@@ -100,6 +115,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataStoreTable" );
     valid_Vector.add ( "DataStoreColumns" );
     valid_Vector.add ( "OrderBy" );
+    valid_Vector.add ( "Sql" );
     valid_Vector.add ( "TableID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
@@ -181,7 +197,7 @@ Run the command.
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "ReadTableFromDBF_Command.runCommand",message = "";
+{	String routine = getClass().getName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -199,8 +215,12 @@ CommandWarningException, CommandException
 
     String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreTable = parameters.getValue ( "DataStoreTable" );
+    if ( (DataStoreTable != null) && DataStoreTable.equals("") ) {
+        DataStoreTable = null; // Simplifies logic below
+    }
     String DataStoreColumns = parameters.getValue ( "DataStoreColumns" );
     String OrderBy = parameters.getValue ( "OrderBy" );
+    String Sql = parameters.getValue ( "Sql" );
     String TableID = parameters.getValue ( "TableID" );
     
     // Find the data store to use...
@@ -233,64 +253,77 @@ CommandWarningException, CommandException
     if ( commandPhase == CommandPhaseType.RUN ) {
         // Create the query.
         DMISelectStatement q = new DMISelectStatement(dmi);
-        q.addTable(DataStoreTable);
-        // Always get the columns from the database to check parameters, to guard against SQL injection
-        List<String> columns = null;
+        if ( DataStoreTable != null ) {
+            q.addTable(DataStoreTable);
+            // Always get the columns from the database to check parameters, to guard against SQL injection
+            List<String> columns = null;
+            try {
+                columns = DMIUtil.getTableColumns(dmi,DataStoreTable);
+            }
+            catch ( Exception e ) {
+                message = "Error getting table columns for table \"" + DataStoreTable + "\".";
+                Message.printWarning ( 2, routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the database for data store \"" + DataStore +
+                        "\" is accessible.") );
+            }
+            // Get the columns to query
+            if ( (DataStoreColumns != null) && !DataStoreColumns.equals("") ) {
+                // Use the columns from the parameter
+                String [] columnsReq = DataStoreColumns.split(",");
+                for ( int i = 0; i < columnsReq.length; i++ ) {
+                    if ( StringUtil.indexOf(columns,columnsReq[i]) < 0 ) {
+                        message = "Database table/view does not contain columnn \"" + columnsReq[i] + "\".";
+                        Message.printWarning ( 2, routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the database table/view contais column \"" + columnsReq[i] +
+                                "\".") );
+                    }
+                    else {
+                        q.addField(columnsReq[i].trim());
+                    }
+                }
+            }
+            else {
+                // Use all the columns from the database
+                for ( String column: columns ) {
+                    q.addField(column);
+                }
+            }
+            // Set the order by information to query
+            if ( (OrderBy != null) && !OrderBy.equals("") ) {
+                String [] columnsReq = OrderBy.split(",");
+                for ( int i = 0; i < columnsReq.length; i++ ) {
+                    // Check for table to guard against SQL injection
+                    if ( StringUtil.indexOfIgnoreCase(columns,columnsReq[i]) < 0 ) {
+                        message = "Database table/view does not contain columnn \"" + columnsReq[i] + "\".";
+                        Message.printWarning ( 2, routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the database table/view contais column \"" + columnsReq[i] +
+                                "\".") );
+                    }
+                    else {
+                        q.addOrderByClause(columnsReq[i].trim());
+                    }
+                }
+            }
+        }
+        String queryString = "";
         try {
-            columns = DMIUtil.getTableColumns(dmi,DataStoreTable);
-        }
-        catch ( Exception e ) {
-            message = "Error getting table columns for table \"" + DataStoreTable + "\".";
-            Message.printWarning ( 2, routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the database for data store \"" + DataStore +
-                    "\" is accessible.") );
-        }
-        // Get the columns to query
-        if ( (DataStoreColumns != null) && !DataStoreColumns.equals("") ) {
-            // Use the columns from the parameter
-            String [] columnsReq = DataStoreColumns.split(",");
-            for ( int i = 0; i < columnsReq.length; i++ ) {
-                if ( StringUtil.indexOf(columns,columnsReq[i]) < 0 ) {
-                    message = "Database table/view does not contain columnn \"" + columnsReq[i] + "\".";
-                    Message.printWarning ( 2, routine, message );
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the database table/view contais column \"" + columnsReq[i] +
-                            "\".") );
-                }
-                else {
-                    q.addField(columnsReq[i].trim());
-                }
+            ResultSet rs = null;
+            if ( DataStoreTable != null ) {
+                // Query using the statement that was built
+                queryString = q.toString();
+                rs = dmi.dmiSelect(q);
             }
-        }
-        else {
-            // Use all the columns from the database
-            for ( String column: columns ) {
-                q.addField(column);
+            else if ( (Sql != null) && !Sql.equals("") ) {
+                // Query using the SQL string
+                queryString = Sql;
+                rs = dmi.dmiSelect(Sql);
             }
-        }
-        // Set the order by information to query
-        if ( (OrderBy != null) && !OrderBy.equals("") ) {
-            String [] columnsReq = OrderBy.split(",");
-            for ( int i = 0; i < columnsReq.length; i++ ) {
-                // Check for table to guard against SQL injection
-                if ( StringUtil.indexOfIgnoreCase(columns,columnsReq[i]) < 0 ) {
-                    message = "Database table/view does not contain columnn \"" + columnsReq[i] + "\".";
-                    Message.printWarning ( 2, routine, message );
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the database table/view contais column \"" + columnsReq[i] +
-                            "\".") );
-                }
-                else {
-                    q.addOrderByClause(columnsReq[i].trim());
-                }
-            }
-        }
-        try {
-            ResultSet rs = dmi.dmiSelect(q);
             Message.printStatus(2, routine, "Executed query \"" + dmi.getLastQueryString() + "\".");
             ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
             table = factory.createDataTable(rs, TableID);
@@ -313,13 +346,13 @@ CommandWarningException, CommandException
             }
         }
         catch ( Exception e ) {
-            message = "Error querying data store \"" + DataStore + "\".";
+            message = "Error querying data store \"" + DataStore + "\" (" + e + ").";
             Message.printWarning ( 2, routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that the database for data store \"" + DataStore +
-                    "\" is appropriate for SQL statement: \"" +
-                    dmi.getLastQueryString() + "\"." ) );
+                    "\" is appropriate for SQL statement: \"" + queryString + "\"." ) );
+            Message.printWarning ( 3, routine, e );
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -358,6 +391,7 @@ public String toString ( PropList props )
 	String DataStoreTable = props.getValue( "DataStoreTable" );
 	String DataStoreColumns = props.getValue( "DataStoreColumns" );
 	String OrderBy = props.getValue( "OrderBy" );
+	String Sql = props.getValue( "Sql" );
     String TableID = props.getValue( "TableID" );
 	StringBuffer b = new StringBuffer ();
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
@@ -383,6 +417,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "OrderBy=\"" + OrderBy + "\"" );
+    }
+    if ( (Sql != null) && (Sql.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Sql=\"" + Sql + "\"" );
     }
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {

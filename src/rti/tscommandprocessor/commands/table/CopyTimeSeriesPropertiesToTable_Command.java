@@ -6,7 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -283,7 +283,7 @@ CommandWarningException, CommandException
             // Get the properties to process
             if ( propertyNames == null ) {
                 // Get all the properties by forming a list of property names from the hasthtable
-                Hashtable<String, Object> propertyHash = ts.getProperties();
+                HashMap<String, Object> propertyHash = ts.getProperties();
                 propertyNames = propertyHash.keySet().toArray(new String[0]);
             }
             // Set the column names from the time series properties

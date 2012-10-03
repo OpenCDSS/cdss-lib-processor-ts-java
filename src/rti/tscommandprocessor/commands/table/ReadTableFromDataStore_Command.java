@@ -6,6 +6,7 @@ import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.io.File;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Vector;
@@ -26,6 +27,7 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
@@ -65,11 +67,13 @@ throws InvalidCommandParameterException
 {   String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreTable = parameters.getValue ( "DataStoreTable" );
     String Sql = parameters.getValue ( "Sql" );
+    String SqlFile = parameters.getValue ( "SqlFile" );
     String TableID = parameters.getValue ( "TableID" );
 
 	String warning = "";
     String message;
-    
+
+    CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -80,19 +84,29 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store." ) );
     }
-    if ( ((Sql == null) || Sql.equals("")) && ((DataStoreTable == null) || (DataStoreTable.length() == 0)) ) {
-        message = "The data store table or SQL statement must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store table or provide a SQL statement." ) );
+    int specCount = 0;
+    if ( (Sql != null) && !Sql.equals("") ) {
+        ++specCount;
     }
-    if ( ((Sql != null) && !Sql.equals("")) && ((DataStoreTable != null) && (DataStoreTable.length() != 0)) ) {
-        message = "The data store table and SQL statement cannot both be specified.";
+    if ( ((DataStoreTable != null) && (DataStoreTable.length() != 0)) ) {
+        ++specCount;
+    }
+    if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
+        ++specCount;
+    }
+    if ( specCount == 0 ) {
+        message = "The data store table, SQL statement, or SQL file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store table or provide a SQL statement." ) );
+                message, "Specify the data store table, SQL statement, or SQL file." ) );
+    }
+    if ( specCount > 1 ) {
+        message = "Onely one of the data store table, SQL statement, or SQL file can be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the data store table, SQL statement, or SQL file." ) );
     }
     if ( (Sql != null) && !Sql.equals("") && !StringUtil.startsWithIgnoreCase(Sql, "select") ) {
         message = "The SQL statement must start with SELECT.";
@@ -100,6 +114,45 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Update the SQL string to start with SELECT." ) );
+    }
+    String SqlFile_full = null;
+    if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
+        String working_dir = null;
+        try {
+            Object o = processor.getPropContents ( "WorkingDir" );
+                // Working directory is available so use it...
+                if ( o != null ) {
+                    working_dir = (String)o;
+                }
+            }
+            catch ( Exception e ) {
+                message = "Error requesting WorkingDir from processor.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an existing SQL file." ) );
+            }
+    
+        try {
+            SqlFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor,this,SqlFile)));
+            File f = new File ( SqlFile_full );
+            if ( !f.exists() ) {
+                message = "The SQL file does not exist:  \"" + SqlFile_full + "\".";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the SQL file exists - may be OK if created at run time." ) );
+            }
+        }
+        catch ( Exception e ) {
+            message = "The SQL file:\n" + "    \"" + SqlFile +
+            "\"\ncannot be adjusted using the working directory:\n" + "    \"" + working_dir + "\".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                     message, "Verify that SQL file and working directory paths are compatible." ) );
+        }
     }
     if ( (TableID == null) || (TableID.length() == 0) ) {
         message = "The output table identifier must be specified.";
@@ -116,6 +169,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataStoreColumns" );
     valid_Vector.add ( "OrderBy" );
     valid_Vector.add ( "Sql" );
+    valid_Vector.add ( "SqlFile" );
     valid_Vector.add ( "TableID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
@@ -221,6 +275,7 @@ CommandWarningException, CommandException
     String DataStoreColumns = parameters.getValue ( "DataStoreColumns" );
     String OrderBy = parameters.getValue ( "OrderBy" );
     String Sql = parameters.getValue ( "Sql" );
+    String SqlFile = parameters.getValue("SqlFile");
     String TableID = parameters.getValue ( "TableID" );
     
     // Find the data store to use...
@@ -238,7 +293,7 @@ CommandWarningException, CommandException
     else {
         dmi = ((DatabaseDataStore)dataStore).getDMI();
     }
-
+    
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
 		Message.printWarning ( 2,
@@ -324,6 +379,25 @@ CommandWarningException, CommandException
                 queryString = Sql;
                 rs = dmi.dmiSelect(Sql);
             }
+            else if ( (SqlFile != null) && !SqlFile.equals("") ) {
+                // Query using the contents of the SQL file
+                String SqlFile_full = SqlFile;
+                SqlFile_full = IOUtil.verifyPathForOS(
+                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                        TSCommandProcessorUtil.expandParameterValue(processor,this,SqlFile)));
+                
+                if ( !IOUtil.fileReadable(SqlFile_full) || !IOUtil.fileExists(SqlFile_full)) {
+                    message = "SQL file \"" + SqlFile_full + "\" is not found or accessible.";
+                    Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                    status.addToLog(commandPhase,
+                        new CommandLogRecord( CommandStatusType.FAILURE, message,
+                            "Verify that the file exists and is readable."));
+                    throw new CommandException ( message );
+                }
+                queryString = StringUtil.toString(IOUtil.fileToStringList(SqlFile_full), " ");
+                rs = dmi.dmiSelect(queryString);
+            }
             Message.printStatus(2, routine, "Executed query \"" + dmi.getLastQueryString() + "\".");
             ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
             table = factory.createDataTable(rs, TableID);
@@ -392,6 +466,7 @@ public String toString ( PropList props )
 	String DataStoreColumns = props.getValue( "DataStoreColumns" );
 	String OrderBy = props.getValue( "OrderBy" );
 	String Sql = props.getValue( "Sql" );
+	String SqlFile = props.getValue( "SqlFile" );
     String TableID = props.getValue( "TableID" );
 	StringBuffer b = new StringBuffer ();
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
@@ -423,6 +498,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "Sql=\"" + Sql + "\"" );
+    }
+    if ( (SqlFile != null) && (SqlFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SqlFile=\"" + SqlFile + "\"" );
     }
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {

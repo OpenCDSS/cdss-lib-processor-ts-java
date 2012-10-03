@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.table;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -11,6 +12,7 @@ import javax.swing.JTextField;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.awt.Color;
 import java.awt.FlowLayout;
@@ -26,6 +28,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 
 import java.util.List;
 import java.util.Vector;
@@ -34,16 +37,23 @@ import RTi.DMI.DMI;
 import RTi.DMI.DMIUtil;
 import RTi.DMI.DatabaseDataStore;
 import RTi.Util.GUI.JGUIUtil;
+import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 public class ReadTableFromDataStore_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
+    
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Add Working Directory";
 
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
@@ -53,10 +63,12 @@ private SimpleJComboBox __DataStoreTable_JComboBox = null;
 private JTextField __DataStoreColumns_JTextField = null;
 private JTextField __OrderBy_JTextField = null;
 private JTextArea __Sql_JTextArea = null;
+private JTextField __SqlFile_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private ReadTableFromDataStore_Command __command = null;
 private boolean __ok = false;
+private String __working_dir = null;
 
 private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
 
@@ -81,7 +93,37 @@ Responds to ActionEvents.
 public void actionPerformed(ActionEvent event)
 {	Object o = event.getSource();
 
-    if ( o == __cancel_JButton ) {
+    if ( o == __browse_JButton ) {
+        // Browse for the file to read...
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle( "Select SQL File");
+        SimpleFileFilter sff = new SimpleFileFilter("sql","SQL File");
+        fc.addChoosableFileFilter(sff);
+        
+        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+        if ( last_directory_selected != null ) {
+            fc.setCurrentDirectory( new File(last_directory_selected));
+        }
+        else {
+            fc.setCurrentDirectory(new File(__working_dir));
+        }
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String directory = fc.getSelectedFile().getParent();
+            String filename = fc.getSelectedFile().getName(); 
+            String path = fc.getSelectedFile().getPath(); 
+    
+            if (filename == null || filename.equals("")) {
+                return;
+            }
+    
+            if (path != null) {
+                __SqlFile_JTextField.setText(path );
+                JGUIUtil.setLastFileDialogDirectory( directory);
+                refresh();
+            }
+        }
+    }
+    else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
 	else if ( o == __ok_JButton ) {
@@ -92,6 +134,20 @@ public void actionPerformed(ActionEvent event)
 			response ( true );
 		}
 	}
+    else if ( o == __path_JButton ) {
+        if ( __path_JButton.getText().equals( __AddWorkingDirectory) ) {
+            __SqlFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,__SqlFile_JTextField.getText() ) );
+        }
+        else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
+            try {
+                __SqlFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir, __SqlFile_JTextField.getText() ) );
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, "ReadTableFromDataStore_JDialog", "Error converting file to relative path." );
+            }
+        }
+        refresh ();
+    }
 }
 
 /**
@@ -132,6 +188,7 @@ private void checkInput ()
 	String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
 	String OrderBy = __OrderBy_JTextField.getText().trim();
 	String Sql = __Sql_JTextArea.getText().trim();
+	String SqlFile = __SqlFile_JTextField.getText().trim();
     String TableID = __TableID_JTextField.getText().trim();
 	__error_wait = false;
 
@@ -150,6 +207,9 @@ private void checkInput ()
     }
     if ( Sql.length() > 0 ) {
         props.set ( "Sql", Sql );
+    }
+    if ( SqlFile.length() > 0 ) {
+        props.set ( "SqlFile", SqlFile );
     }
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
@@ -176,11 +236,13 @@ private void commitEdits ()
     String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
     String OrderBy = __OrderBy_JTextField.getText().trim();
     String Sql = __Sql_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
+    String SqlFile = __SqlFile_JTextField.getText().trim();
     __command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "DataStoreTable", DataStoreTable );
 	__command.setCommandParameter ( "DataStoreColumns", DataStoreColumns );
 	__command.setCommandParameter ( "OrderBy", OrderBy );
 	__command.setCommandParameter ( "Sql", Sql );
+	__command.setCommandParameter ( "SqlFile", SqlFile );
     __command.setCommandParameter ( "TableID", TableID );
 }
 
@@ -219,6 +281,7 @@ Instantiates the GUI components.
 private void initialize ( JFrame parent, ReadTableFromDataStore_Command command )
 {	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
+    __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener(this);
 
@@ -239,7 +302,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
         "This command reads a table from a database datastore table or view."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The query can be specified in one of two ways:"),
+        "The query can be specified in one of three ways:"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "    1) Specify a single table or view, related columns, and order (allows for more up-front checks)."),
@@ -248,6 +311,15 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
         "    2) Specify a free form SQL select statement (allows joins and other SQL constructs " +
         "supported by the database software, but few up-front checks)."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "    3) Similar to 2; however, the SQL statement is read from a file, " +
+        "which can be specified relative to the working directory."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    if ( __working_dir != null ) {
+        JGUIUtil.addComponent(paragraph, new JLabel (
+        "        The working directory is: " + __working_dir ), 
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    }
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The resulting table columns will have data types based on the query results."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -334,6 +406,16 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JGUIUtil.addComponent(sql_JPanel, new JScrollPane(__Sql_JTextArea),
         1, ySql, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "SQL file to read:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SqlFile_JTextField = new JTextField ( 50 );
+    __SqlFile_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __SqlFile_JTextField,
+        1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __browse_JButton = new SimpleJButton ( "Browse", this );
+        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JTextField = new JTextField (10);
@@ -360,7 +442,12 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
-        
+
+    if ( __working_dir != null ) {
+        // Add the button to allow conversion to/from relative path...
+        __path_JButton = new SimpleJButton( __RemoveWorkingDirectory, this);
+        button_JPanel.add ( __path_JButton );
+    }
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add (__cancel_JButton);
 	__cancel_JButton.setToolTipText ( "Close window without saving changes." );
@@ -470,6 +557,7 @@ try{
     String DataStoreColumns = "";
     String OrderBy = "";
     String Sql = "";
+    String SqlFile = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -479,6 +567,7 @@ try{
 		DataStoreColumns = props.getValue ( "DataStoreColumns" );
 		OrderBy = props.getValue ( "OrderBy" );
 		Sql = props.getValue ( "Sql" );
+		SqlFile = props.getValue ( "SqlFile" );
         // The data store list is set up in initialize() but is selected here
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
@@ -525,6 +614,9 @@ try{
         if ( Sql != null ) {
             __Sql_JTextArea.setText ( Sql );
         }
+        if ( SqlFile != null ) {
+            __SqlFile_JTextField.setText(SqlFile);
+        }
 	}
 	// Regardless, reset the command from the fields...
     DataStore = __DataStore_JComboBox.getSelected();
@@ -539,18 +631,48 @@ try{
 	DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
 	OrderBy = __OrderBy_JTextField.getText().trim();
 	Sql = __Sql_JTextArea.getText().trim();
+	SqlFile = __SqlFile_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "DataStoreTable=" + DataStoreTable );
 	props.add ( "DataStoreColumns=" + DataStoreColumns );
 	props.add ( "OrderBy=" + OrderBy );
 	props.add ( "Sql=" + Sql );
+	props.add ( "SqlFile=" + SqlFile);
     props.add ( "TableID=" + TableID );
 	__command_JTextArea.setText( __command.toString ( props ) );
+	// Refresh the Path text.
+    refreshPathControl();
 }
 catch ( Exception e ) {
     Message.printWarning ( 3, routine, e );
 }
+}
+
+/**
+Refresh the PathControl text based on the contents of the input text field contents.
+*/
+private void refreshPathControl()
+{
+    String SqlFile = __SqlFile_JTextField.getText().trim();
+    if ( (SqlFile == null) || (SqlFile.trim().length() == 0) ) {
+        if ( __path_JButton != null ) {
+            __path_JButton.setEnabled ( false );
+        }
+        return;
+    }
+
+    // Check the path and determine what the label on the path button should be...
+    if ( __path_JButton != null ) {
+        __path_JButton.setEnabled ( true );
+        File f = new File ( SqlFile );
+        if ( f.isAbsolute() ) {
+            __path_JButton.setText( __RemoveWorkingDirectory );
+        }
+        else {
+            __path_JButton.setText( __AddWorkingDirectory );
+        }
+    }
 }
 
 /**

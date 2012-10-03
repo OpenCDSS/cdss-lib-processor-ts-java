@@ -65,6 +65,7 @@ private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __DateTimeColumn_JTextField = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for TSID column output
+private SimpleJComboBox __IncludeMissingValues_JComboBox = null;
 private TSFormatSpecifiersJPanel __DataColumn_JTextField = null;
 private JTextField __DataRow_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
@@ -192,6 +193,7 @@ private void checkInput ()
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    String IncludeMissingValues = __IncludeMissingValues_JComboBox.getSelected();
     String DataColumn = __DataColumn_JTextField.getText().trim();
     String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -219,6 +221,9 @@ private void checkInput ()
     }
     if ( TableTSIDFormat.length() > 0 ) {
         props.set ( "TableTSIDFormat", TableTSIDFormat );
+    }
+    if ( IncludeMissingValues.length() > 0 ) {
+        props.set ( "IncludeMissingValues", IncludeMissingValues );
     }
     if ( DataColumn.length() > 0 ) {
         props.set ( "DataColumn", DataColumn );
@@ -267,6 +272,7 @@ private void commitEdits ()
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    String IncludeMissingValues = __IncludeMissingValues_JComboBox.getSelected();
     String DataColumn = __DataColumn_JTextField.getText().trim();
     String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -279,6 +285,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "DateTimeColumn", DateTimeColumn );
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
+    __command.setCommandParameter ( "IncludeMissingValues", IncludeMissingValues );
     __command.setCommandParameter ( "DataColumn", DataColumn );
     __command.setCommandParameter ( "DataRow", DataRow );
     __command.setCommandParameter ( "OutputStart", OutputStart );
@@ -333,7 +340,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
 		"If the table TSID column is specified, output will be to a single column." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The time series must have the same data interval if each time series is a column in output." ), 
+        "The time series must have the same data interval if a multi-column table is created." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "If the output window is specified, use a date/time precision consistent with data." ), 
@@ -416,6 +423,19 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(singleColumn_JPanel, new JLabel ("Optional - can use if TableTSIDColumn is specified (default=alias or TSID)."),
         3, ySingleColumn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(singleColumn_JPanel, new JLabel ( "Include missing values?:"), 
+        0, ++ySingleColumn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeMissingValues_JComboBox = new SimpleJComboBox ( false );
+    __IncludeMissingValues_JComboBox.addItem ( "" );
+    __IncludeMissingValues_JComboBox.addItem ( __command._False );
+    __IncludeMissingValues_JComboBox.addItem ( __command._True );
+    __IncludeMissingValues_JComboBox.select(0);
+    __IncludeMissingValues_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(singleColumn_JPanel, __IncludeMissingValues_JComboBox,
+        1, ySingleColumn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleColumn_JPanel, new JLabel ( "Optional - include missing values (default=" + __command._True + ")."),
+        3, ySingleColumn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Data column(s) in table:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataColumn_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -435,7 +455,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - row number (1+) for first data value."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
+    
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Output start date/time:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField ( "", 10 );
@@ -571,6 +591,7 @@ private void refresh ()
     String DateTimeColumn = "";
     String TableTSIDColumn = "";
     String TableTSIDFormat = "";
+    String IncludeMissingValues = "";
     String DataColumn = "";
     String DataRow = "";
     String OutputStart = "";
@@ -593,6 +614,7 @@ private void refresh ()
         DateTimeColumn = props.getValue ( "DateTimeColumn" );
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
+        IncludeMissingValues = props.getValue ( "IncludeMissingValues" );
         DataColumn = props.getValue ( "DataColumn" );
         DataRow = props.getValue ( "DataRow" );
         IfTableNotFound = props.getValue ( "IfTableNotFound" );
@@ -667,6 +689,23 @@ private void refresh ()
         if (TableTSIDFormat != null ) {
             __TableTSIDFormat_JTextField.setText(TableTSIDFormat.trim());
         }
+        if ( IncludeMissingValues == null ) {
+            // Select default...
+            __IncludeMissingValues_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem(__IncludeMissingValues_JComboBox,
+                IncludeMissingValues, JGUIUtil.NONE, null, null )) {
+                __IncludeMissingValues_JComboBox.select ( IncludeMissingValues );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\n" +
+                "IncludeMissingValues value \"" + IncludeMissingValues +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( DataColumn != null ) {
             __DataColumn_JTextField.setText ( DataColumn );
         }
@@ -739,6 +778,7 @@ private void refresh ()
     DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    IncludeMissingValues = __IncludeMissingValues_JComboBox.getSelected();
     DataColumn = __DataColumn_JTextField.getText().trim();
     DataRow = __DataRow_JTextField.getText().trim();
     OutputStart = __OutputStart_JTextField.getText().trim();
@@ -752,6 +792,7 @@ private void refresh ()
     props.add ( "DateTimeColumn=" + DateTimeColumn );
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
+    props.add ( "IncludeMissingValues=" + IncludeMissingValues );
     props.add ( "DataColumn=" + DataColumn );
     props.add ( "DataRow=" + DataRow );
     props.add ( "Transformation=" + IfTableNotFound );

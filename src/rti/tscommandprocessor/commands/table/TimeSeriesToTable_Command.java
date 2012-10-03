@@ -41,10 +41,16 @@ public class TimeSeriesToTable_Command extends AbstractCommand implements Comman
 {
 
 /**
-Values for the Transformation parameter.  "Linear" is being phased out in favor of "None".
+Values for the Transformation parameter.
 */
 protected final String _Create = "Create";
 protected final String _Warn = "Warn";
+
+/**
+Values for the IncludeMissingValues parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 The table that is created, if creation is requested, for use in discovery mode.
@@ -74,6 +80,7 @@ throws InvalidCommandParameterException
 	String TableID = parameters.getValue ( "TableID" );
     String DateTimeColumn = parameters.getValue ( "DateTimeColumn" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    String IncludeMissingValues = parameters.getValue ( "IncludeMissingValues" );
     String DataColumn = parameters.getValue ( "DataColumn" );
     String DataRow = parameters.getValue ( "DataRow" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -139,6 +146,14 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a literal string for a column name when TableTSIDColumn is specified." ) );
+    }
+    if ( (IncludeMissingValues != null) && !IncludeMissingValues.equals("") &&
+        !IncludeMissingValues.equalsIgnoreCase(_False) && !IncludeMissingValues.equalsIgnoreCase(_True)) {
+        message = "The IncludeMissingValues (" + IncludeMissingValues + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify as " + _False + " or " + _True + "." ) );   
     }
     if ( (DataColumn == null) || (DataColumn.length() == 0) ) {
         message = "The DataColumn is required but has not been specified.";
@@ -240,6 +255,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DateTimeColumn" );
     valid_Vector.add ( "TableTSIDColumn" );
     valid_Vector.add ( "TableTSIDFormat" );
+    valid_Vector.add ( "IncludeMissingValues" );
     valid_Vector.add ( "DataColumn" );
     valid_Vector.add ( "DataRow" );
     valid_Vector.add ( "OutputStart" );
@@ -427,6 +443,11 @@ CommandWarningException, CommandException
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     int TableTSIDColumn_int = -1; // Determined below.
+    String IncludeMissingValues = parameters.getValue ( "IncludeMissingValues" );
+    boolean IncludeMissingValues_boolean = true;
+    if ( (IncludeMissingValues != null) && IncludeMissingValues.equalsIgnoreCase(_False) ) {
+        IncludeMissingValues_boolean = false;
+    }
     int DataRow_int = -1; // Determined below.  Row 0+ for first data value.
     String TableID = parameters.getValue("TableID");
     String IfTableNotFound = parameters.getValue("IfTableNotFound");
@@ -768,7 +789,7 @@ CommandWarningException, CommandException
     		Message.printStatus ( 2, routine, "Copying " + tslist.size() + " time series to table \"" +
     		    TableID + "\"." );
     		TSUtil_TimeSeriesToTable tsu = new TSUtil_TimeSeriesToTable(table, tslist, DateTimeColumn_int,
-    		    TableTSIDColumn_int, TableTSIDFormat, DataColumn_int, DataRow_int,
+    		    TableTSIDColumn_int, TableTSIDFormat, IncludeMissingValues_boolean, DataColumn_int, DataRow_int,
     		    OutputStart_DateTime, OutputEnd_DateTime, outputWindow, true );
     		tsu.timeSeriesToTable();
     		List<String> problems = tsu.getProblems();
@@ -843,6 +864,7 @@ public String toString ( PropList props )
     String DateTimeColumn = props.getValue( "DateTimeColumn" );
     String TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
+    String IncludeMissingValues = props.getValue ( "IncludeMissingValues" );
     String DataColumn = props.getValue( "DataColumn" );
     String DataRow = props.getValue( "DataRow" );
 	String OutputStart = props.getValue("OutputStart");
@@ -889,6 +911,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
+    }
+    if ( (IncludeMissingValues != null) && (IncludeMissingValues.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IncludeMissingValues=" + IncludeMissingValues );
     }
     if ( (DataColumn != null) && (DataColumn.length() > 0) ) {
         if ( b.length() > 0 ) {

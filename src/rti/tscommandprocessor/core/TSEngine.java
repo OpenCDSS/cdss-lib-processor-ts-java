@@ -4217,7 +4217,7 @@ throws Exception
 	
 	// New approach uses DataStore concept to manage input types.  In this case, look up the data store
 	// using the input type string.  If matched, then the DataStore object information below (e.g., for
-	// RiversideDB, ColoradoBNDSS, RccAcis, ReclamationHDB, UsgsNwis).
+	// HydroBase, RccAcis, ReclamationHDB, RiversideDB, UsgsNwis).
 	
 	DataStore dataStore = lookupDataStore ( inputTypeAndName );
 

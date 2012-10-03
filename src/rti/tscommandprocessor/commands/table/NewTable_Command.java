@@ -27,9 +27,7 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
 
 /**
-<p>
 This class initializes, checks, and runs the NewTable() command.
-</p>
 */
 public class NewTable_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {

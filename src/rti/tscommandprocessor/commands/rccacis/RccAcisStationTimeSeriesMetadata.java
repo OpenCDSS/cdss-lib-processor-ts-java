@@ -41,9 +41,24 @@ Variable information.
 private RccAcisVariableTableRecord __variable = null;
 
 /**
+Basin ID (HUC 8-digit).
+*/
+private String basin = "";
+
+/**
+Climate division.
+*/
+private String climdiv = "";
+
+/**
 FIPS county.
 */
 private String county = "";
+
+/**
+NWS county warning area (CWA).
+*/
+private String cwa = "";
 
 /**
 Elevation (feet).
@@ -95,11 +110,35 @@ Valid date range for each element being queried.
 private String[][] valid_daterange = null;
 
 /**
+Return the basin (HUC).
+*/
+public String getBasin ()
+{
+    return this.basin;
+}
+
+/**
+Return the climate division.
+*/
+public String getClimdiv ()
+{
+    return this.climdiv;
+}
+
+/**
 Return the FIPS county.
 */
 public String getCounty()
 {
     return this.county;
+}
+
+/**
+Return the NWS county warning area.
+*/
+public String getCwa ()
+{
+    return this.cwa;
 }
 
 /**
@@ -290,6 +329,38 @@ Set the data store.
 public void setDataStore ( RccAcisDataStore dataStore )
 {
     __dataStore = dataStore;
+}
+
+/**
+Set the basin (HUC).
+*/
+public void setBasin ( String basin )
+{
+    this.basin = basin;
+}
+
+/**
+Set the climate division.
+*/
+public void setClimdiv ( String climdiv )
+{
+    this.climdiv = climdiv;
+}
+
+/**
+Set the county FIPS code.
+*/
+public void setCounty ( String county )
+{
+    this.county = county;
+}
+
+/**
+Set the NWS climate warning area (CWA).
+*/
+public void setCwa ( String cwa )
+{
+    this.cwa = cwa;
 }
 
 /**

@@ -394,7 +394,7 @@ throws IOException, MalformedURLException, URISyntaxException
     // Else, use the current version 2 API, which uses the StnMeta call instead of version 1 MultiStnData call
     // Form the URL - ask for as much metadata as possible
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() +
-        "/StnMeta?meta=sIds,uid,name,state,county,huc,climdiv,cwa,ll,elev,valid_daterange" );
+        "/StnMeta?meta=sIds,uid,name,state,county,basin,climdiv,cwa,ll,elev,valid_daterange" );
     // Specify constraints from input filter
     // Element being read (currently only one data type per call)...
     urlString.append("&elems="+variable.getElem());
@@ -702,7 +702,7 @@ throws MalformedURLException, Exception
     boolean requestJSON = true; // JSON more work to parse, CSV is verified to work
     if ( apiVersion == 1 ) {
         // Version 1 worked with CSV so leave it as is
-        // For version 2 can focus on new features
+        // For version 2 can focus on new features in JSON
         requestJSON = false;
     }
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() + "/StnData" );
@@ -716,7 +716,7 @@ throws MalformedURLException, Exception
     // Only JSON format allows metadata to be requested
     // Version 1 requires sId... whereas version 2 is case-independent
     if ( requestJSON ) {
-        urlString.append( "&meta=sIds,uid,name,state,county,huc,climdiv,cwa,ll,elev,valid_daterange" );
+        urlString.append( "&meta=sIds,uid,name,state,county,basin,climdiv,cwa,ll,elev,valid_daterange" );
     }
     urlString.append( "&sId=" +
          URLEncoder.encode(stationIDAndStationType,"UTF-8") +
@@ -805,6 +805,36 @@ throws MalformedURLException, Exception
         ts.setDataUnits(variable.getUnits());
         ts.setDataUnitsOriginal(variable.getUnits());
         ts.setDescription(stationName);
+        boolean setPropertiesFromMetadata = true;
+        if ( setPropertiesFromMetadata ) {
+            // Set time series properties from the station metadata
+            if ( metaAndData != null ) {
+                // Get metadata from the object and set as properties, using the JSON property names
+                RccAcisStationTimeSeriesMetadata meta = metaAndData.getMeta();
+                ts.setProperty("uid", (meta.getUid() == null) ? "" : meta.getUid() );
+                ts.setProperty("name", (meta.getName() == null) ? "" : meta.getName() );
+                ts.setProperty("county", (meta.getCounty() == null) ? "" : meta.getCounty() );
+                ts.setProperty("basin", (meta.getBasin() == null) ? "" : meta.getBasin() );
+                ts.setProperty("climdiv", (meta.getClimdiv() == null) ? "" : meta.getClimdiv() );
+                ts.setProperty("cwa", (meta.getCwa() == null) ? "" : meta.getCwa() );
+                ts.setProperty("state", (meta.getState() == null) ? "" : meta.getState() );
+                ts.setProperty("elev", new Double(meta.getElev()) );
+                double [] ll = meta.getLl();
+                if ( (ll != null) && (ll.length == 2) ) {
+                    ts.setProperty("latitude", new Double(ll[0]) );
+                    ts.setProperty("longitude", new Double(ll[1]) );
+                }
+                String [] sids = meta.getSids();
+                if ( sids != null ) {
+                    for ( int i = 0; i < sids.length; i++ ) {
+                        // Each string is "ID type"
+                        String [] parts = sids[i].split(" ");
+                        // Set a property "ID-type"
+                        ts.setProperty("ID-" + lookupStationTypeFromCode(Integer.parseInt(parts[1])).getType(), parts[0] );
+                    }
+                }
+            }
+        }
         // Since there is no way currently to retrieve the separate periods, set both to what was retrieved.
         ts.setDate1(dataStart);
         ts.setDate2(dataEnd);

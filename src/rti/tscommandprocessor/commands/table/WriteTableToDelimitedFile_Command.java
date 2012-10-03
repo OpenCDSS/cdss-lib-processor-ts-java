@@ -33,6 +33,12 @@ This class initializes, checks, and runs the WriteTableToDelimitedFile() command
 public class WriteTableToDelimitedFile_Command extends AbstractCommand implements Command, FileGenerator
 {
 
+/** 
+Values for use with WriteHeaderComments parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+
 /**
 Output file that is created by this command.
 */
@@ -58,6 +64,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
 	String TableID = parameters.getValue ( "TableID" );
+	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -122,11 +129,23 @@ throws InvalidCommandParameterException
 						message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
+	
+    if ( (WriteHeaderComments != null) && !WriteHeaderComments.equals("") ) {
+        if ( !WriteHeaderComments.equalsIgnoreCase(_False) && !WriteHeaderComments.equalsIgnoreCase(_True) ) {
+            message = "The WriteHeaderComments parameter (" + WriteHeaderComments + ") must be " + _False +
+            " or " + _True + ".";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the parameter as " + _False + " or " + _True + "."));
+        }
+    }
 
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "TableID" );
+	valid_Vector.add ( "WriteHeaderComments" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -205,6 +224,12 @@ CommandWarningException, CommandException
     String OutputFile = parameters.getValue ( "OutputFile" );
     OutputFile_full = OutputFile;
     String TableID = parameters.getValue ( "TableID" );
+    String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+    boolean WriteHeaderComments_boolean = true;
+    if ( (WriteHeaderComments != null) && WriteHeaderComments.equalsIgnoreCase(_False) ) {
+        WriteHeaderComments_boolean = false;
+    }
+
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
     CommandProcessorRequestResultsBean bean = null;
@@ -249,7 +274,8 @@ CommandWarningException, CommandException
 		OutputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
-		warning_count = writeTable ( table, OutputFile_full, warning_level, command_tag, warning_count );
+		warning_count = writeTable ( table, OutputFile_full, WriteHeaderComments_boolean,
+		    warning_level, command_tag, warning_count );
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
 	}
@@ -284,6 +310,7 @@ public String toString ( PropList parameters )
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String TableID = parameters.getValue ( "TableID" );
+	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TableID != null) && (TableID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -297,6 +324,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
+    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteHeaderComments=\"" + WriteHeaderComments + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
@@ -304,9 +337,11 @@ public String toString ( PropList parameters )
 Write a table to a delimited file.
 @param table Table to write.
 @param OutputFile name of file to write.
+@param writeHeaderComments indicates whether header comments should be written (some software like Esri ArcGIS
+do not handle comments)
 @exception IOException if there is an error writing the file.
 */
-private int writeTable ( DataTable table, String OutputFile,
+private int writeTable ( DataTable table, String OutputFile, boolean writeHeaderComments,
 		int warning_level, String command_tag, int warning_count )
 throws IOException
 {	String routine = getClass().getName() + ".writeTable";
@@ -325,24 +360,30 @@ throws IOException
     // Get the comments to add to the top of the file.
 
     List<String> outputCommentsList = new Vector();
-    try {
-        Object o = processor.getPropContents ( "OutputComments" );
-        // Comments are available so use them...
-        if ( o != null ) {
-            outputCommentsList.addAll((List<String>)o);
+    if ( writeHeaderComments ) {
+        // Get the comments to be written at the top of the file
+        // Put the standard header at the top of the file
+        outputCommentsList = IOUtil.formatCreatorHeader ( "", 80, false );
+        // Additional comments to add
+        try {
+            Object o = processor.getPropContents ( "OutputComments" );
+            // Comments are available so use them...
+            if ( o != null ) {
+                outputCommentsList.addAll((List<String>)o);
+            }
+            // Also add internal comments specific to the table.
+            outputCommentsList.addAll ( table.getComments() );
         }
-        // Also add internal comments specific to the table.
-        outputCommentsList.addAll ( table.getComments() );
-    }
-    catch ( Exception e ) {
-        // Not fatal, but of use to developers.
-        message = "Error requesting OutputComments from processor - not using.";
-        Message.printDebug(10, routine, message );
+        catch ( Exception e ) {
+            // Not fatal, but of use to developers.
+            message = "Error requesting OutputComments from processor - not using.";
+            Message.printDebug(10, routine, message );
+        }
     }
 	
 	try {
 		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
-		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList);
+		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList, "#");
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table to file \"" + OutputFile + "\" (" + e + ")";

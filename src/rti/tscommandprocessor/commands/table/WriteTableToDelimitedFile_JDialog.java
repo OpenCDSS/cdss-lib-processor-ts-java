@@ -24,6 +24,7 @@ import javax.swing.JTextField;
 
 import java.io.File;
 import java.util.List;
+import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -45,14 +46,15 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 	
-private SimpleJButton __browse_JButton = null,// Button to browse for file
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and absolute paths.
-private WriteTableToDelimitedFile_Command __command = null;// Command to edit
-private JTextArea __command_JTextArea=null;// Command display
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
+private WriteTableToDelimitedFile_Command __command = null;
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
-private JTextField __OutputFile_JTextField = null;// Field for time series identifier
+private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 private String __working_dir = null; // Working directory.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -146,6 +148,7 @@ private void checkInput ()
 	PropList parameters = new PropList ( "" );
 	String OutputFile = __OutputFile_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
+    String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -154,6 +157,9 @@ private void checkInput ()
 	}
     if ( (TableID != null) && TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
+    }
+    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+        parameters.set ( "WriteHeaderComments", WriteHeaderComments );
     }
 	try {
 	    // This will warn the user...
@@ -173,8 +179,10 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {   String TableID = __TableID_JComboBox.getSelected();   
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
 }
 
 /**
@@ -212,7 +220,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-     JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write a table to a delimited format file, which can be specified using a full or " +
 		"relative path (relative to the working directory)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -243,6 +251,22 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - table identifier."),
      3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+     
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write header comments?:"), 
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
+     List<String> writeHeaderCommentsList = new Vector();
+     writeHeaderCommentsList.add("");
+     writeHeaderCommentsList.add(__command._False);
+     writeHeaderCommentsList.add(__command._True);
+     __WriteHeaderComments_JComboBox.setData ( writeHeaderCommentsList );
+     __WriteHeaderComments_JComboBox.select(0);
+     __WriteHeaderComments_JComboBox.addItemListener (this);
+     JGUIUtil.addComponent(main_JPanel, __WriteHeaderComments_JComboBox,
+         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Optional - should header comments be written? (default=" + __command._True + ")."),
+         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
      
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -311,7 +335,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -324,6 +348,7 @@ private void refresh ()
 {	String routine = getClass().getName() + "_JDialog.refresh";
 	String OutputFile = "";
     String TableID = "";
+    String WriteHeaderComments = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -332,6 +357,7 @@ private void refresh ()
 		parameters = __command.getCommandParameters();
 		OutputFile = parameters.getValue ( "OutputFile" );
         TableID = parameters.getValue ( "TableID" );
+        WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -352,15 +378,35 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__WriteHeaderComments_JComboBox, WriteHeaderComments, JGUIUtil.NONE, null, null ) ) {
+            __WriteHeaderComments_JComboBox.select ( WriteHeaderComments );
+        }
+        else {
+            if ( (WriteHeaderComments == null) || WriteHeaderComments.equals("") ) {
+                // New command...select the default...
+                if ( __WriteHeaderComments_JComboBox.getItemCount() > 0 ) {
+                    __WriteHeaderComments_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                  "WriteHeaderComments parameter \"" + WriteHeaderComments + "\".  Select a different value or Cancel." );
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
+    WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
 	if ( TableID != null ) {
 	    parameters.add ( "TableID=" + TableID );
 	}
+    if ( WriteHeaderComments != null ) {
+        parameters.add ( "WriteHeaderComments=" + WriteHeaderComments );
+    }
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {
@@ -381,7 +427,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()

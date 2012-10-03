@@ -470,10 +470,11 @@ CommandWarningException, CommandException
 	// Write the new file...
 
 	Message.printStatus ( 2, routine, "Writing list file \"" + OutputFile_full + "\"" );
-	try {	table.writeDelimitedFile ( OutputFile_full,
+	try {
+	    table.writeDelimitedFile ( OutputFile_full,
 			",",	// Delimiter
-			true,	// Write header
-			null );	// Comments for header
+			true,	// Write column names
+			IOUtil.formatCreatorHeader ( "#", 80, false ), "" ); // Comments for header
 		// TODO SAM 2005-11-18
 		// Need a general IOUtil method to format the header strings
 		// (and NOT also open the file).

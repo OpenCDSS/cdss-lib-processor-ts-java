@@ -249,22 +249,28 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Copy time series properties to a table, using matching time series identifier information." ), 
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Copy time series properties to a table, which is useful for creating lists of locations and corresponding time series information." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "Properties typically are set when reading data and by commands like SetTimeSeriesProperty()." ), 
+       "Time series properties are set when reading data and by commands like SetTimeSeriesProperty()." ), 
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "The table output columns will default to the property names.  Use * to match one property name " +
-       "when specifying a list of column names." ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    //JGUIUtil.addComponent(main_JPanel, new JLabel (
-    //    "The table value is determined from a row with a matching time series identifier (TSID) and by " +
-    //    "specifying the column from which to get a value." ), 
-    //    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "If the table does not exist, it will be created." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The table row is determined by matching the time series identifier (TSID) in the TableTSIDColumn and using " +
+        "the specified TSID format." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "If the formatted TSID is not matched, a row will be created for the properties." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST); 
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The table output columns will default to the property names.  Use * to match one property name " +
+        "when specifying a list of column names." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -301,7 +307,7 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to modify or create."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table TSID column:" ), 
@@ -310,7 +316,7 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
     __TableTSIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TableTSIDColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - column name for TSID."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table column name for TSID."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Format of TSID:"),
@@ -488,10 +494,14 @@ private void refresh ()
                 __TableID_JComboBox.select ( TableID );
             }
             else {
-                Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nTableID value \"" + TableID +
-                "\".  Select a different value or Cancel.");
-                __error_wait = true;
+                // Creating new table so add in the first position
+                if ( __TableID_JComboBox.getItemCount() == 0 ) {
+                    __TableID_JComboBox.add(TableID);
+                }
+                else {
+                    __TableID_JComboBox.insert(TableID, 0);
+                }
+                __TableID_JComboBox.select(0);
             }
         }
         if ( TableTSIDColumn != null ) {

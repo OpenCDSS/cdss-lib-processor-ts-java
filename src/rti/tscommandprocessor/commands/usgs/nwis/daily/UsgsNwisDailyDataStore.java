@@ -7,21 +7,6 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Vector;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import com.google.gson.Gson;
-
 import riverside.datastore.AbstractWebServiceDataStore;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisParameterType;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisSiteTimeSeriesMetadata;
@@ -29,6 +14,7 @@ import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisStatisticType;
 import rti.tscommandprocessor.commands.wateroneflow.waterml.WaterMLReader;
 
 import RTi.TS.TS;
+import RTi.TS.TSIdent;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -37,7 +23,6 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
-// TODO SAM 2012-02-28 Need to enable
 /**
 Data store for USGS NWIS daily value web services.
 <pre>
@@ -49,8 +34,7 @@ public class UsgsNwisDailyDataStore extends AbstractWebServiceDataStore
 {
     
 /**
-The records of valid parameters, listed here:  http://nwis.waterdata.usgs.gov/usa/nwis/pmcodes?radio_pm_search=param_group&pm_group=All+--+include+all+parameter+groups&pm_search=&casrn_search=&srsname_search=&format=html_table&show=parameter_group_nm&show=parameter_nm&show=casrn&show=srsname&show=parameter_units
-Examples here:  http://waterservices.usgs.gov/rest/USGS-DV-Service.html
+The records of valid parameters, listed here:  http://help.waterdata.usgs.gov/codes-and-parameters/parameters
 */
 private List<UsgsNwisParameterType> __parameterTypeList = new Vector();
     
@@ -69,13 +53,23 @@ throws URISyntaxException, IOException
     setDescription ( description );
     setServiceRootURI ( serviceRootURI );
     // Initialize the parameter types - this may be available as a service at some point but for now inline
+    __parameterTypeList.add ( new UsgsNwisParameterType("00053","Physical","Surface area, square feet","","","ac"));
     __parameterTypeList.add ( new UsgsNwisParameterType("00054","Physical","Reservoir storage, acre feet","","Reservoir storage","ac-ft"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("00056","Physical","Flow rate of well, gallons per day","","","gal/day"));
     __parameterTypeList.add ( new UsgsNwisParameterType("00060","Physical","Discharge, cubic feet per second","","Stream flow, mean. daily","cfs"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("00062","Physical","Elevation of reservoir water surface above datum, feet","","","ft"));
     __parameterTypeList.add ( new UsgsNwisParameterType("00065","Physical","Gage height, feet","","Height, gage","ft"));
-    __parameterTypeList.add ( new UsgsNwisParameterType("74207","Physical","Moisture content, soil, volumetric, percent of total volume","","Moisture content","%"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("30210","Physical","Depth to water level, below land surface datum (LSD), meters","","Depth, from ground surface to well water level","m"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("61055","Physical","Water level, depth below measuring point, feet","","Water level in well, depth from a reference point","ft"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("62601","Pyysical","Water level elevation above NGVD 1929, inclined (non-vertical) well, feet","","","ft"));
     __parameterTypeList.add ( new UsgsNwisParameterType("63160","Physical","Stream water level elevation above NAVD 1988, in feet","","","ft"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("72008","Physical","Depth of well, feet below land surface datum","","Depth","ft"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("72019","Physical","Depth to water level, feet below land surface","","Depth to water level below land surface","ft"));
     __parameterTypeList.add ( new UsgsNwisParameterType("72020","Physical","Reservoir storage, total pool, percent of capacity","","","%"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("72181","Physical","Moisture content, soil, volumetric, fraction of total volume","","","number"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("74207","Physical","Moisture content, soil, volumetric, percent of total volume","","Moisture content","%"));
     __parameterTypeList.add ( new UsgsNwisParameterType("81026","Physical","Water content of snow, inches","","Water content of snow","in"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("81027","Physical","Temperature, soil, degrees Celsius",""," Temperature, soil","deg C"));
     __parameterTypeList.add ( new UsgsNwisParameterType("82300","Physical","Snow depth, inches","","Depth, snow cover","in"));
     // Initialize the statistic types - this may be available as a service at some point but for now inline
     __statisticTypeList.add ( new UsgsNwisStatisticType("00001","Maximum","Maximum values"));
@@ -272,6 +266,48 @@ throws IOException, MalformedURLException
     }
     metadataList.add(metadata);
     return metadataList;
+}
+
+/**
+Read a single time series given the time series identifier (TSID).  The TSID parts are mapped into the REST
+query parameters as if a single site has been specified, by calling the readTimeSeriesList() method.
+@param tsid time series identifier string of form SiteID..ParameterCode-StatisticCode.Day~DataStoreID
+@param readStart the starting date/time to read, or null to read all data.
+@param readEnd the ending date/time to read, or null to read all data.
+@param readData if true, read the data; if false, construct the time series and populate properties but do
+not read the data
+@return the time series list read from the USGS NWIS daily web services
+*/
+public TS readTimeSeries ( String tsid, DateTime readStart, DateTime readEnd, boolean readData )
+throws MalformedURLException, IOException, Exception
+{   // Initialize empty query parameters.
+    List<String> siteList = new Vector();
+    List<String> stateList = new Vector();
+    List<String> hucList = new Vector();
+    double [] boundingBox = null;
+    List<String> countyList = new Vector();
+    List<UsgsNwisParameterType> parameterList = new Vector<UsgsNwisParameterType>();
+    List<UsgsNwisStatisticType> statisticTypeList = new Vector<UsgsNwisStatisticType>();
+    UsgsNwisSiteStatusType siteStatus = UsgsNwisSiteStatusType.ALL;
+    List<UsgsNwisSiteType> siteTypeList = new Vector<UsgsNwisSiteType>();
+    String agency = null;
+    UsgsNwisFormatType format = UsgsNwisFormatType.WATERML;
+    String outputFile = null;
+    // Parse the TSID string and set in the query parameters
+    TSIdent tsident = TSIdent.parseIdentifier(tsid);
+    siteList.add ( tsident.getLocation() );
+    parameterList.add ( new UsgsNwisParameterType(tsident.getMainType(), "", "", "", "", "") );
+    statisticTypeList.add ( new UsgsNwisStatisticType(tsident.getSubType(), "", "") );
+    // The following should return one and only one time series.
+    List<TS> tsList = readTimeSeriesList ( siteList, stateList, hucList, boundingBox, countyList,
+        parameterList, statisticTypeList, siteStatus, siteTypeList, agency,
+        format, outputFile, readStart, readEnd, readData );
+    if ( tsList.size() > 0 ) {
+        return tsList.get(0);
+    }
+    else {
+        return null;
+    }
 }
 
 /**

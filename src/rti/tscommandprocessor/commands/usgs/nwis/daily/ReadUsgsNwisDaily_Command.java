@@ -642,7 +642,7 @@ CommandWarningException, CommandException
    		if ( (tslist == null) || (size == 0) ) {
 			Message.printStatus ( 2, routine,"No USGS NWIS daily time series were found." );
 	        // Warn if nothing was retrieved (can be overridden to ignore).
-            message = "No time series were read from the USGS NWIS web service.";
+            message = "No time series were read from the USGS NWIS daily value web service.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog ( commandPhase,
@@ -701,7 +701,7 @@ CommandWarningException, CommandException
         }
         // Warn if nothing was retrieved (can be overridden to ignore).
         if ( (tslist == null) || (size == 0) ) {
-            message = "No time series were read from the USGS NWIS daily web service.";
+            message = "No time series were read from the USGS NWIS daily value web service.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog ( commandPhase,

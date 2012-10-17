@@ -36,7 +36,9 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-Data store for USGS NWSI web services.  This class maintains the web service information in a general way.
+Data store for USGS NWIS web services.  This class maintains the web service information in a general way.
+TODO SAM 2012-10-16 Need to evaluate whether this code goes away since relying on UsgsNwisDailyDataStore for specific
+REST API integration.
 */
 public class UsgsNwisDataStore extends AbstractWebServiceDataStore
 {

@@ -508,9 +508,9 @@ CommandWarningException, CommandException
             try {
                 // Do the calculation...
                 TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
-                TSUtil_CalculateTimeSeriesStatistic tsStatistic = new TSUtil_CalculateTimeSeriesStatistic(ts, statisticType,
+                TSUtil_CalculateTimeSeriesStatistic tsu = new TSUtil_CalculateTimeSeriesStatistic(ts, statisticType,
                     AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, Value3_Double );
-                tsStatistic.calculateTimeSeriesStatistic();
+                tsu.calculateTimeSeriesStatistic();
                 // Now set in the table
                 if ( (TableID != null) && !TableID.equals("") ) {
                     if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
@@ -538,18 +538,30 @@ CommandWarningException, CommandException
                         }
                         catch ( Exception e2 ) {
                             // Automatically add to the table, initialize with null (not nonValue)
-                            table.addField(new TableField(TableField.DATA_TYPE_DOUBLE,TableStatisticColumn,10,4), null );
+                            // Create the column using an appropriate type for the statistic
+                            // This call is needed because the statistic could be null or NaN
+                            Class c = tsu.getStatisticDataClass();
+                            if ( c == Integer.class ) {
+                                table.addField(new TableField(TableField.DATA_TYPE_INT,TableStatisticColumn,-1,-1), null );
+                            }
+                            else if ( c == DateTime.class ) {
+                                table.addField(new TableField(TableField.DATA_TYPE_DATE,TableStatisticColumn,-1,-1), null );
+                            }
+                            else if ( c == Double.class ) {
+                                // This also 
+                                table.addField(new TableField(TableField.DATA_TYPE_DOUBLE,TableStatisticColumn,10,4), null );
+                            }
                             statisticColumn = table.getFieldIndex(TableStatisticColumn);
                         }
                         if ( rec != null ) {
                             // There is already a row for the TSID so just set the value in the table column...
-                            rec.setFieldValue(statisticColumn, tsStatistic.getStatisticResult());
+                            rec.setFieldValue(statisticColumn, tsu.getStatisticResult());
                         }
                         else {
                             // There is no row in the table for the time series so add a row to the table...
                             int tsidColumn = table.getFieldIndex(TableTSIDColumn);
                             table.addRecord(table.emptyRecord().setFieldValue(tsidColumn, tsid).
-                                setFieldValue(statisticColumn, tsStatistic.getStatisticResult()));
+                                setFieldValue(statisticColumn, tsu.getStatisticResult()));
                         }
                     }
                 }

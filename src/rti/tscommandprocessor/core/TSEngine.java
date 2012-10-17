@@ -662,6 +662,7 @@ import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
 import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDB_DMI;
+import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisDailyDataStore;
 import rti.tscommandprocessor.commands.usgsnwis.UsgsNwisDataStore;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
@@ -745,13 +746,6 @@ import RTi.Util.Time.YearType;
 public class TSEngine implements TSSupplier, WindowListener
 {
 	
-/**
-Indicate that temporary time series should be retrieved within a command but not
-managed in the processor.  This may go away due to limited use and issues with design.
-*/
-public final String TEMPTS = "TEMPTS";
-public final String TEMPTS_SP="TEMPTS ";
-
 public final int OUTPUT_NONE = 0;		// Initial value for _output_format.
 public final int OUTPUT_STATEMOD = 1;		// Formats for outputting the time series.
 public final int OUTPUT_SUMMARY = 2;		// Time series summary
@@ -2089,36 +2083,24 @@ throws Exception
 }
 
 /**
-Return a time series from either the __tslist vector.  The search is performed backwards in the
+Return a time series from either the __tslist list.  The search is performed backwards in the
 list, assuming that the commands are being processed sequentially and therefore
 any reference to a duplicate ID would intuitively be referring to the latest
 instance in the list.
 @param id Time series identifier (either an alias or TSIdent string).
-@param sequence_number If >= 0, the sequence number of the time series is
-also checked to make a match.
+@param sequence_number If >= 0, the sequence number of the time series is also checked to make a match.
 @return a time series from the requested position or null if none is available.
 @exception Exception if there is an error getting the time series.
 */
 protected TS getTimeSeries ( String command_tag, String id, int sequence_number )
 throws Exception
-{	String tsident = id.trim();
-	if ( tsident.regionMatches(true,0,TEMPTS,0,6) ) {
-		// Temporary time series.  Read it, mark as temporary, and return...
-		Message.printStatus ( 1, "TSEngine.getTimeSeries", "Reading temporary time series \"" +	tsident.substring(6).trim() );
-		TS ts = readTimeSeries ( 2, command_tag, tsident.substring(6).trim(), true );
-		if ( ts != null ) {
-			ts.setStatus ( TEMPTS );
-		}
-		return ts;
+{
+    // Expect the time series to be in memory or BinaryTS file...
+	int pos = indexOf ( id, sequence_number );
+	if ( pos < 0 ) {
+		return null;
 	}
-	else {
-        // Expect the time series to be in memory or BinaryTS file...
-		int pos = indexOf ( id, sequence_number );
-		if ( pos < 0 ) {
-			return null;
-		}
-		return getTimeSeries ( pos );
-	}
+	return getTimeSeries ( pos );
 }
 
 /**
@@ -4627,6 +4609,19 @@ throws Exception
 			ts = null;
 		}
 	}
+    else if ((dataStore != null) && (dataStore instanceof UsgsNwisDailyDataStore) ) {
+        // New style TSID~dataStoreName for USGS NWIS daily value...
+        UsgsNwisDailyDataStore ds = (UsgsNwisDailyDataStore)dataStore;
+        try {
+            ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+        }
+        catch ( Exception te ) {
+            Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+                "\" from USGS NWIS daily value web service." );
+            Message.printWarning ( 3, routine, te );
+            ts = null;
+        }
+    }
     else if ((dataStore != null) && (dataStore instanceof UsgsNwisDataStore) ) {
         // New style TSID~dataStoreName for USGS NWIS...
         UsgsNwisDataStore usgsNwisDataStore = (UsgsNwisDataStore)dataStore;

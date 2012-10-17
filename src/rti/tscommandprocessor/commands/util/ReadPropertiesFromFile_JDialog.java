@@ -23,6 +23,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import java.io.File;
+import java.util.List;
+import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -30,9 +32,11 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
+import RTi.Util.IO.PropertyFileFormatType;
 import RTi.Util.Message.Message;
 
 /**
@@ -55,6 +59,7 @@ private JTextArea __command_JTextArea=null;
 private JTextField __InputFile_JTextField = null;
 // TODO SAM 2012-07-27 Convert the following from a text field to a property selector/formatter,
 // similar to TSFormatSpecifiersJPanel
+private SimpleJComboBox __FileFormat_JComboBox = null;
 private JTextField __IncludeProperty_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -145,6 +150,7 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
+	String FileFormat = __FileFormat_JComboBox.getSelected();
 	String IncludeProperty = __IncludeProperty_JTextField.getText().trim();
 
 	__error_wait = false;
@@ -155,6 +161,9 @@ private void checkInput ()
 	if ( IncludeProperty.length() > 0 ) {
 		parameters.set ( "IncludeProperty", IncludeProperty );
 	}
+    if ( FileFormat.length() > 0 ) {
+        parameters.set ( "FileFormat", FileFormat );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -173,8 +182,10 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
     String IncludeProperty = __IncludeProperty_JTextField.getText().trim();
+    String FileFormat = __FileFormat_JComboBox.getSelected();
     __command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "IncludeProperty", IncludeProperty );
+	__command.setCommandParameter ( "FileFormat", FileFormat );
 }
 
 /**
@@ -233,6 +244,23 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
 	__browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("File format:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FileFormat_JComboBox = new SimpleJComboBox(false);
+    List<PropertyFileFormatType> fileFormatChoices = __command.getFileFormatChoices();
+    List<String> fileFormatChoicesS = new Vector();
+    fileFormatChoicesS.add ( "" );
+    for ( PropertyFileFormatType c : fileFormatChoices ) {
+        fileFormatChoicesS.add ( "" + c );
+    }
+    __FileFormat_JComboBox.setData (fileFormatChoicesS);
+    __FileFormat_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __FileFormat_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - property file format (default=" + PropertyFileFormatType.NAME_TYPE_VALUE + ")."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Property to read:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -322,8 +350,10 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String InputFile = "";
+{	String routine = getClass().getName() + ".refresh";
+    String InputFile = "";
 	String IncludeProperty = "";
+	String FileFormat = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -332,9 +362,26 @@ private void refresh ()
 		parameters = __command.getCommandParameters();
 		InputFile = parameters.getValue ( "InputFile" );
 		IncludeProperty = parameters.getValue ( "IncludeProperty" );
+		FileFormat = parameters.getValue ( "FileFormat" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText (InputFile);
 		}
+        if ( FileFormat == null ) {
+            // Select default...
+            __FileFormat_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem(__FileFormat_JComboBox,
+                FileFormat, JGUIUtil.NONE, null, null ) ) {
+                __FileFormat_JComboBox.select ( FileFormat );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nFileFormat value \"" +
+                FileFormat + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 		if ( IncludeProperty != null ) {
             __IncludeProperty_JTextField.setText (IncludeProperty);
         }
@@ -344,6 +391,7 @@ private void refresh ()
 	IncludeProperty = __IncludeProperty_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "InputFileFile=" + InputFile );
+	parameters.add ( "FileFormat=" + FileFormat );
 	parameters.add ( "IncludeProperty=" + IncludeProperty );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (InputFile == null) || (InputFile.length() == 0) ) {

@@ -618,7 +618,7 @@ throws IOException, MalformedURLException
 }
 
 /**
-Read a time series.
+Read a time series.  Only one element type is read.
 @param tsidentString the time series identifier string as per TSTool conventions.  The location should be
 Type:ID (e.g., COOP:1234).  The data type should be the variable name (might implement abbreviation later but
 trying to stay away from opaque variable major).
@@ -829,8 +829,21 @@ throws MalformedURLException, Exception
                     for ( int i = 0; i < sids.length; i++ ) {
                         // Each string is "ID type"
                         String [] parts = sids[i].split(" ");
-                        // Set a property "ID-type"
-                        ts.setProperty("ID-" + lookupStationTypeFromCode(Integer.parseInt(parts[1])).getType(), parts[0] );
+                        if ( (parts != null) && (parts.length == 2) ) {
+                            // Set a property "ID-type"
+                            RccAcisStationType stype = lookupStationTypeFromCode(Integer.parseInt(parts[1]));
+                            if ( stype != null ) {
+                                ts.setProperty("ID-" + stype.getType(), parts[0] );
+                            }
+                        }
+                    }
+                }
+                // Valid dates will only have two dates since one element was requested
+                String [][] validDates = meta.getValid_daterange();
+                if ( validDates.length > 0 ) {
+                    if ( validDates[0].length == 2 ) {
+                        ts.setProperty("valid_daterange1", validDates[0][0] );
+                        ts.setProperty("valid_daterange2", validDates[0][1] );
                     }
                 }
             }

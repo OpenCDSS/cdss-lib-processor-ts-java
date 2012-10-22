@@ -182,9 +182,16 @@ private String findSingleElementValue(Element parentElement, String elementName)
     return el == null ? null : el.getTextContent().trim();
 }
 
-private String getSingleElementValue(Element parent, String name)
+/**
+Return the text value of the element.
+@param parentElement parent element to process
+@param elementName the element name to match
+@return the first string text of the first matched element, or null if none are matched
+@throws IOException
+*/
+private String getSingleElementValue(Element parent, String elementName)
 throws IOException {
-    return getSingleElement(parent, name).getTextContent().trim();
+    return getSingleElement(parent, elementName).getTextContent().trim();
 }
 
 /**
@@ -301,6 +308,30 @@ throws IOException
         Element siteName = getSingleElement(timeSeriesElement, "siteName");
         if ( siteName != null ) {
             ts.setDescription(siteName.getTextContent());
+        }
+        // Also set properties by passing through XML elements
+        boolean setPropertiesFromMetadata = true;
+        if ( setPropertiesFromMetadata ) {
+            // Set time series properties from the timeSeries elements
+            // From sourceInfo
+            setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"siteName");
+            setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"siteCode");
+            setTimeSeriesPropertyToElementAttributeValue(ts,timeSeriesElement,"siteCode","network","network");
+            setTimeSeriesPropertyToElementAttributeValue(ts,timeSeriesElement,"siteCode","agencyCode","agencyCode");
+            setTimeSeriesPropertyToElementAttributeValue(
+                ts,timeSeriesElement,"timeZoneInfo","siteUsesDaylightSavingsTime","siteUsesDaylightSavingsTime");
+            setTimeSeriesPropertyToElementAttributeValue(
+                ts,timeSeriesElement,"defaultTimeZone","zoneAbbreviation","defaultTimeZone");
+            setTimeSeriesPropertyToElementAttributeValue(
+                ts,timeSeriesElement,"daylightSavingsTimeZone","zoneAbbreviation","dayligthSavingsTimeZone");
+            // From geoLocation
+            setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"latitude");
+            setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"longitude");
+            // Other site properties (USGS only?)
+            setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","siteTypeCd");
+            setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","hucCd");
+            setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","stateCd");
+            setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","countyCd");
         }
         // History
         if ( (url != null) && !url.equals("") ) {
@@ -668,6 +699,119 @@ throws MalformedURLException, IOException, Exception
             interval, __url, __file, readStart, readEnd, readData ));
     }
     return tsList;
+}
+
+/**
+Set a time series property to a WaterML element's value.  For example, use to set the siteName as a property:
+<pre>
+<ns1:siteName>CACHE LA POUDRE RIV AT MO OF CN, NR FT COLLINS, CO</ns1:siteName>
+</pre>
+If the element is not in the DOM, don't set as a time series property.
+@param ts time series being processed
+@param timeSeriesElement a time series DOM element as the starting point for the element search
+@param elementName the element name to set as the property
+*/
+private void setTimeSeriesPropertyToElementValue ( TS ts, Element timeSeriesElement, String elementName )
+{
+    try {
+        Element el = getSingleElement(timeSeriesElement, elementName);
+        if ( el != null ) {
+            String text = el.getTextContent();
+            ts.setProperty(elementName, (text == null) ? "" : text );
+        }
+    }
+    catch ( IOException e ) {
+        return;
+    }
+}
+
+/**
+Set a time series property to a WaterML element's attribute value.  For example, use to set the agencyCode as a property:
+<pre>
+<ns1:siteCode network="NWIS" agencyCode="USGS">06752000</ns1:siteCode>
+</pre>
+If the element is not in the DOM, don't set as a time series property.
+@param ts time series being processed
+@param timeSeriesElement a time series DOM element as the starting point for the element search
+@param elementName the element name to set as the property
+@param propertyName property name to assign (generally either the element or attribute name)
+*/
+private void setTimeSeriesPropertyToElementAttributeValue ( TS ts, Element timeSeriesElement, String elementName,
+    String attributeName, String propertyName )
+{
+    try {
+        Element el = getSingleElement(timeSeriesElement, elementName);
+        if ( el != null ) {
+            NodeList nodes = timeSeriesElement.getElementsByTagNameNS("*",elementName);
+            if ( nodes.getLength() == 0 ) {
+                return;
+            }
+            if ( nodes.getLength() == 0 ) {
+                return;
+            }
+            // Now match the attribute name and value
+            for ( int i = 0; i < nodes.getLength(); i++ ) {
+                Node element = nodes.item(i);
+                // Element value is for the element (not attribute)
+                NamedNodeMap nodeMap = element.getAttributes();
+                Node attribute = nodeMap.getNamedItem(attributeName);
+                if ( (attribute != null) && attribute.getNodeName().equalsIgnoreCase(attributeName) ) {
+                    // Found the attribute of interest
+                    String text = attribute.getTextContent();
+                    ts.setProperty(propertyName, (text == null) ? "" : text );
+                }
+            }
+        }
+    }
+    catch ( IOException e ) {
+        return;
+    }
+}
+
+/**
+Set a time series property from a WaterML element that can be repeated. For example, for the first line below
+the property name "siteTypeCd" will be set to the value "ST":
+<pre>
+<ns1:siteProperty name="siteTypeCd">ST</ns1:siteProperty>
+<ns1:siteProperty name="hucCd">10190007</ns1:siteProperty>
+<ns1:siteProperty name="stateCd">08</ns1:siteProperty>
+<ns1:siteProperty name="countyCd">08069</ns1:siteProperty>
+</pre>
+If the element is not in the DOM, don't set as a time series property.
+@param ts time series being processed
+@param timeSeriesElement a time series DOM element as the starting point for the element search
+@param elementName the element name to match (e.g., "siteProperty" above)
+@param attributeName the attribute name to match (e.g., "name" above)
+@param attributeValue the name of the attribute value to match, used for the property name to set (e.g., "siteTypeCd" above)
+*/
+private void setTimeSeriesPropertyFromGenericPropertyElement ( TS ts, Element timeSeriesElement, String elementName,
+    String attributeName, String attributeValue )
+{
+    //try {
+        // First get all matching elements
+        NodeList nodes = timeSeriesElement.getElementsByTagNameNS("*",elementName);
+        if ( nodes.getLength() == 0 ) {
+            return;
+        }
+        else {
+            // Now match the attribute name and value
+            for ( int i = 0; i < nodes.getLength(); i++ ) {
+                Node element = nodes.item(i);
+                // Element value is for the element (not attribute)
+                String text = element.getTextContent();
+                NamedNodeMap nodeMap = element.getAttributes();
+                Node attribute = nodeMap.getNamedItem(attributeName);
+                if ( (attribute != null) && attribute.getNodeName().equalsIgnoreCase(attributeName) &&
+                    attribute.getTextContent().equalsIgnoreCase(attributeValue) ) {
+                    // Found the node (attribute) of interest
+                    ts.setProperty(attributeValue, (text == null) ? "" : text );
+                }
+            }
+        }
+    //}
+    //catch ( IOException e ) {
+    //    return;
+    //}
 }
 
 }

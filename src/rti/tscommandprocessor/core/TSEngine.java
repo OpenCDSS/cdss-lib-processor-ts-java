@@ -663,7 +663,7 @@ import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDB_DMI;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisDailyDataStore;
-import rti.tscommandprocessor.commands.usgsnwis.UsgsNwisDataStore;
+import rti.tscommandprocessor.commands.usgs.nwis.groundwater.UsgsNwisGroundwaterDataStore;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
@@ -4622,15 +4622,15 @@ throws Exception
             ts = null;
         }
     }
-    else if ((dataStore != null) && (dataStore instanceof UsgsNwisDataStore) ) {
-        // New style TSID~dataStoreName for USGS NWIS...
-        UsgsNwisDataStore usgsNwisDataStore = (UsgsNwisDataStore)dataStore;
+    else if ((dataStore != null) && (dataStore instanceof UsgsNwisGroundwaterDataStore) ) {
+        // New style TSID~dataStoreName for USGS NWIS groundwater values...
+        UsgsNwisGroundwaterDataStore ds = (UsgsNwisGroundwaterDataStore)dataStore;
         try {
-            ts = usgsNwisDataStore.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+            ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                "\" from USGS NWIS web service." );
+                "\" from USGS NWIS groundwater web service." );
             Message.printWarning ( 3, routine, te );
             ts = null;
         }

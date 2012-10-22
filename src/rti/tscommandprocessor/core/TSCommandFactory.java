@@ -213,6 +213,7 @@ import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
 import rti.tscommandprocessor.commands.usgs.nwis.rdb.ReadUsgsNwisRdb_Command;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.ReadUsgsNwisDaily_Command;
+import rti.tscommandprocessor.commands.usgs.nwis.groundwater.ReadUsgsNwisGroundwater_Command;
 
 // Utility commands.
 
@@ -667,6 +668,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadUsgsNwisDaily") ) {
         return new ReadUsgsNwisDaily_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadUsgsNwisGroundwater") ) {
+        return new ReadUsgsNwisGroundwater_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadWaterML") ) {
         return new ReadWaterML_Command ();

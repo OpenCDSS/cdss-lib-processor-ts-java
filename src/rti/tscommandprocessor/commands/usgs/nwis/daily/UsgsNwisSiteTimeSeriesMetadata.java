@@ -1,5 +1,7 @@
 package rti.tscommandprocessor.commands.usgs.nwis.daily;
 
+import riverside.datastore.WebServiceDataStore;
+
 /**
 Metadata for site and time series joined data.  The USGS NWIS REST API here:
 http://waterservices.usgs.gov/rest/USGS-DV-Service.html
@@ -17,9 +19,10 @@ public UsgsNwisSiteTimeSeriesMetadata ()
 }
 
 /**
-Data store associated with this record.
+Data store associated with this record.  Use the interface because this class is used with
+multiple NWIS datastores.
 */
-private UsgsNwisDailyDataStore __dataStore = null;
+private WebServiceDataStore __dataStore = null;
 
 /**
 Parameter information.
@@ -190,7 +193,7 @@ public String getUnits()
 /**
 Set the data store.
 */
-public void setDataStore ( UsgsNwisDailyDataStore dataStore )
+public void setDataStore ( WebServiceDataStore dataStore )
 {
     __dataStore = dataStore;
 }

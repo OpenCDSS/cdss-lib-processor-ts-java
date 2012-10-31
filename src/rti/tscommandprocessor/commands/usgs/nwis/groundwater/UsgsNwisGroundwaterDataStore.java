@@ -413,7 +413,8 @@ throws MalformedURLException, IOException, Exception
             TimeInterval interval = TimeInterval.parseInterval("Day");
             // Pass the input period here because it is used for memory allocation and the time series
             // in the data my have gaps that cause the period to be different
-            tslist = watermlReader.readTimeSeriesList( interval, readStart, readEnd, readData );
+            boolean requireDataToMatchInterval = false; // Output OK as daily, even if more precise date/times
+            tslist = watermlReader.readTimeSeriesList( interval, readStart, readEnd, readData, requireDataToMatchInterval );
         }
         else {
             Message.printWarning(3, routine, "USGS NWIS Daily format " + format +

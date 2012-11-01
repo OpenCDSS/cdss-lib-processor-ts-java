@@ -6,6 +6,7 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +29,7 @@ import RTi.Util.IO.ReaderInputStream;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.TimeUtil;
 
 /**
 Class to read a WaterML file and return time series.
@@ -60,12 +62,20 @@ private String __url = "";
 File path from which WaterML is being read.
 */
 private File __file = null;
-    
+
+/**
+List of problems encountered during read - a simple list of strings.
+*/
+private List<String> __problems = new Vector();
+
 /**
 Constructor.
 @param waterMLString the string from which to parse the time series (may be result of in-memory
 web service call, or text read from WaterML file)
 @param url the full URL query used to make the query (specify as null or empty if read from a file)
+@param file the output file to write results (WaterML, etc.) to
+@param intervalHint the interval that should be used for the output time series (if null use daily) - this
+will be enhanced in the future as more is understood about WaterML
 */
 public WaterMLReader ( String waterMLString, String url, File file )
 {
@@ -183,6 +193,14 @@ private String findSingleElementValue(Element parentElement, String elementName)
 }
 
 /**
+Return the list of problems from the read.
+*/
+public List<String> getProblems ()
+{
+    return __problems;
+}
+
+/**
 Return the text value of the element.
 @param parentElement parent element to process
 @param elementName the element name to match
@@ -258,10 +276,13 @@ populate the history comments in the time series
 @param readEnd ending date/time to read
 @param readData whether to read data values (if false initialize the period but do not allocate
 memory or process the data values)
+@param requireDataToMatchInterval if true, the date/times with data values must align with the interval (if they
+don't warnings will be generated)
 */
 private TS readTimeSeries( WaterMLVersion watermlVersion, Element domElement,
     Element timeSeriesElement,
-    TimeInterval interval, String url, File file, DateTime readStart, DateTime readEnd, boolean readData)
+    TimeInterval interval, String url, File file, DateTime readStart, DateTime readEnd, boolean readData,
+    boolean requireDataToMatchInterval )
 throws IOException
 {   String routine = "WaterMLReader.readTimeSeries";
     String sourceInfoTag = null;
@@ -380,7 +401,8 @@ throws IOException
     if ( Message.isDebugOn ) {
         Message.printDebug(1,routine,"Parsing values...");
     }
-    readTimeSeries_ParseValues ( watermlVersion, ts, valuesElement, noDataValue, readStart, readEnd, readData );
+    readTimeSeries_ParseValues ( watermlVersion, ts, valuesElement, noDataValue, readStart, readEnd, readData,
+        requireDataToMatchInterval );
     if ( Message.isDebugOn ) {
         Message.printDebug(1,routine,"...back from parsing values");
     }
@@ -548,9 +570,11 @@ Parse time series values from the DOM, and also set the period.
 @param readEnd ending date/time to read
 @param readData whether to read data values (if false initialize the period but do not allocate
 memory or process the data values)
+@param requireDataToMatchInterval if true, the date/times with data values must align with the interval (if they
+don't warnings will be generated)
 */
 private void readTimeSeries_ParseValues(WaterMLVersion watermlVersion, TS ts, Element valuesElement,
-    String noDataValue, DateTime readStart, DateTime readEnd, boolean readData )
+    String noDataValue, DateTime readStart, DateTime readEnd, boolean readData, boolean requireDataToMatchInterval )
 throws IOException
 {
     DateTime dataStart = null;
@@ -609,6 +633,14 @@ throws IOException
     double dataValue;
     String dataFlag;
     DateTime dateTime;
+    String intervalString = ts.getIdentifier().getInterval(); // Used to check alignment
+    TimeInterval interval = null;
+    try {
+        interval = TimeInterval.parseInterval(intervalString);
+    }
+    catch ( Exception e ) {
+        // Should not happen
+    }
     if ( readData ) {
         ts.allocateDataSpace();
         for (int i = 0; i < valuelist.getLength(); i++) {
@@ -625,6 +657,14 @@ throws IOException
                 if ( dateTime.lessThan(readStart) || dateTime.greaterThan(readEnd) ) {
                     // Date/time is non in the requested period
                     continue;
+                }
+                if ( requireDataToMatchInterval ) {
+                    // Do a check to see if the date/time aligns exactly with the interval
+                    if ( TimeUtil.compareDateTimePrecisionToTimeInterval(dateTime, interval, requireDataToMatchInterval ) != 0 ) {
+                        __problems.add("Date/time " + dateTime + " is not aligned with time series interval " +
+                            intervalString );
+                        // Even though not aligned, set the values below
+                    }
                 }
                 dataFlag = el.getAttribute("qualifiers");
                 dataValueString = el.getTextContent();
@@ -656,8 +696,11 @@ in the file that indicates that data are daily values, etc.
 @param readStart starting date/time to read
 @param readEnd ending date/time to read
 @param readData if true, read all the data values; if false, only initialize the time series header information
+@param requireDataToMatchInterval if true, require that all date/times for data fall on the exact interval; if false,
+allow the date/time to truncate
 */
-public List<TS> readTimeSeriesList ( TimeInterval interval, DateTime readStart, DateTime readEnd, boolean readData )
+public List<TS> readTimeSeriesList ( TimeInterval interval, DateTime readStart, DateTime readEnd,
+    boolean readData, boolean requireDataToMatchInterval )
 throws MalformedURLException, IOException, Exception
 {   String routine = getClass().getName() + ".readTimeSeriesList";
     // Create the time series from the WaterML...
@@ -696,7 +739,7 @@ throws MalformedURLException, IOException, Exception
                 ", namespace=" + node.getNamespaceURI() + ", name=" + node.getNodeName());
         }
         tsList.add(readTimeSeries(watermlVersion, dom.getDocumentElement(), (Element)timeSeries.item(i),
-            interval, __url, __file, readStart, readEnd, readData ));
+            interval, __url, __file, readStart, readEnd, readData, requireDataToMatchInterval ));
     }
     return tsList;
 }

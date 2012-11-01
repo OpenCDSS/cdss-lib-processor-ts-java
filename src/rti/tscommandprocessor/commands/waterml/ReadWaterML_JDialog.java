@@ -13,6 +13,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -47,10 +48,10 @@ Editor for the ReadWaterML() command.
 public class ReadWaterML_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton __browse_JButton = null,
-			__path_JButton = null, // Convert between relative and absolute path.
-			__cancel_JButton = null,
-			__ok_JButton = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null; // Convert between relative and absolute path.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private ReadWaterML_Command __command = null;
 private String __working_dir = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
@@ -58,6 +59,7 @@ private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private JTextField __InputFile_JTextField = null;
 private SimpleJComboBox __Interval_JComboBox = null;
+private SimpleJComboBox __RequireDataToMatchInterval_JComboBox = null;
 //private JTextField __NewUnits_JTextField = null;
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -186,6 +188,7 @@ private void checkInput () {
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 	String Interval  = __Interval_JComboBox.getSelected();
+	String RequireDataToMatchInterval  = __RequireDataToMatchInterval_JComboBox.getSelected();
 	
 	__error_wait = false;
 
@@ -195,20 +198,24 @@ private void checkInput () {
 	if (InputFile.length() > 0) {
 		props.set("InputFile", InputFile);
 	}
-	if (InputStart.length() > 0 && !InputStart.equals("*")) {
+	if (InputStart.length() > 0) {
 		props.set("InputStart", InputStart);
 	}
-	if (InputEnd.length() > 0 && !InputEnd.equals("*")) {
+	if (InputEnd.length() > 0) {
 		props.set("InputEnd", InputEnd);
 	}
-    if (Interval.length() > 0 && !Interval.equals("*")) {
+    if (Interval.length() > 0) {
         props.set("Interval", Interval);
+    }
+    if (RequireDataToMatchInterval.length() > 0) {
+        props.set("RequireDataToMatchInterval", RequireDataToMatchInterval);
     }
 	//if (NewUnits.length() > 0 && !NewUnits.equals("*")) {
 	//	props.set("NewUnits", NewUnits);
 	//}
 
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	} 
 	catch ( Exception e ) {
@@ -227,6 +234,7 @@ private void commitEdits() {
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String Interval  = __Interval_JComboBox.getSelected();
+	String RequireDataToMatchInterval  = __RequireDataToMatchInterval_JComboBox.getSelected();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
 
     __command.setCommandParameter("Alias", Alias);
@@ -234,6 +242,7 @@ private void commitEdits() {
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
 	__command.setCommandParameter("Interval", Interval);
+	__command.setCommandParameter("RequireDataToMatchInterval", RequireDataToMatchInterval);
 	//__command.setCommandParameter("NewUnits", NewUnits);
 }
 
@@ -320,14 +329,30 @@ private void initialize(JFrame parent, ReadWaterML_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Interval:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
-    __Interval_JComboBox.setData (
-        TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR,false,-1));
+    List<String> intervalChoices = TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR,false,-1);
+    intervalChoices.add ( "Irregular" );
+    __Interval_JComboBox.setData ( intervalChoices );
+    
     // Select a default...
     __Interval_JComboBox.select ( 0 );
     __Interval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval for data."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Require data to match interval?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RequireDataToMatchInterval_JComboBox = new SimpleJComboBox ( false );
+    __RequireDataToMatchInterval_JComboBox.add("");
+    __RequireDataToMatchInterval_JComboBox.add(__command._False);
+    __RequireDataToMatchInterval_JComboBox.add(__command._True);
+    // Select a default...
+    __RequireDataToMatchInterval_JComboBox.select ( 0 );
+    __RequireDataToMatchInterval_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RequireDataToMatchInterval_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - require data/interval alignment (default=" + __command._True + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*
@@ -448,7 +473,8 @@ private void refresh()
 	       InputEnd = "",
 	       //NewUnits = "",
 	       Alias = "",
-	       Interval = "";;
+	       Interval = "",
+	       RequireDataToMatchInterval = "";
 
 	PropList props = null;
 
@@ -462,6 +488,7 @@ private void refresh()
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		Interval = props.getValue("Interval");
+		RequireDataToMatchInterval = props.getValue("RequireDataToMatchInterval");
 		//NewUnits = props.getValue("NewUnits");
 		// Set the control fields
 		if (Alias != null) {
@@ -489,6 +516,19 @@ private void refresh()
                     Interval + "\".  Select a different choice or Cancel." );
             }
         }
+        if ( RequireDataToMatchInterval == null || RequireDataToMatchInterval.equals("") ) {
+            // Select a default...
+            __RequireDataToMatchInterval_JComboBox.select ( 0 );
+        } 
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __RequireDataToMatchInterval_JComboBox, RequireDataToMatchInterval, JGUIUtil.NONE, null, null ) ) {
+                __RequireDataToMatchInterval_JComboBox.select ( RequireDataToMatchInterval );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\nRequireDataToMatchInterval \"" +
+                    RequireDataToMatchInterval + "\".  Select a different choice or Cancel." );
+            }
+        }
 		//if (NewUnits != null) {
 		//	__NewUnits_JTextField.setText(NewUnits);
 		//}
@@ -502,6 +542,7 @@ private void refresh()
 	//NewUnits = __NewUnits_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
 	Interval = __Interval_JComboBox.getSelected();
+	RequireDataToMatchInterval = __RequireDataToMatchInterval_JComboBox.getSelected();
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
@@ -510,6 +551,7 @@ private void refresh()
 	//props.add("NewUnits=" + NewUnits);
 	props.add("Alias=" + Alias);
 	props.add("Interval=" + Interval);
+	props.add("RequireDataToMatchInterval=" + RequireDataToMatchInterval);
 	__Command_JTextArea.setText( __command.toString(props) );
 
 	// Refresh the Path Control text.

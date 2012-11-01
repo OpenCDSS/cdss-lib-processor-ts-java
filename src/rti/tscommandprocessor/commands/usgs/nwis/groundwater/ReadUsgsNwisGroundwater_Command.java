@@ -35,6 +35,7 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the ReadUsgsNwisGroundwater() command.
@@ -86,6 +87,7 @@ throws InvalidCommandParameterException
     String HUCs = parameters.getValue ( "HUCs" );
     String BoundingBox = parameters.getValue ( "BoundingBox" );
     String Counties = parameters.getValue ( "Counties" );
+    String Interval = parameters.getValue( "Interval" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
     String OutputFile = parameters.getValue ( "OutputFile" );
@@ -173,6 +175,27 @@ throws InvalidCommandParameterException
     }
 
 	// TODO SAM 2006-04-24 Need to check the WhereN parameters.
+    
+    if ( Interval == null || (Interval.length() == 0) ) {
+        message = "The data interval must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify a data interval."));
+    }
+    else {
+        try {
+            TimeInterval.parseInterval(Interval);
+        }
+        catch ( Exception e ) {
+            // Should not happen because choices are valid
+            message = "The data interval \"" + Interval + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify a data interval using the command editor."));
+        }
+    }
 
 	if ( (InputStart != null) && !InputStart.equals("") &&
 		!InputStart.equalsIgnoreCase("InputStart") && !InputStart.equalsIgnoreCase("InputEnd") ) {
@@ -253,6 +276,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "SiteStatus" );
     valid_Vector.add ( "SiteTypes" );
     valid_Vector.add ( "Agency" );
+    valid_Vector.add ( "Interval" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Alias" );
@@ -476,7 +500,17 @@ CommandWarningException, CommandException
         format = UsgsNwisFormatType.WATERML;
     }
     String OutputFile = parameters.getValue("OutputFile");
-    
+ 
+    String Interval = parameters.getValue("Interval");
+    TimeInterval interval = null;
+    if ( (Interval != null) && !Interval.equals("") ) {
+        try {
+            interval = TimeInterval.parseInterval(Interval);
+        }
+        catch ( Exception e ) {
+            // Should not happen because checked previously
+        }
+    }
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {
@@ -621,7 +655,7 @@ CommandWarningException, CommandException
             hucList, __boundingBox, countyList,
             parameterList,
             siteStatus, siteTypeList, Agency,
-            format, OutputFile_full,
+            format, OutputFile_full, interval,
             InputStart_DateTime, InputEnd_DateTime, readData );
 		// Make sure that size is set...
 		int size = 0;
@@ -817,6 +851,13 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "Agency=\"" + Agency + "\"" );
+    }
+    String Interval = props.getValue("Interval");
+    if ((Interval != null) && (Interval.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Interval=\"" + Interval + "\"");
     }
 	String InputStart = props.getValue("InputStart");
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {

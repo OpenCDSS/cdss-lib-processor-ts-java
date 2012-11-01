@@ -69,7 +69,6 @@ private SimpleJButton __dataStoreDocumentation_JButton = null;
 private SimpleJButton __dataStoreOnline_JButton = null;
 private ReadUsgsNwisGroundwater_Command __command = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
-//private SimpleJComboBox __DataType_JComboBox = null;
 private JTextField __Sites_JTextField;
 private JTextField __States_JTextField;
 private JTextField __HUCs_JTextField;
@@ -79,13 +78,14 @@ private ChoiceFormatterJPanel __Parameters_JTextField;
 private JTextField __Agency_JTextField;
 private SimpleJComboBox __SiteStatus_JComboBox = null;
 private JTextField __SiteTypes_JTextField;
+private SimpleJComboBox __Interval_JComboBox = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox __Format_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
 			
-private JTextArea __command_JTextArea = null; // Command as JTextArea
+private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
@@ -301,6 +301,10 @@ private void checkInput ()
     if ( SiteTypes.length() > 0 ) {
         props.set ( "SiteTypes", SiteTypes );
     }
+    String Interval = __Interval_JComboBox.getSelected();
+    if ( Interval.length() > 0 ) {
+        props.set ( "Interval", Interval );
+    }
 	String InputStart = __InputStart_JTextField.getText().trim();
 	if ( InputStart.length() > 0 ) {
 		props.set ( "InputStart", InputStart );
@@ -346,6 +350,7 @@ private void commitEdits ()
     String Agency = __Agency_JTextField.getText().trim();
     String SiteStatus = __SiteStatus_JComboBox.getSelected();
     String SiteTypes = __SiteTypes_JTextField.getText().trim();
+    String Interval = __Interval_JComboBox.getSelected();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
@@ -361,6 +366,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Agency", Agency );
 	__command.setCommandParameter ( "SiteStatus", SiteStatus );
 	__command.setCommandParameter ( "SiteTypes", SiteTypes );
+    __command.setCommandParameter ( "Interval", Interval );
     __command.setCommandParameter ( "InputStart", InputStart );
     __command.setCommandParameter ( "InputEnd", InputEnd );
     __command.setCommandParameter ( "Alias", Alias );
@@ -596,6 +602,19 @@ private void initialize ( JFrame parent, ReadUsgsNwisGroundwater_Command command
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - agency code (default=all)."),
         3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Interval:"),
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Interval_JComboBox = new SimpleJComboBox ( false );
+    __Interval_JComboBox.add("Day");
+    __Interval_JComboBox.add("Irregular");
+    // Select a default...
+    __Interval_JComboBox.select ( 0 );
+    __Interval_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
+        1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval for data."),
+        3, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -744,6 +763,7 @@ private void refresh ()
     String Agency = "";
     String SiteStatus = "";
     String SiteTypes = "";
+    String Interval = "";
 	String InputStart = "";
 	String InputEnd = "";
 	String Alias = "";
@@ -764,6 +784,7 @@ private void refresh ()
 		Agency = props.getValue ( "Agency" );
 		SiteStatus = props.getValue ( "SiteStatus" );
 		SiteTypes = props.getValue ( "SiteTypes" );
+		Interval = props.getValue ( "Interval" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
 		Alias = props.getValue ( "Alias" );
@@ -823,6 +844,22 @@ private void refresh ()
         if ( Agency != null ) {
             __Agency_JTextField.setText ( Agency );
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
+            __Interval_JComboBox.select ( Interval );
+        }
+        else {
+            if ( (Interval == null) || Interval.equals("") ) {
+                // New command...select the default...
+                if ( __Interval_JComboBox.getItemCount() > 0 ) {
+                    __Interval_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "Interval parameter \"" + Interval + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
 		if ( InputStart != null ) {
 			__InputStart_JTextField.setText ( InputStart );
 		}
@@ -864,8 +901,9 @@ private void refresh ()
     SiteStatus = __SiteStatus_JComboBox.getSelected();
     SiteTypes = __SiteTypes_JTextField.getText().trim();
     Agency = __Agency_JTextField.getText().trim();
-    InputEnd = __InputEnd_JTextField.getText().trim();
+    Interval = __Interval_JComboBox.getSelected();
     InputStart = __InputStart_JTextField.getText().trim();
+    InputEnd = __InputEnd_JTextField.getText().trim();
     Format = __Format_JComboBox.getSelected();
     OutputFile = __OutputFile_JTextField.getText().trim();
     props.add ( "DataStore=" + DataStore );
@@ -878,6 +916,7 @@ private void refresh ()
     props.add ( "Agency=" + Agency );
     props.add ( "SiteStatus=" + SiteStatus );
     props.add ( "SiteTypes=" + SiteTypes );
+    props.add ( "Interval=" + Interval );
 	props.add ( "InputStart=" + InputStart );
 	props.add ( "InputEnd=" + InputEnd );
 	props.add ( "Alias=" + Alias );

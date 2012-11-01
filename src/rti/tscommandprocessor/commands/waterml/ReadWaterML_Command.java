@@ -40,6 +40,12 @@ implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
+Possible values for RequireDataToMatchInterval parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+
+/**
 Private data members shared between the checkCommandParameter() and the 
 runCommand() methods (prevent code duplication parsing dateTime strings).  
 */
@@ -87,6 +93,7 @@ throws InvalidCommandParameterException
 	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
 	String Interval = parameters.getValue( "Interval" );
+	String RequireDataToMatchInterval = parameters.getValue( "RequireDataToMatchInterval" );
     
     if (Alias != null && !Alias.equals("")) {
         if (Alias.indexOf(" ") > -1) {
@@ -196,6 +203,15 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Specify a data interval using the command editor."));
         }
     }
+
+    if ( RequireDataToMatchInterval != null && !(RequireDataToMatchInterval.equalsIgnoreCase(_True)) && 
+        !(RequireDataToMatchInterval.equalsIgnoreCase(_False)) && !(RequireDataToMatchInterval.equalsIgnoreCase(""))) {
+        message = "RequireDataToMatchInterval is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "RequireDataToMatchInterval must " + _False + " or " + _True + " (default)." ) );
+    }
     
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector();
@@ -204,6 +220,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Interval" );
+    valid_Vector.add ( "RequireDataToMatchInterval" );
     //valid_Vector.add ( "NewUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -338,6 +355,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         catch ( Exception e ) {
             // Should not happen because checked previously
         }
+    }
+    String RequireDataToMatchInterval = parameters.getValue("RequireDataToMatchInterval");
+    boolean RequireDataToMatchInterval_boolean = true; // default
+    if ( (RequireDataToMatchInterval != null) && RequireDataToMatchInterval.equalsIgnoreCase(_False) ) {
+        RequireDataToMatchInterval_boolean = false;
     }
     
     DateTime InputStart_DateTime = null;
@@ -505,7 +527,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             reader.close();
             WaterMLReader watermlReader = new WaterMLReader ( fileContents.toString(), null, new File(InputFile_full) );
-            tslist = watermlReader.readTimeSeriesList( interval, InputStart_DateTime, InputEnd_DateTime, readData );
+            tslist = watermlReader.readTimeSeriesList( interval, InputStart_DateTime, InputEnd_DateTime, readData,
+                RequireDataToMatchInterval_boolean );
+            List<String> problems = watermlReader.getProblems();
+            for ( String problem: problems ) {
+                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
+                    problem, "Check WaterML file contents and command parameters (e.g., time series interval to use)." ) );
+            }
         }
 			
 		if ( tslist != null ) {
@@ -612,6 +640,7 @@ public String toString ( PropList props )
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
 	String Interval = props.getValue("Interval");
+	String RequireDataToMatchInterval = props.getValue("RequireDataToMatchInterval");
 
 	StringBuffer b = new StringBuffer ();
 
@@ -635,16 +664,12 @@ public String toString ( PropList props )
 		}
 		b.append("NewUnits=\"" + NewUnits + "\"");
 	}*/
-
-	// Input Start
 	if ((InputStart != null) && (InputStart.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
 		}
 		b.append("InputStart=\"" + InputStart + "\"");
 	}
-
-	// Input End
 	if ((InputEnd != null) && (InputEnd.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
@@ -656,6 +681,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("Interval=\"" + Interval + "\"");
+    }
+    if ((RequireDataToMatchInterval != null) && (RequireDataToMatchInterval.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("RequireDataToMatchInterval=" + RequireDataToMatchInterval );
     }
 
     return getCommandName() + "("+ b.toString()+")";

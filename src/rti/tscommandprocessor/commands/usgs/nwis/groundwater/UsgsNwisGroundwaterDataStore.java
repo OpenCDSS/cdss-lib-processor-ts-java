@@ -101,12 +101,12 @@ public List<String> getAgencyStrings ( boolean includeName )
 
 /**
 Return the unique list of data interval strings available for a data type, returning values that
-are consistent with TSTool ("Day", rather than "daily").  There is only one choice since using the daily
-value web service.
+are consistent with TSTool ("Day", rather than "daily").  Allow daily and irregular.
 */
 public List<String> getDataIntervalStringsForDataType ( String dataType )
 {   List<String> dataIntervalStrings = new Vector();
     dataIntervalStrings.add("Day");
+    dataIntervalStrings.add("Irregular");
     return dataIntervalStrings;
 }
 
@@ -214,12 +214,13 @@ throws MalformedURLException, IOException, Exception
     String outputFile = null;
     // Parse the TSID string and set in the query parameters
     TSIdent tsident = TSIdent.parseIdentifier(tsid);
+    TimeInterval interval = TimeInterval.parseInterval(tsident.getInterval() );
     siteList.add ( tsident.getLocation() );
     parameterList.add ( new UsgsNwisParameterType(tsident.getMainType(), "", "", "", "", "") );
     // The following should return one and only one time series.
     List<TS> tsList = readTimeSeriesList ( siteList, stateList, hucList, boundingBox, countyList,
         parameterList, siteStatus, siteTypeList, agency,
-        format, outputFile, readStart, readEnd, readData );
+        format, outputFile, interval, readStart, readEnd, readData );
     if ( tsList.size() > 0 ) {
         return tsList.get(0);
     }
@@ -232,17 +233,29 @@ throws MalformedURLException, IOException, Exception
 Read a time series list given the query parameters for the REST interface.  The parameters are used to
 form the URL for the query.  The payload that is received is optionally saved as the output file.  The payload
 is then parsed into 1+ time series and returned.
+@param siteList the list of sites to read
+@param stateList the list of state abbreviations to select sites
+@param hucList the list of HUCs to select sites
+@param boundingBox the bounding box to select sites
+@param countyList the list of FIPS county codes to select sites
+@param parameterList the list of parameters to read
+@param siteStatus the site status to constrain the query
+@param siteTypeList the list of site types to constrain the query
+@param agency the agency to constrain the query
+@param format the output file format
+@param outputFile the output file to create
+@param interval the time series interval to use for output
 @param readStart the starting date/time to read, or null to read all data.
 @param readEnd the ending date/time to read, or null to read all data.
 @param readData if true, read the data; if false, construct the time series and populate properties but do
 not read the data
-@return the time series list read from the USGS NWIS daily web services
+@return the time series list read from the USGS NWIS groundwater web services
 */
 public List<TS> readTimeSeriesList ( List<String> siteList, List<String> stateList,
     List<String> hucList, double[] boundingBox, List<String> countyList,
     List<UsgsNwisParameterType> parameterList,
     UsgsNwisSiteStatusType siteStatus, List<UsgsNwisSiteType> siteTypeList, String agency,
-    UsgsNwisFormatType format, String outputFile,
+    UsgsNwisFormatType format, String outputFile, TimeInterval interval,
     DateTime readStart, DateTime readEnd, boolean readData )
 throws MalformedURLException, IOException, Exception
 {
@@ -408,9 +421,6 @@ throws MalformedURLException, IOException, Exception
         if ( format == UsgsNwisFormatType.WATERML ) {
             // Create the time series from the WaterML...
             WaterMLReader watermlReader = new WaterMLReader ( resultString, urlString.toString(), null );
-            // This is necessary because WaterML (1.1 at least) does not appear to have a clear indicator of
-            // the time series data interval
-            TimeInterval interval = TimeInterval.parseInterval("Day");
             // Pass the input period here because it is used for memory allocation and the time series
             // in the data my have gaps that cause the period to be different
             boolean requireDataToMatchInterval = false; // Output OK as daily, even if more precise date/times

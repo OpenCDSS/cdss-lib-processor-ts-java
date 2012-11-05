@@ -65,6 +65,7 @@ import rti.tscommandprocessor.commands.modsim.ReadMODSIM_Command;
 
 // NWSRFS commands.
 
+import rti.tscommandprocessor.commands.nrcs.awdb.ReadNrcsAwdb_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsEspTraceEnsemble_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsFS5Files_Command;
@@ -610,9 +611,12 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("ReadNDFD") ) {
 		//return new readNDFD_Command ();
 	}
-	else if ( commandName.equalsIgnoreCase("ReadNwsCard") ) {
-		return new ReadNwsCard_Command ();
+	else if ( commandName.equalsIgnoreCase("ReadNrcsAwdb") ) {
+		return new ReadNrcsAwdb_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("ReadNwsCard") ) {
+        return new ReadNwsCard_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("ReadNwsrfsFS5Files") ) {
         return new ReadNwsrfsFS5Files_Command();
     }

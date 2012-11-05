@@ -546,7 +546,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisGroundwater_Command command
         countyList.add(fips.getCode() + " - " + fips.getName() + ", " + fips.getStateAbbreviation());
     }
     __Counties_JTextField = new ChoiceFormatterJPanel ( countyList, "-",
-        "Select a FIPS county to insert in the text field at right.", "-- Select County --", ",",  20 );
+        "Select a FIPS county to insert in the text field at right.", "-- Select County --", ",",  20, true );
     __Counties_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __Counties_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -558,7 +558,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisGroundwater_Command command
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Parameter(s):"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Parameters_JTextField = new ChoiceFormatterJPanel ( getSelectedDataStore().getParameterStrings(true),
-        "-", "Select a parameter to insert in the text field at right.", "-- Select Parameter --", ",",  20 );
+        "-", "Select a parameter to insert in the text field at right.", "-- Select Parameter --", ",",  20, true );
     __Parameters_JTextField.addKeyListener (this);
     __Parameters_JTextField.addDocumentListener (this);
     JGUIUtil.addComponent(main_JPanel, __Parameters_JTextField,

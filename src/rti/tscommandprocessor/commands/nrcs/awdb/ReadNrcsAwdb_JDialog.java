@@ -411,7 +411,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     __Interval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
         1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval for data."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval for time series."),
         3, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for location
@@ -490,13 +490,12 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Element(s):"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Elements_JTextField = new ChoiceFormatterJPanel ( getSelectedDataStore().getElementStrings(true),
-        "-", "Select an element to insert in the text field at right.", "-- Select Element --", ",", 20, false );
+        "-", "Select an element to insert in the text field at right.", "-- Select Element --", ",", 20, true );
     __Elements_JTextField.addKeyListener (this);
     __Elements_JTextField.addDocumentListener (this);
     JGUIUtil.addComponent(main_JPanel, __Elements_JTextField,
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    //JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - list of element codes separated by commas (default=all)."),
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - single element code."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - list of element codes separated by commas (default=all)."),
         3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Elevation, minimum:"), 

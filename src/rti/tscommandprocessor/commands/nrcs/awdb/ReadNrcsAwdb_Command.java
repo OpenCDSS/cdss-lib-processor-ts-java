@@ -1,5 +1,7 @@
 package rti.tscommandprocessor.commands.nrcs.awdb;
 
+import gov.usda.nrcs.wcc.ns.awdbwebservice.Element;
+
 import java.util.List;
 import java.util.Vector;
 
@@ -72,11 +74,11 @@ throws InvalidCommandParameterException
     
     String DataStore = parameters.getValue ( "DataStore" );
     String Interval = parameters.getValue ( "Interval" );
-    String Stations = parameters.getValue ( "Stations" );
-    String States = parameters.getValue ( "States" );
-    String HUCs = parameters.getValue ( "HUCs" );
+    //String Stations = parameters.getValue ( "Stations" );
+    //String States = parameters.getValue ( "States" );
+    //String HUCs = parameters.getValue ( "HUCs" );
     String BoundingBox = parameters.getValue ( "BoundingBox" );
-    String Counties = parameters.getValue ( "Counties" );
+    //String Counties = parameters.getValue ( "Counties" );
     String Elements = parameters.getValue ( "Elements" );
     String ElevationMin = parameters.getValue ( "ElevationMin" );
     String ElevationMax = parameters.getValue ( "ElevationMax" );
@@ -170,13 +172,6 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a valid element code." ) );
-    }
-    else if ( Elements.indexOf(",") >= 0 ) {
-        message = "Only a single element can be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a single element code." ) );
     }
     
     if ( (ElevationMin != null) && !StringUtil.isDouble(ElevationMin) ) {
@@ -408,21 +403,21 @@ CommandWarningException, CommandException
     }
     
     String Elements = parameters.getValue("Elements");
-    NrcsAwdbElementCode element = null;
-    // TODO SAM 2012-11-04 for now allow only a single element since don't have a way to get it back later
-    // from the API
-    //List<NrcsAwdbElementCode> elementList = new Vector();
+    List<Element> elementList = new Vector();
+    Element el;
     if ( (Elements != null) && !Elements.equals("") ) {
         if ( Elements.indexOf(",") < 0 ) {
-            element = new NrcsAwdbElementCode(Elements.trim(), "", "");
-            //elementList.add(new NrcsAwdbElementCode(Elements.trim(), "", ""));
+            el = new Element();
+            el.setElementCd(Elements.trim());
+            elementList.add(el);
         }
-        //else {
-        //    String [] elementArray = Elements.split(",");
-        //    for ( int i = 0; i < elementArray.length; i++ ) {
-        //        elementList.add(new NrcsAwdbElementCode(elementArray[i].trim(), "", ""));
-        //    }
-        //}
+        else {
+            String [] elementArray = Elements.split(",");
+            for ( int i = 0; i < elementArray.length; i++ ) {
+                el = new Element();
+                el.setElementCd(elementArray[i].trim());
+            }
+        }
     }
     String ElevationMin = parameters.getValue("ElevationMin");
     Double elevationMin = null;
@@ -582,7 +577,7 @@ CommandWarningException, CommandException
 
        tslist = nrcsAwdbDataStore.readTimeSeriesList ( stationList, stateList, networkList,
             hucList, __boundingBox, countyList,
-            element, elevationMin, elevationMax, interval,
+            elementList, elevationMin, elevationMax, interval,
             InputStart_DateTime, InputEnd_DateTime, readData );
 		// Make sure that size is set...
 		int size = 0;

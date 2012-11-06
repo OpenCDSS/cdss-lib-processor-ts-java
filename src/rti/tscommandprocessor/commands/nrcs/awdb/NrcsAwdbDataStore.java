@@ -3,11 +3,13 @@ package rti.tscommandprocessor.commands.nrcs.awdb;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.AwdbWebService;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.AwdbWebService_Service;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.Data;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.DataSource;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.Duration;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.Element;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.HeightDepth;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.StationElement;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.StationMetaData;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -23,10 +25,9 @@ import RTi.TS.TSUtil;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.Table.DataTable;
-import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.TimeUtil;
 
 /**
 Data store for NRCS AWDB web service.  This class maintains the web service information in a general way.
@@ -49,7 +50,7 @@ private List<NrcsAwdbNetworkCode> __networkCodeList = new Vector();
 /**
 The list of element codes, listed here:  http://www.wcc.nrcs.usda.gov/web_service/AWDB_Web_Service_Reference.htm
 */
-private List<NrcsAwdbElementCode> __elementCodeList = new Vector();
+private List<Element> __elementList = new Vector();
     
 /**
 Constructor for web service.
@@ -77,9 +78,8 @@ throws URISyntaxException, IOException
     __networkCodeList.add ( new NrcsAwdbNetworkCode("SNOW","NRCS Snow Course Sites"));
     __networkCodeList.add ( new NrcsAwdbNetworkCode("SNTL","NWCC SNOTEL and SCAN stations"));
     __networkCodeList.add ( new NrcsAwdbNetworkCode("USGS","Any USGS station, but also other non-USGS streamflow stations"));
-    // Initialize the element codes - this may be available as a service at some point but for now inline
-    Message.printStatus(2, "", "DataStoreConfigFile=" + getProperty("DataStoreConfigFile") + ", ElementListCsv="+getProperty("ElementListCsv"));
-    initializeElementList(getProperty("DataStoreConfigFile"),getProperty("ElementListCsv"));
+    // Initialize the element codes from web service
+    readElements();
 }
 
 /**
@@ -147,12 +147,12 @@ the name.  Duplicates in the table are ignored.
 */
 public List<String> getElementStrings ( boolean includeName )
 {   List<String> elementList = new Vector();
-    for ( NrcsAwdbElementCode param: __elementCodeList ) {
+    for ( Element el: __elementList ) {
         if ( includeName ) {
-            elementList.add( "" + param.getCode() + " - " + param.getName() );
+            elementList.add( "" + el.getElementCd() + " - " + el.getName() );
         }
         else {
-            elementList.add( "" + param.getCode() );
+            elementList.add( "" + el.getElementCd() );
         }
     }
     return elementList;
@@ -177,48 +177,9 @@ public List<String> getNetworkStrings ( boolean includeDesc )
 }
 
 /**
-Initialize the element list from the CSV file.
-@param dataStoreFile the full path to the datastore configuration file.
-@param elementListFile the relative path to the element list file.
-*/
-private void initializeElementList ( String dataStoreFile, String elementListFile )
-{
-    // Get the path from the dataStoreFile
-    File dsf = new File(dataStoreFile);
-    String elf = IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(dsf.getParent(),elementListFile));
-    if ( IOUtil.fileExists(elf) ) {
-        // Read the delimited file and set the element codes
-        PropList props = new PropList("");
-        props.set("CommentLineIndicator","#");
-        props.set("TrimInput","True");
-        props.set("TrimStrings","True");
-        try {
-            DataTable table = DataTable.parseFile(elf, props);
-            // Loop through the rows in the table and set the elements
-            String name, code, units;
-            TableRecord rec;
-            int nameCol = table.getFieldIndex("Name");
-            int codeCol = table.getFieldIndex("Code");
-            int unitsCol = table.getFieldIndex("Units");
-            for ( int i = 0; i < table.getNumberOfRecords(); i++ ) {
-                rec = table.getRecord(i);
-                name = (String)rec.getFieldValue(nameCol);
-                code = (String)rec.getFieldValue(codeCol);
-                units = (String)rec.getFieldValue(unitsCol);
-                __elementCodeList.add(new NrcsAwdbElementCode(code,name,units));
-            }
-        }
-        catch ( Exception e ) {
-            Message.printWarning(3, "", e);
-            // No input file?
-        }
-    }
-}
-
-/**
 Lookup the AWDB duration from the internal TS interval.
 */
-private Duration lookupDuration ( TimeInterval interval )
+private Duration lookupDurationFromInterval ( TimeInterval interval )
 {
     if ( interval.getBase() == TimeInterval.YEAR ) {
         return Duration.ANNUAL;
@@ -234,6 +195,28 @@ private Duration lookupDuration ( TimeInterval interval )
     }
     else {
         return null;
+    }
+}
+
+/**
+Lookup the TimeInterval from the AWDB duration.
+*/
+private int lookupIntervalFromDuration ( Duration duration )
+{
+    if ( duration == Duration.ANNUAL ) {
+        return TimeInterval.YEAR;
+    }
+    else if ( duration == Duration.MONTHLY ) {
+        return TimeInterval.MONTH;
+    }
+    else if ( duration == Duration.DAILY ) {
+        return TimeInterval.DAY;
+    }
+    else if ( duration == Duration.INSTANTANEOUS ) {
+        return TimeInterval.IRREGULAR;
+    }
+    else {
+        return TimeInterval.UNKNOWN;
     }
 }
 
@@ -273,13 +256,24 @@ private String parseStationIDFromTriplet(String stationTriplet)
 }
 
 /**
+Read the available elements from the web service and cache for further use.
+*/
+private void readElements ()
+{
+    // First read the stations that match the basic criteria
+    AwdbWebService ws = getAwdbWebService ();
+    __elementList = ws.getElements();
+}
+
+/**
 Read a list of time series from the web service, using query parameters that are supported for the web service.
-@param element element code to match stations - must be null or a single code
+@param elementListReq list of requested element codes to match stations -
+if null then the element list is queried for each station as processed
 */
 public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> stateList,
     List<NrcsAwdbNetworkCode>networkList, List<String> hucList, double [] boundingBox,
-    List<String> countyList, NrcsAwdbElementCode element, Double elevationMin, Double elevationMax,
-    TimeInterval interval, DateTime readStart, DateTime readEnd, boolean readData )
+    List<String> countyList, List<Element> elementListReq, Double elevationMin, Double elevationMax,
+    TimeInterval interval, DateTime readStartReq, DateTime readEndReq, boolean readData )
 {   String routine = getClass().getName() + ".readTimeSeriesList";
     List<TS> tsList = new Vector();
     // First read the stations that match the basic criteria
@@ -311,8 +305,10 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
         maxElevation = new BigDecimal(elevationMax);
     }
     List<String> elementCds = new Vector();
-    if ( element != null ) {
-        elementCds.add ( element.getCode() );
+    if ( elementListReq != null ) {
+        for ( Element el: elementListReq ) {
+            elementCds.add ( el.getElementCd() );
+        }
     }
     List<Integer> ordinals = new Vector<Integer>();
     List<HeightDepth> heightDepths = new Vector<HeightDepth>();
@@ -336,20 +332,23 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
     String state;
     String stationID;
     String networkCode;
-    String elementCode = element.getCode();
+    String elementCode;
     int ordinal = 1;
     HeightDepth heightDepth = null;
     boolean getFlags = true;
-    Duration duration = lookupDuration ( interval );
-    String beginDate = ""; // Don't use null because that will cause an exception in SOAP API
-    String endDate = "";
-    if ( readStart != null ) {
-        beginDate = formatDateTime(readStart,interval);
+    Duration duration = lookupDurationFromInterval ( interval );
+    String beginDateString = null; // Null means no requested period so read all
+    String endDateString = null;
+    // Date to read data and also to allocate time series.
+    // May be reset below if no requested period.
+    if ( readStartReq != null ) {
+        beginDateString = formatDateTime(readStartReq,interval);
     }
-    if ( readEnd != null ) {
-        endDate = formatDateTime(readEnd,interval);
+    if ( readEndReq != null ) {
+        endDateString = formatDateTime(readEndReq,interval);
     }
     int iMeta = -1;
+    // Loop through the stations and then the elements for each station
     for ( StationMetaData meta: stationMetaData ) {
         ++iMeta;
         stationTriplet = meta.getStationTriplet();
@@ -359,94 +358,188 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
         String text;
         BigDecimal bd;
         int intervalBase, intervalMult;
-        // Stations will only have been returned for requested matching element in first step
-        tsid = state + "-" + stationID + "." + networkCode + "." + elementCode + "." + interval;
-        try {
-            ts = TSUtil.newTimeSeries(tsid,true);
-            intervalBase = ts.getDataIntervalBase();
-            intervalMult = ts.getDataIntervalMult();
-            ts.setIdentifier(tsid);
-            ts.setDescription(meta.getName());
-            ts.setDate1Original(parseDateTime(meta.getBeginDate()));
-            ts.setDate2Original(parseDateTime(meta.getEndDate()));
-            ts.setDate1(parseDateTime(meta.getBeginDate()));
-            ts.setDate2(parseDateTime(meta.getEndDate()));
-            // Also set properties by passing through XML elements
-            boolean setPropertiesFromMetadata = true;
-            if ( setPropertiesFromMetadata ) {
-                // Set time series properties from the timeSeries elements
-                ts.setProperty("stationTriplet", (stationTriplet == null) ? "" : stationTriplet );
-                text = meta.getName();
-                ts.setProperty("name", (text == null) ? "" : text );
-                text = meta.getActonId();
-                ts.setProperty("actonId", (text == null) ? "" : text );
-                text = meta.getShefId();
-                ts.setProperty("shefId", (text == null) ? "" : text );
-                text = meta.getBeginDate(); // Date station installed
-                ts.setProperty("beginDate", (text == null) ? "" : text );
-                text = meta.getEndDate(); // Date station discontinued
-                ts.setProperty("endDate", (text == null) ? "" : text );
-                text = meta.getCountyName();
-                ts.setProperty("countyName", (text == null) ? "" : text );
-                bd = meta.getElevation();
-                ts.setProperty("elevation", (bd == null) ? null : bd.doubleValue() );
-                text = meta.getFipsCountyCd();
-                ts.setProperty("fipsCountyCd", (text == null) ? "" : text );
-                text = meta.getFipsStateNumber();
-                ts.setProperty("fipsStateNumber", (text == null) ? "" : text );
-                text = meta.getFipsCountryCd();
-                ts.setProperty("fipsCountryCd", (text == null) ? "" : text );
-                text = meta.getHuc();
-                ts.setProperty("huc", (text == null) ? "" : text );
-                bd = meta.getLongitude();
-                ts.setProperty("longitude", (bd == null) ? null : bd.doubleValue() );
-                bd = meta.getLatitude();
-                ts.setProperty("latitude", (bd == null) ? null : bd.doubleValue() );
-                bd = meta.getStationDataTimeZone();
-                ts.setProperty("stationDataTimeZone", (bd == null) ? null : bd.doubleValue() );
-                bd = meta.getStationTimeZone();
-                ts.setProperty("stationTimeZone", (bd == null) ? null : bd.doubleValue() );
-            }
-        }
-        catch ( Exception e ) {
-            continue;
-        }
-        if ( readData ) {
-            Message.printStatus(2, routine, "Getting data values for triplet ("+ iMeta + " of " +
-                stationMetaData.size() + ")=\"" + stationTriplet +
-                "\" elementCode="+elementCode + " duration=" + duration + " beginDate=" + beginDate +
-                " endDate=" + endDate);
-            try {
-                beginDate = "2011-01-01";
-                endDate = "2012-11-01";
-                stationTriplet = "471:ID:SNTL";
-                //elementCode = "WTEQ";
-                // Get the data values for the list of station triplets.
-                // Since only one triplet is processed here, the data array will have one element.
-                List<Data> dataList = ws.getData(Arrays.asList(stationTriplet), elementCode, ordinal, heightDepth,
-                    duration, getFlags, beginDate, endDate);
-                if ( dataList.size() == 1 ) {
-                    // Have data values for the requested triplet and element code
-                    Data data = dataList.get(0);
-                    ts.setDate1(parseDateTime(data.getBeginDate()));
-                    ts.setDate2(parseDateTime(data.getEndDate()));
-                    ts.allocateDataSpace();
-                    // Loop through the data values and set the values and the flag
-                    List<BigDecimal> values = data.getValues();
-                    List<String> flags = data.getFlags();
-                    int nValues = values.size();
-                    DateTime dt = new DateTime(ts.getDate1());
-                    for ( int i = 0; i < nValues; i++, dt.addInterval(intervalBase,intervalMult) ) {
-                        ts.setDataValue(dt, values.get(i).doubleValue(),flags.get(i),0);
+        // Get the elements that are valid for the station, specifying null for dates
+        List<StationElement> stationElementList = ws.getStationElements(stationTriplet, null, null);
+        // Now cut back the list to elements and intervals that were originally requested
+        for ( int iEl = 0; iEl < stationElementList.size(); iEl++ ) {
+            boolean elementFound = false;
+            boolean intervalFound = false;
+            StationElement sel = stationElementList.get(iEl);
+            if ( elementListReq != null ) {
+                // Check for requested elements...
+                for ( Element el : elementListReq ) {
+                    if ( sel.getElementCd().equalsIgnoreCase(el.getElementCd())) {
+                        // Matched the element
+                        elementFound = true;
+                        break;
                     }
                 }
             }
-            catch ( Exception e ) {
-                Message.printWarning(3, routine, "Error getting data values (" + e + ").");
-                Message.printWarning(3, routine, e);
+            // Check for requested interval
+            if ( lookupIntervalFromDuration(sel.getDuration()) == interval.getBase() ) {
+                intervalFound = true;
+            }
+            // If data from web service does not match the requested values, remove from the list so
+            // the StationElement does not get processed below.
+            if ( !elementFound || !intervalFound ) {
+                // Available element/interval was not requested so remove from list
+                stationElementList.remove(iEl);
+                --iEl;
             }
         }
-        tsList.add(ts);
+        // Process the remaining StationElement items...
+        for ( StationElement sel: stationElementList ) {
+            // Process each element code that applies to the station
+            elementCode = sel.getElementCd();
+            tsid = state + "-" + stationID + "." + networkCode + "." + elementCode + "." + interval;
+            try {
+                ts = TSUtil.newTimeSeries(tsid,true);
+                ts.setIdentifier(tsid);
+                intervalBase = ts.getDataIntervalBase();
+                intervalMult = ts.getDataIntervalMult();
+                ts.setMissing(Double.NaN);
+                ts.setDescription(meta.getName());
+                ts.setDate1Original(parseDateTime(sel.getBeginDate())); // Sensor install date
+                ts.setDate2Original(parseDateTime(sel.getEndDate())); // Sensor end, or 2100-01-01 00:00 if active
+                // The following will be reset if reading data but are OK for discovery mode...
+                if ( readStartReq != null ) {
+                    ts.setDate1(readStartReq);
+                }
+                else {
+                    // Set the period to read from the data
+                    ts.setDate1(ts.getDate1Original());
+                }
+                if ( readEndReq != null ) {
+                    ts.setDate2(readEndReq);
+                }
+                else {
+                    // Set the period to read from the data
+                    ts.setDate2(ts.getDate2Original());
+                }
+                ts.setDataUnits(sel.getStoredUnitCd());
+                ts.setDataUnitsOriginal(sel.getOriginalUnitCd());
+                // Also set properties by passing through XML elements
+                boolean setPropertiesFromMetadata = true;
+                if ( setPropertiesFromMetadata ) {
+                    // Set time series properties from the timeSeries elements
+                    ts.setProperty("stationTriplet", (stationTriplet == null) ? "" : stationTriplet );
+                    text = meta.getName();
+                    ts.setProperty("name", (text == null) ? "" : text );
+                    text = meta.getActonId();
+                    ts.setProperty("actonId", (text == null) ? "" : text );
+                    text = meta.getShefId();
+                    ts.setProperty("shefId", (text == null) ? "" : text );
+                    text = meta.getBeginDate(); // Date station installed
+                    ts.setProperty("beginDate", (text == null) ? "" : text );
+                    text = meta.getEndDate(); // Date station discontinued
+                    ts.setProperty("endDate", (text == null) ? "" : text );
+                    text = meta.getCountyName();
+                    ts.setProperty("countyName", (text == null) ? "" : text );
+                    bd = meta.getElevation();
+                    ts.setProperty("elevation", (bd == null) ? null : bd.doubleValue() );
+                    text = meta.getFipsCountyCd();
+                    ts.setProperty("fipsCountyCd", (text == null) ? "" : text );
+                    text = meta.getFipsStateNumber();
+                    ts.setProperty("fipsStateNumber", (text == null) ? "" : text );
+                    text = meta.getFipsCountryCd();
+                    ts.setProperty("fipsCountryCd", (text == null) ? "" : text );
+                    text = meta.getHuc();
+                    ts.setProperty("huc", (text == null) ? "" : text );
+                    bd = meta.getLongitude();
+                    ts.setProperty("longitude", (bd == null) ? null : bd.doubleValue() );
+                    bd = meta.getLatitude();
+                    ts.setProperty("latitude", (bd == null) ? null : bd.doubleValue() );
+                    Integer i = sel.getDataPrecision();
+                    ts.setProperty("dataPrecision", (i == null) ? null : i );
+                    DataSource s = sel.getDataSource();
+                    ts.setProperty("dataSource", (i == null) ? null : "" + s );
+                    int i2 = sel.getOrdinal();
+                    ts.setProperty("ordinal", new Integer(i2) );
+                    HeightDepth hd = sel.getHeightDepth();
+                    if ( hd == null ) {
+                        ts.setProperty("heighDepthValue", null );
+                        ts.setProperty("heightDepthUnitCd", null );
+                    }
+                    else {
+                        ts.setProperty("heighDepthValue", (hd.getValue() == null) ? null : new Double(hd.getValue().doubleValue()));
+                        ts.setProperty("heightDepthUnitCd", (hd.getUnitCd() == null) ? "" : hd.getUnitCd() );
+                    }
+                    bd = meta.getStationDataTimeZone();
+                    ts.setProperty("stationDataTimeZone", (bd == null) ? null : bd.doubleValue() );
+                    bd = meta.getStationTimeZone();
+                    ts.setProperty("stationTimeZone", (bd == null) ? null : bd.doubleValue() );
+                }
+            }
+            catch ( Exception e ) {
+                continue;
+            }
+            if ( readData ) {
+                // Reset the date to read based on the full period available from the StationElement
+                if ( readStartReq == null ) {
+                    beginDateString = sel.getBeginDate();
+                }
+                if ( readEndReq == null ) {
+                    endDateString = sel.getEndDate();
+                }
+                Message.printStatus(2, routine, "Getting data values for triplet ("+ iMeta + " of " +
+                    stationMetaData.size() + ")=\"" + stationTriplet +
+                    "\" elementCode="+elementCode + " duration=" + duration + " beginDate=" + beginDateString +
+                    " endDate=" + endDateString);
+                try {
+                    // Get the data values for the list of station triplets.
+                    // Since only one triplet is processed here, the data array will have one element.
+                    List<Data> dataList = ws.getData(Arrays.asList(stationTriplet), elementCode, ordinal, heightDepth,
+                        sel.getDuration(), getFlags, beginDateString, endDateString);
+                    if ( dataList.size() == 1 ) {
+                        // Have data values for the requested station triplet and element code
+                        Data data = dataList.get(0);
+                        List<BigDecimal> values = data.getValues();
+                        List<String> flags = data.getFlags();
+                        int nValues = values.size();
+                        Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet );
+                        // If a period is not requested, set to the available StationElement data period
+                        if ( readStartReq == null ) {
+                            DateTime readStart = DateTime.parse(beginDateString);
+                            ts.setDate1(readStart);
+                        }
+                        if ( readEndReq == null ) {
+                            DateTime readEnd = new DateTime(ts.getDate1());
+                            readEnd = TimeUtil.addIntervals(readEnd,intervalBase,intervalMult,(nValues - 1));
+                            ts.setDate2(readEnd);
+                        }
+                        ts.allocateDataSpace();
+                        // Loop through the data values and set the values and the flag
+                        DateTime dt = new DateTime(ts.getDate1());
+                        BigDecimal value;
+                        String flag;
+                        for ( int i = 0; i < nValues; i++, dt.addInterval(intervalBase,intervalMult) ) {
+                            value = values.get(i);
+                            flag = flags.get(i);
+                            if ( value == null ) {
+                                // Might still have a flag
+                                if ( (flag != null) && !flag.equals("") ) {
+                                    ts.setDataValue(dt,ts.getMissing(),flag,0);
+                                }
+                            }
+                            else {
+                                // Value is not missing but flag may be null
+                                if ( flag == null ) {
+                                    ts.setDataValue(dt, value.doubleValue());
+                                }
+                                else {
+                                    ts.setDataValue(dt, value.doubleValue(),flag,0);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch ( Exception e ) {
+                    Message.printWarning(3, routine, "Error getting data values (" + e + ").");
+                    Message.printWarning(3, routine, e);
+                }
+            }
+            tsList.add(ts);
+        }
     }
     return tsList;
 }

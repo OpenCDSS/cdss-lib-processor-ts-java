@@ -345,7 +345,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
 	int yMain = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Read one or more time series from the National Resource Conservation Service (NRCS) " +
+    	"Read one or more time series from the Natural Resources Conservation Service (NRCS) " +
     	"Air and Water Database (AWDB) web service."),
     	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -359,8 +359,8 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
         "Refer to the NRCS AWDB datastore documentation for more information." ), 
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"<html>Constrain the query by specifying time series metadata to match.  " +
-    	"<b>A location constraint must be specified.</b></html>" ), 
+    	"Constrain the query by specifying time series metadata to match.  Station number, state, and " +
+    	"network triplet is unique in NRCS AWDB system." ), 
     	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the input period defaults to the input period from SetInputPeriod()."),
@@ -405,6 +405,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     __Interval_JComboBox = new SimpleJComboBox ( false );
     __Interval_JComboBox.add("Day");
     __Interval_JComboBox.add("Month");
+    __Interval_JComboBox.add("Year");
     __Interval_JComboBox.add("Irregular");
     // Select a default...
     __Interval_JComboBox.select ( 0 );
@@ -464,7 +465,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Bounding box:"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __BoundingBox_JTextField = new JTextField (20);
+    __BoundingBox_JTextField = new JTextField (40);
     __BoundingBox_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __BoundingBox_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -477,9 +478,9 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     List<FIPSCounty> counties = FIPSCounty.getData();
     List<String> countyList = new Vector();
     for ( FIPSCounty fips : counties ) {
-        countyList.add(fips.getCode() + " - " + fips.getName() + ", " + fips.getStateAbbreviation());
+        countyList.add(fips.getName() + ", " + fips.getStateAbbreviation() + " (" + fips.getCode() + ")" );
     }
-    __Counties_JTextField = new ChoiceFormatterJPanel ( countyList, "-",
+    __Counties_JTextField = new ChoiceFormatterJPanel ( countyList, ",",
         "Select a FIPS county to insert in the text field at right.", "-- Select County --", ",",  20, true );
     __Counties_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __Counties_JTextField,

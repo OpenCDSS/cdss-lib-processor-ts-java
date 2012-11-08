@@ -7,8 +7,12 @@ import gov.usda.nrcs.wcc.ns.awdbwebservice.DataSource;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.Duration;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.Element;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.HeightDepth;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.InstantaneousData;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.InstantaneousDataFilter;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.InstantaneousDataValue;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.StationElement;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.StationMetaData;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.UnitSystem;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -212,7 +216,8 @@ private int lookupIntervalFromDuration ( Duration duration )
     else if ( duration == Duration.DAILY ) {
         return TimeInterval.DAY;
     }
-    else if ( duration == Duration.INSTANTANEOUS ) {
+    else if ( (duration == null) || (duration == Duration.INSTANTANEOUS) ) {
+        // TODO SAM 2012-11-08 seems like null duration means instantaneous in getStationElements results
         return TimeInterval.IRREGULAR;
     }
     else {
@@ -267,6 +272,8 @@ private void readElements ()
 
 /**
 Read a list of time series from the web service, using query parameters that are supported for the web service.
+@param boundingBox bounding box as WestLong, SouthLat, EastLong, NorthLat (negatives for western hemisphere
+longitudes).
 @param elementListReq list of requested element codes to match stations -
 if null then the element list is queried for each station as processed
 */
@@ -360,7 +367,11 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
         int intervalBase, intervalMult;
         // Get the elements that are valid for the station, specifying null for dates
         List<StationElement> stationElementList = ws.getStationElements(stationTriplet, null, null);
+        Message.printStatus(2,routine,"Read " + stationElementList.size() +
+            " StationElements from NRCS AWDB getStationElements(" + stationTriplet + ") request." );
         // Now cut back the list to elements and intervals that were originally requested
+        // See below for special handling of instantaneous/irregular data
+        List<StationElement> dailyElementList = new Vector(); // Used to deal with instantaneous
         for ( int iEl = 0; iEl < stationElementList.size(); iEl++ ) {
             boolean elementFound = false;
             boolean intervalFound = false;
@@ -379,12 +390,60 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
             if ( lookupIntervalFromDuration(sel.getDuration()) == interval.getBase() ) {
                 intervalFound = true;
             }
+            if ( elementFound && lookupIntervalFromDuration(sel.getDuration()) == TimeInterval.DAY ) {
+                // Save the daily record because may need to add an instantaneous/irregular record
+                dailyElementList.add(sel);
+            }
             // If data from web service does not match the requested values, remove from the list so
             // the StationElement does not get processed below.
             if ( !elementFound || !intervalFound ) {
                 // Available element/interval was not requested so remove from list
+                // See special handling of instantaneous/irregular data below
+                if ( Message.isDebugOn ) {
+                    Message.printStatus(2,routine,"Tossing out unrequested StationElement elementCode=" +
+                        sel.getElementCd() + " duration=" + sel.getDuration());
+                }
                 stationElementList.remove(iEl);
                 --iEl;
+            }
+            else {
+                if ( Message.isDebugOn ) {
+                    Message.printStatus(2,routine,"Keeping requested StationElement elementCode=" +
+                        sel.getElementCd() + " duration=" + sel.getDuration());
+                }
+            }
+        }
+        if ( interval.getBase() == TimeInterval.IRREGULAR ) {
+            // Request was for instantaneous/irregular data but the getStationElements method appears
+            // to not indicate when instantaneous data are available so always add an entry.  If the
+            // element was matched (but no instantaneous), add an instantaneous object
+            boolean found = false;
+            for ( StationElement selDaily: dailyElementList ) {
+                // See if an instantaneous object was added
+                StationElement selFound = null;
+                for ( StationElement sel: stationElementList ) {
+                    if ( (sel.getDuration() == Duration.INSTANTANEOUS) && selDaily.getElementCd().equals(selDaily.getElementCd()) ) {
+                        // Instantaneous StationElement was found above so no need to do more
+                        found = true;
+                        selFound = sel;
+                        break;
+                    }
+                }
+                if ( !found ) {
+                    // Instantaneous StationElement was not found above so add it
+                    StationElement elAdd = new StationElement();
+                    elAdd.setElementCd(selDaily.getElementCd());
+                    elAdd.setDuration(Duration.INSTANTANEOUS);
+                    elAdd.setBeginDate(selDaily.getBeginDate());
+                    elAdd.setEndDate(selDaily.getEndDate());
+                    elAdd.setStoredUnitCd(selDaily.getStoredUnitCd());
+                    elAdd.setOriginalUnitCd(selDaily.getOriginalUnitCd());
+                    if ( Message.isDebugOn ) {
+                        Message.printStatus(2,routine,"Adding elementCode=" +
+                            elAdd.getElementCd() + " duration=" + elAdd.getDuration());
+                    }
+                    stationElementList.add(elAdd);
+                }
             }
         }
         // Process the remaining StationElement items...
@@ -485,57 +544,123 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     stationMetaData.size() + ")=\"" + stationTriplet +
                     "\" elementCode="+elementCode + " duration=" + duration + " beginDate=" + beginDateString +
                     " endDate=" + endDateString);
-                try {
-                    // Get the data values for the list of station triplets.
-                    // Since only one triplet is processed here, the data array will have one element.
-                    List<Data> dataList = ws.getData(Arrays.asList(stationTriplet), elementCode, ordinal, heightDepth,
-                        sel.getDuration(), getFlags, beginDateString, endDateString);
-                    if ( dataList.size() == 1 ) {
-                        // Have data values for the requested station triplet and element code
-                        Data data = dataList.get(0);
-                        List<BigDecimal> values = data.getValues();
-                        List<String> flags = data.getFlags();
-                        int nValues = values.size();
-                        Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet );
-                        // If a period is not requested, set to the available StationElement data period
-                        if ( readStartReq == null ) {
-                            DateTime readStart = DateTime.parse(beginDateString);
-                            ts.setDate1(readStart);
-                        }
-                        if ( readEndReq == null ) {
-                            DateTime readEnd = new DateTime(ts.getDate1());
-                            readEnd = TimeUtil.addIntervals(readEnd,intervalBase,intervalMult,(nValues - 1));
-                            ts.setDate2(readEnd);
-                        }
-                        ts.allocateDataSpace();
-                        // Loop through the data values and set the values and the flag
-                        DateTime dt = new DateTime(ts.getDate1());
-                        BigDecimal value;
-                        String flag;
-                        for ( int i = 0; i < nValues; i++, dt.addInterval(intervalBase,intervalMult) ) {
-                            value = values.get(i);
-                            flag = flags.get(i);
-                            if ( value == null ) {
-                                // Might still have a flag
-                                if ( (flag != null) && !flag.equals("") ) {
-                                    ts.setDataValue(dt,ts.getMissing(),flag,0);
-                                }
+                if ( duration == Duration.INSTANTANEOUS ) {
+                    try {
+                        // Get the data values for the list of station triplets.
+                        // Since only one triplet is processed here, the data array will have one element.
+                        List<InstantaneousData> dataList = ws.getInstantaneousData(Arrays.asList(stationTriplet),
+                            elementCode, ordinal, heightDepth,
+                            beginDateString, endDateString, InstantaneousDataFilter.ALL, UnitSystem.ENGLISH );
+                        if ( dataList.size() == 1 ) {
+                            // Have data values for the requested station triplet and element code
+                            InstantaneousData data = dataList.get(0);
+                            List<InstantaneousDataValue> values = data.getValues();
+                            int nValues = values.size();
+                            Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet );
+                            // If a period is not requested, set to the available StationElement data period
+                            if ( readStartReq == null ) {
+                                DateTime readStart = DateTime.parse(beginDateString);
+                                ts.setDate1(readStart);
                             }
-                            else {
-                                // Value is not missing but flag may be null
-                                if ( flag == null ) {
-                                    ts.setDataValue(dt, value.doubleValue());
+                            if ( readEndReq == null ) {
+                                DateTime readEnd = new DateTime(ts.getDate1());
+                                readEnd = TimeUtil.addIntervals(readEnd,intervalBase,intervalMult,(nValues - 1));
+                                ts.setDate2(readEnd);
+                            }
+                            // Loop through the data values and set the values and the flag
+                            DateTime dt;
+                            String dtString;
+                            BigDecimal value;
+                            String flag;
+                            for ( int i = 0; i < nValues; i++ ) {
+                                dtString = values.get(i).getTime();
+                                try {
+                                    dt = DateTime.parse(dtString);
+                                }
+                                catch ( Exception e ) {
+                                    // Should not happen
+                                    Message.printWarning(3, routine, "Error parsing date/time \"" + dtString +
+                                        "\" - skipping data value." );
+                                    continue;
+                                }
+                                value = values.get(i).getValue();
+                                flag = values.get(i).getFlag();
+                                if ( value == null ) {
+                                    // Might still have a flag
+                                    if ( (flag != null) && !flag.equals("") ) {
+                                        ts.setDataValue(dt,ts.getMissing(),flag,0);
+                                    }
                                 }
                                 else {
-                                    ts.setDataValue(dt, value.doubleValue(),flag,0);
+                                    // Value is not missing but flag may be null
+                                    if ( flag == null ) {
+                                        ts.setDataValue(dt, value.doubleValue());
+                                    }
+                                    else {
+                                        ts.setDataValue(dt, value.doubleValue(),flag,0);
+                                    }
                                 }
                             }
                         }
                     }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error getting instantaneous data values (" + e + ").");
+                        Message.printWarning(3, routine, e);
+                    }
                 }
-                catch ( Exception e ) {
-                    Message.printWarning(3, routine, "Error getting data values (" + e + ").");
-                    Message.printWarning(3, routine, e);
+                else {
+                    try {
+                        // Get the data values for the list of station triplets.
+                        // Since only one triplet is processed here, the data array will have one element.
+                        List<Data> dataList = ws.getData(Arrays.asList(stationTriplet), elementCode, ordinal, heightDepth,
+                            sel.getDuration(), getFlags, beginDateString, endDateString);
+                        if ( dataList.size() == 1 ) {
+                            // Have data values for the requested station triplet and element code
+                            Data data = dataList.get(0);
+                            List<BigDecimal> values = data.getValues();
+                            List<String> flags = data.getFlags();
+                            int nValues = values.size();
+                            Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet );
+                            // If a period is not requested, set to the available StationElement data period
+                            if ( readStartReq == null ) {
+                                DateTime readStart = DateTime.parse(beginDateString);
+                                ts.setDate1(readStart);
+                            }
+                            if ( readEndReq == null ) {
+                                DateTime readEnd = new DateTime(ts.getDate1());
+                                readEnd = TimeUtil.addIntervals(readEnd,intervalBase,intervalMult,(nValues - 1));
+                                ts.setDate2(readEnd);
+                            }
+                            ts.allocateDataSpace();
+                            // Loop through the data values and set the values and the flag
+                            DateTime dt = new DateTime(ts.getDate1());
+                            BigDecimal value;
+                            String flag;
+                            for ( int i = 0; i < nValues; i++, dt.addInterval(intervalBase,intervalMult) ) {
+                                value = values.get(i);
+                                flag = flags.get(i);
+                                if ( value == null ) {
+                                    // Might still have a flag
+                                    if ( (flag != null) && !flag.equals("") ) {
+                                        ts.setDataValue(dt,ts.getMissing(),flag,0);
+                                    }
+                                }
+                                else {
+                                    // Value is not missing but flag may be null
+                                    if ( flag == null ) {
+                                        ts.setDataValue(dt, value.doubleValue());
+                                    }
+                                    else {
+                                        ts.setDataValue(dt, value.doubleValue(),flag,0);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error getting data values (" + e + ").");
+                        Message.printWarning(3, routine, e);
+                    }
                 }
             }
             tsList.add(ts);

@@ -75,10 +75,10 @@ throws InvalidCommandParameterException
     String DataStore = parameters.getValue ( "DataStore" );
     String Interval = parameters.getValue ( "Interval" );
     //String Stations = parameters.getValue ( "Stations" );
-    //String States = parameters.getValue ( "States" );
+    String States = parameters.getValue ( "States" );
     //String HUCs = parameters.getValue ( "HUCs" );
     String BoundingBox = parameters.getValue ( "BoundingBox" );
-    //String Counties = parameters.getValue ( "Counties" );
+    String Counties = parameters.getValue ( "Counties" );
     String Elements = parameters.getValue ( "Elements" );
     String ElevationMin = parameters.getValue ( "ElevationMin" );
     String ElevationMax = parameters.getValue ( "ElevationMax" );
@@ -166,6 +166,16 @@ throws InvalidCommandParameterException
         }
     }
 
+    if ( (Counties != null) && !Counties.equals("") ) {
+        if ( (States == null) || States.equals("") ) {
+            message = "The county can only be specified if state is also specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid state abbreviation when specifying county." ) );
+        }
+    }
+    
     if ( (Elements == null) || Elements.equals("") ) {
         message = "The element must be specified.";
         warning += "\n" + message;

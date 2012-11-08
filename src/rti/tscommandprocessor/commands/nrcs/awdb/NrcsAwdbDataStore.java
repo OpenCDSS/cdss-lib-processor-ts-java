@@ -10,12 +10,14 @@ import gov.usda.nrcs.wcc.ns.awdbwebservice.HeightDepth;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.InstantaneousData;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.InstantaneousDataFilter;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.InstantaneousDataValue;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.ReservoirMetadata;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.StationElement;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.StationMetaData;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.UnitSystem;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -25,6 +27,7 @@ import java.util.Vector;
 import riverside.datastore.AbstractWebServiceDataStore;
 
 import RTi.TS.TS;
+import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -216,8 +219,9 @@ private int lookupIntervalFromDuration ( Duration duration )
     else if ( duration == Duration.DAILY ) {
         return TimeInterval.DAY;
     }
-    else if ( (duration == null) || (duration == Duration.INSTANTANEOUS) ) {
-        // TODO SAM 2012-11-08 seems like null duration means instantaneous in getStationElements results
+    else if ( // (duration == null) ||
+        (duration == Duration.INSTANTANEOUS) ) {
+        // TODO SAM 2012-11-08 confirm whether null duration means instantaneous in getStationElements results
         return TimeInterval.IRREGULAR;
     }
     else {
@@ -268,6 +272,48 @@ private void readElements ()
     // First read the stations that match the basic criteria
     AwdbWebService ws = getAwdbWebService ();
     __elementList = ws.getElements();
+}
+
+/**
+Read a single time series given the time series identifier (TSID).  The TSID parts are mapped into the SOAP
+query parameters as if a single site has been specified, by calling the readTimeSeriesList() method.
+@param tsid time series identifier string of form State-StationID.NetworkCode.ElementCode.Interval~DataStoreID
+@param readStart the starting date/time to read, or null to read all data.
+@param readEnd the ending date/time to read, or null to read all data.
+@param readData if true, read the data; if false, construct the time series and populate properties but do
+not read the data
+@return the time series list read from the NRCS AWDB daily web services
+*/
+public TS readTimeSeries ( String tsid, DateTime readStart, DateTime readEnd, boolean readData )
+throws MalformedURLException, IOException, Exception
+{   // Initialize empty query parameters.
+    List<String> stationIdList = new Vector();
+    List<String> stateList = new Vector();
+    List<String> hucList = new Vector();
+    double [] boundingBox = null;
+    List<String> countyList = new Vector();
+    List<NrcsAwdbNetworkCode> networkList = new Vector();
+    List<Element> elementList = new Vector<Element>();
+    // Parse the TSID string and set in the query parameters
+    TSIdent tsident = TSIdent.parseIdentifier(tsid);
+    TimeInterval interval = TimeInterval.parseInterval(tsident.getInterval() );
+    String loc = tsident.getLocation();
+    String [] locParts = loc.split("-");
+    stateList.add ( locParts[0] );
+    stationIdList.add ( locParts[1] );
+    networkList.add(new NrcsAwdbNetworkCode(tsident.getSource(),""));
+    Element element = new Element();
+    element.setElementCd(tsident.getType());
+    elementList.add ( element );
+    // The following should return one and only one time series.
+    List<TS> tsList = readTimeSeriesList ( stationIdList, stateList, networkList, hucList, boundingBox,
+        countyList, elementList, null, null, interval, readStart, readEnd, readData );
+    if ( tsList.size() > 0 ) {
+        return tsList.get(0);
+    }
+    else {
+        return null;
+    }
 }
 
 /**
@@ -323,6 +369,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
     List<String> stationTriplets = ws.getStations(stationIds, stateCds, networkCds, hucs, countyNames,
         minLatitude, maxLatitude, minLongitude, maxLongitude, minElevation, maxElevation,
         elementCds, ordinals, heightDepths, logicalAnd );
+    // If nothing returned above, try to get reservoirs
     int nStations = 0;
     if ( stationTriplets != null ) {
         nStations = stationTriplets.size();
@@ -331,8 +378,23 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
     if ( nStations == 0 ) {
         return tsList;
     }
+    // TODO SAM 2012-11-08 Would be nice to know which of these to call from the element code,
+    // without hard-coding
     // Now get the list of station metadata for the stations
     List<StationMetaData> stationMetaData = ws.getStationMetadataMultiple(stationTriplets);
+    List<ReservoirMetadata> reservoirMetaDataList = null;
+    // Estimate whether triplets have reservoirs
+    boolean doReservoirs = false;
+    for ( String st: stationTriplets ) {
+        if ( st.indexOf(":RES") > 0 ) {
+            doReservoirs = true;
+            break;
+        }
+    }
+    if ( doReservoirs ) {
+        // Try getting reservoir metadata.
+        reservoirMetaDataList = ws.getReservoirMetadataMultiple(stationTriplets);
+    }
     TS ts;
     String tsid;
     String stationTriplet;
@@ -356,12 +418,23 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
     }
     int iMeta = -1;
     // Loop through the stations and then the elements for each station
+    ReservoirMetadata metaRes;
     for ( StationMetaData meta: stationMetaData ) {
         ++iMeta;
         stationTriplet = meta.getStationTriplet();
         state = parseStateFromTriplet(stationTriplet);
         stationID = parseStationIDFromTriplet(stationTriplet);
         networkCode = parseNetworkCodeFromTriplet(stationTriplet);
+        // Find the matching reservoir metadata (may not have any)
+        metaRes = null;
+        if ( reservoirMetaDataList != null ) {
+            for ( ReservoirMetadata res : reservoirMetaDataList ) {
+                if ( res.getStationTriplet().equals(stationTriplet) ) {
+                    metaRes = res;
+                    break;
+                }
+            }
+        }
         String text;
         BigDecimal bd;
         int intervalBase, intervalMult;
@@ -400,7 +473,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                 // Available element/interval was not requested so remove from list
                 // See special handling of instantaneous/irregular data below
                 if ( Message.isDebugOn ) {
-                    Message.printStatus(2,routine,"Tossing out unrequested StationElement elementCode=" +
+                    Message.printDebug(1,routine,"Tossing out unrequested StationElement elementCode=" +
                         sel.getElementCd() + " duration=" + sel.getDuration());
                 }
                 stationElementList.remove(iEl);
@@ -408,7 +481,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
             }
             else {
                 if ( Message.isDebugOn ) {
-                    Message.printStatus(2,routine,"Keeping requested StationElement elementCode=" +
+                    Message.printDebug(1,routine,"Keeping requested StationElement elementCode=" +
                         sel.getElementCd() + " duration=" + sel.getDuration());
                 }
             }
@@ -420,12 +493,10 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
             boolean found = false;
             for ( StationElement selDaily: dailyElementList ) {
                 // See if an instantaneous object was added
-                StationElement selFound = null;
                 for ( StationElement sel: stationElementList ) {
                     if ( (sel.getDuration() == Duration.INSTANTANEOUS) && selDaily.getElementCd().equals(selDaily.getElementCd()) ) {
                         // Instantaneous StationElement was found above so no need to do more
                         found = true;
-                        selFound = sel;
                         break;
                     }
                 }
@@ -439,7 +510,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     elAdd.setStoredUnitCd(selDaily.getStoredUnitCd());
                     elAdd.setOriginalUnitCd(selDaily.getOriginalUnitCd());
                     if ( Message.isDebugOn ) {
-                        Message.printStatus(2,routine,"Adding elementCode=" +
+                        Message.printDebug(2,routine,"Adding elementCode=" +
                             elAdd.getElementCd() + " duration=" + elAdd.getDuration());
                     }
                     stationElementList.add(elAdd);
@@ -447,6 +518,8 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
             }
         }
         // Process the remaining StationElement items...
+        Message.printStatus(2,routine,"After filtering, have " + stationElementList.size() +
+            " StationElements from NRCS AWDB getStationElements(" + stationTriplet + ") request remaining." );
         for ( StationElement sel: stationElementList ) {
             // Process each element code that applies to the station
             elementCode = sel.getElementCd();
@@ -527,9 +600,19 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     ts.setProperty("stationDataTimeZone", (bd == null) ? null : bd.doubleValue() );
                     bd = meta.getStationTimeZone();
                     ts.setProperty("stationTimeZone", (bd == null) ? null : bd.doubleValue() );
+                    if ( metaRes != null ) {
+                        // Set reservoir properties...
+                        bd = metaRes.getElevationAtCapacity();
+                        ts.setProperty("elevationAtCapacity", (bd == null) ? null : bd.doubleValue() );
+                        bd = metaRes.getReservoirCapacity();
+                        ts.setProperty("reservoirCapacity", (bd == null) ? null : bd.doubleValue() );
+                        bd = metaRes.getUsableCapacity();
+                        ts.setProperty("usableCapacity", (bd == null) ? null : bd.doubleValue() );
+                    }
                 }
             }
             catch ( Exception e ) {
+                Message.printWarning(3,routine,e);
                 continue;
             }
             if ( readData ) {

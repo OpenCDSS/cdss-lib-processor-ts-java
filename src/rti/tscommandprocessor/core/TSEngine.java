@@ -659,6 +659,7 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDataStore;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+import rti.tscommandprocessor.commands.nrcs.awdb.NrcsAwdbDataStore;
 import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDB_DMI;
@@ -4419,6 +4420,19 @@ throws Exception
 			ts = null;
 		}
 	}
+    else if ((dataStore != null) && (dataStore instanceof NrcsAwdbDataStore) ) {
+        // New style TSID~dataStoreName for NRCS AWDB...
+        NrcsAwdbDataStore ds = (NrcsAwdbDataStore)dataStore;
+        try {
+            ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+        }
+        catch ( Exception te ) {
+            Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+                "\" from NRCS AWCB daily value web service." );
+            Message.printWarning ( 3, routine, te );
+            ts = null;
+        }
+    }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("NWSCARD") ) {
 		// New style TSID~input_type~input_name for NWSCardTS...
 		//Message.printStatus ( 1, routine, "Trying to read \"" + tsident_string2 + "\" \"" + input_name + "\"" );

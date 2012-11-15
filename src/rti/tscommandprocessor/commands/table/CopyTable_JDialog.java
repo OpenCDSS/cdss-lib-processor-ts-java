@@ -49,7 +49,7 @@ private boolean __ok = false;
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
-@param runnable If true, the command can be run from the dialog, as a Tool.
+@param tableIDChoices list of table identifiers to provide as choices
 */
 public CopyTable_JDialog ( JFrame parent, CopyTable_Command command, List<String> tableIDChoices )
 {	super(parent, true);

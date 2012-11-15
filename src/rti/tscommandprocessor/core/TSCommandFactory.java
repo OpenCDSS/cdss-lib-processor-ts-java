@@ -123,6 +123,7 @@ import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.TableMath_Command;
 import rti.tscommandprocessor.commands.table.TableTimeSeriesMath_Command;
+import rti.tscommandprocessor.commands.table.TableToTimeSeries_Command;
 import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToHTML_Command;
@@ -819,6 +820,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("TableTimeSeriesMath") ) {
         return new TableTimeSeriesMath_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("TableToTimeSeries") ) {
+        return new TableToTimeSeries_Command ();
     }
     else if ( commandName.equalsIgnoreCase("TestCommand") ) {
 		return new TestCommand_Command ();

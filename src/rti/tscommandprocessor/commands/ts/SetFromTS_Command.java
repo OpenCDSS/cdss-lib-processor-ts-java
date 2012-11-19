@@ -394,12 +394,11 @@ Calls TSCommandProcessor to re-calculate limits for this time series.
 @param command_tag Reference or identifier for this command.
  */
 private int recalculateLimits( TS ts, CommandProcessor TSCmdProc, 
-        int warningLevel, int warning_count, String command_tag )
+    int warningLevel, int warning_count, String command_tag )
 {
     String routine = "SetFromTS_Command.recalculateLimits", message;
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
     
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "TS", ts );
@@ -871,7 +870,7 @@ CommandWarningException, CommandException
 		}
         if ( RecalcLimits_boolean ) {
             try {
-                recalculateLimits( ts, processor, warningLevel, warning_count, command_tag );
+                warning_count = recalculateLimits( ts, processor, warningLevel, warning_count, command_tag );
             }
             catch ( Exception e ) {
                 message = "Unexpected error recalculating limits for time series \"" +

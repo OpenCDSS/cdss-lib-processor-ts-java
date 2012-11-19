@@ -36,7 +36,6 @@ import RTi.TS.TSUtil;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -47,12 +46,12 @@ public class SetFromTS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
-private SetFromTS_Command __command = null;// Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SetFromTS_Command __command = null;
 private JTextField __SetStart_JTextField;
-private JTextField __SetEnd_JTextField; // Text fields for set period.
-private JTextArea __command_JTextArea=null;// Command as JTextField
+private JTextField __SetEnd_JTextField;
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -63,8 +62,8 @@ private JLabel __IndependentTSID_JLabel = null;
 private SimpleJComboBox __IndependentTSID_JComboBox = null;
 private JLabel __IndependentEnsembleID_JLabel = null;
 private SimpleJComboBox __IndependentEnsembleID_JComboBox = null;
-private SimpleJComboBox	__TransferHow_JComboBox =null;	// Indicates how to transfer data.
-private SimpleJComboBox __HandleMissingHow_JComboBox = null; // Indicates how to handle missing data.
+private SimpleJComboBox	__TransferHow_JComboBox =null;
+private SimpleJComboBox __HandleMissingHow_JComboBox = null;
 private SimpleJComboBox __SetDataFlags_JComboBox = null;
 private SimpleJComboBox __RecalcLimits_JComboBox = null;
 private boolean __error_wait = false;
@@ -76,7 +75,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetFromTS_JDialog ( JFrame parent, Command command )
+public SetFromTS_JDialog ( JFrame parent, SetFromTS_Command command )
 {   super(parent, true);
     initialize ( parent, command );
 }
@@ -264,8 +263,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{   __command = (SetFromTS_Command)command;
+private void initialize ( JFrame parent, SetFromTS_Command command )
+{   __command = command;
 
 	addWindowListener( this );
 

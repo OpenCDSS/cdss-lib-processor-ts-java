@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
@@ -26,6 +27,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
@@ -81,7 +83,8 @@ throws InvalidCommandParameterException
     String DateTimeColumn = parameters.getValue ( "DateTimeColumn" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String IncludeMissingValues = parameters.getValue ( "IncludeMissingValues" );
-    String DataColumn = parameters.getValue ( "DataColumn" );
+    String ValueColumn = parameters.getValue ( "ValueColumn" );
+    String FlagColumn = parameters.getValue ( "FlagColumn" );
     String DataRow = parameters.getValue ( "DataRow" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
@@ -139,9 +142,9 @@ throws InvalidCommandParameterException
                 message, "Specify DateTimeColumn as table column name." ) );
     }
     if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() != 0) &&
-        (DataColumn != null) && (DataColumn.indexOf("%") >= 0) ) {
-        message = "The TableTSIDColumn has been specified for single-column output but the DataColumn " +
-        		"uses format specifiers (a literal is required).";
+        (ValueColumn != null) && (ValueColumn.indexOf("%") >= 0) ) {
+        message = "The TableTSIDColumn has been specified for single-column output but the ValueColumn " +
+            "uses format specifiers (a literal is required).";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -155,12 +158,12 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify as " + _False + " or " + _True + "." ) );   
     }
-    if ( (DataColumn == null) || (DataColumn.length() == 0) ) {
-        message = "The DataColumn is required but has not been specified.";
+    if ( (ValueColumn == null) || (ValueColumn.length() == 0) ) {
+        message = "The ValueColumn is required but has not been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify DataColumn as table column name." ) );
+                message, "Specify ValueColumn as table column name." ) );
     }
     if ( (DataRow == null) || (DataRow.length() == 0) ) {
         message = "The DataRow is required but has not been specified.";
@@ -256,7 +259,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TableTSIDColumn" );
     valid_Vector.add ( "TableTSIDFormat" );
     valid_Vector.add ( "IncludeMissingValues" );
-    valid_Vector.add ( "DataColumn" );
+    valid_Vector.add ( "ValueColumn" );
+    valid_Vector.add ( "FlagColumn" );
     valid_Vector.add ( "DataRow" );
     valid_Vector.add ( "OutputStart" );
     valid_Vector.add ( "OutputEnd" );
@@ -281,10 +285,13 @@ Create a blank table to contain the time series.
 @param tableID identifier for the table
 @param dateTimeColumn name for date/time column
 @param tableTSIDColumn name for TSID column (can be missing)
+@param valueColumns the names of data value columns
+@param flagColumns the names of data flag columns
+@param dataRow the first row for data (0+, command parameter is 1+ for users).
 @return A new table with columns set up to receive the time series.
 */
 private DataTable createTable ( List<TS> tslist, String tableID, String dateTimeColumn,
-    String tableTSIDColumn, List<String> dataColumns, int DataRow )
+    String tableTSIDColumn, List<String> valueColumns, List<String> flagColumns, int dataRow )
 {   // Create the table
     List<TableField> tableFields = new Vector(3);
     // DateTime column (always)
@@ -293,12 +300,22 @@ private DataTable createTable ( List<TS> tslist, String tableID, String dateTime
     if ( (tableTSIDColumn != null) && !tableTSIDColumn.equals("") ) {
         tableFields.add ( new TableField ( TableField.DATA_TYPE_STRING, tableTSIDColumn, -1 ) );
     }
-    for ( String dataColumn: dataColumns ) {
+    int i = -1;
+    for ( String valueColumn: valueColumns ) {
         // The data column may include %-specifiers if specifying one column per time series
+        ++i;
         int width = 12; // TODO SAM 2012-08-24 Figure out width from data type or data?
         int precision = 2; // TODO SAM 2012-08-24 Figure out precision from data type?
-        tableFields.add ( new TableField ( TableField.DATA_TYPE_DOUBLE, dataColumn,
+        tableFields.add ( new TableField ( TableField.DATA_TYPE_DOUBLE, valueColumn,
             width, precision ) );
+        // If flags are to be written, then create a column only if the flag column corresponding to data
+        // is not an empty string
+        if ( flagColumns.size() > i ) {
+            String flagColumn = flagColumns.get(i);
+            if ( !flagColumn.equals("") ) {
+                tableFields.add ( new TableField ( TableField.DATA_TYPE_STRING, flagColumn, -1, -1 ) );
+            }
+        }
     }
     // Now define table with one simple call...
     DataTable table = new DataTable ( tableFields );
@@ -310,37 +327,37 @@ Determine the time series data table column names.
 @param tslist list of time series to process
 @param tableTSIDColumn if specified, indicates single-column output and therefore only a single data column will be
 created
-@param dataColumn data column specifier; if a literal, use for single column output and append sequential number for
+@param valueColumn data column specifier; if a literal, use for single column output and append sequential number for
 multi-column output; if contains format strings, use the format with the time series to determine the column name
 */
-private List<String> determineDataColumnNames ( List<TS> tslist, String tableTSIDColumn, String dataColumn )
+private List<String> determineValueColumnNames ( List<TS> tslist, String tableTSIDColumn, String valueColumn )
 {
-    List<String> dataColumnNames = new Vector();
+    List<String> valueColumnNames = new Vector();
     if ( (tableTSIDColumn != null) && !tableTSIDColumn.equals("") ) {
         // Single column output
-        dataColumnNames.add ( dataColumn );
+        valueColumnNames.add ( valueColumn );
     }
     else {
         // Multi-column output
         for ( int i = 0; i < tslist.size(); i++ ) {
             TS ts = tslist.get(i);
             // TODO SAM 2009-10-01 Evaluate how to set precision on table columns from time series.
-            if ( dataColumn.indexOf("%") >= 0 ) {
+            if ( valueColumn.indexOf("%") >= 0 ) {
                 // The data column includes format specifiers and will be expanded
-                dataColumnNames.add ( ts.formatLegend(dataColumn) );
+                valueColumnNames.add ( ts.formatLegend(valueColumn) );
             }
             else {
                 // No ID specifiers so use the same column name +1 from the first
                 if ( i == 0 ) {
-                    dataColumnNames.add ( dataColumn );
+                    valueColumnNames.add ( valueColumn );
                 }
                 else {
-                    dataColumnNames.add ( dataColumn + i );
+                    valueColumnNames.add ( valueColumn + i );
                 }
             }
         }
     }
-    return dataColumnNames;
+    return valueColumnNames;
 }
 
 /**
@@ -374,7 +391,21 @@ public List getObjectList ( Class c )
     return v;
 }
 
-// parseCommand() inherited from base class
+/**
+Parse command from text.
+*/
+public void parseCommand ( String command )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{   // First parse
+    super.parseCommand(command);
+    // Replace legacy "DataColumn" parameter with "ValueColumn"
+    PropList parameters = getCommandParameters();
+    String valueColumn = parameters.getValue("DataColumn");
+    if ( valueColumn != null ) {
+        parameters.set("ValueColumn",valueColumn);
+        parameters.unSet("DataColumn");
+    }
+}
 
 /**
 Run the command.
@@ -439,7 +470,8 @@ CommandWarningException, CommandException
     DateTime OutputWindowEnd_DateTime = null;
     boolean createTable = false;
     int DateTimeColumn_int = -1;
-    int [] DataColumn_int = null; // Determined below.  Columns 0+ for each time series data
+    int [] ValueColumn_int = null; // Determined below.  Columns 0+ for each time series data
+    int [] FlagColumn_int = null; // Determined below.  Columns 0+ for each time series data
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     int TableTSIDColumn_int = -1; // Determined below.
@@ -727,14 +759,26 @@ CommandWarningException, CommandException
         }
     	
         String DateTimeColumn = parameters.getValue("DateTimeColumn");
-        String DataColumn = parameters.getValue("DataColumn");
+        String ValueColumn = parameters.getValue("ValueColumn");
+        String FlagColumn = parameters.getValue("FlagColumn");
         String DataRow = parameters.getValue("DataRow");
         DataRow_int = Integer.parseInt(DataRow) - 1; // Zero offset
         if ( createTable ) {
-            List<String> dataColumnNames = determineDataColumnNames(tslist, TableTSIDColumn, DataColumn);
-            // No existing table was found and a new table should be created
+            List<String> valueColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, ValueColumn);
+            List<String> flagColumnNames = new Vector(); 
+            if ( (FlagColumn != null) && !FlagColumn.equals("") ) {
+                if ( FlagColumn.indexOf(",") >= 0 ) {
+                    // This will handle blanks at end
+                    flagColumnNames = Arrays.asList(FlagColumn.split(","));
+                }
+                else {
+                    flagColumnNames.add(FlagColumn);
+                }
+            }
+            // No existing table was found and a new table should be created with columns for data values and
+            // flags
             table = createTable(tslist, TableID, DateTimeColumn, TableTSIDColumn,
-                dataColumnNames, DataRow_int );
+                valueColumnNames, flagColumnNames, DataRow_int );
             // Get the column numbers from the table that was created, to ensure proper order
             try {
                 DateTimeColumn_int = table.getFieldIndex(DateTimeColumn);
@@ -752,18 +796,36 @@ CommandWarningException, CommandException
                     TableTSIDColumn_int = -1;
                 }
             }
-            // Since creating the table, the data columns are 1+ (0 is date/time).
+            // Since creating the table, the data columns are 1+ (0 is date/time), alternating data and
+            // flag columns if flags are written and not blank
             // TODO SAM 2012-08-24 This will break if an existing table is allowed to be written
-            DataColumn_int = new int[dataColumnNames.size()];
-            String dataColumnName;
-            for ( int i = 0; i < dataColumnNames.size(); i++ ) {
-                dataColumnName = dataColumnNames.get(i);
+            ValueColumn_int = new int[valueColumnNames.size()];
+            String valueColumnName;
+            for ( int i = 0; i < valueColumnNames.size(); i++ ) {
+                valueColumnName = valueColumnNames.get(i);
                 try {
-                    DataColumn_int[i] = table.getFieldIndex(dataColumnName);
+                    ValueColumn_int[i] = table.getFieldIndex(valueColumnName);
                 }
                 catch ( Exception e ) {
                     // Should not happen
-                    DataColumn_int[i] = -1;
+                    ValueColumn_int[i] = -1;
+                }
+            }
+            // Number of flag columns must be zero or the same as number of value columns
+            FlagColumn_int = new int[valueColumnNames.size()];
+            // Initialize...
+            for ( int i = 0; i < valueColumnNames.size(); i++ ) {
+                FlagColumn_int[i] = -1;
+            }
+            String flagColumnName;
+            for ( int i = 0; i < flagColumnNames.size(); i++ ) {
+                flagColumnName = flagColumnNames.get(i);
+                try {
+                    FlagColumn_int[i] = table.getFieldIndex(flagColumnName);
+                }
+                catch ( Exception e ) {
+                    // Should not happen but flag column may be blank indicating not wanting to write
+                    FlagColumn_int[i] = -1;
                 }
             }
             table.setTableID(TableID);
@@ -789,7 +851,8 @@ CommandWarningException, CommandException
     		Message.printStatus ( 2, routine, "Copying " + tslist.size() + " time series to table \"" +
     		    TableID + "\"." );
     		TSUtil_TimeSeriesToTable tsu = new TSUtil_TimeSeriesToTable(table, tslist, DateTimeColumn_int,
-    		    TableTSIDColumn_int, TableTSIDFormat, IncludeMissingValues_boolean, DataColumn_int, DataRow_int,
+    		    TableTSIDColumn_int, TableTSIDFormat, IncludeMissingValues_boolean,
+    		    ValueColumn_int, FlagColumn_int, DataRow_int,
     		    OutputStart_DateTime, OutputEnd_DateTime, outputWindow, true );
     		tsu.timeSeriesToTable();
     		List<String> problems = tsu.getProblems();
@@ -865,7 +928,8 @@ public String toString ( PropList props )
     String TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
     String IncludeMissingValues = props.getValue ( "IncludeMissingValues" );
-    String DataColumn = props.getValue( "DataColumn" );
+    String ValueColumn = props.getValue( "ValueColumn" );
+    String FlagColumn = props.getValue( "FlagColumn" );
     String DataRow = props.getValue( "DataRow" );
 	String OutputStart = props.getValue("OutputStart");
 	String OutputEnd = props.getValue("OutputEnd");
@@ -918,11 +982,17 @@ public String toString ( PropList props )
         }
         b.append ( "IncludeMissingValues=" + IncludeMissingValues );
     }
-    if ( (DataColumn != null) && (DataColumn.length() > 0) ) {
+    if ( (ValueColumn != null) && (ValueColumn.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataColumn=\"" + DataColumn + "\"");
+        b.append ( "ValueColumn=\"" + ValueColumn + "\"");
+    }
+    if ( (FlagColumn != null) && (FlagColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FlagColumn=\"" + FlagColumn + "\"");
     }
     if ( (DataRow != null) && (DataRow.length() > 0) ) {
         if ( b.length() > 0 ) {

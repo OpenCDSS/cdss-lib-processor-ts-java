@@ -66,7 +66,8 @@ private JTextField __DateTimeColumn_JTextField = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for TSID column output
 private SimpleJComboBox __IncludeMissingValues_JComboBox = null;
-private TSFormatSpecifiersJPanel __DataColumn_JTextField = null;
+private TSFormatSpecifiersJPanel __ValueColumn_JTextField = null;
+private TSFormatSpecifiersJPanel __FlagColumn_JTextField = null;
 private JTextField __DataRow_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
@@ -194,7 +195,8 @@ private void checkInput ()
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String IncludeMissingValues = __IncludeMissingValues_JComboBox.getSelected();
-    String DataColumn = __DataColumn_JTextField.getText().trim();
+    String ValueColumn = __ValueColumn_JTextField.getText().trim();
+    String FlagColumn = __FlagColumn_JTextField.getText().trim();
     String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
@@ -225,8 +227,11 @@ private void checkInput ()
     if ( IncludeMissingValues.length() > 0 ) {
         props.set ( "IncludeMissingValues", IncludeMissingValues );
     }
-    if ( DataColumn.length() > 0 ) {
-        props.set ( "DataColumn", DataColumn );
+    if ( ValueColumn.length() > 0 ) {
+        props.set ( "ValueColumn", ValueColumn );
+    }
+    if ( FlagColumn.length() > 0 ) {
+        props.set ( "FlagColumn", FlagColumn );
     }
     if ( DataRow.length() > 0 ) {
         props.set ( "DataRow", DataRow );
@@ -273,7 +278,8 @@ private void commitEdits ()
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String IncludeMissingValues = __IncludeMissingValues_JComboBox.getSelected();
-    String DataColumn = __DataColumn_JTextField.getText().trim();
+    String ValueColumn = __ValueColumn_JTextField.getText().trim();
+    String FlagColumn = __FlagColumn_JTextField.getText().trim();
     String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
@@ -286,7 +292,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "IncludeMissingValues", IncludeMissingValues );
-    __command.setCommandParameter ( "DataColumn", DataColumn );
+    __command.setCommandParameter ( "ValueColumn", ValueColumn );
+    __command.setCommandParameter ( "FlagColumn", FlagColumn );
     __command.setCommandParameter ( "DataRow", DataRow );
     __command.setCommandParameter ( "OutputStart", OutputStart );
     __command.setCommandParameter ( "OutputEnd", OutputEnd );
@@ -309,7 +316,6 @@ Free memory for garbage collection.
 protected void finalize ()
 throws Throwable
 {	__TSID_JComboBox = null;
-	__DataColumn_JTextField = null;
 	__DateTimeColumn_JTextField = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
@@ -438,13 +444,25 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Data column(s) in table:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataColumn_JTextField = new TSFormatSpecifiersJPanel(10);
-    __DataColumn_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
-    __DataColumn_JTextField.addKeyListener ( this );
-    __DataColumn_JTextField.getDocument().addDocumentListener(this);
-    JGUIUtil.addComponent(main_JPanel, __DataColumn_JTextField,
+    __ValueColumn_JTextField = new TSFormatSpecifiersJPanel(10);
+    __ValueColumn_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __ValueColumn_JTextField.addKeyListener ( this );
+    __ValueColumn_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(main_JPanel, __ValueColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data column name(s) for 1+ time series."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - value column name(s) for 1+ time series."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Flag column(s) in table:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FlagColumn_JTextField = new TSFormatSpecifiersJPanel(10);
+    __FlagColumn_JTextField.setToolTipText("If specified, the number of columns much match the data columns, " +
+        "but column names can be blank to ignore.");
+    __FlagColumn_JTextField.addKeyListener ( this );
+    __FlagColumn_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(main_JPanel, __FlagColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - flag column name(s) for 1+ time series."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel,new JLabel( "First row for data:"),
@@ -592,7 +610,8 @@ private void refresh ()
     String TableTSIDColumn = "";
     String TableTSIDFormat = "";
     String IncludeMissingValues = "";
-    String DataColumn = "";
+    String ValueColumn = "";
+    String FlagColumn = "";
     String DataRow = "";
     String OutputStart = "";
     String OutputEnd = "";
@@ -615,7 +634,8 @@ private void refresh ()
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
         IncludeMissingValues = props.getValue ( "IncludeMissingValues" );
-        DataColumn = props.getValue ( "DataColumn" );
+        ValueColumn = props.getValue ( "ValueColumn" );
+        FlagColumn = props.getValue ( "FlagColumn" );
         DataRow = props.getValue ( "DataRow" );
         IfTableNotFound = props.getValue ( "IfTableNotFound" );
         if ( TSList == null ) {
@@ -706,8 +726,11 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( DataColumn != null ) {
-            __DataColumn_JTextField.setText ( DataColumn );
+        if ( ValueColumn != null ) {
+            __ValueColumn_JTextField.setText ( ValueColumn );
+        }
+        if ( FlagColumn != null ) {
+            __FlagColumn_JTextField.setText ( FlagColumn );
         }
         if ( DataRow != null ) {
             __DataRow_JTextField.setText ( DataRow );
@@ -779,7 +802,8 @@ private void refresh ()
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     IncludeMissingValues = __IncludeMissingValues_JComboBox.getSelected();
-    DataColumn = __DataColumn_JTextField.getText().trim();
+    ValueColumn = __ValueColumn_JTextField.getText().trim();
+    FlagColumn = __FlagColumn_JTextField.getText().trim();
     DataRow = __DataRow_JTextField.getText().trim();
     OutputStart = __OutputStart_JTextField.getText().trim();
     OutputEnd = __OutputEnd_JTextField.getText().trim();
@@ -793,7 +817,8 @@ private void refresh ()
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "IncludeMissingValues=" + IncludeMissingValues );
-    props.add ( "DataColumn=" + DataColumn );
+    props.add ( "ValueColumn=" + ValueColumn );
+    props.add ( "FlagColumn=" + FlagColumn );
     props.add ( "DataRow=" + DataRow );
     props.add ( "Transformation=" + IfTableNotFound );
     props.add ( "OutputStart=" + OutputStart );

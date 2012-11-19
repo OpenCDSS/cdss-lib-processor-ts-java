@@ -5,9 +5,8 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
@@ -22,7 +21,6 @@ import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
-import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandProcessor;
@@ -155,6 +153,8 @@ public TableToTimeSeries_Command ()
 	setCommandName ( "TableToTimeSeries" );
 }
 
+// TODO SAM 2012-11-15 Change so checks examine column names - after discovery mode is updated to be aware
+// of column names.  For now only handle TC[] notation at runtime.
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
@@ -267,7 +267,7 @@ throws InvalidCommandParameterException
     
     if ( dateTimeColumnSpecified ) {
         if ( StringUtil.indexOfIgnoreCase(DateTimeColumn,_TC, 0) >= 0 ) {
-            // Original string used slice notation for column name in file
+            // Original string used slice notation for column name
             try {
                 List<String> dateTimeColumnName = new Vector();
                 dateTimeColumnName.add ( DateTimeColumn ); // Only one
@@ -304,7 +304,7 @@ throws InvalidCommandParameterException
     
     if ( dateColumnSpecified ) {
         if ( StringUtil.indexOfIgnoreCase(DateColumn,_TC, 0) >= 0 ) {
-            // Original string used slice notation for column name in file
+            // Original string used slice notation for column
             try {
                 List<String> dateColumnName = new Vector();
                 dateColumnName.add ( DateColumn ); // Only one
@@ -341,7 +341,7 @@ throws InvalidCommandParameterException
     
     if ( timeColumnSpecified ) {
         if ( StringUtil.indexOfIgnoreCase(TimeColumn,_TC, 0) >= 0 ) {
-            // Original string used slice notation for column name in file
+            // Original string used slice notation for column name
             try {
                 List<String> timeColumnName = new Vector();
                 timeColumnName.add ( TimeColumn ); // Only one
@@ -389,7 +389,7 @@ throws InvalidCommandParameterException
     else {
         valueColumns = StringUtil.breakStringList(ValueColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
         if ( StringUtil.indexOfIgnoreCase(ValueColumn,_TC, 0) >= 0 ) {
-            // Original string used slice notation for column name in file
+            // Original string used slice notation for column name
             try {
                 //valueColumnsRuntime = readColumnNamesFromFile(InputFile_full, valueColumns,
                 //    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
@@ -429,7 +429,7 @@ throws InvalidCommandParameterException
     if ( (FlagColumn != null) && (FlagColumn.length() != 0) ) {
         flagColumns = StringUtil.breakStringList(FlagColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
         if ( StringUtil.indexOfIgnoreCase(FlagColumn,_TC, 0) >= 0 ) {
-            // Original string used slice notation for column name in file
+            // Original string used slice notation for column name
             try {
                 //flagColumnsRuntime = readColumnNamesFromFile(InputFile_full, flagColumns,
                 //    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
@@ -492,7 +492,7 @@ throws InvalidCommandParameterException
         // Can have one value that is re-used, or LocationID for each time series
         List<String>tokens = StringUtil.breakStringList(LocationID, ",", 0);
         if ( StringUtil.indexOfIgnoreCase(LocationID,_TC, 0) >= 0 ) {
-            // Original string used slice notation for column name in file
+            // Original string used slice notation for column name
             try {
                 //tokens = readColumnNamesFromFile(InputFile_full, tokens,
                 //    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
@@ -972,6 +972,49 @@ throws Throwable
 }
 
 /**
+Get the column names by handling the TC[] notation.
+@param table the table that is being processed
+@param columnName0 the initial parameter value that may include TC[] notation
+*/
+private List<String> getColumnNamesFromNotation ( DataTable table, String columnName0 )
+{   String routine = getClass().getName() + ".getColumnNamesFromNotation";
+    List<String> columnNames = new Vector();
+    List<String> columnHeadingList = Arrays.asList(table.getFieldNames());
+    int nColumnHeadings = columnHeadingList.size();
+    // Much of the following matches code in the ReadDelimitedFile() command, but here we are processing a table
+    // TODO SAM 2012-11-15 Maybe should put this in the table package as a utility to handle slice notation
+    if ( StringUtil.startsWithIgnoreCase(columnName0,_TC) ) {
+        // Need to process the column names from the file
+        int parenPos1 = columnName0.indexOf(_TC);
+        int parenPos2 = columnName0.indexOf("]");
+        if ( (parenPos1 >= 0) && (parenPos2 >= 0) ) {
+            // Need to interpret slice of field numbers in file
+            String slice = columnName0.substring((parenPos1 + _TC.length()),parenPos2);
+            int [] tableColPos = StringUtil.parseIntegerSlice( slice, ":", 0, nColumnHeadings );
+            Message.printStatus(2, routine, "Got " + tableColPos.length + " columns from slice \"" + slice + "\"" );
+            for ( int ipos = 0; ipos <tableColPos.length; ipos++ ) {
+                // Positions from parameter parsing are 1+ so need to decrement to get 0+ indices
+                Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(tableColPos[ipos] - 1).trim() + "\"" );
+                columnNames.add ( columnHeadingList.get(tableColPos[ipos] - 1).trim() );
+            }
+        }
+        else {
+            // Use all the file field names
+            for ( int ipos = 0; ipos <nColumnHeadings; ipos++ ) {
+                Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(ipos).trim() + "\"" );
+                columnNames.add ( columnHeadingList.get(ipos).trim() );
+            }
+        }
+    }
+    else {
+        // A literal string that can be used as is
+        Message.printStatus(2, routine, "Adding user-specified column name \"" + columnName0 + "\"" );
+        columnNames.add ( columnName0 );
+    }
+    return columnNames;
+}
+
+/**
 Return the runtime column names list.
 */
 private List<String> getColumnNamesRuntime()
@@ -1156,7 +1199,7 @@ public List getObjectList ( Class c )
     if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
         return null;
     }
-    // Since all time series in file must have the same interval, check the first time series (e.g., MonthTS)
+    // Since all time series in table must have the same interval, check the first time series (e.g., MonthTS)
     TS datats = discovery_TS_List.get(0);
     // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
@@ -1215,177 +1258,20 @@ private List<String> getValueColumnsRuntime()
     return __valueColumnsRuntime;
 }
 
-/**
-Determine if a row needs to be skipped, based on command parameters.
-@param row line from file being processed(1+)
-@param firstNonHeaderRow row in the file that is the first after the header comments
-@param skipRows ranges of rows (1+ each) that are to be skipped
-@param skipRowsAfterComments the number of rows after the header comments to be skipped
-*/
-private boolean needToSkipRow( int row, int firstNonHeaderRow, int[][] skipRows, int skipRowsAfterComments )
-{
-    if ( skipRows != null ) {
-        // First check the absolute skips
-        for ( int ipair = 0; ipair < skipRows.length; ipair++ ) {
-            if ( (row >= skipRows[ipair][0]) && (row <= skipRows[ipair][1])) {
-                // Skipping the absolute rows
-                //Message.printStatus ( 2, "", "skipping absolute row " + row );
-                return true;
-            }
-        }
-    }
-    // Check to see if in the rows after the header comments
-    if ( (firstNonHeaderRow > 0) && (skipRowsAfterComments > 0) ) {
-        int startSkip = firstNonHeaderRow;
-        int endSkip = firstNonHeaderRow + skipRowsAfterComments - 1;
-        if ( (row >= startSkip) && (row <= endSkip) ) {
-            //Message.printStatus ( 2, "", "Skipping row " + row + " after comments, firstNonHeaderRow=" +
-            //    firstNonHeaderRow + ", startSkip=" + startSkip + ", endSkip=" + endSkip + " row=" + row );
-            return true;
-        }
-    }
-    return false;
-}
-
 // Use the base class parseCommand() method
 
-// TODO SAM 2010-05-24 Evaluate making code more modular so as to not repeat this code from main read method
 /**
-Read the column names from the file.  This code is essentially a copy of some of the code used when
-actually processing the time series and should be kept consistent.  It mainly is concerned with handling
-initial comments in the file, skipped rows, and reading the first non-comment record as a header.
-@param inputFileFull the full path to the input file.
-@param columnNames0 the value of the ColumnNames parameter before special handling.  For example, this may contain
-FC[] notation.
-*/
-protected List<String> readColumnNamesFromFile ( String inputFileFull, List<String> columnNames0, String delim,
-    String commentChar, int[][] skipRows, int skipRowsAfterComments )
-throws IOException
-{   String routine = getClass().getName() + ".readColumnNamesFromFile";
-    List<String> columnNames = new Vector();
-    BufferedReader in = null;
-    Message.printStatus(2, routine, "Getting the column names from file \"" + inputFileFull + "\"" );
-    in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
-    String s, sTrimmed;
-    List<String> columnHeadingList = null;
-    int nColumnHeadings = 0;
-    int row = 0;
-    boolean rowIsComment = false;
-    int firstNonHeaderRow = -1; // first line that is not a header comment (1+)
-    int dl = 10;
-    int breakFlag = 0;
-    while ( true ) {
-        // Read a line and deal with skipping
-        s = in.readLine();
-        if ( s == null ) {
-            // No more data
-            break;
-        }
-        // Else handle the line
-        ++row;
-        //Message.printStatus(2, routine, "Processing line " + row + ": " + s );
-        if ( Message.isDebugOn ) {
-            Message.printDebug(dl, routine, "Processing line " + row + ": " + s );
-        }
-        rowIsComment = false;
-        sTrimmed = s.trim();
-        // Skip in the range of rows being skipped - this basically throws out rows without evaluating
-        // Don't even know if it is a comment.
-        if ( needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
-            Message.printStatus(2, routine, "1 Skipping row " + row );
-            continue;
-        }
-        if ( (sTrimmed.length() == 0) || (commentChar.indexOf(s.charAt(0)) >= 0) ) {
-            rowIsComment = true;
-        }
-        // Skip rows first, in particular user-specified skips before evaluating for the first non-comment row
-        if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
-            Message.printStatus(2, routine, "2 Skipping row " + row );
-            continue;
-        }
-        Message.printStatus(2, routine, "Line is not a comment and is not being skipped." );
-        if ( !rowIsComment ) {
-            if ( firstNonHeaderRow < 0 ) {
-                // This is the first non-comment data record
-                firstNonHeaderRow = row;
-                if ( Message.isDebugOn ) {
-                    Message.printDebug(dl, routine, "Found first non-comment (non-skipped) line at row " +
-                        firstNonHeaderRow + ": " + s );
-                }
-            }
-        }
-        // Check again in case the first non-header line is detected.
-        if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
-            if ( Message.isDebugOn ) {
-                Message.printDebug(dl, routine, "Skipping the row because needToSkipRow()=true" );
-            }
-            continue;
-        }
-        // Else continue reading data records from the file - this will be the file header with column names...
-        // First break the row (allow quoted strings since headers)...
-        Message.printStatus(2, routine, "Parsing the line to get column names." );
-        columnHeadingList = StringUtil.breakStringList ( s, delim, breakFlag | StringUtil.DELIM_ALLOW_STRINGS );
-        if ( columnHeadingList == null ) {
-            nColumnHeadings = 0;
-        }
-        else {
-            nColumnHeadings = columnHeadingList.size();
-        }
-        // Loop through original column name tokens and, as requested. expand to what is in the file
-        for ( String columnName0 : columnNames0 ) {
-            if ( StringUtil.startsWithIgnoreCase(columnName0,_TC) ) {
-                // Need to process the column names from the file
-                int parenPos1 = columnName0.indexOf(_TC);
-                int parenPos2 = columnName0.indexOf("]");
-                if ( (parenPos1 >= 0) && (parenPos2 >= 0) ) {
-                    // Need to interpret slice of field numbers in file
-                    String slice = columnName0.substring((parenPos1 + _TC.length()),parenPos2);
-                    int [] fileColPos = StringUtil.parseIntegerSlice( slice, ":", 0, nColumnHeadings );
-                    Message.printStatus(2, routine, "Got " + fileColPos.length + " columns from slice \"" + slice + "\"" );
-                    for ( int ipos = 0; ipos <fileColPos.length; ipos++ ) {
-                        // Positions from parameter parsing are 1+ so need to decrement to get 0+ indices
-                        Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(fileColPos[ipos] - 1).trim() + "\"" );
-                        columnNames.add ( columnHeadingList.get(fileColPos[ipos] - 1).trim() );
-                    }
-                }
-                else {
-                    // Use all the file field names
-                    for ( int ipos = 0; ipos <nColumnHeadings; ipos++ ) {
-                        Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(ipos).trim() + "\"" );
-                        columnNames.add ( columnHeadingList.get(ipos).trim() );
-                    }
-                }
-            }
-            else {
-                // A literal string that can be used as is
-                Message.printStatus(2, routine, "Adding user-specified column name \"" + columnName0 + "\"" );
-                columnNames.add ( columnName0 );
-            }
-        }
-        // Currently headers in files can only be one row so break out of reading
-        break;
-    }
-    in.close();
-    return columnNames;
-}
-
-/**
-Read a list of time series from a delimited file.
-@param inputFileFull the full path to the input file.
-@param delim delimiter character(s).
-@param treatConsecutiveDelimitersAsOne indicate whether consecutive delimiter characters should be treated as one.
-@param columnNames names of columns to use when mapping columns
-@param readColumnNamesFromFile if true, then the column names will be read from the file
-@param dateTimeFormat the date/time format, if not determined automatically
+Read a list of time series from a table.
+@param table data table to read
 @param dateTimeColumn the date/time column name
+@param dateTimeFormat the date/time format, if not determined automatically
 @param dateColumn the date column name
 @param timeColumn the time column name
 @param valueColumns the data value column names
-@param commentChar character(s) that indicates comments lines, if the first character of a line
-(or null if not specified).  Only 1-character is checked but more than one special character can be indicated.
+@param flagColumn columns that contain flags (corresponding to valueColumns)
 @param skipRows ranges of rows (1+ each) that are to be skipped
-@param skipRowsAfterComments the number of rows after the header comments to be skipped
-@param ids list of location identifiers to use for time series
+@param locationColumn the column to use for locations, if single column data table
+@param locationIds identifiers to use for time series instead of default value column names
 @param providers list of providers (data sources) to use for time series
 @param dataTypes list of data types to use for time series
 @param interval the data interval
@@ -1736,7 +1622,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String TableID = parameters.getValue("TableID");
+	String LocationID = parameters.getValue("LocationID");
+	String DateTimeColumn = parameters.getValue("DateTimeColumn");
 	String DateTimeFormat = parameters.getValue("DateTimeFormat");
+	String DateColumn = parameters.getValue("DateColumn");
+	String TimeColumn = parameters.getValue("TimeColumn");
+	String ValueColumn = parameters.getValue("ValueColumn");
+	String FlagColumn = parameters.getValue("FlagColumn");
 	String Alias = parameters.getValue("Alias");
 	String InputStart = parameters.getValue("InputStart");
     String InputEnd = parameters.getValue("InputEnd");
@@ -1776,7 +1668,49 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Verify that a table exists with the requested ID." ) );
             }
             else {
+                // Table to be read below
                 table = (DataTable)o_Table;
+                // TODO SAM 2012-11-15 Evaluate doing this in discovery mode in checkCommandParameters() but
+                // for now figure out the information here and set for use below.
+                if ( (LocationID != null) && !LocationID.equals("") &&
+                    StringUtil.indexOfIgnoreCase(LocationID,_TC, 0) >= 0 ) {
+                    List<String> cols = getColumnNamesFromNotation ( table, LocationID );
+                    setLocationIDRuntime(cols);
+                }
+                if ( (DateTimeColumn != null) && !DateTimeColumn.equals("") &&
+                    StringUtil.indexOfIgnoreCase(DateTimeColumn,_TC, 0) >= 0 ) {
+                    List<String> cols = getColumnNamesFromNotation ( table, DateTimeColumn );
+                    // Date/time column is single value
+                    if ( cols.size() > 0 ) {
+                        setDateTimeColumnRuntime(cols.get(0));
+                    }
+                }
+                if ( (DateColumn != null) && !DateColumn.equals("") &&
+                    StringUtil.indexOfIgnoreCase(DateColumn,_TC, 0) >= 0 ) {
+                    List<String> cols = getColumnNamesFromNotation ( table, DateColumn );
+                    // Date column is single value
+                    if ( cols.size() > 0 ) {
+                        setDateColumnRuntime(cols.get(0));
+                    }
+                }
+                if ( (TimeColumn != null) && !TimeColumn.equals("") &&
+                    StringUtil.indexOfIgnoreCase(TimeColumn,_TC, 0) >= 0 ) {
+                    List<String> cols = getColumnNamesFromNotation ( table, TimeColumn );
+                    // Time column is single value
+                    if ( cols.size() > 0 ) {
+                        setTimeColumnRuntime(cols.get(0));
+                    }
+                }
+                if ( (ValueColumn != null) && !ValueColumn.equals("") &&
+                    StringUtil.indexOfIgnoreCase(ValueColumn,_TC, 0) >= 0 ) {
+                    List<String> cols = getColumnNamesFromNotation ( table, ValueColumn );
+                    setValueColumnsRuntime(cols);
+                }
+                if ( (FlagColumn != null) && !FlagColumn.equals("") &&
+                    StringUtil.indexOfIgnoreCase(FlagColumn,_TC, 0) >= 0 ) {
+                    List<String> cols = getColumnNamesFromNotation ( table, FlagColumn );
+                    setFlagColumnsRuntime(cols);
+                }
             }
         }
     }
@@ -1923,41 +1857,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         
         // Read everything in the file (one time series or traces).
         List<String> errorMessages = new Vector();
-        // TODO SAM 2011-03-11 Evaluate whether this should be more explicit
-        // If any parameters refer to the column names, then the column names are expected to be in the table
-        boolean readColumnNamesFromTable = false;
-        if ( (parameters.getValue("ColumnNames") != null) &&
-            StringUtil.indexOfIgnoreCase(parameters.getValue("ColumnNames"),_TC,0) >= 0 ) {
-            readColumnNamesFromTable = true;
-        }
-        else if ( (parameters.getValue("DateTimeColumn") != null) &&
-            StringUtil.indexOfIgnoreCase(parameters.getValue("DateTimeColumn"),_TC,0) >= 0 ) {
-            readColumnNamesFromTable = true;
-        }
-        else if ( (parameters.getValue("DateColumn") != null) &&
-            StringUtil.indexOfIgnoreCase(parameters.getValue("DateColumn"),_TC,0) >= 0 ) {
-            readColumnNamesFromTable = true;
-        }
-        else if ( (parameters.getValue("TimeColumn") != null) &&
-            StringUtil.indexOfIgnoreCase(parameters.getValue("TimeColumn"),_TC,0) >= 0 ) {
-            readColumnNamesFromTable = true;
-        }
-        else if ( (parameters.getValue("ValueColumn") != null) &&
-            StringUtil.indexOfIgnoreCase(parameters.getValue("ValueColumn"),_TC,0) >= 0 ) {
-            readColumnNamesFromTable = true;
-        }
-        else if ( (parameters.getValue("FlagColumn") != null) &&
-            StringUtil.indexOfIgnoreCase(parameters.getValue("FlagColumn"),_TC,0) >= 0 ) {
-            readColumnNamesFromTable = true;
-        }
-        else if ( (parameters.getValue("LocationColumn") != null) &&
-                StringUtil.indexOfIgnoreCase(parameters.getValue("LocationColumn"),_TC,0) >= 0 ) {
-                readColumnNamesFromTable = true;
-            }
-        else if ( (parameters.getValue("LocationID") != null) &&
-            StringUtil.indexOfIgnoreCase(parameters.getValue("LocationID"),_TC,0) >= 0 ) {
-            readColumnNamesFromTable = true;
-        }
         // Read the time series
         tslist = readTimeSeriesList ( table, getDateTimeColumnRuntime(),
             DateTimeFormat, getDateColumnRuntime(),

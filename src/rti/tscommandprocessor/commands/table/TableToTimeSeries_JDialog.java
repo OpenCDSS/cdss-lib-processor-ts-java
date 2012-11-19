@@ -737,12 +737,11 @@ private void refresh()
         if (LocationColumn != null) {
             __LocationColumn_JTextField.setText(LocationColumn);
             if ( !LocationColumn.equals("") ) {
-                __location_JTabbedPane.setSelectedIndex(1);
+                __location_JTabbedPane.setSelectedIndex(0);
             }
         }
         if (LocationID != null) {
             __LocationID_JTextField.setText(LocationID);
-            __location_JTabbedPane.setSelectedIndex(0);
             if ( !LocationID.equals("") ) {
                 __location_JTabbedPane.setSelectedIndex(1);
             }

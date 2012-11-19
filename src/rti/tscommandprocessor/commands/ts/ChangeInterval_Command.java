@@ -38,6 +38,7 @@ import rti.tscommandprocessor.core.TSListType;
 
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
+import RTi.TS.TSLimits;
 import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
 import RTi.TS.TSUtil_ChangeInterval;
@@ -51,6 +52,7 @@ import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
@@ -82,6 +84,12 @@ protected final String _Repeat = "Repeat";
 protected final String _SetToZero = "SetToZero";
 protected final String _IncludeFirstOnly = "IncludeFirstOnly";
 protected final String _AverageEndpoints = "AverageEndpoints";
+
+/**
+Possible values for boolean parameters.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 TSEnsemble created in discovery mode (basically to get the identifier for other commands).
@@ -138,6 +146,7 @@ throws InvalidCommandParameterException
 	String AllowMissingConsecutive = parameters.getValue("AllowMissingConsecutive" );
 	String OutputFillMethod = parameters.getValue( "OutputFillMethod" );
 	String HandleMissingInputHow = parameters.getValue( "HandleMissingInputHow" );
+	String RecalcLimits = parameters.getValue ( "RecalcLimits" );
 
 	// Alias must be specified - for historical command syntax (and generally a good idea)
 	// TODO [LT 2005-05-24] How about the __read_one issue (see parseCommand() method)
@@ -464,6 +473,15 @@ throws InvalidCommandParameterException
                         + "\", " + _Repeat + ", and \"" + _SetToZero + "\"."));
 		}
 	}
+	
+    if ( (RecalcLimits != null) && !RecalcLimits.equals("") &&
+        !RecalcLimits.equalsIgnoreCase( "true" ) && !RecalcLimits.equalsIgnoreCase("false") ) {
+        message = "The RecalcLimits parameter must be blank, " + _False + " (default), or " + _True + ".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a RecalcLimits as " + _False + " or " + _True + ".") );
+    }
     
     // Check for invalid parameters...
 	List<String> valid_Vector = new Vector();
@@ -486,6 +504,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "AllowMissingConsecutive" );
     valid_Vector.add ( "OutputFillMethod" );
     valid_Vector.add ( "HandleMissingInputHow" );
+    valid_Vector.add ( "RecalcLimits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -575,7 +594,7 @@ determined to have invalid syntax.
 parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
-throws 	InvalidCommandSyntaxException, InvalidCommandParameterException
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	String mthd = "changeInterval_Command.parseCommand", mssg;
 	int warning_level = 2;
 
@@ -653,6 +672,53 @@ throws 	InvalidCommandSyntaxException, InvalidCommandParameterException
             parameters.set("TSList=" + TSListType.LAST_MATCHING_TSID );
         }
     }
+}
+
+/**
+Calls TSCommandProcessor to re-calculate limits for this time series.
+@param ts Time Series.
+@param TSCmdProc CommandProcessor that is using this command.
+@param warningLevel Warning level used for displaying warnings.
+@param warning_count Number of warnings found.
+@param command_tag Reference or identifier for this command.
+ */
+private int recalculateLimits( TS ts, CommandProcessor TSCmdProc, 
+    int warningLevel, int warning_count, String command_tag )
+{
+    String routine = getClass().getName() + ".recalculateLimits", message;
+    CommandStatus status = getCommandStatus();
+    PropList request_params = new PropList ( "" );
+    request_params.setUsingObject ( "TS", ts );
+    CommandProcessorRequestResultsBean bean = null;
+    try {
+        bean = TSCmdProc.processRequest( "CalculateTSAverageLimits", request_params);
+    }
+    catch ( Exception e ) {
+        message = "Error recalculating original data limits for \"" + ts.getIdentifierString() + "\" (" + e + ")";
+        Message.printWarning(warningLevel,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+            routine, message  );
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        return warning_count;
+    }
+    // Get the calculated limits and set in the original data limits...
+    PropList bean_PropList = bean.getResultsPropList();
+    Object prop_contents = bean_PropList.getContents ( "TSLimits" );
+    if ( prop_contents == null ) {
+        message = "Null value for TSLimits from CalculateTSAverageLimits(" + ts.getIdentifierString() + ")";
+        Message.printWarning(warningLevel,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+            routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        return warning_count;
+    }
+    // Now set the limits.
+    ts.setDataLimitsOriginal ( (TSLimits)prop_contents );
+    return warning_count;
 }
 
 /**
@@ -783,6 +849,11 @@ CommandWarningException, CommandException
 	    handleMissingInputHow =
 	        TSUtil_ChangeInterval_HandleMissingInputHowType.valueOfIgnoreCase(HandleMissingInputHow);
 	}
+	String RecalcLimits = parameters.getValue ( "RecalcLimits" );
+    boolean recalcLimits = false; // Default
+    if ( (RecalcLimits != null) && RecalcLimits.equalsIgnoreCase("true") ) {
+        recalcLimits = true;
+    }
 	
     // Get the time series to process.
 
@@ -880,6 +951,10 @@ CommandWarningException, CommandException
                 null,  // AllowMissingPercent (not implemented in command)
                 allowMissingConsecutive );
     		result_ts = tsu.changeInterval ( createData );
+    		if ( (commandPhase == CommandPhaseType.RUN) && recalcLimits ) {
+    		    warning_count = recalculateLimits( result_ts, processor, 
+    		        warning_level, warning_count, command_tag );
+    		}
     		resultList.add(result_ts);
     		
     		// Update the newly created time series alias (alias is required)
@@ -1013,7 +1088,8 @@ public String toString ( PropList props, int majorVersion )
 	*/
 	String AllowMissingConsecutive = props.getValue( "AllowMissingConsecutive" );
 	String OutputFillMethod = props.getValue( "OutputFillMethod" );
-	String HandleMissingInputHow= props.getValue( "HandleMissingInputHow");
+	String HandleMissingInputHow = props.getValue( "HandleMissingInputHow");
+	String RecalcLimits = props.getValue( "RecalcLimits");
 	
 	// Creating the command string
 	// This StringBuffer will contain all parameters for the command.
@@ -1116,6 +1192,12 @@ public String toString ( PropList props, int majorVersion )
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "HandleMissingInputHow=" + HandleMissingInputHow );
 	}
+    if ( ( RecalcLimits != null) && (RecalcLimits.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RecalcLimits=" + RecalcLimits );
+    }
     if ( majorVersion < 10 ) {
         // Old syntax...
         if ( (Alias == null) || Alias.equals("") ) {

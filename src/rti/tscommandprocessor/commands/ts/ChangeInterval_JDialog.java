@@ -86,6 +86,7 @@ private SimpleJComboBox	__OutputFillMethod_JComboBox = null; // Fill method when
 private JLabel __HandleMissingInputHow_JLabel = null;
 private SimpleJComboBox	__HandleMissingInputHow_JComboBox = null;
 						// How to handle missing data in input time series.
+private SimpleJComboBox __RecalcLimits_JComboBox = null;
 private JTextArea __Command_JTextArea   = null;
 private JScrollPane	__Command_JScrollPane = null;
 private SimpleJButton __cancel_JButton = null;
@@ -370,6 +371,7 @@ private void checkInput ()
 	String AllowMissingConsecutive = __AllowMissingConsecutive_JTextField.getText().trim();
 	String OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
 	String HandleMissingInputHow = __HandleMissingInputHow_JComboBox.getSelected();
+	String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
 	
 	// Put together the list of parameters to check...
 	PropList props = new PropList ( "" );
@@ -434,9 +436,12 @@ private void checkInput ()
 		props.set( "OutputFillMethod", OutputFillMethod );
 	}
 	if ( HandleMissingInputHow != null &&
-	     HandleMissingInputHow.length() > 0 ) {
+	    HandleMissingInputHow.length() > 0 ) {
 		props.set( "HandleMissingInputHow", HandleMissingInputHow );
 	}
+    if ( RecalcLimits.length() > 0 ) {
+        props.set( "RecalcLimits", RecalcLimits );
+    }
 	
 	// Check the list of Command Parameters.
 	try {
@@ -478,6 +483,7 @@ private void commitEdits ()
 	String AllowMissingConsecutive = __AllowMissingConsecutive_JTextField.getText().trim();
 	String OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
 	String HandleMissingInputHow = __HandleMissingInputHow_JComboBox.getSelected();
+	String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
 
 	// Commit the values to the command object.
     __command.setCommandParameter ( "TSList", TSList );
@@ -501,6 +507,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "AllowMissingConsecutive", AllowMissingConsecutive );
 	__command.setCommandParameter ( "OutputFillMethod", OutputFillMethod );
 	__command.setCommandParameter ( "HandleMissingInputHow", HandleMissingInputHow );
+	__command.setCommandParameter ( "RecalcLimits", RecalcLimits );
 }
 
 /**
@@ -833,6 +840,20 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - how to handle missing values in input (default=" + __command._KeepMissing + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RecalcLimits_JComboBox = new SimpleJComboBox ( false );
+    __RecalcLimits_JComboBox.addItem ( "" );
+    __RecalcLimits_JComboBox.addItem ( __command._False );
+    __RecalcLimits_JComboBox.addItem ( __command._True );
+    __RecalcLimits_JComboBox.select ( 0 );
+    __RecalcLimits_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,
+    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel( "Optional - recalculate original data limits after set (default=" + __command._False + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Command
     
@@ -951,6 +972,7 @@ private void refresh ()
 	String AllowMissingPercent = ""; */
 	String OutputFillMethod	 = "";
 	String HandleMissingInputHow = "";
+	String RecalcLimits = "";
 	
 	__error_wait = false;
 	PropList props 	= null;
@@ -980,6 +1002,7 @@ private void refresh ()
 		AllowMissingConsecutive = props.getValue( "AllowMissingConsecutive" );
 		OutputFillMethod = props.getValue( "OutputFillMethod" );
 		HandleMissingInputHow = props.getValue( "HandleMissingInputHow");
+		RecalcLimits = props.getValue ( "RecalcLimits" );
 
         if ( TSList == null ) {
             // Select default...
@@ -1198,6 +1221,23 @@ private void refresh ()
 				__HandleMissingInputHow_JComboBox.setText ( HandleMissingInputHow );
 			}
 		}
+        if ( RecalcLimits == null ) {
+            // Select default...
+            __RecalcLimits_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem(
+                __RecalcLimits_JComboBox, RecalcLimits, JGUIUtil.NONE, null, null )) {
+                __RecalcLimits_JComboBox.select ( RecalcLimits );
+            }
+            else {
+                Message.printWarning ( 1, mthd,
+                "Existing command references an invalid\n" +
+                "RecalcLimits value \"" + RecalcLimits +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	
 	// Regardless, reset the command from the fields.  This is only  visible
@@ -1223,6 +1263,7 @@ private void refresh ()
 	AllowMissingConsecutive = __AllowMissingConsecutive_JTextField.getText().trim();
 	OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
 	HandleMissingInputHow =	__HandleMissingInputHow_JComboBox.getSelected();
+	RecalcLimits = __RecalcLimits_JComboBox.getSelected();
 	
 	// And set the command properties.
 	props = new PropList ( __command.getCommandName() );
@@ -1253,14 +1294,14 @@ private void refresh ()
 	    props.add ( "OutputFillMethod=" + OutputFillMethod );
 	}
 	props.add ( "HandleMissingInputHow=" + HandleMissingInputHow );
+	props.add ( "RecalcLimits=" + RecalcLimits);
 	
 	__Command_JTextArea.setText( __command.toString(props) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok )
 {	

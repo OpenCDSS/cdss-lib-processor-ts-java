@@ -1546,6 +1546,11 @@ throws IOException
         }
         String locationIdFromTablePrev = "";
         Double value = null;
+        String flag;
+        int flagColumnPos = -1;
+        if ( flagPos.length > 0 ) {
+            flagColumnPos = flagPos[0];
+        }
         for ( int iRec = 0; iRec <= nRecords; iRec++ ) {
             try {
                 rec = table.getRecord(iRec);
@@ -1581,8 +1586,22 @@ throws IOException
                 if ( !locationIdFromTable.equals(locationIdFromTablePrev) ) {
                     ts = hash.get(locationIdFromTable);
                 }
-                ts.setDataValue(dt, value);
-                // TODO SAM 2012-11-11 Need to handle data flag
+                locationIdFromTablePrev = locationIdFromTable;
+                // Get the the data flag
+                flag = null;
+                if ( flagColumnPos >= 0 ) {
+                    o = rec.getFieldValue(flagColumnPos); 
+                    if ( o != null ) {
+                        flag = "" + o;
+                    }
+                }
+                // Set the value and flag in the time series
+                if ( (flag != null) && !flag.equals("") ) {
+                    ts.setDataValue(dt, value, flag, -1);
+                }
+                else {
+                    ts.setDataValue(dt, value);
+                }
             }
             catch ( Exception e ) {
                 // Skip the record
@@ -1594,6 +1613,8 @@ throws IOException
         // Multi-column data
         // Date-time is reused for multiple locations
         Double value = null;
+        String flag = null;
+        int flagColumnPos;
         TS ts;
         // All time series will have the same period since each time series shows up in every row
         for ( int its = 0; its < tslist.size(); its++ ) {
@@ -1626,11 +1647,28 @@ throws IOException
                     else {
                         continue;
                     }
+                    // Get the the data flag
+                    flag = null;
+                    flagColumnPos = -1;
+                    if ( flagPos.length > ival ) {
+                        flagColumnPos = flagPos[ival];
+                    }
+                    if ( flagColumnPos >= 0 ) {
+                        o = rec.getFieldValue(flagColumnPos); 
+                        if ( o != null ) {
+                            flag = "" + o;
+                        }
+                    }
                     // Get the time series, which will be in the order of the values, since the same order
                     // was used to initialize the time series above
                     ts = tslist.get(ival);
-                    ts.setDataValue(dt, value);
-                    // TODO SAM 2012-11-11 Need to handle data flag
+                    // Set the value and flag in the time series
+                    if ( (flag != null) && !flag.equals("") ) {
+                        ts.setDataValue(dt, value, flag, -1);
+                    }
+                    else {
+                        ts.setDataValue(dt, value);
+                    }
                 }
             }
             catch ( Exception e ) {

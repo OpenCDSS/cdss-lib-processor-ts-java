@@ -154,7 +154,8 @@ public TableToTimeSeries_Command ()
 }
 
 // TODO SAM 2012-11-15 Change so checks examine column names - after discovery mode is updated to be aware
-// of column names.  For now only handle TC[] notation at runtime.
+// of column names.  For now only handle TC[] notation at runtime in the runCommandInternal method.
+// Commented-out code below illustrates checks that could be done in discovery mode
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
@@ -539,6 +540,8 @@ throws InvalidCommandParameterException
     if ( (Provider != null) && !Provider.equals("") ) {
         // Can have one value that is re-used, or Provider for each time series
         List<String>tokens = StringUtil.breakStringList(Provider, ",", 0);
+        setProvider(tokens);
+        /*
         if ( (tokens.size() != 1) && (tokens.size() != getValueColumnsRuntime().size()) ) {
             message = "The number of Provider strings (" + tokens.size() + ") is invalid - expecting " +
                 getValueColumnsRuntime().size();
@@ -561,26 +564,30 @@ throws InvalidCommandParameterException
                     provider.add(tokens.get(i));
                 }
             }
-        }
+        }*/
     }
+    /*
     else {
         for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
             provider.add ( "" );
         }
     }
     setProvider ( provider );
+    */
     
-    List<String> dataType = new Vector();
+    List<String> dataType = new Vector<String>();
     setDataType ( dataType );
     if ( (DataType == null) || DataType.equals("") ) {
         // Set to the same as the value columns
-        for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
-            dataType.add ( getValueColumnsRuntime().get(i) );
-        }
+        //for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
+        //    dataType.add ( getValueColumnsRuntime().get(i) );
+        //}
     }
     else {
         // Can have one value that is re-used, or DataType for each time series
         List<String>tokens = StringUtil.breakStringList(DataType, ",", 0);
+        setDataType(tokens);
+        /*
         if ( (tokens.size() != 1) && (tokens.size() != getValueColumnsRuntime().size()) ) {
             message = "The number of DataType strings (" + tokens.size() + ") is invalid - expecting " +
                 getValueColumnsRuntime().size();
@@ -603,9 +610,9 @@ throws InvalidCommandParameterException
                     dataType.add(tokens.get(i));
                 }
             }
-        }
+        }*/
     }
-    setDataType ( dataType );
+    //setDataType ( dataType );
 
     TimeInterval interval = null;
     setInterval ( interval );
@@ -635,6 +642,8 @@ throws InvalidCommandParameterException
     if ( (Scenario != null) && !Scenario.equals("") ) {
         // Can have one value that is re-used, or Scenario for each time series
         List<String>tokens = StringUtil.breakStringList(Scenario, ",", 0);
+        setScenario ( tokens );
+        /*
         if ( (tokens.size() != 1) && (tokens.size() != getValueColumnsRuntime().size()) ) {
             message = "The number of Scenario strings (" + tokens.size() + ") is invalid - expecting " +
                 getValueColumnsRuntime().size();
@@ -657,20 +666,23 @@ throws InvalidCommandParameterException
                     scenario.add(tokens.get(i));
                 }
             }
-        }
-    }
+        }*/
+    }/*
     else {
         for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
             scenario.add ( "" );
         }
     }
     setScenario ( scenario );
+    */
     
     List<String> units = new Vector();
     setUnits ( units );
     if ( (Units != null) && !Units.equals("") ) {
         // Can have one value that is re-used, or units for each time series
         List<String>tokens = StringUtil.breakStringList(Units, ",", 0);
+        setUnits ( tokens );
+        /*
         if ( (tokens.size() != 1) && (tokens.size() != getValueColumnsRuntime().size()) ) {
             message = "The number of units strings (" + tokens.size() + ") is invalid - expecting " +
                 getValueColumnsRuntime().size();
@@ -693,14 +705,16 @@ throws InvalidCommandParameterException
                     units.add(tokens.get(i));
                 }
             }
-        }
+        }*/
     }
+    /*
     else {
         for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
             units.add ( "" );
         }
     }
     setUnits ( units );
+    */
     
     setMissingValue ( new Vector() );
     if ( (MissingValue != null) && !MissingValue.equals("") ) {
@@ -793,7 +807,7 @@ throws InvalidCommandParameterException
 }
 
 /**
-Create a list of providers for time series for use at runtime.
+Create a list of data types for each time series for use at runtime.
 */
 private List<String> createDataTypesRuntime ( boolean singleColumn, List<String> locationIdsFromTable,
     List<String>valueColumns, List<String> dataTypes )
@@ -807,7 +821,7 @@ private List<String> createDataTypesRuntime ( boolean singleColumn, List<String>
         nDataTypes = locationIdsFromTable.size();
     }
     else {
-        nDataTypes = dataTypes.size();
+        nDataTypes = valueColumns.size();
     }
     // Initialize blank...
     for ( int i = 0; i < nDataTypes; i++ ) {
@@ -822,7 +836,7 @@ private List<String> createDataTypesRuntime ( boolean singleColumn, List<String>
     }
     else if ( dataTypes.size() > 1 ) {
         // Multiple column, transfer as many specified values as have
-        for ( int i = 0; i < dataTypes.size(); i++ ) {
+        for ( int i = 0; i < nDataTypes; i++ ) {
             dataTypesForTS.set(i,dataTypes.get(i));
         }
     }
@@ -940,7 +954,7 @@ private List<String> createUnitsRuntime ( boolean singleColumn, List<String> loc
         }
     }
     else if ( units.size() > 1 ) {
-        // Multiple column, transfer as many specified values as have
+        // Multiple column, transfer as many specified units as have
         for ( int i = 0; i < units.size(); i++ ) {
             unitsForTS.set(i,units.get(i));
         }
@@ -1323,6 +1337,7 @@ throws IOException
     catch ( Exception e ) {
         // Use -1 from above
     }
+    // If the location column has been specified then the table is single-column data
     boolean singleColumn = false;
     int locationPos = -1;
     if ( (locationColumn != null) && !locationColumn.equals("") ) {
@@ -1346,7 +1361,7 @@ throws IOException
     }
     int [] flagPos = new int[0];
     try {
-        flagPos = table.getFieldIndices(flagColumns.toArray(new String[valueColumns.size()]));
+        flagPos = table.getFieldIndices(flagColumns.toArray(new String[flagColumns.size()]));
     }
     catch ( Exception e ) {
         // Use empty array
@@ -1427,12 +1442,16 @@ throws IOException
     List<String>scenariosForTS = createScenariosRuntime ( singleColumn, locationIdsFromTable,
         valueColumns.size(), scenarios);
     // Create units for each time series
+    for ( int i = 0; i < units.size(); i++ ) {
+        Message.printStatus(2, routine, "Units[" + i + "] = " + units.get(i) );
+    }
     List<String>unitsForTS = createUnitsRuntime ( singleColumn, locationIdsFromTable,
-        valueColumns.size(), units);
-    Message.printStatus(2,routine,"locationIdsForTS=" + locationIdsForTS.size() +
+        valueColumns.size(), units );
+    Message.printStatus(2,routine,"Sizes: locationIdsForTS=" + locationIdsForTS.size() +
         " dataTypesForTS=" + dataTypesForTS.size() +
         " scenariosForTS=" + scenariosForTS.size() +
-        " providersForTS=" + providersForTS.size() );
+        " providersForTS=" + providersForTS.size() +
+        " unitsForTS=" + unitsForTS.size());
     // Create the time series.  If single column, the count corresponds to the individual location identifiers.
     // If multiple column, the count corresponds to the number of value columns
     int nTS = 0;
@@ -1449,6 +1468,8 @@ throws IOException
         TS ts = null;
         String tsidentstr = locationIdsForTS.get(its) + "." + providersForTS.get(its) + "." +
             dataTypesForTS.get(its) + "." + interval + "." + scenariosForTS.get(its);
+        Message.printStatus(2, routine, "Creating time series for TSID=\"" + tsidentstr + "\", units=\"" +
+            unitsForTS.get(its) + "\"" );
         if ( singleColumn ) {
             valueColumnForTS = valueColumns.get(0);
             valuePosForTS = valuePos[0];
@@ -1516,7 +1537,7 @@ throws IOException
     }
     // Process the data records.
     if ( singleColumn ) {
-        // Create a hashtable to simplify lookup of time series based on the location
+        // Create a hashtable to simplify lookup of time series based on the location ID
         Hashtable<String,TS> hash = new Hashtable();
         TS ts = null;
         for ( int its = 0; its < tslist.size(); its++ ) {
@@ -1550,12 +1571,14 @@ throws IOException
                 else {
                     continue;
                 }
+                // Get the location, which indicates the time series in which to set data
                 o = rec.getFieldValue(locationPos);
                 if ( o == null ) {
                     continue;
                 }
                 locationIdFromTable = "" + o;
-                // Get the time series to process, may be the same as for the previous record
+                // Get the time series to process, may be the same as for the previous record, in which
+                // case a hash table lookup is not needed.
                 if ( !locationIdFromTable.equals(locationIdFromTablePrev) ) {
                     ts = hash.get(locationIdFromTable);
                 }
@@ -1570,6 +1593,52 @@ throws IOException
     }
     else {
         // Multi-column data
+        // Date-time is reused for multiple locations
+        Double value = null;
+        TS ts;
+        // All time series will have the same period since each time series shows up in every row
+        for ( int its = 0; its < tslist.size(); its++ ) {
+            ts = tslist.get(its);
+            ts.allocateDataSpace();
+        }
+        for ( int iRec = 0; iRec <= nRecords; iRec++ ) {
+            try {
+                rec = table.getRecord(iRec);
+                dt = getDateTimeFromRecord(rec,(iRec + 1),dateTimePos,datePos,timePos,null,dateTimeParser,null);
+                if ( dt == null ) {
+                    continue;
+                }
+                // Loop through the values, taken from 1+ columns in the row
+                for ( int ival = 0; ival < valuePos.length; ival++ ) {
+                    // Get the value...
+                    o = rec.getFieldValue(valuePos[ival]);
+                    if ( o == null ) {
+                        continue;
+                    }
+                    else if ( o instanceof Double ) {
+                        value = (Double)o;
+                    }
+                    else if ( o instanceof Float ) {
+                        value = ((Float)o).doubleValue();
+                    }
+                    else if ( o instanceof Integer ) {
+                        value = ((Integer)o).doubleValue();
+                    }
+                    else {
+                        continue;
+                    }
+                    // Get the time series, which will be in the order of the values, since the same order
+                    // was used to initialize the time series above
+                    ts = tslist.get(ival);
+                    ts.setDataValue(dt, value);
+                    // TODO SAM 2012-11-11 Need to handle data flag
+                }
+            }
+            catch ( Exception e ) {
+                // Skip the record
+                continue;
+            }
+        }
     }
     return tslist;
 }

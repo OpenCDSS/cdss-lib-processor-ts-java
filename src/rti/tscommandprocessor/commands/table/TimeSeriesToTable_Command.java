@@ -327,37 +327,39 @@ Determine the time series data table column names.
 @param tslist list of time series to process
 @param tableTSIDColumn if specified, indicates single-column output and therefore only a single data column will be
 created
-@param valueColumn data column specifier; if a literal, use for single column output and append sequential number for
-multi-column output; if contains format strings, use the format with the time series to determine the column name
+@param tableColumn table column specifier (used with values and flags);
+if a literal, use for single column output and append sequential number for
+multi-column output; if contains format strings, use the format with the time series to
+determine the column name
 */
-private List<String> determineValueColumnNames ( List<TS> tslist, String tableTSIDColumn, String valueColumn )
+private List<String> determineValueColumnNames ( List<TS> tslist, String tableTSIDColumn, String tableColumn )
 {
-    List<String> valueColumnNames = new Vector();
+    List<String> tableColumnNames = new Vector();
     if ( (tableTSIDColumn != null) && !tableTSIDColumn.equals("") ) {
         // Single column output
-        valueColumnNames.add ( valueColumn );
+        tableColumnNames.add ( tableColumn );
     }
     else {
         // Multi-column output
         for ( int i = 0; i < tslist.size(); i++ ) {
             TS ts = tslist.get(i);
             // TODO SAM 2009-10-01 Evaluate how to set precision on table columns from time series.
-            if ( valueColumn.indexOf("%") >= 0 ) {
+            if ( tableColumn.indexOf("%") >= 0 ) {
                 // The data column includes format specifiers and will be expanded
-                valueColumnNames.add ( ts.formatLegend(valueColumn) );
+                tableColumnNames.add ( ts.formatLegend(tableColumn) );
             }
             else {
                 // No ID specifiers so use the same column name +1 from the first
                 if ( i == 0 ) {
-                    valueColumnNames.add ( valueColumn );
+                    tableColumnNames.add ( tableColumn );
                 }
                 else {
-                    valueColumnNames.add ( valueColumn + i );
+                    tableColumnNames.add ( tableColumn + i );
                 }
             }
         }
     }
-    return valueColumnNames;
+    return tableColumnNames;
 }
 
 /**
@@ -767,13 +769,7 @@ CommandWarningException, CommandException
             List<String> valueColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, ValueColumn);
             List<String> flagColumnNames = new Vector(); 
             if ( (FlagColumn != null) && !FlagColumn.equals("") ) {
-                if ( FlagColumn.indexOf(",") >= 0 ) {
-                    // This will handle blanks at end
-                    flagColumnNames = Arrays.asList(FlagColumn.split(","));
-                }
-                else {
-                    flagColumnNames.add(FlagColumn);
-                }
+                flagColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, FlagColumn);
             }
             // No existing table was found and a new table should be created with columns for data values and
             // flags

@@ -442,7 +442,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(singleColumn_JPanel, new JLabel ( "Optional - include missing values (default=" + __command._True + ")."),
         3, ySingleColumn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel,new JLabel( "Data column(s) in table:"),
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Data value column(s) in table:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueColumn_JTextField = new TSFormatSpecifiersJPanel(10);
     __ValueColumn_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");

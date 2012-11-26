@@ -65,6 +65,7 @@ throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
 	String TableID = parameters.getValue ( "TableID" );
 	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+	String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -140,12 +141,24 @@ throws InvalidCommandParameterException
                         message, "Specify the parameter as " + _False + " or " + _True + "."));
         }
     }
+    
+    if ( (AlwaysQuoteStrings != null) && !AlwaysQuoteStrings.equals("") ) {
+        if ( !AlwaysQuoteStrings.equalsIgnoreCase(_False) && !AlwaysQuoteStrings.equalsIgnoreCase(_True) ) {
+            message = "The AlwaysQuoteStrings parameter (" + AlwaysQuoteStrings + ") must be " + _False +
+            " (default) or " + _True + ".";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the parameter as " + _False + " or " + _True + "."));
+        }
+    }
 
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "TableID" );
 	valid_Vector.add ( "WriteHeaderComments" );
+	valid_Vector.add ( "AlwaysQuoteStrings" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -229,6 +242,11 @@ CommandWarningException, CommandException
     if ( (WriteHeaderComments != null) && WriteHeaderComments.equalsIgnoreCase(_False) ) {
         WriteHeaderComments_boolean = false;
     }
+    String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
+    boolean AlwaysQuoteStrings_boolean = true;
+    if ( (AlwaysQuoteStrings != null) && AlwaysQuoteStrings.equalsIgnoreCase(_False) ) {
+        AlwaysQuoteStrings_boolean = false;
+    }
 
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
@@ -275,7 +293,7 @@ CommandWarningException, CommandException
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
 		warning_count = writeTable ( table, OutputFile_full, WriteHeaderComments_boolean,
-		    warning_level, command_tag, warning_count );
+		    AlwaysQuoteStrings_boolean, warning_level, command_tag, warning_count );
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
 	}
@@ -311,6 +329,7 @@ public String toString ( PropList parameters )
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String TableID = parameters.getValue ( "TableID" );
 	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+	String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TableID != null) && (TableID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -330,6 +349,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "WriteHeaderComments=\"" + WriteHeaderComments + "\"" );
     }
+    if ( (AlwaysQuoteStrings != null) && (AlwaysQuoteStrings.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AlwaysQuoteStrings=\"" + AlwaysQuoteStrings + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
@@ -339,10 +364,12 @@ Write a table to a delimited file.
 @param OutputFile name of file to write.
 @param writeHeaderComments indicates whether header comments should be written (some software like Esri ArcGIS
 do not handle comments)
+@param alwaysQuoteStrings if true, then always surround strings with double quotes; if false strings will only
+be quoted when they include the delimiter
 @exception IOException if there is an error writing the file.
 */
 private int writeTable ( DataTable table, String OutputFile, boolean writeHeaderComments,
-		int warning_level, String command_tag, int warning_count )
+	boolean alwaysQuoteStrings, int warning_level, String command_tag, int warning_count )
 throws IOException
 {	String routine = getClass().getName() + ".writeTable";
 	String message;
@@ -383,7 +410,7 @@ throws IOException
 	
 	try {
 		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
-		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList, "#");
+		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList, "#", alwaysQuoteStrings );
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table to file \"" + OutputFile + "\" (" + e + ")";

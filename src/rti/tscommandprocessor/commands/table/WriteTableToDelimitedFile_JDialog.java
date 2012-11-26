@@ -55,6 +55,7 @@ private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
+private SimpleJComboBox __AlwaysQuoteStrings_JComboBox = null;
 private String __working_dir = null; // Working directory.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -149,6 +150,7 @@ private void checkInput ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+    String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -160,6 +162,9 @@ private void checkInput ()
     }
     if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
         parameters.set ( "WriteHeaderComments", WriteHeaderComments );
+    }
+    if ( (AlwaysQuoteStrings != null) && (AlwaysQuoteStrings.length() > 0) ) {
+        parameters.set ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
     }
 	try {
 	    // This will warn the user...
@@ -180,9 +185,11 @@ private void commitEdits ()
 {   String TableID = __TableID_JComboBox.getSelected();   
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+	String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
+	__command.setCommandParameter ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
 }
 
 /**
@@ -218,12 +225,16 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write a table to a delimited format file, which can be specified using a full or " +
 		"relative path (relative to the working directory)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The delimiter is a comma, header comment lines start with #, " +
+        "and column headings are the first non-comment line."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 if ( __working_dir != null ) {
      	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
@@ -266,6 +277,22 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
          1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Optional - should header comments be written? (default=" + __command._True + ")."),
+         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+     
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Always quote strings?:"), 
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __AlwaysQuoteStrings_JComboBox = new SimpleJComboBox ( false );
+     List<String> alwaysQuoteStringsList = new Vector();
+     alwaysQuoteStringsList.add("");
+     alwaysQuoteStringsList.add(__command._False);
+     alwaysQuoteStringsList.add(__command._True);
+     __AlwaysQuoteStrings_JComboBox.setData ( alwaysQuoteStringsList );
+     __AlwaysQuoteStrings_JComboBox.select(0);
+     __AlwaysQuoteStrings_JComboBox.addItemListener (this);
+     JGUIUtil.addComponent(main_JPanel, __AlwaysQuoteStrings_JComboBox,
+         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Optional - always quote strings? (default=" + __command._False + ", only quote if delimiter in string)."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
      
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -349,6 +376,7 @@ private void refresh ()
 	String OutputFile = "";
     String TableID = "";
     String WriteHeaderComments = "";
+    String AlwaysQuoteStrings = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -358,6 +386,7 @@ private void refresh ()
 		OutputFile = parameters.getValue ( "OutputFile" );
         TableID = parameters.getValue ( "TableID" );
         WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+        AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -394,11 +423,28 @@ private void refresh ()
                   "WriteHeaderComments parameter \"" + WriteHeaderComments + "\".  Select a different value or Cancel." );
             }
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__AlwaysQuoteStrings_JComboBox, AlwaysQuoteStrings, JGUIUtil.NONE, null, null ) ) {
+            __AlwaysQuoteStrings_JComboBox.select ( AlwaysQuoteStrings );
+        }
+        else {
+            if ( (AlwaysQuoteStrings == null) || AlwaysQuoteStrings.equals("") ) {
+                // New command...select the default...
+                if ( __AlwaysQuoteStrings_JComboBox.getItemCount() > 0 ) {
+                    __AlwaysQuoteStrings_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                  "AlwaysQuoteStrings parameter \"" + AlwaysQuoteStrings + "\".  Select a different value or Cancel." );
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
     WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
+    AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
 	if ( TableID != null ) {
@@ -406,6 +452,9 @@ private void refresh ()
 	}
     if ( WriteHeaderComments != null ) {
         parameters.add ( "WriteHeaderComments=" + WriteHeaderComments );
+    }
+    if ( AlwaysQuoteStrings != null ) {
+        parameters.add ( "AlwaysQuoteStrings=" + AlwaysQuoteStrings );
     }
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {

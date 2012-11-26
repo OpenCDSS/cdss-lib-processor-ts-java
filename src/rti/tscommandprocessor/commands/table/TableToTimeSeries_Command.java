@@ -1367,8 +1367,10 @@ throws IOException
         // Use empty array
     }
     // Loop through the data records and get the maximum and minimum date/times, as well as the unique
-    // locations, needed to initialize the time series
-    Message.printStatus(2,routine,"Table="+table);
+    // locations, needed to initialize the time series.
+    // TODO SAM 2012-11-25 If single column data, the date/times should
+    // correspond to the unique list of time series, but a performance hit to figure out.
+    //Message.printStatus(2,routine,"Table="+table);
     int nRecords = 0;
     if ( readData ) {
         nRecords = table.getNumberOfRecords();
@@ -1442,9 +1444,6 @@ throws IOException
     List<String>scenariosForTS = createScenariosRuntime ( singleColumn, locationIdsFromTable,
         valueColumns.size(), scenarios);
     // Create units for each time series
-    for ( int i = 0; i < units.size(); i++ ) {
-        Message.printStatus(2, routine, "Units[" + i + "] = " + units.get(i) );
-    }
     List<String>unitsForTS = createUnitsRuntime ( singleColumn, locationIdsFromTable,
         valueColumns.size(), units );
     Message.printStatus(2,routine,"Sizes: locationIdsForTS=" + locationIdsForTS.size() +

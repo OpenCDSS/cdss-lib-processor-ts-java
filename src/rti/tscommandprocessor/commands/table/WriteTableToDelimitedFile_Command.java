@@ -243,9 +243,9 @@ CommandWarningException, CommandException
         WriteHeaderComments_boolean = false;
     }
     String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
-    boolean AlwaysQuoteStrings_boolean = true;
-    if ( (AlwaysQuoteStrings != null) && AlwaysQuoteStrings.equalsIgnoreCase(_False) ) {
-        AlwaysQuoteStrings_boolean = false;
+    boolean AlwaysQuoteStrings_boolean = false; // Default
+    if ( (AlwaysQuoteStrings != null) && AlwaysQuoteStrings.equalsIgnoreCase(_True) ) {
+        AlwaysQuoteStrings_boolean = true;
     }
 
     PropList request_params = new PropList ( "" );

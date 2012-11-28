@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.reclamationhdb;
 
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
 import riverside.datastore.DataStore;
 import riverside.datastore.DataStoreFactory;
 
@@ -18,7 +19,7 @@ Create a ReclamationHDBDataStore instance and open the encapsulated ReclamationH
 properties.
 */
 public DataStore create ( PropList props )
-{
+{   String routine = getClass().getName() + ".create";
     String name = props.getValue ( "Name" );
     String description = props.getValue ( "Description" );
     if ( description == null ) {
@@ -43,6 +44,7 @@ public DataStore create ( PropList props )
     }
     catch ( Exception e ) {
         // TODO SAM 2010-09-02 Wrap the exception because need to move from default Exception
+        Message.printWarning(3,routine,e);
         throw new RuntimeException ( "Error opening database connection", e );
     }
 }

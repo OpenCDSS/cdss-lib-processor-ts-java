@@ -669,6 +669,7 @@ public void readGlobalData()
         __databaseParameterList = readRefDbParameterList();
     }
     catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading database parameters (" + e + ").");
     }
     // Data types
@@ -676,6 +677,7 @@ public void readGlobalData()
         __dataTypeList = readHdbDataTypeList();
     }
     catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading data types (" + e + ").");
     }
     // Loading applications needed to convert "TSTool" to HDB identifier for writing data
@@ -683,6 +685,7 @@ public void readGlobalData()
         __loadingApplicationList = readHdbLoadingApplicationList();
     }
     catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading loading applications (" + e + ").");
     }
     // Validation flags are used when writing time series
@@ -690,6 +693,7 @@ public void readGlobalData()
         __validationList = readHdbValidationList();
     }
     catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading validation flags (" + e + ").");
     }
     // Models, used when writing time series
@@ -697,6 +701,7 @@ public void readGlobalData()
         __modelList = readHdbModelList();
     }
     catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading models (" + e + ").");
     }
 }

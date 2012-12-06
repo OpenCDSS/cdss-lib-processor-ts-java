@@ -408,8 +408,9 @@ throws MalformedURLException, IOException, Exception
         throw new IOException ( "Error retrieving data:  " + resultString + " (" + resultString + ")." );
     }
     else {
-        // Save the output to a file if requested
-        if ( (outputFile != null) && !outputFile.equals("") ) {
+        // Save the output to a file if requested - only if reading data because don't want file to be
+        // clobbered during TSTool discovery mode
+        if ( readData && (outputFile != null) && !outputFile.equals("") ) {
             try {
                 IOUtil.writeFile(outputFile, resultString);
                 Message.printStatus ( 2, routine, "Wrote output to file \"" + outputFile + "\"." );

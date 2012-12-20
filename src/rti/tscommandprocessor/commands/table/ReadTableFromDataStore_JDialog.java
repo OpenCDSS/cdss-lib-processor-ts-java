@@ -538,6 +538,9 @@ private void populateDataStoreTableChoices ( DMI dmi )
     for ( String table : tableList ) {
         __DataStoreTable_JComboBox.add( table );
     }
+    // Set large so that new table list from selected datastore does not found up layout
+    String longest = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    __DataStoreTable_JComboBox.setPrototypeDisplayValue(longest);
     // Select first choice (may get reset from existing parameter values).
     __DataStoreTable_JComboBox.select ( null );
     if ( __DataStoreTable_JComboBox.getItemCount() > 0 ) {

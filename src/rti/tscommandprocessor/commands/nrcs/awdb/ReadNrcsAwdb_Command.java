@@ -24,6 +24,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
@@ -37,7 +38,7 @@ import RTi.Util.Time.TimeInterval;
 This class initializes, checks, and runs the ReadNrcsAwdb() command.
 */
 public class ReadNrcsAwdb_Command extends AbstractCommand
-implements Command, CommandDiscoverable
+implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -688,7 +689,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

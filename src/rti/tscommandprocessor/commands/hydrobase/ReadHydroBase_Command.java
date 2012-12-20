@@ -1110,9 +1110,13 @@ CommandWarningException, CommandException
                         // Well with a different identifier to display.
                         id = well.getIdentifier();
                     }
-                    else {
+                    else if ( (well.getWD() > 0) && (well.getID() > 0) ) {
                         // A structure other than wells...
                         id = HydroBase_WaterDistrict.formWDID (wdid_length, well.getWD(), well.getID() );
+                    }
+                    else {
+                        // A structure other than wells...
+                        id = well.formatLatLongID();
                     }
                     tsident_string = id 
                         + "." + well.getData_source() 

@@ -398,6 +398,7 @@ throws IOException
     // Set the time series period and optionally read the data
 
     String noDataValue = getSingleElementValue(variableElement, "noDataValue" );
+    Message.printStatus(2,routine,"noDataValue string is \"" + noDataValue + "\"");
     if ( Message.isDebugOn ) {
         Message.printDebug(1,routine,"Parsing values...");
     }
@@ -576,7 +577,7 @@ don't warnings will be generated)
 private void readTimeSeries_ParseValues(WaterMLVersion watermlVersion, TS ts, Element valuesElement,
     String noDataValue, DateTime readStart, DateTime readEnd, boolean readData, boolean requireDataToMatchInterval )
 throws IOException
-{
+{   String routine = getClass().getName() + ".readTimeSeries_ParseValues";
     DateTime dataStart = null;
     // TODO SAM 2011-01-11 Why not just used beginDateTime and endDateTime for the period?
     NodeList valuelist = valuesElement.getElementsByTagNameNS("*","value");
@@ -641,6 +642,23 @@ throws IOException
     catch ( Exception e ) {
         // Should not happen
     }
+    // noDataValue as string may be something like -999999.0 but -999999 sometimes shows up in file
+    // Create an integer version of the string.  This adds a bit of overhead checking values but is necessary.
+    String noDataValueInt = noDataValue;
+    try {
+        double d = Double.parseDouble(noDataValue);
+        if ( d < 0.0 ) {
+            d = d - .01;
+        }
+        else if ( d > 0.0 ) {
+            d = d + .01;
+        }
+        noDataValueInt = "" + (int)d;
+        Message.printStatus(2,routine,"Alternative noDataValue string is \"" + noDataValueInt + "\"");
+    }
+    catch ( NumberFormatException e ){
+        noDataValueInt = noDataValue;
+    }
     if ( readData ) {
         ts.allocateDataSpace();
         for (int i = 0; i < valuelist.getLength(); i++) {
@@ -668,7 +686,8 @@ throws IOException
                 }
                 dataFlag = el.getAttribute("qualifiers");
                 dataValueString = el.getTextContent();
-                if ( dataValueString.equals(noDataValue) ) {
+                if ( dataValueString.equals(noDataValue) || dataValueString.equals(noDataValueInt)) {
+                    // Missing
                     dataValue = Double.NaN;
                 }
                 else {

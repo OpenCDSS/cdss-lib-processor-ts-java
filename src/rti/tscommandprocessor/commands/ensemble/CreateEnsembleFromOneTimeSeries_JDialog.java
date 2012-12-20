@@ -37,6 +37,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.YearType;
 
 /**
 Command editor dialog for the CreateEnsembleFromOneTimeSeries() command.
@@ -55,9 +56,10 @@ private JTextField __InputEnd_JTextField;
 private JTextField __EnsembleID_JTextField;
 private JTextField __EnsembleName_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private JTextField __TraceLength_JTextField=null; // Total period length.
 private SimpleJComboBox __ShiftDataHow_JComboBox = null;// Indicates how to handle shift.
 private JTextField __ReferenceDate_JTextField = null; // Reference date.
-private JTextField __TraceLength_JTextField=null; // Total period length.
+private SimpleJComboBox __OutputYearType_JComboBox = null;
 
 private boolean __error_wait = false;
 private boolean __first_time = true;
@@ -138,6 +140,7 @@ private void checkInput ()
     String Alias = __Alias_JTextField.getText().trim();
     String TraceLength = __TraceLength_JTextField.getText().trim();
     String ReferenceDate = __ReferenceDate_JTextField.getText().trim();
+    String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
 
     __error_wait = false;
@@ -166,6 +169,9 @@ private void checkInput ()
     if ( ReferenceDate.length() > 0 ) {
         parameters.set ( "ReferenceDate", ReferenceDate );
     }
+    if ( OutputYearType.length() > 0 ) {
+        parameters.set ( "OutputYearType", OutputYearType );
+    }
     if ( ShiftDataHow.length() > 0 ) {
         parameters.set ( "ShiftDataHow", ShiftDataHow );
     }
@@ -185,13 +191,14 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {   String TSID = __TSID_JComboBox.getSelected();
-    String TraceLength = __TraceLength_JTextField.getText().trim();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
     String EnsembleID = __EnsembleID_JTextField.getText().trim();
     String EnsembleName = __EnsembleName_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
+    String TraceLength = __TraceLength_JTextField.getText().trim();
     String ReferenceDate = __ReferenceDate_JTextField.getText().trim();
+    String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
     
     __command.setCommandParameter ( "TSID", TSID );
@@ -202,6 +209,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "Alias", Alias );
     __command.setCommandParameter ( "TraceLength", TraceLength );
     __command.setCommandParameter ( "ReferenceDate", ReferenceDate );
+    __command.setCommandParameter ( "OutputYearType", OutputYearType );
     __command.setCommandParameter ( "ShiftDataHow", ShiftDataHow );
 }
 
@@ -331,7 +339,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=1Year)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Reference date:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ReferenceDate_JTextField = new JTextField ( 10 );
@@ -340,6 +348,20 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=Jan 1 of first year)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Output year type:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputYearType_JComboBox = new SimpleJComboBox ( false );
+    __OutputYearType_JComboBox.add ( "" );
+    __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
+    __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
+    __OutputYearType_JComboBox.add ( "" + YearType.WATER );
+    __OutputYearType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - causes sequence number to agree with year type."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Shift data how?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -428,7 +450,8 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String TSID = "";
+{	String routine = getClass().getName() + ".refresh";
+    String TSID = "";
     String InputStart = "";
     String InputEnd = "";
     String EnsembleID = "";
@@ -436,6 +459,7 @@ private void refresh ()
     String Alias = "";
 	String TraceLength = "";
 	String ReferenceDate = "";
+	String OutputYearType = "";
 	String ShiftDataHow = "";
     PropList parameters = null;      // Parameters as PropList.
     if ( __first_time ) {
@@ -450,6 +474,7 @@ private void refresh ()
         Alias = parameters.getValue("Alias");
         TraceLength = parameters.getValue("TraceLength");
         ReferenceDate = parameters.getValue("ReferenceDate");
+        OutputYearType = parameters.getValue ( "OutputYearType" );
         ShiftDataHow = parameters.getValue("ShiftDataHow");
 
         // Now select the item in the list.  If not a match, print a warning.
@@ -486,6 +511,21 @@ private void refresh ()
         if ( ReferenceDate != null ) {
             __ReferenceDate_JTextField.setText ( ReferenceDate );
         }
+        if ( OutputYearType == null ) {
+            // Select default...
+            __OutputYearType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __OutputYearType_JComboBox,OutputYearType, JGUIUtil.NONE, null, null ) ) {
+                __OutputYearType_JComboBox.select ( OutputYearType );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nOutputYearType value \"" + OutputYearType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( JGUIUtil.isSimpleJComboBoxItem( __ShiftDataHow_JComboBox, ShiftDataHow, JGUIUtil.NONE, null, null ) ) {
             __ShiftDataHow_JComboBox.select ( ShiftDataHow );
         }
@@ -503,14 +543,15 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
     TSID = __TSID_JComboBox.getSelected();
-    TraceLength = __TraceLength_JTextField.getText().trim();
-    ReferenceDate = __ReferenceDate_JTextField.getText().trim();
-    ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
     InputStart = __InputStart_JTextField.getText().trim();
     InputEnd = __InputEnd_JTextField.getText().trim();
     EnsembleID = __EnsembleID_JTextField.getText().trim();
     EnsembleName = __EnsembleName_JTextField.getText().trim();
     Alias = __Alias_JTextField.getText().trim();
+    TraceLength = __TraceLength_JTextField.getText().trim();
+    ReferenceDate = __ReferenceDate_JTextField.getText().trim();
+    OutputYearType = __OutputYearType_JComboBox.getSelected();
+    ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
     parameters = new PropList ( __command.getCommandName() );
     parameters.add ( "TSID=" + TSID );
     parameters.add ( "InputStart=" + InputStart );
@@ -520,6 +561,7 @@ private void refresh ()
     parameters.add ( "Alias=" + Alias );
     parameters.add ( "TraceLength=" + TraceLength );
     parameters.add ( "ReferenceDate=" + ReferenceDate );
+    parameters.add ( "OutputYearType=" + OutputYearType );
     parameters.add ( "ShiftDataHow=" + ShiftDataHow );
     __command_JTextArea.setText( __command.toString ( parameters ) );
 }

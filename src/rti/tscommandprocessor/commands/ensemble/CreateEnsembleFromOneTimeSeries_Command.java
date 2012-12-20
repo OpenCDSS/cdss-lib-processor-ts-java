@@ -18,6 +18,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.YearType;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
@@ -81,11 +82,12 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
     
     String TSID = parameters.getValue ( "TSID" );
-    String TraceLength = parameters.getValue ( "TraceLength" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+    String TraceLength = parameters.getValue ( "TraceLength" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
+    String OutputYearType = parameters.getValue ( "OutputYearType" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
     
     if ( (TSID == null) || (TSID.length() == 0) ) {
@@ -153,6 +155,27 @@ throws InvalidCommandParameterException
                     message, "Specify a valid date/time (or blank) for the reference date." ) );
         }
     }
+    
+    if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
+        try {
+            YearType.valueOfIgnoreCase(OutputYearType);
+        }
+        catch ( Exception e ) {
+            message = "The output year type (" + OutputYearType + ") is invalid.";
+            warning += "\n" + message;
+            StringBuffer b = new StringBuffer();
+            List<YearType> values = YearType.getYearTypeChoices();
+            for ( YearType t : values ) {
+                if ( b.length() > 0 ) {
+                    b.append ( ", " );
+                }
+                b.append ( t.toString() );
+            }
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
+        }
+    }
 
     if ( (ShiftDataHow != null) && (ShiftDataHow.length() != 0) &&
             !ShiftDataHow.equalsIgnoreCase(_ShiftToReference) &&
@@ -175,6 +198,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Alias" );
 	valid_Vector.add ( "TraceLength" );
 	valid_Vector.add ( "ReferenceDate" );
+	valid_Vector.add ( "OutputYearType" );
     valid_Vector.add ( "ShiftDataHow" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -269,8 +293,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
@@ -303,6 +326,11 @@ CommandWarningException, CommandException
     }
     String TraceLength = parameters.getValue ( "TraceLength" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
+    String OutputYearType = parameters.getValue( "OutputYearType" );
+    YearType outputYearType = YearType.CALENDAR;
+    if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
+        outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
+    }
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
 
     TS ts = null;
@@ -489,7 +517,7 @@ CommandWarningException, CommandException
     try {
         TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
         tslist = util.getTracesFromTS ( ts, TraceLength, ReferenceDate_DateTime,
-            ShiftDataHow, InputStart_DateTime, InputEnd_DateTime, Alias, createData );
+            outputYearType, ShiftDataHow, InputStart_DateTime, InputEnd_DateTime, Alias, createData );
     }
     catch ( Exception e ) {
         message = "Unexpected error creating traces from time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -573,6 +601,7 @@ public String toString ( PropList parameters )
     String EnsembleName = parameters.getValue ( "EnsembleName" );
     String Alias = parameters.getValue ( "Alias" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
+    String OutputYearType = parameters.getValue ( "OutputYearType" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
@@ -622,6 +651,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "ReferenceDate=\"" + ReferenceDate + "\"");
+    }
+    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputYearType=" + OutputYearType );
     }
     if ( (ShiftDataHow != null) && (ShiftDataHow.length() > 0) ) {
         if ( b.length() > 0 ) {

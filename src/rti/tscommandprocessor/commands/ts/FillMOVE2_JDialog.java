@@ -514,9 +514,9 @@ private void initialize ( JFrame parent, FillMOVE2_Command command, List<String>
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Dependent analysis end:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DependentAnalysisStart_JTextField = new JTextField ( "", 20 );
-    __DependentAnalysisStart_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __DependentAnalysisStart_JTextField,
+    __DependentAnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __DependentAnalysisEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DependentAnalysisEnd_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - ending date/time (default=full period)."),

@@ -703,7 +703,8 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             List<BigDecimal> values = data.getValues();
                             List<String> flags = data.getFlags();
                             int nValues = values.size();
-                            Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet );
+                            Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet +
+                                " starting on " + data.getBeginDate() + " ending on " + data.getEndDate() );
                             // If a period is not requested, set to the available StationElement data period
                             if ( readStartReq == null ) {
                                 DateTime readStart = DateTime.parse(beginDateString);
@@ -716,9 +717,12 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             }
                             ts.allocateDataSpace();
                             // Loop through the data values and set the values and the flag
-                            DateTime dt = new DateTime(ts.getDate1());
+                            // Use the dates returned in the data list
+                            DateTime dt = DateTime.parse(data.getBeginDate());
+                            dt.setPrecision(ts.getDate1().getPrecision());
                             BigDecimal value;
                             String flag;
+                            boolean fixNrcsFeb29Bug = true; // Needed to fix NRCS web service bug
                             for ( int i = 0; i < nValues; i++, dt.addInterval(intervalBase,intervalMult) ) {
                                 value = values.get(i);
                                 flag = flags.get(i);
@@ -726,6 +730,15 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                     // Might still have a flag
                                     if ( (flag != null) && !flag.equals("") ) {
                                         ts.setDataValue(dt,ts.getMissing(),flag,0);
+                                    }
+                                    if ( fixNrcsFeb29Bug && (intervalBase == TimeInterval.DAY) && !dt.isLeapYear() &&
+                                        (dt.getMonth() == 3) && (dt.getDay() == 1) ) {
+                                        // Web service array thinks position is Feb 29 even though it should be Mar 1
+                                        // Skip the value and turn back the date so it will increment properly when
+                                        // moving forward
+                                        dt.addInterval(intervalBase,-intervalMult);
+                                        Message.printStatus(2, routine, "Date " + dt +
+                                            " value=null - treating as Feb 29 placeholder" );
                                     }
                                 }
                                 else {
@@ -736,6 +749,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                     else {
                                         ts.setDataValue(dt, value.doubleValue(),flag,0);
                                     }
+                                    //Message.printStatus(2, routine, "Date " + dt + " value=" + value.doubleValue());
                                 }
                             }
                         }

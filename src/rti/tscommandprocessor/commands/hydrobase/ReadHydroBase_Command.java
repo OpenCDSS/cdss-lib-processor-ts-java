@@ -1,31 +1,3 @@
-//------------------------------------------------------------------------------
-// readHydroBase_Command - handle the readHydroBase() and
-//				TS Alias = readHydroBase() commands
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2006-04-02	Steven A. Malers, RTi	* Initial version.  Copy and modify
-//					  readStateMod().
-//					* Enable parameters to fill daily
-//					  diversion data.
-//					* Enable parameters to fill diversions
-//					  using comments.
-// 2006-04-27	SAM, RTi		* As per Ray Bennett, fill with
-//					  diversion comments should NOT be on
-//					  by default.
-//					* As per Ray Bennett, fill daily by
-//					  carry forward should ALWAYS be done
-//					  and not be an option - comment out the
-//					  code in case it needs to be enabled
-//					  later.
-// 2007-02-11	SAM, RTi		Remove dependence on TSCommandProcessor.
-//					Use the more generic CommandProcessor interface instead.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.hydrobase;
 
 import java.util.List;
@@ -726,6 +698,7 @@ CommandWarningException, CommandException
     	            getCommandProcessor()).getDataStoreForName( DataStore, HydroBaseDataStore.class );
     	        if ( dataStore != null ) {
     	            Message.printStatus(2, routine, "Selected data store is \"" + dataStore.getName() + "\"." );
+    	            hbdmi = (HydroBaseDMI)dataStore.getDMI();
     	        }
     	        else {
                     message = "Cannot get HydroBase data store for \"" + DataStore + "\".";
@@ -820,13 +793,14 @@ CommandWarningException, CommandException
 			HydroBaseDMI hbdmi = null;
 			HydroBaseDataStore hbDataStore = null;
 			// First try to get from the DataStore list...
-			String DataStore = InputName;
+			String DataStore = parameters.getValue ( "DataStore" );
 			DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
 		         DataStore, HydroBaseDataStore.class );
 	        if ( dataStore != null ) {
 	            // Found a datastore so use it...
 	            hbDataStore = (HydroBaseDataStore)dataStore;
 	            hbdmi = (HydroBaseDMI)hbDataStore.getDMI();
+	            //Message.printStatus(2,routine,"Using \"HydroBase\" datastore.");
 	        }
 	        else {
     			// Also try to get DMI from legacy list...
@@ -839,6 +813,7 @@ CommandWarningException, CommandException
                             message, "Verify that a HydroBase database connection has been opened." ) );
     				throw new Exception ( message );
     			}
+    			//Message.printStatus(2,routine,"Using HydroBase input type.");
     			List<HydroBaseDMI> hbdmi_Vector = (List<HydroBaseDMI>)o;
     			hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, InputName );
     			// Create a temporary data store to pass to following code

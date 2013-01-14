@@ -4123,7 +4123,7 @@ throws Exception
 				if ( readData ) {
 				    ts.allocateDataSpace();
 				}
-				List v = StringUtil.breakStringList ( tsidentString, "~", 0 );
+				List<String> v = StringUtil.breakStringList ( tsidentString, "~", 0 );
 				// Version without the input...
 				String tsident_string2;
 				tsident_string2 = (String)v.get(0);
@@ -4337,6 +4337,7 @@ throws Exception
     }
     else if ((dataStore != null) && (dataStore instanceof HydroBaseDataStore) ) {
         // New style TSID~dataStore
+        // Check this first before input type because datastore should take precedence if both are named "HydroBase"
         HydroBaseDataStore hbds = (HydroBaseDataStore)dataStore;
         try {
             HydroBaseDMI hbdmi = (HydroBaseDMI)hbds.getDMI();

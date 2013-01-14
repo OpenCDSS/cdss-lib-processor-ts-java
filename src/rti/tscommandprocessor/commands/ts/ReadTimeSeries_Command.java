@@ -287,7 +287,7 @@ private void runCommandInternal ( int command_number, CommandPhaseType commandPh
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{	String routine = "ReadTimeSeriesCommand_Command.runCommand", message;
+{	String routine = "ReadTimeSeries_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;

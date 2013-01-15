@@ -94,7 +94,7 @@ throws InvalidCommandParameterException
 	}
 	if ( (FormatterType != null) && !FormatterType.equals("") ) {
 	    // Check the value given the type - only support types that are enabled in this command.
-	    if ( FormatterType.equalsIgnoreCase(""+DateTimeFormatterType.C) ) {
+	    if ( !FormatterType.equalsIgnoreCase(""+DateTimeFormatterType.C) ) {
 	        message = "The date/time formatter \"" + FormatterType + "\" is not recognized.";
 	        warning += "\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,

@@ -529,7 +529,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JLabel DateTimeFormat_JLabel = new JLabel ("Date/time format:");
     JGUIUtil.addComponent(main_JPanel, DateTimeFormat_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel(20,true,true);
+    __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel(20,true,true,null);
     __DateTimeFormat_JPanel.addKeyListener (this);
     __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
     __DateTimeFormat_JPanel.getDocument().addDocumentListener(this); // Respond to changes in text field contents

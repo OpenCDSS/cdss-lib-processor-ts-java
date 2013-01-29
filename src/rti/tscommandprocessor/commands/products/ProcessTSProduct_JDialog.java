@@ -88,6 +88,8 @@ private JTextArea	__command_JTextArea=null;
 private JTextField	__TSProductFile_JTextField=null;
 private JTextField	__OutputFile_JTextField=null;
 private JTextField  __DefaultSaveFile_JTextField=null;
+private JTextField __VisibleStart_JTextField = null;
+private JTextField __VisibleEnd_JTextField = null;
 private SimpleJComboBox	__RunMode_JComboBox = null;
 private SimpleJComboBox	__View_JComboBox = null;
 private boolean		__error_wait = false;	// Is there an error to be cleared up?
@@ -185,6 +187,8 @@ private void checkInput ()
 	String View = __View_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
+    String VisibleStart = __VisibleStart_JTextField.getText().trim();
+    String VisibleEnd = __VisibleEnd_JTextField.getText().trim();
 	__error_wait = false;
 	if ( TSProductFile.length() > 0 ) {
 		props.set ( "TSProductFile", TSProductFile );
@@ -200,6 +204,12 @@ private void checkInput ()
 	}
     if ( DefaultSaveFile.length() > 0 ) {
         props.set ( "DefaultSaveFile", DefaultSaveFile );
+    }
+    if ( VisibleStart.length() > 0 ) {
+        props.set ( "VisibleStart", VisibleStart );
+    }
+    if ( VisibleEnd.length() > 0 ) {
+        props.set ( "VisibleEnd", VisibleEnd );
     }
 	try {
 	    // This will warn the user...
@@ -221,11 +231,15 @@ private void commitEdits ()
 	String View = __View_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
+    String VisibleStart = __VisibleStart_JTextField.getText().trim();
+    String VisibleEnd = __VisibleEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSProductFile", TSProductFile );
 	__command.setCommandParameter ( "RunMode", RunMode );
 	__command.setCommandParameter ( "View", View );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "DefaultSaveFile", DefaultSaveFile );
+    __command.setCommandParameter ( "VisibleStart", VisibleStart );
+    __command.setCommandParameter ( "VisibleEnd", VisibleEnd );
 }
 
 /**
@@ -339,6 +353,26 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel,
         new JLabel ( "Optional - file to save during interactive editing (*.dv)." ), 
         2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Visible start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __VisibleStart_JTextField = new JTextField (20);
+    __VisibleStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __VisibleStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - start of (initial) visible period (default=all data visible)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Visible end:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __VisibleEnd_JTextField = new JTextField (20);
+    __VisibleEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __VisibleEnd_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - end of (initial) visible period (default=all data visible)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -409,7 +443,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -424,6 +458,8 @@ private void refresh ()
 	String View = "";
 	String OutputFile = "";
 	String DefaultSaveFile = "";
+    String VisibleStart = "";
+    String VisibleEnd = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -434,6 +470,8 @@ private void refresh ()
 		View = props.getValue ( "View" );
 		OutputFile = props.getValue("OutputFile");
 		DefaultSaveFile = props.getValue("DefaultSaveFile");
+		VisibleStart = props.getValue ( "VisibleStart" );
+		VisibleEnd = props.getValue ( "VisibleEnd" );
 		if ( TSProductFile != null ) {
 			__TSProductFile_JTextField.setText( TSProductFile );
 		}
@@ -478,6 +516,12 @@ private void refresh ()
 	    if ( DefaultSaveFile != null ) {
 	         __DefaultSaveFile_JTextField.setText( DefaultSaveFile );
 	    }
+        if ( VisibleStart != null ) {
+            __VisibleStart_JTextField.setText (VisibleStart);
+        }
+        if ( VisibleEnd != null ) {
+            __VisibleEnd_JTextField.setText (VisibleEnd);
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TSProductFile = __TSProductFile_JTextField.getText().trim();
@@ -485,12 +529,16 @@ private void refresh ()
 	View = __View_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
+    VisibleStart = __VisibleStart_JTextField.getText().trim();
+    VisibleEnd = __VisibleEnd_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSProductFile=" + TSProductFile );
 	props.add ( "RunMode=" + RunMode );
 	props.add ( "View=" + View );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "DefaultSaveFile=" + DefaultSaveFile );
+	props.add ( "VisibleStart=" + VisibleStart );
+	props.add ( "VisibleEnd=" + VisibleEnd );
 	__command_JTextArea.setText(__command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
@@ -507,8 +555,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()
@@ -540,4 +587,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end processTSProduct_JDialog
+}

@@ -1,22 +1,3 @@
-//------------------------------------------------------------------------------
-// processTSProduct_Command - handle the processTSProduct() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-10-18	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					writeStateMod().
-// 2005-11-04	SAM, RTi		Add annotation provider hooks.
-// 2005-11-07	J. Thomas Sapienza, RTi	Completed code for adding annotations 
-//					via annotation providers.
-// 2007-02-09	SAM, RTi		Remove direct use of TSCommandProcessor.
-//					Cast to a TSSupplier instead of TSCommandProcessor.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.products;
 
 import java.io.File;
@@ -42,6 +23,7 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -55,9 +37,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the ProcessTSProduct() command.
-</p>
 */
 public class ProcessTSProduct_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -91,8 +71,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -100,6 +79,8 @@ throws InvalidCommandParameterException
 	String RunMode = parameters.getValue ( "RunMode" );
 	String View = parameters.getValue ( "View" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String VisibleStart = parameters.getValue ( "VisibleStart" );
+    String VisibleEnd = parameters.getValue ( "VisibleEnd" );
 	String warning = "";
     String message;
 	
@@ -114,47 +95,44 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a time series product file." ) );
 	}
-	else {	String working_dir = null;
-			try { Object o = processor.getPropContents ( "WorkingDir" );
-				// Working directory is available so use it...
-				if ( o != null ) {
-					working_dir = (String)o;
-				}
+	else {
+	    String working_dir = null;
+		try { Object o = processor.getPropContents ( "WorkingDir" );
+			// Working directory is available so use it...
+			if ( o != null ) {
+				working_dir = (String)o;
 			}
-			catch ( Exception e ) {
-				// Not fatal, but of use to developers.
-				message = "Error requesting WorkingDir from processor.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Software error - report problem to support." ) );
-
-			}
+		}
+		catch ( Exception e ) {
+			// Not fatal, but of use to developers.
+			message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Software error - report problem to support." ) );
+		}
 		try {
-            String adjusted_path = IOUtil.verifyPathForOS (
-                IOUtil.adjustPath ( working_dir, TSProductFile) );
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath ( working_dir, TSProductFile) );
 			File f = new File ( adjusted_path );
 			if ( !f.exists() ) {
                 message = "The TSProduct file does not exist for: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the time series product file to process exists." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the time series product file to process exists." ) );
 			}
-			f = null;
 		}
 		catch ( Exception e ) {
             message = "The product file \"" + TSProductFile + "\" cannot be adjusted by the working directory \""
             + working_dir + "\".";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message,
-                            "Verify that the path to the time series product file and working directory are compatible." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                    "Verify that the path to the time series product file and working directory are compatible." ) );
 		}
 	}
 
-	if (	(RunMode != null) && !RunMode.equals("") &&
+	if ( (RunMode != null) && !RunMode.equals("") &&
 		!RunMode.equalsIgnoreCase(_BatchOnly) &&
 		!RunMode.equalsIgnoreCase(_GUIOnly) &&
 		!RunMode.equalsIgnoreCase(_GUIAndBatch) ) {
@@ -224,13 +202,46 @@ throws InvalidCommandParameterException
                             message, "Verify that the output file path and working directory are compatible." ) );
 		}
 	}
+	
+    if ( (VisibleStart != null) && !VisibleStart.equals("")) {
+        try {
+            DateTime datetime1 = DateTime.parse(VisibleStart);
+            if ( datetime1 == null ) {
+                throw new Exception ("bad date");
+            }
+        }
+        catch (Exception e) {
+            message = "Visible start date/time \"" + VisibleStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid Visible start date/time." ) );
+        }
+    }
+    if ( (VisibleEnd != null) && !VisibleEnd.equals("")) {
+        try {
+            DateTime datetime2 = DateTime.parse(VisibleEnd);
+            if ( datetime2 == null ) {
+                throw new Exception ("bad date");
+            }
+        }
+        catch (Exception e) {
+            message = "Visible end date/time \"" + VisibleEnd + "\" is not a valid date/time.";
+            warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid Visible end date/time." ) );
+        }
+    }
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TSProductFile" );
     valid_Vector.add ( "RunMode" );
     valid_Vector.add ( "View" );
     valid_Vector.add ( "OutputFile" );
     valid_Vector.add ( "DefaultSaveFile" );
+    valid_Vector.add ( "VisibleStart" );
+    valid_Vector.add ( "VisibleEnd" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -290,11 +301,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		super.parseCommand ( command_string );
 	}
 	else {	// Parse the old command...
-		List tokens = StringUtil.breakStringList ( command_string,
+		List<String> tokens = StringUtil.breakStringList ( command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( (tokens.size() != 4) && (tokens.size() != 5) ) {
-			message =
-			"Invalid syntax for command.  Expecting 4 parameters.";
+			message = "Invalid syntax for command.  Expecting 4 parameters.";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -337,8 +347,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "processTSProduct_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -398,25 +407,103 @@ CommandWarningException, CommandException
 	}
 
 	// Now try to process...
+	
+    String VisibleStart = parameters.getValue ( "VisibleStart" );
+    DateTime VisibleStart_DateTime = null;
+    PropList request_params = null;
+    CommandProcessorRequestResultsBean bean = null;
+    PropList bean_PropList = null;
+    if ( VisibleStart != null ) {
+        request_params = new PropList ( "" );
+        request_params.set ( "DateTime", VisibleStart );
+        try {
+            bean = processor.processRequest( "DateTime", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting DateTime(DateTime=" + VisibleStart + ") from processor.";
+            Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+        bean_PropList = bean.getResultsPropList();
+        Object prop_contents = bean_PropList.getContents ( "DateTime" );
+        if ( prop_contents == null ) {
+            message = "Null value for DateTime(DateTime=" + VisibleStart +
+                "\") returned from processor.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+        else {
+            VisibleStart_DateTime = (DateTime)prop_contents;
+        }
+    }
+    String VisibleEnd = parameters.getValue ( "VisibleEnd" );
+    DateTime VisibleEnd_DateTime = null;
+    if ( VisibleEnd != null ) {
+        request_params = new PropList ( "" );
+        request_params.set ( "DateTime", VisibleEnd );
+        try {
+            bean = processor.processRequest( "DateTime", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting DateTime(DateTime=" + VisibleEnd + ") from processor.";
+            Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+        bean_PropList = bean.getResultsPropList();
+        Object prop_contents = bean_PropList.getContents ( "DateTime" );
+        if ( prop_contents == null ) {
+            message = "Null value for DateTime(DateTime=" + VisibleEnd +
+            "\") returned from processor.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+        else {
+            VisibleEnd_DateTime = (DateTime)prop_contents;
+        }
+    }
 
     String TSProductFile_full = TSProductFile;
     String OutputFile_full = OutputFile;
 	try {
-        PropList override_props = new PropList ("TSTool");
+        PropList overrideProps = new PropList ("TSTool");
 		DateTime now = new DateTime ( DateTime.DATE_CURRENT );
 		if ( (OutputFile != null) && !OutputFile.equals("") ) {
             OutputFile_full = IOUtil.verifyPathForOS(
-                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
-			override_props.set ( "OutputFile", OutputFile_full );
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+			overrideProps.set ( "OutputFile", OutputFile_full );
 		}
-		override_props.set ( "CurrentDateTime=", now.toString() );
+		// TODO SAM 2013-01-28 Seems like the misplaced equals sign will cause a problem but
+		// need to evaluate whether fix will ALWAYS turn on current date/time vertical line
+		overrideProps.set ( "CurrentDateTime=", now.toString() );
+		if ( VisibleStart_DateTime != null ) {
+		    overrideProps.set ( "VisibleStart", "" + VisibleStart_DateTime );
+		}
+        if ( VisibleEnd_DateTime != null ) {
+            overrideProps.set ( "VisibleEnd", "" + VisibleEnd_DateTime );
+        }
 		if ( View.equalsIgnoreCase(_True) ) {
-			override_props.set ( "InitialView", "Graph" );
-			override_props.set ( "PreviewOutput", "True" );
+			overrideProps.set ( "InitialView", "Graph" );
+			overrideProps.set ( "PreviewOutput", "True" );
 			if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
 			    String DefaultSaveFile_full =
 			        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),DefaultSaveFile);
-			    override_props.set ( "DefaultSaveFile", DefaultSaveFile_full );
+			    overrideProps.set ( "DefaultSaveFile", DefaultSaveFile_full );
 			}
 		}
 		if ( (IOUtil.isBatch() && (RunMode.equalsIgnoreCase("GUIAndBatch") ||(RunMode.equalsIgnoreCase("Batch")))) ||
@@ -428,7 +515,7 @@ CommandWarningException, CommandException
 			}
 			p.addTSSupplier ( (TSSupplier)processor );
             TSProductFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),TSProductFile);
-			TSProduct tsp = new TSProduct ( TSProductFile_full, override_props );
+			TSProduct tsp = new TSProduct ( TSProductFile_full, overrideProps );
 			// Specify annotation providers if available...
 			List ap_Vector = null;			
 			try {
@@ -494,6 +581,8 @@ public String toString ( PropList props )
 	String View = props.getValue("View");
 	String OutputFile = props.getValue("OutputFile");
 	String DefaultSaveFile = props.getValue("DefaultSaveFile");
+    String VisibleStart = props.getValue ( "VisibleStart" );
+    String VisibleEnd = props.getValue ( "VisibleEnd" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSProductFile != null) && (TSProductFile.length() > 0) ) {
 		b.append ( "TSProductFile=\"" + TSProductFile + "\"" );
@@ -516,11 +605,23 @@ public String toString ( PropList props )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
-   if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
+    if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "DefaultSaveFile=\"" + DefaultSaveFile + "\"" );
+    }
+    if ( (VisibleStart != null) && (VisibleStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "VisibleStart=\"" + VisibleStart + "\"" );
+    }
+    if ( (VisibleEnd != null) && (VisibleEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "VisibleEnd=\"" + VisibleEnd + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

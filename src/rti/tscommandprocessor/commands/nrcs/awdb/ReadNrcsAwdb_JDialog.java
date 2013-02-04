@@ -483,6 +483,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     __Counties_JTextField = new ChoiceFormatterJPanel ( countyList, ",",
         "Select a FIPS county to insert in the text field at right.", "-- Select County --", ",",  20, true );
     __Counties_JTextField.addKeyListener (this);
+    __Counties_JTextField.addDocumentListener (this);
     JGUIUtil.addComponent(loc_JPanel, __Counties_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ counties separated by commas."),

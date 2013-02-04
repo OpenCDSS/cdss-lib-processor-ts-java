@@ -555,6 +555,9 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                 if ( setPropertiesFromMetadata ) {
                     // Set time series properties from the timeSeries elements
                     ts.setProperty("stationTriplet", (stationTriplet == null) ? "" : stationTriplet );
+                    ts.setProperty("state", (state == null) ? "" : state );
+                    ts.setProperty("stationId", (stationID == null) ? "" : stationID );
+                    ts.setProperty("networkCode", (networkCode == null) ? "" : networkCode );
                     text = meta.getName();
                     ts.setProperty("name", (text == null) ? "" : text );
                     text = meta.getActonId();

@@ -226,6 +226,22 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Format the template for a warning message.  Add line numbers before.
+*/
+private StringBuffer formatTemplateForWarning ( List<String> templateLines, String nl )
+{   StringBuffer templateFormatted = new StringBuffer();
+    new StringBuffer();
+    int lineNumber = 1;
+    // Don't use space after number because HTML viewer may split and make harder to read
+    templateFormatted.append ( StringUtil.formatString(lineNumber++,"%d") + ":<@normalizeNewlines>" + nl );
+    for ( String line : templateLines ) {
+        templateFormatted.append ( StringUtil.formatString(lineNumber++,"%d") + ":" + line + nl );
+    }
+    templateFormatted.append ( StringUtil.formatString(lineNumber,"%d") + ":</@normalizeNewlines>" + nl );
+    return templateFormatted;
+}
+
+/**
 Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
@@ -343,7 +359,8 @@ CommandWarningException, CommandException
         // results can be edited in Notepad on Windows).
         String nl = System.getProperty("line.separator");
         b.append("<@normalizeNewlines>" + nl );
-        b.append(StringUtil.toString(IOUtil.fileToStringList(InputFile_full),nl));
+        List<String> templateLines = IOUtil.fileToStringList(InputFile_full);
+        b.append(StringUtil.toString(templateLines,nl));
         b.append(nl + "</@normalizeNewlines>" );
         Template template = null;
         boolean error = false;
@@ -352,7 +369,8 @@ CommandWarningException, CommandException
         }
         catch ( Exception e1 ) {
             message = "Freemarker error expanding command template file \"" + InputFile_full +
-                "\" + (" + e1 + ") template text =" + b;
+                "\" + (" + e1 + ") template text (with internal inserts at ends) =" + nl +
+                formatTemplateForWarning(templateLines,nl);
             Message.printWarning ( warning_level, 
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e1 );
@@ -397,7 +415,8 @@ CommandWarningException, CommandException
             }
             catch ( Exception e1 ) {
                 message = "Freemarker error expanding command template file \"" + InputFile_full +
-                    "\" + (" + e1 + ") template text =" + b;
+                    "\" + (" + e1 + ") template text (with internal inserts at ends) =\n" +
+                    formatTemplateForWarning(templateLines,nl);;
                 Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
                 Message.printWarning ( 3, routine, e1 );

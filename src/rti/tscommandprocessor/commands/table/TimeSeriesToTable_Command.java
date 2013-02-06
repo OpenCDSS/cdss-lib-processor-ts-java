@@ -6,7 +6,6 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 

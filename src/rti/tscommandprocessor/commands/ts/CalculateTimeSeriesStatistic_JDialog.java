@@ -257,16 +257,19 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Calculate a statistic for time series and optionally save in a table." ), 
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+       "The table and its columns will be created if not found." ), 
+       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Statistics results may have 1+ values and may include the date/time of the result." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Use table commands to save the results." ), 
+        "Use table commands to save the table results to a file." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify dates with precision appropriate for the data, " +
@@ -389,9 +392,9 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     __TableStatisticColumn_JTextField = new JTextField ( 10 );
     __TableStatisticColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TableStatisticColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required if using table - column name for statistic."), 
+        "Required if using table - column name(s) for statistic(s)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -583,10 +586,14 @@ private void refresh ()
                 __TableID_JComboBox.select ( TableID );
             }
             else {
-                Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nTableID value \"" + TableID +
-                "\".  Select a different value or Cancel.");
-                __error_wait = true;
+                // Creating new table so add in the first position
+                if ( __TableID_JComboBox.getItemCount() == 0 ) {
+                    __TableID_JComboBox.add(TableID);
+                }
+                else {
+                    __TableID_JComboBox.insert(TableID, 0);
+                }
+                __TableID_JComboBox.select(0);
             }
         }
         if ( TableTSIDColumn != null ) {

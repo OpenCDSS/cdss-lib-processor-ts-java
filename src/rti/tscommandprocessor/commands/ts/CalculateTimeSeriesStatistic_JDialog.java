@@ -266,7 +266,7 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
        "The table and its columns will be created if not found." ), 
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Statistics results may have 1+ values and may include the date/time of the result." ), 
+        "Statistics results may include 1+ values and may include the date/time of the result." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use table commands to save the table results to a file." ), 

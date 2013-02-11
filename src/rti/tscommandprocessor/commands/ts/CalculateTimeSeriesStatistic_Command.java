@@ -128,7 +128,7 @@ throws InvalidCommandParameterException
         if ( supported ) {
             int nRequiredValues = -1;
             try {
-                TSUtil_CalculateTimeSeriesStatistic.getRequiredNumberOfValuesForStatistic ( statisticType );
+                nRequiredValues = TSUtil_CalculateTimeSeriesStatistic.getRequiredNumberOfValuesForStatistic ( statisticType );
             }
             catch ( Exception e ) {
                 message = "Statistic \"" + statisticType + "\" is not recognized.";
@@ -383,7 +383,7 @@ CommandWarningException, CommandException
     DateTime AnalysisEnd_DateTime = null;
     
     try {
-        if ( AnalysisStart != null ) {
+        if ( (AnalysisStart != null) && !AnalysisStart.equals("") ) {
             PropList request_params = new PropList ( "" );
             request_params.set ( "DateTime", AnalysisStart );
             CommandProcessorRequestResultsBean bean = null;
@@ -425,7 +425,7 @@ CommandWarningException, CommandException
     }
     
     try {
-        if ( AnalysisEnd != null ) {
+        if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") ) {
             PropList request_params = new PropList ( "" );
             request_params.set ( "DateTime", AnalysisEnd );
             CommandProcessorRequestResultsBean bean = null;
@@ -669,6 +669,28 @@ CommandWarningException, CommandException
                                     // Have not previously checked for or added the column for the statistic
                                     try {
                                         statisticColumnNum[iStat] = table.getFieldIndex(tableStatisticResultsColumn[iStat]);
+                                        // Have a column in the table.  Make sure that it matches in type the statistic
+                                        if ( (c == Integer.class) &&
+                                            (table.getFieldDataType(statisticColumnNum[iStat]) != TableField.DATA_TYPE_INT) ) {
+                                            message = "Existing table column \"" + tableStatisticResultsColumn[iStat] +
+                                                "\" is not of correct integer type for statistic";
+                                            Message.printWarning ( warning_level,
+                                                MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+                                            status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.FAILURE,
+                                                message, "Change the table column type or let this command create the column." ) );
+                                            continue;
+                                        }
+                                        // TODO SAM 2013-02-10 Handle datetime and other types
+                                        if ( ((c == Double.class) || (c == Regression.class)) &&
+                                            (table.getFieldDataType(statisticColumnNum[iStat]) != TableField.DATA_TYPE_DOUBLE) ) {
+                                            message = "Existing table column \"" + tableStatisticResultsColumn[iStat] +
+                                                "\" is not of correct double type for statistic";
+                                            Message.printWarning ( warning_level,
+                                                MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+                                            status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.FAILURE,
+                                                message, "Change the table column type or let this command create the column." ) );
+                                            continue;
+                                        }
                                     }
                                     catch ( Exception e2 ) {
                                         // Column was not found.
@@ -682,7 +704,6 @@ CommandWarningException, CommandException
                                             statisticColumnNum[iStat] = table.addField(new TableField(TableField.DATA_TYPE_DATE,tableStatisticResultsColumn[iStat],-1,-1), null );
                                         }
                                         else if ( c == Double.class ) {
-                                            // This also 
                                             statisticColumnNum[iStat] = table.addField(new TableField(TableField.DATA_TYPE_DOUBLE,tableStatisticResultsColumn[iStat],10,4), null );
                                         }
                                         else if ( c == Regression.class ) {
@@ -691,7 +712,8 @@ CommandWarningException, CommandException
                                         }
                                         else {
                                             // Put this in to help software developers
-                                            message = "Don't know how to handle statistic result class \"" + c;
+                                            message = "Don't know how to handle statistic result class \"" + c +
+                                                "\" for \"" + tableStatisticResultsColumn[iStat] + "\"";
                                             Message.printWarning ( warning_level,
                                                 MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
                                             status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.FAILURE,

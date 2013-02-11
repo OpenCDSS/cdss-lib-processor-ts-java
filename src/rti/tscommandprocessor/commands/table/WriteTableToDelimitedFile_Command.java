@@ -307,6 +307,13 @@ CommandWarningException, CommandException
 		throw new CommandException ( message );
 	}
 	
+    if ( warning_count > 0 ) {
+        message = "There were " + warning_count + " warnings processing the command.";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
+        throw new CommandWarningException ( message );
+    }
+	
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
@@ -382,7 +389,6 @@ throws IOException
 
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
 
     // Get the comments to add to the top of the file.
 

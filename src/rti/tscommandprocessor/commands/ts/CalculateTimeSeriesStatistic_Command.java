@@ -50,6 +50,12 @@ protected final String _Warn = "Warn";
 protected final String _Fail = "Fail";
 
 /**
+Analysis window year, since users do not supply this information.
+This allows for leap year in case the analysis window start or end is on Feb 29.
+*/
+private final int __ANALYSIS_WINDOW_YEAR = 2000;
+
+/**
 Values for ProblemType parameter.
 */
 protected final String _PROBLEM_TYPE_Check = "Check";
@@ -81,6 +87,8 @@ throws InvalidCommandParameterException
     String Statistic = parameters.getValue ( "Statistic" );
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+    String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
+    String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
     String Value1 = parameters.getValue ( "Value1" );
     String Value2 = parameters.getValue ( "Value2" );
     String Value3 = parameters.getValue ( "Value3" );
@@ -215,6 +223,35 @@ throws InvalidCommandParameterException
                 message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         }
     }
+    if ( (AnalysisWindowStart != null) && !AnalysisWindowStart.equals("") ) {
+        String analysisWindowStart = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart;
+        try {
+            DateTime.parse( analysisWindowStart );
+        }
+        catch ( Exception e ) {
+            message = "The analysis window start \"" + AnalysisWindowStart + "\" (prepended with " +
+            __ANALYSIS_WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
+    }
+    
+    if ( (AnalysisWindowEnd != null) && !AnalysisWindowEnd.equals("") ) {
+        String analysisWindowEnd = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd;
+        try {
+            DateTime.parse( analysisWindowEnd );
+        }
+        catch ( Exception e ) {
+            message = "The analysis window end \"" + AnalysisWindowEnd + "\" (prepended with " +
+            __ANALYSIS_WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
+    }
     
     // Check for invalid parameters...
     List<String> valid_Vector = new Vector();
@@ -227,6 +264,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Value3" );
     valid_Vector.add ( "AnalysisStart" );
     valid_Vector.add ( "AnalysisEnd" );
+    valid_Vector.add ( "AnalysisWindowStart" );
+    valid_Vector.add ( "AnalysisWindowEnd" );
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "TableTSIDColumn" );
     valid_Vector.add ( "TableTSIDFormat" );
@@ -353,6 +392,8 @@ CommandWarningException, CommandException
     }
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+    String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
+    String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
@@ -464,6 +505,38 @@ CommandWarningException, CommandException
         status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         throw new InvalidCommandParameterException ( message );
+    }
+    DateTime AnalysisWindowStart_DateTime = null;
+    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
+        try {
+            // The following works with ISO formats...
+            AnalysisWindowStart_DateTime =
+                DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart );
+        }
+        catch ( Exception e ) {
+            message = "AnalysisWindowStart \"" + AnalysisWindowStart +
+                "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
+    DateTime AnalysisWindowEnd_DateTime = null;
+    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
+        try {
+            // The following works with ISO formats...
+            AnalysisWindowEnd_DateTime =
+                DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd );
+        }
+        catch ( Exception e ) {
+            message = "AnalysisWindowEnd \"" + AnalysisWindowEnd +
+                "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            throw new InvalidCommandParameterException ( message );
+        }
     }
     
     // Get the time series to process.  Allow TSID to be a pattern or specific time series...
@@ -635,7 +708,9 @@ CommandWarningException, CommandException
                     // Do the calculation...
                     TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
                     TSUtil_CalculateTimeSeriesStatistic tsu = new TSUtil_CalculateTimeSeriesStatistic(ts, statisticType,
-                        AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, Value3_Double );
+                        AnalysisStart_DateTime, AnalysisEnd_DateTime,
+                        AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime,
+                        Value1_Double, Value2_Double, Value3_Double );
                     tsu.calculateTimeSeriesStatistic();
                     // Now set the statistic value(s) in the table by matching the row (via TSID) and column
                     // (via statistic column name)
@@ -808,6 +883,8 @@ public String toString ( PropList parameters )
     String Value3 = parameters.getValue( "Value3" );
     String AnalysisStart = parameters.getValue( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
+    String AnalysisWindowStart = parameters.getValue( "AnalysisWindowStart" );
+    String AnalysisWindowEnd = parameters.getValue( "AnalysisWindowEnd" );
     String IfNotFound = parameters.getValue ( "IfNotFound" );
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
@@ -869,6 +946,18 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
+    }
+    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisWindowStart=\"" + AnalysisWindowStart + "\"" );
+    }
+    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
     }
     if ( IfNotFound != null && IfNotFound.length() > 0 ) {
         if ( b.length() > 0 ) {

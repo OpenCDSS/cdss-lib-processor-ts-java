@@ -674,7 +674,7 @@ CommandWarningException, CommandException
                     ts.getIdentifier().toStringAliasAndTSID() );
                 TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
                 TSUtil_CalculateTimeSeriesStatistic tsStatistic = new TSUtil_CalculateTimeSeriesStatistic(ts, statisticType,
-                    AnalysisStart_DateTime, AnalysisEnd_DateTime,
+                    AnalysisStart_DateTime, AnalysisEnd_DateTime, null, null,
                     StatisticValue1_Double, StatisticValue2_Double, StatisticValue3_Double );
                 tsStatistic.calculateTimeSeriesStatistic();
                 Message.printStatus(2,routine,"Statistic " + statisticType + "=" + tsStatistic.getStatisticResult() +

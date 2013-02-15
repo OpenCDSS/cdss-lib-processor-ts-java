@@ -245,7 +245,7 @@ private void initialize ( JFrame parent, Command command )
      __TSID_JLabel = new JLabel ("TSID (for TSList=matching TSID):");
      __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
      List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-             (TSCommandProcessor)__command.getCommandProcessor(), __command );
+         (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
      
      __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");

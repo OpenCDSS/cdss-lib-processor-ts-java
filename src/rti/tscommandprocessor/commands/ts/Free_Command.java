@@ -308,6 +308,9 @@ CommandWarningException, CommandException
 	
 	PropList parameters = getCommandParameters();
     String TSList = parameters.getValue ( "TSList" );
+    if ( (TSList == null) || TSList.equals("") ) {
+        TSList = "" + TSListType.ALL_TS;
+    }
     String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String TSPosition = parameters.getValue ( "TSPosition" );
@@ -357,12 +360,11 @@ CommandWarningException, CommandException
         "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
         Message.printWarning(log_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+        Message.printWarning(log_level, routine, e );
         status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report the problem to software support." ) );
     }
-    if ( bean == null ) {
-        Message.printStatus ( 2, routine, "Bean is null.");
-    }
+
     PropList bean_PropList = bean.getResultsPropList();
     Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
     List tslist = null;

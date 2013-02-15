@@ -71,6 +71,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String UseTables = parameters.getValue ( "UseTables" );
     String ListInResults = parameters.getValue ( "ListInResults" );
 	//String IfNotFound = parameters.getValue ( "IfNotFound" );
 	String warning = "";
@@ -177,16 +178,27 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (UseTables != null) && !UseTables.equals("") &&
+        !UseTables.equalsIgnoreCase(_True) &&
+        !UseTables.equalsIgnoreCase(_False) ) {
+        message = "The UseTables parameter \"" + UseTables + "\" must be " + _True + " or " + _False + ".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message,
+                "Correct the UseTables parameter to be blank, " + _True + ", or " + _False + "." ) );
+    }
+    
     if ( (ListInResults != null) && !ListInResults.equals("") &&
         !ListInResults.equalsIgnoreCase(_True) &&
         !ListInResults.equalsIgnoreCase(_False) ) {
-        message = "The View parameter \"" + ListInResults + "\" must be " + _True + " or " + _False + ".";
+        message = "The ListInResults parameter \"" + ListInResults + "\" must be " + _True + " or " + _False + ".";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message,
                 "Correct the ListInResults parameter to be blank, " + _True + ", or " + _False + "." ) );
-}
+    }
 	
 	/*
 	if ( (IfNotFound != null) && !IfNotFound.equals("") ) {
@@ -203,6 +215,7 @@ throws InvalidCommandParameterException
 	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
 	valid_Vector.add ( "OutputFile" );
+	valid_Vector.add ( "UseTables" );
 	valid_Vector.add ( "ListInResults" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -244,9 +257,9 @@ private StringBuffer formatTemplateForWarning ( List<String> templateLines, Stri
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-    List list = new Vector();
+    List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -285,6 +298,11 @@ CommandWarningException, CommandException
 	
 	String InputFile = parameters.getValue ( "InputFile" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String UseTables = parameters.getValue ( "UseTables" );
+    boolean UseTables_boolean = true;
+    if ( (UseTables != null) && UseTables.equalsIgnoreCase(_False) ) {
+        UseTables_boolean = false;
+    }
 	String ListInResults = parameters.getValue ( "ListInResults" );
 	boolean ListInResults_boolean = true;
 	if ( (ListInResults != null) && ListInResults.equalsIgnoreCase(_False) ) {
@@ -390,19 +408,31 @@ CommandWarningException, CommandException
                     model.put(propertyName, tsprocessor.getPropContents(propertyName) );
                 }
                 // Add single column tables from the processor, using the table ID as the object key
-                List<DataTable> tables = (List<DataTable>)tsprocessor.getPropContents ( "TableResultsList" );
-                for ( DataTable table: tables ) {
-                    if ( table.getNumberOfFields() == 1 ) {
-                        // One-column table so add as a hash (list) property in the data model
-                        int numRecords = table.getNumberOfRecords();
-                        SimpleSequence list = new SimpleSequence();
-                        for ( int irec = 0; irec < numRecords; irec++ ) {
-                            list.add ( table.getFieldValue(irec, 0) );
+                if ( UseTables_boolean ) {
+                    List<DataTable> tables = (List<DataTable>)tsprocessor.getPropContents ( "TableResultsList" );
+                    Object tableVal;
+                    for ( DataTable table: tables ) {
+                        if ( table.getNumberOfFields() == 1 ) {
+                            // One-column table so add as a hash (list) property in the data model
+                            int numRecords = table.getNumberOfRecords();
+                            SimpleSequence list = new SimpleSequence();
+                            for ( int irec = 0; irec < numRecords; irec++ ) {
+                                // Check for null because this fouls up the template
+                                tableVal = table.getFieldValue(irec, 0);
+                                if ( tableVal == null ) {
+                                    tableVal = "";
+                                }
+                                list.add ( tableVal );
+                            }
+                            if ( Message.isDebugOn ) {
+                                Message.printStatus(2, routine, "Passing 1-column table \"" + table.getTableID() +
+                                    "\" (" + numRecords + " rows) to template model.");
+                            }
+                            model.put(table.getTableID(), list );
                         }
-                        model.put(table.getTableID(), list );
                     }
                 }
-            }        
+            }
             // Expand the template to the output file
             FileOutputStream fos = new FileOutputStream( OutputFile_full );
             PrintWriter out = new PrintWriter ( fos );
@@ -461,6 +491,7 @@ public String toString ( PropList parameters )
 	}
 	String InputFile = parameters.getValue("InputFile");
 	String OutputFile = parameters.getValue("OutputFile");
+	String UseTables = parameters.getValue("UseTables");
 	String ListInResults = parameters.getValue("ListInResults");
 	//String IfNotFound = parameters.getValue("IfNotFound");
 	StringBuffer b = new StringBuffer ();
@@ -473,6 +504,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputFile=\"" + OutputFile + "\"" );
     }
+    if ( (UseTables != null) && (UseTables.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append(",");
+        }
+        b.append ( "UseTables=" + UseTables );
+    }   
     if ( (ListInResults != null) && (ListInResults.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append(",");

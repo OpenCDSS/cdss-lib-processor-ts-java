@@ -51,6 +51,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JTextField __InputFile_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __UseTables_JComboBox = null;
 private SimpleJComboBox __ListInResults_JComboBox = null;
 //private SimpleJComboBox __IfNotFound_JComboBox =null;
 private JTextArea __command_JTextArea = null;
@@ -189,6 +190,7 @@ private void checkInput ()
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
+	String UseTables = __UseTables_JComboBox.getSelected();
 	String ListInResults = __ListInResults_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
@@ -196,6 +198,9 @@ private void checkInput ()
 	}
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
+    }
+    if ( UseTables.length() > 0 ) {
+        props.set ( "UseTables", UseTables );
     }
     if ( ListInResults.length() > 0 ) {
         props.set ( "ListInResults", ListInResults );
@@ -220,10 +225,12 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
+    String UseTables = __UseTables_JComboBox.getSelected();
     String ListInResults = __ListInResults_JComboBox.getSelected();
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "UseTables", UseTables );
 	__command.setCommandParameter ( "ListInResults", ListInResults );
 	//__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
@@ -304,6 +311,19 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     __browseOutput_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browseOutput_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Use tables as input?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __UseTables_JComboBox = new SimpleJComboBox ( false );
+    __UseTables_JComboBox.add ( "" );
+    __UseTables_JComboBox.add ( __command._False );
+    __UseTables_JComboBox.add ( __command._True );
+    __UseTables_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __UseTables_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ( "Optional - use 1-column tables as input lists (default=" + __command._True + ")." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "List output in results?:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -409,9 +429,10 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	//String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getName() + ".refresh";
 	String InputFile = "";
 	String OutputFile = "";
+	String UseTables = "";
 	String ListInResults = "";
 	//String IfNotFound = "";
     PropList parameters = null;
@@ -420,6 +441,7 @@ private void refresh ()
         parameters = __command.getCommandParameters();
 		InputFile = parameters.getValue ( "InputFile" );
 		OutputFile = parameters.getValue ( "OutputFile" );
+		UseTables = parameters.getValue ( "UseTables" );
 		ListInResults = parameters.getValue ( "ListInResults" );
 		//IfNotFound = parameters.getValue ( "IfNotFound" );
 		if ( InputFile != null ) {
@@ -427,6 +449,22 @@ private void refresh ()
 		}
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText ( OutputFile );
+        }
+        if ( (UseTables == null) || (UseTables.length() == 0) ) {
+            // Select default...
+            __UseTables_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __UseTables_JComboBox,
+                UseTables, JGUIUtil.NONE, null, null ) ) {
+                __UseTables_JComboBox.select ( UseTables );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing "+
+                "command references an invalid\n"+
+                "UseTables \"" + UseTables +
+                "\" parameter.  Select a\ndifferent value or Cancel." );
+            }
         }
         if ( (ListInResults == null) || (ListInResults.length() == 0) ) {
             // Select default...
@@ -438,8 +476,7 @@ private void refresh ()
                 __ListInResults_JComboBox.select ( ListInResults );
             }
             else {
-                Message.printWarning ( 1,
-                "processTSProduct_JDialog.refresh", "Existing "+
+                Message.printWarning ( 1, routine, "Existing "+
                 "command references an invalid\n"+
                 "ListInResults \"" + ListInResults +
                 "\" parameter.  Select a\ndifferent value or Cancel." );
@@ -467,11 +504,13 @@ private void refresh ()
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	UseTables = __UseTables_JComboBox.getSelected();
 	ListInResults = __ListInResults_JComboBox.getSelected();
 	//IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "OutputFile=" + OutputFile );
+	props.add ( "UseTables=" + UseTables );
 	props.add ( "ListInResults=" + ListInResults );
 	//props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString(props) );

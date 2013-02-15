@@ -115,6 +115,7 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 import rti.tscommandprocessor.commands.table.CompareTables_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
+import rti.tscommandprocessor.commands.table.FreeTable_Command;
 import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
 import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
@@ -231,6 +232,7 @@ import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.FormatDateTimeProperty_Command;
 import rti.tscommandprocessor.commands.util.MergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.PrintTextFile_Command;
+import rti.tscommandprocessor.commands.util.ProfileCommands_Command;
 import rti.tscommandprocessor.commands.util.ReadPropertiesFromFile_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
 import rti.tscommandprocessor.commands.util.RunCommands_Command;
@@ -325,7 +327,9 @@ throws UnknownCommandException
 	        commandName = commandString;
 	    }
 	}
-	Message.printStatus(2,routine,"commandName=\"" + commandName + "\"" );
+	if ( Message.isDebugOn ) {
+	    Message.printDebug(1,routine,"commandName=\"" + commandName + "\"" );
+	}
 	
 	// Comment commands...
 	
@@ -502,6 +506,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("Free") ) {
         return new Free_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("FreeTable") ) {
+        return new FreeTable_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("FTPGet") ) {
         return new FTPGet_Command ();
     }
@@ -591,6 +598,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("ProcessTSProduct") ) {
 		return new ProcessTSProduct_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("ProfileCommands") ) {
+        return new ProfileCommands_Command ();
+    }
 
 	// "R" commands...
 

@@ -651,7 +651,9 @@ public static List<TSEnsemble> getDiscoveryEnsembleFromCommandsBeforeCommand(
 {   String routine = "getDiscoveryEnsembleFromCommandsBeforeCommand";
     // Get the position of the command in the list...
     int pos = processor.indexOf(command);
-    Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    if ( Message.isDebugOn ) {
+        Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
+    }
     if ( pos < 0 ) {
         // Just return a blank list...
         return new Vector();
@@ -737,7 +739,9 @@ public static List<TS> getDiscoveryTSFromCommandsBeforeCommand( TSCommandProcess
 {   String routine = "getDiscoveryTSFromCommandsBeforeCommand";
     // Get the position of the command in the list...
     int pos = processor.indexOf(command);
-    Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    if ( Message.isDebugOn ) {
+        Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
+    }
     if ( pos < 0 ) {
         // Just return a blank list...
         return new Vector();
@@ -829,7 +833,9 @@ public static List<String> getEnsembleIdentifiersFromCommandsBeforeCommand( TSCo
 {   String routine = "TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand";
     // Get the position of the command in the list...
     int pos = processor.indexOf(command);
-    Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    if ( Message.isDebugOn ) {
+        Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
+    }
     if ( pos < 0 ) {
         // Just return a blank list...
         return new Vector();
@@ -1134,7 +1140,9 @@ public static List<String> getTableColumnNamesFromCommandsBeforeCommand(
 {   String routine = "TSCommandProcessorUtil.getTableColumnNamesFromCommandsBeforeCommand";
     // Get the position of the command in the list...
     int pos = processor.indexOf(command);
-    Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    if ( Message.isDebugOn ) {
+        Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
+    }
     // Loop backwards because tables may be modified and we want the column names from
     // the table as close previous to the command in question.
     DataTable table;
@@ -1183,31 +1191,34 @@ Commands that implement ObjectListProvider have their getObjectList(DataTable) m
 The getTableID() method on the DataTable is then returned.
 @param commands Commands to search.
 @param sort Should output be sorted by identifier.
-@return list of table identifiers or an empty non-null Vector if nothing found.
+@return list of table identifiers or an empty non-null list if nothing found.
 */
 protected static List<String> getTableIdentifiersFromCommands ( List<Command> commands, boolean sort )
 {   if ( commands == null ) {
         return new Vector();
     }
-    List<String> v = new Vector ( 10, 10 );
+    List<String> tableIDList = new Vector<String> ( 10, 10 );
     int size = commands.size();
     boolean in_comment = false;
     Command command = null;
-    String command_string = null;
+    String commandString = null;
+    String commandName = null;
     for ( int i = 0; i < size; i++ ) {
         command = commands.get(i);
-        command_string = command.toString();
-        if ( command_string.startsWith("/*") ) {
+        commandString = command.toString();
+        commandName = command.getCommandName();
+        if ( commandString.startsWith("/*") ) {
             in_comment = true;
             continue;
         }
-        else if ( command_string.startsWith("*/") ) {
+        else if ( commandString.startsWith("*/") ) {
             in_comment = false;
             continue;
         }
         if ( in_comment ) {
             continue;
         }
+        // Commands that provide a list of time series (so add to the list)
         if ( command instanceof ObjectListProvider ) {
             List<DataTable> list = ((ObjectListProvider)command).getObjectList ( new DataTable().getClass() );
             String id;
@@ -1218,13 +1229,31 @@ protected static List<String> getTableIdentifiersFromCommands ( List<Command> co
                     table = list.get(its);
                     id = table.getTableID();
                     if ( !id.equals("") ) {
-                        v.add( id );
+                        tableIDList.add( id );
                     }
                 }
             }
         }
+        else if ( commandName.equalsIgnoreCase("FreeTable") ) {
+            // Need to remove matching table identifiers that are in the list
+            // (otherwise editing commands will show extra tables as of that point in the workflow, which will
+            // be confusing and may lead to errors, e.g., if consistent units are expected but the units are
+            // not consistent).
+            // First get the matching tables for the FreeTable() command parameters
+            PropList parameters = command.getCommandParameters();
+            String TableID = parameters.getValue("TableID");
+            for ( int iTable = 0; iTable < tableIDList.size(); iTable++ ) {
+                if ( tableIDList.get(iTable).equalsIgnoreCase(TableID) ) {
+                    //Message.printStatus(2,"", "Removing table " + TableID );
+                    tableIDList.remove(iTable--);
+                }
+            }
+        }
     }
-    return v;
+    if ( sort ) {
+        java.util.Collections.sort(tableIDList);
+    }
+    return tableIDList;
 }
 
 /**
@@ -1238,7 +1267,9 @@ public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSComma
 {   String routine = "TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand";
     // Get the position of the command in the list...
     int pos = processor.indexOf(command);
-    Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    if ( Message.isDebugOn ) {
+        Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
+    }
     if ( pos < 0 ) {
         // Just return a blank list...
         return new Vector();
@@ -1307,7 +1338,7 @@ throws IOException, FileNotFoundException
 }
 
 /**
-Get a list of identifiers from a list of commands.  See documentation for
+Get a list of time series identifiers from a list of commands.  See documentation for
 fully loaded method.  The output list is not sorted and does NOT contain the input type or name.
 @param commands Time series commands to search.
 @return list of time series identifiers or an empty non-null list if nothing found.
@@ -1330,7 +1361,8 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
 }
 
 /**
-Get a list of identifiers from a list of commands.  These strings are suitable for drop-down lists, etc.
+Get a list of time series identifiers from a list of commands.
+These strings are suitable for drop-down lists, etc.
 Time series identifiers are determined as follows:
 <ol>
 <li>    Commands that implement ObjectListProvider have their getObjectList(TS) method called.
@@ -1349,7 +1381,7 @@ impacted by this parameter.
 */
 protected static List<String> getTSIdentifiersFromCommands ( List<Command> commands, boolean include_input, boolean sort )
 {	if ( commands == null ) {
-		return new Vector();
+		return new Vector<String>();
 	}
 	List<String> tsidsFromCommands = new Vector (); // The String TSID or alias
 	List<TS> tsFromCommands = new Vector(); // The ts for available TS, used to store each TSIdent
@@ -1499,7 +1531,9 @@ public static List<String> getTSIdentifiersNoInputFromCommandsBeforeCommand( TSC
 {	String routine = "TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand";
 	// Get the position of the command in the list...
 	int pos = processor.indexOf(command);
-	Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+	if ( Message.isDebugOn ) {
+	    Message.printDebug ( 1, routine, "Position in list is " + pos + " for command:" + command );
+	}
 	if ( pos < 0 ) {
 		// Just return a blank list...
 		return new Vector();
@@ -1514,11 +1548,20 @@ public static List<String> getTSIdentifiersNoInputFromCommandsBeforeCommand( TSC
 Get time series that match the TSList and related input.  This method is used to evaluate the list of
 time series from the time series processor, and the list of discovery time series extracted from commands
 (that maintain their own discovery information).
+@param tsCandidateList list of time series to check for matching time series identifier
+@param ensembleCandidateList list of ensembles to check for matching ensemble identifier
+@param TSList string value for TSList (should match TSListType enumeration) - if null or a blank string,
+TSListType.ALL_TS will be used by default
+@param TSPosition string value of TSPosition range notation
+@param EnsembleID ensemble identifier to match
 */
 public static TimeSeriesToProcess getTSMatchingTSListParameters ( List<TS> tsCandidateList,
     List<TSEnsemble> ensembleCandidateList, String TSList, String TSID, String TSPosition, String EnsembleID )
-{
-    String routine = "TSEngine.getTimeSeriesToProcess";
+{   String routine = "TSCommandProcessorUtil.getTimeSeriesToProcess";
+    if ( (TSList == null) || TSList.equals("") ) {
+        // Default is to match all
+        TSList = "" + TSListType.ALL_TS;
+    }
     List<TS> tslist = new Vector(); // List of time series to process
     List<String> errorList = new Vector(); // List of error messages finding time series
     if ( (tsCandidateList == null) || (tsCandidateList.size() == 0) ) {
@@ -1532,8 +1575,10 @@ public static TimeSeriesToProcess getTSMatchingTSListParameters ( List<TS> tsCan
     // Loop through the time series in memory...
     int count = 0;
     TS ts = null;
-    Message.printStatus( 2, "", "Getting list of time series to process using TSList=\"" + TSList +
-        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\", TSPosition=\"" + TSPosition + "\"" );
+    if ( Message.isDebugOn ) {
+        Message.printDebug( 1, routine, "Getting list of time series to process using TSList=\"" + TSList +
+            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\", TSPosition=\"" + TSPosition + "\"" );
+    }
     if ( TSList.equalsIgnoreCase(TSListType.FIRST_MATCHING_TSID.toString()) ) {
         // Search forward for the first single matching time series...
         for ( int its = 0; its < nts; its++ ) {

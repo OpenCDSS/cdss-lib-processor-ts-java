@@ -210,7 +210,7 @@ private volatile boolean __cancel_processing_requested = false;
 /**
 List of DataTable objects maintained by the processor.
 */
-List<DataTable> __Table_Vector = new Vector();
+List<DataTable> __Table_Vector = new Vector<DataTable>();
 
 /**
 List of TimeSeriesView objects maintained by the processor.
@@ -256,7 +256,9 @@ public void addCommand ( Command command, boolean notifyCommandListListeners )
 	if ( notifyCommandListListeners ) {
 		notifyCommandListListenersOfAdd ( __Command_Vector.size() - 1, __Command_Vector.size() - 1 );
 	}
-	Message.printStatus(2, routine, "Added command object \"" +	command + "\"." );
+	if ( Message.isDebugOn ) {
+	    Message.printDebug(1, routine, "Added command object \"" + command + "\"." );
+	}
 }
 
 /**
@@ -2108,6 +2110,9 @@ throws Exception
     else if ( request.equalsIgnoreCase("RemoveAllFromTimeSeriesResultsList") ) {
         return processRequest_RemoveAllFromTimeSeriesResultsList ( request, request_params );
     }
+    else if ( request.equalsIgnoreCase("RemoveTableFromResultsList") ) {
+        return processRequest_RemoveTableFromResultsList ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("RemoveTimeSeriesFromResultsList") ) {
         return processRequest_RemoveTimeSeriesFromResultsList ( request, request_params );
     }
@@ -2954,6 +2959,35 @@ throws Exception
 }
 
 /**
+Process the RemoveTableFromResultsList request.
+*/
+private CommandProcessorRequestResultsBean processRequest_RemoveTableFromResultsList (
+    String request, PropList request_params )
+throws Exception
+{   String routine = "TSCommandProcessor.processRequest_RemoveTableFromResultsList";
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "TableID" );
+    if ( o == null ) {
+        String warning = "Request RemoveTableFromResultsList() does not provide a TableID parameter.";
+        bean.setWarningText ( warning );
+        bean.setWarningRecommendationText ( "This is likely a software code error.");
+        throw new RequestParameterNotFoundException ( warning );
+    }
+    String TableID = (String)o;
+    // Remove all tables having the same identifier.
+    DataTable table;
+    for ( int i = 0; i < __Table_Vector.size(); i++ ) {
+        table = __Table_Vector.get(i);
+        // Remove and decrement the counter so that the next table is checked
+        if ( table.getTableID().equalsIgnoreCase(TableID) ) {
+            __Table_Vector.remove(i--);
+        }
+    }
+    return bean;
+}
+
+/**
 Process the RemoveTimeSeriesFromResultsList request.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveTimeSeriesFromResultsList (
@@ -3321,9 +3355,11 @@ Run discovery on the command. This will, for example, make available a list of t
 to be requested with the ObjectListProvider.getObjectList() method.
 */
 private void readCommandFile_RunDiscoveryOnCommand ( Command command_read )
-{   String routine = getClass().getName() + ".commandList_EditCommand_RunDiscovery";
+{   String routine = getClass().getName() + ".readCommandFile_RunDiscoveryOnCommand";
     // Run the discovery...
-    Message.printStatus(2, routine, "Running discovery mode on command:  \"" + command_read + "\"" );
+    if ( Message.isDebugOn ) {
+        Message.printStatus(2, routine, "Running discovery mode on command:  \"" + command_read + "\"" );
+    }
     try {
         ((CommandDiscoverable)command_read).runCommandDiscovery(indexOf(command_read));
     }

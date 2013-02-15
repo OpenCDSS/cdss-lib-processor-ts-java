@@ -368,11 +368,14 @@ CommandWarningException, CommandException
             TS ts = null;
             Object o_ts = null;
             int TableTSIDColumnNumber = -1;
+            Message.printStatus(2, routine, "Copying properties to table \"" + TableID + "\" for " + nts + " time series");
             for ( int its = 0; its < nts; its++ ) {
                 // The the time series to process, from the list that was returned above.
+                message = "Copying properties for time series " + (its + 1) + " of " + nts;
+                notifyCommandProgressListeners ( its, nts, (float)-1.0, message );
                 o_ts = tslist.get(its);
                 if ( o_ts == null ) {
-                    message = "Time series to process is null.";
+                    message = "Time series " + (its + 1) + " to process is null - skipping.";
                     Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
                     status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message,
@@ -524,6 +527,10 @@ CommandWarningException, CommandException
                     // Get the new record for use below
                     rec = table.getRecord(recNum);
                 }
+                else {
+                    Message.printStatus(2, routine, "Matched table \"" + TableID +
+                        "\" row for TSID \"" + tsid + "\" - duplicate TSID?");
+                }
                 
                 // Loop through the property names...
                 
@@ -556,8 +563,10 @@ CommandWarningException, CommandException
                         // Set the value in the table...
                         try {
                             rec.setFieldValue(tableOutputColumns[icolumn],propertyValue);
-                            Message.printStatus(2, routine, "Setting " + tableOutputColumnNames[icolumn] + "=\"" +
-                                propertyValue + "\"" );
+                            if ( Message.isDebugOn ) {
+                                Message.printDebug(1, routine, "Setting " + tableOutputColumnNames[icolumn] + "=\"" +
+                                    propertyValue + "\"" );
+                            }
                             // TODO SAM 2011-04-27 Evaluate why the column width is necessary in the data table
                             // Reset the column width if necessary
                             if ( propertyValue instanceof String ) {
@@ -588,6 +597,8 @@ CommandWarningException, CommandException
                     }
                 }
             }
+            Message.printStatus(2, routine, "Table \"" + TableID +
+                "\" after copying properties has " + table.getNumberOfRecords() + " records." );
         }
         catch ( Exception e ) {
             message = "Unexpected error processing time series (" + e + ").";

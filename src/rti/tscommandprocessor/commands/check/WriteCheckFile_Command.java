@@ -18,6 +18,7 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProfile;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusType;
@@ -307,6 +308,7 @@ throws Exception
     long totalTime = 0;
     int totalWarnings = 0;
     int totalFailures = 0;
+    CommandProfile commandProfile;
     if ( writeTable ) {
         html.tableStart();
         html.tableRowStart();
@@ -324,14 +326,15 @@ throws Exception
         int countWarnings, countFailures;
         for ( int iCommand = 0; iCommand < commandsSize; iCommand++ ) {
             command = commands.get(iCommand);
+            commandProfile = command.getCommandProfile(CommandPhaseType.RUN);
             html.tableRowStart();
             // Row (command) number...
             td1[0] = "" + (iCommand + 1);
             html.tableCells( td1, null );
             // Run time
-            td1[0] = "" + StringUtil.formatString(((double)command.getRunTime())/1000.0,"%.3f");
+            td1[0] = "" + StringUtil.formatString(((double)commandProfile.getRunTime())/1000.0,"%.3f");
             html.tableCells( td1, null );
-            totalTime += command.getRunTime();
+            totalTime += commandProfile.getRunTime();
             // Number of warnings
             countWarnings = CommandStatusUtil.getSeverityCount ( command, CommandStatusType.WARNING, false );
             totalWarnings += countWarnings;

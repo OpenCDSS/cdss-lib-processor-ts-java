@@ -360,7 +360,7 @@ throws IOException
         	// Exclude the command file if tag in the file indicates that it is not compatible with
         	// this command's parameters.
         	boolean doAddForOS = false;
-        	List tagValues = TSCommandProcessorUtil.getTagValues ( path.toString(), "os" );
+        	List<Object> tagValues = TSCommandProcessorUtil.getTagValues ( path.toString(), "os" );
         	if ( !needToCheckForUnixOS && !needToCheckForWindowsOS ) {
         	    // Not checking for OS so go ahead and add
         	    doAddForOS = true;
@@ -482,8 +482,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;

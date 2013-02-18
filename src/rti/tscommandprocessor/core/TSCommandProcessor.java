@@ -131,7 +131,7 @@ public final int	INSERT_TS = 1,
 /**
 The list of commands managed by this command processor, guaranteed to be non-null.
 */
-private List<Command> __Command_Vector = new Vector();
+private List<Command> __Command_Vector = new Vector<Command>();
 
 /**
 The name of the file to which the commands are saved, or null if not saved.
@@ -172,7 +172,7 @@ private List __patternTS_Vector = new Vector();
 /**
 The list of TSEnsemble managed by this command processor, guaranteed to be non-null.
 */
-private List<TSEnsemble> __TSEnsemble_Vector = new Vector();
+private List<TSEnsemble> __TSEnsemble_Vector = new Vector<TSEnsemble>();
 
 /**
 The initial working directory for processing, typically the location of the commands
@@ -414,12 +414,13 @@ This is being used during transition of old string commands to full Command clas
 may be needed in any case to preserve commands that were manually edited.  Commands with
 problems will in any case be flagged at run-time as unrecognized or problematic.
 @param append If true, the commands will be appended to the existing commands.
+@param runDiscoveryOnLoad if true, run discovery mode on the commands at load; if false, do not run discovery
 @param initialWorkingDir the initial working directory to use to run the commands (if not null) - this is typically
 specified because it would be set to the location of the command file if the command file were read from disk.
 @exception IOException if initialWorkingDir is not valid.
 */
-public void addCommandsFromStringList ( List commandStrings, boolean createUnknownCommandIfNotRecognized,
-    boolean append, File initialWorkingDir )
+public void addCommandsFromStringList ( List<String> commandStrings, boolean createUnknownCommandIfNotRecognized,
+    boolean append, boolean runDiscoveryOnLoad, File initialWorkingDir )
 throws IOException
 {   String routine = getClass().getName() + ".initializeCommandsFromStringList";
     // Set the working directory because this may be used by other commands.
@@ -443,7 +444,7 @@ throws IOException
     int numAdded = 0;
     int numCommandStrings = commandStrings.size();
     for ( int i = 0; i < numCommandStrings; i++ ) {
-        line = (String)commandStrings.get(i);
+        line = commandStrings.get(i);
         // Trim spaces from the end of the line.  These can really cause problems with time series identifiers
         // FIXME SAM 2009-01-20 Is desirable to trim later so the original representation of commands is not changed.
         // In particular people may want to indent the commands.  Need to make sure that trim() is included when
@@ -476,9 +477,9 @@ throws IOException
         String fixme = "FIXME! ";  // String for inserted messages
         try {
             command.initializeCommand(
-                line,   // Command string, needed to do full parse on parameters
-                this,   // Processor, needed to make requests
-                true);  // Do full initialization (parse)
+                line, // Command string, needed to do full parse on parameters
+                this, // Processor, needed to make requests
+                true); // Do full initialization (parse)
         }
         catch ( InvalidCommandSyntaxException e ) {
             // Can't use cf.newCommand() because it will recognized the command
@@ -490,28 +491,28 @@ throws IOException
             if ( (command != null) && (command instanceof CommandStatusProvider) ) {
                 CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                "Invalid command syntax (" + e + ").",
-                                "Correct the command.  See log file for details." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        "Invalid command syntax (" + e + ").",
+                        "Correct the command.  See log file for details." ) );
             }
             // Add generic commands as comments prior to this command to show the original,
             Command command2 = new GenericCommand ();
             command2.setCommandString ( "#" + fixme +
-                    "The following command had errors and needs to be corrected below and this comment removed.");
+                "The following command had errors and needs to be corrected below and this comment removed.");
             CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading the following command.",
-                            "Correct the command below (typically a parameter error due to manual edit)." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    "There was an error loading the following command.",
+                    "Correct the command below (typically a parameter error due to manual edit)." ) );
             addCommand ( command2, notifyListenersForEachAdd );
             ++numAdded;
             command2 = new GenericCommand ();
             command2.setCommandString ( "#" + fixme + line );
             status = ((CommandStatusProvider)command2).getCommandStatus();
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading this command.",
-                            "Correct the command below (typically a parameter error due to manual edit)." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    "There was an error loading this command.",
+                    "Correct the command below (typically a parameter error due to manual edit)." ) );
             addCommand ( command2, notifyListenersForEachAdd );
             ++numAdded;
             // Allow the bad command to be loaded below.  It may have no arguments or partial
@@ -527,28 +528,28 @@ throws IOException
             if ( (command != null) && (command instanceof CommandStatusProvider) ) {
                 CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                "Invalid command parameter." + e + ").",
-                                "Correct the command.  See log file for details." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        "Invalid command parameter." + e + ").",
+                        "Correct the command.  See log file for details." ) );
             }
             // Add generic commands as comments prior to this command to show the original,
             Command command2 = new GenericCommand ();
             command2.setCommandString ( "# " + fixme +
-                    "The following command had errors and needs to be corrected below and this comment removed.");
+                "The following command had errors and needs to be corrected below and this comment removed.");
             CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading the following command.",
-                            "Correct the command below (typically an error due to manual edit)." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    "There was an error loading the following command.",
+                    "Correct the command below (typically an error due to manual edit)." ) );
             addCommand ( command2, notifyListenersForEachAdd );
             ++numAdded;
             command2 = new GenericCommand ();
             command2.setCommandString ( "#" + line );
             status = ((CommandStatusProvider)command2).getCommandStatus();
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading this command.",
-                            "Correct the command below (typically an error due to manual edit)." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    "There was an error loading this command.",
+                    "Correct the command below (typically an error due to manual edit)." ) );
             addCommand ( command2, notifyListenersForEachAdd );
             ++numAdded;
             // Allow the bad command to be loaded below.  It may have no arguments or partial
@@ -564,28 +565,28 @@ throws IOException
             if ( (command != null) && (command instanceof CommandStatusProvider) ) {
                 CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                "Unexpected error creating the command.",
-                                "Check the command syntax.  See log file for details." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        "Unexpected error creating the command.",
+                        "Check the command syntax.  See log file for details." ) );
             }
             // Add generic commands as comments prior to this command to show the original,
             Command command2 = new GenericCommand ();
             command2.setCommandString ( "#" + fixme +
-                    " The following command had errors and needs to be corrected below and this comment removed.");
+                " The following command had errors and needs to be corrected below and this comment removed.");
             CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading the following command.",
-                            "Correct the command below (typically an error due to manual edit)." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    "There was an error loading the following command.",
+                    "Correct the command below (typically an error due to manual edit)." ) );
             addCommand ( command2, notifyListenersForEachAdd );
             ++numAdded;
             command2 = new GenericCommand ();
             command2.setCommandString ( "#" + fixme + line );
             status = ((CommandStatusProvider)command2).getCommandStatus();
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading this command.",
-                            "Correct the command below (typically an error due to manual edit)." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    "There was an error loading this command.",
+                    "Correct the command below (typically an error due to manual edit)." ) );
             addCommand ( command2, notifyListenersForEachAdd );
             ++numAdded;
             // Allow the bad command to be loaded below.  It may have no arguments or partial
@@ -629,19 +630,19 @@ throws IOException
                 // command or a generic command (string command)...
                 String message = "Error loading command - invalid syntax (" + e + ").";
                 if ( command instanceof CommandStatusProvider ) {
-                       if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
-                               greaterThan(CommandStatusType.UNKNOWN) ) {
-                           // No need to print a message to the screen because a visual marker will be shown, but log...
-                           Message.printWarning ( 2,
-                                   MessageUtil.formatMessageTag(command_tag,
-                                           ++error_count), routine, message );
-                       }
-                       if ( command instanceof GenericCommand ) {
-                            // The command class will not have added a log record so do it here...
-                            ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
-                                    new CommandLogRecord(CommandStatusType.FAILURE,
-                                            message, "Check the log for more details." ) );
-                       }
+                   if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+                       greaterThan(CommandStatusType.UNKNOWN) ) {
+                       // No need to print a message to the screen because a visual marker will be shown, but log...
+                       Message.printWarning ( 2,
+                           MessageUtil.formatMessageTag(command_tag,
+                               ++error_count), routine, message );
+                   }
+                   if ( command instanceof GenericCommand ) {
+                        // The command class will not have added a log record so do it here...
+                        ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Check the log for more details." ) );
+                   }
                 }
                 else {
                     // Command has not been updated to set warning/failure in status so show here
@@ -659,7 +660,7 @@ throws IOException
             ++numAdded;
             // Run discovery on the command so that the identifiers are available to other commands.
             // Do up front and then only when commands are edited.
-            if ( command instanceof CommandDiscoverable ) {
+            if ( runDiscoveryOnLoad && (command instanceof CommandDiscoverable) ) {
                 readCommandFile_RunDiscoveryOnCommand ( command );
             }
         }
@@ -2964,7 +2965,7 @@ Process the RemoveTableFromResultsList request.
 private CommandProcessorRequestResultsBean processRequest_RemoveTableFromResultsList (
     String request, PropList request_params )
 throws Exception
-{   String routine = "TSCommandProcessor.processRequest_RemoveTableFromResultsList";
+{   //String routine = "TSCommandProcessor.processRequest_RemoveTableFromResultsList";
     TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters...
     Object o = request_params.getContents ( "TableID" );
@@ -3317,18 +3318,20 @@ This is being used during transition of old string commands to full Command clas
 may be needed in any case to preserve commands that were manually edited.  Commands with
 problems will in any case be flagged at run-time as unrecognized or problematic.
 @param append If true, the commands will be appended to the existing commands.
+@param runDiscoveryOnLoad if true, run discovery mode on the commands at load; if false, do not run discovery
 @exception IOException if there is a problem reading the file.
 @exception FileNotFoundException if the specified commands file does not exist.
 */
-public void readCommandFile ( String path, boolean createUnknownCommandIfNotRecognized, boolean append )
+public void readCommandFile ( String path, boolean createUnknownCommandIfNotRecognized, boolean append,
+    boolean runDiscoveryOnLoad )
 throws IOException, FileNotFoundException
 {	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
 	try {
-        setCommandFileName ( path );   // This is used in headers, etc.
+        setCommandFileName ( path ); // This is used in headers, etc.
         // Read all the lines in the file
         String line;
-        List commandStrings = new Vector();
+        List<String> commandStrings = new Vector<String>();
         while ( true ) {
         	line = br.readLine();
         	if ( line == null ) {
@@ -3340,7 +3343,7 @@ throws IOException, FileNotFoundException
         File path_File = new File(path);
         String initialWorkingDir = path_File.getParent();
         addCommandsFromStringList ( commandStrings, createUnknownCommandIfNotRecognized,
-                append, new File(initialWorkingDir) );
+            append, runDiscoveryOnLoad, new File(initialWorkingDir) );
 	}
 	finally {
         // Close the file...

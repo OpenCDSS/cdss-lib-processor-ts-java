@@ -18,14 +18,17 @@ private TSCommandProcessor __processor = new TSCommandProcessor();
 
 /**
 Read the commands from a file.
-@param filename Name of command file to run, should be absolute.
+@param filename name of command file to run, should be absolute.
+@param runDiscoveryOnLoad indicates whether to run discovery mode on commands when loading (this is
+a noticable performance hit for large command files)
 */
-public void readCommandFile ( String path )
+public void readCommandFile ( String path, boolean runDiscoveryOnLoad )
 throws FileNotFoundException, IOException
 {	__processor.readCommandFile (
-		path,	// InitialWorkingDir will be set to commands file location
-		true,	// Create GenericCommand instances for unknown commands
-		false );	// Do not append the commands.
+		path, // InitialWorkingDir will be set to commands file location
+		true, // Create GenericCommand instances for unknown commands
+		false, // Do not append the commands.
+		runDiscoveryOnLoad );
 }
 
 /**
@@ -35,17 +38,8 @@ public void runCommands ()
 throws Exception
 {
 	__processor.runCommands(
-			null,		// Subset of Command instances to run - just run all
-			null );		// Properties to control run
-}
-
-/**
-Return the command processor used by the runner.
-@return the command processor used by the runner
-@deprecated Use getProcessor()
-*/
-public TSCommandProcessor get__processor() {
-    return getProcessor();
+			null, // Subset of Command instances to run - just run all
+			null ); // Properties to control run
 }
 
 /**

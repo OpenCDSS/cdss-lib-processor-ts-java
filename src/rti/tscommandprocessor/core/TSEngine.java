@@ -723,6 +723,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProfile;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusProviderUtil;
@@ -2466,7 +2467,7 @@ so that original data averages are used.</b>
 @param commandList The Vector of Command from the TSCommandProcessor,
 to be processed.  If null, process all.  Non-null is typically only used, for example,
 if a user has selected commands in a GUI.
-@param app_PropList if not null, then properties are set as the commands are
+@param appPropList if not null, then properties are set as the commands are
 run.  This is typically used when running commands prior to using an edit
 dialog in the TSTool GUI.  Properties can have the following values:
 <table width=100% cellpadding=10 cellspacing=0 border=2>
@@ -2501,9 +2502,9 @@ processing.
 
 </table>
 */
-protected void processCommands ( List commandList,	PropList app_PropList )
+protected void processCommands ( List<Command> commandList, PropList appPropList )
 throws Exception
-{	String	message, routine = "TSEngine.processCommands";
+{	String message, routine = "TSEngine.processCommands";
 	String message_tag = "ProcessCommands"; // Tag used with messages generated in this method.
 	int error_count = 0;	// For errors during time series retrieval
 	int update_count = 0;	// For warnings about command updates
@@ -2516,11 +2517,11 @@ throws Exception
 	// Save the passed in properties (formed in the TSCommandProcessor) request
 	// call, so that they can be retrieved with other requests.
 	
-	if ( app_PropList == null ) {
-		app_PropList = new PropList ( "TSEngine" );
+	if ( appPropList == null ) {
+		appPropList = new PropList ( "TSEngine" );
 	}
 	// Save class version...
-	__processor_PropList = app_PropList;
+	__processor_PropList = appPropList;
 
 	// Initialize the working directory to the initial directory that is
 	// passed in.  Do this because software may request the working directory that
@@ -2546,7 +2547,7 @@ throws Exception
 	// just time series (to allow interactive graphing).
 	boolean CreateOutput_boolean = __ts_processor.getCreateOutput().booleanValue();
 	if ( __processor_PropList != null ) {
-		String CreateOutput = app_PropList.getValue ( "CreateOutput" );
+		String CreateOutput = appPropList.getValue ( "CreateOutput" );
 		if ( (CreateOutput != null) && CreateOutput.equalsIgnoreCase("False")){
 			__ts_processor.setCreateOutput ( new Boolean(false));
 			CreateOutput_boolean = false;
@@ -2566,7 +2567,7 @@ throws Exception
 	// Indicate whether a recursive run of the processor is being made (e.g., because RunCommands() is used).
 	boolean Recursive_boolean = false;
 	if ( __processor_PropList != null ) {
-		String Recursive = app_PropList.getValue ( "Recursive" );
+		String Recursive = appPropList.getValue ( "Recursive" );
 		if ( (Recursive != null) && Recursive.equalsIgnoreCase("True")){
 			Recursive_boolean = true;
 			// Default for recursive runs is to NOT append results...
@@ -2580,11 +2581,11 @@ throws Exception
 	Message.printStatus ( 1, routine, "Processing " + size + " commands..." );
 	StopWatch stopwatch = new StopWatch();
 	stopwatch.start();
-	String command_String = null;
+	String commandString = null;
 
 	boolean inComment = false;
 	Command command = null;	// The command to process
-	CommandStatus command_status = null; // Put outside of main try to be able to use in catch.
+	CommandStatus commandStatus = null; // Put outside of main try to be able to use in catch.
 
     // Turn off interactive warnings to pretent overload on user in loops.
     Message.setPropValue ( "ShowWarningDialog=false" );
@@ -2609,8 +2610,9 @@ throws Exception
 	int i;	// Put here so can check count outside of end of loop
 	boolean prev_command_complete_notified = false;// If previous command completion listeners were notified
 										// May not occur if "continue" in loop.
-	Command command_prev = null;	// previous command in loop
-	// Indicat the state of the processor...
+	CommandProfile commandProfile = null; // Profile to track execution time, memory use
+	Command commandPrev = null; // previous command in loop
+	// Indicatd the state of the processor...
 	__ts_processor.setIsRunning ( true );
 	// Stopwatch to time each command...
     StopWatch stopWatch = new StopWatch();
@@ -2621,13 +2623,13 @@ throws Exception
 		command_tag = "" + i_for_message;	// Command number as integer 1+, for message/log handler.
 		// If for some reason the previous command did not notify listeners of its completion (e.g., due to
 		// continue in loop, do it now)...
-		if ( !prev_command_complete_notified && (command_prev != null) ) {
-			__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( (i - 1), size, command_prev );
+		if ( !prev_command_complete_notified && (commandPrev != null) ) {
+			__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( (i - 1), size, commandPrev );
 		}
 		prev_command_complete_notified = false;
 		// Save the previous command before resetting to new command below.
 		if ( i > 0 ) {
-			command_prev = command;
+			commandPrev = command;
 		}
 		// Check for a cancel, which would have been set by pressing
 		// the cancel button on the warning dialog or by using the other TSTool menus...
@@ -2644,69 +2646,85 @@ throws Exception
 		}
 		try {
 		    // Catch errors in all the commands.
-    		command = (Command)commandList.get(i);
-    		command_String = command.toString();
-    		if ( command_String == null ) {
+    		command = commandList.get(i);
+    		commandString = command.toString();
+    		if ( commandString == null ) {
     			continue;
     		}
-    		command_String = command_String.trim();
+    		commandString = commandString.trim();
     		// All commands will implement CommandStatusProvider so get it...
-    		command_status = ((CommandStatusProvider)command).getCommandStatus();
+    		commandStatus = ((CommandStatusProvider)command).getCommandStatus();
     		// Clear the run status (internally will set to UNKNOWN).
-    		command_status.clearLog(CommandPhaseType.RUN);
+    		commandStatus.clearLog(CommandPhaseType.RUN);
+    		commandProfile = command.getCommandProfile(CommandPhaseType.RUN);
     		Message.printStatus ( 1, routine, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     		Message.printStatus ( 1, routine,
-    			"Start processing command " + (i + 1) + " of " + size + ": \"" + command_String + "\" " );
+    			"Start processing command " + (i + 1) + " of " + size + ": \"" + commandString + "\" " );
             stopWatch.clear();
             stopWatch.start();
-            command.setRunTime( 0 );
+            commandProfile.setStartTime(System.currentTimeMillis());
+            commandProfile.setStartHeap(Runtime.getRuntime().totalMemory());
     		// Notify any listeners that the command is running...
     		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, size, command );
     
     		if ( command instanceof Comment_Command ) {
     			// Comment.  Mark as processing successful.
-    			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
-    			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+                commandProfile.setEndTime(System.currentTimeMillis());
+                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			continue;
     		}
     		else if ( command instanceof CommentBlockStart_Command ) {
     			inComment = true;
-    			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
-    			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+                commandProfile.setEndTime(System.currentTimeMillis());
+                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			continue;
     		}
     		else if ( command instanceof CommentBlockEnd_Command ) {
     			inComment = false;
-    			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
-    			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+                commandProfile.setEndTime(System.currentTimeMillis());
+                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			continue;
     		}
     		if ( inComment ) {
     		    // Commands won't know themselves that they are in a comment so set the status for them
     		    // and continue.
     		    // TODO SAM 2008-09-30 Do the logs need to be cleared?
-    			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
-    			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+                commandProfile.setEndTime(System.currentTimeMillis());
+                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			continue;
     		}
     		// TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities
-    		else if ( command_String.regionMatches(true,0,"createYearStatisticsReport",0,26)){
-    			do_createYearStatisticsReport ( command_String );
+    		else if ( commandString.regionMatches(true,0,"createYearStatisticsReport",0,26)){
+    			do_createYearStatisticsReport ( commandString );
+                commandProfile.setEndTime(System.currentTimeMillis());
+                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			continue;
     		}
     		else if ( command instanceof Exit_Command ) {
     			// Exit the processing...
     			Message.printStatus ( 1, routine, "Exit - stop processing commands." );
+                commandProfile.setEndTime(System.currentTimeMillis());
+                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			break;
     		}
     	
     		// Check for obsolete commands (do this last to minimize the amount of processing through this code)...
     		// Do this at the end because this logic may seldom be hit if valid commands are processed above.  
     		
-    		else if ( processCommands_CheckForObsoleteCommands(command_String, (CommandStatusProvider)command, message_tag, i_for_message) ) {
+    		else if ( processCommands_CheckForObsoleteCommands(commandString, (CommandStatusProvider)command, message_tag, i_for_message) ) {
     			// Had a match so increment the counters.
     			++update_count;
     			++error_count;
+                commandProfile.setEndTime(System.currentTimeMillis());
+                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     		}
     		// Command factory for remaining commands...
     		else {
@@ -2716,7 +2734,7 @@ throws Exception
     				// Initialize the command (parse)...
     				// TODO SAM 2007-09-05 Need to evaluate where the initialization occurs (probably the initial edit or load)?
     				if ( Message.isDebugOn ) {
-    					Message.printDebug ( 1, routine, "Initializing the Command for \"" + command_String + "\"" );
+    					Message.printDebug ( 1, routine, "Initializing the Command for \"" + commandString + "\"" );
     				}
     				if ( command instanceof CommandStatusProvider ) {
     					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.INITIALIZATION);
@@ -2724,11 +2742,11 @@ throws Exception
     				if ( command instanceof CommandStatusProvider ) {
     					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.DISCOVERY);
     				}
-    				command.initializeCommand ( command_String, __ts_processor, true );
+    				command.initializeCommand ( commandString, __ts_processor, true );
     				// TODO SAM 2005-05-11 Is this the best place for this or should it be in RunCommand()?
     				// Check the command parameters...
     				if ( Message.isDebugOn ) {
-    					Message.printDebug ( 1, routine, "Checking the parameters for command \"" + command_String + "\"" );
+    					Message.printDebug ( 1, routine, "Checking the parameters for command \"" + commandString + "\"" );
     				}
     				command.checkCommandParameters ( command.getCommandParameters(), command_tag, 2 );
     				// Clear the run status for the command...
@@ -2838,7 +2856,7 @@ throws Exception
     					Message.printWarning ( 2,
     						MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
                         // Always add to the log because this type of exception is unexpected from a Command object.
-    					command_status.addToLog(CommandPhaseType.RUN,
+    					commandStatus.addToLog(CommandPhaseType.RUN,
     							new CommandLogRecord(CommandStatusType.FAILURE,
     									"Unexpected exception \"" + e.getMessage() + "\"",
     									"See log file for details.") );
@@ -2854,18 +2872,19 @@ throws Exception
                 finally {
                     // Save the time spent running the command
                     stopWatch.stop();
-                    command.setRunTime( stopWatch.getMilliseconds() );
+                    commandProfile.setEndTime(System.currentTimeMillis());
+                    commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
                 }
     		}
 		} // Main catch
 		catch ( Exception e ) {
 			Message.printWarning ( popup_warning_level, MessageUtil.formatMessageTag(command_tag,
-			++error_count), routine, "There was an error processing command: \"" + command_String +
+			++error_count), routine, "There was an error processing command: \"" + commandString +
 			"\".  Cannot continue processing." );
 			Message.printWarning ( 3, routine, e );
 			if ( command instanceof CommandStatusProvider ) {
 				// Add to the command log as a failure...
-				command_status.addToLog(CommandPhaseType.RUN,
+				commandStatus.addToLog(CommandPhaseType.RUN,
 						new CommandLogRecord(CommandStatusType.FAILURE,
 								"Unexpected error \"" + e.getMessage() + "\"", "See log file for details.") );
 			}
@@ -2877,7 +2896,7 @@ throws Exception
 			++error_count), routine, message );
 			if ( command instanceof CommandStatusProvider ) {
 				// Add to the command log as a failure...
-				command_status.addToLog(CommandPhaseType.RUN,
+				commandStatus.addToLog(CommandPhaseType.RUN,
 					new CommandLogRecord(CommandStatusType.FAILURE, message,
 						"Try increasing JRE memory with -Xmx and restarting the software.  " +
 						"See the log file for details.  See troubleshooting documentation.") );
@@ -2893,9 +2912,9 @@ throws Exception
 		prev_command_complete_notified = true;
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
 		Message.printStatus ( 1, routine,
-            "Done processing command \"" + command_String + "\" (" +  (i + 1) + " of " + size + " commands, " +
-            StringUtil.formatString(command.getRunTime(),"%d") + " ms runtime)" );
-		runtimeTotal += command.getRunTime();
+            "Done processing command \"" + commandString + "\" (" +  (i + 1) + " of " + size + " commands, " +
+            StringUtil.formatString(commandProfile.getRunTime(),"%d") + " ms runtime)" );
+		runtimeTotal += commandProfile.getRunTime();
         Message.printStatus ( 2, routine, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" );
 	}
 	// If necessary, do a final notify for the last command...

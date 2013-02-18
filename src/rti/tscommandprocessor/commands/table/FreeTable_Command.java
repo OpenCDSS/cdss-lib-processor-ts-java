@@ -22,7 +22,6 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
-import RTi.Util.Table.DataTable;
 
 /**
 This class initializes, checks, and runs the FreeTable() command.
@@ -120,12 +119,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     // Get the table to process.
 
-    DataTable table = null;
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (TableID != null) && !TableID.equals("") ) {
-            // Get the table to be updated
+            // Get the table to be removed, even though will not use it within the command
             request_params = new PropList ( "" );
             request_params.set ( "TableID", TableID );
             try {
@@ -146,9 +144,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
                 status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that a table exists with the requested ID." ) );
-            }
-            else {
-                table = (DataTable)o_Table;
             }
         }
     }

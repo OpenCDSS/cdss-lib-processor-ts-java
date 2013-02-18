@@ -229,6 +229,12 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 
 	String InputFile = parameters.getValue ( "InputFile" );
+	String RunDiscovery = parameters.getValue ( "RunDiscovery" );
+	// TODO SAM 2013-02-17 Enable as a full property (what should be default?
+	boolean runDiscovery = true;
+	if ( (RunDiscovery != null) && RunDiscovery.equalsIgnoreCase("False") ) {
+	    runDiscovery = false;
+	}
     String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
     String ShareProperties = parameters.getValue ( "ShareProperties" );
     if ( (ShareProperties == null) || ShareProperties.equals("") ) {
@@ -258,7 +264,7 @@ CommandWarningException, CommandException
 		
 		TSCommandFileRunner runner = new TSCommandFileRunner ();
         // This will set the initial working directory of the runner to that of the command file...
-		runner.readCommandFile(InputFile_full);
+		runner.readCommandFile(InputFile_full, runDiscovery );
         // Set the database connection information...
         // FIXME SAM 2007-11-25 HydroBase needs to be converted to generic DataStore objects.
         TSCommandProcessor runner_processor = runner.getProcessor();

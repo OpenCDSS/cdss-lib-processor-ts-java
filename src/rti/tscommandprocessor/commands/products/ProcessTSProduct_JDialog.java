@@ -1,33 +1,3 @@
-// ----------------------------------------------------------------------------
-// processTSProduct_JDialog - editor for processTSProduct()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 20 Feb 2001	Steven A. Malers, RTi	Initial version.
-// 31 Aug 2001	SAM, RTi		Add additional comments at top and
-//					source place-holder for later use.
-//					Enable the browse button.
-// 2002-04-05	SAM, RTi		Rework interface to be cleaner.  Add
-//					ability to add/remove working directory.
-// 2002-06-01	SAM, RTi		Correct title bar in file selector.
-// 2003-04-07	SAM, RTi		Add an output file to the command.
-// 2003-12-07	SAM, RTi		Update to Swing.
-// 2004-02-17	SAM, RTi		Fix bug where directory from file
-//					selection was not getting set as the
-//					last dialog directory in JGUIUtil.
-// 2004-08-03	SAM, RTi		Fix bug where working directory
-//					add/remove buttons had action strings
-//					that did not match the setup.
-// 2005-10-18	SAM, RTi		Move from the TSTool package to the GRTS
-//					package and convert to named parameter
-//					notation.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.products;
 
 import java.awt.FlowLayout;
@@ -78,23 +48,23 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private final String __AddWorkingDirectoryToTSP = "Add Working Directory to TSP";
 private final String __RemoveWorkingDirectoryFromTSP = "Remove Working Directory from TSP";
 
-private SimpleJButton	__browse_JButton = null,// Browse for file.
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and absolute paths
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null; // Convert between relative and absolute paths
 private ProcessTSProduct_Command __command = null;// Command to edit
-private String		__working_dir = null;	// Working directory.
-private JTextArea	__command_JTextArea=null;
-private JTextField	__TSProductFile_JTextField=null;
-private JTextField	__OutputFile_JTextField=null;
-private JTextField  __DefaultSaveFile_JTextField=null;
+private String __working_dir = null; // Working directory.
+private JTextArea __command_JTextArea = null;
+private JTextField __TSProductFile_JTextField=null;
+private JTextField __OutputFile_JTextField=null;
+private JTextField __DefaultSaveFile_JTextField=null;
 private JTextField __VisibleStart_JTextField = null;
 private JTextField __VisibleEnd_JTextField = null;
 private SimpleJComboBox	__RunMode_JComboBox = null;
 private SimpleJComboBox	__View_JComboBox = null;
-private boolean		__error_wait = false;	// Is there an error to be cleared up?
-private boolean		__first_time = true;
-private boolean		__ok = false; // Indicates whether the user has pressed OK to close the dialog.
+private boolean __error_wait = false; // Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
 Command editor dialog constructor.

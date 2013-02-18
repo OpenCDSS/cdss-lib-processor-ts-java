@@ -1305,7 +1305,7 @@ public static List<Object> getTagValues ( CommandProcessor processor, String tag
         // Check the comment.
         int pos = StringUtil.indexOfIgnoreCase(commandString,searchTag,0);
         if ( pos >= 0 ) {
-            List parts = StringUtil.breakStringList(
+            List<String> parts = StringUtil.breakStringList(
                 commandString.substring(pos)," \t", StringUtil.DELIM_SKIP_BLANKS);
             if ( parts.size() == 1 ) {
                 // No value to the tag so 
@@ -1314,7 +1314,7 @@ public static List<Object> getTagValues ( CommandProcessor processor, String tag
             else {
                 // Add as a string - note that this value may contain multiple values separated by
                 // commas or some other encoding.  The calling code needs to handle.
-                tagValues.add ( (String)parts.get(1) );
+                tagValues.add ( parts.get(1) );
             }
         }
     }
@@ -1333,7 +1333,9 @@ public static List<Object> getTagValues ( String commandFile, String tag )
 throws IOException, FileNotFoundException
 {
     TSCommandProcessor processor = new TSCommandProcessor();
-    processor.readCommandFile(commandFile, true, false);
+    // TODO SAM 2013-02-17 This might be an expensive way to parse tags because
+    // command objects are heavier than simple strings
+    processor.readCommandFile(commandFile, true, false, false);
     return getTagValues ( processor, tag );
 }
 

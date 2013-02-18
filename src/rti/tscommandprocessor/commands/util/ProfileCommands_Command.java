@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
@@ -16,7 +17,9 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProfile;
 import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
@@ -24,17 +27,23 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
+import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the ProfileCommands() command.
 */
 public class ProfileCommands_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
-    
+
 /**
-The table that is created.
+The detail table that is created.
 */
-private DataTable __table = null;
+private DataTable __detailTable = null;
+
+/**
+The summary table that is created.
+*/
+private DataTable __summaryTable = null;
 
 /**
 Constructor.
@@ -54,25 +63,16 @@ cross-reference to the original commands.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
-	String warning = "";
-    String message;
+{	String warning = "";
     
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (TableID == null) || (TableID.length() == 0) ) {
-        message = "The table identifier must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the table identifier." ) );
-    }
- 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TableID" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List<String> validParameterNames = new Vector();
+    validParameterNames.add ( "SummaryTableID" );
+    validParameterNames.add ( "DetailTableID" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validParameterNames, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -95,22 +95,33 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
-Return the table that is read by this class when run in discovery mode.
+Return the detail table that is read by this class when run in discovery mode.
 */
-private DataTable getDiscoveryTable()
+private DataTable getDiscoveryDetailTable()
 {
-    return __table;
+    return __detailTable;
+}
+
+/**
+Return the summary table that is read by this class when run in discovery mode.
+*/
+private DataTable getDiscoverySummaryTable()
+{
+    return __summaryTable;
 }
 
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
 public List getObjectList ( Class c )
-{   DataTable table = getDiscoveryTable();
-    List v = null;
-    if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
-        v.add ( table );
+{   DataTable summaryTable = getDiscoverySummaryTable();
+    DataTable detailTable = getDiscoveryDetailTable();
+    List v = new Vector();
+    if ( (summaryTable != null) && (c == summaryTable.getClass()) ) {
+        v.add ( summaryTable );
+    }
+    if ( (detailTable != null) && (c == detailTable.getClass()) ) {
+        v.add ( detailTable );
     }
     return v;
 }
@@ -118,13 +129,134 @@ public List getObjectList ( Class c )
 // Use base class parseCommand()
 
 /**
-Fill the output table with command statistics.
+Fill the detail table with command statistics.
 @param table the table to fill
-@param commanList list of commands to process
+@param commandList list of commands to process
 */
-private void profileCommands ( DataTable table, List<Command> commandList )
+private DataTable profileCommandsDetail ( String detailTableID, List<Command> commandList )
 throws Exception
-{
+{   // Create the summary table...
+    List<TableField> columnList = new Vector();
+    columnList.add ( new TableField(TableField.DATA_TYPE_INT, "CommandNum", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Command", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "StartTime", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_INT, "StartTime (ms)", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "EndTime", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "EndTime (ms)", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "RunTime (ms)", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_DOUBLE, "RunTime (%)", -1, 3) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "StartHeap (bytes)", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "EndHeap (bytes)", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "DeltaHeap (bytes)", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_DOUBLE, "DeltaHeap (%)", -1, 3) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_INT, "NumLogRecords", -1, -1) );
+    DataTable table = new DataTable( columnList );
+    table.setTableID ( detailTableID );
+    // Loop through the commands once to get the run times so that a total can be computed and
+    // used for percent for each output record
+    String commandName;
+    long runTimeAll = 0;
+    CommandProfile profile;
+    for ( Command c : commandList ) {
+        profile = c.getCommandProfile(CommandPhaseType.RUN);
+        Message.printStatus(2,"XXX","Runtime=" + profile.getRunTime());
+        if ( profile.getEndTime() != 0 ) { // Check because ProfileCommands may have start but no end
+            runTimeAll += profile.getRunTime();
+        }
+    }
+    Message.printStatus(2,"XXX","RuntimeAll=" + runTimeAll);
+    // Loop through the commands again and output runtime information to table
+    CommandStatus status;
+    long runTime;
+    long startTimeMs, endTimeMs;
+    String startTime, endTime;
+    long startHeap, endHeap, deltaHeap;
+    DateTime dt;
+    int row = -1;
+    int logRecordCount;
+    boolean okToProcess = true;
+    for ( Command c : commandList ) {
+        ++row;
+        if ( c == this ) {
+            // Have found the current command so this command and following commands
+            // will not have output for some information
+            okToProcess = false;
+        }
+        // Format cell values
+        commandName = c.getCommandName();
+        profile = c.getCommandProfile(CommandPhaseType.RUN);
+        logRecordCount = 0;
+        if ( c instanceof CommandStatusProvider ) {
+            status = ((CommandStatusProvider)c).getCommandStatus();
+            logRecordCount = status.getCommandLog(CommandPhaseType.RUN).size();
+        }
+        startTimeMs = profile.getStartTime();
+        dt = new DateTime(new Date(startTimeMs));
+        startTime = dt.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS_hh);
+        endTimeMs = profile.getEndTime();
+        dt = new DateTime(new Date(endTimeMs));
+        endTime = dt.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS_hh);
+        runTime = profile.getRunTime();
+        startHeap = profile.getStartHeap();
+        endHeap = profile.getEndHeap();
+        deltaHeap = endHeap - startHeap;
+        int col = 0;
+        // Add rows to the table
+        table.setFieldValue(row,col++, new Integer(row + 1),true); // Command number (1+)
+        table.setFieldValue(row,col++, commandName,true);
+        if ( okToProcess ) {
+            table.setFieldValue(row,col++, startTime,true);
+            table.setFieldValue(row,col++, new Long(startTimeMs),true);
+            table.setFieldValue(row,col++, endTime,true);
+            table.setFieldValue(row,col++, new Long(endTimeMs),true);
+            table.setFieldValue(row,col++, new Integer((int)runTime),true);
+            if ( runTimeAll == 0 ) {
+                table.setFieldValue(row,col++, new Double(0.0), true );
+            }
+            else {
+                table.setFieldValue(row,col++, new Double(100.0*((double)runTime/(double)runTimeAll)),true);
+            }
+            table.setFieldValue(row,col++, new Long(startHeap),true);
+            table.setFieldValue(row,col++, new Long(endHeap),true);
+            table.setFieldValue(row,col++, new Long(deltaHeap),true);
+            table.setFieldValue(row,col++, new Double(100.0*(double)deltaHeap/(double)endHeap),true);
+            table.setFieldValue(row,col++, new Integer((int)(logRecordCount)),true);
+        }
+        else {
+            table.setFieldValue(row,col++, null,true); // startTime...
+            table.setFieldValue(row,col++, null,true);
+            table.setFieldValue(row,col++, null,true);
+            table.setFieldValue(row,col++, null,true);
+            table.setFieldValue(row,col++, null,true);
+            table.setFieldValue(row,col++, null,true);
+            table.setFieldValue(row,col++, null,true);
+            table.setFieldValue(row,col++, null,true);
+            table.setFieldValue(row,col++, null,true);
+            table.setFieldValue(row,col++, null,true);
+            table.setFieldValue(row,col++, null,true); // ... through logRecordCount
+        }
+    }
+    return table;
+}
+
+/**
+Fill the summary table with command statistics.
+@param table the table to fill
+@param commandList list of commands to process
+*/
+private DataTable profileCommandsSummary ( String summaryTableID, List<Command> commandList )
+throws Exception
+{   // Create the summary table...
+    List<TableField> columnList = new Vector();
+    columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Command", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_INT, "NumberOfOccurances", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "TotalTime (ms)", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_DOUBLE, "TotalTime (%)", -1, 3) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "AverageTime (ms)", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "MaximumTime (ms)", -1, -1) );
+    columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "MinimumTime (ms)", -1, -1) );
+    DataTable table = new DataTable( columnList );
+    table.setTableID ( summaryTableID );
     // Loop through the commands once to get a unique list of commands that are used
     List<String> commandNameList = new Vector<String>();
     String commandName;
@@ -151,8 +283,10 @@ throws Exception
     int pos;
     String cname;
     long runTime;
+    CommandProfile profile;
     for ( Command c : commandList ) {
         commandName = c.getCommandName();
+        profile = c.getCommandProfile(CommandPhaseType.RUN);
         // Find the position in the list
         for ( pos = 0; ; ++pos ) {
             cname = commandNameList.get(pos);
@@ -160,7 +294,12 @@ throws Exception
                 break; 
             }
         }
-        runTime = c.getRunTime();
+        if ( profile.getEndTime() != 0 ) { // Check because ProfileCommands may have start but no end
+            runTime = profile.getRunTime();
+        }
+        else {
+            runTime = 0;
+        }
         runTotalTimeAll += runTime;
         runTimeTotal[pos] += runTime;
         runTimeMin[pos] = (runTimeMin[pos] == 0 ? (int)runTime : Math.min(runTimeMin[pos], (int)runTime) );
@@ -184,17 +323,18 @@ throws Exception
         int col = 0;
         table.setFieldValue(pos,col++, commandNameList.get(pos),true);
         table.setFieldValue(pos,col++, new Integer(count[pos]),true);
-        table.setFieldValue(pos,col++, new Integer(runTimeTotal[pos]),true);
+        table.setFieldValue(pos,col++, new Long(runTimeTotal[pos]),true);
         if ( runTotalTimeAll == 0 ) {
-            table.setFieldValue(pos,col++, new Double(0.0) );
+            table.setFieldValue(pos,col++, new Double(0.0), true );
         }
         else {
-            table.setFieldValue(pos,col++, new Double(100.0*(double)runTimeTotal[pos]/(double)runTotalTimeAll),true);
+            table.setFieldValue(pos,col++, new Double(100.0*((double)runTimeTotal[pos]/(double)runTotalTimeAll)),true);
         }
-        table.setFieldValue(pos,col++, new Integer(runTimeMean[pos]),true);
-        table.setFieldValue(pos,col++, new Integer(runTimeMax[pos]),true);
-        table.setFieldValue(pos,col++, new Integer(runTimeMin[pos]),true);
+        table.setFieldValue(pos,col++, new Long(runTimeMean[pos]),true);
+        table.setFieldValue(pos,col++, new Long(runTimeMax[pos]),true);
+        table.setFieldValue(pos,col++, new Long(runTimeMin[pos]),true);
     }
+    return table;
 }
 
 /**
@@ -240,7 +380,8 @@ CommandWarningException, CommandException
     CommandStatus status = getCommandStatus();
     status.clearLog(command_phase);
     if ( command_phase == CommandPhaseType.DISCOVERY ) {
-        setDiscoveryTable ( null );
+        setDiscoverySummaryTable ( null );
+        setDiscoveryDetailTable ( null );
     }
 
 	// Make sure there are time series available to operate on...
@@ -248,7 +389,8 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
-    String TableID = parameters.getValue ( "TableID" );
+    String SummaryTableID = parameters.getValue ( "SummaryTableID" );
+    String DetailTableID = parameters.getValue ( "DetailTableID" );
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
@@ -259,53 +401,66 @@ CommandWarningException, CommandException
 	}
 
 	try {
-    	// Create the table...
-    
-	    List<TableField> columnList = new Vector();
-	    DataTable table = null;
-        
-        if ( command_phase == CommandPhaseType.RUN ) {
-            // Create the table with column data
-            columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Command", -1, -1) );
-            columnList.add ( new TableField(TableField.DATA_TYPE_INT, "Number", -1, -1) );
-            columnList.add ( new TableField(TableField.DATA_TYPE_INT, "Total Time (ms)", -1, -1) );
-            columnList.add ( new TableField(TableField.DATA_TYPE_DOUBLE, "Total Time (%)", -1, 3) );
-            columnList.add ( new TableField(TableField.DATA_TYPE_INT, "Average Time (ms)", -1, -1) );
-            columnList.add ( new TableField(TableField.DATA_TYPE_INT, "Maximum Time (ms)", -1, -1) );
-            columnList.add ( new TableField(TableField.DATA_TYPE_INT, "Minimum Time (ms)", -1, -1) );
-            table = new DataTable( columnList );
-            table.setTableID ( TableID );
-            
-            // Fill the table with command profile
-            profileCommands ( table, processor.getCommands() );
-            
-            // Set the table in the processor...
-            
-            PropList request_params = new PropList ( "" );
-            request_params.setUsingObject ( "Table", table );
-            try {
-                processor.processRequest( "SetTable", request_params);
+	    if ( (SummaryTableID != null) && !SummaryTableID.equals("") ) {
+            if ( command_phase == CommandPhaseType.RUN ) {
+                DataTable table = profileCommandsSummary ( SummaryTableID, processor.getCommands() );
+                
+                // Set the table in the processor...
+                
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "Table", table );
+                try {
+                    processor.processRequest( "SetTable", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetTable(Table=...) from processor.";
+                    Message.printWarning(warning_level,
+                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                            routine, message );
+                    status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                               message, "Report problem to software support." ) );
+                }
             }
-            catch ( Exception e ) {
-                message = "Error requesting SetTable(Table=...) from processor.";
-                Message.printWarning(warning_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report problem to software support." ) );
+            else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+                // Create an empty table and set the ID
+                DataTable table = new DataTable();
+                table.setTableID ( SummaryTableID );
+                setDiscoverySummaryTable ( table );
             }
-        }
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
-            // Create an empty table and set the ID
-            table = new DataTable();
-            table.setTableID ( TableID );
-            setDiscoveryTable ( table );
+	    }
+        if ( (DetailTableID != null) && !DetailTableID.equals("") ) {
+            if ( command_phase == CommandPhaseType.RUN ) {
+                DataTable table = profileCommandsDetail ( DetailTableID, processor.getCommands() );
+                
+                // Set the table in the processor...
+                
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "Table", table );
+                try {
+                    processor.processRequest( "SetTable", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetTable(Table=...) from processor.";
+                    Message.printWarning(warning_level,
+                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                            routine, message );
+                    status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                               message, "Report problem to software support." ) );
+                }
+            }
+            else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+                // Create an empty table and set the ID
+                DataTable table = new DataTable();
+                table.setTableID ( DetailTableID );
+                setDiscoveryDetailTable ( table );
+            }
         }
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Unexpected error creating new table (" + e + ").";
+		message = "Unexpected error creating command profile (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
         status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
@@ -323,11 +478,19 @@ CommandWarningException, CommandException
 }
 
 /**
-Set the table that is read by this class in discovery mode.
+Set the detail table that is read by this class in discovery mode.
 */
-private void setDiscoveryTable ( DataTable table )
+private void setDiscoveryDetailTable ( DataTable table )
 {
-    __table = table;
+    __detailTable = table;
+}
+
+/**
+Set the summary table that is read by this class in discovery mode.
+*/
+private void setDiscoverySummaryTable ( DataTable table )
+{
+    __summaryTable = table;
 }
 
 /**
@@ -337,13 +500,20 @@ public String toString ( PropList props )
 {	if ( props == null ) {
 		return getCommandName() + "()";
 	}
-    String TableID = props.getValue( "TableID" );
+    String DetailTableID = props.getValue( "DetailTableID" );
+    String SummaryTableID = props.getValue( "SummaryTableID" );
 	StringBuffer b = new StringBuffer ();
-    if ( (TableID != null) && (TableID.length() > 0) ) {
+    if ( (SummaryTableID != null) && (SummaryTableID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "TableID=\"" + TableID + "\"" );
+        b.append ( "SummaryTableID=\"" + SummaryTableID + "\"" );
+    }
+    if ( (DetailTableID != null) && (DetailTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DetailTableID=\"" + DetailTableID + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

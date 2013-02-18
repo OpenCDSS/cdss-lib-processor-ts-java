@@ -35,7 +35,8 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private boolean __error_wait = false; // To track errors
 private boolean __first_time = true; // Indicate first time display
 private JTextArea __command_JTextArea = null;
-private JTextField __TableID_JTextField = null;
+private JTextField __SummaryTableID_JTextField = null;
+private JTextField __DetailTableID_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private ProfileCommands_Command __command = null;
@@ -79,11 +80,15 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
-    String TableID = __TableID_JTextField.getText().trim();
+    String SummaryTableID = __SummaryTableID_JTextField.getText().trim();
+    String DetailTableID = __DetailTableID_JTextField.getText().trim();
 	__error_wait = false;
 
-    if ( TableID.length() > 0 ) {
-        props.set ( "TableID", TableID );
+    if ( SummaryTableID.length() > 0 ) {
+        props.set ( "SummaryTableID", SummaryTableID );
+    }
+    if ( DetailTableID.length() > 0 ) {
+        props.set ( "DetailTableID", DetailTableID );
     }
 	try {
 	    // This will warn the user...
@@ -101,8 +106,10 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String TableID = __TableID_JTextField.getText().trim();
-    __command.setCommandParameter ( "TableID", TableID );
+{	String SummaryTableID = __SummaryTableID_JTextField.getText().trim();
+    String DetailTableID = __DetailTableID_JTextField.getText().trim();
+    __command.setCommandParameter ( "SummaryTableID", SummaryTableID );
+    __command.setCommandParameter ( "DetailTableID", DetailTableID );
 }
 
 /**
@@ -142,19 +149,35 @@ private void initialize ( JFrame parent, Command command )
 	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-    	"This command profiles (summarizes execution time) for the commands and saves information to a new table."),
+    	"This command profiles commands and saves execution time and memory information in detail and summary tables."),
     	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "If the software is running out of memory before completing the commands, then use this command on a subset " +
+        "of commands to identify memory usage."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "The profile information for this command and following commands will be incomplete."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Summary table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JTextField = new JTextField (10);
-    __TableID_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
+    __SummaryTableID_JTextField = new JTextField (10);
+    __SummaryTableID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SummaryTableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the table."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - unique identifier for the summary table."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Detail table ID:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DetailTableID_JTextField = new JTextField (10);
+    __DetailTableID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __DetailTableID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - unique identifier for the detail table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -231,19 +254,26 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String TableID = "";
+{	String SummaryTableID = "";
+    String DetailTableID = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
-        TableID = props.getValue ( "TableID" );
-        if ( TableID != null ) {
-            __TableID_JTextField.setText ( TableID );
+        SummaryTableID = props.getValue ( "SummaryTableID" );
+        DetailTableID = props.getValue ( "DetailTableID" );
+        if ( SummaryTableID != null ) {
+            __SummaryTableID_JTextField.setText ( SummaryTableID );
+        }
+        if ( DetailTableID != null ) {
+            __DetailTableID_JTextField.setText ( DetailTableID );
         }
 	}
 	// Regardless, reset the command from the fields...
-    TableID = __TableID_JTextField.getText().trim();
+    SummaryTableID = __SummaryTableID_JTextField.getText().trim();
+    DetailTableID = __DetailTableID_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
-    props.add ( "TableID=" + TableID );
+    props.add ( "SummaryTableID=" + SummaryTableID );
+    props.add ( "DetailTableID=" + DetailTableID );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 
@@ -275,11 +305,11 @@ public void windowClosing(WindowEvent event) {
 }
 
 // The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+public void windowActivated(WindowEvent evt) {}
+public void windowClosed(WindowEvent evt) {}
+public void windowDeactivated(WindowEvent evt) {}
+public void windowDeiconified(WindowEvent evt) {}
+public void windowIconified(WindowEvent evt) {}
+public void windowOpened(WindowEvent evt) {}
 
 }

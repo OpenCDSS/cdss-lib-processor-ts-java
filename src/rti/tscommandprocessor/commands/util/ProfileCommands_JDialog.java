@@ -24,7 +24,6 @@ import java.awt.event.WindowListener;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -46,9 +45,8 @@ private boolean __ok = false;
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
-@param runnable If true, the command can be run from the dialog, as a Tool.
 */
-public ProfileCommands_JDialog ( JFrame parent, Command command )
+public ProfileCommands_JDialog ( JFrame parent, ProfileCommands_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -128,10 +126,9 @@ throws Throwable
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
-@param runnable If true, the command can be run from the dialog, as a Tool.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (ProfileCommands_Command)command;
+private void initialize ( JFrame parent, ProfileCommands_Command command )
+{	__command = command;
 
 	addWindowListener(this);
 

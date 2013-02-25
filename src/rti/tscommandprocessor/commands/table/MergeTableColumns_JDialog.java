@@ -60,39 +60,31 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 // Used for button labels...
 
-private final String __AddWorkingDirectoryToListFile =
-			"Add Working Directory To List File";
-private final String __RemoveWorkingDirectoryFromListFile =
-			"Remove Working Directory From List File";
+private final String __AddWorkingDirectoryToListFile = "Add Working Directory To List File";
+private final String __RemoveWorkingDirectoryFromListFile = "Remove Working Directory From List File";
 
-private final String __AddWorkingDirectoryToOutputFile =
-			"Add Working Directory To Output File";
-private final String __RemoveWorkingDirectoryFromOutputFile =
-			"Remove Working Directory From Output File";
+private final String __AddWorkingDirectoryToOutputFile = "Add Working Directory To Output File";
+private final String __RemoveWorkingDirectoryFromOutputFile = "Remove Working Directory From Output File";
 
-private boolean		__error_wait = false;	// To track errors
-private boolean		__first_time = true;	// Indicate first time display
-private JFrame		__parent_JFrame = null;	// Parent JFrame
-private JTextArea	__command_JTextArea=null;// For command
-private JTextField	__ListFile_JTextField = null;// List file
-private JTextField	__OutputFile_JTextField = null;// Output list file
-private JTextField	__Columns_JTextField = null;	// Columns to merge 
-private JTextField	__NewColumnName_JTextField = null;// New merged column
-private JTextField	__SimpleMergeFormat_JTextField = null;
-							// Format widths for
-							// parts - integer for
-							// %s or 0N for zero-
-							// padded integers
-private SimpleJButton	__cancel_JButton = null;
-private SimpleJButton	__ok_JButton = null;	
-private SimpleJButton	__browse_JButton = null;
-private SimpleJButton	__browse2_JButton = null;
-private SimpleJButton	__path_JButton = null;
-private SimpleJButton	__path2_JButton = null;
-private String		__working_dir = null;	
-private MergeTableColumns_Command	__command = null;
-private boolean		__runnable = false;
-private boolean		__ok = false;
+private boolean __error_wait = false; // To track errors
+private boolean __first_time = true;
+private JFrame __parent_JFrame = null;
+private JTextArea __command_JTextArea=null;
+private JTextField __ListFile_JTextField = null;
+private JTextField __OutputFile_JTextField = null;
+private JTextField __Columns_JTextField = null; 
+private JTextField __NewColumnName_JTextField = null;
+private JTextField __SimpleMergeFormat_JTextField = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;	
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __browse2_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __path2_JButton = null;
+private String __working_dir = null;	
+private MergeTableColumns_Command __command = null;
+private boolean __runnable = false;
+private boolean __ok = false;
 
 /**
 mergeListFileColumns constructor
@@ -100,8 +92,7 @@ mergeListFileColumns constructor
 @param command Command to edit.
 @param runnable If true, the command can be run from the dialog, as a Tool.
 */
-public MergeTableColumns_JDialog ( JFrame parent, Command command,
-					boolean runnable )
+public MergeTableColumns_JDialog ( JFrame parent, MergeTableColumns_Command command, boolean runnable )
 {	super(parent, true);
 	initialize ( parent, command, runnable );
 }
@@ -330,9 +321,9 @@ Instantiates the GUI components.
 @param command Command to edit and possibly run.
 @param runnable If true, the command can be run from the dialog, as a Tool.
 */
-private void initialize ( JFrame parent, Command command, boolean runnable )
+private void initialize ( JFrame parent, MergeTableColumns_Command command, boolean runnable )
 {	__parent_JFrame = parent;
-	__command = (MergeTableColumns_Command)command;
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 	__runnable = runnable;

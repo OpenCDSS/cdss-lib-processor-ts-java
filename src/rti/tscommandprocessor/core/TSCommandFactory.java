@@ -95,6 +95,7 @@ import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 
 // StateCU commands.
 
+import rti.tscommandprocessor.commands.spreadsheet.ReadTableFromExcel_Command;
 import rti.tscommandprocessor.commands.statecu.ReadStateCU_Command;
 import rti.tscommandprocessor.commands.statecu.ReadStateCUB_Command;
 import rti.tscommandprocessor.commands.statecu.WriteStateCU_Command;
@@ -674,6 +675,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadTableFromDelimitedFile") ) {
         return new ReadTableFromDelimitedFile_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadTableFromExcel") ) {
+        return new ReadTableFromExcel_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadTimeSeries") ) {
         return new ReadTimeSeries_Command ();

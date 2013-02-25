@@ -79,7 +79,6 @@ private DMI __dmi = null; // DMI to do queries.
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
-@param runnable If true, the command can be run from the dialog, as a Tool.
 */
 public ReadTableFromDataStore_JDialog ( JFrame parent, ReadTableFromDataStore_Command command )
 {	super(parent, true);
@@ -276,7 +275,6 @@ private DatabaseDataStore getSelectedDataStore ()
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
-@param runnable If true, the command can be run from the dialog, as a Tool.
 */
 private void initialize ( JFrame parent, ReadTableFromDataStore_Command command )
 {	__command = command;

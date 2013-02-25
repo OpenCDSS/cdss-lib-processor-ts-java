@@ -32,7 +32,6 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -68,9 +67,8 @@ private boolean __ok = false;
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
-@param runnable If true, the command can be run from the dialog, as a Tool.
 */
-public ReadTableFromDelimitedFile_JDialog ( JFrame parent, Command command )
+public ReadTableFromDelimitedFile_JDialog ( JFrame parent, ReadTableFromDelimitedFile_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -213,10 +211,9 @@ throws Throwable
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
-@param runnable If true, the command can be run from the dialog, as a Tool.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (ReadTableFromDelimitedFile_Command)command;
+private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command command )
+{	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 

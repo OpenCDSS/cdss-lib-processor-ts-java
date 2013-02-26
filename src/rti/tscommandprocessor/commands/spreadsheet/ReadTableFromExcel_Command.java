@@ -5,13 +5,16 @@ import javax.swing.JFrame;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.AreaReference;
+import org.apache.poi.ss.util.CellReference;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -158,8 +161,9 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-   if ( ExcelColumnNames != null && !(ExcelColumnNames.equalsIgnoreCase(_True)) && 
-       !(ExcelColumnNames.equalsIgnoreCase(_False)) && !(ExcelColumnNames.equalsIgnoreCase(""))) {
+   if ( ExcelColumnNames != null && !ExcelColumnNames.equalsIgnoreCase(_ColumnN) && 
+       !ExcelColumnNames.equalsIgnoreCase(_FirstRowInRange) &&
+       !ExcelColumnNames.equalsIgnoreCase(_RowBeforeRange) && !ExcelColumnNames.equalsIgnoreCase("")) {
        message = "ExcelColumnNames is invalid.";
        warning += "\n" + message;
        status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -167,8 +171,8 @@ throws InvalidCommandParameterException
                message, "ExcelColumnNames must " + _False + " (default) or " + _True ) );
    }
 	
-	if ( ReadAllAsText != null && !(ReadAllAsText.equalsIgnoreCase(_True)) && 
-        !(ReadAllAsText.equalsIgnoreCase(_False)) && !(ReadAllAsText.equalsIgnoreCase(""))) {
+	if ( ReadAllAsText != null && !ReadAllAsText.equalsIgnoreCase(_True) && 
+        !ReadAllAsText.equalsIgnoreCase(_False) && !ReadAllAsText.equalsIgnoreCase("") ) {
         message = "ReadAllAsText is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -207,9 +211,10 @@ Create table columns from the first row of the area.
 @param area are being read into table
 @param excelColumnNames indicate how to determine column names from the Excel worksheet
 @param readAllAsText if True, treat all data as text values
+@param problems list of problems encountered during processing
 */
 private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
-    AreaReference area, String excelColumnNames, boolean readAllAsText )
+    AreaReference area, String excelColumnNames, boolean readAllAsText, List<String> problems )
 {   String routine = getClass().getName() + ".createTableColumns";
     Row dataRow; // First row of data
     Row headerRow = null; // Row containing column headings
@@ -222,6 +227,11 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
     }
     else if ( excelColumnNames.equalsIgnoreCase(_RowBeforeRange) ) {
         headerRow = sheet.getRow(iRow - 1);
+        if ( headerRow == null ) {
+            problems.add ( "Specified ExcelColumnNames=" + _RowBeforeRange +
+                " but this results in row not on sheet.  Check address range." );
+            return;
+        }
     }
     dataRow = sheet.getRow(iRow);
     int colStart = area.getFirstCell().getCol();
@@ -229,6 +239,7 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
     int columnIndex = -1;
     // First get the column names
     String [] columnNames = new String[colEnd - colStart + 1];
+    int cellType;
     for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
         ++columnIndex;
         if ( excelColumnNames.equalsIgnoreCase(_ColumnN) ) {
@@ -237,13 +248,30 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
         else {
             // Column names taken from header row - text value
             cell = headerRow.getCell(iCol);
-            columnNames[columnIndex] = "" + cell;
+            if ( cell == null ) {
+                // Default...
+                columnNames[columnIndex] = "Column" + (columnIndex + 1);
+            }
+            else {
+                cellType = cell.getCellType();
+                if ( cellType == Cell.CELL_TYPE_FORMULA ) {
+                    // Have to evaluate the formula to get the result, which can be used as the column name
+                    FormulaEvaluator formulaEval = wb.getCreationHelper().createFormulaEvaluator();
+                    columnNames[columnIndex] = formulaEval.evaluate(cell).formatAsString();
+                }
+                else if ( (cellType == Cell.CELL_TYPE_BLANK) || (cellType == Cell.CELL_TYPE_ERROR) ) {
+                 // Default...
+                    columnNames[columnIndex] = "Column" + (columnIndex + 1);
+                }
+                else {
+                    columnNames[columnIndex] = "" + cell;
+                }
+            }
         }
     }
     // Now loop through and determine the column data type from the data row
     // and add columns to the table
     columnIndex = -1;
-    int cellType;
     CellStyle style = null;
     for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
         cell = dataRow.getCell(iCol);
@@ -253,6 +281,12 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
         }
         else {
             // Interpret the first row cell types to determine column types
+            if ( cell == null ) {
+                // Treat as a string
+                Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
+                table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
+                continue;
+            }
             cellType = cell.getCellType();
             if ( cellType == Cell.CELL_TYPE_STRING ) {
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
@@ -290,8 +324,6 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                 table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
             }
             else if ( cellType == Cell.CELL_TYPE_FORMULA ) {
-                // What to do with this?
-                // TODO SAM 2013-02-22 Evaluate whether should scan down the column to figure out
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
                 table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
             }
@@ -313,17 +345,65 @@ public boolean editCommand ( JFrame parent )
 /**
 Get the array of cell ranges based on one of the input address methods.
 @param wb the Excel workbook object
+@param sheet the sheet in the workbook, read in entirety if no other address information is given
 @param excelAddress Excel address range (e.g., A1:D10 or $A1:$D10 or variant)
 @param excelNamedRange a named range
 @param excelTableName a table name, treated as named range
 @return null if no area reference can be determined
 */
-private AreaReference getAreaReference ( Workbook wb,
+private AreaReference getAreaReference ( Workbook wb, Sheet sheet,
     String excelAddress, String excelNamedRange, String excelTableName )
-{
+{   String routine = getClass().getName() + ".getAreaReference";
     if ( (excelTableName != null) && (excelTableName.length() > 0) ) {
-        // Table name takes precedence
+        // Table name takes precedence as range name
         excelNamedRange = excelTableName;
+    }
+    // If sheet is specified but excelAddress, String excelNamedRange, String excelTableName are not,
+    // read the entire sheet
+    if ( ((excelAddress == null) || (excelAddress.length() == 0)) &&
+        ((excelNamedRange == null) || (excelNamedRange.length() == 0)) ) {
+        // Examine the sheet for blank columns/cells.  POI provides methods for the rows...
+        int firstRow = sheet.getFirstRowNum();
+        int lastRow = sheet.getLastRowNum();
+        Message.printStatus(2, routine, "firstRow=" + firstRow + ", lastRow=" + lastRow );
+        // ...but have to iterate through the rows as per:
+        //  http://stackoverflow.com/questions/2194284/how-to-get-the-last-column-index-reading-excel-file
+        Row row;
+        int firstCol = -1;
+        int lastCol = -1;
+        int cellNum; // Index of cell in row (not column number?)
+        int col;
+        for ( int iRow = firstRow; iRow <= lastRow; iRow++ ) {
+            row = sheet.getRow(iRow);
+            cellNum = row.getFirstCellNum(); // Not sure what this returns if no columns.  Assume -1
+            if ( cellNum >= 0 ) {
+                col = row.getCell(cellNum).getColumnIndex();
+                if ( firstCol < 0 ) {
+                    firstCol = col;
+                }
+                else {
+                    firstCol = Math.min(firstCol, col);
+                }
+            }
+            cellNum = row.getLastCellNum() - 1; // NOTE -1, as per API docs
+            if ( cellNum >= 0 ) {
+                col = row.getCell(cellNum).getColumnIndex();
+                if ( lastCol < 0 ) {
+                    lastCol = col;
+                }
+                else {
+                    lastCol = Math.max(lastCol, col);
+                }
+            }
+            Message.printStatus(2, routine, "row " + iRow + ", firstCol=" + firstCol + ", lastCol=" + lastCol );
+        }
+        // Return null if the any of the row column limits were not determined
+        if ( (firstRow < 0) || (firstCol < 0) || (lastRow < 0) || (lastCol < 0) ) {
+            return null;
+        }
+        else {
+            return new AreaReference(new CellReference(firstRow,firstCol), new CellReference(lastRow,lastCol));
+        }
     }
     if ( (excelAddress != null) && (excelAddress.length() > 0) ) {
         return new AreaReference(excelAddress);
@@ -393,11 +473,6 @@ throws FileNotFoundException, IOException
     DataTable table = new DataTable();
     
     Workbook wb = null;
-    AreaReference area = getAreaReference ( wb, excelAddress, excelNamedRange, excelTableName );
-    if ( area == null ) {
-        problems.add ( "Unable to get worksheet area reference from address information." );
-        return null;
-    }
     InputStream inp = null;
     try {
         try {
@@ -411,7 +486,7 @@ throws FileNotFoundException, IOException
             wb = WorkbookFactory.create(inp);
         }
         catch ( InvalidFormatException e ) {
-            problems.add ( "Error creating workbook from \"" + workbookFile + "\" (" + e + ")." );
+            problems.add ( "Error creating workbook object from \"" + workbookFile + "\" (" + e + ")." );
             return null;
         }
         Sheet sheet = null;
@@ -420,12 +495,27 @@ throws FileNotFoundException, IOException
         if ( (sheetName == null) || (sheetName.length() == 0) ) {
             // Default is to use the first sheet
             sheet = wb.getSheetAt(0);
+            if ( sheet == null ) {
+                problems.add ( "Workbook does not include any worksheets" );
+                return null;
+            }
         }
         else {
             sheet = wb.getSheet(sheetName);
+            if ( sheet == null ) {
+                problems.add ( "Workbook does not include worksheet named \"" + sheetName + "\"" );
+                return null;
+            }
         }
+        // Get the contiguous block of data to process by evaluating user input
+        AreaReference area = getAreaReference ( wb, sheet, excelAddress, excelNamedRange, excelTableName );
+        if ( area == null ) {
+            problems.add ( "Unable to get worksheet area reference from address information." );
+            return null;
+        }
+        Message.printStatus(2,routine,"Excel address block to read: " + area );
         // Create the table based on the first row of the area
-        createTableColumns ( table, wb, sheet, area, excelColumnNames, readAllAsText );
+        createTableColumns ( table, wb, sheet, area, excelColumnNames, readAllAsText, problems );
         int [] tableColumnTypes = table.getFieldDataTypes();
         // Read the data from the area and transfer to the table.
         Row row;
@@ -446,7 +536,9 @@ throws FileNotFoundException, IOException
         boolean cellValueBoolean;
         double cellValueDouble;
         Date cellValueDate;
+        CellValue formulaCellValue = null; // Cell value after formula evaluation
         DateTime dt;
+        boolean cellIsFormula; // Used to know when the evaluate cell formula to get output object
         for ( int iRow = rowStart; iRow <= rowEnd; iRow++ ) {
             row = sheet.getRow(iRow);
             iRowOut = iRow - rowStart;
@@ -463,156 +555,182 @@ throws FileNotFoundException, IOException
                         table.setFieldValue(iRowOut, iColOut, null, true);
                     }
                 }
-                else if ( readAllAsText ) {
-                    // No formatting...
-                    table.setFieldValue(iRowOut, iColOut, "" + cell, true);
+                // First get the data using the type indicated for the cell.  Then translate to
+                // the appropriate type in the data table.  Handling at cell level is needed because
+                // the Excel worksheet might have cell values that are mixed type in the column.
+                // The checks are exhaustive, so list in the order that is most likely (string, double,
+                // boolean, blank, error, formula).
+                cellType = cell.getCellType();
+                Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" +
+                    cellType );
+                cellIsFormula = false;
+                if ( cellType == Cell.CELL_TYPE_FORMULA ) {
+                    // Have to evaluate the cell and get the value as the result
+                    cellIsFormula = true;
+                    try {
+                        FormulaEvaluator formulaEval = wb.getCreationHelper().createFormulaEvaluator();
+                        formulaCellValue = formulaEval.evaluate(cell);
+                        // Reset cellType for following code
+                        cellType = formulaCellValue.getCellType();
+                        Message.printStatus(2, routine, "Detected formula, new cellType=" + cellType +
+                            ", cell value=\"" + formulaCellValue + "\"" );
+                    }
+                    catch ( Exception e ) {
+                        // Handle as an error in processing below.
+                        problems.add ( "Error evaluating formula for row [" + iRow + "][" + iCol + "] \"" +
+                            cell + "\" - setting to error cell type (" + e + ")");
+                        cellType = Cell.CELL_TYPE_ERROR;
+                    }
                 }
-                else {
-                    // First get the data using the type indicated for the cell.  Then translate to
-                    // the appropriate type in the data table.  Handling at cell level is needed because
-                    // the Excel worksheet might have cell values that are mixed type in the column.
-                    // The checks are exhaustive, so list in the order that is most likely (string, double,
-                    // boolean, blank, error, formula).
-                    cellType = cell.getCellType();
-                    Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" +
-                        cellType );
-                    if ( cellType == Cell.CELL_TYPE_STRING ) {
-                        cellValueString = "" + cell.toString();
-                        if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                            // Just set
-                            table.setFieldValue(iRowOut, iColOut, cellValueString, true);
+                if ( cellType == Cell.CELL_TYPE_STRING ) {
+                    if ( cellIsFormula ) {
+                        cellValueString = formulaCellValue.getStringValue();
+                    }
+                    else {
+                        cellValueString = cell.getStringCellValue();
+                    }
+                    if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
+                        // Just set
+                        table.setFieldValue(iRowOut, iColOut, cellValueString, true);
+                    }
+                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
+                        // Parse to the double
+                        try {
+                            table.setFieldValue(iRowOut, iColOut, new Double(cellValueString), true);
                         }
-                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
-                            // Parse to the double
-                            try {
-                                table.setFieldValue(iRowOut, iColOut, new Double(cellValueString), true);
-                            }
-                            catch ( NumberFormatException e ) {
-                                // Set to NaN
-                                table.setFieldValue(iRowOut, iColOut, Double.NaN, true);
-                            }
+                        catch ( NumberFormatException e ) {
+                            // Set to NaN
+                            table.setFieldValue(iRowOut, iColOut, Double.NaN, true);
                         }
-                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
-                            // Parse to the boolean
-                            if ( cellValueString.equalsIgnoreCase("True") || cellValueString.equals("1") ) {
-                                table.setFieldValue(iRowOut, iColOut, new Integer(1), true);
-                            }
-                            else {
-                                // Set to null
-                                table.setFieldValue(iRowOut, iColOut, null, true);
-                            }
-                        }
-                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
-                            // Try to parse to a date/time string
-                            try {
-                                dt = DateTime.parse(cellValueString);
-                                table.setFieldValue(iRowOut, iColOut, dt.getDate(), true);
-                            }
-                            catch ( Exception e ) {
-                                // Set to null
-                                table.setFieldValue(iRowOut, iColOut, null, true);
-                            }
+                    }
+                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
+                        // Parse to the boolean
+                        if ( cellValueString.equalsIgnoreCase("True") || cellValueString.equals("1") ) {
+                            table.setFieldValue(iRowOut, iColOut, new Integer(1), true);
                         }
                         else {
-                            // Other cell types don't translate
+                            // Set to null
                             table.setFieldValue(iRowOut, iColOut, null, true);
                         }
                     }
-                    else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
-                        if (DateUtil.isCellDateFormatted(cell)) {
-                            cellValueDate = cell.getDateCellValue();
-                            if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
-                                // date to date
-                                table.setFieldValue(iRowOut, iColOut, cellValueDate, true);
-                            }
-                            else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                                // date to string
-                                try {
-                                    dt = new DateTime ( cellValueDate );
-                                    table.setFieldValue(iRowOut, iColOut, dt.toString(), true);
-                                }
-                                catch ( Exception e ) {
-                                    table.setFieldValue(iRowOut, iColOut, null, true);
-                                }
-                            }
-                            else {
-                                table.setFieldValue(iRowOut, iColOut, null, true);
-                            }
+                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
+                        // Try to parse to a date/time string
+                        try {
+                            dt = DateTime.parse(cellValueString);
+                            table.setFieldValue(iRowOut, iColOut, dt.getDate(), true);
                         }
-                        else {
-                            cellValueDouble = cell.getNumericCellValue();
-                            if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
-                                // Double to double
-                                table.setFieldValue(iRowOut, iColOut, new Double(cellValueDouble), true);
-                            }
-                            else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                                // Double to string
-                                table.setFieldValue(iRowOut, iColOut, "" + cellValueDouble, true);
-                            }
-                            else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
-                                // Double to boolean - try checking zero
-                                if ( cellValueDouble == 0.0 ) {
-                                    table.setFieldValue(iRowOut, iColOut, new Integer(0), true);
-                                }
-                                else {
-                                    table.setFieldValue(iRowOut, iColOut, new Integer(1), true);
-                                }
-                            }
-                            else {
-                                table.setFieldValue(iRowOut, iColOut, null, true);
-                            }
+                        catch ( Exception e ) {
+                            // Set to null
+                            table.setFieldValue(iRowOut, iColOut, null, true);
                         }
                     }
-                    else if ( cellType == Cell.CELL_TYPE_BOOLEAN ) {
-                        cellValueBoolean = cell.getBooleanCellValue();
-                        if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
-                            table.setFieldValue(iRowOut, iColOut, cellValueBoolean, true);
+                    else {
+                        // Other cell types don't translate
+                        table.setFieldValue(iRowOut, iColOut, null, true);
+                    }
+                }
+                else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
+                    if (DateUtil.isCellDateFormatted(cell)) {
+                        if ( cellIsFormula ) {
+                            // TODO SAM 2013-02-25 Does not seem to method to return date 
+                            cellValueDate = null;
+                        }
+                        else {
+                            cellValueDate = cell.getDateCellValue();
+                        }
+                        if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
+                            // date to date
+                            table.setFieldValue(iRowOut, iColOut, cellValueDate, true);
                         }
                         else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                            // Just set
-                            table.setFieldValue(iRowOut, iColOut, "" + cellValueBoolean, true);
-                        }
-                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
-                            if ( cellValueBoolean ) {
-                                table.setFieldValue(iRowOut, iColOut, new Double(1.0), true);
+                            // date to string
+                            try {
+                                dt = new DateTime ( cellValueDate );
+                                table.setFieldValue(iRowOut, iColOut, dt.toString(), true);
                             }
-                            else {
-                                table.setFieldValue(iRowOut, iColOut, new Double(0.0), true);
+                            catch ( Exception e ) {
+                                table.setFieldValue(iRowOut, iColOut, null, true);
                             }
-                        }
-                        else {
-                            // Not able to convert
-                            table.setFieldValue(iRowOut, iColOut, null, true);
-                        }
-                    }
-                    else if ( cellType == Cell.CELL_TYPE_BLANK ) {
-                        // Null works for all object types.  If truly a blank string in text cell, use "" as text
-                        if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                            table.setFieldValue(iRowOut, iColOut, "", true);
-                        }
-                        else {
-                            table.setFieldValue(iRowOut, iColOut, null, true);
-                        }
-                    }
-                    else if ( cellType == Cell.CELL_TYPE_ERROR ) {
-                        if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                            table.setFieldValue(iRowOut, iColOut, "", true);
-                        }
-                        else {
-                            table.setFieldValue(iRowOut, iColOut, null, true);
-                        }
-                    }
-                    else if ( cellType == Cell.CELL_TYPE_FORMULA ) {
-                        if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                            table.setFieldValue(iRowOut, iColOut, "", true);
                         }
                         else {
                             table.setFieldValue(iRowOut, iColOut, null, true);
                         }
                     }
                     else {
+                        if ( cellIsFormula ) {
+                            cellValueDouble = formulaCellValue.getNumberValue();
+                        }
+                        else {
+                            cellValueDouble = cell.getNumericCellValue();
+                        }
+                        if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
+                            // Double to double
+                            table.setFieldValue(iRowOut, iColOut, new Double(cellValueDouble), true);
+                        }
+                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
+                            // Double to string
+                            table.setFieldValue(iRowOut, iColOut, "" + cellValueDouble, true);
+                        }
+                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
+                            // Double to boolean - try checking zero
+                            if ( cellValueDouble == 0.0 ) {
+                                table.setFieldValue(iRowOut, iColOut, new Integer(0), true);
+                            }
+                            else {
+                                table.setFieldValue(iRowOut, iColOut, new Integer(1), true);
+                            }
+                        }
+                        else {
+                            table.setFieldValue(iRowOut, iColOut, null, true);
+                        }
+                    }
+                }
+                else if ( cellType == Cell.CELL_TYPE_BOOLEAN ) {
+                    if ( cellIsFormula ) {
+                        cellValueBoolean = formulaCellValue.getBooleanValue();
+                    }
+                    else {
+                        cellValueBoolean = cell.getBooleanCellValue();
+                    }
+                    if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
+                        table.setFieldValue(iRowOut, iColOut, cellValueBoolean, true);
+                    }
+                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
+                        // Just set
+                        table.setFieldValue(iRowOut, iColOut, "" + cellValueBoolean, true);
+                    }
+                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
+                        if ( cellValueBoolean ) {
+                            table.setFieldValue(iRowOut, iColOut, new Double(1.0), true);
+                        }
+                        else {
+                            table.setFieldValue(iRowOut, iColOut, new Double(0.0), true);
+                        }
+                    }
+                    else {
+                        // Not able to convert
                         table.setFieldValue(iRowOut, iColOut, null, true);
                     }
+                }
+                else if ( cellType == Cell.CELL_TYPE_BLANK ) {
+                    // Null works for all object types.  If truly a blank string in text cell, use "" as text
+                    if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
+                        table.setFieldValue(iRowOut, iColOut, "", true);
+                    }
+                    else {
+                        table.setFieldValue(iRowOut, iColOut, null, true);
+                    }
+                }
+                else if ( cellType == Cell.CELL_TYPE_ERROR ) {
+                    if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
+                        table.setFieldValue(iRowOut, iColOut, "", true);
+                    }
+                    else {
+                        table.setFieldValue(iRowOut, iColOut, null, true);
+                    }
+                }
+                else {
+                    table.setFieldValue(iRowOut, iColOut, null, true);
                 }
             }
         }
@@ -727,7 +845,10 @@ CommandWarningException, CommandException
                     message, "Check the log file for exceptions." ) );
             }
             // Set the table identifier...
-            
+            if ( table == null ) {
+                // Create an empty table to have something in output for user
+                table = new DataTable();
+            }
             table.setTableID ( TableID );
 	    }
 	    else if ( command_phase == CommandPhaseType.DISCOVERY ) {

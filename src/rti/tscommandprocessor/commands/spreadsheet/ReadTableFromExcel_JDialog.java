@@ -283,7 +283,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JTextField = new JTextField (10);
+    __TableID_JTextField = new JTextField (20);
     __TableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -302,7 +302,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Worksheet:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Worksheet_JTextField = new JTextField (10);
+    __Worksheet_JTextField = new JTextField (20);
     __Worksheet_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Worksheet_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

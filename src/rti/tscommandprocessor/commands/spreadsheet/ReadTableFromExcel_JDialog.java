@@ -63,7 +63,9 @@ private JTabbedPane __excelSpace_JTabbedPane = null;
 private JTextField __ExcelAddress_JTextField = null;
 private JTextField __ExcelNamedRange_JTextField = null;
 private JTextField __ExcelTableName_JTextField = null;
+private JTextField __Comment_JTextField = null;
 private SimpleJComboBox __ExcelColumnNames_JComboBox = null;
+private JTextField __ExcelIntegerColumns_JTextField = null;
 private SimpleJComboBox __ReadAllAsText_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
@@ -100,9 +102,9 @@ public void actionPerformed(ActionEvent event)
             fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle("Select Excel File");
-        SimpleFileFilter sff = new SimpleFileFilter("xls", "Excel File");
+     	fc.addChoosableFileFilter(new SimpleFileFilter("xls", "Excel File"));
+		SimpleFileFilter sff = new SimpleFileFilter("xlsx", "Excel File");
 		fc.addChoosableFileFilter(sff);
-		fc.addChoosableFileFilter( new SimpleFileFilter("xlsx", "Excel File") );
 		fc.setFileFilter(sff);
 
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -156,7 +158,9 @@ private void checkInput ()
 	String ExcelAddress = __ExcelAddress_JTextField.getText().trim();
 	String ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	String ExcelTableName = __ExcelTableName_JTextField.getText().trim();
+	String Comment = __Comment_JTextField.getText().trim();
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
+	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
 	__error_wait = false;
 
@@ -180,6 +184,12 @@ private void checkInput ()
     }
     if ( ExcelColumnNames.length() > 0 ) {
         props.set ( "ExcelColumnNames", ExcelColumnNames );
+    }
+    if (Comment.length() > 0) {
+        props.set("Comment", Comment);
+    }
+    if ( ExcelIntegerColumns.length() > 0 ) {
+        props.set ( "ExcelIntegerColumns", ExcelIntegerColumns );
     }
     if ( ReadAllAsText.length() > 0 ) {
         props.set ( "ReadAllAsText", ReadAllAsText );
@@ -207,6 +217,8 @@ private void commitEdits ()
 	String ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	String ExcelTableName = __ExcelTableName_JTextField.getText().trim();
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
+	String Comment = __Comment_JTextField.getText().trim();
+	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
@@ -215,6 +227,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ExcelNamedRange", ExcelNamedRange );
 	__command.setCommandParameter ( "ExcelTableName", ExcelTableName );
 	__command.setCommandParameter ( "ExcelColumnNames", ExcelColumnNames );
+	__command.setCommandParameter ( "Comment", Comment );
+	__command.setCommandParameter ( "ExcelIntegerColumns", ExcelIntegerColumns );
 	__command.setCommandParameter ( "ReadAllAsText", ReadAllAsText );
 }
 
@@ -318,7 +332,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JPanel address_JPanel = new JPanel();
     address_JPanel.setLayout(new GridBagLayout());
-    __excelSpace_JTabbedPane.addTab ( "By Excel Address", address_JPanel );
+    __excelSpace_JTabbedPane.addTab ( "by Excel Address", address_JPanel );
     int yAddress = -1;
         
     JGUIUtil.addComponent(address_JPanel, new JLabel ("Excel address:"),
@@ -332,10 +346,10 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     
     JPanel range_JPanel = new JPanel();
     range_JPanel.setLayout(new GridBagLayout());
-    __excelSpace_JTabbedPane.addTab ( " Range", range_JPanel );
+    __excelSpace_JTabbedPane.addTab ( "by Named Range", range_JPanel );
     int yRange = -1;
     
-    JGUIUtil.addComponent(range_JPanel, new JLabel ("Excel range name:"),
+    JGUIUtil.addComponent(range_JPanel, new JLabel ("Excel named range:"),
         0, ++yRange, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcelNamedRange_JTextField = new JTextField (10);
     __ExcelNamedRange_JTextField.addKeyListener (this);
@@ -346,7 +360,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     
     JPanel table_JPanel = new JPanel();
     table_JPanel.setLayout(new GridBagLayout());
-    __excelSpace_JTabbedPane.addTab ( "By Table Name", table_JPanel );
+    __excelSpace_JTabbedPane.addTab ( "by Table Name", table_JPanel );
     int yTable = -1;
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Excel table name:"),
@@ -372,6 +386,26 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - how to define column names (default=" +
         __command._ColumnN + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Comment character:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Comment_JTextField = new JTextField (10);
+    __Comment_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Comment_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - character that indicates comment lines (default=none)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Excel integer columns:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcelIntegerColumns_JTextField = new JTextField (20);
+    __ExcelIntegerColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ExcelIntegerColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ("Optional - columns that are integers, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Read all as text?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -473,6 +507,8 @@ private void refresh ()
 	String ExcelNamedRange = "";
 	String ExcelTableName = "";
 	String ExcelColumnNames = "";
+    String Comment = "";
+	String ExcelIntegerColumns = "";
 	String ReadAllAsText = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
@@ -484,6 +520,8 @@ private void refresh ()
 		ExcelNamedRange = props.getValue ( "ExcelNamedRange" );
 		ExcelTableName = props.getValue ( "ExcelTableName" );
 		ExcelColumnNames = props.getValue ( "ExcelColumnNames" );
+		Comment = props.getValue ( "Comment" );
+		ExcelIntegerColumns = props.getValue ( "ExcelIntegerColumns" );
 		ReadAllAsText = props.getValue ( "ReadAllAsText" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
@@ -506,7 +544,7 @@ private void refresh ()
         if ( ExcelColumnNames == null || ExcelColumnNames.equals("") ) {
             // Select a default...
             __ExcelColumnNames_JComboBox.select ( 0 );
-        } 
+        }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __ExcelColumnNames_JComboBox, ExcelColumnNames, JGUIUtil.NONE, null, null ) ) {
                 __ExcelColumnNames_JComboBox.select ( ExcelColumnNames );
@@ -515,6 +553,12 @@ private void refresh ()
                 Message.printWarning ( 1, routine, "Existing command references an invalid\nExcelColumnNames \"" +
                     ExcelColumnNames + "\".  Select a different choice or Cancel." );
             }
+        }
+        if ( Comment != null) {
+            __Comment_JTextField.setText(Comment);
+        }
+        if ( ExcelIntegerColumns != null ) {
+            __ExcelIntegerColumns_JTextField.setText ( ExcelIntegerColumns );
         }
         if ( ReadAllAsText == null || ReadAllAsText.equals("") ) {
             // Select a default...
@@ -538,6 +582,8 @@ private void refresh ()
 	ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	ExcelTableName = __ExcelTableName_JTextField.getText().trim();
 	ExcelColumnNames = __ExcelColumnNames_JComboBox.getSelected();
+	Comment = __Comment_JTextField.getText().trim();
+	ExcelIntegerColumns = __ExcelIntegerColumns_JTextField.getText().trim();
 	ReadAllAsText = __ReadAllAsText_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
@@ -547,6 +593,8 @@ private void refresh ()
 	props.add ( "ExcelNamedRange=" + ExcelNamedRange );
 	props.add ( "ExcelTableName=" + ExcelTableName );
 	props.add ( "ExcelColumnNames=" + ExcelColumnNames );
+	props.add ( "Comment=" + Comment );
+	props.add ( "ExcelIntegerColumns=" + ExcelIntegerColumns );
 	props.add ( "ReadAllAsText=" + ReadAllAsText );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...

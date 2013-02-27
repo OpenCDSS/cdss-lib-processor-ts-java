@@ -74,6 +74,12 @@ The table that is read.
 private DataTable __table = null;
 
 /**
+The first data row from the range.  Save this because it is possible that comment lines
+are skipped so not as easy as assuming the header line is before or at start of range.
+*/
+private int __firstDataRow = 0;
+
+/**
 Constructor.
 */
 public ReadTableFromExcel_Command ()
@@ -191,6 +197,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "ExcelNamedRange" );
     valid_Vector.add ( "ExcelTableName" );
     valid_Vector.add ( "ExcelColumnNames" );
+    valid_Vector.add ( "Comment" );
+    valid_Vector.add ( "ExcelIntegerColumns" );
     valid_Vector.add ( "ReadAllAsText" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
@@ -210,30 +218,73 @@ Create table columns from the first row of the area.
 @param sheet the worksheet being read
 @param area are being read into table
 @param excelColumnNames indicate how to determine column names from the Excel worksheet
+@param comment if non-null indicates character(s) that indicate comment lines
+@param excelIntegerColumns names of columns that should be treated as integers, or null if none
 @param readAllAsText if True, treat all data as text values
 @param problems list of problems encountered during processing
 */
 private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
-    AreaReference area, String excelColumnNames, boolean readAllAsText, List<String> problems )
+    AreaReference area, String excelColumnNames, String comment, String [] excelIntegerColumns,
+    boolean readAllAsText, List<String> problems )
 {   String routine = getClass().getName() + ".createTableColumns";
     Row dataRow; // First row of data
     Row headerRow = null; // Row containing column headings
     Cell cell;
     int iRow = area.getFirstCell().getRow();
+    int firstDataRow = iRow; // Default before checking ExcelColumnNames parameter
+    int rowEnd = area.getLastCell().getRow();
     if ( excelColumnNames.equalsIgnoreCase(_FirstRowInRange) ) {
-        // First row in range is columns so data is next row
-        headerRow = sheet.getRow(iRow);
-        ++iRow;
-    }
-    else if ( excelColumnNames.equalsIgnoreCase(_RowBeforeRange) ) {
-        headerRow = sheet.getRow(iRow - 1);
-        if ( headerRow == null ) {
-            problems.add ( "Specified ExcelColumnNames=" + _RowBeforeRange +
-                " but this results in row not on sheet.  Check address range." );
-            return;
+        if ( comment == null ) {
+            // Comments are not used so header is first row and first data row is next
+            headerRow = sheet.getRow(iRow);
+            firstDataRow = iRow + 1;
+        }
+        else {
+            // Loop through first column cells.  If string and starts with comment, skip row
+            boolean foundFirstDataRow = false;
+            for ( ; iRow <= rowEnd; iRow++ ) {
+                if ( rowIsComment ( sheet, iRow, comment ) ) {
+                    continue;
+                }
+                else {
+                    headerRow = sheet.getRow(iRow);
+                    // Now find the first data row (could have more comments)
+                    for ( ++iRow; iRow <= rowEnd; iRow++ ) {
+                        if ( rowIsComment ( sheet, iRow, comment ) ) {
+                            continue;
+                        }
+                        else {
+                            foundFirstDataRow = true;
+                            firstDataRow = iRow;
+                            break;
+                        }
+                    }
+                }
+                if ( foundFirstDataRow ) {
+                    break;
+                }
+            }
         }
     }
-    dataRow = sheet.getRow(iRow);
+    else if ( excelColumnNames.equalsIgnoreCase(_RowBeforeRange) ) {
+        // Loop backwards and skip comments
+        for ( --iRow; iRow >= 0; iRow-- ) {
+            if ( rowIsComment ( sheet, iRow, comment ) ) {
+                continue;
+            }
+            else {
+                headerRow = sheet.getRow(iRow);
+                if ( headerRow == null ) {
+                    problems.add ( "Specified ExcelColumnNames=" + _RowBeforeRange +
+                        " but this results in row not on sheet.  Check address range." );
+                    return;
+                }
+            }
+        }
+    }
+    setFirstDataRow(firstDataRow);
+    Message.printStatus(2, routine, "Determined first data row to be [" + firstDataRow + "]");
+    dataRow = sheet.getRow(firstDataRow);
     int colStart = area.getFirstCell().getCol();
     int colEnd = area.getLastCell().getCol();
     int columnIndex = -1;
@@ -280,7 +331,23 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
             table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
         }
         else {
+            // See if the column name matches the integer columns
+            boolean isInteger = false;
+            if ( excelIntegerColumns != null ) {
+                for ( int i = 0; i < excelIntegerColumns.length; i++ ) {
+                    if ( columnNames[columnIndex].equalsIgnoreCase(excelIntegerColumns[i]) ) {
+                        // Treat as a string
+                        isInteger = true;
+                        break;
+                    }
+                }
+            }
             // Interpret the first row cell types to determine column types
+            if ( isInteger ) {
+                Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_INT));
+                table.addField ( new TableField(TableField.DATA_TYPE_INT, columnNames[columnIndex], -1, -1), null );
+                continue;
+            }
             if ( cell == null ) {
                 // Treat as a string
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
@@ -299,6 +366,7 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                     table.addField ( new TableField(TableField.DATA_TYPE_DATE, columnNames[columnIndex], -1, -1), null );
                 }
                 else {
+                    // TODO SAM 2013-02-26 Need to figure out the precision from formatting
                     // For now always set the column to a double with the precision from formatting
                     // Could default to integer for 0-precision but could guess wrong
                     style = cell.getCellStyle();
@@ -438,6 +506,14 @@ private DataTable getDiscoveryTable()
 }
 
 /**
+Return the row (0+) of the first data row to process.
+*/
+private int getFirstDataRow ()
+{
+    return __firstDataRow;
+}
+
+/**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
 public List getObjectList ( Class c )
@@ -461,16 +537,22 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 @param excelNamedRange a named range
 @param excelTableName a table name
 @param excelColumnNames indicate how to determine column names from the Excel worksheet
+@param comment character that if at start of first column indicates row is a comment
+@param excelIntegerColumns names of columns that should be treated as integers, or null if none
 @param readAllAsText if True, treat all data as text values
 @param problems list of problems encountered during read, for formatted logging in calling code
 @return a DataTable with the Excel contents
 */
 private DataTable readTableFromExcelFile ( String workbookFile, String sheetName,
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
-    boolean readAllAsText, List<String> problems )
+    String comment, String [] excelIntegerColumns, boolean readAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getName() + ".readTableFromExcelFile";
     DataTable table = new DataTable();
+    if ( (comment != null) && (comment.trim().length() == 0) ) {
+        // Set to null to simplify logic below
+        comment = null;
+    }
     
     Workbook wb = null;
     InputStream inp = null;
@@ -515,16 +597,13 @@ throws FileNotFoundException, IOException
         }
         Message.printStatus(2,routine,"Excel address block to read: " + area );
         // Create the table based on the first row of the area
-        createTableColumns ( table, wb, sheet, area, excelColumnNames, readAllAsText, problems );
+        createTableColumns ( table, wb, sheet, area, excelColumnNames, comment, excelIntegerColumns,
+             readAllAsText, problems );
         int [] tableColumnTypes = table.getFieldDataTypes();
         // Read the data from the area and transfer to the table.
         Row row;
         Cell cell;
-        int rowStart = area.getFirstCell().getRow();
-        if ( excelColumnNames.equalsIgnoreCase(_FirstRowInRange) ) {
-            // First row in range is columns so data is next row
-            ++rowStart;
-        }
+        int rowStart = getFirstDataRow(); // Set in createTableColumns()
         int rowEnd = area.getLastCell().getRow();
         int colStart = area.getFirstCell().getCol();
         int colEnd = area.getLastCell().getCol();
@@ -543,6 +622,10 @@ throws FileNotFoundException, IOException
             row = sheet.getRow(iRow);
             iRowOut = iRow - rowStart;
             Message.printStatus(2, routine, "Processing row [" + iRow + "] end at [" + rowEnd + "]" );
+            if ( (comment != null) && rowIsComment(sheet, iRow, comment) ) {
+                // No need to process the row.
+                continue;
+            }
             for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
                 iColOut = iCol - colStart;
                 cell = row.getCell(iCol);
@@ -554,6 +637,7 @@ throws FileNotFoundException, IOException
                     else {
                         table.setFieldValue(iRowOut, iColOut, null, true);
                     }
+                    continue;
                 }
                 // First get the data using the type indicated for the cell.  Then translate to
                 // the appropriate type in the data table.  Handling at cell level is needed because
@@ -657,6 +741,7 @@ throws FileNotFoundException, IOException
                         }
                     }
                     else {
+                        // Floating point value
                         if ( cellIsFormula ) {
                             cellValueDouble = formulaCellValue.getNumberValue();
                         }
@@ -746,6 +831,25 @@ throws FileNotFoundException, IOException
 }
 
 /**
+Is the row a comment?
+@param sheet sheet being read
+@param iRow row in sheet (0+)
+@param comment if not null, character at start of row that indicates comment
+*/
+private boolean rowIsComment ( Sheet sheet, int iRow, String comment )
+{   Row dataRow = sheet.getRow(iRow);
+    Cell cell = dataRow.getCell(0);
+    if ( (cell != null) && (cell.getCellType() == Cell.CELL_TYPE_STRING) ) {
+        String cellValue = cell.getStringCellValue();
+        if ( (cellValue != null) && (cellValue.length() > 0) &&
+            cellValue.substring(0,1).equals(comment) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
 Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
@@ -806,10 +910,20 @@ CommandWarningException, CommandException
 	if ( (ExcelColumnNames == null) || ExcelColumnNames.equals("") ) {
 	    ExcelColumnNames = _ColumnN; // Default
 	}
-	String TreatAsText = parameters.getValue ( "TreatAsText" );
-	boolean treatAsText = false;
-	if ( (TreatAsText != null) && TreatAsText.equalsIgnoreCase("True") ) {
-	    treatAsText = true;
+	String Comment = parameters.getValue ( "Comment" );
+	String comment = null;
+	if ( (Comment != null) && Comment.length() > 0 ) {
+	    comment = Comment;
+	}
+	String ExcelIntegerColumns = parameters.getValue ( "ExcelIntegerColumns" );
+	String [] excelIntegerColumns = null;
+	if ( (ExcelIntegerColumns != null) && !ExcelIntegerColumns.equals("") ) {
+	    excelIntegerColumns = ExcelIntegerColumns.split(",");
+	}
+	String ReadAllAsText = parameters.getValue ( "ReadAllAsText" );
+	boolean readAllAsText = false;
+	if ( (ReadAllAsText != null) && ReadAllAsText.equalsIgnoreCase("True") ) {
+	    readAllAsText = true;
 	}
 
 	String InputFile_full = IOUtil.verifyPathForOS(
@@ -836,7 +950,8 @@ CommandWarningException, CommandException
 	try {
 	    if ( command_phase == CommandPhaseType.RUN ) {
             table = readTableFromExcelFile ( InputFile_full, Worksheet,
-                ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, treatAsText, problems );
+                ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, comment, excelIntegerColumns,
+                readAllAsText, problems );
             for ( String problem: problems ) {
                 Message.printWarning ( 3, routine, problem );
                 message = "Error reading from Excel: " + problem;
@@ -907,6 +1022,14 @@ private void setDiscoveryTable ( DataTable table )
 }
 
 /**
+Set the first data row (0+).
+*/
+private void setFirstDataRow ( int row )
+{
+    __firstDataRow = row;
+}
+
+/**
 Return the string representation of the command.
 */
 public String toString ( PropList props )
@@ -919,8 +1042,10 @@ public String toString ( PropList props )
 	String ExcelAddress = props.getValue("ExcelAddress");
 	String ExcelNamedRange = props.getValue("ExcelNamedRange");
 	String ExcelTableName = props.getValue("ExcelTableName");
-	String ReadAllAsText = props.getValue("ReadAllAsText");
 	String ExcelColumnNames = props.getValue("ExcelColumnNames");
+	String Comment = props.getValue("Comment");
+	String ExcelIntegerColumns = props.getValue("ExcelIntegerColumns");
+	String ReadAllAsText = props.getValue("ReadAllAsText");
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -962,7 +1087,19 @@ public String toString ( PropList props )
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "ExcelColumnNames=\"" + ExcelColumnNames + "\"" );
+        b.append ( "ExcelColumnNames=" + ExcelColumnNames );
+    }
+    if ( (Comment != null) && (Comment.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Comment=\"" + Comment + "\"" );
+    }
+    if ( (ExcelIntegerColumns != null) && (ExcelIntegerColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcelIntegerColumns=\"" + ExcelIntegerColumns + "\"" );
     }
     if ( (ReadAllAsText != null) && (ReadAllAsText.length() > 0) ) {
         if ( b.length() > 0 ) {

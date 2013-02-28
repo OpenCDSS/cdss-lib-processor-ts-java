@@ -122,11 +122,13 @@ import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
+import rti.tscommandprocessor.commands.table.RemoveTableRowsFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.TableMath_Command;
 import rti.tscommandprocessor.commands.table.TableTimeSeriesMath_Command;
 import rti.tscommandprocessor.commands.table.TableToTimeSeries_Command;
 import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
+import rti.tscommandprocessor.commands.table.WriteTableToDataStore_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToHTML_Command;
 
@@ -707,6 +709,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("RemoveFile") ) {
         return new RemoveFile_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("RemoveTableRowsFromDataStore") ) {
+        return new RemoveTableRowsFromDataStore_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("ReplaceValue") ) {
         return new ReplaceValue_Command ();
     }
@@ -901,6 +906,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("WriteSummary") ) {
 		return new WriteSummary_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("WriteTableToDataStore") ) {
+        return new WriteTableToDataStore_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("WriteTableToDelimitedFile") ) {
         return new WriteTableToDelimitedFile_Command ();
     }

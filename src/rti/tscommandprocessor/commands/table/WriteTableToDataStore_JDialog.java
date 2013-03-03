@@ -48,8 +48,11 @@ private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __IncludeColumns_JTextField = null;
+private JTextField __ExcludeColumns_JTextField = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private SimpleJComboBox __DataStoreTable_JComboBox = null;
+private JTextField __ColumnMap_JTextField = null;
+private JTextArea __DataStoreRelatedColumnsMap_JTextField = null;
 private SimpleJComboBox __WriteMode_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
@@ -120,8 +123,11 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     String DataStore = __DataStore_JComboBox.getSelected();
 	String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
+	String ColumnMap = __ColumnMap_JTextField.getText().trim();
+	String DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextField.getText().trim();
 	String WriteMode = __WriteMode_JComboBox.getSelected();
 	__error_wait = false;
 
@@ -130,6 +136,9 @@ private void checkInput ()
     }
     if ( IncludeColumns.length() > 0 ) {
         props.set ( "IncludeColumns", IncludeColumns );
+    }
+    if ( ExcludeColumns.length() > 0 ) {
+        props.set ( "ExcludeColumns", ExcludeColumns );
     }
     if ( (DataStore != null) && DataStore.length() > 0 ) {
         props.set ( "DataStore", DataStore );
@@ -142,6 +151,12 @@ private void checkInput ()
 	if ( DataStoreTable.length() > 0 ) {
 		props.set ( "DataStoreTable", DataStoreTable );
 	}
+    if ( ColumnMap.length() > 0 ) {
+        props.set ( "ColumnMap", ColumnMap );
+    }
+    if ( DataStoreRelatedColumnsMap.length() > 0 ) {
+        props.set ( "DataStoreRelatedColumnsMap", DataStoreRelatedColumnsMap );
+    }
     if ( WriteMode.length() > 0 ) {
         props.set ( "WriteMode", WriteMode );
     }
@@ -164,13 +179,19 @@ private void commitEdits ()
 {	
     String TableID = __TableID_JComboBox.getSelected();
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+    String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     String DataStore = __DataStore_JComboBox.getSelected();
     String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
+    String ColumnMap = __ColumnMap_JTextField.getText().trim();
+    String DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextField.getText().trim();
     String WriteMode = __WriteMode_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "IncludeColumns", IncludeColumns );
+    __command.setCommandParameter ( "ExcludeColumns", ExcludeColumns );
     __command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "DataStoreTable", DataStoreTable );
+	__command.setCommandParameter ( "ColumnMap", ColumnMap );
+	__command.setCommandParameter ( "DataStoreRelatedColumnsMap", DataStoreRelatedColumnsMap );
 	__command.setCommandParameter ( "WriteMode", WriteMode );
 }
 
@@ -228,10 +249,11 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
         "This command writes a table to a database datastore table or view."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The table column names and types must match the database table columns."),
+        "The table column names and types by default must match the database table columns but can " +
+        "be mapped with the ColumnMap parameter."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The write mode can impact performance if multiple database write attempts are needed to write."),
+        "The write mode can impact performance and should be consistent with data management processes."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -254,6 +276,15 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
     __IncludeColumns_JTextField = new JTextField (10);
     __IncludeColumns_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns from TableID, separated by commas (default=all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table columns to NOT write:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeColumns_JTextField = new JTextField (10);
+    __ExcludeColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ExcludeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - columns from TableID, separated by commas (default=all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -289,6 +320,28 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - database table/view to receive data."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table to datastore column map:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnMap_JTextField = new JTextField (10);
+    __ColumnMap_JTextField.setToolTipText("Use format:  TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
+    __ColumnMap_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ColumnMap_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - if column names differ (default=names are same)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Datastore related columns map:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreRelatedColumnsMap_JTextField = new JTextArea (6,35);
+    __DataStoreRelatedColumnsMap_JTextField.setLineWrap ( true );
+    __DataStoreRelatedColumnsMap_JTextField.setWrapStyleWord ( true );
+    __DataStoreRelatedColumnsMap_JTextField.setToolTipText("DatastoreColumn:RelatedTable.RelatedColumn,...");
+    __DataStoreRelatedColumnsMap_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__DataStoreRelatedColumnsMap_JTextField),
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - if table column matches related table column."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // How to write the data...
     
@@ -436,16 +489,22 @@ private void refresh ()
 try{
     String TableID = "";
     String IncludeColumns = "";
+    String ExcludeColumns = "";
     String DataStore = "";
     String DataStoreTable = "";
+    String ColumnMap = "";
+    String DataStoreRelatedColumnsMap = "";
     String WriteMode = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         IncludeColumns = props.getValue ( "IncludeColumns" );
+        ExcludeColumns = props.getValue ( "ExcludeColumns" );
 		DataStoreTable = props.getValue ( "DataStoreTable" );
 	    DataStore = props.getValue ( "DataStore" );
+	    ColumnMap = props.getValue ( "ColumnMap" );
+	    DataStoreRelatedColumnsMap = props.getValue ( "DataStoreRelatedColumnsMap" );
 	    WriteMode = props.getValue ( "WriteMode" );
         if ( TableID == null ) {
             // Select default...
@@ -464,6 +523,9 @@ try{
         }
         if ( IncludeColumns != null ) {
             __IncludeColumns_JTextField.setText ( IncludeColumns );
+        }
+        if ( ExcludeColumns != null ) {
+            __ExcludeColumns_JTextField.setText ( ExcludeColumns );
         }
         // The data store list is set up in initialize() but is selected here
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
@@ -499,6 +561,12 @@ try{
                   "DataStoreTable parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+        if ( ColumnMap != null ) {
+            __ColumnMap_JTextField.setText ( ColumnMap );
+        }
+        if ( DataStoreRelatedColumnsMap != null ) {
+            __DataStoreRelatedColumnsMap_JTextField.setText ( DataStoreRelatedColumnsMap );
+        }
         if ( WriteMode == null ) {
             // Select default...
             __WriteMode_JComboBox.select ( 0 );
@@ -518,6 +586,7 @@ try{
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     DataStore = __DataStore_JComboBox.getSelected();
     if ( DataStore == null ) {
         DataStore = "";
@@ -526,12 +595,17 @@ try{
     if ( DataStoreTable == null ) {
         DataStoreTable = "";
     }
+    ColumnMap = __ColumnMap_JTextField.getText().trim();
+    DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextField.getText().trim();
     WriteMode = __WriteMode_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "IncludeColumns=" + IncludeColumns );
+    props.add ( "ExcludeColumns=" + ExcludeColumns );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "DataStoreTable=" + DataStoreTable );
+	props.add ( "ColumnMap=" + ColumnMap );
+	props.add ( "DataStoreRelatedColumnsMap=" + DataStoreRelatedColumnsMap );
 	props.add ( "WriteMode=" + WriteMode );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }

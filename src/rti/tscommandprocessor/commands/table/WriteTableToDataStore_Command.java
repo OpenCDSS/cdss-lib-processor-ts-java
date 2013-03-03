@@ -7,10 +7,12 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
 import RTi.DMI.DMI;
+import RTi.DMI.DMISelectStatement;
 import RTi.DMI.DMIUtil;
 import RTi.DMI.DMIWriteModeType;
 import RTi.DMI.DMIWriteStatement;
@@ -102,8 +104,11 @@ throws InvalidCommandParameterException
 	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "IncludeColumns" );
+    valid_Vector.add ( "ExcludeColumns" );
     valid_Vector.add ( "DataStore" );
     valid_Vector.add ( "DataStoreTable" );
+    valid_Vector.add ( "ColumnMap" );
+    valid_Vector.add ( "DataStoreRelatedColumnsMap" );
     valid_Vector.add ( "WriteMode" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
@@ -170,10 +175,47 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             includeColumns[i] = includeColumns[i].trim();
         }
     }
+    String ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
+    String [] excludeColumns = null;
+    if ( ExcludeColumns != null ) {
+        if ( ExcludeColumns.indexOf(",") > 0 ) {
+            excludeColumns = ExcludeColumns.split(",");
+        }
+        else {
+            excludeColumns = new String[1];
+            excludeColumns[0] = ExcludeColumns;
+        }
+        for ( int i = 0; i < excludeColumns.length; i++ ) {
+            excludeColumns[i] = excludeColumns[i].trim();
+        }
+    }
     String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreTable = parameters.getValue ( "DataStoreTable" );
     if ( (DataStoreTable != null) && DataStoreTable.equals("") ) {
         DataStoreTable = null; // Simplifies logic below
+    }
+    String ColumnMap = parameters.getValue ( "ColumnMap" );
+    Hashtable columnMap = new Hashtable();
+    if ( (ColumnMap != null) && (ColumnMap.length() > 0) && (ColumnMap.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(ColumnMap, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            columnMap.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
+    String DataStoreRelatedColumnsMap = parameters.getValue ( "DataStoreRelatedColumnsMap" );
+    Hashtable dataStoreRelatedColumnsMap = new Hashtable();
+    if ( (DataStoreRelatedColumnsMap != null) && (DataStoreRelatedColumnsMap.length() > 0) &&
+        (DataStoreRelatedColumnsMap.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(DataStoreRelatedColumnsMap, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            dataStoreRelatedColumnsMap.put(parts[0].trim(), parts[1].trim() );
+        }
     }
     String WriteMode = parameters.getValue ( "WriteMode" );
     DMIWriteModeType writeMode = DMIWriteModeType.valueOfIgnoreCase(WriteMode);
@@ -246,7 +288,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             datastoreTableColumns = DMIUtil.getTableColumns(dmi,DataStoreTable);
         }
         catch ( Exception e ) {
-            message = "Error getting table columns for table \"" + DataStoreTable + "\".";
+            message = "Error getting table columns for datastore table \"" + DataStoreTable + "\".";
             Message.printWarning ( 2, routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -254,11 +296,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     "\" is accessible.") );
         }
         // Only include columns that are requested to be included
+        // Also map the column names to the corresponding datastore names
         int numTableColumns = table.getNumberOfFields();
         boolean [] columnOkToWrite = new boolean[numTableColumns];
-        String [] tableFieldNames = table.getFieldNames();
-        int [] tableColumnTypes = table.getFieldDataTypes();
+        String [] tableFieldNames = table.getFieldNames(); // Names from input table
+        String [] tableFieldNamesMapped = new String[tableFieldNames.length]; // Names to use in datastore table
+        int [] tableColumnTypes = table.getFieldDataTypes(); // Input table column numbers
+        String [] DataStoreRelatedTables = new String[tableFieldNames.length]; // Datastore related tables for foreign keys
+        String [] DataStoreRelatedColumns = new String[tableFieldNames.length]; // Datastore related table columns for foreign keys
+        String [] DataStoreRelatedPrimaryColumns = new String[tableFieldNames.length]; // Datastore related table primary key column
+        Object mappedName = null; // Mapped column name from hashtable map
+        Object relatedColumnO; // hastable object if foreign key is used
         for ( int iCol = 0; iCol < numTableColumns; iCol++ ) {
+            // Copy the table column name to the datastore mapped name and change if command parameter
+            // specified a mapping
+            tableFieldNamesMapped[iCol] = tableFieldNames[iCol];
+            mappedName = columnMap.get(tableFieldNames[iCol]);
+            if ( mappedName != null ) {
+                // Have a map
+                tableFieldNamesMapped[iCol] = (String)mappedName;
+            }
+            // Set the boolean for whether the table column should actually be written
             String tableField = table.getFieldName(iCol);
             columnOkToWrite[iCol] = false;
             if ( includeColumns == null ) {
@@ -273,34 +331,215 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     }
                 }
             }
+            // Now check the ExcludeColumns parameter, which may counter the include columns
+            if ( excludeColumns != null ) {
+                for ( int iExclude = 0; iExclude < excludeColumns.length; iExclude++ ) {
+                    if ( excludeColumns[iExclude].equalsIgnoreCase(tableField) ) {
+                        columnOkToWrite[iCol] = false;
+                        break;
+                    }
+                }
+            }
             if ( columnOkToWrite[iCol] ) {
-                if ( StringUtil.indexOf(datastoreTableColumns,tableField) < 0 ) {
-                    message = "Datastore table/view does not contain columnn \"" + tableField + "\".";
+                // Determine whether the column is associated with a related table column (foreign key)
+                // If so, save the related table and column for use in the write code below
+                DataStoreRelatedTables[iCol] = null;
+                DataStoreRelatedColumns[iCol] = null;
+                DataStoreRelatedPrimaryColumns[iCol] = null;
+                relatedColumnO = dataStoreRelatedColumnsMap.get(tableFieldNamesMapped[iCol]);
+                if ( relatedColumnO != null ) {
+                    // Handled related table (foreign key) columns
+                    // The value from the hashtable will be a string table.column
+                    String [] parts = ((String)relatedColumnO).split("\\.");
+                    if ( parts.length != 2 ) {
+                        message = "Datastore related column information \"" + (String)relatedColumnO +
+                            "\" does not appear to be in format RelatedTable.RelatedColumn";
+                        Message.printWarning ( 2, routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify the syntax of the related table specification.") );
+                    }
+                    else {
+                        DataStoreRelatedTables[iCol] = parts[0];
+                        DataStoreRelatedColumns[iCol] = parts[1];
+                        if ( !DMIUtil.databaseHasTable(dmi, DataStoreRelatedTables[iCol]) ) {
+                            message = "Writing datastore table \"" + DataStoreTable +
+                                "\" column \"" + tableFieldNamesMapped[iCol] +
+                                "\": datastore does not contain related table/view \"" +
+                                DataStoreRelatedTables[iCol] + "\".";
+                            Message.printWarning ( 2, routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the database contains table \"" +
+                                    DataStoreRelatedTables[iCol] + "\".") );
+                        }
+                        else if ( !DMIUtil.databaseTableHasColumn(dmi, DataStoreRelatedTables[iCol],
+                            DataStoreRelatedColumns[iCol]) ) {
+                            message = "Writing datastore table \"" + DataStoreTable +
+                                "\" column \"" + tableFieldNamesMapped[iCol] +
+                                "\": related table/view \"" + DataStoreRelatedTables[iCol] +
+                                "\" does not contain column \"" + DataStoreRelatedColumns[iCol] + "\".";
+                            Message.printWarning ( 2, routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the database related table/view \"" +
+                                    DataStoreRelatedTables[iCol] + "\" contains column \"" +
+                                    DataStoreRelatedColumns[iCol] + "\".") );
+                        }
+                        // Now save the primary key column for the related table, for use below
+                        // Must be exactly 1 primary key
+                        List<String> primaryKeyColumns = DMIUtil.getTablePrimaryKeyColumns(dmi, DataStoreRelatedTables[iCol]);
+                        int np = primaryKeyColumns.size();
+                        if ( np == 0 ) {
+                            message = "Writing datastore table \"" + DataStoreTable +
+                                "\" column \"" + tableFieldNamesMapped[iCol] +
+                                "\": related table/view \"" + DataStoreRelatedTables[iCol] +
+                                "\" does not have a primary key column.";
+                            Message.printWarning ( 2, routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the related database table/view \"" +
+                                    DataStoreRelatedTables[iCol] + "\" has 1 primary key defined.") );
+                        }
+                        else if ( np > 1 ) {
+                            message = "Writing datastore table \"" + DataStoreTable +
+                                "\" column \"" + tableFieldNamesMapped[iCol] +
+                                "\": datastore related table/view \"" + DataStoreRelatedTables[iCol] +
+                                "\" has " + np + " primary key columns.  Must have only 1.";
+                            Message.printWarning ( 2, routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the related database table/view \"" +
+                                    DataStoreRelatedTables[iCol] + "\" has 1 primary key defined.") );
+                        }
+                        else {
+                            DataStoreRelatedPrimaryColumns[iCol] = primaryKeyColumns.get(0);
+                        }
+                    }
+                }
+                else if ( StringUtil.indexOf(datastoreTableColumns,tableFieldNamesMapped[iCol]) < 0 ) {
+                    message = "Datastore table/view \"" + DataStoreTable + "\" does not contain column \"" +
+                        tableFieldNamesMapped[iCol] + "\".";
                     Message.printWarning ( 2, routine, message );
                     status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the database table/view contais column \"" + tableField +
-                            "\".") );
+                            message, "Verify that the database table/view \"" +
+                            DataStoreTable + "\" contains column \"" + tableFieldNamesMapped[iCol] + "\".") );
                 }
             }
         }
         // For now create statements for every row.
         // TODO SAM 2013-02-28 Need to optimize by creating a prepared statement
+        Object o; // Generic table cell values
+        DMIWriteStatement ws; // Write statement
+        DMISelectStatement fkSelect; // Used when foreign key select is used
         for ( int iRow = 0; iRow < table.getNumberOfRecords(); iRow++ ) {
             // Create the query.
-            DMIWriteStatement ws = new DMIWriteStatement(dmi);
+            sqlString = "Not yet formed";
+            ws = new DMIWriteStatement(dmi);
             ws.addTable(DataStoreTable);
             // Add the DataTable columns to write to the statement
-
-            Object o; // Generic table cell values
             for ( int iCol = 0; iCol < numTableColumns; iCol++ ) {
                 if ( columnOkToWrite[iCol] ) {
                     // Add the fields to write and the values
                     o = table.getFieldValue(iRow, iCol);
                     // Handle the column types specifically to deal with nulls, dates, etc.
                     // Cast nulls to make sure the correct DMIWriteStatement method is called
-                    if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_STRING ) {
-                        ws.addField(tableFieldNames[iCol]);
+                    //
+                    // First check to see if the datastore column is a related table (foreign key)
+                    if ( (DataStoreRelatedTables[iCol] != null) && (DataStoreRelatedColumns[iCol] != null) &&
+                        (DataStoreRelatedPrimaryColumns[iCol] != null)) {
+                        fkSelect = new DMISelectStatement(dmi);
+                        fkSelect.addTable(DataStoreRelatedTables[iCol]);
+                        // Return only the primary key column value below.
+                        // The value in the original table is used as the where
+                        if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_STRING ) {
+                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            if ( o == null ) {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                            }
+                            else {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = '" +
+                                    (String)o + "'" );
+                            }
+                        }
+                        else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_INT ) {
+                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            if ( o == null ) {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                            }
+                            else {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                    (Integer)o );
+                            }
+                        }
+                        else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_SHORT ) {
+                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            if ( o == null ) {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                            }
+                            else {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                    (Short)o );
+                            }
+                        }
+                        else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_LONG ) {
+                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            if ( o == null ) {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                            }
+                            else {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                    (Long)o );
+                            }
+                        }
+                        // The following types are unlikely to be primary keys, but include for completeness
+                        else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_DOUBLE ) {
+                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            if ( o == null ) {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                            }
+                            else {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                    (Double)o );
+                            }
+                        }
+                        else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_FLOAT ) {
+                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            if ( o == null ) {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                            }
+                            else {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                    (Float)o );
+                            }
+                        }
+                        else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_DATE ) {
+                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            if ( o == null ) {
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                            }
+                            else {
+                                // TODO SAM 2013-03-02 Get the data formatting working
+                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                    (Date)o );
+                            }
+                        }
+                        else {
+                            message = "Related datastore table column \"" + tableFieldNamesMapped[iCol] + " type \"" +
+                            TableColumnType.valueOf(tableColumnTypes[iCol]) +
+                            "\" handling is not supported.  Unable to write table.";
+                            Message.printWarning ( 2, routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Contact software support to enhance software.") );
+                        }
+                        // Now add the nested select statement to the main insert
+                        ws.addField(tableFieldNamesMapped[iCol]);
+                        ws.addValue(fkSelect);
+                    }
+                    else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_STRING ) {
+                        ws.addField(tableFieldNamesMapped[iCol]);
                         if ( o == null ) {
                             ws.addValue((String)null);
                         }
@@ -309,7 +548,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                     }
                     else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_INT ) {
-                        ws.addField(tableFieldNames[iCol]);
+                        ws.addField(tableFieldNamesMapped[iCol]);
                         if ( o == null ) {
                             ws.addValue((Integer)null);
                         }
@@ -318,7 +557,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                     }
                     else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_DOUBLE ) {
-                        ws.addField(tableFieldNames[iCol]);
+                        ws.addField(tableFieldNamesMapped[iCol]);
                         if ( o == null ) {
                             ws.addValue((Double)null);
                         }
@@ -327,7 +566,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                     }
                     else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_FLOAT ) {
-                        ws.addField(tableFieldNames[iCol]);
+                        ws.addField(tableFieldNamesMapped[iCol]);
                         if ( o == null ) {
                             ws.addValue((Float)null);
                         }
@@ -336,7 +575,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                     }
                     else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_SHORT ) {
-                        ws.addField(tableFieldNames[iCol]);
+                        ws.addField(tableFieldNamesMapped[iCol]);
                         if ( o == null ) {
                             ws.addValue((Short)null);
                         }
@@ -345,7 +584,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                     }
                     else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_LONG ) {
-                        ws.addField(tableFieldNames[iCol]);
+                        ws.addField(tableFieldNamesMapped[iCol]);
                         if ( o == null ) {
                             ws.addValue((Long)null);
                         }
@@ -354,7 +593,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                     }
                     else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_DATE ) {
-                        ws.addField(tableFieldNames[iCol]);
+                        ws.addField(tableFieldNamesMapped[iCol]);
                         if ( o == null ) {
                             ws.addValue((Date)null);
                         }
@@ -363,7 +602,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                     }
                     else {
-                        message = "Data table column type \"" +
+                        message = "Datastore table column \"" + tableFieldNamesMapped[iCol] + " type \"" +
                         TableColumnType.valueOf(tableColumnTypes[iCol]) +
                         "\" handling is not supported.  Unable to write table.";
                         Message.printWarning ( 2, routine, message );
@@ -386,6 +625,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Verify that the database for datastore \"" + DataStore +
                 "\" is appropriate for SQL statement: \"" + sqlString + "\"." ) );
+        Message.printWarning ( 3, routine, "SQL string:  " + sqlString );
         Message.printWarning ( 3, routine, e );
     }
     
@@ -408,8 +648,11 @@ public String toString ( PropList props )
 	}
     String TableID = props.getValue( "TableID" );
     String IncludeColumns = props.getValue( "IncludeColumns" );
+    String ExcludeColumns = props.getValue( "ExcludeColumns" );
 	String DataStore = props.getValue( "DataStore" );
 	String DataStoreTable = props.getValue( "DataStoreTable" );
+	String ColumnMap = props.getValue( "ColumnMap" );
+	String DataStoreRelatedColumnsMap = props.getValue( "DataStoreRelatedColumnsMap" );
 	String WriteMode = props.getValue( "WriteMode" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
@@ -424,6 +667,12 @@ public String toString ( PropList props )
         }
         b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
     }
+    if ( (ExcludeColumns != null) && (ExcludeColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcludeColumns=\"" + ExcludeColumns + "\"" );
+    }
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -435,6 +684,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "DataStoreTable=\"" + DataStoreTable + "\"" );
+    }
+    if ( (ColumnMap != null) && (ColumnMap.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnMap=\"" + ColumnMap + "\"" );
+    }
+    if ( (DataStoreRelatedColumnsMap != null) && (DataStoreRelatedColumnsMap.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStoreRelatedColumnsMap=\"" + DataStoreRelatedColumnsMap + "\"" );
     }
     if ( (WriteMode != null) && (WriteMode.length() > 0) ) {
         if ( b.length() > 0 ) {

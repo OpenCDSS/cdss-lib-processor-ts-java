@@ -477,7 +477,12 @@ private AreaReference getAreaReference ( Workbook wb, Sheet sheet,
         return new AreaReference(excelAddress);
     }
     else if ( (excelNamedRange != null) && (excelNamedRange.length() > 0) ) {
-        int namedCellIdx = wb.getNameIndex(excelAddress);
+        int namedCellIdx = wb.getNameIndex(excelNamedRange);
+        if ( namedCellIdx < 0 ) {
+            Message.printWarning(3, routine, "Unable to get Excel internal index for named range \"" +
+                excelNamedRange + "\"" );
+            return null;
+        }
         Name aNamedCell = wb.getNameAt(namedCellIdx);
 
         // Retrieve the cell at the named range and test its contents

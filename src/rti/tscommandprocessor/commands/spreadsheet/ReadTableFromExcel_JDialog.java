@@ -297,7 +297,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JTextField = new JTextField (20);
+    __TableID_JTextField = new JTextField (30);
     __TableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -306,7 +306,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input (workbook) file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputFile_JTextField = new JTextField (35);
+	__InputFile_JTextField = new JTextField (45);
 	__InputFile_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -316,7 +316,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Worksheet:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Worksheet_JTextField = new JTextField (20);
+    __Worksheet_JTextField = new JTextField (30);
     __Worksheet_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Worksheet_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -534,12 +534,16 @@ private void refresh ()
         }
 		if ( ExcelAddress != null ) {
 			__ExcelAddress_JTextField.setText ( ExcelAddress );
+			// Also select the tab to be visible
+			__excelSpace_JTabbedPane.setSelectedIndex(0);
 		}
 		if ( ExcelNamedRange != null ) {
 			__ExcelNamedRange_JTextField.setText ( ExcelNamedRange );
+			__excelSpace_JTabbedPane.setSelectedIndex(1);
 		}
         if ( ExcelTableName != null ) {
             __ExcelTableName_JTextField.setText ( ExcelTableName );
+            __excelSpace_JTabbedPane.setSelectedIndex(2);
         }
         if ( ExcelColumnNames == null || ExcelColumnNames.equals("") ) {
             // Select a default...

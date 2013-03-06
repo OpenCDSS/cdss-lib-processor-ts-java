@@ -51,8 +51,8 @@ private JTextField __IncludeColumns_JTextField = null;
 private JTextField __ExcludeColumns_JTextField = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private SimpleJComboBox __DataStoreTable_JComboBox = null;
-private JTextField __ColumnMap_JTextField = null;
-private JTextArea __DataStoreRelatedColumnsMap_JTextField = null;
+private JTextArea __ColumnMap_JTextArea = null;
+private JTextArea __DataStoreRelatedColumnsMap_JTextArea = null;
 private SimpleJComboBox __WriteMode_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
@@ -126,8 +126,8 @@ private void checkInput ()
 	String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     String DataStore = __DataStore_JComboBox.getSelected();
 	String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
-	String ColumnMap = __ColumnMap_JTextField.getText().trim();
-	String DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextField.getText().trim();
+	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
+	String DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextArea.getText().trim().replace("\n"," ");
 	String WriteMode = __WriteMode_JComboBox.getSelected();
 	__error_wait = false;
 
@@ -182,8 +182,8 @@ private void commitEdits ()
     String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     String DataStore = __DataStore_JComboBox.getSelected();
     String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
-    String ColumnMap = __ColumnMap_JTextField.getText().trim();
-    String DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextField.getText().trim();
+    String ColumnMap = __ColumnMap_JTextArea.getText().trim();
+    String DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextArea.getText().trim();
     String WriteMode = __WriteMode_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "IncludeColumns", IncludeColumns );
@@ -323,24 +323,26 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table to datastore column map:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ColumnMap_JTextField = new JTextField (10);
-    __ColumnMap_JTextField.setToolTipText("Use format:  TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
-    __ColumnMap_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ColumnMap_JTextField,
+    __ColumnMap_JTextArea = new JTextArea (6,35);
+    __ColumnMap_JTextArea.setLineWrap ( true );
+    __ColumnMap_JTextArea.setWrapStyleWord ( true );
+    __ColumnMap_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
+    __ColumnMap_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnMap_JTextArea),
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - if column names differ (default=names are same)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Datastore related columns map:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataStoreRelatedColumnsMap_JTextField = new JTextArea (6,35);
-    __DataStoreRelatedColumnsMap_JTextField.setLineWrap ( true );
-    __DataStoreRelatedColumnsMap_JTextField.setWrapStyleWord ( true );
-    __DataStoreRelatedColumnsMap_JTextField.setToolTipText("DatastoreColumn:RelatedTable.RelatedColumn,...");
-    __DataStoreRelatedColumnsMap_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__DataStoreRelatedColumnsMap_JTextField),
+    __DataStoreRelatedColumnsMap_JTextArea = new JTextArea (6,35);
+    __DataStoreRelatedColumnsMap_JTextArea.setLineWrap ( true );
+    __DataStoreRelatedColumnsMap_JTextArea.setWrapStyleWord ( true );
+    __DataStoreRelatedColumnsMap_JTextArea.setToolTipText("DatastoreColumn:RelatedTable.RelatedColumn,...");
+    __DataStoreRelatedColumnsMap_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__DataStoreRelatedColumnsMap_JTextArea),
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - if table column matches related table column."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - if datastore column matches from related column."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // How to write the data...
@@ -562,10 +564,10 @@ try{
             }
         }
         if ( ColumnMap != null ) {
-            __ColumnMap_JTextField.setText ( ColumnMap );
+            __ColumnMap_JTextArea.setText ( ColumnMap );
         }
         if ( DataStoreRelatedColumnsMap != null ) {
-            __DataStoreRelatedColumnsMap_JTextField.setText ( DataStoreRelatedColumnsMap );
+            __DataStoreRelatedColumnsMap_JTextArea.setText ( DataStoreRelatedColumnsMap );
         }
         if ( WriteMode == null ) {
             // Select default...
@@ -595,8 +597,8 @@ try{
     if ( DataStoreTable == null ) {
         DataStoreTable = "";
     }
-    ColumnMap = __ColumnMap_JTextField.getText().trim();
-    DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextField.getText().trim();
+    ColumnMap = __ColumnMap_JTextArea.getText().trim();
+    DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextArea.getText().trim();
     WriteMode = __WriteMode_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );

@@ -281,6 +281,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
     String sqlString = "";
+    int iRow = -1; // Table row being written
     try {
         // Always get the columns from the database to check parameters, to guard against SQL injection
         List<String> datastoreTableColumns = new Vector<String>();
@@ -302,9 +303,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         String [] tableFieldNames = table.getFieldNames(); // Names from input table
         String [] tableFieldNamesMapped = new String[tableFieldNames.length]; // Names to use in datastore table
         int [] tableColumnTypes = table.getFieldDataTypes(); // Input table column numbers
-        String [] DataStoreRelatedTables = new String[tableFieldNames.length]; // Datastore related tables for foreign keys
-        String [] DataStoreRelatedColumns = new String[tableFieldNames.length]; // Datastore related table columns for foreign keys
-        String [] DataStoreRelatedPrimaryColumns = new String[tableFieldNames.length]; // Datastore related table primary key column
+        String [] dataStoreRelatedTables = new String[tableFieldNames.length]; // Datastore related tables for foreign keys
+        String [] dataStoreRelatedLookupColumns = new String[tableFieldNames.length]; // Datastore related table columns for foreign keys
+        String [] dataStoreRelatedPrimaryKeyColumns = new String[tableFieldNames.length]; // Datastore related table primary key column
+        //String [] dataStoreRelatedForeignKeyColumns = new String[tableFieldNames.length]; // Datastore related table foreign key column
         Object mappedName = null; // Mapped column name from hashtable map
         Object relatedColumnO; // hastable object if foreign key is used
         for ( int iCol = 0; iCol < numTableColumns; iCol++ ) {
@@ -343,78 +345,104 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             if ( columnOkToWrite[iCol] ) {
                 // Determine whether the column is associated with a related table column (foreign key)
                 // If so, save the related table and column for use in the write code below
-                DataStoreRelatedTables[iCol] = null;
-                DataStoreRelatedColumns[iCol] = null;
-                DataStoreRelatedPrimaryColumns[iCol] = null;
+                dataStoreRelatedTables[iCol] = null;
+                dataStoreRelatedLookupColumns[iCol] = null;
+                //dataStoreRelatedForeignKeyColumns[iCol] = null;
+                dataStoreRelatedPrimaryKeyColumns[iCol] = null;
                 relatedColumnO = dataStoreRelatedColumnsMap.get(tableFieldNamesMapped[iCol]);
+                String relatedColumn = null;
+                String [] parts = null;
                 if ( relatedColumnO != null ) {
                     // Handled related table (foreign key) columns
                     // The value from the hashtable will be a string table.column
-                    String [] parts = ((String)relatedColumnO).split("\\.");
-                    if ( parts.length != 2 ) {
-                        message = "Datastore related column information \"" + (String)relatedColumnO +
-                            "\" does not appear to be in format RelatedTable.RelatedColumn";
+                    relatedColumn = (String)relatedColumnO;
+                    if ( relatedColumn.indexOf(".") <= 0 ) {
+                        // Single part specified
+                        // Related table should be determined based on the related foreign key name
+                        dataStoreRelatedLookupColumns[iCol] = relatedColumn;
+                        String [] foreignKeyTableAndColumn =
+                            DMIUtil.getTableForeignKeyTableAndColumn(dmi, DataStoreTable, tableFieldNamesMapped[iCol]);
+                        if ( foreignKeyTableAndColumn == null ) {
+                            message = "Datastore related column information \"" + (String)relatedColumnO +
+                                "\" does not provide a table and no foreign key information is available in the database";
+                            Message.printWarning ( 2, routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify the syntax of the related column specification.") );
+                        }
+                        else {
+                            dataStoreRelatedTables[iCol] = foreignKeyTableAndColumn[0];
+                        }
+                    }
+                    else {
+                        parts = relatedColumn.split("\\.");
+                        if ( parts.length != 2 ){
+                            message = "Datastore related column information \"" + (String)relatedColumnO +
+                                "\" does not appear to be in format RelatedColumn or RelatedTable.RelatedColumn";
+                            Message.printWarning ( 2, routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify the syntax of the related column specification.") );
+                        }
+                        else {
+                            dataStoreRelatedTables[iCol] = parts[0];
+                            dataStoreRelatedLookupColumns[iCol] = parts[1];
+                        }
+                    }
+                    // Now have the related table name and related table column
+                    if ( !DMIUtil.databaseHasTable(dmi, dataStoreRelatedTables[iCol]) ) {
+                        message = "Writing datastore table \"" + DataStoreTable +
+                            "\" column \"" + tableFieldNamesMapped[iCol] +
+                            "\": datastore does not contain related table/view \"" +
+                            dataStoreRelatedTables[iCol] + "\".";
                         Message.printWarning ( 2, routine, message );
                         status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify the syntax of the related table specification.") );
+                                message, "Verify that the database contains table \"" +
+                                dataStoreRelatedTables[iCol] + "\".") );
+                    }
+                    else if ( !DMIUtil.databaseTableHasColumn(dmi, dataStoreRelatedTables[iCol],
+                        dataStoreRelatedLookupColumns[iCol]) ) {
+                        message = "Writing datastore table \"" + DataStoreTable +
+                            "\" column \"" + tableFieldNamesMapped[iCol] +
+                            "\": related table/view \"" + dataStoreRelatedTables[iCol] +
+                            "\" does not contain column \"" + dataStoreRelatedLookupColumns[iCol] + "\".";
+                        Message.printWarning ( 2, routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the database related table/view \"" +
+                                dataStoreRelatedTables[iCol] + "\" contains column \"" +
+                                dataStoreRelatedLookupColumns[iCol] + "\".") );
+                    }
+                    // Now save the primary key column for the related table, for use below
+                    // Must be exactly 1 primary key
+                    List<String> primaryKeyColumns = DMIUtil.getTablePrimaryKeyColumns(dmi, dataStoreRelatedTables[iCol]);
+                    int np = primaryKeyColumns.size();
+                    if ( np == 0 ) {
+                        message = "Writing datastore table \"" + DataStoreTable +
+                            "\" column \"" + tableFieldNamesMapped[iCol] +
+                            "\": related table/view \"" + dataStoreRelatedTables[iCol] +
+                            "\" does not have a primary key column.";
+                        Message.printWarning ( 2, routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the related database table/view \"" +
+                                dataStoreRelatedTables[iCol] + "\" has 1 primary key defined.") );
+                    }
+                    else if ( np > 1 ) {
+                        message = "Writing datastore table \"" + DataStoreTable +
+                            "\" column \"" + tableFieldNamesMapped[iCol] +
+                            "\": datastore related table/view \"" + dataStoreRelatedTables[iCol] +
+                            "\" has " + np + " primary key columns.  Must have only 1.";
+                        Message.printWarning ( 2, routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the related database table/view \"" +
+                                dataStoreRelatedTables[iCol] + "\" has 1 primary key defined.") );
                     }
                     else {
-                        DataStoreRelatedTables[iCol] = parts[0];
-                        DataStoreRelatedColumns[iCol] = parts[1];
-                        if ( !DMIUtil.databaseHasTable(dmi, DataStoreRelatedTables[iCol]) ) {
-                            message = "Writing datastore table \"" + DataStoreTable +
-                                "\" column \"" + tableFieldNamesMapped[iCol] +
-                                "\": datastore does not contain related table/view \"" +
-                                DataStoreRelatedTables[iCol] + "\".";
-                            Message.printWarning ( 2, routine, message );
-                            status.addToLog ( commandPhase,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Verify that the database contains table \"" +
-                                    DataStoreRelatedTables[iCol] + "\".") );
-                        }
-                        else if ( !DMIUtil.databaseTableHasColumn(dmi, DataStoreRelatedTables[iCol],
-                            DataStoreRelatedColumns[iCol]) ) {
-                            message = "Writing datastore table \"" + DataStoreTable +
-                                "\" column \"" + tableFieldNamesMapped[iCol] +
-                                "\": related table/view \"" + DataStoreRelatedTables[iCol] +
-                                "\" does not contain column \"" + DataStoreRelatedColumns[iCol] + "\".";
-                            Message.printWarning ( 2, routine, message );
-                            status.addToLog ( commandPhase,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Verify that the database related table/view \"" +
-                                    DataStoreRelatedTables[iCol] + "\" contains column \"" +
-                                    DataStoreRelatedColumns[iCol] + "\".") );
-                        }
-                        // Now save the primary key column for the related table, for use below
-                        // Must be exactly 1 primary key
-                        List<String> primaryKeyColumns = DMIUtil.getTablePrimaryKeyColumns(dmi, DataStoreRelatedTables[iCol]);
-                        int np = primaryKeyColumns.size();
-                        if ( np == 0 ) {
-                            message = "Writing datastore table \"" + DataStoreTable +
-                                "\" column \"" + tableFieldNamesMapped[iCol] +
-                                "\": related table/view \"" + DataStoreRelatedTables[iCol] +
-                                "\" does not have a primary key column.";
-                            Message.printWarning ( 2, routine, message );
-                            status.addToLog ( commandPhase,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Verify that the related database table/view \"" +
-                                    DataStoreRelatedTables[iCol] + "\" has 1 primary key defined.") );
-                        }
-                        else if ( np > 1 ) {
-                            message = "Writing datastore table \"" + DataStoreTable +
-                                "\" column \"" + tableFieldNamesMapped[iCol] +
-                                "\": datastore related table/view \"" + DataStoreRelatedTables[iCol] +
-                                "\" has " + np + " primary key columns.  Must have only 1.";
-                            Message.printWarning ( 2, routine, message );
-                            status.addToLog ( commandPhase,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Verify that the related database table/view \"" +
-                                    DataStoreRelatedTables[iCol] + "\" has 1 primary key defined.") );
-                        }
-                        else {
-                            DataStoreRelatedPrimaryColumns[iCol] = primaryKeyColumns.get(0);
-                        }
+                        // Single primary key
+                        dataStoreRelatedPrimaryKeyColumns[iCol] = primaryKeyColumns.get(0);
                     }
                 }
                 else if ( StringUtil.indexOf(datastoreTableColumns,tableFieldNamesMapped[iCol]) < 0 ) {
@@ -433,7 +461,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Object o; // Generic table cell values
         DMIWriteStatement ws; // Write statement
         DMISelectStatement fkSelect; // Used when foreign key select is used
-        for ( int iRow = 0; iRow < table.getNumberOfRecords(); iRow++ ) {
+        int nTableRows = table.getNumberOfRecords();
+        for ( iRow = 0; iRow < nTableRows; iRow++ ) {
+            if ( (iRow == 0) || (iRow == (nTableRows - 1)) || (iRow%5 == 0) ) {
+                // Update the progress bar every 5%
+                message = "Writing row " + (iRow + 1) + " of " + nTableRows;
+                notifyCommandProgressListeners ( iRow, nTableRows, (float)-1.0, message );
+            }
             // Create the query.
             sqlString = "Not yet formed";
             ws = new DMIWriteStatement(dmi);
@@ -447,81 +481,81 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     // Cast nulls to make sure the correct DMIWriteStatement method is called
                     //
                     // First check to see if the datastore column is a related table (foreign key)
-                    if ( (DataStoreRelatedTables[iCol] != null) && (DataStoreRelatedColumns[iCol] != null) &&
-                        (DataStoreRelatedPrimaryColumns[iCol] != null)) {
+                    if ( (dataStoreRelatedTables[iCol] != null) && (dataStoreRelatedLookupColumns[iCol] != null) &&
+                        (dataStoreRelatedPrimaryKeyColumns[iCol] != null)) {
                         fkSelect = new DMISelectStatement(dmi);
-                        fkSelect.addTable(DataStoreRelatedTables[iCol]);
+                        fkSelect.addTable(dataStoreRelatedTables[iCol]);
                         // Return only the primary key column value below.
                         // The value in the original table is used as the where
                         if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_STRING ) {
-                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            fkSelect.addField(dataStoreRelatedPrimaryKeyColumns[iCol]);
                             if ( o == null ) {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " is null" );
                             }
                             else {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = '" +
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = '" +
                                     (String)o + "'" );
                             }
                         }
                         else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_INT ) {
-                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            fkSelect.addField(dataStoreRelatedPrimaryKeyColumns[iCol]);
                             if ( o == null ) {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " is null" );
                             }
                             else {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " +
                                     (Integer)o );
                             }
                         }
                         else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_SHORT ) {
-                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            fkSelect.addField(dataStoreRelatedPrimaryKeyColumns[iCol]);
                             if ( o == null ) {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " is null" );
                             }
                             else {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " +
                                     (Short)o );
                             }
                         }
                         else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_LONG ) {
-                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            fkSelect.addField(dataStoreRelatedPrimaryKeyColumns[iCol]);
                             if ( o == null ) {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " is null" );
                             }
                             else {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " +
                                     (Long)o );
                             }
                         }
                         // The following types are unlikely to be primary keys, but include for completeness
                         else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_DOUBLE ) {
-                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            fkSelect.addField(dataStoreRelatedPrimaryKeyColumns[iCol]);
                             if ( o == null ) {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " is null" );
                             }
                             else {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " +
                                     (Double)o );
                             }
                         }
                         else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_FLOAT ) {
-                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            fkSelect.addField(dataStoreRelatedPrimaryKeyColumns[iCol]);
                             if ( o == null ) {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " is null" );
                             }
                             else {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " +
                                     (Float)o );
                             }
                         }
                         else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_DATE ) {
-                            fkSelect.addField(DataStoreRelatedPrimaryColumns[iCol]);
+                            fkSelect.addField(dataStoreRelatedPrimaryKeyColumns[iCol]);
                             if ( o == null ) {
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " is null" );
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " is null" );
                             }
                             else {
                                 // TODO SAM 2013-03-02 Get the data formatting working
-                                fkSelect.addWhereClause(DataStoreRelatedPrimaryColumns[iCol] + " = " +
+                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " +
                                     (Date)o );
                             }
                         }
@@ -541,7 +575,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_STRING ) {
                         ws.addField(tableFieldNamesMapped[iCol]);
                         if ( o == null ) {
-                            ws.addValue((String)null);
+                            ws.addValue("");
                         }
                         else {
                             ws.addValue((String)o);
@@ -619,7 +653,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     catch ( Exception e ) {
-        message = "Error writing to datastore \"" + DataStore + "\" (" + e + ").";
+        message = "Error writing to datastore \"" + DataStore + "\" row " + iRow + " (" + e + ").";
         Message.printWarning ( 2, routine, message );
         status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,

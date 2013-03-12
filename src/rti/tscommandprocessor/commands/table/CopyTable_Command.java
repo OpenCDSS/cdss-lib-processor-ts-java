@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -24,6 +25,7 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
 /**
@@ -93,6 +95,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "NewTableID" );
     valid_Vector.add ( "IncludeColumns" );
+    valid_Vector.add ( "ColumnMap" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -202,6 +205,17 @@ CommandWarningException, CommandException
             includeColumns[i] = includeColumns[i].trim();
         }
     }
+    String ColumnMap = parameters.getValue ( "ColumnMap" );
+    Hashtable columnMap = new Hashtable();
+    if ( (ColumnMap != null) && (ColumnMap.length() > 0) && (ColumnMap.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(ColumnMap, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            columnMap.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
     
     // Get the table to process.
 
@@ -250,7 +264,7 @@ CommandWarningException, CommandException
     	// Create the table...
     
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	        DataTable newTable = table.createCopy ( table, NewTableID, includeColumns );
+	        DataTable newTable = table.createCopy ( table, NewTableID, includeColumns, columnMap );
             
             // Set the table in the processor...
             
@@ -313,6 +327,7 @@ public String toString ( PropList props )
     String TableID = props.getValue( "TableID" );
     String NewTableID = props.getValue( "NewTableID" );
 	String IncludeColumns = props.getValue( "IncludeColumns" );
+	String ColumnMap = props.getValue( "ColumnMap" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -332,6 +347,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
 	}
+    if ( (ColumnMap != null) && (ColumnMap.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnMap=\"" + ColumnMap + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

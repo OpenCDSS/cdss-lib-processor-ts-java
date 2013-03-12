@@ -40,6 +40,7 @@ private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __NewTableID_JTextField = null;
 private JTextField __IncludeColumns_JTextField = null;
+private JTextArea __ColumnMap_JTextArea = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private CopyTable_Command __command = null;
@@ -86,6 +87,7 @@ private void checkInput ()
 	String TableID = __TableID_JComboBox.getSelected();
     String NewTableID = __NewTableID_JTextField.getText().trim();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -97,6 +99,9 @@ private void checkInput ()
 	if ( IncludeColumns.length() > 0 ) {
 		props.set ( "IncludeColumns", IncludeColumns );
 	}
+    if ( ColumnMap.length() > 0 ) {
+        props.set ( "ColumnMap", ColumnMap );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -116,9 +121,11 @@ private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
     String NewTableID = __NewTableID_JTextField.getText().trim();
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+    String ColumnMap = __ColumnMap_JTextArea.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "NewTableID", NewTableID );
 	__command.setCommandParameter ( "IncludeColumns", IncludeColumns );
+	__command.setCommandParameter ( "ColumnMap", ColumnMap );
 }
 
 /**
@@ -161,7 +168,7 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
         "This command creates a new table by copying another table."),
         0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "For example, single column tables can be created from a larger table to use as a list."),
+        "For example, single column tables can be created from a larger table to use as a list with a template."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -195,6 +202,18 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to copy (default=copy all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column map:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnMap_JTextArea = new JTextArea (6,35);
+    __ColumnMap_JTextArea.setLineWrap ( true );
+    __ColumnMap_JTextArea.setWrapStyleWord ( true );
+    __ColumnMap_JTextArea.setToolTipText("OriginalColumn1:NewColumn1,OriginalColumn2:NewColumn2");
+    __ColumnMap_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnMap_JTextArea),
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - to change names (default=names are same)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -275,12 +294,14 @@ private void refresh ()
     String TableID = "";
     String NewTableID = "";
     String IncludeColumns = "";
+    String ColumnMap = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         NewTableID = props.getValue ( "NewTableID" );
         IncludeColumns = props.getValue ( "IncludeColumns" );
+        ColumnMap = props.getValue ( "ColumnMap" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -302,15 +323,20 @@ private void refresh ()
 		if ( IncludeColumns != null ) {
 			__IncludeColumns_JTextField.setText ( IncludeColumns );
 		}
+        if ( ColumnMap != null ) {
+            __ColumnMap_JTextArea.setText ( ColumnMap );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
     NewTableID = __NewTableID_JTextField.getText().trim();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	ColumnMap = __ColumnMap_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "NewTableID=" + NewTableID );
 	props.add ( "IncludeColumns=" + IncludeColumns );
+	props.add ( "ColumnMap=" + ColumnMap );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

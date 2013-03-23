@@ -25,7 +25,6 @@ import RTi.TS.TSIterator;
 import RTi.TS.TSUtil;
 import RTi.Util.GUI.InputFilter;
 import RTi.Util.GUI.InputFilter_JPanel;
-import RTi.Util.IO.IOUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
@@ -56,6 +55,11 @@ Database parameters from REF_DB_PARAMETER.
 private Hashtable<String, String> __databaseParameterList = new Hashtable();
 
 /**
+Data types from HDB_AGEN.
+*/
+private List<ReclamationHDB_Agency> __agencyList = new Vector();
+
+/**
 Data types from HDB_DATATYPE.
 */
 private List<ReclamationHDB_DataType> __dataTypeList = new Vector();
@@ -69,6 +73,16 @@ private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new V
 Models from HDB_MODEL.
 */
 private List<ReclamationHDB_Model> __modelList = new Vector();
+
+/**
+Overwrite flags from HDB_OVERWRITE_FLAG.
+*/
+private List<ReclamationHDB_OverwriteFlag> __overwriteFlagList = new Vector();
+
+/**
+Time zones supported when writing time series.
+*/
+private List<String> __timeZoneList = new Vector<String>();
 
 /**
 Loading applications from HDB_VALIDATION.
@@ -92,12 +106,8 @@ public ReclamationHDB_DMI ( String databaseEngine, String databaseServer,
     String databaseName, int port, String systemLogin, String systemPassword )
 throws Exception {
     // The engine is used in the base class so it needs to be non-null in the following call if not specified
-    super ( (databaseEngine == null) ? "Oracle":databaseEngine,
+    super ( (databaseEngine == null) ? "Oracle" : databaseEngine,
         databaseServer, databaseName, port, systemLogin, systemPassword );
-    if ( databaseEngine == null ) {
-        // Use the default...
-        setDatabaseEngine("Oracle");
-    }
     setEditable(true);
     setSecure(true);
 }
@@ -304,6 +314,15 @@ public List<ReclamationHDB_SiteDataType> findSiteDataType( List<ReclamationHDB_S
 }
 
 /**
+Return the list of agencies (global data initialized when database connection is opened).
+@return the list of agencies 
+*/
+public List<ReclamationHDB_Agency> getAgencyList ()
+{
+    return __agencyList;
+}
+
+/**
 Return the global time zone that is used for time series values more precise than daily.
 @return the global time zone that is used for time series values more precise than daily.  An empty
 string is returned if the time zone is not available.
@@ -419,6 +438,14 @@ private String getOracleDateFormat ( int intervalBase )
         throw new InvalidParameterException("Time interval " + intervalBase +
             " is not recognized - can't get Oracle date/time format.");
     }
+}
+
+/**
+Return the list of global overwrite flags.
+*/
+public List<ReclamationHDB_OverwriteFlag> getOverwriteFlagList()
+{
+    return __overwriteFlagList;
 }
 
 /**
@@ -566,6 +593,14 @@ public List<ReclamationHDB_Validation> getHdbValidationList()
 }
 
 /**
+Return the list of supported time zones.
+*/
+public List<String> getTimeZoneList()
+{
+    return __timeZoneList;
+}
+
+/**
 Get the write statement for writing time series.  A stored procedure statement is re-used.
 */
 private DMIWriteStatement getWriteTimeSeriesStatement ( DMIWriteStatement writeStatement )
@@ -604,6 +639,38 @@ throws Exception
 
     writeStatement.setStoredProcedureData(spData);
     return writeStatement;
+}
+
+/**
+Lookup the ReclamationHDB_Agency given the internal agency ID.
+@return the matching agency object, or null if not found
+@param agencyList a list of ReclamationHDB_Agency to search
+@param agencyID the agency ID to match
+*/
+private ReclamationHDB_Agency lookupAgency ( List<ReclamationHDB_Agency> agencyList, int agencyID )
+{
+    for ( ReclamationHDB_Agency a: agencyList ) {
+        if ( (a != null) && (a.getAgenID() == agencyID) ) {
+            return a;
+        }
+    }
+    return null;
+}
+
+/**
+Lookup the ReclamationHDB_Agency given the internal agency ID.
+@return the matching agency object, or null if not found
+@param agencyList a list of ReclamationHDB_Agency to search
+@param agenAbbrev the agency abbreviation (case-insensitive)
+*/
+private ReclamationHDB_Agency lookupAgency ( List<ReclamationHDB_Agency> agencyList, String agenAbbrev )
+{
+    for ( ReclamationHDB_Agency a: agencyList ) {
+        if ( (a != null) && (a.getAgenAbbrev() != null) && a.getAgenAbbrev().equalsIgnoreCase(agenAbbrev) ) {
+            return a;
+        }
+    }
+    return null;
 }
 
 /**
@@ -664,6 +731,15 @@ public void readGlobalData()
 {   String routine = getClass().getName() + ".readGlobalData";
     // Don't do a lot of caching at this point since database performance seems to be good
     // Do get the global database controlling parameters and other small reference table data
+
+    // Agencies
+    try {
+        __agencyList = readHdbAgencyList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
+        Message.printWarning(3,routine,"Error reading agencies (" + e + ").");
+    }
     // Database properties include database timezone for hourly date/times
     try {
         __databaseParameterList = readRefDbParameterList();
@@ -688,6 +764,14 @@ public void readGlobalData()
         Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading loading applications (" + e + ").");
     }
+    // Overwrite flags are used when writing time series
+    try {
+        __overwriteFlagList = readHdbOverwriteFlagList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
+        Message.printWarning(3,routine,"Error reading overwrite flags (" + e + ").");
+    }
     // Validation flags are used when writing time series
     try {
         __validationList = readHdbValidationList();
@@ -704,6 +788,79 @@ public void readGlobalData()
         Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading models (" + e + ").");
     }
+    // Time zones...
+    // As per email from Mark Bogner (2013-03-13):
+    // They have to be the standard 3 character time zones (GMT,EST,MST,PST,MDT,CST,EDT...) are all valid
+    // For stability, put the supported codes here
+    __timeZoneList = new Vector<String>();
+    __timeZoneList.add ( "CDT" );
+    __timeZoneList.add ( "CST" );
+    __timeZoneList.add ( "EDT" );
+    __timeZoneList.add ( "EST" );
+    __timeZoneList.add ( "GMT" );
+    __timeZoneList.add ( "MDT" );
+    __timeZoneList.add ( "MST" );
+    __timeZoneList.add ( "PDT" );
+    __timeZoneList.add ( "PST" );
+}
+
+/**
+Read the HDB_AGEN table.
+@return the list of agency data
+*/
+private List<ReclamationHDB_Agency> readHdbAgencyList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbAgencyList";
+    List<ReclamationHDB_Agency> results = new Vector();
+    String sqlCommand = "select HDB_AGEN.AGEN_ID, HDB_AGEN.AGEN_NAME, HDB_AGEN.AGEN_ABBREV from HDB_AGEN " +
+        "order by HDB_AGEN.AGEN_NAME";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_Agency data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_Agency();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setAgenID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setAgenName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setAgenAbbrev(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting agency data from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        if ( stmt != null ) {
+            stmt.close();
+        }
+    }
+    
+    return results;
 }
 
 /**
@@ -786,7 +943,7 @@ throws SQLException
 }
 
 /**
-Read the database parameters from the REF_DB_PARAMETER table.
+Read the database parameters from the HDB_LOADING_APPLICATION table.
 @return the list of loading application data
 */
 private List<ReclamationHDB_LoadingApplication> readHdbLoadingApplicationList ( )
@@ -966,6 +1123,61 @@ throws SQLException
     }
     catch (SQLException e) {
         Message.printWarning(3, routine, "Error getting loading application data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the data from the HDB_OVERWRITE_FLAG table.
+@return the list of validation data
+*/
+private List<ReclamationHDB_OverwriteFlag> readHdbOverwriteFlagList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbOverwriteFlagList";
+    List<ReclamationHDB_OverwriteFlag> results = new Vector();
+    String sqlCommand = "select HDB_OVERWRITE_FLAG.OVERWRITE_FLAG, " +
+        "HDB_OVERWRITE_FLAG.OVERWRITE_FLAG_NAME, HDB_OVERWRITE_FLAG.CMMNT from HDB_OVERWRITE_FLAG";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_OverwriteFlag data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_OverwriteFlag();
+            col = 1;
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setOverwriteFlag(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setOverwriteFlagName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting overwrite flag data from HDB (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
     finally {
@@ -1166,6 +1378,56 @@ throws SQLException
     catch (SQLException e) {
         Message.printWarning(3, routine, "Error getting loading application data from HDB \"" +
             getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the data from the HDB_VALIDATION table.
+@return the list of validation data
+*/
+private List<ReclamationHDB_Validation> readHdbValidationList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbValidation";
+    List<ReclamationHDB_Validation> results = new Vector();
+    String sqlCommand = "select HDB_VALIDATION.VALIDATION, HDB_VALIDATION.CMMNT from HDB_VALIDATION";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_Validation data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_Validation();
+            col = 1;
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setValidation(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting validation data from HDB (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
     finally {
@@ -1437,6 +1699,7 @@ throws SQLException
     " HDB_DATATYPE.DATATYPE_NAME," + // long
     " HDB_DATATYPE.DATATYPE_COMMON_NAME," + // short
     " HDB_DATATYPE.PHYSICAL_QUANTITY_NAME,\n" + // short
+    " HDB_DATATYPE.AGEN_ID,\n" + // short
     //" HDB_DATATYPE.UNIT_ID," + // Use the reference table string instead of numeric key
     " HDB_UNIT.UNIT_COMMON_NAME,\n" +
     // HDB_SITE_DATATYPE
@@ -1762,56 +2025,6 @@ throws Exception
 }
 
 /**
-Read the data from the HDB_VALIDATION table.
-@return the list of validation data
-*/
-private List<ReclamationHDB_Validation> readHdbValidationList ( )
-throws SQLException
-{   String routine = getClass().getName() + ".readHdbValidation";
-    List<ReclamationHDB_Validation> results = new Vector();
-    String sqlCommand = "select HDB_VALIDATION.VALIDATION, HDB_VALIDATION.CMMNT from HDB_VALIDATION";
-    ResultSet rs = null;
-    Statement stmt = null;
-    try {
-        stmt = __hdbConnection.ourConn.createStatement();
-        rs = stmt.executeQuery(sqlCommand);
-        // Set the fetch size to a relatively big number to try to improve performance.
-        // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
-        String s;
-        int record = 0;
-        int col;
-        ReclamationHDB_Validation data;
-        while (rs.next()) {
-            ++record;
-            data = new ReclamationHDB_Validation();
-            col = 1;
-            s = rs.getString(col++);
-            if ( !rs.wasNull() ) {
-                data.setValidation(s);
-            }
-            s = rs.getString(col++);
-            if ( !rs.wasNull() ) {
-                data.setCmmnt(s);
-            }
-            results.add ( data );
-        }
-    }
-    catch (SQLException e) {
-        Message.printWarning(3, routine, "Error getting validation data from HDB (" + e + ")." );
-        Message.printWarning(3, routine, e );
-    }
-    finally {
-        if ( rs != null ) {
-            rs.close();
-        }
-        stmt.close();
-    }
-    
-    return results;
-}
-
-/**
 Set a DateTime's contents given an HDB (Oracle) date/time string.
 This does not do a full parse constructor because a single DateTime instance is reused.
 @param dateTime the DateTime instance to set values in (should be at an appropriate precision)
@@ -1863,6 +2076,8 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
     if ( !tsType.equalsIgnoreCase("Real") ) {
         isReal = false;
     }
+    List<ReclamationHDB_Agency> agencyList = getAgencyList();
+    ReclamationHDB_Agency agency;
     try {
         while (rs.next()) {
             ++record;
@@ -1972,6 +2187,20 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
             if ( !rs.wasNull() ) {
                 data.setPhysicalQuantityName(s);
             }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setAgenID(i);
+                // Also set the abbreviation
+                agency = lookupAgency ( agencyList, i );
+                if ( agency != null ) {
+                    if ( agency.getAgenAbbrev() == null ) {
+                        data.setAgenAbbrev("");
+                    }
+                    else {
+                        data.setAgenAbbrev(agency.getAgenAbbrev());
+                    }
+                }
+            }
             s = rs.getString(col++);
             if ( !rs.wasNull() ) {
                 data.setUnitCommonName(s);
@@ -2037,16 +2266,19 @@ Write a time series to the database.
 @param modelRunDate model run date, to determine model_run_id
 @param hydrologicIndicator, to determine model_run_id
 @param modelRunID, will be used instead of that determined from above
-@param validationFlag validation flag for value
-@param dataFlags user-specified data flags
-@param timeZone time zone to write (can be null)
+@param agency agency abbreviation (can be null or blank to use default)
+@param validationFlag validation flag for value (can be null or blank to use default)
+@param overwriteFlag overwrite flag for value (can be null or blank to use default)
+@param dataFlags user-specified data flags (can be null or blank to use default)
+@param timeZone time zone to write (can be null or blank to use default)
 @param outputStart start of period to write (if null write full period).
 @param outputEnd end of period to write (if null write full period).
 */
 public void writeTimeSeries ( TS ts, String loadingApp,
     String siteCommonName, String dataTypeCommonName, Long siteDataTypeID,
     String modelName, String modelRunName, String modelRunDate, String hydrologicIndicator, Long modelRunID,
-    String validationFlag, String dataFlags, String timeZone, DateTime outputStartReq, DateTime outputEndReq )
+    String agency, String validationFlag, String overwriteFlag, String dataFlags,
+    String timeZone, DateTime outputStartReq, DateTime outputEndReq )
 throws SQLException
 {   String routine = getClass().getName() + ".writeTimeSeries";
     if ( ts == null ) {
@@ -2089,9 +2321,22 @@ throws SQLException
         }
     }
     Integer computeID = null; // Use default
+    if ( (agency != null) && agency.equals("") ) {
+        // Set to null to use default
+        agency = null;
+    }
+    Integer agenID = null;
+    if ( agency != null ) {
+        // Lookup the agency from the abbreviation
+        agenID = lookupAgency(getAgencyList(), agency).getAgenID();
+    }
     if ( (validationFlag != null) && validationFlag.equals("") ) {
         // Set to null to use default
         validationFlag = null;
+    }
+    if ( (overwriteFlag != null) && overwriteFlag.equals("") ) {
+        // Set to null to use default
+        overwriteFlag = null;
     }
     if ( (dataFlags != null) && dataFlags.equals("") ) {
         // Set to null to use default
@@ -2135,7 +2380,7 @@ throws SQLException
     }
     else {
         //cs = getConnection().prepareCall("begin write_to_hdb (?,?,?,?,?,?,?,?); end;");
-        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?,?,?)}");
+        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?,?,?,?,?)}");
     }
     TSData tsdata;
     DateTime dt;
@@ -2175,6 +2420,8 @@ throws SQLException
                 writeStatement.setValue(validationFlag,iParam++); // VALIDATION_FLAG
                 writeStatement.setValue(dataFlags,iParam++); // DATA_FLAGS
                 writeStatement.setValue(timeZone,iParam++); // TIME_ZONE
+                writeStatement.setValue(overwriteFlag,iParam++); // OVERWRITE_FLAG
+                writeStatement.setValue(agenID,iParam++); // AGEN_ID
                 // Execute the statement
                 //Message.printStatus(2, routine, "Statement is: " + writeStatement.toString() );
                 //dmiWrite(writeStatement, 0);
@@ -2213,6 +2460,18 @@ throws SQLException
                 else {
                     cs.setString(iParam++,timeZone);
                 }
+                if ( overwriteFlag == null ) { // OVERWRITE_FLAG
+                    cs.setNull(iParam++,java.sql.Types.VARCHAR);
+                }
+                else {
+                    cs.setString(iParam++,overwriteFlag);
+                }
+                if ( agenID == null ) {
+                    cs.setNull(iParam++,java.sql.Types.INTEGER);
+                }
+                else {
+                    cs.setInt(iParam++,agenID); // AGEN_ID
+                }
                 cs.addBatch();
             }
         }
@@ -2244,11 +2503,11 @@ throws SQLException
         catch (BatchUpdateException e) {
             // Will happen if any of the batch commands fail.
             Message.printWarning(3,routine,e);
-            throw new RuntimeException ( "Error executing write callable statement.", e );
+            throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
         }
         catch (SQLException e) {
             Message.printWarning(3,routine,e);
-            throw new RuntimeException ( "Error executing write callable statement.", e );
+            throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
         }
     }
     if ( errorCount > 0 ) {

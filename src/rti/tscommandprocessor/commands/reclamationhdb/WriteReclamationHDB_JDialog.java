@@ -60,7 +60,7 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private WriteReclamationHDB_Command __command = null;
-private JTextArea __command_JTextArea=null;
+private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __SiteCommonName_JComboBox = null;
 private SimpleJComboBox __DataTypeCommonName_JComboBox = null;
 private JLabel __selectedSiteID_JLabel = null;
@@ -73,8 +73,12 @@ private SimpleJComboBox __HydrologicIndicator_JComboBox = null;
 private JLabel __selectedModelID_JLabel = null;
 private JLabel __selectedModelRunID_JLabel = null;
 private SimpleJComboBox __ModelRunID_JComboBox = null;
+private SimpleJComboBox __Agency_JComboBox = null;
 private SimpleJComboBox __ValidationFlag_JComboBox = null;
+private SimpleJComboBox __OverwriteFlag_JComboBox = null;
 private JTextField __DataFlags_JTextField = null;
+private SimpleJComboBox __TimeZone_JComboBox = null;
+private JLabel __TimeZone_JLabel = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
@@ -123,7 +127,7 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Refresh the site common name choices in response to the currently selected ReclamationHDB data store.
+Refresh the site common name choices in response to the currently selected ReclamationHDB datastore.
 */
 private void actionPerformedDataStoreSelected ( )
 {
@@ -132,13 +136,17 @@ private void actionPerformedDataStoreSelected ( )
         return;
     }
     setDMIForSelectedDataStore();
-    //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
-    // Now populate the data type choices corresponding to the data store
+    //Message.printStatus(2, "", "Selected datastore " + __dataStore + " __dmi=" + __dmi );
+    // Now populate the data type choices corresponding to the datastore
     populateSiteCommonNameChoices ( __dmi );
     populateSiteDataTypeIDChoices ( __dmi );
     populateModelNameChoices ( __dmi );
     populateModelRunIDChoices ( __dmi );
+    populateAgencyChoices ( __dmi );
     populateValidationFlagChoices ( __dmi );
+    populateOverwriteFlagChoices ( __dmi );
+    populateTimeZoneChoices ( __dmi );
+    populateTimeZoneLabel ( __dmi );
 }
 
 /**
@@ -281,8 +289,11 @@ private void checkInput ()
     String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
     String HydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
     String ModelRunID = __ModelRunID_JComboBox.getSelected();
-    String ValidationFlag = __ValidationFlag_JComboBox.getSelected();
+    String Agency = getSelectedAgency();
+    String ValidationFlag = getSelectedValidationFlag();
+    String OverwriteFlag = getSelectedOverwriteFlag();
     String DataFlags = __DataFlags_JTextField.getText().trim();
+    String TimeZone = __TimeZone_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 
@@ -324,11 +335,20 @@ private void checkInput ()
     if ( (ModelRunID != null) && (ModelRunID.length() > 0) ) {
         parameters.set ( "ModelRunID", ModelRunID );
     }
+    if ( (Agency != null) && (Agency.length() > 0) ) {
+        parameters.set ( "Agency", Agency );
+    }
     if ( (ValidationFlag != null) && (ValidationFlag.length() > 0) ) {
         parameters.set ( "ValidationFlag", ValidationFlag );
     }
+    if ( (OverwriteFlag != null) && (OverwriteFlag.length() > 0) ) {
+        parameters.set ( "OverwriteFlag", OverwriteFlag );
+    }
     if ( DataFlags.length() > 0 ) {
         parameters.set ( "DataFlags", DataFlags );
+    }
+    if ( TimeZone.length() > 0 ) {
+        parameters.set ( "TimeZone", TimeZone );
     }
 	if ( OutputStart.length() > 0 ) {
 		parameters.set ( "OutputStart", OutputStart );
@@ -364,8 +384,11 @@ private void commitEdits ()
     String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
     String HydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
     String ModelRunID = __ModelRunID_JComboBox.getSelected();
-    String ValidationFlag = __ValidationFlag_JComboBox.getSelected();
+    String Agency = getSelectedAgency();
+    String ValidationFlag = getSelectedValidationFlag();
+    String OverwriteFlag = getSelectedOverwriteFlag();
     String DataFlags = __DataFlags_JTextField.getText().trim();
+    String TimeZone = __TimeZone_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "DataStore", DataStore );
@@ -380,8 +403,11 @@ private void commitEdits ()
     __command.setCommandParameter ( "ModelRunDate", ModelRunDate );
     __command.setCommandParameter ( "HydrologicIndicator", HydrologicIndicator );
     __command.setCommandParameter ( "ModelRunID", ModelRunID );
+    __command.setCommandParameter ( "Agency", Agency );
     __command.setCommandParameter ( "ValidationFlag", ValidationFlag );
+    __command.setCommandParameter ( "OverwriteFlag", OverwriteFlag );
     __command.setCommandParameter ( "DataFlags", DataFlags );
+    __command.setCommandParameter ( "TimeZone", TimeZone );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 }
@@ -403,7 +429,7 @@ throws Throwable
 
 /**
 Return the ReclamationHDB_DMI that is currently being used for database interaction,
-based on the selected data store.
+based on the selected datastore.
 */
 private ReclamationHDB_DMI getReclamationHDB_DMI ()
 {
@@ -411,8 +437,26 @@ private ReclamationHDB_DMI getReclamationHDB_DMI ()
 }
 
 /**
-Return the selected data store, used to provide intelligent parameter choices.
-@return the selected data store, or null if nothing selected (or none available)
+Return the selected agency abbreviation, used to provide intelligent parameter choices.
+The displayed format is:  "AgencyAbbrev - AgencyName"
+@return the selected agency, or "" if nothing selected
+*/
+private String getSelectedAgency ()
+{   String agency = __Agency_JComboBox.getSelected();
+    if ( agency == null ) {
+        return "";
+    }
+    else if ( agency.indexOf("-") > 0 ) {
+        return agency.substring(0,agency.indexOf("-")).trim();
+    }
+    else {
+        return agency.trim();
+    }
+}
+
+/**
+Return the selected datastore, used to provide intelligent parameter choices.
+@return the selected datastore, or null if nothing selected (or none available)
 */
 private ReclamationHDBDataStore getSelectedDataStore ()
 {   
@@ -428,6 +472,42 @@ private ReclamationHDBDataStore getSelectedDataStore ()
         }
     }
     return null;
+}
+
+/**
+Return the selected overwrite flag, used to provide intelligent parameter choices.
+The displayed format is:  "OverwriteFlag - Name"
+@return the selected flag, or "" if nothing selected
+*/
+private String getSelectedOverwriteFlag()
+{   String overwriteFlag = __OverwriteFlag_JComboBox.getSelected();
+    if ( overwriteFlag == null ) {
+        return "";
+    }
+    else if ( overwriteFlag.indexOf("-") > 0 ) {
+        return overwriteFlag.substring(0,overwriteFlag.indexOf("-")).trim();
+    }
+    else {
+        return overwriteFlag.trim();
+    }
+}
+
+/**
+Return the selected validation flag, used to provide intelligent parameter choices.
+The displayed format is:  "ValidationFlag - Name"
+@return the selected flag, or "" if nothing selected
+*/
+private String getSelectedValidationFlag()
+{   String validationFlag = __ValidationFlag_JComboBox.getSelected();
+    if ( validationFlag == null ) {
+        return "";
+    }
+    else if ( validationFlag.indexOf("-") > 0 ) {
+        return validationFlag.substring(0,validationFlag.indexOf("-")).trim();
+    }
+    else {
+        return validationFlag.trim();
+    }
 }
 
 /**
@@ -449,10 +529,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
 	int yMain = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command is under development.  Functionality is being reviewed by Reclamation staff.</b></html>." ),
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write one time series (or ensemble trace) to a Reclamation HDB database." ),
+		"Write one time series or ensemble to a Reclamation HDB database." ),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The string parameters are used to determine database internal numeric primary keys " +
@@ -475,10 +552,10 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     
     __ignoreEvents = true; // So that a full pass of initialization can occur
     
-    // List available data stores of the correct type
-    // Other lists are NOT populated until a data store is selected (driven by events)
+    // List available datastores of the correct type
+    // Other lists are NOT populated until a datastore is selected (driven by events)
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data store:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
@@ -492,7 +569,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - open data store for HDB database."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - datastore for HDB database."), 
         3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -645,6 +722,15 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(model_JPanel, new JLabel (
         "Optional - alternative to selecting above choices."),
         3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Agency:"), 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Agency_JComboBox = new SimpleJComboBox ( false );
+    __Agency_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Agency_JComboBox,
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - agency supplying data (default=no agency)."),
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Validation flag:"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -652,7 +738,16 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __ValidationFlag_JComboBox.addItemListener (this);
     JGUIUtil.addComponent(main_JPanel, __ValidationFlag_JComboBox,
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - standard flag (default=no flag)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - validation flag (default=no flag)."),
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Overwrite flag:"), 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OverwriteFlag_JComboBox = new SimpleJComboBox ( false );
+    __OverwriteFlag_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OverwriteFlag_JComboBox,
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - overwrite flag (default=O)."),
         3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data flags:"), 
@@ -663,6 +758,18 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - user-defined flag (default=no flag)."),
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Time zone:"), 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeZone_JComboBox = new SimpleJComboBox ( false );
+    __TimeZone_JComboBox.addItemListener (this);
+    __TimeZone_JComboBox.setToolTipText ( "The time zone in time series is NOT used by default.  " +
+    	"Use this parameter to tell the database the time zone for data." );
+    JGUIUtil.addComponent(main_JPanel, __TimeZone_JComboBox,
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __TimeZone_JLabel = new JLabel ("");
+    JGUIUtil.addComponent(main_JPanel, __TimeZone_JLabel,
         3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
@@ -705,7 +812,6 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
-
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
 	__ok_JButton = new SimpleJButton("OK", "OK", this);
@@ -740,7 +846,7 @@ public void itemStateChanged (ItemEvent e)
     Object source = e.getSource();
     int sc = e.getStateChange();
     if ( (source == __DataStore_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-        // User has selected a data store.
+        // User has selected a datastore.
         actionPerformedDataStoreSelected ();
     }
     else if ( (source == __SiteCommonName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
@@ -808,6 +914,48 @@ public boolean ok ()
 }
 
 /**
+Populate the agency list based on the selected datastore.
+*/
+private void populateAgencyChoices ( ReclamationHDB_DMI rdmi )
+{   String routine = getClass().getName() + ".populateAgencyChoices";
+    if ( (rdmi == null) || (__Agency_JComboBox == null) ) {
+        // Initialization
+        return;
+    }
+    List<String> agencyStrings = new Vector();
+    try {
+        List<ReclamationHDB_Agency> agencyList = rdmi.getAgencyList();
+        agencyStrings.add(""); // No agency will be used
+        String agencyAbbrev;
+        String agencyName;
+        for ( ReclamationHDB_Agency agency: agencyList ) {
+            agencyAbbrev = agency.getAgenAbbrev();
+            agencyName = agency.getAgenName();
+            if ( agencyAbbrev.length() > 0 ) {
+                if ( agencyName.length() > 0 ) {
+                    agencyStrings.add ( agencyAbbrev + " - " + agencyName );
+                }
+                else {
+                    agencyStrings.add ( agencyAbbrev );
+                }
+            }
+        }
+        Collections.sort(agencyStrings,String.CASE_INSENSITIVE_ORDER);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error getting HDB agency list (" + e + ")." );
+        agencyStrings = new Vector();
+    }
+    __Agency_JComboBox.removeAll ();
+    __Agency_JComboBox.setData(agencyStrings);
+    // Select first choice (may get reset from existing parameter values).
+    __Agency_JComboBox.select ( null );
+    if ( __Agency_JComboBox.getItemCount() > 0 ) {
+        __Agency_JComboBox.select ( 0 );
+    }
+}
+
+/**
 Populate the data type choice list based on the selected site common name.
 */
 private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
@@ -838,7 +986,7 @@ private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
-Populate the model hydrologic indicator list based on the selected data store.
+Populate the model hydrologic indicator list based on the selected datastore.
 */
 private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateHydrologicIndicatorChoices";
@@ -880,7 +1028,7 @@ private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
-Populate the model name list based on the selected data store.
+Populate the model name list based on the selected datastore.
 */
 private void populateModelNameChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateModelNameChoices";
@@ -912,7 +1060,7 @@ private void populateModelNameChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
-Populate the model run date list based on the selected data store.
+Populate the model run date list based on the selected datastore.
 */
 private void populateModelRunDateChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateModelRunDateChoices";
@@ -953,7 +1101,7 @@ private void populateModelRunDateChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
-Populate the model run ID list based on the selected data store.
+Populate the model run ID list based on the selected datastore.
 */
 private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateModelRunIDhoices";
@@ -986,7 +1134,7 @@ private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
-Populate the model run name list based on the selected data store.
+Populate the model run name list based on the selected datastore.
 */
 private void populateModelRunNameChoices ( ReclamationHDB_DMI rdmi )
 {   //String routine = getClass().getName() + ".populateModelRunNameChoices";
@@ -1012,7 +1160,39 @@ private void populateModelRunNameChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
-Populate the site common name list based on the selected data store.
+Populate the overwrite flag list based on the selected datastore.
+*/
+private void populateOverwriteFlagChoices ( ReclamationHDB_DMI rdmi )
+{   String routine = getClass().getName() + ".populateOverwriteFlagChoices";
+    if ( (rdmi == null) || (__OverwriteFlag_JComboBox == null) ) {
+        // Initialization
+        return;
+    }
+    List<String> overwriteFlagStrings = new Vector();
+    try {
+        List<ReclamationHDB_OverwriteFlag> overwriteFlagList = rdmi.getOverwriteFlagList();
+        overwriteFlagStrings.add(""); // No flag specified by parameter
+        for ( ReclamationHDB_OverwriteFlag overwriteFlag: overwriteFlagList ) {
+            overwriteFlagStrings.add ( overwriteFlag.getOverwriteFlag() + " - " +
+                overwriteFlag.getOverwriteFlagName());
+        }
+        Collections.sort(overwriteFlagStrings,String.CASE_INSENSITIVE_ORDER);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error getting HDB overwrite flag list (" + e + ")." );
+        overwriteFlagStrings = new Vector();
+    }
+    __OverwriteFlag_JComboBox.removeAll ();
+    __OverwriteFlag_JComboBox.setData(overwriteFlagStrings);
+    // Select first choice (may get reset from existing parameter values).
+    __OverwriteFlag_JComboBox.select ( null );
+    if ( __OverwriteFlag_JComboBox.getItemCount() > 0 ) {
+        __OverwriteFlag_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Populate the site common name list based on the selected datastore.
 */
 private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateSiteCommonNameChoices";
@@ -1043,7 +1223,7 @@ private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
-Populate the site common name list based on the selected data store.
+Populate the site common name list based on the selected datastore.
 */
 private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateSiteDataTypeIDChoices";
@@ -1075,7 +1255,33 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
-Populate the validation flag list based on the selected data store.
+Populate the time zone choices based on the selected datastore.
+*/
+private void populateTimeZoneChoices ( ReclamationHDB_DMI rdmi )
+{
+    __TimeZone_JComboBox.removeAll ();
+    List<String> timeZoneChoices = rdmi.getTimeZoneList();
+    timeZoneChoices.add(0,"");
+    __TimeZone_JComboBox.setData(timeZoneChoices);
+    // Select first choice (may get reset from existing parameter values).
+    __TimeZone_JComboBox.select ( null );
+    if ( __TimeZone_JComboBox.getItemCount() > 0 ) {
+        __TimeZone_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Populate the time zone label, which uses the HDB default time zone.
+*/
+private void populateTimeZoneLabel ( ReclamationHDB_DMI rdmi )
+{
+    String defaultTZ = __dmi.getDatabaseTimeZone();
+    __TimeZone_JLabel.setText("Optional - time zone for instantaneous and daily data (default="+
+        defaultTZ + ").");
+}
+
+/**
+Populate the validation flag list based on the selected datastore.
 */
 private void populateValidationFlagChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateValidationFlagChoices";
@@ -1093,7 +1299,7 @@ private void populateValidationFlagChoices ( ReclamationHDB_DMI rdmi )
             if ( (flag.length() > 0) && Character.isLetter(flag.charAt(0)) &&
                 Character.isUpperCase(flag.charAt(0))) {
                 // Only add uppercase characters
-                validationFlagStrings.add ( flag );
+                validationFlagStrings.add ( flag + " - " + validation.getCmmnt() );
             }
         }
         Collections.sort(validationFlagStrings,String.CASE_INSENSITIVE_ORDER);
@@ -1189,7 +1395,10 @@ private void refresh ()
     String HydrologicIndicator = "";
     String ModelRunDate = "";
     String ModelRunID = "";
+    String Agency = "";
     String ValidationFlag = "";
+    String OverwriteFlag = "";
+    String TimeZone = "";
     String DataFlags = "";
 	String OutputStart = "";
 	String OutputEnd = "";
@@ -1211,14 +1420,17 @@ private void refresh ()
         HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
         ModelRunDate = parameters.getValue ( "ModelRunDate" );
         ModelRunID = parameters.getValue ( "ModelRunID" );
+        Agency = parameters.getValue ( "Agency" );
         ValidationFlag = parameters.getValue ( "ValidationFlag" );
+        OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
         DataFlags = parameters.getValue ( "DataFlags" );
+        TimeZone = parameters.getValue ( "TimeZone" );
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( DataStore );
             if ( __ignoreEvents ) {
-                // Also need to make sure that the data store and DMI are actually selected
+                // Also need to make sure that the datastore and DMI are actually selected
                 // Call manually because events are disabled at startup to allow cascade to work properly
                 setDMIForSelectedDataStore();
             }
@@ -1244,7 +1456,7 @@ private void refresh ()
                 if ( __DataStore_JComboBox.getItemCount() > 0 ) {
                     __DataStore_JComboBox.select ( 0 );
                     if ( __ignoreEvents ) {
-                        // Also need to make sure that the data store and DMI are actually selected
+                        // Also need to make sure that the datastore and DMI are actually selected
                         // Call manually because events are disabled at startup to allow cascade to work properly
                         setDMIForSelectedDataStore();
                     }
@@ -1269,6 +1481,28 @@ private void refresh ()
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+                // Select the first so at least something is visible to user
+                __DataStore_JComboBox.select ( 0 );
+                if ( __ignoreEvents ) {
+                    // Also need to make sure that the datastore and DMI are actually selected
+                    // Call manually because events are disabled at startup to allow cascade to work properly
+                    setDMIForSelectedDataStore();
+                }
+                if ( __ignoreEvents ) {
+                    // Also need to make sure that the __siteDataTypeList is populated
+                    // Call manually because events are disabled at startup to allow cascade to work properly
+                    readSiteDataTypeList(__dmi);
+                }
+                if ( __ignoreEvents ) {
+                    // Also need to make sure that the __modelList is populated
+                    // Call manually because events are disabled at startup to allow cascade to work properly
+                    try {
+                        readModelList(__dmi);
+                    }
+                    catch ( Exception e ) {
+                        // The above call will set the list to empty.
+                    }
+                }
             }
         }
         if ( TSList == null ) {
@@ -1471,9 +1705,30 @@ private void refresh ()
             }
         }
         // First populate the choices...
+        populateAgencyChoices(getReclamationHDB_DMI() );
+        int [] index = new int[1];
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Agency_JComboBox, Agency, JGUIUtil.CHECK_SUBSTRINGS,
+            " ", 0, index, true ) ) {
+            __Agency_JComboBox.select ( index[0] );
+        }
+        else {
+            if ( (Agency == null) || Agency.equals("") ) {
+                // New command...select the default...
+                if ( __Agency_JComboBox.getItemCount() > 0 ) {
+                    __Agency_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "Agency parameter \"" + Agency + "\".  Select a different value or Cancel." );
+            }
+        }
+        // First populate the choices...
         populateValidationFlagChoices(getReclamationHDB_DMI() );
-        if ( JGUIUtil.isSimpleJComboBoxItem(__ValidationFlag_JComboBox, ValidationFlag, JGUIUtil.NONE, null, null ) ) {
-            __ValidationFlag_JComboBox.select ( ValidationFlag );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__ValidationFlag_JComboBox, ValidationFlag,JGUIUtil.CHECK_SUBSTRINGS,
+            " ", 0, index, true )) {
+            __ValidationFlag_JComboBox.select ( index[0] );
         }
         else {
             if ( (ValidationFlag == null) || ValidationFlag.equals("") ) {
@@ -1488,8 +1743,46 @@ private void refresh ()
                   "ValidationFlag parameter \"" + ValidationFlag + "\".  Select a different value or Cancel." );
             }
         }
+        // First populate the choices...
+        populateOverwriteFlagChoices(getReclamationHDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__OverwriteFlag_JComboBox, OverwriteFlag, JGUIUtil.CHECK_SUBSTRINGS,
+            " ", 0, index, true ) ) {
+            __OverwriteFlag_JComboBox.select ( index[0] );
+        }
+        else {
+            if ( (OverwriteFlag == null) || OverwriteFlag.equals("") ) {
+                // New command...select the default...
+                if ( __OverwriteFlag_JComboBox.getItemCount() > 0 ) {
+                    __OverwriteFlag_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "OverwriteFlag parameter \"" + OverwriteFlag + "\".  Select a different value or Cancel." );
+            }
+        }
         if ( DataFlags != null ) {
             __DataFlags_JTextField.setText (DataFlags);
+        }
+        // First populate the choices...
+        populateTimeZoneChoices(getReclamationHDB_DMI() );
+        populateTimeZoneLabel(getReclamationHDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__TimeZone_JComboBox, TimeZone, JGUIUtil.NONE, null, null ) ) {
+            __TimeZone_JComboBox.select ( TimeZone );
+        }
+        else {
+            if ( (TimeZone == null) || TimeZone.equals("") ) {
+                // New command...select the default...
+                if ( __TimeZone_JComboBox.getItemCount() > 0 ) {
+                    __TimeZone_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "TimeZone parameter \"" + TimeZone + "\".  Select a different value or Cancel." );
+            }
         }
 		if ( OutputStart != null ) {
 			__OutputStart_JTextField.setText (OutputStart);
@@ -1543,11 +1836,14 @@ private void refresh ()
     if ( ModelRunID == null ) {
         ModelRunID = "";
     }
-    ValidationFlag = __ValidationFlag_JComboBox.getSelected();
-    if ( ValidationFlag == null ) {
-        ValidationFlag = "";
-    }
+    Agency = getSelectedAgency();
+    ValidationFlag = getSelectedValidationFlag();
+    OverwriteFlag = getSelectedOverwriteFlag();
     DataFlags = __DataFlags_JTextField.getText().trim();
+    TimeZone = __TimeZone_JComboBox.getSelected();
+    if ( TimeZone == null ) {
+        TimeZone = "";
+    }
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
@@ -1563,8 +1859,11 @@ private void refresh ()
     parameters.add ( "ModelRunDate=" + ModelRunDate );
     parameters.add ( "HydrologicIndicator=" + HydrologicIndicator );
     parameters.add ( "ModelRunID=" + ModelRunID );
+    parameters.add ( "Agency=" + Agency );
     parameters.add ( "ValidationFlag=" + ValidationFlag );
+    parameters.add ( "OverwriteFlag=" + OverwriteFlag );
     parameters.add ( "DataFlags=" + DataFlags );
+    parameters.add ( "TimeZone=" + TimeZone );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
@@ -1591,7 +1890,7 @@ private void response ( boolean ok )
 }
 
 /**
-Set the internal data based on the selected data store.
+Set the internal data based on the selected datastore.
 */
 private void setDMIForSelectedDataStore()
 {   __dataStore = getSelectedDataStore();
@@ -1627,8 +1926,15 @@ Update the model information text fields.
 */
 private void updateModelIDTextFields ()
 {   // Model information...
-    List<ReclamationHDB_Model> modelList = __dmi.findModel(__modelList, __ModelName_JComboBox.getSelected() );
-    if ( modelList.size() == 0 ) {
+    List<ReclamationHDB_Model> modelList = null;
+    try {
+        modelList = __dmi.findModel(__modelList, __ModelName_JComboBox.getSelected() );
+    }
+    catch ( Exception e ) {
+        // Generally due to startup with bad datastore
+        modelList = null;
+    }
+    if ( (modelList == null) || (modelList.size() == 0) ) {
         __selectedModelID_JLabel.setText ( "No matches" );
     }
     else if ( modelList.size() == 1 ) {
@@ -1638,14 +1944,21 @@ private void updateModelIDTextFields ()
         __selectedModelID_JLabel.setText ( "" + modelList.size() + " matches" );
     }
     // Model run information...
-    List<ReclamationHDB_ModelRun> modelRunList = new Vector();
+    List<ReclamationHDB_ModelRun> modelRunList = null;
+    try {
+        modelRunList = new Vector();
+    }
+    catch ( Exception e ) {
+        // Generally due to startup with bad datastore
+        modelRunList = null;
+    }
     // TODO SAM 2012-03-25 Need to enable
     //__dmi.findModelRun(__modelRunList,
     //    __ModelName_JComboBox.getSelected(),
     //    __ModelRunName_JComboBox.getSelected(),
     //    __ModelRunDate_JComboBox.getSelected(),
     //    __HydrologicIndicator_JTextField.getText().trim() );
-    if ( modelRunList.size() == 0 ) {
+    if ( (modelRunList == null) || (modelRunList.size() == 0) ) {
         __selectedModelRunID_JLabel.setText ( "No matches" );
     }
     else if ( modelRunList.size() == 1 ) {
@@ -1661,9 +1974,16 @@ Update the model information text fields.
 */
 private void updateSiteIDTextFields ()
 {
-    List<ReclamationHDB_SiteDataType> stdList = __dmi.findSiteDataType(__siteDataTypeList,
-        __SiteCommonName_JComboBox.getSelected(), null );
-    if ( stdList.size() == 0 ) {
+    List<ReclamationHDB_SiteDataType> stdList = null;
+    try {
+        stdList = __dmi.findSiteDataType(__siteDataTypeList,
+            __SiteCommonName_JComboBox.getSelected(), null );
+    }
+    catch ( Exception e ) {
+        // Generally at startup with a bad datastore configuration
+        stdList = null;
+    }
+    if ( (stdList == null) || (stdList.size() == 0) ) {
         __selectedSiteID_JLabel.setText ( "No matches" );
     }
     else if ( stdList.size() > 0 ) {
@@ -1673,10 +1993,16 @@ private void updateSiteIDTextFields ()
     else {
         __selectedSiteID_JLabel.setText ( "" + stdList.size() + " matches" );
     }
-        
-    stdList = __dmi.findSiteDataType(__siteDataTypeList,
-        __SiteCommonName_JComboBox.getSelected(), __DataTypeCommonName_JComboBox.getSelected() );
-    if ( stdList.size() == 0 ) {
+
+    try {
+        stdList = __dmi.findSiteDataType(__siteDataTypeList,
+            __SiteCommonName_JComboBox.getSelected(), __DataTypeCommonName_JComboBox.getSelected() );
+    }
+    catch ( Exception e ) {
+        // Generally at startup with a bad datastore configuration
+        stdList = null;
+    }
+    if ( (stdList == null) || (stdList.size() == 0) ) {
         __selectedSiteDataTypeID_JLabel.setText ( "No matches" );
     }
     else if ( stdList.size() == 1 ) {

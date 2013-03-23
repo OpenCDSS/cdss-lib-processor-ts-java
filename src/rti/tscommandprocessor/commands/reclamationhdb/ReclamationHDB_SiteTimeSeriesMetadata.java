@@ -28,6 +28,8 @@ private String __dataTypeName= "";
 private String __dataTypeCommonName= "";
 private String __physicalQuantityName= "";
 private String __unitCommonName= "";
+private int __agenID = -1; // Reference to HDB_AGEN - carry around because agency abbreviation might be null
+private String __agenAbbrev = ""; // Ideally use this but might be null in database
 
 // From HDB_SITE_DATATYPE
 private int __siteDataTypeID = DMIUtil.MISSING_INT;
@@ -50,6 +52,16 @@ Constructor.
 */
 public ReclamationHDB_SiteTimeSeriesMetadata ()
 {   super();
+}
+
+public int getAgenID ()
+{
+    return __agenID;
+}
+
+public String getAgenAbbrev ()
+{
+    return __agenAbbrev;
 }
 
 public String getDataInterval ()
@@ -166,6 +178,16 @@ public String getTSID ()
 public String getUnitCommonName ()
 {
     return __unitCommonName;
+}
+
+public void setAgenAbbrev ( String agenAbbrev )
+{
+    __agenAbbrev = agenAbbrev;
+}
+
+public void setAgenID ( int agenID )
+{
+    __agenID = agenID;
 }
 
 public void setDataInterval ( String dataInterval )

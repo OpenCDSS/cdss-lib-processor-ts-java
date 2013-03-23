@@ -205,7 +205,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
 	valid_Vector.add ( "DataStore" );
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
@@ -218,8 +218,11 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "HydrologicIndicator" );
     valid_Vector.add ( "ModelRunDate" );
     valid_Vector.add ( "ModelRunID" );
+    valid_Vector.add ( "Agency" );
     valid_Vector.add ( "ValidationFlag" );
+    valid_Vector.add ( "OverwriteFlag" );
     valid_Vector.add ( "DataFlags" );
+    valid_Vector.add ( "TimeZone" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -291,8 +294,11 @@ CommandWarningException, CommandException
     if ( StringUtil.isLong(ModelRunID) ) {
         modelRunID = Long.parseLong(ModelRunID);
     }
+    String Agency = parameters.getValue ( "Agency" );
     String ValidationFlag = parameters.getValue ( "ValidationFlag" );
+    String OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
     String DataFlags = parameters.getValue ( "DataFlags" );
+    String TimeZone = parameters.getValue ( "TimeZone" );
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -453,13 +459,13 @@ CommandWarningException, CommandException
             dataStore.getName() + "\"" );
         String loadingApp = "TSTool";
         boolean doWrite = true;
-        String timeZone = null;
         if ( doWrite && (tslist != null) ) {
             for ( TS ts : tslist ) {
                 dmi.writeTimeSeries ( ts, loadingApp,
                     SiteCommonName, DataTypeCommonName, siteDataTypeID,
                     ModelName, ModelRunName, ModelRunDate, HydrologicIndicator, modelRunID,
-                    ValidationFlag, DataFlags, timeZone, OutputStart_DateTime, OutputEnd_DateTime );
+                    Agency, ValidationFlag, OverwriteFlag, DataFlags,
+                    TimeZone, OutputStart_DateTime, OutputEnd_DateTime );
             }
         }
     }
@@ -498,8 +504,11 @@ public String toString ( PropList parameters )
     String ModelRunDate = parameters.getValue( "ModelRunDate" );
     String HydrologicIndicator = parameters.getValue( "HydrologicIndicator" );
     String ModelRunID = parameters.getValue( "ModelRunID" );
+    String Agency = parameters.getValue( "Agency" );
     String ValidationFlag = parameters.getValue( "ValidationFlag" );
+    String OverwriteFlag = parameters.getValue( "OverwriteFlag" );
     String DataFlags = parameters.getValue( "DataFlags" );
+    String TimeZone = parameters.getValue( "TimeZone" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	StringBuffer b = new StringBuffer ();
@@ -575,17 +584,35 @@ public String toString ( PropList parameters )
         }
         b.append ( "ModelRunID=" + ModelRunID );
     }
+    if ( (Agency != null) && (Agency.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Agency=\"" + Agency + "\"");
+    }
     if ( (ValidationFlag != null) && (ValidationFlag.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "ValidationFlag=\"" + ValidationFlag + "\"" );
     }
+    if ( (OverwriteFlag != null) && (OverwriteFlag.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OverwriteFlag=\"" + OverwriteFlag + "\"" );
+    }
     if ( (DataFlags != null) && (DataFlags.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "DataFlags=\"" + DataFlags + "\"" );
+    }
+    if ( (TimeZone != null) && (TimeZone.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TimeZone=\"" + TimeZone + "\"" );
     }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -7,6 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -59,6 +60,7 @@ private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private JTextField __TableID_JTextField = null;
+private JTabbedPane __sql_JTabbedPane = null;
 private SimpleJComboBox __DataStoreTable_JComboBox = null;
 private JTextField __DataStoreColumns_JTextField = null;
 private JTextField __OrderBy_JTextField = null;
@@ -303,7 +305,8 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
         "The query can be specified in one of three ways:"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "    1) Specify a single table or view, related columns, and order (allows for more up-front checks)."),
+        "    1) Specify a single table or view, related columns, and order (allows for more up-front checks " +
+        "but can run out of memory for very large tables)."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "    2) Specify a free form SQL select statement (allows joins and other SQL constructs " +
@@ -346,73 +349,76 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data store containing data to read."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    // Panel for parsed query
-    int yParsed = -1;
-    JPanel parsed_JPanel = new JPanel();
-    parsed_JPanel.setLayout( new GridBagLayout() );
-    parsed_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),
-        "Specify query using table and column choices" ));
-    JGUIUtil.addComponent( main_JPanel, parsed_JPanel,
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __sql_JTabbedPane = new JTabbedPane ();
+    __sql_JTabbedPane.setBorder(
+        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+        "Specify how to query the datastore" ));
+    JGUIUtil.addComponent(main_JPanel, __sql_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    // Data tables are particular to the data store...
+    // Panel for SQL via table choices
+    int yTable = -1;
+    JPanel table_JPanel = new JPanel();
+    table_JPanel.setLayout( new GridBagLayout() );
+    __sql_JTabbedPane.addTab ( "Table and columns", table_JPanel );
     
-    JGUIUtil.addComponent(parsed_JPanel, new JLabel ( "Data store table:"),
-        0, ++yParsed, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Data store table:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreTable_JComboBox = new SimpleJComboBox ( false );
     __DataStoreTable_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(parsed_JPanel, __DataStoreTable_JComboBox,
-        1, yParsed, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(parsed_JPanel, new JLabel("Required - database table/view to read."), 
-        3, yParsed, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, __DataStoreTable_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel("Required - database table/view to read."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(parsed_JPanel, new JLabel ("Data store columns:"),
-        0, ++yParsed, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Data store columns:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreColumns_JTextField = new JTextField (10);
     __DataStoreColumns_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(parsed_JPanel, __DataStoreColumns_JTextField,
-        1, yParsed, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(parsed_JPanel, new JLabel ("Optional - database table/view columns, separated by commas (default=all)."),
-        3, yParsed, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(table_JPanel, __DataStoreColumns_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - database table/view columns, separated by commas (default=all)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
-    JGUIUtil.addComponent(parsed_JPanel, new JLabel ("Order by:"),
-        0, ++yParsed, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Order by:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OrderBy_JTextField = new JTextField (10);
     __OrderBy_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(parsed_JPanel, __OrderBy_JTextField,
-        1, yParsed, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(parsed_JPanel, new JLabel ("Optional - columns to sort by, separated by commas (default=no sort)."),
-        3, yParsed, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(table_JPanel, __OrderBy_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - columns to sort by, separated by commas (default=no sort)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for SQL string query
+    // Panel for SQL via SQL statement
     int ySql = -1;
     JPanel sql_JPanel = new JPanel();
     sql_JPanel.setLayout( new GridBagLayout() );
-    sql_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),
-        "OR... Specify query using SQL" ));
-    JGUIUtil.addComponent( main_JPanel, sql_JPanel,
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __sql_JTabbedPane.addTab ( "SQL string", sql_JPanel );
     
     JGUIUtil.addComponent(sql_JPanel, new JLabel ("SQL String:"), 
         0, ++ySql, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Sql_JTextArea = new JTextArea (6,50);
+    __Sql_JTextArea = new JTextArea (9,50);
     __Sql_JTextArea.setLineWrap ( true );
     __Sql_JTextArea.setWrapStyleWord ( true );
     __Sql_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(sql_JPanel, new JScrollPane(__Sql_JTextArea),
         1, ySql, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "SQL file to read:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for SQL via SQL file
+    int yFile = -1;
+    JPanel file_JPanel = new JPanel();
+    file_JPanel.setLayout( new GridBagLayout() );
+    __sql_JTabbedPane.addTab ( "SQL file", file_JPanel );
+    
+    JGUIUtil.addComponent(file_JPanel, new JLabel ( "SQL file to read:" ), 
+        0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SqlFile_JTextField = new JTextField ( 50 );
     __SqlFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __SqlFile_JTextField,
-        1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(file_JPanel, __SqlFile_JTextField,
+        1, yFile, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     __browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        JGUIUtil.addComponent(file_JPanel, __browse_JButton,
+        6, yFile, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -594,6 +600,7 @@ try{
         // Now select what the command had previously (if specified)...
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreTable_JComboBox, DataStoreTable, JGUIUtil.NONE, null, null ) ) {
             __DataStoreTable_JComboBox.select ( DataStoreTable );
+            __sql_JTabbedPane.setSelectedIndex(0);
         }
         else {
             if ( (DataStoreTable == null) || DataStoreTable.equals("") ) {
@@ -612,11 +619,13 @@ try{
         if ( OrderBy != null ) {
             __OrderBy_JTextField.setText ( OrderBy );
         }
-        if ( Sql != null ) {
+        if ( (Sql != null) && !Sql.equals("") ) {
             __Sql_JTextArea.setText ( Sql );
+            __sql_JTabbedPane.setSelectedIndex(1);
         }
-        if ( SqlFile != null ) {
+        if ( (SqlFile != null) && !SqlFile.equals("") ) {
             __SqlFile_JTextField.setText(SqlFile);
+            __sql_JTabbedPane.setSelectedIndex(2);
         }
 	}
 	// Regardless, reset the command from the fields...

@@ -213,6 +213,26 @@ public void determineDatabaseVersion()
 }
 
 /**
+Find an instance of ReclamationHDB_Ensemble given the ensemble name.
+@return the list of matching items (a non-null list is guaranteed)
+@param ensembleList a list of ReclamationHDB_Ensemble to search
+@param ensembleName the ensemble name to match (case-insensitive)
+*/
+public List<ReclamationHDB_Ensemble> findEnsemble( List<ReclamationHDB_Ensemble> ensembleList, String ensembleName )
+{
+    List<ReclamationHDB_Ensemble> foundList = new Vector();
+    for ( ReclamationHDB_Ensemble ensemble: ensembleList ) {
+        if ( (ensembleName != null) && !ensemble.getEnsembleName().equalsIgnoreCase(ensembleName) ) {
+            // Ensemble name to match was specified but did not match
+            continue;
+        }
+        // If here OK to add to the list.
+        foundList.add ( ensemble );
+    }
+    return foundList;
+}
+
+/**
 Find an instance of ReclamationHDB_LoadingApplication given the application name.
 @return the list of matching items (a non-null list is guaranteed)
 @param loadingApplicationList a list of ReclamationHDB_Model to search
@@ -928,7 +948,7 @@ throws SQLException
         }
     }
     catch (SQLException e) {
-        Message.printWarning(3, routine, "Error getting loading data types from HDB \"" +
+        Message.printWarning(3, routine, "Error getting data types from HDB \"" +
             getDatabaseName() + "\" (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
@@ -1052,7 +1072,7 @@ throws SQLException
         }
     }
     catch (SQLException e) {
-        Message.printWarning(3, routine, "Error getting loading application data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, "Error getting model data from HDB (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
     finally {
@@ -1072,7 +1092,7 @@ Read the database model runs from the HDB_MODEL_RUN table given the model ID.
 */
 public List<ReclamationHDB_ModelRun> readHdbModelRunListForModelID ( int modelID )
 throws SQLException
-{   String routine = getClass().getName() + ".readHdbModelList";
+{   String routine = getClass().getName() + ".readHdbModelRunListForModelID";
     List<ReclamationHDB_ModelRun> results = new Vector();
     StringBuffer sqlCommand = new StringBuffer (
         "select REF_MODEL_RUN.MODEL_ID, REF_MODEL_RUN.MODEL_RUN_ID, REF_MODEL_RUN.MODEL_RUN_NAME," +
@@ -1122,7 +1142,7 @@ throws SQLException
         }
     }
     catch (SQLException e) {
-        Message.printWarning(3, routine, "Error getting loading application data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, "Error getting model run data from HDB (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
     finally {
@@ -1376,7 +1396,7 @@ throws SQLException
         }
     }
     catch (SQLException e) {
-        Message.printWarning(3, routine, "Error getting loading application data from HDB \"" +
+        Message.printWarning(3, routine, "Error getting site data from HDB \"" +
             getDatabaseName() + "\" (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
@@ -1493,6 +1513,71 @@ throws SQLException
         if ( stmt != null ) {
             stmt.close();
         }
+    }
+    
+    return results;
+}
+
+/**
+Read the database models from the HDB_MODEL table.
+@return the list of ensembles
+*/
+public List<ReclamationHDB_Ensemble> readRefEnsembleList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readRefEnsembleList";
+    List<ReclamationHDB_Ensemble> results = new Vector<ReclamationHDB_Ensemble>();
+    String sqlCommand = "select REF_ENSEMBLE.ENSEMBLE_ID, " +
+        "REF_ENSEMBLE.ENSEMBLE_NAME, REF_ENSEMBLE.AGEN_ID, REF_ENSEMBLE.TRACE_DOMAIN, " +
+        "REF_ENSEMBLE.CMMNT from REF_ENSEMBLE";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_Ensemble data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_Ensemble();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setEnsembleID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setEnsembleName(s);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setAgenID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setTraceDomain(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting ensemble data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
     }
     
     return results;

@@ -20,6 +20,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -66,6 +67,7 @@ private SimpleJComboBox __DataTypeCommonName_JComboBox = null;
 private JLabel __selectedSiteID_JLabel = null;
 private JLabel __selectedSiteDataTypeID_JLabel = null;
 private SimpleJComboBox __SiteDataTypeID_JComboBox = null;
+private JTabbedPane __model_JTabbedPane = null;
 private SimpleJComboBox __ModelName_JComboBox = null;
 private SimpleJComboBox __ModelRunName_JComboBox = null;
 private SimpleJComboBox __ModelRunDate_JComboBox = null;
@@ -73,6 +75,13 @@ private SimpleJComboBox __HydrologicIndicator_JComboBox = null;
 private JLabel __selectedModelID_JLabel = null;
 private JLabel __selectedModelRunID_JLabel = null;
 private SimpleJComboBox __ModelRunID_JComboBox = null;
+private SimpleJComboBox __EnsembleName_JComboBox = null;
+private SimpleJComboBox __EnsembleModelName_JComboBox = null;
+private SimpleJComboBox __EnsembleModelRunDate_JComboBox = null;
+private JLabel __selectedEnsembleID_JLabel = null;
+private JLabel __selectedEnsembleModelID_JLabel = null;
+private JLabel __selectedEnsembleModelRunID_JLabel = null;
+//private SimpleJComboBox __EnsembleModelRunID_JComboBox = null;
 private SimpleJComboBox __Agency_JComboBox = null;
 private SimpleJComboBox __ValidationFlag_JComboBox = null;
 private SimpleJComboBox __OverwriteFlag_JComboBox = null;
@@ -91,9 +100,10 @@ private boolean __ignoreEvents = false; // Used to ignore cascading events when 
 private ReclamationHDBDataStore __dataStore = null; // selected ReclamationHDBDataStore
 private ReclamationHDB_DMI __dmi = null; // ReclamationHDB_DMI to do queries.
 
-private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new Vector(); // Corresponds to displayed list
-private List<ReclamationHDB_Model> __modelList = new Vector(); // Corresponds to displayed list (has model_id)
-private List<ReclamationHDB_ModelRun> __modelRunList = new Vector(); // Corresponds to models matching model_id
+private List<ReclamationHDB_Ensemble> __ensembleList = new Vector<ReclamationHDB_Ensemble>(); // Corresponds to displayed list (has ensemble_id)
+private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new Vector<ReclamationHDB_SiteDataType>(); // Corresponds to displayed list
+private List<ReclamationHDB_Model> __modelList = new Vector<ReclamationHDB_Model>(); // Corresponds to displayed list (has model_id)
+private List<ReclamationHDB_ModelRun> __modelRunList = new Vector<ReclamationHDB_ModelRun>(); // Corresponds to models matching model_id
 
 /**
 Command editor constructor.
@@ -142,6 +152,8 @@ private void actionPerformedDataStoreSelected ( )
     populateSiteDataTypeIDChoices ( __dmi );
     populateModelNameChoices ( __dmi );
     populateModelRunIDChoices ( __dmi );
+    populateEnsembleNameChoices ( __dmi );
+    populateEnsembleModelNameChoices ( __dmi );
     populateAgencyChoices ( __dmi );
     populateValidationFlagChoices ( __dmi );
     populateOverwriteFlagChoices ( __dmi );
@@ -161,6 +173,41 @@ private void actionPerformedDataTypeCommonNameSelected ( )
     // No further action needed to populate choices but show selected site_datatype_id for those who
     // are familiar with the database internals
     updateSiteIDTextFields();
+}
+
+/**
+Refresh the query choices for the currently selected ReclamationHDB ensemble name.
+*/
+private void actionPerformedEnsembleNameSelected ( )
+{
+    if ( __EnsembleName_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    // No further action needed to populate choices but show selected ensemble_id those who
+    // are familiar with the database internals
+    updateEnsembleIDTextFields ();
+    // Now populate the model run choices corresponding to the ensemble name, which will cascade to
+    // populating the other choices
+    populateEnsembleModelNameChoices ( __dmi );
+}
+
+/**
+Refresh the query choices for the currently selected ReclamationHDB model name.
+*/
+private void actionPerformedEnsembleModelNameSelected ( )
+{
+    if ( __EnsembleModelName_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    // No further action needed to populate choices but show selected model_id those who
+    // are familiar with the database internals
+    updateEnsembleIDTextFields ();
+    // Now populate the model run choices corresponding to the model name, which will cascade to
+    // populating the other choices
+    // This is not a selectable item with ensembles - just key off of model run name
+    //populateModelRunNameChoices ( __dmi );
 }
 
 /**
@@ -289,6 +336,9 @@ private void checkInput ()
     String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
     String HydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
     String ModelRunID = __ModelRunID_JComboBox.getSelected();
+    String EnsembleName = __EnsembleName_JComboBox.getSelected();
+    String EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
+    String EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
     String Agency = getSelectedAgency();
     String ValidationFlag = getSelectedValidationFlag();
     String OverwriteFlag = getSelectedOverwriteFlag();
@@ -334,6 +384,15 @@ private void checkInput ()
     }
     if ( (ModelRunID != null) && (ModelRunID.length() > 0) ) {
         parameters.set ( "ModelRunID", ModelRunID );
+    }
+    if ( (EnsembleName != null) && (EnsembleName.length() > 0) ) {
+        parameters.set ( "EnsembleName", EnsembleName );
+    }
+    if ( (EnsembleModelName != null) && (EnsembleModelName.length() > 0) ) {
+        parameters.set ( "EnsembleModelName", EnsembleModelName );
+    }
+    if ( (EnsembleModelRunDate != null) && (EnsembleModelRunDate.length() > 0) ) {
+        parameters.set ( "EnsembleModelRunDate", EnsembleModelRunDate );
     }
     if ( (Agency != null) && (Agency.length() > 0) ) {
         parameters.set ( "Agency", Agency );
@@ -384,6 +443,9 @@ private void commitEdits ()
     String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
     String HydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
     String ModelRunID = __ModelRunID_JComboBox.getSelected();
+    String EnsembleName = __EnsembleName_JComboBox.getSelected();
+    String EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
+    String EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
     String Agency = getSelectedAgency();
     String ValidationFlag = getSelectedValidationFlag();
     String OverwriteFlag = getSelectedOverwriteFlag();
@@ -403,6 +465,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "ModelRunDate", ModelRunDate );
     __command.setCommandParameter ( "HydrologicIndicator", HydrologicIndicator );
     __command.setCommandParameter ( "ModelRunID", ModelRunID );
+    __command.setCommandParameter ( "EnsembleName", EnsembleName );
+    __command.setCommandParameter ( "EnsembleModelName", EnsembleModelName );
+    __command.setCommandParameter ( "EnsembleModelRunDate", EnsembleModelRunDate );
     __command.setCommandParameter ( "Agency", Agency );
     __command.setCommandParameter ( "ValidationFlag", ValidationFlag );
     __command.setCommandParameter ( "OverwriteFlag", OverwriteFlag );
@@ -645,15 +710,22 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "Optional - alternative to selecting above choices."),
         3, ySiteDataType, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel to control model selection
+    __model_JTabbedPane = new JTabbedPane ();
+    __model_JTabbedPane.setBorder(
+        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+        "Specify how to match the HDB model_run_id (leave blank if not writing model time series data)" ));
+    JGUIUtil.addComponent(main_JPanel, __model_JTabbedPane,
+        0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel to control model selection for individual time series
     int yModel = -1;
     JPanel model_JPanel = new JPanel();
     model_JPanel.setLayout( new GridBagLayout() );
-    model_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),
-        "Specify how to match the HDB model_run_id (leave blank if not writing model time series data)" ));
-    JGUIUtil.addComponent( main_JPanel, model_JPanel,
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __model_JTabbedPane.addTab ( "Individual model time series", model_JPanel );
+    
+    JGUIUtil.addComponent(model_JPanel, new JLabel (
+        "Use these parameters when writing individual model time series to HDB."), 
+        0, ++yModel, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(model_JPanel, new JLabel ("Model name:"), 
         0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -722,7 +794,85 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(model_JPanel, new JLabel (
         "Optional - alternative to selecting above choices."),
         3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel to control model selection for an ensemble
+    int yEnsemble = -1;
+    JPanel ensemble_JPanel = new JPanel();
+    ensemble_JPanel.setLayout( new GridBagLayout() );
+    __model_JTabbedPane.addTab ( "Ensemble of model time series", ensemble_JPanel );
 
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Use these parameters when writing model ensemble time series to HDB."), 
+        0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "The trace number for each time series in the ensemble will be taken from " +
+        "the \"sequence number\" assigned by TSTool when reading/creating the ensemble."), 
+        0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "If the run date is specified, the ensemble time series will be uniquely identified with the " +
+        "run date (to the hour)."), 
+        0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble name:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleName_JComboBox = new SimpleJComboBox (false);
+    __EnsembleName_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(ensemble_JPanel, __EnsembleName_JComboBox,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Required - used to determine the ensemble model_run_id."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble model name:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleModelName_JComboBox = new SimpleJComboBox (false);
+    // Set the size to handle example data - otherwise may have layout issues.
+    __EnsembleModelName_JComboBox.setPrototypeDisplayValue("MMMMMMMMMMMMMMMMMMMMMMMMM");
+    __EnsembleModelName_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(ensemble_JPanel, __EnsembleModelName_JComboBox,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Required - used to determine the ensemble model_run_id."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble model run date:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleModelRunDate_JComboBox = new SimpleJComboBox (false);
+    __EnsembleModelRunDate_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(ensemble_JPanel, __EnsembleModelRunDate_JComboBox,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Optional - YYYY-MM-DD HH, used to determine the ensemble model_run_id (default=date not used)."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble_id:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __selectedEnsembleID_JLabel = new JLabel ( "");
+    JGUIUtil.addComponent(ensemble_JPanel, __selectedEnsembleID_JLabel,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble model_id:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __selectedEnsembleModelID_JLabel = new JLabel ( "");
+    JGUIUtil.addComponent(ensemble_JPanel, __selectedEnsembleModelID_JLabel,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble model_run_id:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __selectedEnsembleModelRunID_JLabel = new JLabel ( "Determined when command is run");
+    JGUIUtil.addComponent(ensemble_JPanel, __selectedEnsembleModelRunID_JLabel,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    //JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+    //    ""),
+    //    3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Additional general write parameters...
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Agency:"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Agency_JComboBox = new SimpleJComboBox ( false );
@@ -827,7 +977,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     updateSiteIDTextFields();
     updateModelIDTextFields();
     
-	setResizable ( false ); // TODO SAM 2010-12-10 Resizing causes some problems
+	setResizable ( true ); // TODO SAM 2010-12-10 Resizing causes some problems
     pack();
     JGUIUtil.center( this );
     super.setVisible( true );
@@ -872,6 +1022,14 @@ public void itemStateChanged (ItemEvent e)
     else if ( (source == __HydrologicIndicator_JComboBox) && (sc == ItemEvent.SELECTED) ) {
         // User has selected a model name.
         actionPerformedHydrologicIndicatorSelected ();
+    }
+    else if ( (source == __EnsembleName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected an ensemble name.
+        actionPerformedEnsembleNameSelected ();
+    }
+    else if ( (source == __EnsembleModelName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected an ensemble model name.
+        actionPerformedEnsembleModelNameSelected ();
     }
  
     refresh();
@@ -982,6 +1140,64 @@ private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
     __DataTypeCommonName_JComboBox.select ( null );
     if ( __DataTypeCommonName_JComboBox.getItemCount() > 0 ) {
         __DataTypeCommonName_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Populate the ensemble model name list based on the selected datastore.
+The model names are the same as the non-ensemble list so reuse what was read from HDB.
+*/
+private void populateEnsembleModelNameChoices ( ReclamationHDB_DMI rdmi )
+{   if ( (rdmi == null) || (__EnsembleModelName_JComboBox == null) ) {
+        // Initialization
+        return;
+    }
+    List<String> modelNameStrings = new Vector();
+    modelNameStrings.add ( "" ); // Always add blank because user may not want model time series
+    for ( ReclamationHDB_Model model: __modelList ) {
+        modelNameStrings.add ( model.getModelName() );
+    }
+    Collections.sort(modelNameStrings,String.CASE_INSENSITIVE_ORDER);
+    StringUtil.removeDuplicates(modelNameStrings, true, true);
+    __EnsembleModelName_JComboBox.removeAll ();
+    __EnsembleModelName_JComboBox.setData(modelNameStrings);
+    // Select first choice (may get reset from existing parameter values).
+    __EnsembleModelName_JComboBox.select ( null );
+    if ( __EnsembleModelName_JComboBox.getItemCount() > 0 ) {
+        __EnsembleModelName_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Populate the model name list based on the selected datastore.
+*/
+private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
+{   String routine = getClass().getName() + ".populateEnsembleNameChoices";
+    if ( (rdmi == null) || (__EnsembleName_JComboBox == null) ) {
+        // Initialization
+        return;
+    }
+    List<String> ensembleNameStrings = new Vector();
+    ensembleNameStrings.add ( "" ); // Always add blank because user may not want ensemble time series
+    ensembleNameStrings.add ( "Test" ); // Add so something is in the list, FIXME SAM 2013-03-23 remove when code tested
+    try {
+        readEnsembleList(rdmi);
+        for ( ReclamationHDB_Ensemble ensemble: __ensembleList ) {
+            ensembleNameStrings.add ( ensemble.getEnsembleName() );
+        }
+        Collections.sort(ensembleNameStrings,String.CASE_INSENSITIVE_ORDER);
+        StringUtil.removeDuplicates(ensembleNameStrings, true, true);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error getting HDB ensemble list (" + e + ")." );
+        ensembleNameStrings = new Vector();
+    }
+    __EnsembleName_JComboBox.removeAll ();
+    __EnsembleName_JComboBox.setData(ensembleNameStrings);
+    // Select first choice (may get reset from existing parameter values).
+    __EnsembleName_JComboBox.select ( null );
+    if ( __EnsembleName_JComboBox.getItemCount() > 0 ) {
+        __EnsembleName_JComboBox.select ( 0 );
     }
 }
 
@@ -1318,6 +1534,22 @@ private void populateValidationFlagChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
+Read the ensemble list and set for use in the editor.
+*/
+private void readEnsembleList ( ReclamationHDB_DMI rdmi )
+throws Exception
+{
+    try {
+        List<ReclamationHDB_Ensemble> modelList = rdmi.readRefEnsembleList();
+        setEnsembleList(modelList);
+    }
+    catch ( Exception e ) {
+        setEnsembleList(new Vector<ReclamationHDB_Ensemble>());
+        throw e;
+    }
+}
+
+/**
 Read the model list and set for use in the editor.
 */
 private void readModelList ( ReclamationHDB_DMI rdmi )
@@ -1328,7 +1560,7 @@ throws Exception
         setModelList(modelList);
     }
     catch ( Exception e ) {
-        setModelList(new Vector());
+        setModelList(new Vector<ReclamationHDB_Model>());
         throw e;
     }
 }
@@ -1354,7 +1586,7 @@ private void readModelRunListForSelectedModel ( ReclamationHDB_DMI rdmi )
         }
         catch ( Exception e ) {
             Message.printWarning(3, routine, "Error getting HDB model run list (" + e + ")." );
-            setModelRunList(new Vector());
+            setModelRunList(new Vector<ReclamationHDB_ModelRun>());
         }
     }
     else {
@@ -1374,7 +1606,7 @@ private void readSiteDataTypeList ( ReclamationHDB_DMI rdmi )
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB site data type list (" + e + ")." );
-        setSiteDataTypeList(new Vector());
+        setSiteDataTypeList(new Vector<ReclamationHDB_SiteDataType>());
     }
 }
 
@@ -1395,6 +1627,9 @@ private void refresh ()
     String HydrologicIndicator = "";
     String ModelRunDate = "";
     String ModelRunID = "";
+    String EnsembleName = "";
+    String EnsembleModelName = "";
+    String EnsembleModelRunDate = "";
     String Agency = "";
     String ValidationFlag = "";
     String OverwriteFlag = "";
@@ -1420,6 +1655,9 @@ private void refresh ()
         HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
         ModelRunDate = parameters.getValue ( "ModelRunDate" );
         ModelRunID = parameters.getValue ( "ModelRunID" );
+        EnsembleName = parameters.getValue ( "EnsembleName" );
+        EnsembleModelName = parameters.getValue ( "EnsembleModelName" );
+        EnsembleModelRunDate = parameters.getValue ( "EnsembleModelRunDate" );
         Agency = parameters.getValue ( "Agency" );
         ValidationFlag = parameters.getValue ( "ValidationFlag" );
         OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
@@ -1705,6 +1943,34 @@ private void refresh ()
             }
         }
         // First populate the choices...
+        populateEnsembleNameChoices(getReclamationHDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__EnsembleName_JComboBox, EnsembleName, JGUIUtil.NONE, null, null ) ) {
+            __EnsembleName_JComboBox.select ( EnsembleName );
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the __modelRunList is populated
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                readModelRunListForSelectedModel(__dmi);
+            }
+        }
+        else {
+            if ( (EnsembleName == null) || EnsembleName.equals("") ) {
+                // New command...select the default...
+                if ( __EnsembleName_JComboBox.getItemCount() > 0 ) {
+                    __EnsembleName_JComboBox.select ( 0 );
+                    if ( __ignoreEvents ) {
+                        // Also need to make sure that the __modelRunList is populated
+                        // Call manually because events are disabled at startup to allow cascade to work properly
+                        readModelRunListForSelectedModel(__dmi);
+                    }
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "EnsembleName parameter \"" + EnsembleName + "\".  Select a different value or Cancel." );
+            }
+        }
+        // First populate the choices...
         populateAgencyChoices(getReclamationHDB_DMI() );
         int [] index = new int[1];
         if ( JGUIUtil.isSimpleJComboBoxItem(__Agency_JComboBox, Agency, JGUIUtil.CHECK_SUBSTRINGS,
@@ -1836,6 +2102,18 @@ private void refresh ()
     if ( ModelRunID == null ) {
         ModelRunID = "";
     }
+    EnsembleName = __EnsembleName_JComboBox.getSelected();
+    if ( EnsembleName == null ) {
+        EnsembleName = "";
+    }
+    EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
+    if ( EnsembleModelName == null ) {
+        EnsembleModelName = "";
+    }
+    EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
+    if ( EnsembleModelRunDate == null ) {
+        EnsembleModelRunDate = "";
+    }
     Agency = getSelectedAgency();
     ValidationFlag = getSelectedValidationFlag();
     OverwriteFlag = getSelectedOverwriteFlag();
@@ -1859,6 +2137,9 @@ private void refresh ()
     parameters.add ( "ModelRunDate=" + ModelRunDate );
     parameters.add ( "HydrologicIndicator=" + HydrologicIndicator );
     parameters.add ( "ModelRunID=" + ModelRunID );
+    parameters.add ( "EnsembleName=" + EnsembleName );
+    parameters.add ( "EnsembleModelName=" + EnsembleModelName );
+    parameters.add ( "EnsembleModelRunDate=" + EnsembleModelRunDate );
     parameters.add ( "Agency=" + Agency );
     parameters.add ( "ValidationFlag=" + ValidationFlag );
     parameters.add ( "OverwriteFlag=" + OverwriteFlag );
@@ -1898,6 +2179,14 @@ private void setDMIForSelectedDataStore()
 }
 
 /**
+Set the HDB ensemble list corresponding to the displayed list.
+*/
+private void setEnsembleList ( List<ReclamationHDB_Ensemble> ensembleList )
+{
+    __ensembleList = ensembleList;
+}
+
+/**
 Set the HDB model list corresponding to the displayed list.
 */
 private void setModelList ( List<ReclamationHDB_Model> modelList )
@@ -1919,6 +2208,48 @@ Set the HDB site data type list corresponding to the displayed list.
 private void setSiteDataTypeList ( List<ReclamationHDB_SiteDataType> siteDataTypeList )
 {
     __siteDataTypeList = siteDataTypeList;
+}
+
+/**
+Update the ensemble information text fields.
+*/
+private void updateEnsembleIDTextFields ()
+{   // Ensemble information...
+    List<ReclamationHDB_Ensemble> ensembleList = null;
+    try {
+        ensembleList = __dmi.findEnsemble(__ensembleList, __EnsembleName_JComboBox.getSelected() );
+    }
+    catch ( Exception e ) {
+        // Generally due to startup with bad datastore
+        ensembleList = null;
+    }
+    if ( (ensembleList == null) || (ensembleList.size() == 0) ) {
+        __selectedEnsembleID_JLabel.setText ( "No matches" );
+    }
+    else if ( ensembleList.size() == 1 ) {
+        __selectedEnsembleID_JLabel.setText ( "" + ensembleList.get(0).getEnsembleID() );
+    }
+    else {
+        __selectedEnsembleID_JLabel.setText ( "" + ensembleList.size() + " matches" );
+    }
+    // Model information...
+    List<ReclamationHDB_Model> modelList = null;
+    try {
+        modelList = __dmi.findModel(__modelList, __EnsembleModelName_JComboBox.getSelected() );
+    }
+    catch ( Exception e ) {
+        // Generally due to startup with bad datastore
+        modelList = null;
+    }
+    if ( (modelList == null) || (modelList.size() == 0) ) {
+        __selectedEnsembleModelID_JLabel.setText ( "No matches" );
+    }
+    else if ( modelList.size() == 1 ) {
+        __selectedEnsembleModelID_JLabel.setText ( "" + modelList.get(0).getModelID() );
+    }
+    else {
+        __selectedEnsembleModelID_JLabel.setText ( "" + modelList.size() + " matches" );
+    }
 }
 
 /**

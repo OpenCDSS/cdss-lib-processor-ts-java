@@ -218,6 +218,9 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "HydrologicIndicator" );
     valid_Vector.add ( "ModelRunDate" );
     valid_Vector.add ( "ModelRunID" );
+    valid_Vector.add ( "EnsembleName" );
+    valid_Vector.add ( "EnsembleModelName" );
+    valid_Vector.add ( "EnsembleModelRunDate" );
     valid_Vector.add ( "Agency" );
     valid_Vector.add ( "ValidationFlag" );
     valid_Vector.add ( "OverwriteFlag" );
@@ -504,6 +507,9 @@ public String toString ( PropList parameters )
     String ModelRunDate = parameters.getValue( "ModelRunDate" );
     String HydrologicIndicator = parameters.getValue( "HydrologicIndicator" );
     String ModelRunID = parameters.getValue( "ModelRunID" );
+    String EnsembleName = parameters.getValue( "EnsembleName" );
+    String EnsembleModelName = parameters.getValue( "EnsembleModelName" );
+    String EnsembleModelRunDate = parameters.getValue( "EnsembleModelRunDate" );
     String Agency = parameters.getValue( "Agency" );
     String ValidationFlag = parameters.getValue( "ValidationFlag" );
     String OverwriteFlag = parameters.getValue( "OverwriteFlag" );
@@ -583,6 +589,24 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "ModelRunID=" + ModelRunID );
+    }
+    if ( (EnsembleName != null) && (EnsembleName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
+    }
+    if ( (EnsembleModelName != null) && (EnsembleModelName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleModelName=\"" + EnsembleModelName + "\"" );
+    }
+    if ( (EnsembleModelRunDate != null) && (EnsembleModelRunDate.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleModelRunDate=\"" + EnsembleModelRunDate + "\"" );
     }
     if ( (Agency != null) && (Agency.length() > 0) ) {
         if ( b.length() > 0 ) {

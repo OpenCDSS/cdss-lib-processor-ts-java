@@ -25,6 +25,7 @@ import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
 /**
@@ -154,11 +155,12 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "TableID" );
 	valid_Vector.add ( "WriteHeaderComments" );
 	valid_Vector.add ( "AlwaysQuoteStrings" );
+	valid_Vector.add ( "NewlineReplacement" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -247,6 +249,11 @@ CommandWarningException, CommandException
     if ( (AlwaysQuoteStrings != null) && AlwaysQuoteStrings.equalsIgnoreCase(_True) ) {
         AlwaysQuoteStrings_boolean = true;
     }
+    String NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
+    String newlineReplacement = NewlineReplacement;
+    if ( (NewlineReplacement != null) && NewlineReplacement.equals("") ) {
+        newlineReplacement = null; // User must use \s to indicate space
+    }
 
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
@@ -293,7 +300,8 @@ CommandWarningException, CommandException
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
 		warning_count = writeTable ( table, OutputFile_full, WriteHeaderComments_boolean,
-		    AlwaysQuoteStrings_boolean, warning_level, command_tag, warning_count );
+		    AlwaysQuoteStrings_boolean, StringUtil.literalToInternal(newlineReplacement),
+		        warning_level, command_tag, warning_count );
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
 	}
@@ -337,6 +345,7 @@ public String toString ( PropList parameters )
 	String TableID = parameters.getValue ( "TableID" );
 	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 	String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
+	String NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TableID != null) && (TableID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -354,13 +363,19 @@ public String toString ( PropList parameters )
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "WriteHeaderComments=\"" + WriteHeaderComments + "\"" );
+        b.append ( "WriteHeaderComments=" + WriteHeaderComments );
     }
     if ( (AlwaysQuoteStrings != null) && (AlwaysQuoteStrings.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "AlwaysQuoteStrings=\"" + AlwaysQuoteStrings + "\"" );
+        b.append ( "AlwaysQuoteStrings=" + AlwaysQuoteStrings );
+    }
+    if ( (NewlineReplacement != null) && (NewlineReplacement.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewlineReplacement=\"" + NewlineReplacement + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }
@@ -373,10 +388,12 @@ Write a table to a delimited file.
 do not handle comments)
 @param alwaysQuoteStrings if true, then always surround strings with double quotes; if false strings will only
 be quoted when they include the delimiter
+@param newlineReplacement if non-null, string to replace newlines in strings when writing the file
 @exception IOException if there is an error writing the file.
 */
 private int writeTable ( DataTable table, String OutputFile, boolean writeHeaderComments,
-	boolean alwaysQuoteStrings, int warning_level, String command_tag, int warning_count )
+	boolean alwaysQuoteStrings, String newlineReplacement,
+	int warning_level, String command_tag, int warning_count )
 throws IOException
 {	String routine = getClass().getName() + ".writeTable";
 	String message;
@@ -416,7 +433,8 @@ throws IOException
 	
 	try {
 		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
-		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList, "#", alwaysQuoteStrings );
+		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList, "#", alwaysQuoteStrings,
+		    newlineReplacement );
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table to file \"" + OutputFile + "\" (" + e + ")";

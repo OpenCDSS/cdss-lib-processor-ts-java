@@ -56,6 +56,7 @@ private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 private SimpleJComboBox __AlwaysQuoteStrings_JComboBox = null;
+private JTextField __NewlineReplacement_JTextField = null;
 private String __working_dir = null; // Working directory.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -151,6 +152,7 @@ private void checkInput ()
     String TableID = __TableID_JComboBox.getSelected();
     String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
+    String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
 
 	__error_wait = false;
 	
@@ -165,6 +167,9 @@ private void checkInput ()
     }
     if ( (AlwaysQuoteStrings != null) && (AlwaysQuoteStrings.length() > 0) ) {
         parameters.set ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
+    }
+    if ( (NewlineReplacement != null) && (NewlineReplacement.length() > 0) ) {
+        parameters.set ( "NewlineReplacement", NewlineReplacement );
     }
 	try {
 	    // This will warn the user...
@@ -186,10 +191,12 @@ private void commitEdits ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
 	String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
+	String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
 	__command.setCommandParameter ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
+	__command.setCommandParameter ( "NewlineReplacement", NewlineReplacement );
 }
 
 /**
@@ -295,6 +302,16 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
          "Optional - always quote strings? (default=" + __command._False + ", only quote if delimiter in string)."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
      
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Newline replacement:"),
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __NewlineReplacement_JTextField = new JTextField (10);
+     __NewlineReplacement_JTextField.addKeyListener (this);
+     JGUIUtil.addComponent(main_JPanel, __NewlineReplacement_JTextField,
+         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Optional - replacement for newline character (use \\t for tab or \\s for space)."),
+         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
@@ -377,6 +394,7 @@ private void refresh ()
     String TableID = "";
     String WriteHeaderComments = "";
     String AlwaysQuoteStrings = "";
+    String NewlineReplacement = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -387,6 +405,7 @@ private void refresh ()
         TableID = parameters.getValue ( "TableID" );
         WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
         AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
+        NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -439,12 +458,16 @@ private void refresh ()
                   "AlwaysQuoteStrings parameter \"" + AlwaysQuoteStrings + "\".  Select a different value or Cancel." );
             }
         }
+        if (NewlineReplacement != null) {
+            __NewlineReplacement_JTextField.setText(NewlineReplacement);
+       }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
     WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
+    NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
 	if ( TableID != null ) {
@@ -456,6 +479,7 @@ private void refresh ()
     if ( AlwaysQuoteStrings != null ) {
         parameters.add ( "AlwaysQuoteStrings=" + AlwaysQuoteStrings );
     }
+    parameters.add("NewlineReplacement=" + NewlineReplacement );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

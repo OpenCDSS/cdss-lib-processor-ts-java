@@ -64,8 +64,10 @@ private JTabbedPane __sql_JTabbedPane = null;
 private SimpleJComboBox __DataStoreTable_JComboBox = null;
 private JTextField __DataStoreColumns_JTextField = null;
 private JTextField __OrderBy_JTextField = null;
+private JTextField __Top_JTextField = null;
 private JTextArea __Sql_JTextArea = null;
 private JTextField __SqlFile_JTextField = null;
+private SimpleJComboBox __DataStoreProcedure_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private ReadTableFromDataStore_Command __command = null;
@@ -188,8 +190,10 @@ private void checkInput ()
 	String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
 	String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
 	String OrderBy = __OrderBy_JTextField.getText().trim();
+	String Top = __Top_JTextField.getText().trim();
 	String Sql = __Sql_JTextArea.getText().trim();
 	String SqlFile = __SqlFile_JTextField.getText().trim();
+	String DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
     String TableID = __TableID_JTextField.getText().trim();
 	__error_wait = false;
 
@@ -206,11 +210,17 @@ private void checkInput ()
     if ( OrderBy.length() > 0 ) {
         props.set ( "OrderBy", OrderBy );
     }
+    if ( Top.length() > 0 ) {
+        props.set ( "Top", Top );
+    }
     if ( Sql.length() > 0 ) {
         props.set ( "Sql", Sql );
     }
     if ( SqlFile.length() > 0 ) {
         props.set ( "SqlFile", SqlFile );
+    }
+    if ( DataStoreProcedure.length() > 0 ) {
+        props.set ( "DataStoreProcedure", DataStoreProcedure );
     }
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
@@ -232,18 +242,22 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
-    String TableID = __TableID_JTextField.getText().trim();
     String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
     String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
     String OrderBy = __OrderBy_JTextField.getText().trim();
+    String Top = __Top_JTextField.getText().trim();
     String Sql = __Sql_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
     String SqlFile = __SqlFile_JTextField.getText().trim();
+    String DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
+    String TableID = __TableID_JTextField.getText().trim();
     __command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "DataStoreTable", DataStoreTable );
 	__command.setCommandParameter ( "DataStoreColumns", DataStoreColumns );
 	__command.setCommandParameter ( "OrderBy", OrderBy );
+	__command.setCommandParameter ( "Top", Top );
 	__command.setCommandParameter ( "Sql", Sql );
 	__command.setCommandParameter ( "SqlFile", SqlFile );
+	__command.setCommandParameter ( "DataStoreProcedure", DataStoreProcedure );
     __command.setCommandParameter ( "TableID", TableID );
 }
 
@@ -299,18 +313,17 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
 	int yy = -1;
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command reads a table from a database datastore table or view."),
+        "This command reads a table from a database datastore table, view, or procedure."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The query can be specified in one of three ways:"),
+        "The query can be specified in one of four ways:"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "    1) Specify a single table or view, related columns, and order (allows for more up-front checks " +
-        "but can run out of memory for very large tables)."),
+        "    1) Specify a single table or view, related columns, and sort order."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "    2) Specify a free form SQL select statement (allows joins and other SQL constructs " +
-        "supported by the database software, but few up-front checks)."),
+        "supported by the database software)."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "    3) Similar to 2; however, the SQL statement is read from a file, " +
@@ -322,6 +335,9 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     JGUIUtil.addComponent(paragraph, new JLabel (
+        "    4) Specify a database procedure to run (under development)."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
         "The resulting table columns will have data types based on the query results."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
@@ -330,7 +346,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
 	
     // List available data stores of the correct type
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data store:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
@@ -362,7 +378,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     table_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "Table and columns", table_JPanel );
     
-    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Data store table:"),
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Datastore table:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreTable_JComboBox = new SimpleJComboBox ( false );
     __DataStoreTable_JComboBox.addItemListener ( this );
@@ -371,7 +387,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JGUIUtil.addComponent(table_JPanel, new JLabel("Required - database table/view to read."), 
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Data store columns:"),
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Datastore columns:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreColumns_JTextField = new JTextField (10);
     __DataStoreColumns_JTextField.addKeyListener (this);
@@ -387,6 +403,15 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JGUIUtil.addComponent(table_JPanel, __OrderBy_JTextField,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - columns to sort by, separated by commas (default=no sort)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Top N rows:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Top_JTextField = new JTextField (10);
+    __Top_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(table_JPanel, __Top_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - return top N rows (default=return all)."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Panel for SQL via SQL statement
@@ -419,6 +444,26 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     __browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(file_JPanel, __browse_JButton,
         6, yFile, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    // Panel for procedure
+    int yProc = -1;
+    JPanel proc_JPanel = new JPanel();
+    proc_JPanel.setLayout( new GridBagLayout() );
+    __sql_JTabbedPane.addTab ( "Procedure", proc_JPanel );
+
+    JGUIUtil.addComponent(proc_JPanel, new JLabel (
+        "Currently, only procedures that do not require parameters can be run."),
+        0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(proc_JPanel, new JLabel ( "Datastore procedure:"),
+        0, ++yProc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreProcedure_JComboBox = new SimpleJComboBox ( false );
+    __DataStoreProcedure_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(proc_JPanel, __DataStoreProcedure_JComboBox,
+        1, yProc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(proc_JPanel, new JLabel("Optional - database procedure to run to generate results."), 
+        3, yProc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Table for results
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -512,12 +557,51 @@ public boolean ok ()
 }
 
 /**
-Populate the data type list based on the selected database.
+Populate the procedure list based on the selected database.
+@param dmi DMI to use when selecting procedure list
+*/
+private void populateDataStoreProcedureChoices ( DMI dmi )
+{   String routine = getClass().getName() + "populateDataStoreProcedureChoices";
+    List<String> procList = null;
+    List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system procedures
+    if ( dmi == null ) {
+        procList = new Vector();
+    }
+    else {
+        try {
+            procList = DMIUtil.getDatabaseProcedureNames(dmi, true, notIncluded);
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 1, routine, "Error getting procedure list (" + e + ")." );
+            Message.printWarning ( 3, routine, e );
+            procList = null;
+        }
+    }
+    if ( procList == null ) {
+        procList = new Vector<String>();
+    }
+    // Always add a blank option at the start to help with initialization
+    procList.add ( 0, "" );
+    __DataStoreProcedure_JComboBox.removeAll();
+    for ( String proc : procList ) {
+        __DataStoreProcedure_JComboBox.add( proc );
+    }
+    // Set large so that new procedure list from selected datastore does not foul up layout
+    String longest = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    __DataStoreProcedure_JComboBox.setPrototypeDisplayValue(longest);
+    // Select first choice (may get reset from existing parameter values).
+    __DataStoreProcedure_JComboBox.select ( null );
+    if ( __DataStoreProcedure_JComboBox.getItemCount() > 0 ) {
+        __DataStoreProcedure_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Populate the table list based on the selected database.
 @param dmi DMI to use when selecting table list
 */
 private void populateDataStoreTableChoices ( DMI dmi )
 {   String routine = getClass().getName() + "populateDataStoreTableChoices";
-    __TableID_JTextField.removeAll ();
     List<String> tableList = null;
     List<String> notIncluded = new Vector(); // TODO SAM 2012-01-31 need to omit system tables
     if ( dmi == null ) {
@@ -528,7 +612,7 @@ private void populateDataStoreTableChoices ( DMI dmi )
             tableList = DMIUtil.getDatabaseTableNames(dmi, true, notIncluded);
         }
         catch ( Exception e ) {
-            Message.printWarning ( 1, routine, "Error getting tables table list (" + e + ")." );
+            Message.printWarning ( 1, routine, "Error getting table list (" + e + ")." );
             Message.printWarning ( 3, routine, e );
             tableList = null;
         }
@@ -542,7 +626,7 @@ private void populateDataStoreTableChoices ( DMI dmi )
     for ( String table : tableList ) {
         __DataStoreTable_JComboBox.add( table );
     }
-    // Set large so that new table list from selected datastore does not found up layout
+    // Set large so that new table list from selected datastore does not foul up layout
     String longest = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     __DataStoreTable_JComboBox.setPrototypeDisplayValue(longest);
     // Select first choice (may get reset from existing parameter values).
@@ -559,22 +643,26 @@ private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
 try{
     String DataStore = "";
-    String TableID = "";
     String DataStoreTable = "";
     String DataStoreColumns = "";
     String OrderBy = "";
+    String Top = "";
     String Sql = "";
     String SqlFile = "";
+    String DataStoreProcedure = "";
+    String TableID = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
 		DataStore = props.getValue ( "DataStore" );
-        TableID = props.getValue ( "TableID" );
 		DataStoreTable = props.getValue ( "DataStoreTable" );
 		DataStoreColumns = props.getValue ( "DataStoreColumns" );
 		OrderBy = props.getValue ( "OrderBy" );
+		Top = props.getValue ( "Top" );
 		Sql = props.getValue ( "Sql" );
 		SqlFile = props.getValue ( "SqlFile" );
+		DataStoreProcedure = props.getValue ( "DataStoreProcedure" );
+		TableID = props.getValue ( "TableID" );
         // The data store list is set up in initialize() but is selected here
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
@@ -595,7 +683,7 @@ try{
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
         }
-        // First populate the data type choices...
+        // First populate the table choices...
         populateDataStoreTableChoices(getDMI() );
         // Now select what the command had previously (if specified)...
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreTable_JComboBox, DataStoreTable, JGUIUtil.NONE, null, null ) ) {
@@ -619,6 +707,9 @@ try{
         if ( OrderBy != null ) {
             __OrderBy_JTextField.setText ( OrderBy );
         }
+        if ( Top != null ) {
+            __Top_JTextField.setText ( Top );
+        }
         if ( (Sql != null) && !Sql.equals("") ) {
             __Sql_JTextArea.setText ( Sql );
             __sql_JTabbedPane.setSelectedIndex(1);
@@ -626,6 +717,24 @@ try{
         if ( (SqlFile != null) && !SqlFile.equals("") ) {
             __SqlFile_JTextField.setText(SqlFile);
             __sql_JTabbedPane.setSelectedIndex(2);
+        }
+        // First populate the procedure choices...
+        populateDataStoreProcedureChoices(getDMI() );
+        // Now select what the command had previously (if specified)...
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreProcedure_JComboBox, DataStoreProcedure, JGUIUtil.NONE, null, null ) ) {
+            __DataStoreProcedure_JComboBox.select ( DataStoreProcedure );
+            __sql_JTabbedPane.setSelectedIndex(3);
+        }
+        else {
+            if ( (DataStoreProcedure == null) || DataStoreProcedure.equals("") ) {
+                // New command...select the default...
+                __DataStoreProcedure_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "DataStoreProcedure parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+            }
         }
 	}
 	// Regardless, reset the command from the fields...
@@ -640,15 +749,22 @@ try{
     }
 	DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
 	OrderBy = __OrderBy_JTextField.getText().trim();
+	Top = __Top_JTextField.getText().trim();
 	Sql = __Sql_JTextArea.getText().trim();
 	SqlFile = __SqlFile_JTextField.getText().trim();
+    DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
+    if ( DataStoreProcedure == null ) {
+        DataStoreProcedure = "";
+    }
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "DataStoreTable=" + DataStoreTable );
 	props.add ( "DataStoreColumns=" + DataStoreColumns );
 	props.add ( "OrderBy=" + OrderBy );
+	props.add ( "Top=" + Top );
 	props.add ( "Sql=" + Sql );
 	props.add ( "SqlFile=" + SqlFile);
+	props.add ( "DataStoreProcedure=" + DataStoreProcedure );
     props.add ( "TableID=" + TableID );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Refresh the Path text.

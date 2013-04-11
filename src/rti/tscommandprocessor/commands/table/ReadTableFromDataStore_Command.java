@@ -13,6 +13,7 @@ import java.util.Vector;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMISelectStatement;
+import RTi.DMI.DMIStoredProcedureData;
 import RTi.DMI.DMIUtil;
 import RTi.DMI.DatabaseDataStore;
 import RTi.Util.Message.Message;
@@ -66,8 +67,10 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {   String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreTable = parameters.getValue ( "DataStoreTable" );
+    String Top = parameters.getValue ( "Top" );
     String Sql = parameters.getValue ( "Sql" );
     String SqlFile = parameters.getValue ( "SqlFile" );
+    String DataStoreProcedure = parameters.getValue ( "DataStoreProcedure" );
     String TableID = parameters.getValue ( "TableID" );
 
 	String warning = "";
@@ -94,15 +97,18 @@ throws InvalidCommandParameterException
     if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
         ++specCount;
     }
+    if ( ((DataStoreProcedure != null) && (DataStoreProcedure.length() != 0)) ) {
+        ++specCount;
+    }
     if ( specCount == 0 ) {
-        message = "The data store table, SQL statement, or SQL file must be specified.";
+        message = "The data store table, SQL statement, SQL file, or procedure must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store table, SQL statement, or SQL file." ) );
+                message, "Specify the data store table, SQL statement, SQL file, or procedure." ) );
     }
     if ( specCount > 1 ) {
-        message = "Onely one of the data store table, SQL statement, or SQL file can be specified.";
+        message = "Onely one of the data store table, SQL statement, SQL file, or procedure can be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -114,6 +120,13 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Update the SQL string to start with SELECT." ) );
+    }
+    if ( (Top != null) && (Top.length() != 0) && !StringUtil.isInteger(Top)) {
+        message = "The Top value (" + Top +") is not an integer.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the Top parameter as an integer." ) );
     }
     String SqlFile_full = null;
     if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
@@ -163,13 +176,15 @@ throws InvalidCommandParameterException
     }
     
 	//  Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "DataStore" );
     valid_Vector.add ( "DataStoreTable" );
     valid_Vector.add ( "DataStoreColumns" );
     valid_Vector.add ( "OrderBy" );
+    valid_Vector.add ( "Top" );
     valid_Vector.add ( "Sql" );
     valid_Vector.add ( "SqlFile" );
+    valid_Vector.add ( "DataStoreProcedure" );
     valid_Vector.add ( "TableID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
@@ -274,8 +289,14 @@ CommandWarningException, CommandException
     }
     String DataStoreColumns = parameters.getValue ( "DataStoreColumns" );
     String OrderBy = parameters.getValue ( "OrderBy" );
+    String Top = parameters.getValue ( "Top" );
+    Integer top = 0;
+    if ( (Top != null) && !top.equals("") ) {
+        top = Integer.parseInt(Top);
+    }
     String Sql = parameters.getValue ( "Sql" );
     String SqlFile = parameters.getValue("SqlFile");
+    String DataStoreProcedure = parameters.getValue("DataStoreProcedure");
     String TableID = parameters.getValue ( "TableID" );
     
     // Find the data store to use...
@@ -333,7 +354,7 @@ CommandWarningException, CommandException
                         Message.printWarning ( 2, routine, message );
                         status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the database table/view contais column \"" + columnsReq[i] +
+                                message, "Verify that the database table/view contains column \"" + columnsReq[i] +
                                 "\".") );
                     }
                     else {
@@ -357,7 +378,7 @@ CommandWarningException, CommandException
                         Message.printWarning ( 2, routine, message );
                         status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the database table/view contais column \"" + columnsReq[i] +
+                                message, "Verify that the database table/view contains column \"" + columnsReq[i] +
                                 "\".") );
                     }
                     else {
@@ -365,8 +386,12 @@ CommandWarningException, CommandException
                     }
                 }
             }
+            if ( (Top != null) && !Top.equals("") ) {
+                q.setTop ( top );
+            }
         }
         String queryString = "";
+        // Execute the query as appropriate depending on how the query was specified
         try {
             ResultSet rs = null;
             if ( DataStoreTable != null ) {
@@ -397,6 +422,11 @@ CommandWarningException, CommandException
                 }
                 queryString = StringUtil.toString(IOUtil.fileToStringList(SqlFile_full), " ");
                 rs = dmi.dmiSelect(queryString);
+            }
+            else if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
+                // Run a stored procedure
+                q.setStoredProcedureData(new DMIStoredProcedureData(dmi,DataStoreProcedure));
+                rs = q.executeStoredProcedure();
             }
             Message.printStatus(2, routine, "Executed query \"" + dmi.getLastQueryString() + "\".");
             ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
@@ -465,8 +495,10 @@ public String toString ( PropList props )
 	String DataStoreTable = props.getValue( "DataStoreTable" );
 	String DataStoreColumns = props.getValue( "DataStoreColumns" );
 	String OrderBy = props.getValue( "OrderBy" );
+	String Top = props.getValue( "Top" );
 	String Sql = props.getValue( "Sql" );
 	String SqlFile = props.getValue( "SqlFile" );
+	String DataStoreProcedure = props.getValue( "DataStoreProcedure" );
     String TableID = props.getValue( "TableID" );
 	StringBuffer b = new StringBuffer ();
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
@@ -493,6 +525,12 @@ public String toString ( PropList props )
         }
         b.append ( "OrderBy=\"" + OrderBy + "\"" );
     }
+    if ( (Top != null) && (Top.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Top=" + Top );
+    }
     if ( (Sql != null) && (Sql.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -504,6 +542,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "SqlFile=\"" + SqlFile + "\"" );
+    }
+    if ( (DataStoreProcedure != null) && (DataStoreProcedure.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStoreProcedure=\"" + DataStoreProcedure + "\"" );
     }
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {

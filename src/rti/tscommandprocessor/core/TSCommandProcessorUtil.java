@@ -320,8 +320,13 @@ public static String expandParameterValue( CommandProcessor processor, Command c
 }
 
 /**
-Expand a string to recognize time series % formatting strings using TS.formatLegend()
-and also ${Property} strings.  If a property string is not found, it will remain without being replaced.
+Expand a string using:
+<ol>
+<li> time series % formatting strings using TS.formatLegend()</li>
+<li> time series processor ${Property} strings</li>
+<li> time series  ${ts:Property} strings</li>
+</ol>
+If a property string is not found, it will remain without being replaced.
 @param processor The processor that is being used.
 @param ts Time series to be used for metadata string.
 @param s String to expand.  The string can contain % format specifiers used with TS.
@@ -337,81 +342,112 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
     // First expand using the % characters...
     String s2 = ts.formatLegend ( s );
     //Message.printStatus(2, routine, "After formatLegend(), string is \"" + s2 + "\"" );
-    // Now replace ${Property} strings with properties from the processor
+    // Now replace ${ts:Property} and ${Property} strings with properties from the processor
     int start = 0;
     int pos2 = 0;
-    while ( pos2 < s2.length() ) {
-        int pos1 = s2.indexOf( "${", start );
-        if ( pos1 >= 0 ) {
-            // Find the end of the property
-            pos2 = s2.indexOf( "}", pos1 );
-            if ( pos2 > 0 ) {
-                // Get the property...
-                String propname = s2.substring(pos1+2,pos2);
-                String propval_string = "";
-                PropList request_params = new PropList ( "" );
-                request_params.setUsingObject ( "PropertyName", propname );
-                CommandProcessorRequestResultsBean bean = null;
-                try {
-                    bean = processor.processRequest( "GetProperty", request_params);
-                }
-                catch ( Exception e ) {
-                    String message = "Error requesting GetProperty(Property=\"" + propname + "\") from processor.";
-                    Message.printWarning ( 3,routine, message );
-                    if ( status != null ) {
-                        status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
+    // Put the most specific first so it is matched first
+    String [] startStrings = { "${ts:", "${" };
+    String [] endStrings = { "}", "}" };
+    boolean isTsProp = false;
+    Object propO;
+    for ( int ipat = 0; ipat < startStrings.length; ipat++ ) {
+        isTsProp = false;
+        if ( startStrings[ipat].equals("${ts:") || startStrings[ipat].equals("${TS:") ) {
+            isTsProp = true; // Time series property
+        }
+        while ( pos2 < s2.length() ) {
+            int pos1 = s2.indexOf( startStrings[ipat], start );
+            if ( pos1 >= 0 ) {
+                // Find the end of the property
+                pos2 = s2.indexOf( endStrings[ipat], pos1 );
+                if ( pos2 > 0 ) {
+                    // Get the property...
+                    String propname = s2.substring(pos1+2,pos2);
+                    String propvalString = "";
+                    if ( isTsProp ) {
+                        // Get the property out of the time series
+                        propO = ts.getProperty(propname);
+                        if ( propO == null ) {
+                            String message = "Time series \"" + ts.getIdentifierString() + "\" property=\"" +
+                                propname + "\" has a null value.";
+                            Message.printWarning ( 3,routine, message );
+                            if ( status != null ) {
+                                status.addToLog ( commandPhase,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Verify that the property is set for the time series." ) );
+                            }
+                        }
+                        else {
+                            propvalString = "" + propO;
+                        }
                     }
-                    start = pos2;
-                    continue;
-                }
-                if ( bean == null ) {
-                    String message =
-                        "Unable to find property from processor using GetProperty(Property=\"" + propname + "\").";
-                    Message.printWarning ( 3,routine, message );
-                    if ( status != null ) {
-                        status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                message,
-                                "Verify that the property name is valid - must match case." ) );
+                    else {
+                        // Get the property from the processor properties
+                        PropList request_params = new PropList ( "" );
+                        request_params.setUsingObject ( "PropertyName", propname );
+                        CommandProcessorRequestResultsBean bean = null;
+                        try {
+                            bean = processor.processRequest( "GetProperty", request_params);
+                        }
+                        catch ( Exception e ) {
+                            String message = "Error requesting GetProperty(Property=\"" + propname + "\") from processor.";
+                            Message.printWarning ( 3,routine, message );
+                            if ( status != null ) {
+                                status.addToLog ( commandPhase,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Report the problem to software support." ) );
+                            }
+                            start = pos2;
+                            continue;
+                        }
+                        if ( bean == null ) {
+                            String message =
+                                "Unable to find property from processor using GetProperty(Property=\"" + propname + "\").";
+                            Message.printWarning ( 3,routine, message );
+                            if ( status != null ) {
+                                status.addToLog ( commandPhase,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message,
+                                        "Verify that the property name is valid - must match case." ) );
+                            }
+                            start = pos2;
+                            continue;
+                        }
+                        PropList bean_PropList = bean.getResultsPropList();
+                        Object o_PropertyValue = bean_PropList.getContents ( "PropertyValue" );
+                        if ( o_PropertyValue == null ) {
+                            String message =
+                                "Null PropertyValue returned from processor for GetProperty(PropertyName=\"" + propname + "\").";
+                            Message.printWarning ( 3, routine, message );
+                            if ( status != null ) {
+                                status.addToLog ( commandPhase,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message,
+                                        "Verify that the property name is valid - must match case." ) );
+                            }
+                            start = pos2;
+                            continue;
+                        }
+                        else {
+                            propvalString = o_PropertyValue.toString();
+                            start = pos2;
+                        }
                     }
-                    start = pos2;
-                    continue;
-                }
-                PropList bean_PropList = bean.getResultsPropList();
-                Object o_PropertyValue = bean_PropList.getContents ( "PropertyValue" );
-                if ( o_PropertyValue == null ) {
-                    String message =
-                        "Null PropertyValue returned from processor for GetProperty(PropertyName=\"" + propname + "\").";
-                    Message.printWarning ( 3, routine, message );
-                    if ( status != null ) {
-                        status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                message,
-                                "Verify that the property name is valid - must match case." ) );
-                    }
-                    start = pos2;
-                    continue;
+                    // Replace the string and continue to evaluate s2
+                    s2 = s2.substring ( 0, pos1 ) + propvalString + s2.substring (pos2 + 1);
                 }
                 else {
-                    propval_string = o_PropertyValue.toString();
-                    start = pos2;
+                    // No closing character so march on...
+                    start = pos1 + 2;
+                    if ( start > s2.length() ) {
+                        break;
+                    }
                 }
-                // Replace the string and continue to evaluate s2
-                s2 = s2.substring ( 0, pos1 ) + propval_string + s2.substring (pos2 + 1);
             }
             else {
-                // No closing character so march on...
-                start = pos1 + 2;
-                if ( start > s2.length() ) {
-                    break;
-                }
+                // Done processing properties.
+                break;
             }
-        }
-        else {
-            // Done processing properties.
-            break;
         }
     }
     return s2;

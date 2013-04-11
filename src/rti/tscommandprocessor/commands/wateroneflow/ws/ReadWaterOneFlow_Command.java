@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.wateroneflow.ws;
 
+import java.io.File;
 import java.util.List;
 import java.util.Vector;
 
@@ -21,6 +22,7 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
@@ -81,11 +83,15 @@ throws InvalidCommandParameterException
     String message;
     
     String DataStore = parameters.getValue ( "DataStore" );
-    String DataType = parameters.getValue ( "DataType" );
+    String NetworkName = parameters.getValue ( "NetworkName" );
+    String SiteID = parameters.getValue ( "SiteID" );
+    String Variable = parameters.getValue ( "Variable" );
     String Interval = parameters.getValue ( "Interval" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
+    String OutputFile = parameters.getValue ( "OutputFile" );
 
+    CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -96,13 +102,29 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store." ) );
     }
-    /*
-    if ( (DataType == null) || DataType.equals("") ) {
-        message = "The data type must be specified.";
+    
+    if ( (NetworkName == null) || NetworkName.equals("") ) {
+        message = "The network name must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data type." ) );
+                message, "Specify the network name." ) );
+    }
+    
+    if ( (SiteID == null) || SiteID.equals("") ) {
+        message = "The SiteID must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the SiteID." ) );
+    }
+
+    if ( (Variable == null) || Variable.equals("") ) {
+        message = "The variable must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the variable." ) );
     }
     
     if ( (Interval == null) || Interval.equals("") ) {
@@ -141,19 +163,63 @@ throws InvalidCommandParameterException
                     message, "Specify a date/time or InputEnd." ) );
 		}
 	}
-	*/
+	
+    if ( (OutputFile != null) && (OutputFile.length() != 0) ) {
+        String working_dir = null;
+        try {
+            Object o = processor.getPropContents ( "WorkingDir" );
+            if ( o != null ) {
+                working_dir = (String)o;
+            }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Software error - report the problem to support." ) );
+        }
+
+        try {
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+            File f = new File ( adjusted_path );
+            File f2 = new File ( f.getParent() );
+            if ( !f2.exists() ) {
+                message = "The output file parent directory does not exist for: \"" + adjusted_path + "\".";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Create the output directory." ) );
+            }
+            f = null;
+            f2 = null;
+        }
+        catch ( Exception e ) {
+            message = "The output file:\n" +
+            "    \"" + OutputFile +
+            "\"\ncannot be adjusted using the working directory:\n" +
+            "    \"" + working_dir + "\".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that output file and working directory paths are compatible." ) );
+        }
+    }
 
     // Check for invalid parameters...
     List<String> valid_Vector = new Vector();
     valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "DataType" );
+    valid_Vector.add ( "NetworkName" );
+    valid_Vector.add ( "SiteID" );
+    valid_Vector.add ( "Variable" );
     valid_Vector.add ( "Interval" );
+    /*
     for ( int i = 1; i <= __numFilterGroups; i++ ) { 
         valid_Vector.add ( "Where" + i );
     }
+    */
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "OutputFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -265,15 +331,19 @@ CommandWarningException, CommandException
     }
     
     String DataStore = parameters.getValue("DataStore");
+    String NetworkName = parameters.getValue("NetworkName");
+    String SiteID = parameters.getValue("SiteID");
+    String Variable = parameters.getValue("Variable");
     /*
-    String DataType = parameters.getValue("DataType");
     // This may be of the form "4" or "4 - Precipitation (daily") but only want the number
-    int pos = DataType.indexOf("-");
+    int pos = Variable.indexOf("-");
     if ( pos > 0 ) {
-        DataType = DataType.substring(0,pos);
+        Variable = Variable.substring(0,pos);
     }
+    */
     String Interval = parameters.getValue("Interval");
     String Alias = parameters.getValue("Alias");
+    String OutputFile = parameters.getValue("OutputFile");
     
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
@@ -380,7 +450,6 @@ CommandWarningException, CommandException
                         message, "Report problem to software support." ) );
 		}
 	}
-	*/
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -397,6 +466,7 @@ CommandWarningException, CommandException
 					// read or replaced if a list is read.
 	try {
         // Read 1+ time series...
+	    /*
 		List WhereN_Vector = new Vector ( 6 );
 		String WhereN;
 		int nfg = 0;	// Used below.
@@ -407,6 +477,7 @@ CommandWarningException, CommandException
 			}
 			WhereN_Vector.add ( WhereN );
 		}
+		*/
 	
 		// Find the data store to use...
 		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
@@ -512,7 +583,14 @@ CommandWarningException, CommandException
 			}
 		}
 		 */
-		TS ts = waterOneFlowDataStore.readTimeSeries ( );
+	    String OutputFile_full = OutputFile;
+        if ( (OutputFile != null) && !OutputFile.equals("") ) {
+            OutputFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+        }
+		TS ts = waterOneFlowDataStore.readTimeSeries ( NetworkName, SiteID, Variable, InputStart_DateTime,
+		    InputEnd_DateTime, OutputFile_full );
 		if ( ts != null ) {
 		    tslist.add ( ts );
 		}
@@ -563,7 +641,7 @@ CommandWarningException, CommandException
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Data may not be in database.  See previous messages." ) );
-    }
+        }
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -598,7 +676,6 @@ private void setDiscoveryTSList ( List discovery_TS_Vector )
     __discovery_TS_Vector = discovery_TS_Vector;
 }
 
-// FIXME SAM 2010-10-20 Enable correct properties
 /**
 Return the string representation of the command.
 */
@@ -614,12 +691,26 @@ public String toString ( PropList props )
         }
         b.append ( "DataStore=\"" + DataStore + "\"" );
     }
-    String DataType = props.getValue("DataType");
-    if ( (DataType != null) && (DataType.length() > 0) ) {
+    String NetworkName = props.getValue("NetworkName");
+    if ( (NetworkName != null) && (NetworkName.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataType=\"" + DataType + "\"" );
+        b.append ( "NetworkName=\"" + NetworkName + "\"" );
+    }
+    String SiteID = props.getValue("SiteID");
+    if ( (SiteID != null) && (SiteID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SiteID=\"" + SiteID + "\"" );
+    }
+    String Variable = props.getValue("Variable");
+    if ( (Variable != null) && (Variable.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Variable=\"" + Variable + "\"" );
     }
 	String Interval = props.getValue("Interval");
 	if ( (Interval != null) && (Interval.length() > 0) ) {
@@ -628,6 +719,7 @@ public String toString ( PropList props )
 		}
 		b.append ( "Interval=\"" + Interval + "\"" );
 	}
+	/*
 	String delim = ";";
     for ( int i = 1; i <= __numFilterGroups; i++ ) {
     	String where = props.getValue("Where" + i);
@@ -638,6 +730,7 @@ public String toString ( PropList props )
     		b.append ( "Where" + i + "=\"" + where + "\"" );
     	}
     }
+    */
 	String InputStart = props.getValue("InputStart");
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -658,6 +751,13 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "Alias=\"" + Alias + "\"" );
+    }
+    String OutputFile = props.getValue("OutputFile");
+    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputFile=\"" + OutputFile + "\"" );
     }
 
     return getCommandName() + "(" + b.toString() + ")";

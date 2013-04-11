@@ -143,13 +143,25 @@ throws InvalidCommandParameterException
 	}
 
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "DataType" );
     valid_Vector.add ( "Interval" );
+    valid_Vector.add ( "DataType" );
     for ( int i = 1; i <= __numFilterGroups; i++ ) { 
         valid_Vector.add ( "Where" + i );
     }
+    valid_Vector.add ( "SiteCommonName" );
+    valid_Vector.add ( "DataTypeCommonName" );
+    valid_Vector.add ( "SiteDataTypeID" );
+    valid_Vector.add ( "ModelName" );
+    valid_Vector.add ( "ModelRunName" );
+    valid_Vector.add ( "HydrologicIndicator" );
+    valid_Vector.add ( "ModelRunDate" );
+    valid_Vector.add ( "ModelRunID" );
+    valid_Vector.add ( "EnsembleName" );
+    valid_Vector.add ( "EnsembleTraceID" );
+    valid_Vector.add ( "EnsembleModelName" );
+    valid_Vector.add ( "EnsembleModelRunDate" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Alias" );
@@ -607,13 +619,6 @@ public String toString ( PropList props )
         }
         b.append ( "DataStore=\"" + DataStore + "\"" );
     }
-    String DataType = props.getValue("DataType");
-    if ( (DataType != null) && (DataType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataType=\"" + DataType + "\"" );
-    }
 	String Interval = props.getValue("Interval");
 	if ( (Interval != null) && (Interval.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -621,6 +626,13 @@ public String toString ( PropList props )
 		}
 		b.append ( "Interval=\"" + Interval + "\"" );
 	}
+    String DataType = props.getValue("DataType");
+    if ( (DataType != null) && (DataType.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataType=\"" + DataType + "\"" );
+    }
 	String delim = ";";
     for ( int i = 1; i <= __numFilterGroups; i++ ) {
     	String where = props.getValue("Where" + i);
@@ -630,6 +642,90 @@ public String toString ( PropList props )
     		}
     		b.append ( "Where" + i + "=\"" + where + "\"" );
     	}
+    }
+    String SiteCommonName = props.getValue( "SiteCommonName" );
+    if ( (SiteCommonName != null) && (SiteCommonName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SiteCommonName=\"" + SiteCommonName + "\"" );
+    }
+    String DataTypeCommonName = props.getValue( "DataTypeCommonName" );
+    if ( (DataTypeCommonName != null) && (DataTypeCommonName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataTypeCommonName=\"" + DataTypeCommonName + "\"" );
+    }
+    String SiteDataTypeID = props.getValue( "SiteDataTypeID" );
+    if ( (SiteDataTypeID != null) && (SiteDataTypeID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SiteDataTypeID=" + SiteDataTypeID );
+    }
+    String ModelName = props.getValue( "ModelName" );
+    if ( (ModelName != null) && (ModelName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ModelName=\"" + ModelName + "\"" );
+    }
+    String ModelRunName = props.getValue( "ModelRunName" );
+    if ( (ModelRunName != null) && (ModelRunName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ModelRunName=\"" + ModelRunName + "\"" );
+    }
+    String ModelRunDate = props.getValue( "ModelRunDate" );
+    if ( (ModelRunDate != null) && (ModelRunDate.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ModelRunDate=\"" + ModelRunDate + "\"" );
+    }
+    String HydrologicIndicator = props.getValue( "HydrologicIndicator" );
+    if ( (HydrologicIndicator != null) && (HydrologicIndicator.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "HydrologicIndicator=\"" + HydrologicIndicator + "\"" );
+    }
+    String ModelRunID = props.getValue( "ModelRunID" );
+    if ( (ModelRunID != null) && (ModelRunID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ModelRunID=" + ModelRunID );
+    }
+    String EnsembleName = props.getValue( "EnsembleName" );
+    if ( (EnsembleName != null) && (EnsembleName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
+    }
+    String EnsembleTraceID = props.getValue( "EnsembleTraceID" );
+    if ( (EnsembleTraceID != null) && (EnsembleTraceID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleTraceID=\"" + EnsembleTraceID + "\"" );
+    }
+    String EnsembleModelName = props.getValue( "EnsembleModelName" );
+    if ( (EnsembleModelName != null) && (EnsembleModelName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleModelName=\"" + EnsembleModelName + "\"" );
+    }
+    String EnsembleModelRunDate = props.getValue( "EnsembleModelRunDate" );
+    if ( (EnsembleModelRunDate != null) && (EnsembleModelRunDate.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleModelRunDate=\"" + EnsembleModelRunDate + "\"" );
     }
 	String InputStart = props.getValue("InputStart");
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {

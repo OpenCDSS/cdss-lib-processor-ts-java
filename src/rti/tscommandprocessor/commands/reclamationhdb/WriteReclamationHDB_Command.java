@@ -28,6 +28,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the WriteReclamationHDB() command.
@@ -53,7 +54,8 @@ cross-reference to the original commands.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String DataStore = parameters.getValue ( "DataStore" );
+{	String TSList = parameters.getValue ( "TSList" );
+    String DataStore = parameters.getValue ( "DataStore" );
     String SiteCommonName = parameters.getValue ( "SiteCommonName" );
     String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
     String SiteDataTypeID = parameters.getValue ( "SiteDataTypeID" );
@@ -62,10 +64,15 @@ throws InvalidCommandParameterException
     String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
     String ModelRunDate = parameters.getValue ( "ModelRunDate" );
     String ModelRunID = parameters.getValue ( "ModelRunID" );
+    String EnsembleName = parameters.getValue ( "EnsembleName" );
+    String EnsembleModelName = parameters.getValue ( "EnsembleModelName" );
+    String EnsembleTraceID = parameters.getValue ( "EnsembleTraceID" );
+    String EnsembleModelRunDate = parameters.getValue ( "EnsembleModelRunDate" );
     String ValidationFlag = parameters.getValue ( "ValidationFlag" );
     String DataFlags = parameters.getValue ( "DataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String IntervalOverride = parameters.getValue ( "IntervalOverride" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -137,20 +144,88 @@ throws InvalidCommandParameterException
     
     if ( (ModelRunDate != null) && !ModelRunDate.equals("") ) {
         // If the date/time has a trailing .0, remove because the parse code does not handle the hundredths
-        // TODO SAM 2012-04-09 Decide if hundredths should be in parameter value
+        // TODO SAM 2013-04-07 Check the precision after parsing to make sure to minute
         int pos = ModelRunDate.indexOf(".0");
+        DateTime dt = null;
         if ( pos > 0 ) {
             ModelRunDate = ModelRunDate.substring(0,pos);
         }
         try { 
-            DateTime.parse(ModelRunDate);
+            dt = DateTime.parse(ModelRunDate);
         }
         catch ( Exception e ) {
             message = "The model run date is invalid.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the model run date as YYYY-MM-DD hh:mm:ss." ) );
+                    message, "Specify the model run date as YYYY-MM-DD hh:mm." ) );
+        }
+        if ( dt != null ) {
+            if ( dt.getPrecision() != DateTime.PRECISION_MINUTE ) {
+                message = "The model run date must be specified to minute precision.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the model run date as YYYY-MM-DD hh:mm." ) );
+            }
+        }
+    }
+    
+    // Only allow a single time series to be written, or an ensemble
+    // TODO SAM 2013-04-07 might allow wildcards in parameters later
+    if ( (EnsembleName != null) && !EnsembleName.equals("") ) {
+        // Must specify time series with ensemble ID for consistency
+        if ( !TSList.equalsIgnoreCase(""+TSListType.ENSEMBLE_ID) ) {
+            message = "Specifying an ensemble name requires using TSList=" + TSListType.ENSEMBLE_ID;
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify an ensemble ID to write." ) );
+        }
+        // Only allow either a single time series or ensemble to be written
+        if ( (ModelName != null) && !ModelName.equals("")) {
+            message = "Both a single model name and ensemble name have been specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a single model name OR ensemble name." ) );
+        }
+        // Ensemble model name must be specified
+        if ( (EnsembleModelName == null) || EnsembleModelName.equals("")) {
+            message = "The model name for hte ensemble must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the model name used with the ensemble time series." ) );
+        }
+    }
+    
+    if ( (EnsembleModelRunDate != null) && !EnsembleModelRunDate.equals("") ) {
+        // If the date/time has a trailing .0, remove because the parse code does not handle the hundredths
+        // TODO SAM 2013-04-07 Check the precision after parsing to make sure to minute
+        int pos = EnsembleModelRunDate.indexOf(".0");
+        DateTime dt = null;
+        if ( pos > 0 ) {
+            EnsembleModelRunDate = EnsembleModelRunDate.substring(0,pos);
+        }
+        try { 
+            dt = DateTime.parse(EnsembleModelRunDate);
+        }
+        catch ( Exception e ) {
+            message = "The ensemble model run date is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the ensemble model run date as YYYY-MM-DD hh:mm." ) );
+        }
+        if ( dt != null ) {
+            if ( dt.getPrecision() != DateTime.PRECISION_MINUTE ) {
+                message = "The ensemble model run date must be specified to minute precision.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the ensemble model run date as YYYY-MM-DD hh:mm." ) );
+            }
         }
     }
     
@@ -204,6 +279,19 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output end date/time." ) );
 		}
 	}
+	if ( (IntervalOverride != null) && IntervalOverride.equals("") ) {
+        try {
+            TimeInterval.parseInterval(IntervalOverride);
+        }
+        catch ( Exception e ) {
+            // Should not happen because choices are valid
+            message = "The interval override \"" + IntervalOverride + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify an interval using the command editor."));
+        }
+	}
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector<String>();
 	valid_Vector.add ( "DataStore" );
@@ -219,6 +307,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "ModelRunDate" );
     valid_Vector.add ( "ModelRunID" );
     valid_Vector.add ( "EnsembleName" );
+    valid_Vector.add ( "EnsembleTraceID" );
     valid_Vector.add ( "EnsembleModelName" );
     valid_Vector.add ( "EnsembleModelRunDate" );
     valid_Vector.add ( "Agency" );
@@ -228,6 +317,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TimeZone" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
+	valid_Vector.add ( "IntervalOverride" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -286,6 +376,8 @@ CommandWarningException, CommandException
     String ModelRunName = parameters.getValue ( "ModelRunName" );
     String ModelRunDate = parameters.getValue ( "ModelRunDate" );
     if ( ModelRunDate != null ) {
+        // TODO SAM 2013-04-07 Strip off hundredths of second.  Should not be needed now because
+        // run date should only go to minute.
         int pos = ModelRunDate.indexOf(".0");
         if ( pos > 0 ) {
             ModelRunDate = ModelRunDate.substring(0,pos);
@@ -293,6 +385,23 @@ CommandWarningException, CommandException
     }
     String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
     String ModelRunID = parameters.getValue ( "ModelRunID" );
+    String EnsembleName = parameters.getValue ( "EnsembleName" );
+    if ( (EnsembleName != null) && EnsembleName.equals("") ) {
+        EnsembleName = null; // Simplifies logic below when ensemble is not used
+    }
+    String EnsembleModelName = parameters.getValue ( "EnsembleModelName" );
+    String EnsembleTraceID = parameters.getValue ( "EnsembleTraceID" );
+    if ( (EnsembleTraceID != null) && EnsembleTraceID.equals("") ) {
+        EnsembleTraceID = null; // Simplifies logic below when default is used
+    }
+    String EnsembleModelRunDate = parameters.getValue ( "EnsembleModelRunDate" );
+    if ( (EnsembleModelRunDate != null) && EnsembleModelRunDate.equals("") ) {
+        EnsembleModelRunDate = null; // Simplifies logic below when default is used
+    }
+    DateTime ensembleModelRunDate = null;
+    if ( EnsembleModelRunDate != null ) {
+        ensembleModelRunDate = DateTime.parse(EnsembleModelRunDate);
+    }
     Long modelRunID = null;
     if ( StringUtil.isLong(ModelRunID) ) {
         modelRunID = Long.parseLong(ModelRunID);
@@ -449,7 +558,7 @@ CommandWarningException, CommandException
         DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
             DataStore, ReclamationHDBDataStore.class );
         if ( dataStore == null ) {
-            message = "Could not get data store for name \"" + DataStore + "\" to query data.";
+            message = "Could not get data store for name \"" + DataStore + "\" to write time series.";
             Message.printWarning ( 2, routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -462,8 +571,63 @@ CommandWarningException, CommandException
             dataStore.getName() + "\"" );
         String loadingApp = "TSTool";
         boolean doWrite = true;
+        int traceNumber = 0;
+        String traceNumberAsString;
         if ( doWrite && (tslist != null) ) {
             for ( TS ts : tslist ) {
+                if ( EnsembleName != null ) {
+                    // Writing an ensemble so get the model_run_id for the specific trace using the
+                    // ensemble information
+                    // First get the trace number based on the EnsembleTraceID parameter
+                    if ( EnsembleTraceID == null ) {
+                        // Use the time series sequence number and if that is not set generate an error
+                        traceNumber = ts.getSequenceNumber();
+                        if ( traceNumber < 0 ) {
+                            // No sequence number set so skip the time series
+                            message = "Unable to determine trace number for \"" +
+                                ts.getIdentifierString() + "\" for EnsembleTraceID=\"" + EnsembleTraceID +
+                                "\" - not writing trace.";
+                            Message.printWarning ( warning_level, 
+                                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                            status.addToLog ( CommandPhaseType.RUN,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Verify that trace number is available in the time series." ) );
+                            continue;
+                        }
+                    }
+                    else {
+                        // Try to get the trace number by formatting the data specified by the parameter
+                        traceNumberAsString = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, EnsembleTraceID, status, CommandPhaseType.RUN);
+                        try {
+                            traceNumber = Integer.valueOf(traceNumberAsString);
+                        }
+                        catch ( NumberFormatException e ) {
+                            message = "Unable to determine time series trace number for \"" +
+                                ts.getIdentifierString() + "\" EnsembleTraceID=\"" + EnsembleTraceID +
+                                "\" and expanded value \"" + traceNumberAsString + "\" - not writing trace.";
+                            Message.printWarning ( warning_level, 
+                                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                            status.addToLog ( CommandPhaseType.RUN,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Verify that the trace number is available in the time series." ) );
+                            continue;
+                        }
+                    }
+                    modelRunID = dmi.readModelRunIDForEnsembleTrace ( EnsembleName, traceNumber,
+                        EnsembleModelName, ensembleModelRunDate );
+                    if ( modelRunID == null ) {
+                        message = "Unable to determine HDB MRI number for time series \"" +
+                            ts.getIdentifierString() + "\" EnsembleTraceID=\"" + EnsembleTraceID +
+                            "\" and trace number " + traceNumber + " - not writing trace.";
+                        Message.printWarning ( warning_level, 
+                            MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                        status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the trace number is defined in the database." ) );
+                        continue;
+                    }
+                }
                 dmi.writeTimeSeries ( ts, loadingApp,
                     SiteCommonName, DataTypeCommonName, siteDataTypeID,
                     ModelName, ModelRunName, ModelRunDate, HydrologicIndicator, modelRunID,
@@ -508,6 +672,7 @@ public String toString ( PropList parameters )
     String HydrologicIndicator = parameters.getValue( "HydrologicIndicator" );
     String ModelRunID = parameters.getValue( "ModelRunID" );
     String EnsembleName = parameters.getValue( "EnsembleName" );
+    String EnsembleTraceID = parameters.getValue( "EnsembleTraceID" );
     String EnsembleModelName = parameters.getValue( "EnsembleModelName" );
     String EnsembleModelRunDate = parameters.getValue( "EnsembleModelRunDate" );
     String Agency = parameters.getValue( "Agency" );
@@ -517,6 +682,7 @@ public String toString ( PropList parameters )
     String TimeZone = parameters.getValue( "TimeZone" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String IntervalOverride = parameters.getValue ( "IntervalOverride" );
 	StringBuffer b = new StringBuffer ();
 	if ( (DataStore != null) && (DataStore.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -596,6 +762,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
     }
+    if ( (EnsembleTraceID != null) && (EnsembleTraceID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleTraceID=\"" + EnsembleTraceID + "\"" );
+    }
     if ( (EnsembleModelName != null) && (EnsembleModelName.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -649,6 +821,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
+    }
+    if ( (IntervalOverride != null) && (IntervalOverride.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IntervalOverride=\"" + IntervalOverride + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

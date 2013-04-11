@@ -15,6 +15,7 @@ import java.util.Vector;
 import rti.tscommandprocessor.commands.reclamationhdb.java_lib.hdbLib.JavaConnections;
 
 import RTi.DMI.DMI;
+import RTi.DMI.DMISelectStatement;
 import RTi.DMI.DMIStoredProcedureData;
 import RTi.DMI.DMIUtil;
 import RTi.DMI.DMIWriteStatement;
@@ -380,7 +381,7 @@ throws SQLException
         " HDB_SITE.SITE_ID = HDB_SITE_DATATYPE.SITE_ID and" +
         " HDB_DATATYPE.DATATYPE_ID = HDB_SITE_DATATYPE.DATATYPE_ID" +
         " order by HDB_OBJECTTYPE.OBJECTTYPE_NAME, HDB_DATATYPE.DATATYPE_COMMON_NAME";
-    List<String> types = new Vector();
+    List<String> types = new Vector<String>();
     
     try
     {
@@ -1458,6 +1459,106 @@ throws SQLException
     }
     
     return results;
+}
+
+/**
+Read the model run identifier (MRI) for an ensemble trace,
+as per Mark Bogner email of Jan 21, 2013, with a few subsequent changes:
+<pre>
+PROCEDURE ENSEMBLE.GET_TSTOOL_ENSEMBLE_MRI
+  Argument Name                  Type                    In/Out Default?
+  ------------------------------ ----------------------- ------ --------
+  OP_MODEL_RUN_ID                NUMBER                  OUT
+  P_ENSEMBLE_NAME                VARCHAR2                IN
+  P_TRACE_NUMBER                 NUMBER                  IN
+  P_MODEL_NAME                   VARCHAR2                IN
+  P_RUN_DATE                     DATE                    IN     DEFAULT
+  P_IS_RUNDATE_KEY               VARCHAR2                IN     DEFAULT
+
+This procedure was written exclusively for TsTool use with the following Business rules and specifications
+
+     1. return a model_run_id for the specified TsTool input parameters
+     2. apply a business rule: run_date in REF_MODEL_RUN for TsTool is truncated to the hour
+     3. apply a business rule: the model_run_name for any new REF_MODEL_RUN records will be a concatenation of the P_ENSEMBLE with the P_TRACE_NUMBER (up to 9999)
+     4. throw an exception if P_MODEL_NAME doesn't already exist
+     5. create a REF_ENSEMBLE record if the P_ENSEMBLE_NAME doesn't already exist
+     6. create a REF_ENSEMBLE_TRACE record if that combination of input parameters to a particular model_run_id record does not already exist
+     7. create a REF_MODEL_RUN record if the above business rules and input parameters dictate that necessity
+     8. Business rule: P_MODEL_NAME can not be NULL and must match an entry in the database
+     9. Business rule: P_ENSEMBLE_NAME can not be NULL
+    10. Business rule: P_TRACE_NUMBER can not be NULL
+    11. Business rule: P_IS_RUNDATE_KEY must be a "Y" or "N"
+    12. Business rule: If using Run_DATE as part of the key, it must be a valid date and not NULL
+    13. Any use of P_RUN_DATE utilizes the truncation to the minute
+    14. Multiple runs of a single ensemble and trace can be stored if the Run_date is key specified
+    15. HYDROLOGIC_INDICATOR will be populated with the P_TRACE_NUMBER (character representation) on creation of a REF_MODEL_RUN record
+    16. For REF_ENSEMBLE_TRACE records at a minimum, either column TRACE_NUMERIC or TRACE_NAME must be populated.
+    17. For TsTool, creation of REF_ENSEMBLE_TRACE records TRACE_ID, TRACE_NUMERIC and TRACE_NAME will be populated with P_TRACE_NUMBER from the TsTool procedure call
+</pre>
+*/
+public Long readModelRunIDForEnsembleTrace ( String ensembleName, int traceNumber,
+    String ensembleModelName, DateTime ensembleModelRunDate )
+{   String routine = getClass().getName() + ".readModelRunIDForEnsembleTrace";
+    DMISelectStatement selectStatement = null;
+    CallableStatement cs = null;
+    try {
+        DMIStoredProcedureData spData = new DMIStoredProcedureData(this, "ENSEMBLE.GET_TSTOOL_ENSEMBLE_MRI");
+        selectStatement.setStoredProcedureData(spData);
+        int iParam = 1;
+        selectStatement.setValue(ensembleName,iParam++); // Cannot be null
+        selectStatement.setValue(traceNumber,iParam++); // Cannot be null
+        selectStatement.setValue(ensembleModelName,iParam++); // Cannot be null
+        selectStatement.setValue(ensembleModelRunDate,iParam++); // Can be null
+        String isRundateKey = "N";
+        if ( ensembleModelRunDate != null ) {
+            isRundateKey = "Y";
+        }
+        selectStatement.setValue(isRundateKey,iParam++); // Cannot be null
+        /*
+        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?)}");
+        cs.setString(iParam++,ensembleName); // Cannot be null
+        cs.setInt(iParam++,traceNumber); // Cannot be null
+        cs.setString(iParam++,ensembleModelName); // Cannot be null
+        if ( ensembleModelRunDate == null ) {
+            // Date is not being used
+            cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
+        }
+        else {
+            cs.setTimestamp(iParam++,new Timestamp(ensembleModelRunDate.getDate().getTime()));
+        }
+        cs.addBatch();
+        */
+    }
+    catch ( Exception e ) {
+        throw new RuntimeException ( "Error constructing statement (" + e + " )" );
+    }
+    /*
+    try {
+        // TODO SAM 2012-03-28 Figure out how to use to compare values updated with expected number
+        //int [] updateCounts =
+        cs.executeBatch();
+        cs.get
+        cs.close();
+        return mri;
+    }
+    catch (BatchUpdateException e) {
+        // Will happen if any of the batch commands fail.
+        Message.printWarning(3,routine,e);
+        throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
+    }
+    catch (SQLException e) {
+        Message.printWarning(3,routine,e);
+        throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
+    }
+    */
+    try {
+        dmiSelect(selectStatement);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3,routine,e);
+        return new Long(-1);
+    }
+    return new Long(-1);
 }
 
 /**

@@ -1044,6 +1044,8 @@ public boolean ok ()
 
 /**
 Set the data type choices in response to a new datastore being selected.
+The data types are used with the filters because DataTypeCommonName is used with the specific
+data queries.
 */
 private void populateDataTypeChoices ()
 {   String routine = getClass().getName() + ".populateDataTypeChoices";
@@ -1058,8 +1060,10 @@ private void populateDataTypeChoices ()
         Message.printWarning(2, routine, "Unable to get object types and associated data types for datastore \"" +
             __DataStore_JComboBox.getSelected() + "\" - no database connection?");
     }
+    // Add a blank option if the filters are not being used
+    dataTypes.add(0,"");
     // Add a wildcard option to get all data types
-    dataTypes.add(0,"*");
+    dataTypes.add(1,"*");
     __DataType_JComboBox.setData ( dataTypes );
     __DataType_JComboBox.select ( 0 );
 }
@@ -1211,6 +1215,11 @@ private void populateIntervalChoices ()
 {
     __Interval_JComboBox.removeAll();
     __Interval_JComboBox.add ( "Hour" );
+    __Interval_JComboBox.add ( "2Hour" );
+    __Interval_JComboBox.add ( "3Hour" );
+    __Interval_JComboBox.add ( "4Hour" );
+    __Interval_JComboBox.add ( "6Hour" );
+    __Interval_JComboBox.add ( "12Hour" );
     __Interval_JComboBox.add ( "Day" );
     __Interval_JComboBox.add ( "Month" );
     __Interval_JComboBox.add ( "Year" );
@@ -1955,7 +1964,7 @@ private void refresh ()
     props.add ( "HydrologicIndicator=" + HydrologicIndicator );
     props.add ( "ModelRunID=" + ModelRunID );
     props.add ( "EnsembleName=" + EnsembleName );
-    props.add ( "EnsembleTraceID=" + EnsembleTraceID );
+    //props.add ( "EnsembleTraceID=" + EnsembleTraceID );
     props.add ( "EnsembleModelName=" + EnsembleModelName );
     props.add ( "EnsembleModelRunDate=" + EnsembleModelRunDate );
 	InputStart = __InputStart_JTextField.getText().trim();

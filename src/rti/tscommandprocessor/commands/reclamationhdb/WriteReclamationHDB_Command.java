@@ -411,6 +411,16 @@ CommandWarningException, CommandException
     String OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
     String DataFlags = parameters.getValue ( "DataFlags" );
     String TimeZone = parameters.getValue ( "TimeZone" );
+    String IntervalOverride = parameters.getValue ( "IntervalOverride" );
+    TimeInterval intervalOverride = null;
+    if ( (IntervalOverride != null) && !IntervalOverride.equals("") ) {
+        try {
+            intervalOverride = TimeInterval.parseInterval(IntervalOverride);
+        }
+        catch ( Exception e ) {
+            intervalOverride = null;
+        }
+    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -632,7 +642,7 @@ CommandWarningException, CommandException
                     SiteCommonName, DataTypeCommonName, siteDataTypeID,
                     ModelName, ModelRunName, ModelRunDate, HydrologicIndicator, modelRunID,
                     Agency, ValidationFlag, OverwriteFlag, DataFlags,
-                    TimeZone, OutputStart_DateTime, OutputEnd_DateTime );
+                    TimeZone, OutputStart_DateTime, OutputEnd_DateTime, intervalOverride );
             }
         }
     }

@@ -12,7 +12,10 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.SwingUtilities;
+
 import rti.tscommandprocessor.commands.reclamationhdb.java_lib.hdbLib.JavaConnections;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMISelectStatement;
@@ -66,6 +69,13 @@ Data types from HDB_DATATYPE.
 private List<ReclamationHDB_DataType> __dataTypeList = new Vector();
 
 /**
+Keep alive SQL string and frequency.  If specified in configuration file and set with
+setKeepAlive(), will be used to run a thread and query the database to keep the connection open.
+*/
+private String __keepAliveSql = null;
+private String __keepAliveFrequency = null;
+
+/**
 Loading applications from HDB_LOADING_APPLICATION.
 */
 private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new Vector();
@@ -117,7 +127,7 @@ throws Exception {
 Convert the start/end date/time values from an HDB time series table to a single date/time used internally
 with time series.
 @param startDateTime the START_DATE_TIME value from an HDB time series table
-@param endDateTime the ENDDATE_TIME value from an HDB time series table
+@param endDateTime the END_DATE_TIME value from an HDB time series table
 @param intervalBase the TimeInterval interval base for the data
 @param dateTime if null, create a DateTime and return; if not null, reuse the instance
 */
@@ -144,15 +154,17 @@ Convert a start date/time for an entire time series to an internal date/time sui
 for the time series period start/end.
 @param startDateTime min/max start date/time from time series data records as per HDB conventions
 @param intervalBase time series interval base
+@param intervalMult time series interval multiplier
 @param timeZone time zone abbreviation (e.g., "MST" to use for hourly and instantaneous data)
 @return internal date/time that can be used to set the time series start/end, for memory allocation
 */
-private DateTime convertHDBStartDateTimeToInternal ( Date startDateTime, int intervalBase, String timeZone )
+private DateTime convertHDBStartDateTimeToInternal ( Date startDateTime, int intervalBase, int intervalMult,
+    String timeZone )
 {   DateTime dateTime = new DateTime(startDateTime);
     if ( intervalBase == TimeInterval.HOUR ) {
-        // The date/time using internal conventions is one hour later
+        // The date/time using internal conventions is N-hour later
         // FIXME SAM 2010-11-01 Are there any instantaneous 1hour values?
-        dateTime.addHour(1);
+        dateTime.addHour(intervalMult);
         dateTime.setTimeZone(timeZone);
     }
     else if ( intervalBase == TimeInterval.IRREGULAR ) {
@@ -167,16 +179,29 @@ private DateTime convertHDBStartDateTimeToInternal ( Date startDateTime, int int
 Convert an internal date/time to an HDB start date/time suitable to limit the query of time series records.
 @param startDateTime min/max start date/time from time series data records as per HDB conventions
 @param intervalBase time series interval base
+@param intervalMult time series interval multiplier
 @return internal date/time that can be used to set the time series start/end, for memory allocation
 */
-private String convertInternalDateTimeToHDBStartString ( DateTime dateTime, int intervalBase )
-{   if ( intervalBase == TimeInterval.HOUR ) {
+private String convertInternalDateTimeToHDBStartString ( DateTime dateTime, int intervalBase, int intervalMult )
+{   // Protect the original value by making a copy...
+    // TODO SAM 2013-04-14 for some reason copying loses the time zone.
+    DateTime dateTime2 = new DateTime(dateTime);
+    if ( intervalBase == TimeInterval.HOUR ) {
         // The date/time using internal conventions is one hour later
         // FIXME SAM 2010-11-01 Are there any instantaneous 1hour values?
-        dateTime.addHour(-1);
+        dateTime2.addHour(-intervalMult);
+        return dateTime2.toString();
     }
-    // Otherwise for DAY, MONTH, YEAR the starting date/time is correct when precision is considered
-    return dateTime.toString();
+    else if ( intervalBase == TimeInterval.MONTH ) {
+        return dateTime2.toString() + "-01"; // Need extra string as per notes in getOracleDateFormat()
+    }
+    else if ( intervalBase == TimeInterval.YEAR ) {
+        return dateTime2.toString() + "-01-01"; // Need extra string as per notes in getOracleDateFormat()
+    }
+    else {
+        // Otherwise for DAY, MONTH, YEAR the starting date/time is correct when precision is considered
+        return dateTime2.toString();
+    }
 }
 
 /**
@@ -434,11 +459,16 @@ throws SQLException
 /**
 Get the Oracle date/time format string given the data interval.
 See http://www.techonthenet.com/oracle/functions/to_date.php
+Not mentioned, that if the date format does not include enough formatting, unexpected defaults
+may be used.  For example, formatting only the year with "YYYY" uses a default month of the
+current month, see:  https://forums.oracle.com/forums/thread.jspa?threadID=854498
+Consequently, a YYYY string being formatted must have 01-01 already appended.  See
+convertInternalDateTimeToHDBStartString().
 @param a TimeInterval base interval
 @return the Oracle string for the to_date() SQL function (e.g., "YYYY-MM-DD HH24:MI:SS")
 */
 private String getOracleDateFormat ( int intervalBase )
-{
+{   // Oracle format output by to_date is like: 2000-04-01 00:00:00.0
     if ( intervalBase == TimeInterval.HOUR ) {
         return "YYYY-MM-DD HH24";
     }
@@ -446,10 +476,10 @@ private String getOracleDateFormat ( int intervalBase )
         return "YYYY-MM-DD";
     }
     else if ( intervalBase == TimeInterval.MONTH ) {
-        return "YYYY-MM";
+        return "YYYY-MM-DD";
     }
     else if ( intervalBase == TimeInterval.YEAR ) {
-        return "YYYY";
+        return "YYYY-MM-DD";
     }
     else if ( intervalBase == TimeInterval.IRREGULAR ) {
         // Use minute since that seems to be what instantaneous data are
@@ -729,6 +759,8 @@ public void open ()
     setConnection ( __hdbConnection.ourConn );
     Message.printStatus(2, routine, "Opened the database connection." );
     readGlobalData();
+    // Start a "keep alive" thread to make sure the database connection is not lost
+    startKeepAliveThread();
 }
 
 /**
@@ -1968,6 +2000,12 @@ throws Exception
 {   String routine = getClass().getName() + "readTimeSeries";
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString );
 
+    if ( (tsident.getIntervalBase() != TimeInterval.HOUR) && (tsident.getIntervalBase() != TimeInterval.IRREGULAR) &&
+         (tsident.getIntervalMult() != 1) ) {
+        // Not able to handle multiples for non-hourly
+        throw new IllegalArgumentException(
+            "Data interval must be 1 for intervals other than hour." );
+    }
     // Create the time series...
     
     TS ts = TSUtil.newTimeSeries(tsidentString, true);
@@ -2015,6 +2053,7 @@ throws Exception
         modelRunDate );
     TimeInterval tsInterval = TimeInterval.parseInterval(timeStep);
     int intervalBase = tsInterval.getBase();
+    int intervalMult = tsInterval.getMultiplier();
     if ( tsMetadataList.size() != 1 ) {
         throw new InvalidParameterException ( "Time series identifier \"" + tsidentString +
             "\" matches " + tsMetadataList.size() + " time series - should match exactly one." );
@@ -2023,16 +2062,17 @@ throws Exception
     int siteDataTypeID = tsMetadata.getSiteDataTypeID();
     int refModelRunID = tsMetadata.getModelRunID();
     
-    // Set the time series metadata...
+    // Set the time series metadata in core TSTool data as well as general property list...
     
     String timeZone = getDatabaseTimeZone();
     ts.setDataUnits(tsMetadata.getUnitCommonName() );
     ts.setDate1Original(convertHDBStartDateTimeToInternal ( tsMetadata.getStartDateTimeMin(),
-        intervalBase, timeZone ) );
+        intervalBase, intervalMult, timeZone ) );
     ts.setDate2Original(convertHDBStartDateTimeToInternal ( tsMetadata.getStartDateTimeMax(),
-        intervalBase, timeZone ) );
+        intervalBase, intervalMult, timeZone ) );
     // Set the missing value to NaN (HDB missing records typically are not even written to the DB).
     ts.setMissing(Double.NaN);
+    setTimeSeriesProperties ( ts, tsMetadata );
     
     // Now read the data...
     if ( readData ) {
@@ -2043,7 +2083,8 @@ throws Exception
         String hdbReqStartDateMax = null;
         if ( readStart != null ) {
             // The date/time will be internal representation, but need to convert to hdb data record start
-            hdbReqStartDateMin = convertInternalDateTimeToHDBStartString ( readStart, intervalBase );
+            hdbReqStartDateMin = convertInternalDateTimeToHDBStartString ( readStart, intervalBase, intervalMult );
+            //Message.printStatus(2,routine,"Setting time series start to requested \"" + readStart + "\"");
             ts.setDate1(readStart);
             if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
                 ts.setDate1(ts.getDate1().setTimeZone(timeZone) );
@@ -2059,7 +2100,8 @@ throws Exception
         }
         if ( readEnd != null ) {
             // The date/time will be internal representation, but need to convert to hdb data record start
-            hdbReqStartDateMax = convertInternalDateTimeToHDBStartString ( readEnd, intervalBase );
+            hdbReqStartDateMax = convertInternalDateTimeToHDBStartString ( readEnd, intervalBase, intervalMult );
+            //Message.printStatus(2,routine,"Setting time series end to requested \"" + readEnd + "\"");
             ts.setDate2(readEnd);
             if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
                 ts.setDate2( ts.getDate2().setTimeZone(timeZone) );
@@ -2192,6 +2234,10 @@ throws Exception
                     intervalBase, dateTime );
                 // TODO SAM 2010-10-31 Figure out how to handle flags
                 ts.setDataValue( dateTime, value );
+                if ( Message.isDebugOn ) {
+                    Message.printDebug(1,routine,"Read HDB startDateTime=\"" + startDateTime +
+                        "\" endDateTime=" + endDateTime + " ineternal dataTime=\"" + dateTime + "\" value=" + value);
+                }
             }
             sw.stop();
             Message.printStatus(2,routine,"Transfer of \"" + tsidentString + "\" data took " + sw.getSeconds() +
@@ -2240,6 +2286,108 @@ public void setDateTime ( DateTime dateTime, int intervalBase, String dateTimeSt
     }
     // Instantaneous treat as minute...
     dateTime.setMinute ( Integer.parseInt(dateTimeString.substring(14,16)) );
+}
+
+/**
+Set whether the "keep alive" query thread should run, useful when accessing an HDB remotely
+@param keepAliveSql SQL string to run periodically to keep database connection alive
+@param keepAliveFrequency number of seconds between "keep alive" queries
+*/
+public void setKeepAlive ( String keepAliveSql, String keepAliveFrequency )
+{
+    __keepAliveSql = keepAliveSql;
+    __keepAliveFrequency = keepAliveFrequency;
+}
+
+/**
+Set properties on the time series, based on HDB information.
+@param ts time series to being processed.
+*/
+private void setTimeSeriesProperties ( TS ts, ReclamationHDB_SiteTimeSeriesMetadata tsm )
+{   // Set generally in order of the TSID
+    ts.setProperty("REAL_MODEL_TYPE", tsm.getRealModelType());
+    
+    // Site information...
+    ts.setProperty("SITE_ID", DMIUtil.isMissing(tsm.getSiteID()) ? null : new Integer(tsm.getSiteID()) );
+    ts.setProperty("SITE_NAME", tsm.getSiteName() );
+    ts.setProperty("SITE_COMMON_NAME", tsm.getSiteCommonName() );
+    ts.setProperty("STATE_CODE", tsm.getSiteCommonName() );
+    ts.setProperty("BASIN_ID", DMIUtil.isMissing(tsm.getBasinID()) ? null : new Integer(tsm.getBasinID()) );
+    ts.setProperty("LATITUDE", DMIUtil.isMissing(tsm.getLatitude()) ? null : new Double(tsm.getLatitude()) );
+    ts.setProperty("LONGITUDE", DMIUtil.isMissing(tsm.getLongitude()) ? null : new Double(tsm.getLongitude()) );
+    ts.setProperty("HUC", tsm.getHuc() );
+    ts.setProperty("SEGMENT_NO", DMIUtil.isMissing(tsm.getSegmentNo()) ? null : new Integer(tsm.getSegmentNo()) );
+    ts.setProperty("RIVER_MILE", DMIUtil.isMissing(tsm.getRiverMile()) ? null : new Float(tsm.getRiverMile()) );
+    ts.setProperty("ELEVATION", DMIUtil.isMissing(tsm.getElevation()) ? null : new Float(tsm.getElevation()) );
+    ts.setProperty("DESCRIPTION", tsm.getDescription() );
+    ts.setProperty("NWS_CODE", tsm.getNwsCode() );
+    ts.setProperty("SCS_ID", tsm.getScsID() );
+    ts.setProperty("SHEF_CODE", tsm.getShefCode() );
+    ts.setProperty("USGS_ID", tsm.getUsgsID() );
+    ts.setProperty("DB_SITE_CODE", tsm.getDbSiteCode() );
+    
+    ts.setProperty("INTERVAL", tsm.getDataInterval());
+    
+    ts.setProperty("OBJECT_TYPE_NAME", tsm.getObjectTypeName());
+    ts.setProperty("OBJECT_TYPE_ID", tsm.getObjectTypeID());
+
+    // From HDB_DATATYPE
+    ts.setProperty("DATA_TYPE_NAME", tsm.getDataTypeName());
+    ts.setProperty("DATA_TYPE_COMMON_NAME", tsm.getDataTypeCommonName());
+    ts.setProperty("PHYSICAL_QUANTITY_NAME", tsm.getPhysicalQuantityName());
+    ts.setProperty("UNIT_COMMON_NAME", tsm.getUnitCommonName());
+    ts.setProperty("AGEN_ID", DMIUtil.isMissing(tsm.getAgenID()) ? null : new Integer(tsm.getAgenID()) );
+    ts.setProperty("AGEN_ABBREV", tsm.getAgenAbbrev());
+
+    // From HDB_SITE_DATATYPE
+    ts.setProperty("SITE_DATATYPE_ID", DMIUtil.isMissing(tsm.getSiteDataTypeID()) ? null : new Integer(tsm.getSiteDataTypeID()) );
+
+    // From HDB_MODEL
+    ts.setProperty("MODEL_NAME", tsm.getModelName());
+
+    // From REF_MODEL_RUN
+    ts.setProperty("MODEL_RUN_ID", DMIUtil.isMissing(tsm.getModelRunID()) ? null : new Integer(tsm.getModelRunID()) );
+    ts.setProperty("MODEL_RUN_NAME", tsm.getModelRunName());
+    ts.setProperty("HYDROLOGIC_INDICATOR", tsm.getHydrologicIndicator());
+    ts.setProperty("MODEL_RUN_DATE", tsm.getModelRunDate());
+}
+
+/**
+Start a keep alive thread going that periodically does a trivial SQL query to ensure
+that the database connection is kept open.
+*/
+private void startKeepAliveThread()
+{
+    // Only start the thread if the KeepAliveSQL and KeepAliveFrequency datastore properties
+    // have been specified
+    if ( (__keepAliveSql != null) && !__keepAliveSql.equals("") &&
+        (__keepAliveFrequency != null) && !__keepAliveFrequency.equals("") ) {
+        int freq = 120;
+        try {
+            freq = Integer.parseInt(__keepAliveFrequency);
+        }
+        catch ( NumberFormatException e ) {
+            return;
+        }
+        final long freqms = freq*1000;
+        Runnable r = new Runnable() {
+            public void run() {
+                try {
+                    dmiSelect(__keepAliveSql);
+                    Thread.sleep(freqms);
+                }
+                catch ( Exception e ) {
+                    // OK since don't care about results.
+                }
+            }
+        };
+        if ( SwingUtilities.isEventDispatchThread() ) {
+            r.run();
+        }
+        else {
+            SwingUtilities.invokeLater ( r );
+        }
+    }
 }
 
 /**
@@ -2459,12 +2607,13 @@ Write a time series to the database.
 @param timeZone time zone to write (can be null or blank to use default)
 @param outputStart start of period to write (if null write full period).
 @param outputEnd end of period to write (if null write full period).
+@param intervalOverride if true, then irregular time series will use this hourly interval to write the data
 */
 public void writeTimeSeries ( TS ts, String loadingApp,
     String siteCommonName, String dataTypeCommonName, Long siteDataTypeID,
     String modelName, String modelRunName, String modelRunDate, String hydrologicIndicator, Long modelRunID,
     String agency, String validationFlag, String overwriteFlag, String dataFlags,
-    String timeZone, DateTime outputStartReq, DateTime outputEndReq )
+    String timeZone, DateTime outputStartReq, DateTime outputEndReq, TimeInterval intervalOverride )
 throws SQLException
 {   String routine = getClass().getName() + ".writeTimeSeries";
     if ( ts == null ) {
@@ -2548,6 +2697,7 @@ throws SQLException
         throw new RuntimeException("Unable to initialize iterator for period " + outputStart + " to " + outputEnd );
     }
     // If true use RiversideDMI, if false use basic callable statement as per some code from Dave King
+    // Callable statement should perform well because its structure is initialized up front
     boolean writeUsingRiversideDMI = false;
     DMIWriteStatement writeStatement = null;
     CallableStatement cs = null;
@@ -2579,6 +2729,12 @@ throws SQLException
     if ( ts.getDataIntervalBase() == TimeInterval.HOUR ) {
         // Hourly data need to have the hour shifted by one hour
         timeOffset = -1000*3600;
+    }
+    else if ( (ts.getDataIntervalBase() != TimeInterval.IRREGULAR) &&
+        (ts.getDataIntervalMult() != 1) ) {
+        // Not able to handle multiples for non-hourly
+        throw new IllegalArgumentException(
+            "Data interval must be 1 for intervals other than hour." );
     }
     // Repeatedly call the stored procedure that writes the data
     while ( (tsdata = tsi.next()) != null ) {
@@ -2659,6 +2815,11 @@ throws SQLException
                     cs.setInt(iParam++,agenID); // AGEN_ID
                 }
                 cs.addBatch();
+                if ( Message.isDebugOn ) {
+                    Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
+                        " HDB date/time ms=" + dt.getDate().getTime()+timeOffset +
+                        " HDB date/time with offset=" + new Date(dt.getDate().getTime()+timeOffset));
+                }
             }
         }
         catch ( Exception e ) {

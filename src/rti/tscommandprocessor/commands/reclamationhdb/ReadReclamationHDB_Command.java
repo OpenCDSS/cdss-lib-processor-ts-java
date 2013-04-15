@@ -83,6 +83,7 @@ throws InvalidCommandParameterException
     String DataStore = parameters.getValue ( "DataStore" );
     String DataType = parameters.getValue ( "DataType" );
     String Interval = parameters.getValue ( "Interval" );
+    String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
 
@@ -97,12 +98,22 @@ throws InvalidCommandParameterException
                 message, "Specify the data store." ) );
     }
     
-    if ( (DataType == null) || DataType.equals("") ) {
+    if ( ((DataType == null) || DataType.equals("")) &&
+        ((DataTypeCommonName == null) || DataTypeCommonName.equals("")) ) {
         message = "The data type must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data type." ) );
+    }
+    
+    if ( ((DataType != null) && !DataType.equals("")) &&
+        ((DataTypeCommonName != null) && !DataTypeCommonName.equals("")) ) {
+        message = "The data type cannot be specified for both the filters and reading specific time series.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the data type only for the filters or reading specific time series." ) );
     }
     
     if ( (Interval == null) || Interval.equals("") ) {
@@ -278,6 +289,12 @@ CommandWarningException, CommandException
     String DataStore = parameters.getValue("DataStore");
     String DataType = parameters.getValue("DataType");
     String Interval = parameters.getValue("Interval");
+    String SiteCommonName = parameters.getValue("SiteCommonName");
+    String DataTypeCommonName = parameters.getValue("DataTypeCommonName");
+    String ModelName = parameters.getValue("ModelName");
+    String ModelRunName = parameters.getValue("ModelRunName");
+    String ModelRunDate = parameters.getValue("ModelRunDate");
+    String EnsembleModelName = parameters.getValue("EnsembleModelName");
     String Alias = parameters.getValue("Alias");
     
 	String InputStart = parameters.getValue ( "InputStart" );
@@ -400,132 +417,170 @@ CommandWarningException, CommandException
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
-        // Read 1+ time series...
-		// Get the input needed to process the file...
-		//String InputName = parameters.getValue ( "InputName" );
-		//if ( InputName == null ) {
-		//	InputName = "";
-		//}
-		List WhereN_Vector = new Vector ( 6 );
-		String WhereN;
-		int nfg = 0;	// Used below.
-		for ( nfg = 0; nfg < 100; nfg++ ) {
-			WhereN = parameters.getValue ( "Where" + (nfg + 1) );
-			if ( WhereN == null ) {
-				break;	// No more where clauses
-			}
-			WhereN_Vector.add ( WhereN );
-		}
-	
-		// Find the data store to use...
-		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
-		    DataStore, ReclamationHDBDataStore.class );
-		if ( dataStore == null ) {
-			message = "Could not get data store for name \"" + DataStore + "\" to query data.";
-			Message.printWarning ( 2, routine, message );
+	    // Find the data store to use...
+        DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
+            DataStore, ReclamationHDBDataStore.class );
+        if ( dataStore == null ) {
+            message = "Could not get data store for name \"" + DataStore + "\" to query data.";
+            Message.printWarning ( 2, routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that a ReclamationHDB database connection has been opened with name \"" +
                     DataStore + "\"." ) );
-			throw new Exception ( message );
-		}
-		ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
+            throw new Exception ( message );
+        }
+        ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
 
-		// Initialize an input filter based on the data type...
-
-		ReclamationHDB_TimeSeries_InputFilter_JPanel filterPanel =
-		    new ReclamationHDB_TimeSeries_InputFilter_JPanel((ReclamationHDBDataStore)dataStore, getNumFilterGroups());
-
-		// Populate with the where information from the command...
-
-		String filterDelim = ";";
-		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-			WhereN = (String)WhereN_Vector.get(ifg);
-            if ( WhereN.length() == 0 ) {
-                continue;
-            }
-			// Set the filter...
-			try {
-                filterPanel.setInputFilter( ifg, WhereN, filterDelim );
-			}
-			catch ( Exception e ) {
-                message = "Error setting where information using \""+WhereN+"\"";
-				Message.printWarning ( 2, routine,message);
-				Message.printWarning ( 3, routine, e );
-				++warning_count;
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support - also see the log file." ) );
-			}
-		}
-		
-		// Extract the 
-
-		// Read the list of objects from which identifiers can be obtained.  This code is similar to that in
-		// TSTool_JFrame.readHydroBaseHeaders...
-	
-		Message.printStatus ( 2, routine, "Getting the list of time series..." );
-	
-		List<ReclamationHDB_SiteTimeSeriesMetadata> tsMetadataList = null;
-
-		// The data type in the command is "ObjectType - DataCommonName", which is OK for the following call
-        tsMetadataList = dmi.readSiteTimeSeriesMetadataList(DataType, Interval, filterPanel );
-		// Make sure that size is set...
-		int size = 0;
-		if ( tsMetadataList != null ) {
-			size = tsMetadataList.size();
-		}
-	
-   		if ( (tsMetadataList == null) || (size == 0) ) {
-			Message.printStatus ( 2, routine,"No Reclamation HDB time series were found." );
-	        // Warn if nothing was retrieved (can be overridden to ignore).
-            message = "No time series were read from the Reclamation HDB database.";
-            Message.printWarning ( warning_level, 
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Data may not be in database." +
-                    	"  Previous messages may provide more information." ) );
-   		}
-   		else {
-			// Else, convert each header object to a TSID string and read the time series...
-
-			Message.printStatus ( 2, "", "Reading " + size + " time series..." );
-
-			String tsidentString = null;
-			TS ts = null; // Time series to read.
-			ReclamationHDB_SiteTimeSeriesMetadata meta = null;
-			for ( int i = 0; i < size; i++ ) {
-				meta = (ReclamationHDB_SiteTimeSeriesMetadata)tsMetadataList.get(i);
-				tsidentString = meta.getTSID() + "~" + DataStore;
-	
-				Message.printStatus ( 2, routine, "Reading time series for \"" + tsidentString + "\"..." );
-				try {
-				    ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
-				    // Set the alias to the desired string - this is impacted by the Location parameter
-                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                        processor, ts, Alias, status, commandPhase);
-                    ts.setAlias ( alias );
-					// Add the time series to the temporary list.  It will be further processed below...
-					tslist.add ( ts );
-				}
-				catch ( Exception e ) {
-					message = "Unexpected error reading Reclamation HDB time series (" + e + ").";
-					Message.printWarning ( 2, routine, message );
-					Message.printWarning ( 2, routine, e );
-					++warning_count;
+	    if ( (DataType != null) && !DataType.equals("") ) {
+            // Input filter parameters have been specified so read 1+ time series...
+    		// Get the input needed to process the file...
+    		//String InputName = parameters.getValue ( "InputName" );
+    		//if ( InputName == null ) {
+    		//	InputName = "";
+    		//}
+    		List WhereN_Vector = new Vector ( 6 );
+    		String WhereN;
+    		int nfg = 0;	// Used below.
+    		for ( nfg = 0; nfg < 100; nfg++ ) {
+    			WhereN = parameters.getValue ( "Where" + (nfg + 1) );
+    			if ( WhereN == null ) {
+    				break;	// No more where clauses
+    			}
+    			WhereN_Vector.add ( WhereN );
+    		}
+    	
+    		// Initialize an input filter based on the data type...
+    
+    		ReclamationHDB_TimeSeries_InputFilter_JPanel filterPanel =
+    		    new ReclamationHDB_TimeSeries_InputFilter_JPanel((ReclamationHDBDataStore)dataStore, getNumFilterGroups());
+    
+    		// Populate with the where information from the command...
+    
+    		String filterDelim = ";";
+    		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
+    			WhereN = (String)WhereN_Vector.get(ifg);
+                if ( WhereN.length() == 0 ) {
+                    continue;
+                }
+    			// Set the filter...
+    			try {
+                    filterPanel.setInputFilter( ifg, WhereN, filterDelim );
+    			}
+    			catch ( Exception e ) {
+                    message = "Error setting where information using \""+WhereN+"\"";
+    				Message.printWarning ( 2, routine,message);
+    				Message.printWarning ( 3, routine, e );
+    				++warning_count;
                     status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report the problem to software support - also see the log file." ) );
-				}
-			}
-		}
+                            message, "Report the problem to software support - also see the log file." ) );
+    			}
+    		}
+    		
+    		// Extract the 
     
-        size = 0;
-        if ( tslist != null ) {
-            size = tslist.size();
+    		// Read the list of objects from which identifiers can be obtained.  This code is similar to that in
+    		// TSTool_JFrame.readHydroBaseHeaders...
+    	
+    		Message.printStatus ( 2, routine, "Getting the list of time series..." );
+    	
+    		List<ReclamationHDB_SiteTimeSeriesMetadata> tsMetadataList = null;
+    
+    		// The data type in the command is "ObjectType - DataCommonName", which is OK for the following call
+            tsMetadataList = dmi.readSiteTimeSeriesMetadataList(DataType, Interval, filterPanel );
+    		// Make sure that size is set...
+    		int size = 0;
+    		if ( tsMetadataList != null ) {
+    			size = tsMetadataList.size();
+    		}
+    	
+       		if ( (tsMetadataList == null) || (size == 0) ) {
+    			Message.printStatus ( 2, routine,"No Reclamation HDB time series were found." );
+    	        // Warn if nothing was retrieved (can be overridden to ignore).
+                message = "No time series were read from the Reclamation HDB database.";
+                Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Data may not be in database." +
+                        	"  Previous messages may provide more information." ) );
+       		}
+       		else {
+    			// Else, convert each header object to a TSID string and read the time series...
+    
+    			Message.printStatus ( 2, "", "Reading " + size + " time series..." );
+    
+    			String tsidentString = null;
+    			TS ts = null; // Time series to read.
+    			ReclamationHDB_SiteTimeSeriesMetadata meta = null;
+    			for ( int i = 0; i < size; i++ ) {
+    				meta = (ReclamationHDB_SiteTimeSeriesMetadata)tsMetadataList.get(i);
+    				tsidentString = meta.getTSID() + "~" + DataStore;
+    	
+    				Message.printStatus ( 2, routine, "Reading time series for \"" + tsidentString + "\"..." );
+    				try {
+    				    ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
+    				    // Set the alias to the desired string - this is impacted by the Location parameter
+                        String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, Alias, status, commandPhase);
+                        ts.setAlias ( alias );
+    					// Add the time series to the temporary list.  It will be further processed below...
+    					tslist.add ( ts );
+    				}
+    				catch ( Exception e ) {
+    					message = "Unexpected error reading Reclamation HDB time series (" + e + ").";
+    					Message.printWarning ( 2, routine, message );
+    					Message.printWarning ( 2, routine, e );
+    					++warning_count;
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                               message, "Report the problem to software support - also see the log file." ) );
+    				}
+    			}
+    		}
+	    }
+	    else if ( (EnsembleModelName != null) && !EnsembleModelName.equals("") ) {
+            // Reading an ensemble of model time series 
         }
-        Message.printStatus ( 2, routine, "Read " + size + " Reclamation HDB time series." );
+	    else {
+	        String tsidentString = null;
+	        // Reading a single time series
+	        if ( (ModelName != null) && !ModelName.equals("") ) {
+	            // Single model time series
+	            tsidentString = "Model:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval + "." +
+                    ModelName + "-" + ModelRunName + "HydrologicIndicator" + "-" + ModelRunDate + "~" + DataStore;
+	        }
+    
+	        else {
+	            // Simple real time series
+	            tsidentString = "Real:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval +
+	                "~" + DataStore;
+	        }
+	        try {
+ 	            TS ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
+                // Set the alias to the desired string - this is impacted by the Location parameter
+                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                    processor, ts, Alias, status, commandPhase);
+                ts.setAlias ( alias );
+                // Add the time series to the temporary list.  It will be further processed below...
+                tslist.add ( ts );
+            }
+            catch ( Exception e ) {
+                message = "Unexpected error reading Reclamation HDB time series (" + e + ").";
+                Message.printWarning ( 2, routine, message );
+                Message.printWarning ( 2, routine, e );
+                ++warning_count;
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                       message, "Report the problem to software support - also see the log file." ) );
+            }
+	    }
+    
+        int nts = 0;
+        if ( tslist != null ) {
+            nts = tslist.size();
+        }
+        Message.printStatus ( 2, routine, "Read " + nts + " Reclamation HDB time series." );
 
         if ( commandPhase == CommandPhaseType.RUN ) {
             if ( tslist != null ) {
@@ -561,7 +616,7 @@ CommandWarningException, CommandException
             setDiscoveryTSList ( tslist );
         }
         // Warn if nothing was retrieved (can be overridden to ignore).
-        if ( (tslist == null) || (size == 0) ) {
+        if ( (tslist == null) || (nts == 0) ) {
             message = "No time series were read from the Reclamation HDB database.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );

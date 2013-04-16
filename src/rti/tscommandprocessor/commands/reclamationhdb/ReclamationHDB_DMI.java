@@ -541,7 +541,8 @@ private String getTimeSeriesTableFromInterval ( String interval, boolean isReal 
     if ( !isReal ) {
         prefix = "M_";
     }
-    if ( interval.equalsIgnoreCase("hour") || interval.equalsIgnoreCase("1hour")) {
+    if ( interval.toUpperCase().indexOf("HOUR") >= 0 ) {
+        // Allow NHour time series
         return prefix + "HOUR";
     }
     else if ( interval.equalsIgnoreCase("day") || interval.equalsIgnoreCase("1day")) {
@@ -2037,14 +2038,28 @@ throws Exception
         String[] scenarioParts = tsident.getScenario().split("-");
         if ( scenarioParts.length < 4 ) {
             throw new InvalidParameterException ( "Time series identifier \"" + tsidentString +
-            "\" does is for a model but scenario is not of form ModelName-ModelRunName-ModelRunDate" );
+            "\" is for a model but scenario is not of form " +
+            "ModelName-ModelRunName-HydrologicIndicator-ModelRunDate (only have " +
+            scenarioParts.length + ")." );
         }
-        modelName = scenarioParts[0].replace('?','.'); // Reverse translation from UI
-        modelRunName = scenarioParts[1].replace('?','.'); // Reverse translation from UI;
-        modelHydrologicIndicator = scenarioParts[2].replace('?','.'); // Reverse translation from UI;
-        // Run date includes dashes so need to take the end of the string
-        modelRunDate = tsident.getScenario().substring(modelName.length() + modelRunName.length() +
-            modelHydrologicIndicator.length() + 3); // 3 is for separating periods
+        // Try to do it anyhow - replace question marks from UI with periods to use internally
+        if ( scenarioParts.length >= 1 ) {
+            modelName = scenarioParts[0].replace('?','.'); // Reverse translation from UI 
+        }
+        if ( scenarioParts.length >= 2 ) {
+            modelRunName = scenarioParts[1].replace('?','.'); // Reverse translation from UI;
+        }
+        if ( scenarioParts.length >= 3 ) {
+            modelHydrologicIndicator = scenarioParts[2].replace('?','.'); // Reverse translation from UI;
+        }
+        // Run date is whatever is left and the run date includes dashes so need to take the end of the string
+        try {
+            modelRunDate = tsident.getScenario().substring(modelName.length() + modelRunName.length() +
+                modelHydrologicIndicator.length() + 3); // 3 is for separating periods
+        }
+        catch ( Exception e ) {
+            modelRunDate = null;
+        }
     }
     String timeStep = tsident.getInterval();
     // Scenario for models is ModelName-ModelRunName-ModelRunDate, which translate to a unique model run ID
@@ -2622,6 +2637,23 @@ throws SQLException
     if ( !ts.hasData() ) {
         return;
     }
+    // Interval override can only be used with irregular time series
+    TimeInterval outputInterval = null;
+    if ( intervalOverride == null ) {
+        // Use the output interval from the time series
+        outputInterval = new TimeInterval(ts.getDataIntervalBase(),ts.getDataIntervalMult());
+    }
+    else {
+        if ( ts.getDataIntervalBase() != TimeInterval.IRREGULAR ) {
+            throw new IllegalArgumentException(
+                "Interval override can only be used when writing irregular time series." );
+        }
+        if ( intervalOverride.getMultiplier() != TimeInterval.HOUR ) {
+            throw new IllegalArgumentException(
+                "Interval override for irregular time series must be hour interval." );
+        }
+        outputInterval = intervalOverride;
+    }
     // Determine the loading application
     List<ReclamationHDB_LoadingApplication> loadingApplicationList =
         findLoadingApplication ( getLoadingApplicationList(), loadingApp );
@@ -2629,7 +2661,8 @@ throws SQLException
         throw new IllegalArgumentException("Unable to match loading application \"" + loadingApp + "\"" );
     }
     int loadingAppID = loadingApplicationList.get(0).getLoadingApplicationID();
-    String sampleInterval = getSampleIntervalFromInterval ( ts.getDataIntervalBase() );
+    // Determine which HDB table to write...
+    String sampleInterval = getSampleIntervalFromInterval ( outputInterval.getBase() );
     // Get the site_datatype_id
     if ( siteDataTypeID == null ) {
         // Try to get from the parts
@@ -2720,19 +2753,19 @@ throws SQLException
     }
     TSData tsdata;
     DateTime dt;
-    String sampleDateTimeString;
     int errorCount = 0;
     int writeTryCount = 0;
     double value;
     int iParam;
     int timeOffset = 0;
-    if ( ts.getDataIntervalBase() == TimeInterval.HOUR ) {
-        // Hourly data need to have the hour shifted by one hour
+    if ( outputInterval.getMultiplier() == TimeInterval.HOUR ) {
+        // Hourly data or instantaneous (irregular) being treated like hourly
+        // Need to have the hour shifted by one hour because start date is start of interval
         timeOffset = -1000*3600;
     }
     else if ( (ts.getDataIntervalBase() != TimeInterval.IRREGULAR) &&
         (ts.getDataIntervalMult() != 1) ) {
-        // Not able to handle multiples for non-hourly
+        // Not able to handle multipliers for non-hourly
         throw new IllegalArgumentException(
             "Data interval must be 1 for intervals other than hour." );
     }
@@ -2744,6 +2777,21 @@ throws SQLException
         if ( ts.isDataMissing(value) ) {
             // TODO SAM 2012-03-27 Evaluate whether should have option to write
             continue;
+        }
+        // If an override interval is specified, make sure that the date/time passes the test for
+        // writing, as per the TSTool WriteReclamationHDB() documentation
+        if ( intervalOverride != null ) {
+            if ( dt.getHour()%intervalOverride.getMultiplier() != 0 ) {
+                // Hour is not evenly divisible by the multiplier so don't allow
+                Message.printWarning(3, routine, "Date/time \"" + dt +
+                    "\" hour is not evenly divisible by override interval.  Not writing.");
+                ++errorCount;
+                continue;
+            }
+            // Set the hour and minutes to zero since being written as hourly
+            dt.setMinute(0);
+            dt.setSecond(0);
+            dt.setHSecond(0);
         }
         try {
             iParam = 1; // JDBC code is 1-based (use argument 1 for return value if used)

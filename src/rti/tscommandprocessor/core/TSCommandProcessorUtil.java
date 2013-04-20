@@ -51,6 +51,7 @@ Used to handle regression test results during testing.
 private static PrintWriter __regression_test_fp = null;
 private static int __regressionTestFailCount = 0;
 private static int __regressionTestPassCount = 0;
+private static int __regressionTestDisabledCount = 0;
 
 /**
 Append a time series to the processor time series results list.
@@ -98,32 +99,46 @@ private static int __regressionTestLineCount = 0;
 Add a record to the regression test results report.  The report is a simple text file
 that indicates whether a test passed.
 @param processor CommandProcessor that is being run.
+@param isEnabled whether the command file is enabled (it is useful to list all tests even if not
+enabled in order to generate an inventory of disabled tests that need cleanup)
+@param runTimeMs run time for the command in milliseconds
 @param testPassFail whether the test was a success or failure (it is possible for the test to
 be a successful even if the command file failed, if failure was expected)
 @param expectedStatus the expected status (as a string)
 @param maxSeverity the maximum severity from the command file that was run.
-@param InputFile_full the full path to the command file that was run. 
+@param InputFile_full the full path to the command file that was run.
 */
-public static void appendToRegressionTestReport(CommandProcessor processor, String testPassFail,
-        String expectedStatus, CommandStatusType maxSeverity,
-        String InputFile_full )
+public static void appendToRegressionTestReport(CommandProcessor processor, boolean isEnabled, long runTimeMs,
+    String testPassFail, String expectedStatus, CommandStatusType maxSeverity,
+    String InputFile_full )
 {
     ++__regressionTestLineCount;
     if ( __regression_test_fp != null ) {
-        // FIXME SAM 2008-02-19 Would be useful to have command run time.
         String indicator = " ";
-        if ( testPassFail.equalsIgnoreCase("FAIL") ) {
+        if ( testPassFail.toUpperCase().indexOf("FAIL") >= 0 ) {
             indicator = "*";
             ++__regressionTestFailCount;
         }
         else {
             ++__regressionTestPassCount;
         }
+        String lineCount = StringUtil.formatString(__regressionTestLineCount,"%5d");
+        String enabled = "       ";
+        String runTime = "        ";
+        if ( !isEnabled ) {
+            ++__regressionTestDisabledCount;
+            enabled = "FALSE  ";
+            testPassFail = "    ";
+        }
+        runTime = StringUtil.formatString(runTimeMs,"%7d");
+        String delim = "|";
         __regression_test_fp.println (
-                StringUtil.formatString(__regressionTestLineCount,"%4d") + " " +
-                indicator + StringUtil.formatString(testPassFail,"%-4.4s") + indicator + "  " +
-                StringUtil.formatString(expectedStatus,"%-10.10s") + " " +
-                StringUtil.formatString(maxSeverity,"%-10.10s") + " " + InputFile_full);
+            lineCount + delim +
+            enabled + delim +
+            runTime + delim +
+            indicator + StringUtil.formatString(testPassFail,"%-4.4s") + indicator + delim +
+            StringUtil.formatString(expectedStatus,"%-10.10s") + delim +
+            StringUtil.formatString(maxSeverity,"%-10.10s") + " " + delim + InputFile_full);
     }
 }
 
@@ -194,9 +209,17 @@ public static void closeRegressionTestReportFile ()
     if ( __regression_test_fp == null ) {
         return;
     }
-    __regression_test_fp.println ( "#---------------------------------------------------------------------" );
-    __regression_test_fp.println ( "# FAIL count = " + getRegressionTestFailCount() );
-    __regression_test_fp.println ( "# PASS count = " + getRegressionTestPassCount() );
+    __regression_test_fp.println ( "#----+-------+-------+------+----------+-----------+------------------" +
+    "---------------------------------------------------------------------------" );
+    int totalRun = getRegressionTestFailCount() + getRegressionTestPassCount();
+    __regression_test_fp.println ( "FAIL count     = " + getRegressionTestFailCount() +
+        ", " + StringUtil.formatString(100.0*(double)getRegressionTestFailCount()/(double)totalRun,"%.3f")+ "%");
+    __regression_test_fp.println ( "PASS count     = " + getRegressionTestPassCount() +
+        ", " + StringUtil.formatString(100.0*(double)getRegressionTestPassCount()/(double)totalRun,"%.3f")+ "%");
+    __regression_test_fp.println ( "Disabled count = " + getRegressionTestDisabledCount() );
+    __regression_test_fp.println ( "#--------------------------------" );
+    __regression_test_fp.println ( "Total          = " +
+        (totalRun + getRegressionTestDisabledCount()) );
     
     __regression_test_fp.close();
     __regression_test_fp = null;
@@ -1144,6 +1167,15 @@ public static Collection getPropertyNameList( CommandProcessor processor )
 }
 
 /**
+Return the regression test disabled count.
+@return the regression test disabled count.
+*/
+private static int getRegressionTestDisabledCount ()
+{
+    return __regressionTestDisabledCount;
+}
+
+/**
 Return the regression test fail count.
 @return the regression test fail count.
 */
@@ -1159,6 +1191,23 @@ Return the regression test pass count.
 private static int getRegressionTestPassCount ()
 {
     return __regressionTestPassCount;
+}
+
+/**
+Get the total run time for the commands.  This is used, for example, by the RunCommands() command.
+@param commands list of commands to determine total run time.
+@return total run time for all commands, in milliseconds.
+*/
+public static long getRunTimeTotal ( List<Command> commands )
+{
+    long runTimeTotal = 0;
+    if ( commands == null ) {
+        return runTimeTotal;
+    }
+    for ( Command command : commands ) {
+        runTimeTotal += command.getCommandProfile(CommandPhaseType.RUN).getRunTime();
+    }
+    return runTimeTotal;
 }
 
 // FIXME SAM 2008-01-31 Need to sort the column names.
@@ -2056,13 +2105,29 @@ throws FileNotFoundException
     __regression_test_fp = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
     IOUtil.printCreatorHeader ( __regression_test_fp, "#", 80, 0 );
     __regression_test_fp.println ( "#" );
-    __regression_test_fp.println ( "# The test status below may be PASS or FAIL." );
-    __regression_test_fp.println ( "# A test can pass even if the commands file actual status is FAILURE, " +
-    		"if failure is expected." );
-    __regression_test_fp.println ( "#     Test   Commands   Commands" );
-    __regression_test_fp.println ( "#     Pass/  Expected   Actual" );
-    __regression_test_fp.println ( "# Num Fail   Status     Status     Command File" );
-    __regression_test_fp.println ( "#---------------------------------------------------------------------" );
+    __regression_test_fp.println ( "# Command file regression test report from StartRegressionTestResultsReport() and RunCommands()" );
+    __regression_test_fp.println ( "#" );
+    __regression_test_fp.println ( "# Explanation of columns:" );
+    __regression_test_fp.println ( "#" );
+    __regression_test_fp.println ( "# Num: count of the tests" );
+    __regression_test_fp.println ( "# Enabled: blank if test enabled or FALSE if \"#@enabled false\" in command file" );
+    __regression_test_fp.println ( "# Run Time: run time in milliseconds" );
+    __regression_test_fp.println ( "# Test Pass/Fail:" );
+    __regression_test_fp.println ( "#    The test status below may be PASS or FAIL (or blank if disabled)." );
+    __regression_test_fp.println ( "#    A test will pass if the command file actual status matches the expected status." );
+    __regression_test_fp.println ( "#    Disabled tests are not run and do not count as PASS or FAIL." );
+    __regression_test_fp.println ( "#    Search for *FAIL* to find failed tests." );
+    __regression_test_fp.println ( "# Commands Expected Status:" );
+    __regression_test_fp.println ( "#    Default is assumed to be SUCCESS." );
+    __regression_test_fp.println ( "#    \"#@expectedStatus Warning|Failure\" comment in command file overrides default." );
+    __regression_test_fp.println ( "# Commands Actual Status:" );
+    __regression_test_fp.println ( "#    The most severe status (Success|Warning|Failure) for each command file." );
+    __regression_test_fp.println ( "#" );
+    __regression_test_fp.println ( "#    |       |       |Test  |Commands  |Commands   |" );
+    __regression_test_fp.println ( "#    |       |Run    |Pass/ |Expected  |Actual     |" );
+    __regression_test_fp.println ( "# Num|Enabled|Time   |Fail  |Status    |Status     |Command File" );
+    __regression_test_fp.println ( "#----+-------+-------+------+----------+-----------+------------------" +
+    		"---------------------------------------------------------------------------" );
 }
 
 /**

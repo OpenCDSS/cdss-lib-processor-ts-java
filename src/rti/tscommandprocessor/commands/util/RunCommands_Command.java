@@ -265,104 +265,117 @@ CommandWarningException, CommandException
 		TSCommandFileRunner runner = new TSCommandFileRunner ();
         // This will set the initial working directory of the runner to that of the command file...
 		runner.readCommandFile(InputFile_full, runDiscovery );
-        // Set the database connection information...
-        // FIXME SAM 2007-11-25 HydroBase needs to be converted to generic DataStore objects.
-        TSCommandProcessor runner_processor = runner.getProcessor();
-        if ( ShareDataStores.equalsIgnoreCase(_Share) ) {
-            // All data stores are transferred
-            runner_processor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
-            runner_processor.setDataStores(((TSCommandProcessor)processor).getDataStores(), false);
+		// If the command file is not enabled, don't need to initialize or process
+		// TODO SAM 2013-04-20 Even if disabled, will still run discovery above - need to disable discovery in this case
+		boolean isEnabled = runner.isCommandFileEnabled();
+        String expectedStatus = CommandStatusType.SUCCESS.toString(); // Expected status of running command file
+        if ( ExpectedStatus != null ) {
+            expectedStatus = ExpectedStatus;
         }
-        /*
-         * TODO SAM 2010-09-30 Need to evaluate how to share properties - issue is that built-in properties are
-         * handled explicitly whereas user-defined properties are in a list that can be easily shared.
-         * Also, some properties like the working directory receive special treatment.
-         * For now don't bite off the property issue
-        if ( ShareProperties.equalsIgnoreCase(_Copy) ) {
-            setProcessorProperties(processor,runner_processor,true);
-        }
-        else if ( ShareProperties.equalsIgnoreCase(_Share) ) {
-            // All data stores are transferred
-            setProcessorProperties(processor,runner_processor,false);
-        }
-        */
-		runner.runCommands();
-		
-		// Set the CommandStatus for this command to the most severe status of the
-		// commands file that was just run.
-		CommandStatusType maxSeverity = TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor());
-		String testPassFail = "????"; // Status for the test, which is not always the same as maxSeverity
-		String expectedStatus = CommandStatusType.SUCCESS.toString(); // Expected status of running command file
-		if ( ExpectedStatus != null ) {
-		    expectedStatus = ExpectedStatus;
-		}
-		if ( ExpectedStatus != null ) {
-		    if ( maxSeverity.toString().equalsIgnoreCase(ExpectedStatus) ) {
-                // User has indicated an expected status and it matches the actual so consider this a success.
-                // This should generally be used only when running a test that we expect to fail (e.g., run
-                // obsolete command or testing handling of errors).
-                status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.SUCCESS,
-                    "Severity is max of commands file that was run (may not be a problem) - matches expected so considered Success.",
-                    "Additional status messages are omitted to allow test to be success - " +
-                    "refer to log file if warning/failure."));
-                // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
-                // have a successful status that shows in the displays.
-                // DO NOT append the messages from the command because their status will cause the
-                // error displays to show problem indicators.
-                testPassFail = __PASS;
-		    }
-		    else {
-		        // User has specified an expected status and it does NOT match the actual status so this is a failure.
-                status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(
-                    CommandStatusType.SUCCESS,
-                    "Severity is max of commands file that was run (may not be a problem) - does not match expected so considered Failure.",
-                    "Check the command to confirm the expected status."));
-                // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
-                // have a successful status that shows in the displays.
-                // DO NOT append the messages from the command because their status will cause the
-                // error displays to show problem indicators.
-                testPassFail = __FAIL;
-		    }
-        }
-        else {
-            status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(maxSeverity,
-				"Severity is max of commands file that was run (may not be a problem).",
-				"See additional status messages and refer to log file if warning/failure."));
-            // Append the log records from the command file that was run.
-            CommandStatusUtil.appendLogRecords ( status, (List)runner.getProcessor().getCommands() );
-            if ( maxSeverity.greaterThanOrEqualTo(CommandStatusType.WARNING)) {
-                testPassFail = __FAIL;
+		if ( isEnabled ) {
+            // Set the database connection information...
+            // FIXME SAM 2007-11-25 HydroBase needs to be converted to generic DataStore objects.
+            TSCommandProcessor runner_processor = runner.getProcessor();
+            if ( ShareDataStores.equalsIgnoreCase(_Share) ) {
+                // All data stores are transferred
+                runner_processor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
+                runner_processor.setDataStores(((TSCommandProcessor)processor).getDataStores(), false);
+            }
+            /*
+             * TODO SAM 2010-09-30 Need to evaluate how to share properties - issue is that built-in properties are
+             * handled explicitly whereas user-defined properties are in a list that can be easily shared.
+             * Also, some properties like the working directory receive special treatment.
+             * For now don't bite off the property issue
+            if ( ShareProperties.equalsIgnoreCase(_Copy) ) {
+                setProcessorProperties(processor,runner_processor,true);
+            }
+            else if ( ShareProperties.equalsIgnoreCase(_Share) ) {
+                // All data stores are transferred
+                setProcessorProperties(processor,runner_processor,false);
+            }
+            */
+    		runner.runCommands();
+    	    // Total runtime for the commands
+            long runTimeTotal = TSCommandProcessorUtil.getRunTimeTotal(runner.getProcessor().getCommands());
+    		
+    		// Set the CommandStatus for this command to the most severe status of the
+    		// commands file that was just run.
+    		CommandStatusType maxSeverity = TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor());
+    		String testPassFail = "????"; // Status for the test, which is not always the same as maxSeverity
+    		if ( ExpectedStatus != null ) {
+    		    if ( maxSeverity.toString().equalsIgnoreCase(ExpectedStatus) ) {
+                    // User has indicated an expected status and it matches the actual so consider this a success.
+                    // This should generally be used only when running a test that we expect to fail (e.g., run
+                    // obsolete command or testing handling of errors).
+                    status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.SUCCESS,
+                        "Severity is max of commands file that was run (may not be a problem) - matches expected so considered Success.",
+                        "Additional status messages are omitted to allow test to be success - " +
+                        "refer to log file if warning/failure."));
+                    // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
+                    // have a successful status that shows in the displays.
+                    // DO NOT append the messages from the command because their status will cause the
+                    // error displays to show problem indicators.
+                    testPassFail = __PASS;
+    		    }
+    		    else {
+    		        // User has specified an expected status and it does NOT match the actual status so this is a failure.
+                    status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(
+                        CommandStatusType.SUCCESS,
+                        "Severity is max of commands file that was run (may not be a problem) - does not match expected so considered Failure.",
+                        "Check the command to confirm the expected status."));
+                    // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
+                    // have a successful status that shows in the displays.
+                    // DO NOT append the messages from the command because their status will cause the
+                    // error displays to show problem indicators.
+                    testPassFail = __FAIL;
+    		    }
             }
             else {
-                testPassFail = __PASS;
+                status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(maxSeverity,
+    				"Severity is max of commands file that was run (may not be a problem).",
+    				"See additional status messages and refer to log file if warning/failure."));
+                // Append the log records from the command file that was run.
+                CommandStatusUtil.appendLogRecords ( status, (List)runner.getProcessor().getCommands() );
+                if ( maxSeverity.greaterThanOrEqualTo(CommandStatusType.WARNING)) {
+                    testPassFail = __FAIL;
+                }
+                else {
+                    testPassFail = __PASS;
+                }
             }
+
+            // Add a record to the regression report...
+
+            TSCommandProcessorUtil.appendToRegressionTestReport(processor,isEnabled,runTimeTotal,
+                 testPassFail,expectedStatus,maxSeverity,InputFile_full);
+    
+    		// If it was requested to append the results to the calling processor, get
+    		// the results from the runner and do so...
+    		
+    		if ( (AppendResults != null) && AppendResults.equalsIgnoreCase("true")) {
+    			TSCommandProcessor processor2 = runner.getProcessor();
+    			Object o_tslist = processor2.getPropContents("TSResultsList");
+    			PropList request_params = new PropList ( "" );
+    			if ( o_tslist != null ) {
+    				List tslist = (List)o_tslist;
+    				int size = tslist.size();
+    				TS ts;
+    				for ( int i = 0; i < size; i++ ) {
+    					ts = (TS)tslist.get(i);
+    					request_params.setUsingObject( "TS", ts );
+    					processor.processRequest( "AppendTimeSeries", request_params );
+    				}
+    			}
+    		}
+    		
+    		Message.printStatus ( 2, routine,"...done processing commands from file." );
+	    }
+        else {
+            // Add a record to the regression report (the isEnabled value is what is important for the report
+            // because the test is not actually run)...
+            TSCommandProcessorUtil.appendToRegressionTestReport(processor,isEnabled,0L,
+                 "",expectedStatus,CommandStatusType.UNKNOWN,InputFile_full);
         }
-
-        // Also add a record to the regression report...
-        // TODO SAM 2008-07-09 Evaluate whether to print the expected status, the actual status and the
-        // test status.
-        TSCommandProcessorUtil.appendToRegressionTestReport(processor,testPassFail,expectedStatus,maxSeverity,InputFile_full);
-
-		// If it was requested to append the results to the calling processor, get
-		// the results from the runner and do so...
-		
-		if ( (AppendResults != null) && AppendResults.equalsIgnoreCase("true")) {
-			TSCommandProcessor processor2 = runner.getProcessor();
-			Object o_tslist = processor2.getPropContents("TSResultsList");
-			PropList request_params = new PropList ( "" );
-			if ( o_tslist != null ) {
-				List tslist = (List)o_tslist;
-				int size = tslist.size();
-				TS ts;
-				for ( int i = 0; i < size; i++ ) {
-					ts = (TS)tslist.get(i);
-					request_params.setUsingObject( "TS", ts );
-					processor.processRequest( "AppendTimeSeries", request_params );
-				}
-			}
-		}
-		
-		Message.printStatus ( 2, routine,"...done processing commands from file." );
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );

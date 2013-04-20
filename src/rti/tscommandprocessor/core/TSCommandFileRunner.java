@@ -2,6 +2,10 @@ package rti.tscommandprocessor.core;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
+
+import RTi.Util.IO.Command;
+import RTi.Util.Message.Message;
 
 /**
 This class allows a commands file to be be run.  For example, it can be
@@ -29,6 +33,38 @@ throws FileNotFoundException, IOException
 		true, // Create GenericCommand instances for unknown commands
 		false, // Do not append the commands.
 		runDiscoveryOnLoad );
+}
+
+/**
+Determine whether the command file is enabled.
+This is used in the TSTool RunCommands() command to determine if a command file is enabled.
+@return false if any comments have "@enabled False", otherwise true
+*/
+public boolean isCommandFileEnabled ()
+{
+    List<Command> commands = __processor.getCommands();
+    String C;
+    int pos;
+    for ( Command command : commands ) {
+        C = command.toString().toUpperCase();
+        pos = C.indexOf("@ENABLED");
+        if ( pos >= 0 ) {
+            Message.printStatus(2, "", "Detected tag: " + C);
+            // Check the token following @enabled
+            if ( C.length() > (pos + 8) ) {
+                // Have trailing characters
+                String [] parts = C.substring(pos).split(" ");
+                if ( parts.length > 1 ) {
+                    if ( parts[1].trim().equals("FALSE") ) {
+                        Message.printStatus(2, "", "Detected false");
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    Message.printStatus(2, "", "Did not detect false");
+    return true;
 }
 
 /**

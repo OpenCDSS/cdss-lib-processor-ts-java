@@ -72,7 +72,8 @@ throws InvalidCommandParameterException
     String DataFlags = parameters.getValue ( "DataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String IntervalOverride = parameters.getValue ( "IntervalOverride" );
+	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+	//String IntervalOverride = parameters.getValue ( "IntervalOverride" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -279,6 +280,8 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output end date/time." ) );
 		}
 	}
+	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+	/*
 	if ( (IntervalOverride != null) && IntervalOverride.equals("") ) {
         try {
             TimeInterval.parseInterval(IntervalOverride);
@@ -292,6 +295,7 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Specify an interval using the command editor."));
         }
 	}
+	*/
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector<String>();
 	valid_Vector.add ( "DataStore" );
@@ -317,7 +321,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TimeZone" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "IntervalOverride" );
+	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+	//valid_Vector.add ( "IntervalOverride" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -411,6 +416,8 @@ CommandWarningException, CommandException
     String OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
     String DataFlags = parameters.getValue ( "DataFlags" );
     String TimeZone = parameters.getValue ( "TimeZone" );
+    // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+    /*
     String IntervalOverride = parameters.getValue ( "IntervalOverride" );
     TimeInterval intervalOverride = null;
     if ( (IntervalOverride != null) && !IntervalOverride.equals("") ) {
@@ -421,6 +428,7 @@ CommandWarningException, CommandException
             intervalOverride = null;
         }
     }
+    */
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -642,7 +650,8 @@ CommandWarningException, CommandException
                     SiteCommonName, DataTypeCommonName, siteDataTypeID,
                     ModelName, ModelRunName, ModelRunDate, HydrologicIndicator, modelRunID,
                     Agency, ValidationFlag, OverwriteFlag, DataFlags,
-                    TimeZone, OutputStart_DateTime, OutputEnd_DateTime, intervalOverride );
+                    TimeZone, OutputStart_DateTime, OutputEnd_DateTime );//, intervalOverride );
+                    // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
             }
         }
     }
@@ -692,7 +701,8 @@ public String toString ( PropList parameters )
     String TimeZone = parameters.getValue( "TimeZone" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String IntervalOverride = parameters.getValue ( "IntervalOverride" );
+	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+	//String IntervalOverride = parameters.getValue ( "IntervalOverride" );
 	StringBuffer b = new StringBuffer ();
 	if ( (DataStore != null) && (DataStore.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -832,12 +842,15 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
     }
+    // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+    /*
     if ( (IntervalOverride != null) && (IntervalOverride.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "IntervalOverride=\"" + IntervalOverride + "\"" );
     }
+    */
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

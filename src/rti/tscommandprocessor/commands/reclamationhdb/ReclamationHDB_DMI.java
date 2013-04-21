@@ -187,7 +187,7 @@ private String convertInternalDateTimeToHDBStartString ( DateTime dateTime, int 
     // TODO SAM 2013-04-14 for some reason copying loses the time zone.
     DateTime dateTime2 = new DateTime(dateTime);
     if ( intervalBase == TimeInterval.HOUR ) {
-        // The date/time using internal conventions is one hour later
+        // The date/time using internal conventions is Nhour later
         // FIXME SAM 2010-11-01 Are there any instantaneous 1hour values?
         dateTime2.addHour(-intervalMult);
         return dateTime2.toString();
@@ -2388,11 +2388,17 @@ private void startKeepAliveThread()
         Runnable r = new Runnable() {
             public void run() {
                 try {
-                    dmiSelect(__keepAliveSql);
+                    // Put in some protection against injection by checking for keywords other than SELECT
+                    String sql = __keepAliveSql.toUpperCase();
+                    if ( sql.startsWith("SELECT") && (sql.indexOf("INSERT") < 0) &&
+                        (sql.indexOf("DELETE") < 0) && (sql.indexOf("UPDATE") < 0) ) {
+                        dmiSelect(__keepAliveSql);
+                    }
                     Thread.sleep(freqms);
                 }
                 catch ( Exception e ) {
-                    // OK since don't care about results.
+                    // OK since don't care about results but output to troubleshoot (typical user won't see).
+                    Message.printWarning(3, "keepAlive.run", e);
                 }
             }
         };
@@ -2603,6 +2609,7 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
     return results;
 }
 
+//@param intervalOverride if true, then irregular time series will use this hourly interval to write the data
 /**
 Write a time series to the database.
 @param ts time series to write
@@ -2622,13 +2629,12 @@ Write a time series to the database.
 @param timeZone time zone to write (can be null or blank to use default)
 @param outputStart start of period to write (if null write full period).
 @param outputEnd end of period to write (if null write full period).
-@param intervalOverride if true, then irregular time series will use this hourly interval to write the data
 */
 public void writeTimeSeries ( TS ts, String loadingApp,
     String siteCommonName, String dataTypeCommonName, Long siteDataTypeID,
     String modelName, String modelRunName, String modelRunDate, String hydrologicIndicator, Long modelRunID,
     String agency, String validationFlag, String overwriteFlag, String dataFlags,
-    String timeZone, DateTime outputStartReq, DateTime outputEndReq, TimeInterval intervalOverride )
+    String timeZone, DateTime outputStartReq, DateTime outputEndReq ) //, TimeInterval intervalOverride )
 throws SQLException
 {   String routine = getClass().getName() + ".writeTimeSeries";
     if ( ts == null ) {
@@ -2638,7 +2644,9 @@ throws SQLException
         return;
     }
     // Interval override can only be used with irregular time series
-    TimeInterval outputInterval = null;
+    TimeInterval outputInterval = new TimeInterval(ts.getDataIntervalBase(),ts.getDataIntervalMult());
+    // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+    /*
     if ( intervalOverride == null ) {
         // Use the output interval from the time series
         outputInterval = new TimeInterval(ts.getDataIntervalBase(),ts.getDataIntervalMult());
@@ -2654,6 +2662,8 @@ throws SQLException
         }
         outputInterval = intervalOverride;
     }
+    */
+
     // Determine the loading application
     List<ReclamationHDB_LoadingApplication> loadingApplicationList =
         findLoadingApplication ( getLoadingApplicationList(), loadingApp );
@@ -2749,7 +2759,7 @@ throws SQLException
     }
     else {
         //cs = getConnection().prepareCall("begin write_to_hdb (?,?,?,?,?,?,?,?); end;");
-        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?,?,?,?,?)}");
+        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?,?,?,?,?,?)}");
     }
     TSData tsdata;
     DateTime dt;
@@ -2758,13 +2768,15 @@ throws SQLException
     double value;
     int iParam;
     int timeOffset = 0;
-    if ( outputInterval.getMultiplier() == TimeInterval.HOUR ) {
-        // Hourly data or instantaneous (irregular) being treated like hourly
-        // Need to have the hour shifted by one hour because start date is start of interval
-        timeOffset = -1000*3600;
+    int outputIntervalBase = outputInterval.getBase();
+    int outputIntervalMult = outputInterval.getMultiplier();
+    if ( outputIntervalBase == TimeInterval.HOUR ) {
+        // Hourly data
+        // Need to have the hour shifted by one hour because start date passed as SAMPLE_DATE_TIME
+        // is start of interval.  The offset is in milliseconds
+        timeOffset = -1000*3600*outputIntervalMult;
     }
-    else if ( (ts.getDataIntervalBase() != TimeInterval.IRREGULAR) &&
-        (ts.getDataIntervalMult() != 1) ) {
+    else if ( (outputIntervalBase != TimeInterval.IRREGULAR) && outputIntervalMult != 1 ) {
         // Not able to handle multipliers for non-hourly
         throw new IllegalArgumentException(
             "Data interval must be 1 for intervals other than hour." );
@@ -2780,6 +2792,8 @@ throws SQLException
         }
         // If an override interval is specified, make sure that the date/time passes the test for
         // writing, as per the TSTool WriteReclamationHDB() documentation
+        // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+        /*
         if ( intervalOverride != null ) {
             if ( dt.getHour()%intervalOverride.getMultiplier() != 0 ) {
                 // Hour is not evenly divisible by the multiplier so don't allow
@@ -2793,6 +2807,7 @@ throws SQLException
             dt.setSecond(0);
             dt.setHSecond(0);
         }
+        */
         try {
             iParam = 1; // JDBC code is 1-based (use argument 1 for return value if used)
             ++writeTryCount;
@@ -2821,6 +2836,7 @@ throws SQLException
                 // Format the date/time as a string consistent with the database engine
                 //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
                 //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
+                // The offset is negative in order to shift to the start of the interval
                 cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime()+timeOffset)); // SAMPLE_DATE_TIME
                 cs.setDouble(iParam++,value); // SAMPLE_VALUE
                 cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
@@ -2862,12 +2878,35 @@ throws SQLException
                 else {
                     cs.setInt(iParam++,agenID); // AGEN_ID
                 }
-                cs.addBatch();
-                if ( Message.isDebugOn ) {
-                    Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
-                        " HDB date/time ms=" + dt.getDate().getTime()+timeOffset +
-                        " HDB date/time with offset=" + new Date(dt.getDate().getTime()+timeOffset));
+                // The WRITE_TO_HDB procedure previously only had a SAMPLE_DATE_TIME parameter but as of
+                // 2013-04-16 email from Mark Bogner:
+                // "PER ECAO request:
+                // SAMPLE_END_DATE_TIME has been added as the last parameter of WRITE_TO_HDB in test."
+                // and..
+                // "For the most part, this date/time parameter will be left alone and null.
+                // This parameter was put in place to handle the N hour intervals."
+                //
+                // Consequently, for the most part pass the SAMPLE_END_DATE_TIME as null except in the case
+                // where have NHour data
+                if ( (outputIntervalBase == TimeInterval.HOUR) && (outputIntervalMult != 1) ) {
+                    cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime())); // SAMPLE_END_DATE_TIME
+                    if ( Message.isDebugOn ) {
+                        Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
+                            " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffset) +
+                            " HDB date/time ms end=" + dt.getDate().getTime() + " diff = " + timeOffset );
+                    }
                 }
+                else {
+                    // Pass a null as per previous functionality
+                    cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
+                    if ( Message.isDebugOn ) {
+                        Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
+                            " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffset) +
+                            " HDB date/time ms end=null");
+                    }
+                }
+
+                cs.addBatch();
             }
         }
         catch ( Exception e ) {

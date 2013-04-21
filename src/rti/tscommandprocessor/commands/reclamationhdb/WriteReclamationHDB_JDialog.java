@@ -98,7 +98,8 @@ private JLabel __TimeZone_JLabel = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private SimpleJComboBox __IntervalOverride_JComboBox = null;
+//TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+//private SimpleJComboBox __IntervalOverride_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Has user pressed OK to close the dialog?
@@ -386,7 +387,8 @@ private void checkInput ()
     String TimeZone = __TimeZone_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	String IntervalOverride = __IntervalOverride_JComboBox.getSelected();
+	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+	//String IntervalOverride = __IntervalOverride_JComboBox.getSelected();
 
 	__error_wait = false;
 
@@ -459,9 +461,10 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );
 	}
-    if ( IntervalOverride.length() > 0 ) {
-        parameters.set ( "IntervalOverride", IntervalOverride );
-    }
+	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+    //if ( IntervalOverride.length() > 0 ) {
+    //    parameters.set ( "IntervalOverride", IntervalOverride );
+    //}
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -501,7 +504,7 @@ private void commitEdits ()
     String TimeZone = __TimeZone_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	String IntervalOverride = __IntervalOverride_JComboBox.getSelected();
+	//String IntervalOverride = __IntervalOverride_JComboBox.getSelected();
 	__command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
@@ -525,7 +528,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TimeZone", TimeZone );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
-	__command.setCommandParameter ( "IntervalOverride", IntervalOverride );
+	//__command.setCommandParameter ( "IntervalOverride", IntervalOverride );
 }
 
 /**
@@ -670,7 +673,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The HDB time series table is determined from the data interval, with irregular data being written to the " +
-        "instantaneous data table (unless IntervalOverride is specified)." ),
+        "instantaneous data table." ),
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "TSTool will only write time series records and will not write records for " +
@@ -723,7 +726,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JPanel siteDataType_JPanel = new JPanel();
     siteDataType_JPanel.setLayout( new GridBagLayout() );
     siteDataType_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),"Specify how to match the HDB site_datatype_id" ));
+        BorderFactory.createLineBorder(Color.black),"Specify how to match the HDB site_datatype_id (required for all time series and ensembles)" ));
     JGUIUtil.addComponent( main_JPanel, siteDataType_JPanel,
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
@@ -778,7 +781,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __model_JTabbedPane = new JTabbedPane ();
     __model_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify how to match the HDB model_run_id (leave blank if not writing model time series data)" ));
+        "Specify how to match the HDB model_run_id (leave blank if not writing single or ensemble model time series data)" ));
     JGUIUtil.addComponent(main_JPanel, __model_JTabbedPane,
         0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
@@ -914,7 +917,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(ensemble_JPanel, __EnsembleTraceID_JTextField,
         1, yEnsemble, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Optional - use %L for location, etc. or ${TS:property} (default=no alias)."),
+        "Optional - use %z for sequence number, etc. or ${TS:property} (default=sequence number)."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble model run date:"), 
@@ -1026,6 +1029,8 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
 		"Optional - override the global output end (default=write all data)."),
 		3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+    /*
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Interval override:"),
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IntervalOverride_JComboBox = new SimpleJComboBox ( false );
@@ -1041,6 +1046,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - for irregular interval, treat as hourly instead of instantaneous when writing."),
         3, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        */
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -2176,6 +2182,8 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
+		// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+		/*
         if ( JGUIUtil.isSimpleJComboBoxItem(__IntervalOverride_JComboBox, IntervalOverride, JGUIUtil.NONE, null, null ) ) {
             __IntervalOverride_JComboBox.select ( IntervalOverride );
         }
@@ -2192,6 +2200,7 @@ private void refresh ()
                   "IntervalOverride parameter \"" + IntervalOverride + "\".  Select a different value or Cancel." );
             }
         }
+        */
 	}
 	// Regardless, reset the command from the fields...
 	DataStore = __DataStore_JComboBox.getSelected();
@@ -2258,10 +2267,13 @@ private void refresh ()
     }
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
+	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+	/*
     IntervalOverride = __IntervalOverride_JComboBox.getSelected();
     if ( IntervalOverride == null ) {
         IntervalOverride = "";
     }
+    */
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "DataStore=" + DataStore );
 	parameters.add ( "TSList=" + TSList );
@@ -2286,7 +2298,8 @@ private void refresh ()
     parameters.add ( "TimeZone=" + TimeZone );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
-	parameters.add ( "IntervalOverride=" + IntervalOverride );
+	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+	//parameters.add ( "IntervalOverride=" + IntervalOverride );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 }
 

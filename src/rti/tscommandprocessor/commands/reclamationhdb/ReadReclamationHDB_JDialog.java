@@ -650,7 +650,8 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JPanel siteDataType_JPanel = new JPanel();
     siteDataType_JPanel.setLayout( new GridBagLayout() );
     siteDataType_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),"Specify how to match the HDB site_datatype_id" ));
+        BorderFactory.createLineBorder(Color.black),
+        "Specify how to match the HDB site_datatype_id (required for all time series and ensembles)" ));
     JGUIUtil.addComponent( inner_JPanel, siteDataType_JPanel,
         0, ++yInner, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     

@@ -763,18 +763,22 @@ private void initialize ( JFrame parent )
 	// Top comments
 	JPanel mainNotes_JPanel = new JPanel();
 	mainNotes_JPanel.setLayout( new GridBagLayout() );
-	int yNotes = 0;
+	int yNotes = -1;
     if ( __commandUI == null ) {
         JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
             "This command determines the best fit to fill the dependent time"
             + " series with data from the independent time series, and performs the filling."),
-            0, yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     else {
         JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
+            "<html><b>THIS TOOL IS UNDER DEVELOPMENT - USE THE FillMixedStation() COMMAND." +
+            "  Contact the developers if you want to help.</b></html>"),
+            0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
             "This tool determines the best fit to fill the dependent time"
             + " series with data from the independent time series, and generates a command to perform the filling."),
-            0, yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
 
     JGUIUtil.addComponent(mainNotes_JPanel, new JLabel (

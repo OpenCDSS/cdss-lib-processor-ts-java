@@ -816,7 +816,7 @@ private void initialize ( JFrame parent )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "Center", main_JPanel );
-	int y = 0, yMain=0;
+	int y = -1, yMain=0;
 
 	// Top comments
     JPanel mainNotes_JPanel = new JPanel();
@@ -826,13 +826,18 @@ private void initialize ( JFrame parent )
 			new JLabel ( "This command finds"
 				+ " the best fit to fill the dependent time"
 				+ " series with data from the dependent time series."),
-			0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	} else {
+				0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	}
+	else {
+        JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
+            "<html><b>THIS TOOL IS UNDER DEVELOPMENT." +
+            "  Contact the developers if you want to help.</b></html>"),
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 		JGUIUtil.addComponent( mainNotes_JPanel,
 			new JLabel (
 			    "This tool finds the best fit to fill the dependent time"
 				+ " series with data from the independent time series."),
-			0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+				0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
 	   /*JGUIUtil.addComponent(mainNotes_JPanel, new JLabel (

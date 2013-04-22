@@ -778,15 +778,16 @@ CommandWarningException, CommandException
             // Create an empty table matching the identifier
             table = new DataTable( new Vector() );
             table.setTableID ( TableID );
-
+            newTable = true;
         }
         else {
+            newTable = false;
             table = (DataTable)o_Table;
         }
     }
     if ( newTable ) {
         if ( commandPhase == CommandPhaseType.RUN ) {
-            // Set the table in the processor...
+            // Set the table in the processor (its contents will be modified below)...
             
             request_params = new PropList ( "" );
             request_params.setUsingObject ( "Table", table );

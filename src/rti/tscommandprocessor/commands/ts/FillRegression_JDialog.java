@@ -901,10 +901,9 @@ private void refresh ()
                 __TableID_JComboBox.select ( TableID );
             }
             else {
-                Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nTableID value \"" + TableID +
-                "\".  Select a different value or Cancel.");
-                __error_wait = true;
+                // User can specify new table so add to the end of the list
+                __TableID_JComboBox.add(TableID);
+                __TableID_JComboBox.select(TableID);
             }
         }
         if ( TableTSIDColumn != null ) {

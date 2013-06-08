@@ -202,7 +202,10 @@ private void initialize ( JFrame parent, ReadTimeSeries_Command command )
 		"The alias should be descriptive and should not contain spaces, periods, or parentheses."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "See also the CreateFromList() command."),
+        "Specify the period to read using the SetInputPeriod() command."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "See also the ReadTimeSeriesList() command."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Time series identifier:"),

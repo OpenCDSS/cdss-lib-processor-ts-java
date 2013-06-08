@@ -75,7 +75,8 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide an input column 1 name." ) );
     }
-    
+
+    DataTableStringOperatorType operatorType = null;
     if ( (Operator == null) || Operator.equals("") ) {
         message = "The operator must be specified.";
         warning += "\n" + message;
@@ -85,7 +86,6 @@ throws InvalidCommandParameterException
     else {
         // Make sure that the operator is known in general
         boolean supported = false;
-        DataTableStringOperatorType operatorType = null;
         try {
             operatorType = DataTableStringOperatorType.valueOfIgnoreCase(Operator);
             supported = true;
@@ -183,12 +183,17 @@ throws InvalidCommandParameterException
         }*/
     }
     
-    if ( ((InputColumn2 == null) || InputColumn2.equals("")) &&
-        ((InputValue2 == null) || InputValue2.equals(""))) {
-        message = "Either InputColumn2 or InputValue2 MUST be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Provide a column name or string constant as Input2." ) );
+    if ( (operatorType != null) && (operatorType != DataTableStringOperatorType.TO_DOUBLE) &&
+        (operatorType != DataTableStringOperatorType.TO_INTEGER) &&
+        (operatorType != DataTableStringOperatorType.TO_DATE) &&
+        (operatorType != DataTableStringOperatorType.TO_DATE_TIME)) {
+        if ( ((InputColumn2 == null) || InputColumn2.equals("")) &&
+            ((InputValue2 == null) || InputValue2.equals(""))) {
+            message = "Either InputColumn2 or InputValue2 MUST be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Provide a column name or string constant as Input2." ) );
+        }
     }
     
     if ( ((InputColumn2 != null) && !InputColumn2.equals("")) &&
@@ -319,7 +324,7 @@ CommandWarningException, CommandException
         dtm.manipulate ( InputColumn1, operator, InputColumn2, InputValue2, OutputColumn, problems );
     }
     catch ( Exception e ) {
-        message = "Unexpected error performing table math (" + e + ").";
+        message = "Unexpected error performing table string manipulation (" + e + ").";
         Message.printWarning ( warning_level, 
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );

@@ -59,6 +59,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String NewTableID = parameters.getValue ( "NewTableID" );
+    String DistinctColumns = parameters.getValue ( "DistinctColumns" );
 	String warning = "";
     String message;
     
@@ -89,13 +90,29 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new table identifier different from the original table identifier." ) );
     }
+    String [] distinctColumns = null;
+    if ( (DistinctColumns != null) && !DistinctColumns.equals("") ) {
+        distinctColumns = DistinctColumns.split(",");
+        for ( int i = 0; i < distinctColumns.length; i++ ) {
+            distinctColumns[i] = distinctColumns[i].trim();
+        }
+        if ( distinctColumns.length != 1 ) {
+            message = "Distinct columns currently can only have one column.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a single column name to check for distinct." ) );
+        }
+    }
  
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "NewTableID" );
+    valid_Vector.add ( "DistinctColumns" );
     valid_Vector.add ( "IncludeColumns" );
     valid_Vector.add ( "ColumnMap" );
+    valid_Vector.add ( "ColumnFilters" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -179,7 +196,7 @@ Run the command.
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "NewTable_Command.runCommand",message = "";
+{	String routine = getClass().getName() + ".runCommandInternal",message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -205,6 +222,14 @@ CommandWarningException, CommandException
             includeColumns[i] = includeColumns[i].trim();
         }
     }
+    String DistinctColumns = parameters.getValue ( "DistinctColumns" );
+    String [] distinctColumns = null;
+    if ( (DistinctColumns != null) && !DistinctColumns.equals("") ) {
+        distinctColumns = DistinctColumns.split(",");
+        for ( int i = 0; i < distinctColumns.length; i++ ) {
+            distinctColumns[i] = distinctColumns[i].trim();
+        }
+    }
     String ColumnMap = parameters.getValue ( "ColumnMap" );
     Hashtable columnMap = new Hashtable();
     if ( (ColumnMap != null) && (ColumnMap.length() > 0) && (ColumnMap.indexOf(":") > 0) ) {
@@ -214,6 +239,17 @@ CommandWarningException, CommandException
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
             columnMap.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
+    String ColumnFilters = parameters.getValue ( "ColumnFilters" );
+    Hashtable columnFilters = new Hashtable();
+    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            columnFilters.put(parts[0].trim(), parts[1].trim() );
         }
     }
     
@@ -264,7 +300,8 @@ CommandWarningException, CommandException
     	// Create the table...
     
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	        DataTable newTable = table.createCopy ( table, NewTableID, includeColumns, columnMap );
+	        DataTable newTable = table.createCopy ( table, NewTableID, includeColumns,
+	            distinctColumns, columnMap, columnFilters );
             
             // Set the table in the processor...
             
@@ -326,8 +363,10 @@ public String toString ( PropList props )
 	}
     String TableID = props.getValue( "TableID" );
     String NewTableID = props.getValue( "NewTableID" );
+    String DistinctColumns = props.getValue( "DistinctColumns" );
 	String IncludeColumns = props.getValue( "IncludeColumns" );
 	String ColumnMap = props.getValue( "ColumnMap" );
+	String ColumnFilters = props.getValue( "ColumnFilters" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -347,11 +386,23 @@ public String toString ( PropList props )
 		}
 		b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
 	}
+    if ( (DistinctColumns != null) && (DistinctColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DistinctColumns=\"" + DistinctColumns + "\"" );
+    }
     if ( (ColumnMap != null) && (ColumnMap.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "ColumnMap=\"" + ColumnMap + "\"" );
+    }
+    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnFilters=\"" + ColumnFilters + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -40,7 +40,9 @@ private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __NewTableID_JTextField = null;
 private JTextField __IncludeColumns_JTextField = null;
+private JTextField __DistinctColumns_JTextField = null;
 private JTextArea __ColumnMap_JTextArea = null;
+private JTextArea __ColumnFilters_JTextArea = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private CopyTable_Command __command = null;
@@ -87,7 +89,9 @@ private void checkInput ()
 	String TableID = __TableID_JComboBox.getSelected();
     String NewTableID = __NewTableID_JTextField.getText().trim();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	String DistinctColumns = __DistinctColumns_JTextField.getText().trim();
 	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
+	String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -99,8 +103,14 @@ private void checkInput ()
 	if ( IncludeColumns.length() > 0 ) {
 		props.set ( "IncludeColumns", IncludeColumns );
 	}
+    if ( DistinctColumns.length() > 0 ) {
+        props.set ( "DistinctColumns", DistinctColumns );
+    }
     if ( ColumnMap.length() > 0 ) {
         props.set ( "ColumnMap", ColumnMap );
+    }
+    if ( ColumnFilters.length() > 0 ) {
+        props.set ( "ColumnFilters", ColumnFilters );
     }
 	try {
 	    // This will warn the user...
@@ -121,11 +131,15 @@ private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
     String NewTableID = __NewTableID_JTextField.getText().trim();
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+    String DistinctColumns = __DistinctColumns_JTextField.getText().trim();
     String ColumnMap = __ColumnMap_JTextArea.getText().trim();
+    String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "NewTableID", NewTableID );
 	__command.setCommandParameter ( "IncludeColumns", IncludeColumns );
+	__command.setCommandParameter ( "DistinctColumns", DistinctColumns );
 	__command.setCommandParameter ( "ColumnMap", ColumnMap );
+	__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
 }
 
 /**
@@ -204,6 +218,15 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to copy (default=copy all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Distinct column names:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DistinctColumns_JTextField = new JTextField (10);
+    __DistinctColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DistinctColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to filter distinct combinations (default=copy all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column map:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnMap_JTextArea = new JTextArea (6,35);
@@ -214,6 +237,18 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnMap_JTextArea),
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - to change names (default=names are same)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnFilters_JTextArea = new JTextArea (3,35);
+    __ColumnFilters_JTextArea.setLineWrap ( true );
+    __ColumnFilters_JTextArea.setWrapStyleWord ( true );
+    __ColumnFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnFilters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnFilters_JTextArea),
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - filter output by matching column pattern (default=copy all rows)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -294,14 +329,18 @@ private void refresh ()
     String TableID = "";
     String NewTableID = "";
     String IncludeColumns = "";
+    String DistinctColumns = "";
     String ColumnMap = "";
+    String ColumnFilters = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         NewTableID = props.getValue ( "NewTableID" );
+        DistinctColumns = props.getValue ( "DistinctColumns" );
         IncludeColumns = props.getValue ( "IncludeColumns" );
         ColumnMap = props.getValue ( "ColumnMap" );
+        ColumnFilters = props.getValue ( "ColumnFilters" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -320,23 +359,33 @@ private void refresh ()
         if ( NewTableID != null ) {
             __NewTableID_JTextField.setText ( NewTableID );
         }
+        if ( DistinctColumns != null ) {
+            __DistinctColumns_JTextField.setText ( DistinctColumns );
+        }
 		if ( IncludeColumns != null ) {
 			__IncludeColumns_JTextField.setText ( IncludeColumns );
 		}
         if ( ColumnMap != null ) {
             __ColumnMap_JTextArea.setText ( ColumnMap );
         }
+        if ( ColumnFilters != null ) {
+            __ColumnFilters_JTextArea.setText ( ColumnFilters );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
     NewTableID = __NewTableID_JTextField.getText().trim();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	DistinctColumns = __DistinctColumns_JTextField.getText().trim();
 	ColumnMap = __ColumnMap_JTextArea.getText().trim();
+	ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "NewTableID=" + NewTableID );
+    props.add ( "DistinctColumns=" + DistinctColumns );
 	props.add ( "IncludeColumns=" + IncludeColumns );
 	props.add ( "ColumnMap=" + ColumnMap );
+	props.add ( "ColumnFilters=" + ColumnFilters );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

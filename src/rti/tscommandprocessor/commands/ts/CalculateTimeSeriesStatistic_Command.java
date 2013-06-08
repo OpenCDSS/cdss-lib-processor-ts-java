@@ -776,7 +776,7 @@ CommandWarningException, CommandException
                                             statisticColumnNum[iStat] = table.addField(new TableField(TableField.DATA_TYPE_INT,tableStatisticResultsColumn[iStat],-1,-1), null );
                                         }
                                         else if ( c == DateTime.class ) {
-                                            statisticColumnNum[iStat] = table.addField(new TableField(TableField.DATA_TYPE_DATE,tableStatisticResultsColumn[iStat],-1,-1), null );
+                                            statisticColumnNum[iStat] = table.addField(new TableField(TableField.DATA_TYPE_DATETIME,tableStatisticResultsColumn[iStat],-1,-1), null );
                                         }
                                         else if ( c == Double.class ) {
                                             statisticColumnNum[iStat] = table.addField(new TableField(TableField.DATA_TYPE_DOUBLE,tableStatisticResultsColumn[iStat],10,4), null );

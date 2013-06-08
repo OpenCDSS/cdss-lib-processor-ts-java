@@ -49,11 +49,6 @@ metadata (TSIdent) filled in.
 private List<TS> __discovery_TS_Vector = null;
 
 /**
-Indicates whether the TS Alias version of the command is being used.
-*/
-protected boolean _use_alias = false;
-
-/**
 Constructor.
 */
 public CreateFromList_Command ()

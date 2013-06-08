@@ -276,7 +276,7 @@ private void initialize ( JFrame parent, Command command )
 
 	addWindowListener( this );
 
-    Insets insetsTLBR = new Insets(0,2,0,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 

@@ -22,6 +22,7 @@ import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 
 // DateValue commands
 
+import rti.tscommandprocessor.commands.datastore.WriteTimeSeriesToDataStore_Command;
 import rti.tscommandprocessor.commands.datevalue.ReadDateValue_Command;
 import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
 
@@ -52,6 +53,7 @@ import rti.tscommandprocessor.commands.hecdss.WriteHecDss_Command;
 import rti.tscommandprocessor.commands.hydrobase.FillUsingDiversionComments_Command;
 import rti.tscommandprocessor.commands.hydrobase.OpenHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrobase.ReadHydroBase_Command;
+import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
 
 // Logging commands.
 
@@ -65,6 +67,7 @@ import rti.tscommandprocessor.commands.modsim.ReadMODSIM_Command;
 
 // NWSRFS commands.
 
+import rti.tscommandprocessor.commands.network.AnalyzeNetworkPointFlow_Command;
 import rti.tscommandprocessor.commands.nrcs.awdb.ReadNrcsAwdb_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsEspTraceEnsemble_Command;
@@ -93,6 +96,9 @@ import rti.tscommandprocessor.commands.riverware.WriteRiverWare_Command;
 
 import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 
+// Spatial commands.
+import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
+
 // StateCU commands.
 
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableFromExcel_Command;
@@ -116,6 +122,7 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 import rti.tscommandprocessor.commands.table.CompareTables_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
+import rti.tscommandprocessor.commands.table.FormatTableString_Command;
 import rti.tscommandprocessor.commands.table.FreeTable_Command;
 import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
 import rti.tscommandprocessor.commands.table.NewTable_Command;
@@ -184,6 +191,7 @@ import rti.tscommandprocessor.commands.ts.LookupTimeSeriesFromTable_Command;
 import rti.tscommandprocessor.commands.ts.Multiply_Command;
 import rti.tscommandprocessor.commands.ts.NewDayTSFromMonthAndDayTS_Command;
 import rti.tscommandprocessor.commands.ts.NewEndOfMonthTSFromDayTS_Command;
+import rti.tscommandprocessor.commands.ts.ReadTimeSeriesList_Command;
 import rti.tscommandprocessor.commands.ts.RunningStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticYearTS_Command;
@@ -358,6 +366,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("AdjustExtremes") ) {
         return new AdjustExtremes_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("AnalyzeNetworkPointFlow") ) {
+        return new AnalyzeNetworkPointFlow_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("AnalyzePattern") ) {
 		return new AnalyzePattern_Command ();
 	}
@@ -505,6 +516,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("FormatDateTimeProperty") ) {
         return new FormatDateTimeProperty_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("FormatTableString") ) {
+        return new FormatTableString_Command ();
     }
     else if ( commandName.equalsIgnoreCase("Free") ) {
         return new Free_Command ();
@@ -683,6 +697,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadTimeSeries") ) {
         return new ReadTimeSeries_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadTimeSeriesList") ) {
+        return new ReadTimeSeriesList_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadUsgsNwis") || commandName.equalsIgnoreCase("ReadUsgsNwisRdb")) {
         // Automatically convert legacy command to new name
@@ -917,6 +934,15 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesProperty") ) {
         return new WriteTimeSeriesProperty_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToDataStore") ) {
+        return new WriteTimeSeriesToDataStore_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToJson") ) {
+        return new WriteTimeSeriesToJson_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToKml") ) {
+        return new WriteTimeSeriesToKml_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteWaterML") ) {
         return new WriteWaterML_Command ();

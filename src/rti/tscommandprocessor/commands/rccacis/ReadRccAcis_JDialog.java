@@ -331,7 +331,7 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
     setIntervalChoices();
-    __DataType_JComboBox.addItemListener ( this );
+    __Interval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data interval (time step) for time series."), 
@@ -563,7 +563,7 @@ private void refresh ()
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "Interval parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+                  "Interval parameter \"" + Interval + "\".  Select a\ndifferent value or Cancel." );
             }
         }
         InputFilter_JPanel filter_panel = __inputFilter_JPanel;

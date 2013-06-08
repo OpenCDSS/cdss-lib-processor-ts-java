@@ -35,6 +35,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableColumnType;
 import RTi.Util.Table.TableField;
+import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the WriteTableToDataStore() command.
@@ -548,15 +549,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                     (Float)o );
                             }
                         }
-                        else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_DATE ) {
+                        else if ( (tableColumnTypes[iCol] == TableField.DATA_TYPE_DATE) ||
+                            (tableColumnTypes[iCol] == TableField.DATA_TYPE_DATETIME) ) {
                             fkSelect.addField(dataStoreRelatedPrimaryKeyColumns[iCol]);
                             if ( o == null ) {
                                 fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " is null" );
                             }
                             else {
                                 // TODO SAM 2013-03-02 Get the data formatting working
-                                fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " +
-                                    (Date)o );
+                                if ( o instanceof Date ) {
+                                    fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " + (Date)o );
+                                }
+                                else if ( o instanceof DateTime ) {
+                                    fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " +
+                                        ((DateTime)o).getDate() );
+                                }
                             }
                         }
                         else {
@@ -626,13 +633,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             ws.addValue((Long)o);
                         }
                     }
-                    else if ( tableColumnTypes[iCol] == TableField.DATA_TYPE_DATE ) {
+                    else if ( (tableColumnTypes[iCol] == TableField.DATA_TYPE_DATE) ||
+                        (tableColumnTypes[iCol] == TableField.DATA_TYPE_DATE) ) {
                         ws.addField(tableFieldNamesMapped[iCol]);
                         if ( o == null ) {
                             ws.addValue((Date)null);
                         }
                         else {
-                            ws.addValue((Date)o);
+                            if ( o instanceof Date ) {
+                                ws.addValue((Date)o);
+                            }
+                            else if ( o instanceof DateTime ) {
+                                ws.addValue(((DateTime)o).getDate());
+                            }
                         }
                     }
                     else {

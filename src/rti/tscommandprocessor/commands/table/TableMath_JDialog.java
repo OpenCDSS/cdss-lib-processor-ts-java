@@ -180,7 +180,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
 	int y = 0;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Perform simple math operation on columns of data in a table, using one of the following approaches:" ), 
+		"Perform a simple math operation on columns of data in a table, using one of the following approaches:" ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
         "   - process input from two columns to populate the output column" ), 

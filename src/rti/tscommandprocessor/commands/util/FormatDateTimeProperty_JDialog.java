@@ -346,7 +346,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "FormatDateTimeProperty_JDialog.refresh";
+{	String routine = getClass().getName() + ".refresh";
     String PropertyName = "";
     String DateTimePropertyName = "";
     String FormatterType = "";

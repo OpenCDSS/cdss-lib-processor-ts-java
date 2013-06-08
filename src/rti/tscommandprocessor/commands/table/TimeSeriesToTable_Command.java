@@ -293,6 +293,7 @@ private DataTable createTable ( List<TS> tslist, String tableID, String dateTime
     String tableTSIDColumn, List<String> valueColumns, List<String> flagColumns, int dataRow )
 {   // Create the table
     List<TableField> tableFields = new Vector(3);
+    // TODO SAM 2013-05-12 evaluate whether to use DATA_TYPE_DATETIME
     // DateTime column (always)
     tableFields.add ( new TableField ( TableField.DATA_TYPE_DATE, dateTimeColumn, 12 ) );
     // TableTSIDColumn (optional) - used for single column output

@@ -7,6 +7,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
@@ -447,8 +448,11 @@ CommandWarningException, CommandException
                                 else if ( propertyValue instanceof Double ) {
                                     table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, propertyNames[iProp],15, 6), null);
                                 }
-                                else if ( propertyValue instanceof DateTime ) {
+                                else if ( propertyValue instanceof Date ) {
                                     table.addField(new TableField(TableField.DATA_TYPE_DATE, propertyNames[iProp], -1, -1), null);
+                                }
+                                else if ( propertyValue instanceof DateTime ) {
+                                    table.addField(new TableField(TableField.DATA_TYPE_DATETIME, propertyNames[iProp], -1, -1), null);
                                 }
                                 else if ( propertyValue == null ) {
                                     // If null just let the property be set by a later record where a non-null value is found.

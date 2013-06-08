@@ -361,6 +361,7 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
             }
             else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
                 if (DateUtil.isCellDateFormatted(cell)) {
+                    // TODO SAM 2013-05-12 Evaluate whether to use DATA_TYPE_DATETIME
                     //table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
                     Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_DATE));
                     table.addField ( new TableField(TableField.DATA_TYPE_DATE, columnNames[columnIndex], -1, -1), null );

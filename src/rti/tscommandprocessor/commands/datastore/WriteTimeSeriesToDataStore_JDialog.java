@@ -61,6 +61,7 @@ private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __MissingValue_JTextField = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
+private SimpleJComboBox __MatchLocationType_JComboBox = null;
 private SimpleJComboBox __WriteMode_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -150,6 +151,7 @@ private void checkInput ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String DataStore = __DataStore_JComboBox.getSelected();
+    String MatchLocationType = __MatchLocationType_JComboBox.getSelected();
     String WriteMode = __WriteMode_JComboBox.getSelected();
 
 	__error_wait = false;
@@ -176,11 +178,14 @@ private void checkInput ()
         parameters.set ( "DataStore", DataStore );
         __dataStore = getSelectedDataStore();
     }
-    if ( WriteMode.length() > 0 ) {
-        parameters.set ( "WriteMode", WriteMode );
-    }
     else {
         parameters.set ( "DataStore", "" );
+    }
+    if ( MatchLocationType.length() > 0 ) {
+        parameters.set ( "MatchLocationType", MatchLocationType );
+    }
+    if ( WriteMode.length() > 0 ) {
+        parameters.set ( "WriteMode", WriteMode );
     }
 	try {
 	    // This will warn the user...
@@ -205,6 +210,7 @@ private void commitEdits ()
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
     String DataStore = __DataStore_JComboBox.getSelected();
+    String MatchLocationType = __MatchLocationType_JComboBox.getSelected();
     String WriteMode = __WriteMode_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
@@ -213,6 +219,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
     __command.setCommandParameter ( "DataStore", DataStore );
+    __command.setCommandParameter ( "MatchLocationType", MatchLocationType );
     __command.setCommandParameter ( "WriteMode", WriteMode );
 }
 
@@ -238,8 +245,7 @@ private DatabaseDataStore getSelectedDataStore ()
 {   String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
     DatabaseDataStore dataStore = (DatabaseDataStore)((TSCommandProcessor)
-        __command.getCommandProcessor()).getDataStoreForName(
-        DataStore, DatabaseDataStore.class );
+        __command.getCommandProcessor()).getDataStoreForName( DataStore, DatabaseDataStore.class );
     if ( dataStore != null ) {
         Message.printStatus(2, routine, "Selected data store is \"" + dataStore.getName() + "\"." );
     }
@@ -359,6 +365,21 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel("Required - database datastore to receive data."), 
         3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Match location type?:"),
+        0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MatchLocationType_JComboBox = new SimpleJComboBox ( false );
+    List<String> mltChoices = new Vector<String>();
+    mltChoices.add ( "" );
+    mltChoices.add ( "" + command._False );
+    mltChoices.add ( "" + command._True );
+    __MatchLocationType_JComboBox.setData(mltChoices);
+    __MatchLocationType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(ds_JPanel, __MatchLocationType_JComboBox,
+        1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - match location type prefix (default=" +
+        command._False + ")."), 
+        3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     // How to write the data...
     
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Write mode:"),
@@ -468,6 +489,7 @@ private void refresh ()
     String TSID = "";
     String EnsembleID = "";
     String DataStore = "";
+    String MatchLocationType = "";
     String WriteMode = "";
 	__error_wait = false;
 	PropList parameters = null;
@@ -482,6 +504,7 @@ private void refresh ()
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
         DataStore = parameters.getValue ( "DataStore" );
+        MatchLocationType = parameters.getValue ( "MatchLocationType" );
         WriteMode = parameters.getValue ( "WriteMode" );
         if ( MissingValue != null ) {
             __MissingValue_JTextField.setText ( MissingValue );
@@ -554,6 +577,21 @@ private void refresh ()
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+        if ( MatchLocationType == null ) {
+            // Select default...
+            __MatchLocationType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __MatchLocationType_JComboBox,MatchLocationType, JGUIUtil.NONE, null, null ) ) {
+                __MatchLocationType_JComboBox.select ( MatchLocationType );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nMatchLocationType value \"" + MatchLocationType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( WriteMode == null ) {
             // Select default...
             __WriteMode_JComboBox.select ( 0 );
@@ -581,6 +619,7 @@ private void refresh ()
     if ( DataStore == null ) {
         DataStore = "";
     }
+    MatchLocationType = __MatchLocationType_JComboBox.getSelected();
     WriteMode = __WriteMode_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
@@ -590,6 +629,7 @@ private void refresh ()
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	parameters.add ( "DataStore=" + DataStore );
+	parameters.add ( "MatchLocationType=" + MatchLocationType );
 	parameters.add ( "WriteMode=" + WriteMode );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 }

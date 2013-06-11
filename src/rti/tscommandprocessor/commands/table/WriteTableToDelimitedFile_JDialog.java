@@ -67,9 +67,10 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit
 */
-public WriteTableToDelimitedFile_JDialog ( JFrame parent, WriteTableToDelimitedFile_Command command )
+public WriteTableToDelimitedFile_JDialog ( JFrame parent, WriteTableToDelimitedFile_Command command,
+    List<String> tableIDChoices )
 {	super(parent, true);
-	initialize ( parent, command );
+	initialize ( parent, command, tableIDChoices );
 }
 
 /**
@@ -220,7 +221,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command command )
+private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command command, List<String> tableIDChoices )
 {	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -261,9 +262,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __TableID_JComboBox = new SimpleJComboBox ( false ); // Don't allow edits
-     List<String> TableIDs = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
-         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-     __TableID_JComboBox.setData(TableIDs);
+     __TableID_JComboBox.setData(tableIDChoices);
      __TableID_JComboBox.addItemListener ( this );
      JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

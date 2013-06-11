@@ -7,6 +7,7 @@ import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.IO.AbstractCommand;
@@ -179,7 +180,10 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new WriteTableToDelimitedFile_JDialog ( parent, this )).ok();
+    List<String> tableIDChoices =
+        TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)getCommandProcessor(), this);
+	return (new WriteTableToDelimitedFile_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 /**

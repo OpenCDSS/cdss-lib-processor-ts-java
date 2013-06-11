@@ -468,7 +468,7 @@ try{
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataStoreTable parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+                  "DataStoreTable parameter \"" + DataStoreTable + "\".  Select a\ndifferent value or Cancel." );
             }
         }
         /*
@@ -502,7 +502,7 @@ try{
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "RemoveAllRows parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+                  "RemoveAllRows parameter \"" + RemoveAllRows + "\".  Select a\ndifferent value or Cancel." );
             }
         }
 	}

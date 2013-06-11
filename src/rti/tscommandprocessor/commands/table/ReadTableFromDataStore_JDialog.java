@@ -698,7 +698,7 @@ try{
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataStoreTable parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+                  "DataStoreTable parameter \"" + DataStoreTable + "\".  Select a\ndifferent value or Cancel." );
             }
         }
         if ( DataStoreColumns != null ) {
@@ -735,7 +735,7 @@ try{
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataStoreProcedure parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+                  "DataStoreProcedure parameter \"" + DataStoreProcedure + "\".  Select a\ndifferent value or Cancel." );
             }
         }
 	}

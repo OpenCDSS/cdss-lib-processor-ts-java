@@ -258,6 +258,8 @@ protected List<TSFunctionType> getFunctionChoices()
     functionTypes.add ( TSFunctionType.DATE_YYYYMMDD );
     functionTypes.add ( TSFunctionType.DATETIME_YYYYMMDD_HH );
     functionTypes.add ( TSFunctionType.DATETIME_YYYYMMDD_HHMM );
+    functionTypes.add ( TSFunctionType.RANDOM_0_1);
+    functionTypes.add ( TSFunctionType.RANDOM_0_1000);
     return functionTypes;
 }
 

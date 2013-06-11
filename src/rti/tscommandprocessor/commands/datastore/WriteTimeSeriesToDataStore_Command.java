@@ -660,15 +660,15 @@ private void writeTimeSeries ( TS ts, DateTime outputStart, DateTime outputEnd,
     try {
         if ( matchLocationType ) {
             // Location in time series is of form LocationType:LocationID
+            // TODO SAM 2013-06-10 What to do if location ID has a ":" and no location type?
             int pos = ts.getLocation().indexOf(':');
             if ( pos < 0 ) {
                 // There is no location type
                 ss.addWhereClause(timeSeriesMetadataTableLocationIdColumn + "='" + ts.getLocation() + "'");
             }
             else {
-                String [] parts = ts.getLocation().split(":");
-                ss.addWhereClause(timeSeriesMetadataTableLocationTypeColumn + "='" + parts[0] + "'");
-                ss.addWhereClause(timeSeriesMetadataTableLocationIdColumn + "='" + parts[1] + "'");
+                ss.addWhereClause(timeSeriesMetadataTableLocationTypeColumn + "='" + ts.getLocation().substring(0,pos) + "'");
+                ss.addWhereClause(timeSeriesMetadataTableLocationIdColumn + "='" + ts.getLocation().substring(pos+1) + "'");
             }
         }
         else {

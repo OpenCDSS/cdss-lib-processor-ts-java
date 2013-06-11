@@ -723,7 +723,9 @@ try{
         // Now select what the command had previously (if specified)...
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreProcedure_JComboBox, DataStoreProcedure, JGUIUtil.NONE, null, null ) ) {
             __DataStoreProcedure_JComboBox.select ( DataStoreProcedure );
-            __sql_JTabbedPane.setSelectedIndex(3);
+            if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
+                __sql_JTabbedPane.setSelectedIndex(3);
+            }
         }
         else {
             if ( (DataStoreProcedure == null) || DataStoreProcedure.equals("") ) {

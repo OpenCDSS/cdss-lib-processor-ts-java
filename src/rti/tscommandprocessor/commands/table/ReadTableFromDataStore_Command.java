@@ -291,7 +291,7 @@ CommandWarningException, CommandException
     String OrderBy = parameters.getValue ( "OrderBy" );
     String Top = parameters.getValue ( "Top" );
     Integer top = 0;
-    if ( (Top != null) && !top.equals("") ) {
+    if ( (Top != null) && !Top.equals("") ) {
         top = Integer.parseInt(Top);
     }
     String Sql = parameters.getValue ( "Sql" );
@@ -323,7 +323,7 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 	
-    // Set the table in the processor...
+    // Query the table and set in the processor...
     
     DataTable table = null;
     if ( commandPhase == CommandPhaseType.RUN ) {

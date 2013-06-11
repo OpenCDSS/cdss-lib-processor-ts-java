@@ -203,7 +203,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Now break pairs and put in hashtable
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
-            columnMap.put(parts[0].trim(), parts[1].trim() );
+            String tableColumn = parts[0].trim();
+            if ( columnMap.get(tableColumn) != null ) {
+                message = "Column map has duplicate entries for table column \"" + tableColumn + "\".";
+                Message.printWarning ( 2, routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Remove the duplicate, for example by adding a column to the table with desired name." ) );
+            }
+            else {
+                columnMap.put(tableColumn, parts[1].trim() );
+            }
         }
     }
     String DataStoreRelatedColumnsMap = parameters.getValue ( "DataStoreRelatedColumnsMap" );
@@ -215,7 +225,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Now break pairs and put in hashtable
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
-            dataStoreRelatedColumnsMap.put(parts[0].trim(), parts[1].trim() );
+            String tableColumn = parts[0].trim();
+            if ( dataStoreRelatedColumnsMap.get(tableColumn) != null ) {
+                message = "Related columns map has duplicate entries for table column \"" + tableColumn + "\".";
+                Message.printWarning ( 2, routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Remove the duplicate." ) );
+            }
+            else {
+                dataStoreRelatedColumnsMap.put(tableColumn, parts[1].trim() );
+            }
         }
     }
     String WriteMode = parameters.getValue ( "WriteMode" );

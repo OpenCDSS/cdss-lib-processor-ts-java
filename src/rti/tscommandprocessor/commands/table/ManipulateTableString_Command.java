@@ -27,7 +27,7 @@ import RTi.Util.Table.DataTableStringManipulation;
 import RTi.Util.Table.DataTableStringOperatorType;
 
 /**
-This class initializes, checks, and runs the TableStringManipulate() command.
+This class initializes, checks, and runs the ManipulateTableString() command.
 */
 public class ManipulateTableString_Command extends AbstractCommand implements Command
 {
@@ -55,6 +55,7 @@ throws InvalidCommandParameterException
     String Operator = parameters.getValue ( "Operator" );
     String InputColumn2 = parameters.getValue ( "InputColumn2" );
     String InputValue2 = parameters.getValue ( "InputValue2" );
+    String InputValue3 = parameters.getValue ( "InputValue3" );
     String OutputColumn = parameters.getValue ( "OutputColumn" );
     String warning = "";
     String message;
@@ -196,6 +197,23 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (operatorType != null) && (operatorType == DataTableStringOperatorType.REPLACE)) {
+        // Must have input column 2 or value 2, and value 3
+        if ( ((InputColumn2 == null) || InputColumn2.equals("")) &&
+            ((InputValue2 == null) || InputValue2.equals(""))) {
+            message = "Either InputColumn2 or InputValue2 MUST be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Provide a column name or string constant as Input2." ) );
+        }
+        if ( (InputValue3 == null) || InputValue3.equals("") ) {
+            message = "InputValue3 MUST be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Provide a string constant as InputValue3." ) );
+        }
+    }
+    
     if ( ((InputColumn2 != null) && !InputColumn2.equals("")) &&
         ((InputValue2 != null) && !InputValue2.equals(""))) {
         message = "Either InputColumn2 or InputValue2 MUST be specified (but not both).";
@@ -212,12 +230,13 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "InputColumn1" );
     valid_Vector.add ( "Operator" );
     valid_Vector.add ( "InputColumn2" );
     valid_Vector.add ( "InputValue2" );
+    valid_Vector.add ( "InputValue3" );
     valid_Vector.add ( "OutputColumn" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -272,6 +291,7 @@ CommandWarningException, CommandException
     DataTableStringOperatorType operator = DataTableStringOperatorType.valueOfIgnoreCase(Operator);
     String InputColumn2 = parameters.getValue ( "InputColumn2" );
     String InputValue2 = parameters.getValue ( "InputValue2" );
+    String InputValue3 = parameters.getValue ( "InputValue3" );
     String OutputColumn = parameters.getValue ( "OutputColumn" );
 
     // Get the table to process.
@@ -321,7 +341,7 @@ CommandWarningException, CommandException
     List<String> problems = new Vector();
     try {
         DataTableStringManipulation dtm = new DataTableStringManipulation ( table );
-        dtm.manipulate ( InputColumn1, operator, InputColumn2, InputValue2, OutputColumn, problems );
+        dtm.manipulate ( InputColumn1, operator, InputColumn2, InputValue2, InputValue3, OutputColumn, problems );
     }
     catch ( Exception e ) {
         message = "Unexpected error performing table string manipulation (" + e + ").";
@@ -383,6 +403,7 @@ public String toString ( PropList parameters )
     String Operator = parameters.getValue( "Operator" );
     String InputColumn2 = parameters.getValue( "InputColumn2" );
     String InputValue2 = parameters.getValue( "InputValue2" );
+    String InputValue3 = parameters.getValue( "InputValue3" );
     String OutputColumn = parameters.getValue( "OutputColumn" );
         
     StringBuffer b = new StringBuffer ();
@@ -416,6 +437,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "InputValue2=\"" + InputValue2 + "\"");
+    }
+    if ( (InputValue3 != null) && (InputValue3.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InputValue3=\"" + InputValue3 + "\"");
     }
     if ( (OutputColumn != null) && (OutputColumn.length() > 0) ) {
         if ( b.length() > 0 ) {

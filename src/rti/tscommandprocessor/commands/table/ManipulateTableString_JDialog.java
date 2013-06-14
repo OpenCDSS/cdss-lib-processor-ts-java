@@ -42,6 +42,7 @@ private SimpleJComboBox __InputColumn1_JComboBox = null;
 private SimpleJComboBox __Operator_JComboBox = null;
 private SimpleJComboBox __InputColumn2_JComboBox = null;
 private JTextField __InputValue2_JTextField = null;
+private JTextField __InputValue3_JTextField = null;
 private SimpleJComboBox __OutputColumn_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
@@ -94,6 +95,7 @@ private void checkInput ()
     String InputColumn1 = __InputColumn1_JComboBox.getSelected();
     String InputColumn2 = __InputColumn2_JComboBox.getSelected();
     String InputValue2 = __InputValue2_JTextField.getText();
+    String InputValue3 = __InputValue3_JTextField.getText();
     String Operator = __Operator_JComboBox.getSelected();
     String OutputColumn = __OutputColumn_JComboBox.getSelected();
 	PropList parameters = new PropList ( "" );
@@ -111,6 +113,9 @@ private void checkInput ()
     }
     if ( InputValue2.length() > 0 ) {
         parameters.set ( "InputValue2", InputValue2 );
+    }
+    if ( InputValue3.length() > 0 ) {
+        parameters.set ( "InputValue3", InputValue3 );
     }
     if ( Operator.length() > 0 ) {
         parameters.set ( "Operator", Operator );
@@ -138,12 +143,14 @@ private void commitEdits ()
     String InputColumn1 = __InputColumn1_JComboBox.getSelected();
     String InputColumn2 = __InputColumn2_JComboBox.getSelected();
     String InputValue2 = __InputValue2_JTextField.getText();
+    String InputValue3 = __InputValue3_JTextField.getText();
     String Operator = __Operator_JComboBox.getSelected();
     String OutputColumn = __OutputColumn_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "InputColumn1", InputColumn1 );
     __command.setCommandParameter ( "InputColumn2", InputColumn2 );
     __command.setCommandParameter ( "InputValue2", InputValue2 );
+    __command.setCommandParameter ( "InputValue3", InputValue3 );
     __command.setCommandParameter ( "Operator", Operator );
     __command.setCommandParameter ( "OutputColumn", OutputColumn );
 
@@ -184,11 +191,11 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
 		"Perform simple manipulation on columns of string data in a table, using one of the following approaches:" ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "   - process input from two columns to populate the output column" ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	   JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "   - process input from a column and a constant to populate the output column" ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "   - process input from two columns to populate the output column" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "   - process input from a column and a constant to populate the output column" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Future enhancements may provide more cell range addressing - currently full columns are processed." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -252,6 +259,15 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     JGUIUtil.addComponent(main_JPanel, __InputValue2_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required if no input column 2 - constant string."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input value 3:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputValue3_JTextField = new JTextField ( 10 ); 
+    __InputValue3_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __InputValue3_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - only by some operators."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
@@ -348,6 +364,7 @@ private void refresh ()
     String InputColumn1 = "";
     String InputColumn2 = "";
     String InputValue2 = "";
+    String InputValue3 = "";
     String Operator = "";
     String OutputColumn = "";
 
@@ -359,6 +376,7 @@ private void refresh ()
         InputColumn1 = props.getValue ( "InputColumn1" );
         InputColumn2 = props.getValue ( "InputColumn2" );
         InputValue2 = props.getValue ( "InputValue2" );
+        InputValue3 = props.getValue ( "InputValue3" );
         Operator = props.getValue ( "Operator" );
 		OutputColumn = props.getValue ( "OutputColumn" );
         if ( TableID == null ) {
@@ -420,6 +438,9 @@ private void refresh ()
         if ( InputValue2 != null ) {
             __InputValue2_JTextField.setText ( InputValue2 );
         }
+        if ( InputValue3 != null ) {
+            __InputValue3_JTextField.setText ( InputValue3 );
+        }
         if ( OutputColumn == null ) {
             // Select default...
             __OutputColumn_JComboBox.select ( 0 );
@@ -440,6 +461,7 @@ private void refresh ()
     Operator = __Operator_JComboBox.getSelected();
     InputColumn2 = __InputColumn2_JComboBox.getSelected();
     InputValue2 = __InputValue2_JTextField.getText();
+    InputValue3 = __InputValue3_JTextField.getText();
     OutputColumn = __OutputColumn_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
@@ -447,6 +469,7 @@ private void refresh ()
     props.add ( "Operator=" + Operator );
     props.add ( "InputColumn2=" + InputColumn2 );
     props.add ( "InputValue2=" + InputValue2 );
+    props.add ( "InputValue3=" + InputValue3 );
     props.add ( "OutputColumn=" + OutputColumn );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }

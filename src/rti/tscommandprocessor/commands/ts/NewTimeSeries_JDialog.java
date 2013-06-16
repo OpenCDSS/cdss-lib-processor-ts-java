@@ -101,8 +101,7 @@ public void actionPerformed( ActionEvent event )
 			}
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error creating time series identifier from \"" + NewTSID + "\"." );
+			Message.printWarning ( 1, routine, "Error creating time series identifier from \"" + NewTSID + "\"." );
 			Message.printWarning ( 3, routine, e );
 		}
 	}

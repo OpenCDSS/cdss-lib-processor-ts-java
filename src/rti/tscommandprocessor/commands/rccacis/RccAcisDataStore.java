@@ -643,7 +643,7 @@ throws MalformedURLException, Exception
     }
     int apiVersion = getAPIVersion();
     // The station ID needs to specify the location type...
-    String stationIDAndStationType = readTimeSeries_FormHttpRequestStationID ( tsident.getLocation() );
+    String stationIDAndStationType = readTimeSeries_FormHttpRequestStationID ( tsident.getLocationType(), tsident.getLocation() );
     // The start and end date are required.
     String readStartString = "por";
     String readEndString = "por";
@@ -971,30 +971,29 @@ throws MalformedURLException, Exception
 }
 
 /**
-Form the station ID string part of the time series request, something like "ID code", where code is the station
-ID code.  If an ACIS ID, no code is necessary.
-@param tsidLocation the location part of a time series identifier.
- */
-String readTimeSeries_FormHttpRequestStationID ( String tsidLocation )
+Form the station ID string part of the time series request, something like "Type:ID" (e.g., "GHCN:USC00016643"),
+where ID is the station.
+@param tsidLocationType the location type part of a time series identifier (station ID network abbreviation).
+@param tsidLocation the location part of a time series identifier (station ID).
+*/
+private String readTimeSeries_FormHttpRequestStationID ( String tsidLocationType, String tsidLocation )
 {
-    int colonPos = tsidLocation.indexOf(":");
-    if ( colonPos <= 0 ) {
-        throw new InvalidParameterException ( "Station location \"" + tsidLocation +
-            "\" is invalid (should be Type:ID)" );
+    if ( tsidLocationType.length() == 0 ) {
+        throw new InvalidParameterException ( "Station location type abbreviation is not specified." );
     }
     try {
-        RccAcisStationType stationType = lookupStationTypeFromType(tsidLocation.substring(0,colonPos).trim());
+        RccAcisStationType stationType = lookupStationTypeFromType(tsidLocationType.trim());
         if ( stationType == null ) {
             throw new InvalidParameterException ( "Station code from \"" + tsidLocation +
                 "\" cannot be determined." );
         }
         else if ( stationType.getCode() == 0 ) {
             // No station type code is expected since the ACIS type, just pass ACIS ID
-            return tsidLocation.substring(colonPos + 1).trim();
+            return tsidLocation.trim();
         }
         else {
             // Station ID followed by the station type code
-            return tsidLocation.substring(colonPos + 1).trim() + " " + stationType.getCode();
+            return tsidLocation.trim() + " " + stationType.getCode();
         }
     }
     catch ( NumberFormatException e ) {

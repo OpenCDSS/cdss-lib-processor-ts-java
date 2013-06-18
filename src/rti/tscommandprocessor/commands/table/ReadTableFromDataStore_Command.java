@@ -392,8 +392,8 @@ CommandWarningException, CommandException
         }
         String queryString = "";
         // Execute the query as appropriate depending on how the query was specified
+        ResultSet rs = null;
         try {
-            ResultSet rs = null;
             if ( DataStoreTable != null ) {
                 // Query using the statement that was built
                 queryString = q.toString();
@@ -457,6 +457,9 @@ CommandWarningException, CommandException
                     message, "Verify that the database for data store \"" + DataStore +
                     "\" is appropriate for SQL statement: \"" + queryString + "\"." ) );
             Message.printWarning ( 3, routine, e );
+        }
+        finally {
+            DMI.closeResultSet(rs);
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {

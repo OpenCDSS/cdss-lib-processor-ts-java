@@ -59,9 +59,14 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField __MissingValue_JTextField = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
-private SimpleJComboBox __MatchLocationType_JComboBox = null;
+private JTextField __DataStoreLocationType_JTextField = null;
+private JTextField __DataStoreDataSource_JTextField = null;
+private JTextField __DataStoreDataType_JTextField = null;
+private JTextField __DataStoreScenario_JTextField = null;
+private JTextField __DataStoreInterval_JTextField = null;
+private JTextField __DataStoreUnits_JTextField = null;
+private JTextField __DataStoreMissingValue_JTextField = null;
 private SimpleJComboBox __WriteMode_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -149,9 +154,14 @@ private void checkInput ()
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String MissingValue = __MissingValue_JTextField.getText().trim();
     String DataStore = __DataStore_JComboBox.getSelected();
-    String MatchLocationType = __MatchLocationType_JComboBox.getSelected();
+    String DataStoreLocationType = __DataStoreLocationType_JTextField.getText().trim();
+    String DataStoreDataSource = __DataStoreDataSource_JTextField.getText().trim();
+    String DataStoreDataType = __DataStoreDataType_JTextField.getText().trim();
+    String DataStoreScenario = __DataStoreScenario_JTextField.getText().trim();
+    String DataStoreInterval = __DataStoreInterval_JTextField.getText().trim();
+    String DataStoreUnits = __DataStoreUnits_JTextField.getText().trim();
+    String DataStoreMissingValue = __DataStoreMissingValue_JTextField.getText().trim();
     String WriteMode = __WriteMode_JComboBox.getSelected();
 
 	__error_wait = false;
@@ -171,9 +181,6 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );
 	}
-    if ( MissingValue.length() > 0 ) {
-        parameters.set ( "MissingValue", MissingValue );
-    }
     if ( (DataStore != null) && DataStore.length() > 0 ) {
         parameters.set ( "DataStore", DataStore );
         __dataStore = getSelectedDataStore();
@@ -181,8 +188,26 @@ private void checkInput ()
     else {
         parameters.set ( "DataStore", "" );
     }
-    if ( MatchLocationType.length() > 0 ) {
-        parameters.set ( "MatchLocationType", MatchLocationType );
+    if ( DataStoreLocationType.length() > 0 ) {
+        parameters.set ( "DataStoreLocationType", DataStoreLocationType );
+    }
+    if ( DataStoreDataSource.length() > 0 ) {
+        parameters.set ( "DataStoreDataSource", DataStoreDataSource );
+    }
+    if ( DataStoreDataType.length() > 0 ) {
+        parameters.set ( "DataStoreDataType", DataStoreDataType );
+    }
+    if ( DataStoreScenario.length() > 0 ) {
+        parameters.set ( "DataStoreScenario", DataStoreScenario );
+    }
+    if ( DataStoreInterval.length() > 0 ) {
+        parameters.set ( "DataStoreInterval", DataStoreInterval );
+    }
+    if ( DataStoreUnits.length() > 0 ) {
+        parameters.set ( "DataStoreUnits", DataStoreUnits );
+    }
+    if ( DataStoreMissingValue.length() > 0 ) {
+        parameters.set ( "DataStoreMissingValue", DataStoreMissingValue );
     }
     if ( WriteMode.length() > 0 ) {
         parameters.set ( "WriteMode", WriteMode );
@@ -208,18 +233,28 @@ private void commitEdits ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();  
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	String MissingValue = __MissingValue_JTextField.getText().trim();
     String DataStore = __DataStore_JComboBox.getSelected();
-    String MatchLocationType = __MatchLocationType_JComboBox.getSelected();
+    String DataStoreLocationType = __DataStoreLocationType_JTextField.getText().trim();
+    String DataStoreDataSource = __DataStoreDataSource_JTextField.getText().trim();
+    String DataStoreDataType = __DataStoreDataType_JTextField.getText().trim();
+    String DataStoreScenario = __DataStoreScenario_JTextField.getText().trim();
+    String DataStoreInterval = __DataStoreInterval_JTextField.getText().trim();
+    String DataStoreUnits = __DataStoreUnits_JTextField.getText().trim();
+    String DataStoreMissingValue = __DataStoreMissingValue_JTextField.getText().trim();
     String WriteMode = __WriteMode_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
-	__command.setCommandParameter ( "MissingValue", MissingValue );
     __command.setCommandParameter ( "DataStore", DataStore );
-    __command.setCommandParameter ( "MatchLocationType", MatchLocationType );
+    __command.setCommandParameter ( "DataStoreLocationType", DataStoreLocationType );
+    __command.setCommandParameter ( "DataStoreDataSource", DataStoreDataSource );
+    __command.setCommandParameter ( "DataStoreDataType", DataStoreDataType );
+    __command.setCommandParameter ( "DataStoreScenario", DataStoreScenario );
+    __command.setCommandParameter ( "DataStoreInterval", DataStoreInterval );
+    __command.setCommandParameter ( "DataStoreUnits", DataStoreUnits );
+    __command.setCommandParameter ( "DataStoreMissingValue", DataStoreMissingValue );
     __command.setCommandParameter ( "WriteMode", WriteMode );
 }
 
@@ -274,7 +309,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a database datastore," +
-		" where time series to database mapping is defined in the datastore configuration." ),
+		" where time series to database table mapping is defined in the datastore configuration." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Enter date/times to a precision appropriate for output time series."),
@@ -305,16 +340,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     yTS = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, ts_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yTS );
    
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Missing value:" ),
-        0, ++yTS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MissingValue_JTextField = new JTextField ( "", 20 );
-    __MissingValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(ts_JPanel, __MissingValue_JTextField,
-        1, yTS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ts_JPanel, new JLabel (
-        "Optional - value to write for missing data (default=time series missing value)."),
-        3, yTS, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
     JGUIUtil.addComponent(ts_JPanel, new JLabel ("Output start:"), 
 		0, ++yTS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputStart_JTextField = new JTextField (20);
@@ -365,19 +390,68 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel("Required - database datastore to receive data."), 
         3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Match location type?:"),
+    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore location type:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MatchLocationType_JComboBox = new SimpleJComboBox ( false );
-    List<String> mltChoices = new Vector<String>();
-    mltChoices.add ( "" );
-    mltChoices.add ( "" + command._False );
-    mltChoices.add ( "" + command._True );
-    __MatchLocationType_JComboBox.setData(mltChoices);
-    __MatchLocationType_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(ds_JPanel, __MatchLocationType_JComboBox,
+    __DataStoreLocationType_JTextField = new JTextField ( 10 );
+    __DataStoreLocationType_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ds_JPanel, __DataStoreLocationType_JTextField,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - match location type prefix (default=" +
-        command._False + ")."), 
+    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - specify location type to use in datastore (default=time series location type)."), 
+        3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore data source:"),
+        0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreDataSource_JTextField = new JTextField ( 10 );
+    __DataStoreDataSource_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ds_JPanel, __DataStoreDataSource_JTextField,
+        1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - specify data source to use in datastore (default=time series data source)."), 
+        3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore data type:"),
+        0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreDataType_JTextField = new JTextField ( 10 );
+    __DataStoreDataType_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ds_JPanel, __DataStoreDataType_JTextField,
+        1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - specify data type to use in datastore (default=time series data type)."), 
+        3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore interval:"),
+        0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreInterval_JTextField = new JTextField ( 10 );
+    __DataStoreInterval_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ds_JPanel, __DataStoreInterval_JTextField,
+        1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - specify data interval to use in datastore (default=time series data interval)."), 
+        3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore scenario:"),
+        0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreScenario_JTextField = new JTextField ( 10 );
+    __DataStoreScenario_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ds_JPanel, __DataStoreScenario_JTextField,
+        1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - specify scenario to use in datastore (default=time series scenario)."), 
+        3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore missing value:" ),
+        0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreMissingValue_JTextField = new JTextField ( "", 20 );
+    __DataStoreMissingValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ds_JPanel, __DataStoreMissingValue_JTextField,
+        1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ds_JPanel, new JLabel (
+        "Optional - value to write for missing data (default=time series missing value)."),
+        3, yDS, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore units:"),
+        0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreUnits_JTextField = new JTextField ( 10 );
+    __DataStoreUnits_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ds_JPanel, __DataStoreUnits_JTextField,
+        1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - specify units to use in datastore (default=time series units)."), 
         3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // How to write the data...
@@ -387,6 +461,8 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     __WriteMode_JComboBox = new SimpleJComboBox ( false );
     List<String> writeModeChoices = new Vector<String>();
     writeModeChoices.add ( "" );
+    writeModeChoices.add ( "" + __command._DeleteAllThenInsert );
+    writeModeChoices.add ( "" + __command._DeletePeriodThenInsert );
     writeModeChoices.add ( "" + DMIWriteModeType.DELETE_INSERT );
     writeModeChoices.add ( "" + DMIWriteModeType.INSERT );
     writeModeChoices.add ( "" + DMIWriteModeType.INSERT_UPDATE );
@@ -396,7 +472,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     __WriteMode_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(ds_JPanel, __WriteMode_JComboBox,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - how to write (default=" +
+    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - how to write data records (default=" +
         DMIWriteModeType.INSERT_UPDATE + ")."), 
         3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
@@ -482,14 +558,19 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = "WriteTimeSeriesToDataStore_JDialog.refresh";
-	String MissingValue = "";
 	String OutputStart = "";
 	String OutputEnd = "";
 	String TSList = "";
     String TSID = "";
     String EnsembleID = "";
     String DataStore = "";
-    String MatchLocationType = "";
+    String DataStoreLocationType = "";
+    String DataStoreDataSource = "";
+    String DataStoreDataType = "";
+    String DataStoreInterval = "";
+    String DataStoreScenario = "";
+    String DataStoreUnits = "";
+    String DataStoreMissingValue = "";
     String WriteMode = "";
 	__error_wait = false;
 	PropList parameters = null;
@@ -497,18 +578,20 @@ private void refresh ()
 		__first_time = false;
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
-	    MissingValue = parameters.getValue("MissingValue");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
 		TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
         DataStore = parameters.getValue ( "DataStore" );
-        MatchLocationType = parameters.getValue ( "MatchLocationType" );
+        DataStoreLocationType = parameters.getValue ( "DataStoreLocationType" );
+        DataStoreDataSource = parameters.getValue ( "DataStoreDataSource" );
+        DataStoreDataType = parameters.getValue ( "DataStoreDataType" );
+        DataStoreInterval = parameters.getValue ( "DataStoreInterval" );
+        DataStoreScenario = parameters.getValue ( "DataStoreScenario" );
+        DataStoreUnits = parameters.getValue ( "DataStoreUnits" );
+        DataStoreMissingValue = parameters.getValue("DataStoreMissingValue");
         WriteMode = parameters.getValue ( "WriteMode" );
-        if ( MissingValue != null ) {
-            __MissingValue_JTextField.setText ( MissingValue );
-        }
 		if ( OutputStart != null ) {
 			__OutputStart_JTextField.setText (OutputStart);
 		}
@@ -577,20 +660,26 @@ private void refresh ()
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        if ( MatchLocationType == null ) {
-            // Select default...
-            __MatchLocationType_JComboBox.select ( 0 );
+        if ( DataStoreLocationType != null ) {
+            __DataStoreLocationType_JTextField.setText (DataStoreLocationType);
         }
-        else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __MatchLocationType_JComboBox,MatchLocationType, JGUIUtil.NONE, null, null ) ) {
-                __MatchLocationType_JComboBox.select ( MatchLocationType );
-            }
-            else {
-                Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nMatchLocationType value \"" + MatchLocationType +
-                "\".  Select a different value or Cancel.");
-                __error_wait = true;
-            }
+        if ( DataStoreDataSource != null ) {
+            __DataStoreDataSource_JTextField.setText (DataStoreDataSource);
+        }
+        if ( DataStoreDataType != null ) {
+            __DataStoreDataType_JTextField.setText (DataStoreDataType);
+        }
+        if ( DataStoreInterval != null ) {
+            __DataStoreInterval_JTextField.setText (DataStoreInterval);
+        }
+        if ( DataStoreScenario != null ) {
+            __DataStoreScenario_JTextField.setText (DataStoreScenario);
+        }
+        if ( DataStoreUnits != null ) {
+            __DataStoreUnits_JTextField.setText (DataStoreUnits);
+        }
+        if ( DataStoreMissingValue != null ) {
+            __DataStoreMissingValue_JTextField.setText ( DataStoreMissingValue );
         }
         if ( WriteMode == null ) {
             // Select default...
@@ -609,7 +698,6 @@ private void refresh ()
         }
 	}
 	// Regardless, reset the command from the fields...
-	MissingValue = __MissingValue_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
 	TSList = __TSList_JComboBox.getSelected();
@@ -619,17 +707,28 @@ private void refresh ()
     if ( DataStore == null ) {
         DataStore = "";
     }
-    MatchLocationType = __MatchLocationType_JComboBox.getSelected();
+    DataStoreLocationType = __DataStoreLocationType_JTextField.getText().trim();
+    DataStoreDataSource = __DataStoreDataSource_JTextField.getText().trim();
+    DataStoreDataType = __DataStoreDataType_JTextField.getText().trim();
+    DataStoreInterval = __DataStoreInterval_JTextField.getText().trim();
+    DataStoreScenario = __DataStoreScenario_JTextField.getText().trim();
+    DataStoreUnits = __DataStoreUnits_JTextField.getText().trim();
+    DataStoreMissingValue = __DataStoreMissingValue_JTextField.getText().trim();
     WriteMode = __WriteMode_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
     parameters.add ( "EnsembleID=" + EnsembleID );
-	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	parameters.add ( "DataStore=" + DataStore );
-	parameters.add ( "MatchLocationType=" + MatchLocationType );
+	parameters.add ( "DataStoreLocationType=" + DataStoreLocationType );
+	parameters.add ( "DataStoreDataSource=" + DataStoreDataSource );
+	parameters.add ( "DataStoreDataType=" + DataStoreDataType );
+	parameters.add ( "DataStoreInterval" + DataStoreInterval );
+	parameters.add ( "DataStoreScenario=" + DataStoreScenario );
+	parameters.add ( "DataStoreUnits=" + DataStoreUnits );
+	parameters.add ( "DataStoreMissingValue=" + DataStoreMissingValue );
 	parameters.add ( "WriteMode=" + WriteMode );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 }

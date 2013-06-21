@@ -340,6 +340,9 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The resulting table columns will have data types based on the query results."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "SQL specified with ${property} notation will be updated to use processor property values before executing the query."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);

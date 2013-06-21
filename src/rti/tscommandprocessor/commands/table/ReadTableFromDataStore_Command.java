@@ -400,9 +400,9 @@ CommandWarningException, CommandException
                 rs = dmi.dmiSelect(q);
             }
             else if ( (Sql != null) && !Sql.equals("") ) {
-                // Query using the SQL string
-                queryString = Sql;
-                rs = dmi.dmiSelect(Sql);
+                // Query using the SQL string.  Expand first using ${Property} notation
+                queryString = TSCommandProcessorUtil.expandParameterValue(processor, this, Sql);
+                rs = dmi.dmiSelect(queryString);
             }
             else if ( (SqlFile != null) && !SqlFile.equals("") ) {
                 // Query using the contents of the SQL file
@@ -420,7 +420,8 @@ CommandWarningException, CommandException
                             "Verify that the file exists and is readable."));
                     throw new CommandException ( message );
                 }
-                queryString = StringUtil.toString(IOUtil.fileToStringList(SqlFile_full), " ");
+                queryString = TSCommandProcessorUtil.expandParameterValue(processor, this,
+                    StringUtil.toString(IOUtil.fileToStringList(SqlFile_full), " "));
                 rs = dmi.dmiSelect(queryString);
             }
             else if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {

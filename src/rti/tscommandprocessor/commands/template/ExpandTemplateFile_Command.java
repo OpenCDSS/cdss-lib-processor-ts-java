@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +22,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -31,6 +33,8 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.ObjectListProvider;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -40,11 +44,17 @@ import RTi.Util.Table.DataTable;
 /**
 This class initializes, checks, and runs the ExpandTemplateFile() command.
 */
-public class ExpandTemplateFile_Command extends AbstractCommand implements Command, FileGenerator
+public class ExpandTemplateFile_Command extends AbstractCommand
+implements Command, CommandDiscoverable, FileGenerator, ObjectListProvider
 {
     
 protected final String _False = "False";
 protected final String _True = "True";
+
+/**
+Property set during discovery.
+*/
+private Prop __discoveryProp = null;
     
 /**
 Output file that is created by this command.
@@ -71,6 +81,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String OutputProperty = parameters.getValue ( "OutputProperty" );
     String UseTables = parameters.getValue ( "UseTables" );
     String ListInResults = parameters.getValue ( "ListInResults" );
 	//String IfNotFound = parameters.getValue ( "IfNotFound" );
@@ -88,8 +99,8 @@ throws InvalidCommandParameterException
         message = "The input template command file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an existing input file." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify an existing input file." ) );
     }
     else {
         String working_dir = null;
@@ -130,11 +141,13 @@ throws InvalidCommandParameterException
     }
 	
     if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
-        message = "The output file: \"" + OutputFile + "\" must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify an output file." ) );
+        if ( (OutputProperty == null) || (OutputProperty.length() == 0) ) {
+            message = "The output file and/or property must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify an output file and/or property." ) );
+        }
     }
     else {
         String working_dir = null;
@@ -212,9 +225,10 @@ throws InvalidCommandParameterException
 	}
 	*/
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
 	valid_Vector.add ( "InputFile" );
 	valid_Vector.add ( "OutputFile" );
+	valid_Vector.add ( "OutputProperty" );
 	valid_Vector.add ( "UseTables" );
 	valid_Vector.add ( "ListInResults" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -255,6 +269,35 @@ private StringBuffer formatTemplateForWarning ( List<String> templateLines, Stri
 }
 
 /**
+Return the property defined in discovery phase.
+*/
+private Prop getDiscoveryProp ()
+{
+    return __discoveryProp;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    Prop discovery_Prop = getDiscoveryProp ();
+    if ( discovery_Prop == null ) {
+        return null;
+    }
+    Prop prop = new Prop();
+    // Check for TS request or class that matches the data...
+    if ( c == prop.getClass() ) {
+        List v = new Vector (1);
+        v.add ( discovery_Prop );
+        return v;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
 Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
@@ -278,17 +321,44 @@ private File getOutputFile ()
 
 /**
 Run the command.
-@param command_line Command number in sequence.
+@param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@param commandPhase The command phase that is being run (RUN or DISCOVERY).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "ExpandTemplateFile_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
+	int log_level = 3; // Level for non-user messages for log file.
 	
 	PropList parameters = getCommandParameters();
 	
@@ -298,6 +368,7 @@ CommandWarningException, CommandException
 	
 	String InputFile = parameters.getValue ( "InputFile" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String OutputProperty = parameters.getValue ( "OutputProperty" );
 	String UseTables = parameters.getValue ( "UseTables" );
     boolean UseTables_boolean = true;
     if ( (UseTables != null) && UseTables.equalsIgnoreCase(_False) ) {
@@ -331,22 +402,24 @@ CommandWarningException, CommandException
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-                    message, "Verify that the file exists at the time the command is run."));
+                message, "Verify that the file exists at the time the command is run."));
             /*
         }
         else {
             Message.printStatus( 2, routine, message + "  Ignoring.");
         }*/
 	}
-    String OutputFile_full = IOUtil.verifyPathForOS(
-    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile ) );
-    file = new File ( OutputFile_full );
-    if ( !file.getParentFile().exists() ) {
-       message = "Expanded command file parent folder \"" + file.getParentFile() + "\" does not exist.";
-           Message.printWarning ( warning_level,
-               MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+    String OutputFile_full = null;
+    if ( (OutputFile != null) && !OutputFile.equals("") ) {
+        OutputFile_full = IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile ) );
+        file = new File ( OutputFile_full );
+        if ( !file.getParentFile().exists() ) {
+           message = "Output file parent folder \"" + file.getParentFile() + "\" does not exist.";
+               Message.printWarning ( warning_level,
+                   MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-                   message, "Verify that the output folder exists at the time the command is run."));
+               message, "Verify that the output folder exists at the time the command is run."));
+        }
     }
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -358,6 +431,7 @@ CommandWarningException, CommandException
     try {
         // Initialize the output file to null...
         setOutputFile ( null );
+        setDiscoveryProp(null);
         // Call the FreeMarker API...
         Configuration config = new Configuration();
         // TODO SAM 2009-10-07 Not sure what configuration is needed for TSTool since most
@@ -433,29 +507,73 @@ CommandWarningException, CommandException
                     }
                 }
             }
-            // Expand the template to the output file
-            FileOutputStream fos = new FileOutputStream( OutputFile_full );
-            PrintWriter out = new PrintWriter ( fos );
-            try {
-                template.process (model, out);
-                // Set the output file
-                if ( ListInResults_boolean ) {
-                    setOutputFile ( new File(OutputFile_full));
+            if ( (commandPhase == CommandPhaseType.RUN) && (OutputFile_full != null) ) {
+                // Expand the template to the output file
+                FileOutputStream fos = new FileOutputStream( OutputFile_full );
+                PrintWriter out = new PrintWriter ( fos );
+                try {
+                    template.process (model, out);
+                    // Set the output file
+                    if ( ListInResults_boolean ) {
+                        setOutputFile ( new File(OutputFile_full));
+                    }
+                }
+                catch ( Exception e1 ) {
+                    message = "Freemarker error expanding command template file \"" + InputFile_full +
+                        "\" + (" + e1 + ") template text (with internal inserts at ends) =\n" +
+                        formatTemplateForWarning(templateLines,nl);;
+                    Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                    Message.printWarning ( 3, routine, e1 );
+                    status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Check template file syntax for Freemarker markup errors."));
+                }
+                finally {
+                    out.close();
                 }
             }
-            catch ( Exception e1 ) {
-                message = "Freemarker error expanding command template file \"" + InputFile_full +
-                    "\" + (" + e1 + ") template text (with internal inserts at ends) =\n" +
-                    formatTemplateForWarning(templateLines,nl);;
-                Message.printWarning ( warning_level, 
-                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-                Message.printWarning ( 3, routine, e1 );
-                status.addToLog(CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Check template file syntax for Freemarker markup errors."));
-            }
-            finally {
-                out.close();
+            if ( (OutputProperty != null) && !OutputProperty.equals("") ) {
+                // Expand the template to a property - run and discovery mode
+                StringWriter out = new StringWriter ();
+                try {
+                    template.process (model, out);
+                    // Set the property in the processor                   
+                    PropList request_params = new PropList ( "" );
+                    request_params.setUsingObject ( "PropertyName", OutputProperty );
+                    // Trim off trailing newline
+                    String propValue = out.getBuffer().toString().trim();
+                    request_params.setUsingObject ( "PropertyValue", propValue );
+                    try {
+                        processor.processRequest( "SetProperty", request_params); 
+                        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+                            setDiscoveryProp ( new Prop(OutputProperty,propValue,"" + propValue ) );
+                        }
+                    }
+                    catch ( Exception e ) {
+                        message = "Error requesting SetProperty(Property=\"" + OutputProperty + "\") from processor.";
+                        Message.printWarning(log_level,
+                                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                                routine, message );
+                        status.addToLog ( CommandPhaseType.RUN,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Report the problem to software support." ) );
+                    }
+                }
+                catch ( Exception e1 ) {
+                    message = "Freemarker error expanding command template file \"" + InputFile_full +
+                        "\" + (" + e1 + ") template text to property (with internal inserts at ends) =\n" +
+                        formatTemplateForWarning(templateLines,nl);;
+                    Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                    Message.printWarning ( 3, routine, e1 );
+                    status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Check template file syntax for Freemarker markup errors."));
+                }
+                finally {
+                    out.close();
+                }
             }
         }
 	}
@@ -475,6 +593,15 @@ CommandWarningException, CommandException
 }
 
 /**
+Set the property defined in discovery phase.
+@param prop Property set during discovery phase.
+*/
+private void setDiscoveryProp ( Prop prop )
+{
+    __discoveryProp = prop;
+}
+
+/**
 Set the output file that is created by this command.  This is only used internally.
 */
 private void setOutputFile ( File file )
@@ -491,6 +618,7 @@ public String toString ( PropList parameters )
 	}
 	String InputFile = parameters.getValue("InputFile");
 	String OutputFile = parameters.getValue("OutputFile");
+	String OutputProperty = parameters.getValue("OutputProperty");
 	String UseTables = parameters.getValue("UseTables");
 	String ListInResults = parameters.getValue("ListInResults");
 	//String IfNotFound = parameters.getValue("IfNotFound");
@@ -503,6 +631,12 @@ public String toString ( PropList parameters )
             b.append(",");
         }
         b.append ( "OutputFile=\"" + OutputFile + "\"" );
+    }
+    if ( (OutputProperty != null) && (OutputProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append(",");
+        }
+        b.append ( "OutputProperty=\"" + OutputProperty + "\"" );
     }
     if ( (UseTables != null) && (UseTables.length() > 0) ) {
         if ( b.length() > 0 ) {

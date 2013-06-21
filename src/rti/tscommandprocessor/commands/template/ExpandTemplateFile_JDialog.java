@@ -51,6 +51,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JTextField __InputFile_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
+private JTextField __OutputProperty_JTextField = null;
 private SimpleJComboBox __UseTables_JComboBox = null;
 private SimpleJComboBox __ListInResults_JComboBox = null;
 //private SimpleJComboBox __IfNotFound_JComboBox =null;
@@ -149,12 +150,10 @@ public void actionPerformed( ActionEvent event )
 		}
 		else if ( __pathInput_JButton.getText().equals(__RemoveWorkingDirectoryInputFile) ) {
 			try {
-                __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
-                        __InputFile_JTextField.getText() ) );
+                __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir, __InputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1, routine,
-				"Error converting input file name to relative path." );
+				Message.printWarning ( 1, routine, "Error converting input file name to relative path." );
 			}
 		}
 		refresh ();
@@ -165,17 +164,16 @@ public void actionPerformed( ActionEvent event )
         }
         else if ( __pathOutput_JButton.getText().equals(__RemoveWorkingDirectoryOutputFile) ) {
             try {
-                __OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
-                        __OutputFile_JTextField.getText() ) );
+                __OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
             }
             catch ( Exception e ) {
-                Message.printWarning ( 1, routine,
-                "Error converting output file name to relative path." );
+                Message.printWarning ( 1, routine, "Error converting output file name to relative path." );
             }
         }
         refresh ();
     }
-	else {	// Choices...
+	else {
+	    // Choices...
 		refresh();
 	}
 }
@@ -189,6 +187,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String OutputProperty = __OutputProperty_JTextField.getText().trim();
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	String UseTables = __UseTables_JComboBox.getSelected();
 	String ListInResults = __ListInResults_JComboBox.getSelected();
@@ -198,6 +197,9 @@ private void checkInput ()
 	}
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
+    }
+    if ( OutputProperty.length() > 0 ) {
+        props.set ( "OutputProperty", OutputProperty );
     }
     if ( UseTables.length() > 0 ) {
         props.set ( "UseTables", UseTables );
@@ -225,11 +227,13 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
+    String OutputProperty = __OutputProperty_JTextField.getText().trim();
     String UseTables = __UseTables_JComboBox.getSelected();
     String ListInResults = __ListInResults_JComboBox.getSelected();
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "OutputProperty", OutputProperty );
 	__command.setCommandParameter ( "UseTables", UseTables );
 	__command.setCommandParameter ( "ListInResults", ListInResults );
 	//__command.setCommandParameter ( "IfNotFound", IfNotFound );
@@ -268,11 +272,11 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command expands a template file into a fully-expanded file." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"This command expands a template file into a fully-expanded file and/or processor property." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Template functionality is implemented using the FreeMarker package (freemarker.org)." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -311,7 +315,17 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     __browseOutput_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browseOutput_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-    
+ 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expanded property:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputProperty_JTextField = new JTextField ( 10 );
+    __OutputProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ( "Optional - output string property (default=no output property)." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Use tables as input?:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __UseTables_JComboBox = new SimpleJComboBox ( false );
@@ -432,6 +446,7 @@ private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
 	String InputFile = "";
 	String OutputFile = "";
+	String OutputProperty = "";
 	String UseTables = "";
 	String ListInResults = "";
 	//String IfNotFound = "";
@@ -441,6 +456,7 @@ private void refresh ()
         parameters = __command.getCommandParameters();
 		InputFile = parameters.getValue ( "InputFile" );
 		OutputFile = parameters.getValue ( "OutputFile" );
+		OutputProperty = parameters.getValue ( "OutputProperty" );
 		UseTables = parameters.getValue ( "UseTables" );
 		ListInResults = parameters.getValue ( "ListInResults" );
 		//IfNotFound = parameters.getValue ( "IfNotFound" );
@@ -449,6 +465,9 @@ private void refresh ()
 		}
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText ( OutputFile );
+        }
+        if ( OutputProperty != null ) {
+            __OutputProperty_JTextField.setText ( OutputProperty );
         }
         if ( (UseTables == null) || (UseTables.length() == 0) ) {
             // Select default...
@@ -504,12 +523,14 @@ private void refresh ()
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	OutputProperty = __OutputProperty_JTextField.getText().trim();
 	UseTables = __UseTables_JComboBox.getSelected();
 	ListInResults = __ListInResults_JComboBox.getSelected();
 	//IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "OutputFile=" + OutputFile );
+	props.add ( "OutputProperty=" + OutputProperty );
 	props.add ( "UseTables=" + UseTables );
 	props.add ( "ListInResults=" + ListInResults );
 	//props.add ( "IfNotFound=" + IfNotFound );

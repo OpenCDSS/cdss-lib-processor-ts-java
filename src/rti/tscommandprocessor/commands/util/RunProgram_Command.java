@@ -93,7 +93,7 @@ throws InvalidCommandParameterException
     // use the separate arguments first.
     // Timeout is not required
     if ( (Timeout != null) && (Timeout.length() != 0) && !StringUtil.isDouble(Timeout) ) {
-        message = "The tmeout value \"" + Timeout + "\" is not a number.";
+        message = "The timeout value \"" + Timeout + "\" is not a number.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,

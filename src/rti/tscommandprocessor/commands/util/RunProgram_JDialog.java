@@ -1,19 +1,3 @@
-// ----------------------------------------------------------------------------
-// runProgram_JDialog - editor for runProgram()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 22 Aug 2001	Steven A. Malers, RTi	Initial version (copy and modify
-//					setMissingDataValue_Dialog).
-//					Might need to add pause also to let
-//					OS finish with files.
-// 2002-04-08	SAM, RTi		Clean up dialog.
-// 2003-12-03	SAM, RTi		Update to Swing.
-// 2007-02-26	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.util;
 
 import java.awt.event.ActionEvent;
@@ -272,8 +256,7 @@ private void initialize ( JFrame parent, Command command )
 	__Timeout_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Timeout_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - default is no timeout."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - default is no timeout."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Exit status indicator:" ), 
@@ -398,7 +381,7 @@ private void refresh ()
                 __UseCommandShell_JComboBox.select ( UseCommandShell );
             }
             else {
-                Message.printWarning ( 1, "openHydroBase_JDialog.refresh",
+                Message.printWarning ( 1, "RunProgram_JDialog.refresh",
                 "Existing command references an invalid UseCommandShell parameter \""
                 + UseCommandShell + "\".  Select a different value or Cancel.");
                 __error_wait = true;
@@ -434,8 +417,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok )
 {   __ok = ok;

@@ -565,6 +565,9 @@ public List getObjectList ( Class c )
 
     // TODO SAM 2011-03-31 Does the following work as intended?
     // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
+        return null;
+    }
     TS datats = discoveryTSList.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {

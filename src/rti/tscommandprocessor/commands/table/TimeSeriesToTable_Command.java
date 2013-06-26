@@ -341,10 +341,19 @@ private List<String> determineValueColumnNames ( List<TS> tslist, String tableTS
     }
     else {
         // Multi-column output
+        String [] tableColumnParts = null;
+        if ( tableColumn.indexOf(",") > 0 ) {
+            // Table columns are specified as comma-separated values
+            tableColumnParts = tableColumn.split(",");
+        }
         for ( int i = 0; i < tslist.size(); i++ ) {
             TS ts = tslist.get(i);
             // TODO SAM 2009-10-01 Evaluate how to set precision on table columns from time series.
-            if ( tableColumn.indexOf("%") >= 0 ) {
+            if ( tableColumn.indexOf(",") > 0 ) {
+                // Table column names were split above so use the part.  Also allow expansion
+                tableColumnNames.add ( ts.formatLegend(tableColumnParts[i].trim()) );
+            }
+            else if ( tableColumn.indexOf("%") >= 0 ) {
                 // The data column includes format specifiers and will be expanded
                 tableColumnNames.add ( ts.formatLegend(tableColumn) );
             }

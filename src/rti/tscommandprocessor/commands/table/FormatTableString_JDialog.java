@@ -35,15 +35,15 @@ import RTi.Util.String.StringFormatterSpecifiersJPanel;
 public class FormatTableString_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
-private FormatTableString_Command __command = null;	// Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private FormatTableString_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __InputColumns_JTextField = null;
 private StringFormatterSpecifiersJPanel __Format_JPanel = null;
 private SimpleJComboBox __OutputColumn_JComboBox = null;
-private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
+private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
 
@@ -242,7 +242,7 @@ private void initialize ( JFrame parent, FormatTableString_Command command, List
     __InputColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - names of columns to process, separated by commas."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required if formatting column(s) - name(s) of columns to process, separated by commas."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which

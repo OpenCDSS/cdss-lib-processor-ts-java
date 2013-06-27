@@ -50,7 +50,6 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {   String TableID = parameters.getValue ( "TableID" );
-    String InputColumns = parameters.getValue ( "InputColumns" );
     String Format = parameters.getValue ( "Format" );
     String OutputColumn = parameters.getValue ( "OutputColumn" );
     String warning = "";
@@ -64,13 +63,6 @@ throws InvalidCommandParameterException
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide the identifier for the table to process." ) );
-    }
-    
-    if ( (InputColumns == null) || InputColumns.equals("") ) {
-        message = "At least 1 input column must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Provide an input column name." ) );
     }
     
     if ( (Format == null) || Format.equals("") ) {
@@ -141,8 +133,8 @@ CommandWarningException, CommandException
     
     String TableID = parameters.getValue ( "TableID" );
     String InputColumns = parameters.getValue ( "InputColumns" );
-    String [] inputColumnNames = null;
-    if ( InputColumns != null ) {
+    String [] inputColumnNames = new String[0];
+    if ( (InputColumns != null) && !InputColumns.equals("") ) {
         if ( InputColumns.indexOf(",") < 0 ) {
             inputColumnNames = new String[1];
             inputColumnNames[0] = InputColumns.trim();

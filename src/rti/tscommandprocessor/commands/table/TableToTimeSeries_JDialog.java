@@ -60,8 +60,13 @@ private JTextField __ValueColumn_JTextField = null;
 private JTextField __FlagColumn_JTextField = null;
 //private JTextField __SkipRows_JTextField = null;
 private JTextField __LocationID_JTextField = null;
+private JTextField __LocationTypeColumn_JTextField = null;
 private JTextField __LocationColumn_JTextField = null;
-private JTextField __Provider_JTextField = null;
+private JTextField __DataSourceColumn_JTextField = null;
+private JTextField __DataTypeColumn_JTextField = null;
+private JTextField __ScenarioColumn_JTextField = null;
+private JTextField __UnitsColumn_JTextField = null;
+private JTextField __DataSource_JTextField = null;
 private JTextField __DataType_JTextField = null;
 private SimpleJComboBox __Interval_JComboBox = null;
 private JTextField __Scenario_JTextField = null;
@@ -161,11 +166,16 @@ private void checkInput () {
 	String TimeColumn = __TimeColumn_JTextField.getText().trim();
 	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
 	String DateTimeFormat =__DateTimeFormat_JPanel.getText(true,true).trim();
+	String LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
 	String LocationColumn = __LocationColumn_JTextField.getText().trim();
+	String DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
+	String DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
+	String ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
+	String UnitsColumn = __UnitsColumn_JTextField.getText().trim();
 	String LocationID = __LocationID_JTextField.getText().trim();
 	String ValueColumn = __ValueColumn_JTextField.getText().trim();
 	String FlagColumn = __FlagColumn_JTextField.getText().trim();
-	String Provider = __Provider_JTextField.getText().trim();
+	String DataSource = __DataSource_JTextField.getText().trim();
 	String DataType = __DataType_JTextField.getText().trim();
 	String Interval = __Interval_JComboBox.getSelected();
 	String Scenario = __Scenario_JTextField.getText().trim();
@@ -195,8 +205,23 @@ private void checkInput () {
     if (DateTimeFormat.length() > 0) {
         props.set("DateTimeFormat", DateTimeFormat);
     }
+    if (LocationTypeColumn.length() > 0) {
+        props.set("LocationTypeColumn", LocationTypeColumn);
+    }
     if (LocationColumn.length() > 0) {
         props.set("LocationColumn", LocationColumn);
+    }
+    if (DataSourceColumn.length() > 0) {
+        props.set("DataSourceColumn", DataSourceColumn);
+    }
+    if (DataTypeColumn.length() > 0) {
+        props.set("DataTypeColumn", DataTypeColumn);
+    }
+    if (ScenarioColumn.length() > 0) {
+        props.set("ScenarioColumn", ScenarioColumn);
+    }
+    if (UnitsColumn.length() > 0) {
+        props.set("UnitsColumn", UnitsColumn);
     }
     if (LocationID.length() > 0) {
         props.set("LocationID", LocationID);
@@ -207,8 +232,8 @@ private void checkInput () {
     if (FlagColumn.length() > 0) {
         props.set("FlagColumn", FlagColumn);
     }
-    if (Provider.length() > 0) {
-        props.set("Provider", Provider);
+    if (DataSource.length() > 0) {
+        props.set("DataSource", DataSource);
     }
     if (DataType.length() > 0) {
         props.set("DataType", DataType);
@@ -258,9 +283,14 @@ private void commitEdits() {
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     String ValueColumn = __ValueColumn_JTextField.getText().trim();
     String FlagColumn = __FlagColumn_JTextField.getText().trim();
+    String LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
     String LocationColumn = __LocationColumn_JTextField.getText().trim();
+    String DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
+    String DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
+    String ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
+    String UnitsColumn = __UnitsColumn_JTextField.getText().trim();
     String LocationID = __LocationID_JTextField.getText().trim();
-    String Provider = __Provider_JTextField.getText().trim();
+    String DataSource = __DataSource_JTextField.getText().trim();
     String DataType = __DataType_JTextField.getText().trim();
     String Interval = __Interval_JComboBox.getSelected();
     String Scenario = __Scenario_JTextField.getText().trim();
@@ -276,11 +306,16 @@ private void commitEdits() {
 	__command.setCommandParameter("TimeColumn", TimeColumn);
 	__command.setCommandParameter("DateTimeColumn", DateTimeColumn);
 	__command.setCommandParameter("DateTimeFormat", DateTimeFormat);
+	__command.setCommandParameter("LocationTypeColumn", LocationTypeColumn);
     __command.setCommandParameter("LocationColumn", LocationColumn);
+    __command.setCommandParameter("DataSourceColumn", DataSourceColumn);
+    __command.setCommandParameter("DataTypeColumn", DataTypeColumn);
+    __command.setCommandParameter("ScenarioColumn", ScenarioColumn);
+    __command.setCommandParameter("UnitsColumn", UnitsColumn);
     __command.setCommandParameter("LocationID", LocationID);
 	__command.setCommandParameter("ValueColumn", ValueColumn);
 	__command.setCommandParameter("FlagColumn", FlagColumn);
-	__command.setCommandParameter("Provider", Provider );
+	__command.setCommandParameter("DataSource", DataSource );
 	__command.setCommandParameter("DataType", DataType);
 	__command.setCommandParameter("Interval", Interval);
 	__command.setCommandParameter("Scenario", Scenario);
@@ -317,19 +352,16 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
 	addWindowListener( this );
 
-    Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(1,2,1,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Create 1+ time series from a table, using " +
-        "provided information to assign the time series metadata."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The table can contain one column per time series, or a single column for all time series." ), 
+        "Create 1+ time series from a table." +
+        "  The table can contain one column per time series, or a single column for all time series." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The column name(s), date/time column, value column(s), and Location ID(s) columns can use the notation " +
@@ -418,7 +450,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JPanel multTS_JPanel = new JPanel();
     multTS_JPanel.setLayout(new GridBagLayout());
-    __location_JTabbedPane.addTab ( "Multiple Data Columns", multTS_JPanel );
+    __location_JTabbedPane.addTab ( "Multiple Data Value (Number) Columns", multTS_JPanel );
     int yMult = -1;
     
     JGUIUtil.addComponent(multTS_JPanel, new JLabel ("Location ID(s):"),
@@ -433,8 +465,19 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JPanel singleTS_JPanel = new JPanel();
     singleTS_JPanel.setLayout(new GridBagLayout());
-    __location_JTabbedPane.addTab ( "Single Data Column", singleTS_JPanel );
+    __location_JTabbedPane.addTab ( "Single Data Value (Number) Column", singleTS_JPanel );
     int ySingle = -1;
+    
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location type column:"),
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LocationTypeColumn_JTextField = new JTextField (20);
+    __LocationTypeColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(singleTS_JPanel, __LocationTypeColumn_JTextField,
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "Optional - column name for location type"),
+        3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationColumn_JTextField = new JTextField (20);
@@ -443,6 +486,46 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - column name for location identifier."),
+        3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data source column:"),
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataSourceColumn_JTextField = new JTextField (20);
+    __DataSourceColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(singleTS_JPanel, __DataSourceColumn_JTextField,
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "Optional - column name for data source if not provided with DataSource."),
+        3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data type column:"),
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataTypeColumn_JTextField = new JTextField (20);
+    __DataTypeColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(singleTS_JPanel, __DataTypeColumn_JTextField,
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "Optional - column name for data type if not provided with DataType."),
+        3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Scenario column:"),
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ScenarioColumn_JTextField = new JTextField (20);
+    __ScenarioColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(singleTS_JPanel, __ScenarioColumn_JTextField,
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "Optional - column name for scenario if not provided as Scenario."),
+        3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data units column:"),
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __UnitsColumn_JTextField = new JTextField (20);
+    __UnitsColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(singleTS_JPanel, __UnitsColumn_JTextField,
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "Optional - column name for units, if not provided as Units."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Value column(s):"),
@@ -465,14 +548,14 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         "Optional - specify column names for time series flags, separated by commas (can use \"TC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data provider:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data source:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Provider_JTextField = new JTextField (10);
-    __Provider_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Provider_JTextField,
+    __DataSource_JTextField = new JTextField (10);
+    __DataSource_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - data provider (data source) for the data (default=blank)."),
+        "Optional - data source (provider) for the data (default=blank)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data type(s):"),
@@ -640,16 +723,21 @@ Refresh the command from the other text field contents.
 private void refresh()
 {   String routine = getClass().getName() + ".refresh", message;
     String TableID = "";
-//    String SkipRows = "";
+    //String SkipRows = "";
     String DateColumn = "";
     String TimeColumn = "";
     String DateTimeColumn = "";
     String DateTimeFormat = "";
+    String LocationTypeColumn = "";
     String LocationColumn = "";
+    String DataSourceColumn = "";
+    String DataTypeColumn = "";
+    String ScenarioColumn = "";
+    String UnitsColumn = "";
     String LocationID = "";
     String ValueColumn = "";
     String FlagColumn = "";
-    String Provider = "";
+    String DataSource = "";
     String DataType = "";
     String Interval = "";
     String Scenario = "";
@@ -672,11 +760,16 @@ private void refresh()
 	    TimeColumn = props.getValue("TimeColumn");
 	    DateTimeColumn = props.getValue("DateTimeColumn");
 	    DateTimeFormat = props.getValue("DateTimeFormat");
+	    LocationTypeColumn = props.getValue("LocationTypeColumn");
         LocationColumn = props.getValue("LocationColumn");
+        DataSourceColumn = props.getValue("DataSourceColumn");
+        DataTypeColumn = props.getValue("DataTypeColumn");
+        ScenarioColumn = props.getValue("ScenarioColumn");
+        UnitsColumn = props.getValue("UnitsColumn");
         LocationID = props.getValue("LocationID");
 	    ValueColumn = props.getValue("ValueColumn");
 	    FlagColumn = props.getValue("FlagColumn");
-	    Provider = props.getValue("Provider");
+	    DataSource = props.getValue("DataSource");
 	    DataType = props.getValue("DataType");
 	    Interval = props.getValue("Interval");
 	    Scenario = props.getValue("Scenario");
@@ -734,11 +827,26 @@ private void refresh()
                 __DateTimeFormat_JPanel.setText(DateTimeFormat);
             }
         }
+        if (LocationTypeColumn != null) {
+            __LocationTypeColumn_JTextField.setText(LocationTypeColumn);
+        }
         if (LocationColumn != null) {
             __LocationColumn_JTextField.setText(LocationColumn);
             if ( !LocationColumn.equals("") ) {
                 __location_JTabbedPane.setSelectedIndex(1);
             }
+        }
+        if (DataSourceColumn != null) {
+            __DataSourceColumn_JTextField.setText(DataSourceColumn);
+        }
+        if (DataTypeColumn != null) {
+            __DataTypeColumn_JTextField.setText(DataTypeColumn);
+        }
+        if (ScenarioColumn != null) {
+            __ScenarioColumn_JTextField.setText(ScenarioColumn);
+        }
+        if (UnitsColumn != null) {
+            __UnitsColumn_JTextField.setText(UnitsColumn);
         }
         if (LocationID != null) {
             __LocationID_JTextField.setText(LocationID);
@@ -752,8 +860,8 @@ private void refresh()
         if (FlagColumn != null) {
             __FlagColumn_JTextField.setText(FlagColumn);
         }
-        if (Provider != null) {
-            __Provider_JTextField.setText(Provider);
+        if (DataSource != null) {
+            __DataSource_JTextField.setText(DataSource);
         }
         if (DataType != null) {
             __DataType_JTextField.setText(DataType);
@@ -800,11 +908,16 @@ private void refresh()
     TimeColumn = __TimeColumn_JTextField.getText().trim();
     DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     DateTimeFormat = __DateTimeFormat_JPanel.getText(true,true).trim();
+    LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
     LocationColumn = __LocationColumn_JTextField.getText().trim();
+    DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
+    DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
+    ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
+    UnitsColumn = __UnitsColumn_JTextField.getText().trim();
     LocationID = __LocationID_JTextField.getText().trim();
     ValueColumn = __ValueColumn_JTextField.getText().trim();
     FlagColumn = __FlagColumn_JTextField.getText().trim();
-    Provider = __Provider_JTextField.getText().trim();
+    DataSource = __DataSource_JTextField.getText().trim();
     DataType = __DataType_JTextField.getText().trim();
     Interval = __Interval_JComboBox.getSelected();
     Scenario = __Scenario_JTextField.getText().trim();
@@ -821,11 +934,16 @@ private void refresh()
     props.add("TimeColumn=" + TimeColumn );
     props.add("DateTimeColumn=" + DateTimeColumn );
     props.add("DateTimeFormat=" + DateTimeFormat );
+    props.add("LocationTypeColumn=" + LocationTypeColumn );
     props.add("LocationColumn=" + LocationColumn );
+    props.add("DataSourceColumn=" + DataSourceColumn );
+    props.add("DataTypeColumn=" + DataTypeColumn );
+    props.add("ScenarioColumn=" + ScenarioColumn );
+    props.add("UnitsColumn=" + UnitsColumn );
     props.add("LocationID=" + LocationID );
     props.add("ValueColumn=" + ValueColumn );
     props.add("FlagColumn=" + FlagColumn );
-    props.add("Provider=" + Provider );
+    props.add("DataSource=" + DataSource );
     props.add("DataType=" + DataType );
     props.add("Interval=" + Interval );
     props.add("Scenario=" + Scenario );

@@ -434,7 +434,7 @@ private AreaReference getAreaReference ( Workbook wb, Sheet sheet,
         // Examine the sheet for blank columns/cells.  POI provides methods for the rows...
         int firstRow = sheet.getFirstRowNum();
         int lastRow = sheet.getLastRowNum();
-        Message.printStatus(2, routine, "firstRow=" + firstRow + ", lastRow=" + lastRow );
+        Message.printStatus(2, routine, "Sheet firstRow=" + firstRow + ", lastRow=" + lastRow );
         // ...but have to iterate through the rows as per:
         //  http://stackoverflow.com/questions/2194284/how-to-get-the-last-column-index-reading-excel-file
         Row row;
@@ -444,6 +444,10 @@ private AreaReference getAreaReference ( Workbook wb, Sheet sheet,
         int col;
         for ( int iRow = firstRow; iRow <= lastRow; iRow++ ) {
             row = sheet.getRow(iRow);
+            if ( row == null ) {
+                // TODO SAM 2013-06-28 Sometimes this happens with extra rows at the end of a worksheet?
+                continue;
+            }
             cellNum = row.getFirstCellNum(); // Not sure what this returns if no columns.  Assume -1
             if ( cellNum >= 0 ) {
                 col = row.getCell(cellNum).getColumnIndex();
@@ -626,6 +630,10 @@ throws FileNotFoundException, IOException
         boolean cellIsFormula; // Used to know when the evaluate cell formula to get output object
         for ( int iRow = rowStart; iRow <= rowEnd; iRow++ ) {
             row = sheet.getRow(iRow);
+            if ( row == null ) {
+                // Seems to happen at bottom of worksheets where there are extra junk rows
+                continue;
+            }
             iRowOut = iRow - rowStart;
             Message.printStatus(2, routine, "Processing row [" + iRow + "] end at [" + rowEnd + "]" );
             if ( (comment != null) && rowIsComment(sheet, iRow, comment) ) {
@@ -763,12 +771,12 @@ throws FileNotFoundException, IOException
                             table.setFieldValue(iRowOut, iColOut, "" + cellValueDouble, true);
                         }
                         else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
-                            // Double to boolean - try checking zero
-                            if ( cellValueDouble == 0.0 ) {
-                                table.setFieldValue(iRowOut, iColOut, new Integer(0), true);
+                            // Double to integer - use an offset to help make sure integer value is correct
+                            if ( cellValueDouble >= 0.0 ) {
+                                table.setFieldValue(iRowOut, iColOut, new Integer((int)(cellValueDouble + .0001)), true);
                             }
                             else {
-                                table.setFieldValue(iRowOut, iColOut, new Integer(1), true);
+                                table.setFieldValue(iRowOut, iColOut, new Integer((int)(cellValueDouble - .0001)), true);
                             }
                         }
                         else {
@@ -925,6 +933,9 @@ CommandWarningException, CommandException
 	String [] excelIntegerColumns = null;
 	if ( (ExcelIntegerColumns != null) && !ExcelIntegerColumns.equals("") ) {
 	    excelIntegerColumns = ExcelIntegerColumns.split(",");
+	    for ( int i = 0; i < excelIntegerColumns.length; i++ ) {
+	        excelIntegerColumns[i] = excelIntegerColumns[i].trim();
+	    }
 	}
 	String ReadAllAsText = parameters.getValue ( "ReadAllAsText" );
 	boolean readAllAsText = false;

@@ -119,6 +119,7 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 
 // Table commands.
 
+import rti.tscommandprocessor.commands.table.AppendTable_Command;
 import rti.tscommandprocessor.commands.table.CompareTables_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
@@ -374,6 +375,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("AppendFile") ) {
         return new AppendFile_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("AppendTable") ) {
+        return new AppendTable_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ARMA") ) {
         return new ARMA_Command ();

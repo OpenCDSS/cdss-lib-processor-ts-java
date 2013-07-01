@@ -24,7 +24,6 @@ import javax.swing.JTextField;
 
 import java.io.File;
 import java.util.List;
-import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -59,11 +58,9 @@ private WriteTimeSeriesToJson_Command __command = null;
 private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
 private JTextField __OutputFile_JTextField = null;
-private JTextField __Delimiter_JTextField = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
-private SimpleJComboBox __IrregularInterval_JComboBox = null; // Interval used to write irregular time series
 private SimpleJComboBox	__TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -182,7 +179,6 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
 	String OutputFile = __OutputFile_JTextField.getText().trim();
-	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
@@ -190,7 +186,6 @@ private void checkInput ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String MissingValue = __MissingValue_JTextField.getText().trim();
-    String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -206,9 +201,6 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
-    if (Delimiter.length() > 0) {
-        parameters.set("Delimiter", Delimiter);
-    }
     if (Precision.length() > 0) {
         parameters.set("Precision", Precision);
     }
@@ -220,9 +212,6 @@ private void checkInput ()
 	}
     if ( MissingValue.length() > 0 ) {
         parameters.set ( "MissingValue", MissingValue );
-    }
-    if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
-        parameters.set ( "IrregularInterval", IrregularInterval );
     }
 	try {
 	    // This will warn the user...
@@ -244,22 +233,18 @@ private void commitEdits ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();  
 	String OutputFile = __OutputFile_JTextField.getText().trim();
-	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
-	String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
-	__command.setCommandParameter ( "Delimiter", Delimiter );
 	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
-	__command.setCommandParameter ( "IrregularInterval", IrregularInterval );
 }
 
 /**
@@ -306,6 +291,9 @@ private void initialize ( JFrame parent, WriteTimeSeriesToJson_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a JSON format file, which can be used for website integration." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The JSON file structure closely matches the TSTool internal representation for lists of time series." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
@@ -343,16 +331,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToJson_Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Delimiter_JTextField = new JTextField (10);
-    __Delimiter_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - delimiter between values (default=space, comma is only other allowed delimiter)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output precision:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -392,25 +370,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToJson_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - override the global output end (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
-    List<String> intervalChoices = new Vector();
-    intervalChoices.add("");
-    intervalChoices.add("Minute");
-    intervalChoices.add("Hour");
-    intervalChoices.add("Day");
-    intervalChoices.add("Month");
-    intervalChoices.add("Year");
-    __IrregularInterval_JComboBox.setData ( intervalChoices );
-    __IrregularInterval_JComboBox.select(0);
-    __IrregularInterval_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __IrregularInterval_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required for irregular time series - used to process date/times."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -495,7 +454,6 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = "WriteTimeSeriesToKml_JDialog.refresh";
 	String OutputFile = "";
-	String Delimiter = "";
 	String Precision = "";
 	String MissingValue = "";
 	String OutputStart = "";
@@ -503,7 +461,6 @@ private void refresh ()
 	String TSList = "";
     String TSID = "";
     String EnsembleID = "";
-    String IrregularInterval = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -511,7 +468,6 @@ private void refresh ()
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
 		OutputFile = parameters.getValue ( "OutputFile" );
-	    Delimiter = parameters.getValue("Delimiter");
 	    Precision = parameters.getValue("Precision");
 	    MissingValue = parameters.getValue("MissingValue");
 		OutputStart = parameters.getValue ( "OutputStart" );
@@ -519,13 +475,9 @@ private void refresh ()
 		TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
-        IrregularInterval = parameters.getValue ( "IrregularInterval" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
-	    if (Delimiter != null) {
-	         __Delimiter_JTextField.setText(Delimiter);
-	    }
 	    if ( Precision != null ) {
 	        __Precision_JTextField.setText ( Precision );
 	    }
@@ -583,25 +535,9 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem( __IrregularInterval_JComboBox, IrregularInterval, JGUIUtil.NONE, null, null ) ) {
-            __IrregularInterval_JComboBox.select ( IrregularInterval );
-        }
-        else {
-            // Automatically add to the list after the blank (might be a multiple)...
-            if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
-                __IrregularInterval_JComboBox.insertItemAt ( IrregularInterval, 1 );
-                // Select...
-                __IrregularInterval_JComboBox.select ( IrregularInterval );
-            }
-            else {
-                // Select the blank...
-                __IrregularInterval_JComboBox.select ( 0 );
-            }
-        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
-	Delimiter = __Delimiter_JTextField.getText().trim();
 	Precision = __Precision_JTextField.getText().trim();
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
@@ -609,18 +545,15 @@ private void refresh ()
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-    IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
     parameters.add ( "EnsembleID=" + EnsembleID );
 	parameters.add ( "OutputFile=" + OutputFile );
-	parameters.add ( "Delimiter=" + Delimiter );
 	parameters.add ( "Precision=" + Precision );
 	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
-	parameters.add ( "IrregularInterval=" + IrregularInterval );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

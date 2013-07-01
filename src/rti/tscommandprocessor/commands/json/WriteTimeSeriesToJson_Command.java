@@ -1,6 +1,9 @@
 package rti.tscommandprocessor.commands.json;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Vector;
 
@@ -9,7 +12,9 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
-import RTi.TS.DateValueTS;
+import RTi.TS.TS;
+import RTi.TS.TSData;
+import RTi.TS.TSIterator;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
@@ -25,13 +30,10 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the WriteTimeSeriesToJson() command.
@@ -63,12 +65,10 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
-    String Delimiter = parameters.getValue("Delimiter" );
     String MissingValue = parameters.getValue("MissingValue" );
     String Precision = parameters.getValue ( "Precision" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -123,14 +123,6 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	if ( (Delimiter != null) && !Delimiter.equals("") && !Delimiter.equals(",")) {
-        message = "The delimiter \"" + Delimiter + "\" currently must be blank (to indicate space) or a comma.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the delimiter as blank or a comma." ) );
-	}
-	
     if ( (Precision != null) && !Precision.equals("") ) {
         if ( !StringUtil.isInteger(Precision) ) {
             message = "The precision \"" + Precision + "\" is not an integer.";
@@ -180,24 +172,9 @@ throws InvalidCommandParameterException
 		}
 	}
 
-    if ( (IrregularInterval != null) && !IrregularInterval.equals("") ) {
-        try {
-            TimeInterval.parseInterval ( IrregularInterval );
-        }
-        catch ( Exception e ) {
-            message = "The irregular time series interval is not valid.";
-            warning += "\n" + message;
-            status.addToLog(CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(
-                    CommandStatusType.FAILURE, message,
-                    "Specify a standard interval (e.g., 6Hour, Day, Month)."));
-        }
-    }
-
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
 	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "Delimiter" );
 	valid_Vector.add ( "Precision" );
 	valid_Vector.add ( "MissingValue" );
 	valid_Vector.add ( "OutputStart" );
@@ -205,7 +182,6 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "IrregularInterval" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -248,44 +224,6 @@ private File getOutputFile ()
 }
 
 /**
-Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "WriteDateValue_Command.parseCommand", message;
-	int warning_level = 2;
-	if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
-		// New syntax, can be blank parameter list for new command...
-		super.parseCommand ( command_string );
-	}
-	else {	// Parse the old command...
-		List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
-		if ( tokens.size() != 2 ) {
-			message =
-			"Invalid syntax for command.  Expecting WriteDateValue(OutputFile).";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		String OutputFile = ((String)tokens.get(1)).trim();
-		// Defaults because not in the old command...
-		String TSList = "AllTS";
-		PropList parameters = new PropList ( getCommandName() );
-		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		parameters.set ( "TSList", TSList );
-		if ( OutputFile.length() > 0 ) {
-			parameters.set ( "OutputFile", OutputFile );
-		}
-		parameters.setHowSet ( Prop.SET_UNKNOWN );
-		setCommandParameters ( parameters );
-	}
-}
-
-/**
 Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
@@ -294,7 +232,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "WriteDateValue_Command.runCommand", message;
+{	String routine = "WriteTimeSeriesToJson_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -322,14 +260,6 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
-	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
-    TimeInterval irregularInterval = null;
-    try {
-        irregularInterval = TimeInterval.parseInterval ( IrregularInterval );
-    }
-    catch ( Exception e ) {
-        // Will have been checked previously
-    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -470,71 +400,45 @@ CommandWarningException, CommandException
 		}
 	}
 
-	// Now try to write.  Only do so if the number of time series is 1+.  Otherwise an exception will occur.
-    // TODO SAM 2007-11-19 Evaluate whether DateValueTS.writeTimeSeriesList() should allow empty list,
-    // resulting in just a header in the output.  This might be useful during testing
-
-	PropList props = new PropList ( "WriteDateValue" );
-	String Delimiter = parameters.getValue( "Delimiter" );
-	if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
-	    props.set("Delimiter=" + Delimiter);
-	}
 	String Precision = parameters.getValue ( "Precision" );
+	Integer precision = new Integer(4);
     if ( (Precision != null) && (Precision.length() > 0) ) {
-        props.set("Precision=" + Precision);
+        precision = Integer.parseInt(Precision);
     }
-    String MissingValue = parameters.getValue ( "MissingValue" );
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        props.set("MissingValue=" + MissingValue);
-    }
+    String MissingValue = parameters.getValue ( "MissingValue" ); 
     
-    // Get the comments to add to the top of the file.
-
-    List<String> OutputComments_Vector = null;
+    String OutputFile_full = OutputFile;
     try {
-        Object o = processor.getPropContents ( "OutputComments" );
-        // Comments are available so use them...
-        if ( o != null ) {
-            OutputComments_Vector = (List)o;
-            props.setUsingObject("OutputComments",OutputComments_Vector);
+        // Convert to an absolute path...
+        OutputFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+        Message.printStatus ( 2, routine, "Writing JSON file \"" + OutputFile_full + "\"" );
+        List<String> errors = new Vector<String>();
+        String version = "01";
+        boolean overlap = false;
+        writeTimeSeriesList ( tslist, OutputFile_full, version, precision, MissingValue,
+			OutputStart_DateTime, OutputEnd_DateTime, overlap, errors );
+        for ( String error : errors ) {
+            Message.printWarning ( warning_level, 
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, error );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    error, "Check log file for details." ) );
         }
+        // Save the output file name...
+        setOutputFile ( new File(OutputFile_full));
     }
     catch ( Exception e ) {
-        // Not fatal, but of use to developers.
-        message = "Error requesting OutputComments from processor - not using.";
-        Message.printDebug(10, routine, message );
+        message = "Unexpected error writing time series to JSON file \"" + OutputFile_full + "\" (" + e + ")";
+        Message.printWarning ( warning_level, 
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+        Message.printWarning ( 3, routine, e );
+        status.addToLog ( CommandPhaseType.RUN,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Check log file for details." ) );
+        throw new CommandException ( message );
     }
-    
-    if ( irregularInterval != null ) {
-        props.setUsingObject("IrregularInterval",irregularInterval);
-    }
-    
-    // Write the time series file even if no time series are available.  This is useful for
-    // troubleshooting and testing (in cases where no time series are available.
-    //if ( (tslist != null) && (tslist.size() > 0) ) {
-        String OutputFile_full = OutputFile;
-        try {
-            // Convert to an absolute path...
-            OutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
-            Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
-            DateValueTS.writeTimeSeriesList ( tslist, OutputFile_full,
-				OutputStart_DateTime, OutputEnd_DateTime, "", true, props );
-            // Save the output file name...
-            setOutputFile ( new File(OutputFile_full));
-        }
-        catch ( Exception e ) {
-            message = "Unexpected error writing time series to DateValue file \"" + OutputFile_full + "\" (" + e + ")";
-            Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-            Message.printWarning ( 3, routine, e );
-            status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Check log file for details." ) );
-            throw new CommandException ( message );
-        }
-    //}
 	
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
@@ -556,7 +460,6 @@ public String toString ( PropList parameters )
 		return getCommandName() + "()";
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
-	String Delimiter = parameters.getValue ( "Delimiter" );
 	String Precision = parameters.getValue("Precision");
 	String MissingValue = parameters.getValue("MissingValue");
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -564,20 +467,31 @@ public String toString ( PropList parameters )
     String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
-    String IrregularInterval = parameters.getValue( "IrregularInterval" );
 	StringBuffer b = new StringBuffer ();
+    if ( (TSList != null) && (TSList.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSList=" + TSList );
+    }
+    if ( (TSID != null) && (TSID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSID=\"" + TSID + "\"" );
+    }
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
-    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Delimiter=\"" + Delimiter + "\"" );
-    }
     if ( (Precision != null) && (Precision.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -602,31 +516,165 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IrregularInterval=" + IrregularInterval );
-    }
 	return getCommandName() + "(" + b.toString() + ")";
+}
+
+// TODO SAM 2013-7-01 Evaluate whether a separate package should be created - for now keep the code here
+// until there is time to split out
+/**
+Write the time series list to a JSON file.
+*/
+private void writeTimeSeriesList ( List<TS> tslist, String outputFile, String version, Integer precision, String missingValue,
+    DateTime outputStart, DateTime outputEnd, boolean overlap, List<String> errors )
+{   Message.printStatus(2,"","Writing JSON version \"" + version + "\" file \"" + outputFile + "\"" );
+    PrintWriter fout = null;
+    try {
+        FileOutputStream fos = new FileOutputStream ( outputFile );
+        fout = new PrintWriter ( fos );
+        if ( version.endsWith("01") ) {
+            writeTimeSeriesList01 ( fout, tslist, precision, missingValue, outputStart, outputEnd, overlap, errors );
+        }
+        else {
+            errors.add("Unrecognized JSON time series file version \"" + version + "\"" );
+        }
+    }
+    catch ( FileNotFoundException e ) {
+        errors.add ( "Output file \"" + outputFile + "\" could not be created (" + e + ")." );
+    }
+    finally {
+        try {
+            fout.close();
+        }
+        catch ( Exception e ) {
+        }
+    } 
+}
+
+/**
+Write the version 01 format JSON.
+@param fout open PrintWriter to write to
+@param tslist list of time series to write
+@param outputStart output start or null to write full period
+@param outputEnd output end or null to write full period
+@param overlap if true, write the data in overlapping fashion (date/time shared between time series)
+@param errors list of error strings to be propagated to calling code
+*/
+private void writeTimeSeriesList01 ( PrintWriter fout, List<TS> tslist, Integer precision, String missingValue,
+    DateTime outputStart, DateTime outputEnd,
+    boolean overlap, List<String> errors )
+{   Message.printStatus(2,"","Writing " + tslist.size() + " time series to JSON 01 version file." );
+    String nl = System.getProperty("line.separator");
+    String i1 = " "; // Indentation levels
+    String i2 = "  ";
+    String i3 = "   ";
+    String i4 = "    ";
+    String i5 = "     ";
+    fout.write( "{" + nl );
+    // Overall properties
+    fout.write( i1 + "\"timeSeriesList\": {" + nl );
+    fout.write( i2 + "\"numTimeSeries\": " + tslist.size() + "," + nl );
+    fout.write( i2 + "\"overlap\": " + overlap + "," + nl );
+    // Array of time series
+    fout.write( i2 + "\"timeSeries\": [" + nl );
+    if ( overlap ) {
+        // Overlap the time series in output, similar to DateValue file
+        // TODO SAM 2013-07-01 Need to enable
+    }
+    else {
+        // Represent each time series completely separately
+        int its = -1;
+        for ( TS ts : tslist ) {
+            ++its;
+            // Metadata about each time series
+            if ( its == 0 ) {
+                fout.write( i3+ "{" + nl );
+            }
+            else {
+                fout.write( "," + nl + i3+ "{" + nl );
+            }
+            // Determie the missing value as a string, to output in metadata and 
+            String missingValueString = "" + ts.getMissing();
+            if ( (missingValue != null) && !missingValue.equals("") ) {
+                missingValueString = missingValue;
+            }
+            fout.write( i4 + "\"timeSeriesMeta\": {" + nl );
+            fout.write( i5 + "\"tsid\": \"" + ts.getIdentifierString() + "\"," + nl );
+            fout.write( i5 + "\"alias\": \"" + ts.getAlias() + "\"," + nl );
+            fout.write( i5 + "\"description\": \"" + ts.getDescription() + "\"," + nl );
+            fout.write( i5 + "\"locationType\": \"" + ts.getIdentifier().getLocationType() + "\"," + nl );
+            fout.write( i5 + "\"locationId\": \"" + ts.getIdentifier().getLocation() + "\"," + nl );
+            fout.write( i5 + "\"dataSource\": \"" + ts.getIdentifier().getSource() + "\"," + nl );
+            fout.write( i5 + "\"dataType\": \"" + ts.getIdentifier().getType() + "\"," + nl );
+            fout.write( i5 + "\"scenario\": \"" + ts.getIdentifier().getScenario() + "\"," + nl );
+            if ( missingValueString.equalsIgnoreCase("NaN") ) {
+                // JSON does not handle NaN as a number so have to quote and parsing code needs to handle
+                fout.write( i5 + "\"missingVal\": \"" + missingValueString + "\"," + nl );
+            }
+            else {
+                // No need to quote number
+                fout.write( i5 + "\"missingVal\": " + missingValueString + "," + nl );
+            }
+            fout.write( i5 + "\"units\": \"" + ts.getDataUnits() + "\"," + nl );
+            fout.write( i5 + "\"unitsOriginal\": \"" + ts.getDataUnitsOriginal() + "\"," + nl );
+            fout.write( i5 + "\"start\": \"" + ts.getDate1() + "\"," + nl );
+            fout.write( i5 + "\"end\": \"" + ts.getDate2() + "\"," + nl );
+            fout.write( i5 + "\"startOriginal\": \"" + ts.getDate1Original() + "\"," + nl );
+            fout.write( i5 + "\"endOriginal\": \"" + ts.getDate2Original() + "\"," + nl );
+            boolean hasDataFlags = ts.hasDataFlags();
+            fout.write( i5 + "\"hasDataFlags\": " + hasDataFlags + nl );
+            fout.write( i4 + "}," + nl );
+            // Data for each time series (write arrays separately but have an option to line up
+            fout.write( i4 + "\"timeSeriesData\": [" + nl );
+            TSIterator tsi = null;
+            try {
+                tsi = ts.iterator(outputStart, outputEnd);
+            }
+            catch ( Exception e ) {
+                errors.add ( "Error creating iterator for time series data (" + e + ")." );
+                continue; 
+            }
+            // Process the data array
+            TSData tsdata;
+            double value;
+            String valueFormat = "%.4f";
+            if ( precision != null ) {
+                valueFormat = "%." + precision + "f";
+            }
+            StringBuffer b = new StringBuffer();
+            int iVal = -1;
+            while ( (tsdata = tsi.next()) != null ) {
+                ++iVal;
+                b.setLength(0);
+                if ( iVal != 0 ) {
+                    // Comma and newline after previous value
+                    b.append ( "," + nl );
+                }
+                b.append ( i5 );
+                b.append ( "{ \"dt\": \"" );
+                b.append ( tsdata.getDate().toString() );
+                b.append ( "\"" );
+                value = tsdata.getDataValue();
+                if ( ts.isDataMissing(value) ) {
+                    b.append ( ", \"value\": " + missingValueString );
+                }
+                else {
+                    b.append ( ", \"value\": " + StringUtil.formatString(value,valueFormat) );
+                }
+                if ( hasDataFlags ) {
+                    b.append ( ", \"flag\": \"" );
+                    b.append ( tsdata.getDataFlag() );
+                    b.append ( "\"" );
+                }
+                b.append ( " }" );
+                fout.write( b.toString() );
+            }
+            fout.write( nl + i4 + "]" + nl );
+            fout.write( i3 + "}" );
+        }
+    }
+    fout.write( nl + i2 + "]" + nl );
+    fout.write( i1 + "}" + nl );   
+    fout.write( "}" + nl );
 }
 
 }

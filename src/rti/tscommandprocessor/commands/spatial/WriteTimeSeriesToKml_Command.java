@@ -1,6 +1,9 @@
 package rti.tscommandprocessor.commands.spatial;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Vector;
 
@@ -9,7 +12,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
-import RTi.TS.DateValueTS;
+import RTi.TS.TS;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
@@ -25,13 +28,10 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the WriteTimeSeriesToKml() command.
@@ -48,8 +48,8 @@ private File __OutputFile_File = null;
 Constructor.
 */
 public WriteTimeSeriesToKml_Command ()
-{	super();
-	setCommandName ( "WriteTimeSeriesToKml" );
+{   super();
+    setCommandName ( "WriteTimeSeriesToKml" );
 }
 
 /**
@@ -62,75 +62,81 @@ cross-reference to the original commands.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String OutputFile = parameters.getValue ( "OutputFile" );
-    String Delimiter = parameters.getValue("Delimiter" );
+{   String OutputFile = parameters.getValue ( "OutputFile" );
+    String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
+    String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
     String MissingValue = parameters.getValue("MissingValue" );
     String Precision = parameters.getValue ( "Precision" );
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
-	String warning = "";
-	String routine = getCommandName() + ".checkCommandParameters";
-	String message;
+    String OutputStart = parameters.getValue ( "OutputStart" );
+    String OutputEnd = parameters.getValue ( "OutputEnd" );
+    String warning = "";
+    String routine = getCommandName() + ".checkCommandParameters";
+    String message;
 
-	CommandProcessor processor = getCommandProcessor();
-	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
-	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
-		message = "The output file: \"" + OutputFile + "\" must be specified.";
-		warning += "\n" + message;
-		status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-			message, "Specify an output file." ) );
-	}
-	else {
+    CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
+    
+    if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+        message = "The output file must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify an output file." ) );
+    }
+    else {
         String working_dir = null;
-		try {
-		    Object o = processor.getPropContents ( "WorkingDir" );
-			if ( o != null ) {
-				working_dir = (String)o;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting WorkingDir from processor.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-				message, "Software error - report the problem to support." ) );
-		}
+        try {
+            Object o = processor.getPropContents ( "WorkingDir" );
+            if ( o != null ) {
+                working_dir = (String)o;
+            }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Software error - report the problem to support." ) );
+        }
 
-		try {
+        try {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                     TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
-			File f = new File ( adjusted_path );
-			File f2 = new File ( f.getParent() );
-			if ( !f2.exists() ) {
-				message = "The output file parent directory does not exist for: \"" + adjusted_path + "\".";
-				warning += "\n" + message;
-				status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "Create the output directory." ) );
-			}
-			f = null;
-			f2 = null;
-		}
-		catch ( Exception e ) {
-			message = "The output file:\n" +
-			"    \"" + OutputFile +
-			"\"\ncannot be adjusted using the working directory:\n" +
-			"    \"" + working_dir + "\".";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-				message, "Verify that output file and working directory paths are compatible." ) );
-		}
-	}
-	
-	if ( (Delimiter != null) && !Delimiter.equals("") && !Delimiter.equals(",")) {
-        message = "The delimiter \"" + Delimiter + "\" currently must be blank (to indicate space) or a comma.";
+            File f = new File ( adjusted_path );
+            File f2 = new File ( f.getParent() );
+            if ( !f2.exists() ) {
+                message = "The output file parent directory does not exist for: \"" + adjusted_path + "\".";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Create the output directory." ) );
+            }
+            f = null;
+            f2 = null;
+        }
+        catch ( Exception e ) {
+            message = "The output file:\n" +
+            "    \"" + OutputFile +
+            "\"\ncannot be adjusted using the working directory:\n" +
+            "    \"" + working_dir + "\".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that output file and working directory paths are compatible." ) );
+        }
+    }
+    
+    if ( (LongitudeProperty == null) || (LongitudeProperty.length() == 0) ) {
+        message = "The longitude property must be specified.";
         warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the delimiter as blank or a comma." ) );
-	}
-	
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the longitude property." ) );
+    }
+    
+    if ( (LatitudeProperty == null) || (LatitudeProperty.length() == 0) ) {
+        message = "The latitude property must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the latitude property." ) );
+    }
+    
     if ( (Precision != null) && !Precision.equals("") ) {
         if ( !StringUtil.isInteger(Precision) ) {
             message = "The precision \"" + Precision + "\" is not an integer.";
@@ -151,69 +157,56 @@ throws InvalidCommandParameterException
         }
     }
 
-	if ( (OutputStart != null) && !OutputStart.equals("")) {
-		try {	DateTime datetime1 = DateTime.parse(OutputStart);
-			if ( datetime1 == null ) {
-				throw new Exception ("bad date");
-			}
-		}
-		catch (Exception e) {
-			message = "Output start date/time \"" + OutputStart + "\" is not a valid date/time.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a valid output start date/time." ) );
-		}
-	}
-	if ( (OutputEnd != null) && !OutputEnd.equals("")) {
-		try {	DateTime datetime2 = DateTime.parse(OutputEnd);
-			if ( datetime2 == null ) {
-				throw new Exception ("bad date");
-			}
-		}
-		catch (Exception e) {
-			message = "Output end date/time \"" + OutputEnd + "\" is not a valid date/time.";
-			warning += "\n" + message;
-				status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a valid output end date/time." ) );
-		}
-	}
-
-    if ( (IrregularInterval != null) && !IrregularInterval.equals("") ) {
-        try {
-            TimeInterval.parseInterval ( IrregularInterval );
+    if ( (OutputStart != null) && !OutputStart.equals("")) {
+        try {   DateTime datetime1 = DateTime.parse(OutputStart);
+            if ( datetime1 == null ) {
+                throw new Exception ("bad date");
+            }
         }
-        catch ( Exception e ) {
-            message = "The irregular time series interval is not valid.";
+        catch (Exception e) {
+            message = "Output start date/time \"" + OutputStart + "\" is not a valid date/time.";
             warning += "\n" + message;
-            status.addToLog(CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(
-                    CommandStatusType.FAILURE, message,
-                    "Specify a standard interval (e.g., 6Hour, Day, Month)."));
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid output start date/time." ) );
+        }
+    }
+    if ( (OutputEnd != null) && !OutputEnd.equals("")) {
+        try {   DateTime datetime2 = DateTime.parse(OutputEnd);
+            if ( datetime2 == null ) {
+                throw new Exception ("bad date");
+            }
+        }
+        catch (Exception e) {
+            message = "Output end date/time \"" + OutputEnd + "\" is not a valid date/time.";
+            warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid output end date/time." ) );
         }
     }
 
-	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "Delimiter" );
-	valid_Vector.add ( "Precision" );
-	valid_Vector.add ( "MissingValue" );
-	valid_Vector.add ( "OutputStart" );
-	valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "TSList" );
+    // Check for invalid parameters...
+    List<String> valid_Vector = new Vector<String>();
+    valid_Vector.add ( "OutputFile" );
+    valid_Vector.add ( "LongitudeProperty" );
+    valid_Vector.add ( "LatitudeProperty" );
+    valid_Vector.add ( "ElevationProperty" );
+    valid_Vector.add ( "Precision" );
+    valid_Vector.add ( "MissingValue" );
+    valid_Vector.add ( "OutputStart" );
+    valid_Vector.add ( "OutputEnd" );
+    valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "IrregularInterval" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
-	if ( warning.length() > 0 ) {
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level), routine, warning );
-		throw new InvalidCommandParameterException ( warning );
-	}
-	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+    if ( warning.length() > 0 ) {
+        Message.printWarning ( warning_level,
+        MessageUtil.formatMessageTag(command_tag,warning_level), routine, warning );
+        throw new InvalidCommandParameterException ( warning );
+    }
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -223,8 +216,8 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	return (new WriteTimeSeriesToKml_JDialog ( parent, this )).ok();
+{   // The command will be modified if changed...
+    return (new WriteTimeSeriesToKml_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -232,11 +225,11 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector();
-	if ( getOutputFile() != null ) {
-		list.add ( getOutputFile() );
-	}
-	return list;
+    List<File> list = new Vector();
+    if ( getOutputFile() != null ) {
+        list.add ( getOutputFile() );
+    }
+    return list;
 }
 
 /**
@@ -244,45 +237,7 @@ Return the output file generated by this file.  This method is used internally.
 */
 private File getOutputFile ()
 {
-	return __OutputFile_File;
-}
-
-/**
-Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "WriteDateValue_Command.parseCommand", message;
-	int warning_level = 2;
-	if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
-		// New syntax, can be blank parameter list for new command...
-		super.parseCommand ( command_string );
-	}
-	else {	// Parse the old command...
-		List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
-		if ( tokens.size() != 2 ) {
-			message =
-			"Invalid syntax for command.  Expecting WriteDateValue(OutputFile).";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		String OutputFile = ((String)tokens.get(1)).trim();
-		// Defaults because not in the old command...
-		String TSList = "AllTS";
-		PropList parameters = new PropList ( getCommandName() );
-		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		parameters.set ( "TSList", TSList );
-		if ( OutputFile.length() > 0 ) {
-			parameters.set ( "OutputFile", OutputFile );
-		}
-		parameters.setHowSet ( Prop.SET_UNKNOWN );
-		setCommandParameters ( parameters );
-	}
+    return __OutputFile_File;
 }
 
 /**
@@ -294,249 +249,217 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "WriteDateValue_Command.runCommand", message;
-	int warning_level = 2;
-	String command_tag = "" + command_number;
-	int warning_count = 0;
-	
-	// Clear the output file
-	
-	setOutputFile ( null );
-	
-	// Check whether the processor wants output files to be created...
+{   String routine = "WriteTimeSeriesToKml_Command.runCommand", message;
+    int warning_level = 2;
+    String command_tag = "" + command_number;
+    int warning_count = 0;
+    
+    // Clear the output file
+    
+    setOutputFile ( null );
+    
+    // Check whether the processor wants output files to be created...
 
-	CommandProcessor processor = getCommandProcessor();
-	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
-			Message.printStatus ( 2, routine,
-			"Skipping \"" + toString() + "\" because output is not being created." );
-	}
-	
-	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    CommandProcessor processor = getCommandProcessor();
+    if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
+            Message.printStatus ( 2, routine,
+            "Skipping \"" + toString() + "\" because output is not being created." );
+    }
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 
-	PropList parameters = getCommandParameters();
-	String TSList = parameters.getValue ( "TSList" );
+    PropList parameters = getCommandParameters();
+    String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
         TSList = TSListType.ALL_TS.toString();
     }
-	String TSID = parameters.getValue ( "TSID" );
+    String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
-    TimeInterval irregularInterval = null;
+    String OutputFile = parameters.getValue ( "OutputFile" );
+    String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
+    String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
+    String ElevationProperty = parameters.getValue ( "ElevationProperty" );
+
+    // Get the time series to process...
+    PropList request_params = new PropList ( "" );
+    request_params.set ( "TSList", TSList );
+    request_params.set ( "TSID", TSID );
+    request_params.set ( "EnsembleID", EnsembleID );
+    CommandProcessorRequestResultsBean bean = null;
     try {
-        irregularInterval = TimeInterval.parseInterval ( IrregularInterval );
+        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
     }
     catch ( Exception e ) {
-        // Will have been checked previously
-    }
-
-	// Get the time series to process...
-	PropList request_params = new PropList ( "" );
-	request_params.set ( "TSList", TSList );
-	request_params.set ( "TSID", TSID );
-    request_params.set ( "EnsembleID", EnsembleID );
-	CommandProcessorRequestResultsBean bean = null;
-	try {
-        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
-	}
-	catch ( Exception e ) {
         message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
-	}
-	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	if ( o_TSList == null ) {
+        Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report problem to software support." ) );
+    }
+    PropList bean_PropList = bean.getResultsPropList();
+    Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+    if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
-	}
-	List tslist = (List)o_TSList;
-	if ( tslist.size() == 0 ) {
+        Message.printWarning ( warning_level,
+        MessageUtil.formatMessageTag(
+        command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report problem to software support." ) );
+    }
+    List tslist = (List)o_TSList;
+    if ( tslist.size() == 0 ) {
         message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.WARNING,
-						message, "Confirm that time series are available (may be OK for partial run)." ) );
-	}
+        Message.printWarning ( warning_level,
+        MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Confirm that time series are available (may be OK for partial run)." ) );
+    }
 
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	DateTime OutputStart_DateTime = null;
-	if ( OutputStart != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputStart );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputStart +
-				"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor (can be null)...
-		try {
-		    Object o_OutputStart = processor.getPropContents ( "OutputStart" );
-			if ( o_OutputStart != null ) {
-				OutputStart_DateTime = (DateTime)o_OutputStart;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting OutputStart from processor - not using.";
-			Message.printDebug(10, routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-	}
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	DateTime OutputEnd_DateTime = null;
-	if ( OutputEnd != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputEnd );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputEnd +
-			"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputEnd_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor...
-		try {
-		    Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
-			if ( o_OutputEnd != null ) {
-				OutputEnd_DateTime = (DateTime)o_OutputEnd;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputEnd from processor - not using.";
-			Message.printDebug(10, routine, message );
-		}
-	}
-
-	// Now try to write.  Only do so if the number of time series is 1+.  Otherwise an exception will occur.
-    // TODO SAM 2007-11-19 Evaluate whether DateValueTS.writeTimeSeriesList() should allow empty list,
-    // resulting in just a header in the output.  This might be useful during testing
-
-	PropList props = new PropList ( "WriteDateValue" );
-	String Delimiter = parameters.getValue( "Delimiter" );
-	if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
-	    props.set("Delimiter=" + Delimiter);
-	}
-	String Precision = parameters.getValue ( "Precision" );
-    if ( (Precision != null) && (Precision.length() > 0) ) {
-        props.set("Precision=" + Precision);
-    }
-    String MissingValue = parameters.getValue ( "MissingValue" );
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        props.set("MissingValue=" + MissingValue);
-    }
-    
-    // Get the comments to add to the top of the file.
-
-    List<String> OutputComments_Vector = null;
-    try {
-        Object o = processor.getPropContents ( "OutputComments" );
-        // Comments are available so use them...
-        if ( o != null ) {
-            OutputComments_Vector = (List)o;
-            props.setUsingObject("OutputComments",OutputComments_Vector);
-        }
-    }
-    catch ( Exception e ) {
-        // Not fatal, but of use to developers.
-        message = "Error requesting OutputComments from processor - not using.";
-        Message.printDebug(10, routine, message );
-    }
-    
-    if ( irregularInterval != null ) {
-        props.setUsingObject("IrregularInterval",irregularInterval);
-    }
-    
-    // Write the time series file even if no time series are available.  This is useful for
-    // troubleshooting and testing (in cases where no time series are available.
-    //if ( (tslist != null) && (tslist.size() > 0) ) {
-        String OutputFile_full = OutputFile;
+    String OutputStart = parameters.getValue ( "OutputStart" );
+    DateTime OutputStart_DateTime = null;
+    if ( OutputStart != null ) {
+        request_params = new PropList ( "" );
+        request_params.set ( "DateTime", OutputStart );
         try {
-            // Convert to an absolute path...
-            OutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
-            Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
-            DateValueTS.writeTimeSeriesList ( tslist, OutputFile_full,
-				OutputStart_DateTime, OutputEnd_DateTime, "", true, props );
-            // Save the output file name...
-            setOutputFile ( new File(OutputFile_full));
+            bean = processor.processRequest( "DateTime", request_params);
         }
         catch ( Exception e ) {
-            message = "Unexpected error writing time series to DateValue file \"" + OutputFile_full + "\" (" + e + ")";
-            Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-            Message.printWarning ( 3, routine, e );
+            message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
+            Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Check log file for details." ) );
-            throw new CommandException ( message );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
         }
-    //}
-	
-	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+        bean_PropList = bean.getResultsPropList();
+        Object prop_contents = bean_PropList.getContents ( "DateTime" );
+        if ( prop_contents == null ) {
+            message = "Null value for DateTime(DateTime=" + OutputStart +
+                "\") returned from processor.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+        else {
+            OutputStart_DateTime = (DateTime)prop_contents;
+        }
+    }
+    else {
+        // Get from the processor (can be null)...
+        try {
+            Object o_OutputStart = processor.getPropContents ( "OutputStart" );
+            if ( o_OutputStart != null ) {
+                OutputStart_DateTime = (DateTime)o_OutputStart;
+            }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting OutputStart from processor - not using.";
+            Message.printDebug(10, routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+    }
+    String OutputEnd = parameters.getValue ( "OutputEnd" );
+    DateTime OutputEnd_DateTime = null;
+    if ( OutputEnd != null ) {
+        request_params = new PropList ( "" );
+        request_params.set ( "DateTime", OutputEnd );
+        try {
+            bean = processor.processRequest( "DateTime", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
+            Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+        bean_PropList = bean.getResultsPropList();
+        Object prop_contents = bean_PropList.getContents ( "DateTime" );
+        if ( prop_contents == null ) {
+            message = "Null value for DateTime(DateTime=" + OutputEnd +
+            "\") returned from processor.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+        else {
+            OutputEnd_DateTime = (DateTime)prop_contents;
+        }
+    }
+    else {
+        // Get from the processor...
+        try {
+            Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
+            if ( o_OutputEnd != null ) {
+                OutputEnd_DateTime = (DateTime)o_OutputEnd;
+            }
+        }
+        catch ( Exception e ) {
+            // Not fatal, but of use to developers.
+            message = "Error requesting OutputEnd from processor - not using.";
+            Message.printDebug(10, routine, message );
+        }
+    }
+
+    String Precision = parameters.getValue ( "Precision" );
+    Integer precision = new Integer(4);
+    if ( (Precision != null) && (Precision.length() > 0) ) {
+        precision = Integer.parseInt(Precision);
+    }
+    String MissingValue = parameters.getValue ( "MissingValue" ); 
+    
+    String OutputFile_full = OutputFile;
+    try {
+        // Convert to an absolute path...
+        OutputFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+        Message.printStatus ( 2, routine, "Writing KML file \"" + OutputFile_full + "\"" );
+        List<String> errors = new Vector<String>();
+        String version = "2";
+        writeTimeSeriesList ( tslist, OutputFile_full, version, precision, MissingValue,
+            OutputStart_DateTime, OutputEnd_DateTime, LongitudeProperty, LatitudeProperty, ElevationProperty, errors );
+        for ( String error : errors ) {
+            Message.printWarning ( warning_level, 
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, error );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    error, "Check log file for details." ) );
+        }
+        // Save the output file name...
+        setOutputFile ( new File(OutputFile_full));
+    }
+    catch ( Exception e ) {
+        message = "Unexpected error writing time series to KML file \"" + OutputFile_full + "\" (" + e + ")";
+        Message.printWarning ( warning_level, 
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+        Message.printWarning ( 3, routine, e );
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check log file for details." ) );
+        throw new CommandException ( message );
+    }
+    
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -544,7 +467,7 @@ Set the output file that is created by this command.  This is only used internal
 */
 private void setOutputFile ( File file )
 {
-	__OutputFile_File = file;
+    __OutputFile_File = file;
 }
 
 /**
@@ -552,31 +475,62 @@ Return the string representation of the command.
 @param parameters Command parameters as strings.
 */
 public String toString ( PropList parameters )
-{	if ( parameters == null ) {
-		return getCommandName() + "()";
-	}
-	String OutputFile = parameters.getValue ( "OutputFile" );
-	String Delimiter = parameters.getValue ( "Delimiter" );
-	String Precision = parameters.getValue("Precision");
-	String MissingValue = parameters.getValue("MissingValue");
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
+{   if ( parameters == null ) {
+        return getCommandName() + "()";
+    }
+    String OutputFile = parameters.getValue ( "OutputFile" );
+    String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
+    String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
+    String ElevationProperty = parameters.getValue ( "ElevationProperty" );
+    String Precision = parameters.getValue("Precision");
+    String MissingValue = parameters.getValue("MissingValue");
+    String OutputStart = parameters.getValue ( "OutputStart" );
+    String OutputEnd = parameters.getValue ( "OutputEnd" );
     String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
-    String IrregularInterval = parameters.getValue( "IrregularInterval" );
-	StringBuffer b = new StringBuffer ();
-	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputFile=\"" + OutputFile + "\"" );
-	}
-    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
+    StringBuffer b = new StringBuffer ();
+    if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "Delimiter=\"" + Delimiter + "\"" );
+        b.append ( "TSList=" + TSList );
+    }
+    if ( (TSID != null) && (TSID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSID=\"" + TSID + "\"" );
+    }
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
+    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputFile=\"" + OutputFile + "\"" );
+    }
+    if ( (LongitudeProperty != null) && (LongitudeProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LongitudeProperty=\"" + LongitudeProperty + "\"" );
+    }
+    if ( (LatitudeProperty != null) && (LatitudeProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LatitudeProperty=\"" + LatitudeProperty + "\"" );
+    }
+    if ( (ElevationProperty != null) && (ElevationProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ElevationProperty=\"" + ElevationProperty + "\"" );
     }
     if ( (Precision != null) && (Precision.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -596,37 +550,103 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputStart=\"" + OutputStart + "\"" );
     }
-	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
-	}
-    if ( (TSList != null) && (TSList.length() > 0) ) {
+    if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "TSList=" + TSList );
+        b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
     }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
+    return getCommandName() + "(" + b.toString() + ")";
+}
+
+// TODO SAM 2013-7-01 Evaluate whether a separate package should be created - for now keep the code here
+// until there is time to split out
+/**
+Write the time series list to a KML file.
+*/
+private void writeTimeSeriesList ( List<TS> tslist, String outputFile, String version, Integer precision, String missingValue,
+    DateTime outputStart, DateTime outputEnd, String longitudeProperty,
+    String latitudeProperty, String elevationProperty, List<String> errors )
+{   PrintWriter fout = null;
+    try {
+        FileOutputStream fos = new FileOutputStream ( outputFile );
+        fout = new PrintWriter ( fos );
+        // For now just support KML 2
+        writeTimeSeriesList2 ( fout, tslist, precision, missingValue, outputStart, outputEnd, longitudeProperty,
+            latitudeProperty, elevationProperty, errors );
+    }
+    catch ( FileNotFoundException e ) {
+        errors.add ( "Output file \"" + outputFile + "\" could not be created (" + e + ")." );
+    }
+    finally {
+        try {
+            fout.close();
         }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
+        catch ( Exception e ) {
         }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    } 
+}
+
+/**
+Write the version 01 format KML.
+@param fout open PrintWriter to write to
+@param tslist list of time series to write
+@param outputStart output start or null to write full period
+@param outputEnd output end or null to write full period
+@param overlap if true, write the data in overlapping fashion (date/time shared between time series)
+@param errors list of error strings to be propagated to calling code
+*/
+private void writeTimeSeriesList2 ( PrintWriter fout, List<TS> tslist, Integer precision, String missingValue,
+    DateTime outputStart, DateTime outputEnd, String longitudeProp, String latitudeProp, String elevationProp,
+    List<String> errors )
+{   // Write the header
+    String i1 = " ";
+    String i2 = "  ";
+    String i3 = "   ";
+    String i4 = "    ";
+    fout.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n" +
+        i1 + "<Document>\n" );
+    // Write the styles based on the data types.
+    // Get the unique list of data types
+    int nDataTypes = 1;
+    for ( int i = 0; i < nDataTypes; i++ ) {
+        fout.write(i2 + "<Style id=\"dataTypeStyle\">\n");
+        //fout.write(i3 + "<IconStyle>\n");
+        //fout.write(i4 + "<Icon><href>xxx.png</href></Icon>\n");
+        //fout.write(i3 + "</IconStyle>\n");
+        fout.write(i2 + "</Style>\n");
     }
-    if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
+    Object longitude, latitude, elevation; // Can be double, int, or string
+    for ( TS ts : tslist ) {
+        longitude = null;
+        latitude = null;
+        elevation = null;
+        if ( longitudeProp != null ) {
+            longitude = ts.getProperty(longitudeProp);
         }
-        b.append ( "IrregularInterval=" + IrregularInterval );
+        if ( latitudeProp != null ) {
+            latitude = ts.getProperty(latitudeProp);
+        }
+        if ( elevationProp != null ) {
+            elevation = ts.getProperty(elevationProp);
+        }
+        if ( elevation == null ) {
+            elevation = "0";
+        }
+        if ( (longitude == null) || (latitude == null) ) {
+            continue;
+        }
+        fout.write(i2 + "<Placemark>\n");
+        // TODO SAM 2013-07-01 use formatting strings for name
+        fout.write(i3 + "<name>" + ts.getDescription() + "</name>\n");
+        fout.write(i3 + "<Point>\n");
+        fout.write(i4 + "<coordinates>" + longitude + "," + latitude + "," + elevation + "</coordinates>\n");
+        fout.write(i3 + "</Point>\n");
+        fout.write(i2 + "</Placemark>\n");
     }
-	return getCommandName() + "(" + b.toString() + ")";
+    fout.write( i1 + "</Document>\n" );   
+    fout.write( "</kml>\n" );
 }
 
 }

@@ -1163,7 +1163,7 @@ public static Collection getPropertyNameList( CommandProcessor processor )
 	if ( processor instanceof TSCommandProcessor ) {
 		return ((TSCommandProcessor)processor).getPropertyNameList(true,true);
 	}
-	return new Vector();
+	return new Vector<String>();
 }
 
 /**

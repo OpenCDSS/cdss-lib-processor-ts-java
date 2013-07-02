@@ -1405,7 +1405,7 @@ public Collection getPropertyNameList ( boolean includeBuiltInProperties, boolea
 	// properties be available (and rely on discovery to pass to other commands)?
 	// Add properties that are hard-coded.
 	if ( includeBuiltInProperties ) {
-	    List<String> v = new Vector();
+	    List<String> v = new Vector<String>();
         v.add ( "AutoExtendPeriod" );
         v.add ( "AverageStart" );
         v.add ( "AverageEnd" );

@@ -318,7 +318,7 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
  
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expanded property:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputProperty_JTextField = new JTextField ( 10 );
+    __OutputProperty_JTextField = new JTextField ( 20 );
     __OutputProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputProperty_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

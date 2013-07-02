@@ -432,147 +432,155 @@ CommandWarningException, CommandException
         // Initialize the output file to null...
         setOutputFile ( null );
         setDiscoveryProp(null);
-        // Call the FreeMarker API...
-        Configuration config = new Configuration();
-        // TODO SAM 2009-10-07 Not sure what configuration is needed for TSTool since most
-        // templates will be located with command files and user data
-        //config.setSharedVariable("shared", "avoid global variables");
-        // See comment below on why this is used.
-        config.setSharedVariable("normalizeNewlines", new freemarker.template.utility.NormalizeNewlines());
-        config.setTemplateLoader(new FileTemplateLoader(new File(".")));
-
-        // In some apps, use config to load templates as it provides caching
-        //Template template = config.getTemplate("some-template.ftl");
-
-        // Manipulate the template file into an in-memory string so it can be manipulated...
-        StringBuffer b = new StringBuffer();
-        // Prepend any extra FreeMarker content that should be handled transparently.
-        // "normalizeNewlines" is used to ensure that output has line breaks consistent with the OS (e.g., so that
-        // results can be edited in Notepad on Windows).
-        String nl = System.getProperty("line.separator");
-        b.append("<@normalizeNewlines>" + nl );
-        List<String> templateLines = IOUtil.fileToStringList(InputFile_full);
-        b.append(StringUtil.toString(templateLines,nl));
-        b.append(nl + "</@normalizeNewlines>" );
-        Template template = null;
-        boolean error = false;
-        try {
-            template = new Template("template", new StringReader(b.toString()), config);
-        }
-        catch ( Exception e1 ) {
-            message = "Freemarker error expanding command template file \"" + InputFile_full +
-                "\" + (" + e1 + ") template text (with internal inserts at ends) =" + nl +
-                formatTemplateForWarning(templateLines,nl);
-            Message.printWarning ( warning_level, 
-            MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-            Message.printWarning ( 3, routine, e1 );
-            status.addToLog(CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Check template file syntax for Freemarker markup errors."));
-            error = true;
-        }
-        if ( !error ) {
-            // Create a model
-            Map model = new HashMap();
-            TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
-            if ( processor instanceof TSCommandProcessor ) {
-                // Add properties from the processor
-                Collection<String> propertyNames = tsprocessor.getPropertyNameList(true,true);
-                for ( String propertyName : propertyNames ) {
-                    model.put(propertyName, tsprocessor.getPropContents(propertyName) );
-                }
-                // Add single column tables from the processor, using the table ID as the object key
-                if ( UseTables_boolean ) {
-                    List<DataTable> tables = (List<DataTable>)tsprocessor.getPropContents ( "TableResultsList" );
-                    Object tableVal;
-                    for ( DataTable table: tables ) {
-                        if ( table.getNumberOfFields() == 1 ) {
-                            // One-column table so add as a hash (list) property in the data model
-                            int numRecords = table.getNumberOfRecords();
-                            SimpleSequence list = new SimpleSequence();
-                            for ( int irec = 0; irec < numRecords; irec++ ) {
-                                // Check for null because this fouls up the template
-                                tableVal = table.getFieldValue(irec, 0);
-                                if ( tableVal == null ) {
-                                    tableVal = "";
-                                }
-                                list.add ( tableVal );
-                            }
-                            if ( Message.isDebugOn ) {
-                                Message.printStatus(2, routine, "Passing 1-column table \"" + table.getTableID() +
-                                    "\" (" + numRecords + " rows) to template model.");
-                            }
-                            model.put(table.getTableID(), list );
-                        }
-                    }
-                }
-            }
-            if ( (commandPhase == CommandPhaseType.RUN) && (OutputFile_full != null) ) {
-                // Expand the template to the output file
-                FileOutputStream fos = new FileOutputStream( OutputFile_full );
-                PrintWriter out = new PrintWriter ( fos );
-                try {
-                    template.process (model, out);
-                    // Set the output file
-                    if ( ListInResults_boolean ) {
-                        setOutputFile ( new File(OutputFile_full));
-                    }
-                }
-                catch ( Exception e1 ) {
-                    message = "Freemarker error expanding command template file \"" + InputFile_full +
-                        "\" + (" + e1 + ") template text (with internal inserts at ends) =\n" +
-                        formatTemplateForWarning(templateLines,nl);;
-                    Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-                    Message.printWarning ( 3, routine, e1 );
-                    status.addToLog(CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Check template file syntax for Freemarker markup errors."));
-                }
-                finally {
-                    out.close();
-                }
-            }
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             if ( (OutputProperty != null) && !OutputProperty.equals("") ) {
-                // Expand the template to a property - run and discovery mode
-                StringWriter out = new StringWriter ();
-                try {
-                    template.process (model, out);
-                    // Set the property in the processor                   
-                    PropList request_params = new PropList ( "" );
-                    request_params.setUsingObject ( "PropertyName", OutputProperty );
-                    // Trim off trailing newline
-                    String propValue = out.getBuffer().toString().trim();
-                    request_params.setUsingObject ( "PropertyValue", propValue );
-                    try {
-                        processor.processRequest( "SetProperty", request_params); 
-                        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-                            setDiscoveryProp ( new Prop(OutputProperty,propValue,"" + propValue ) );
+                // Just set the property name
+                setDiscoveryProp(new Prop(OutputProperty,null,""));
+            }
+        }
+        else if ( commandPhase == CommandPhaseType.RUN ) {
+            // Call the FreeMarker API...
+            Configuration config = new Configuration();
+            // TODO SAM 2009-10-07 Not sure what configuration is needed for TSTool since most
+            // templates will be located with command files and user data
+            //config.setSharedVariable("shared", "avoid global variables");
+            // See comment below on why this is used.
+            config.setSharedVariable("normalizeNewlines", new freemarker.template.utility.NormalizeNewlines());
+            config.setTemplateLoader(new FileTemplateLoader(new File(".")));
+    
+            // In some apps, use config to load templates as it provides caching
+            //Template template = config.getTemplate("some-template.ftl");
+    
+            // Manipulate the template file into an in-memory string so it can be manipulated...
+            StringBuffer b = new StringBuffer();
+            // Prepend any extra FreeMarker content that should be handled transparently.
+            // "normalizeNewlines" is used to ensure that output has line breaks consistent with the OS (e.g., so that
+            // results can be edited in Notepad on Windows).
+            String nl = System.getProperty("line.separator");
+            b.append("<@normalizeNewlines>" + nl );
+            List<String> templateLines = IOUtil.fileToStringList(InputFile_full);
+            b.append(StringUtil.toString(templateLines,nl));
+            b.append(nl + "</@normalizeNewlines>" );
+            Template template = null;
+            boolean error = false;
+            try {
+                template = new Template("template", new StringReader(b.toString()), config);
+            }
+            catch ( Exception e1 ) {
+                message = "Freemarker error expanding command template file \"" + InputFile_full +
+                    "\" + (" + e1 + ") template text (with internal inserts at ends) =" + nl +
+                    formatTemplateForWarning(templateLines,nl);
+                Message.printWarning ( warning_level, 
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                Message.printWarning ( 3, routine, e1 );
+                status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check template file syntax for Freemarker markup errors."));
+                error = true;
+            }
+            if ( !error ) {
+                // Create a model
+                Map model = new HashMap();
+                TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
+                if ( processor instanceof TSCommandProcessor ) {
+                    // Add properties from the processor
+                    Collection<String> propertyNames = tsprocessor.getPropertyNameList(true,true);
+                    for ( String propertyName : propertyNames ) {
+                        model.put(propertyName, tsprocessor.getPropContents(propertyName) );
+                    }
+                    // Add single column tables from the processor, using the table ID as the object key
+                    if ( UseTables_boolean ) {
+                        List<DataTable> tables = (List<DataTable>)tsprocessor.getPropContents ( "TableResultsList" );
+                        Object tableVal;
+                        for ( DataTable table: tables ) {
+                            if ( table.getNumberOfFields() == 1 ) {
+                                // One-column table so add as a hash (list) property in the data model
+                                int numRecords = table.getNumberOfRecords();
+                                SimpleSequence list = new SimpleSequence();
+                                for ( int irec = 0; irec < numRecords; irec++ ) {
+                                    // Check for null because this fouls up the template
+                                    tableVal = table.getFieldValue(irec, 0);
+                                    if ( tableVal == null ) {
+                                        tableVal = "";
+                                    }
+                                    list.add ( tableVal );
+                                }
+                                if ( Message.isDebugOn ) {
+                                    Message.printStatus(2, routine, "Passing 1-column table \"" + table.getTableID() +
+                                        "\" (" + numRecords + " rows) to template model.");
+                                }
+                                model.put(table.getTableID(), list );
+                            }
                         }
                     }
-                    catch ( Exception e ) {
-                        message = "Error requesting SetProperty(Property=\"" + OutputProperty + "\") from processor.";
-                        Message.printWarning(log_level,
-                                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                                routine, message );
-                        status.addToLog ( CommandPhaseType.RUN,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Report the problem to software support." ) );
+                }
+                if ( OutputFile_full != null ) {
+                    // Expand the template to the output file
+                    FileOutputStream fos = new FileOutputStream( OutputFile_full );
+                    PrintWriter out = new PrintWriter ( fos );
+                    try {
+                        template.process (model, out);
+                        // Set the output file
+                        if ( ListInResults_boolean ) {
+                            setOutputFile ( new File(OutputFile_full));
+                        }
+                    }
+                    catch ( Exception e1 ) {
+                        message = "Freemarker error expanding command template file \"" + InputFile_full +
+                            "\" + (" + e1 + ") template text (with internal inserts at ends) =\n" +
+                            formatTemplateForWarning(templateLines,nl);;
+                        Message.printWarning ( warning_level, 
+                        MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                        Message.printWarning ( 3, routine, e1 );
+                        status.addToLog(CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Check template file syntax for Freemarker markup errors."));
+                    }
+                    finally {
+                        out.close();
                     }
                 }
-                catch ( Exception e1 ) {
-                    message = "Freemarker error expanding command template file \"" + InputFile_full +
-                        "\" + (" + e1 + ") template text to property (with internal inserts at ends) =\n" +
-                        formatTemplateForWarning(templateLines,nl);;
-                    Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-                    Message.printWarning ( 3, routine, e1 );
-                    status.addToLog(CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Check template file syntax for Freemarker markup errors."));
-                }
-                finally {
-                    out.close();
+                if ( (OutputProperty != null) && !OutputProperty.equals("") ) {
+                    // Expand the template to a property - run and discovery mode
+                    StringWriter out = new StringWriter ();
+                    try {
+                        template.process (model, out);
+                        // Set the property in the processor                   
+                        PropList request_params = new PropList ( "" );
+                        request_params.setUsingObject ( "PropertyName", OutputProperty );
+                        // Trim off trailing newline
+                        String propValue = out.getBuffer().toString().trim();
+                        request_params.setUsingObject ( "PropertyValue", propValue );
+                        try {
+                            processor.processRequest( "SetProperty", request_params); 
+                            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+                                setDiscoveryProp ( new Prop(OutputProperty,propValue,"" + propValue ) );
+                            }
+                        }
+                        catch ( Exception e ) {
+                            message = "Error requesting SetProperty(Property=\"" + OutputProperty + "\") from processor.";
+                            Message.printWarning(log_level,
+                                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                                    routine, message );
+                            status.addToLog ( CommandPhaseType.RUN,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                            message, "Report the problem to software support." ) );
+                        }
+                    }
+                    catch ( Exception e1 ) {
+                        message = "Freemarker error expanding command template file \"" + InputFile_full +
+                            "\" + (" + e1 + ") template text to property (with internal inserts at ends) =\n" +
+                            formatTemplateForWarning(templateLines,nl);;
+                        Message.printWarning ( warning_level, 
+                        MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                        Message.printWarning ( 3, routine, e1 );
+                        status.addToLog(CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Check template file syntax for Freemarker markup errors."));
+                    }
+                    finally {
+                        out.close();
+                    }
                 }
             }
         }

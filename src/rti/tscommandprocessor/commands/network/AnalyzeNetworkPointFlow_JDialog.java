@@ -46,6 +46,7 @@ private JTextField __NodeIDColumn_JTextField = null;
 private JTextField __NodeNameColumn_JTextField = null;
 private JTextField __NodeTypeColumn_JTextField = null;
 private JTextField __NodeDistanceColumn_JTextField = null;
+private JTextField __NodeWeightColumn_JTextField = null;
 private JTextField __DownstreamNodeIDColumn_JTextField = null;
 private JTextField __NodeAddTypes_JTextField = null;
 private JTextField __NodeAddDataTypes_JTextField = null;
@@ -108,6 +109,7 @@ private void checkInput ()
 	String NodeNameColumn = __NodeNameColumn_JTextField.getText().trim();
 	String NodeTypeColumn = __NodeTypeColumn_JTextField.getText().trim();
 	String NodeDistanceColumn = __NodeDistanceColumn_JTextField.getText().trim();
+	String NodeWeightColumn = __NodeWeightColumn_JTextField.getText().trim();
 	String DownstreamNodeIDColumn = __DownstreamNodeIDColumn_JTextField.getText().trim();
 	String NodeAddTypes = __NodeAddTypes_JTextField.getText().trim();
 	String NodeAddDataTypes = __NodeAddDataTypes_JTextField.getText().trim();
@@ -138,6 +140,9 @@ private void checkInput ()
     }
     if ( NodeDistanceColumn.length() > 0 ) {
         props.set ( "NodeDistanceColumn", NodeDistanceColumn );
+    }
+    if ( NodeWeightColumn.length() > 0 ) {
+        props.set ( "NodeWeightColumn", NodeWeightColumn );
     }
     if ( DownstreamNodeIDColumn.length() > 0 ) {
         props.set ( "DownstreamNodeIDColumn", DownstreamNodeIDColumn );
@@ -202,6 +207,7 @@ private void commitEdits ()
     String NodeNameColumn = __NodeNameColumn_JTextField.getText().trim();
     String NodeTypeColumn = __NodeTypeColumn_JTextField.getText().trim();
     String NodeDistanceColumn = __NodeDistanceColumn_JTextField.getText().trim();
+    String NodeWeightColumn = __NodeWeightColumn_JTextField.getText().trim();
     String DownstreamNodeIDColumn = __DownstreamNodeIDColumn_JTextField.getText().trim();
     String NodeAddTypes = __NodeAddTypes_JTextField.getText().trim();
     String NodeAddDataTypes = __NodeAddDataTypes_JTextField.getText().trim();
@@ -221,6 +227,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "NodeNameColumn", NodeNameColumn );
     __command.setCommandParameter ( "NodeTypeColumn", NodeTypeColumn );
     __command.setCommandParameter ( "NodeDistanceColumn", NodeDistanceColumn );
+    __command.setCommandParameter ( "NodeWeightColumn", NodeWeightColumn );
     __command.setCommandParameter ( "DownstreamNodeIDColumn", DownstreamNodeIDColumn );
 	__command.setCommandParameter ( "NodeAddTypes", NodeAddTypes );
 	__command.setCommandParameter ( "NodeAddDataTypes", NodeAddDataTypes );
@@ -341,6 +348,15 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JGUIUtil.addComponent(table_JPanel, __NodeDistanceColumn_JTextField,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - used if GainMethod requires distance."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Node weight column:"), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NodeWeightColumn_JTextField = new JTextField (10);
+    __NodeWeightColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __NodeWeightColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - used if GainMethod requires weight."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Downstream node ID column:"), 
@@ -472,6 +488,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     gainChoices.add ( "" );
     gainChoices.add ( "" + NetworkGainMethodType.DISTANCE );
     gainChoices.add ( "" + NetworkGainMethodType.NONE );
+    gainChoices.add ( "" + NetworkGainMethodType.WEIGHT );
     __GainMethod_JComboBox.setData(gainChoices);
     __GainMethod_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __GainMethod_JComboBox,
@@ -568,6 +585,7 @@ private void refresh ()
     String NodeNameColumn = "";
     String NodeTypeColumn = "";
     String NodeDistanceColumn = "";
+    String NodeWeightColumn = "";
     String DownstreamNodeIDColumn = "";
     String NodeAddTypes = "";
     String NodeAddDataTypes = "";
@@ -590,6 +608,7 @@ private void refresh ()
         NodeNameColumn = props.getValue ( "NodeNameColumn" );
         NodeTypeColumn = props.getValue ( "NodeTypeColumn" );
         NodeDistanceColumn = props.getValue ( "NodeDistanceColumn" );
+        NodeWeightColumn = props.getValue ( "NodeWeightColumn" );
         DownstreamNodeIDColumn = props.getValue ( "DownstreamNodeIDColumn" );
         NodeAddTypes = props.getValue ( "NodeAddTypes" );
         NodeAddDataTypes = props.getValue ( "NodeAddDataTypes" );
@@ -630,6 +649,9 @@ private void refresh ()
         }
         if ( NodeDistanceColumn != null ) {
             __NodeDistanceColumn_JTextField.setText ( NodeDistanceColumn );
+        }
+        if ( NodeWeightColumn != null ) {
+            __NodeWeightColumn_JTextField.setText ( NodeWeightColumn );
         }
         if ( DownstreamNodeIDColumn != null ) {
             __DownstreamNodeIDColumn_JTextField.setText ( DownstreamNodeIDColumn );
@@ -702,6 +724,7 @@ private void refresh ()
 	NodeNameColumn = __NodeNameColumn_JTextField.getText().trim();
 	NodeTypeColumn = __NodeTypeColumn_JTextField.getText().trim();
 	NodeDistanceColumn = __NodeDistanceColumn_JTextField.getText().trim();
+	NodeWeightColumn = __NodeWeightColumn_JTextField.getText().trim();
 	DownstreamNodeIDColumn = __DownstreamNodeIDColumn_JTextField.getText().trim();
 	NodeAddTypes = __NodeAddTypes_JTextField.getText().trim();
 	NodeAddDataTypes = __NodeAddDataTypes_JTextField.getText().trim();
@@ -722,6 +745,7 @@ private void refresh ()
     props.add ( "NodeNameColumn=" + NodeNameColumn );
     props.add ( "NodeTypeColumn=" + NodeTypeColumn );
     props.add ( "NodeDistanceColumn=" + NodeDistanceColumn );
+    props.add ( "NodeWeightColumn=" + NodeWeightColumn );
     props.add ( "DownstreamNodeIDColumn=" + DownstreamNodeIDColumn );
     props.add ( "NodeAddTypes=" + NodeAddTypes );
     props.add ( "NodeAddDataTypes=" + NodeAddDataTypes );

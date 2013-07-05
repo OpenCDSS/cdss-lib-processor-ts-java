@@ -10,6 +10,10 @@ Distance (stream mile, etc.).
 */
 DISTANCE("Distance"),
 /**
+Weight (relative gain/loss for node in reach.).
+*/
+WEIGHT("Weight"),
+/**
 No gain analysis (carry forward).
 */
 NONE("None");

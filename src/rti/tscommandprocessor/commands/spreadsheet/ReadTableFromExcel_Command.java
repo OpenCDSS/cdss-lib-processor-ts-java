@@ -370,9 +370,9 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                     // TODO SAM 2013-02-26 Need to figure out the precision from formatting
                     // For now always set the column to a double with the precision from formatting
                     // Could default to integer for 0-precision but could guess wrong
-                    style = cell.getCellStyle();
-                    short format = style.getDataFormat();
-                    CellStyle style2 = wb.getCellStyleAt(format);
+                    //style = cell.getCellStyle();
+                    //short format = style.getDataFormat();
+                    //CellStyle style2 = wb.getCellStyleAt(format);
                     Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_DOUBLE));
                     table.addField ( new TableField(TableField.DATA_TYPE_DOUBLE, columnNames[columnIndex], -1, 6), null );
                 }

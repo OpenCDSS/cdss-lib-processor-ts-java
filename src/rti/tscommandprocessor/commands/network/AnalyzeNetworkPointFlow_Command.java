@@ -63,28 +63,37 @@ public AnalyzeNetworkPointFlow_Command ()
 
 /**
 Add nodes upstream of the node with the given identifier (which has already been added to the network).
+The first call should pass the most downstream node in the network for "nodeID"
+and subsequent calls will follow the tributaries upstream recursively (called from this method).
+@param table the table listing network nodes
+@param network the node network that is being created from the network table
+@param nodeID identifier for node that has already been added (treated as downstream nodes for other nodes to add)
+@param nodeIdColumnNum table column number (0+) for node identifiers
+@param nodeNameColumnNum table column number (0+) for node names
+@param nodeTypeColumnNum table column number (0+) for node types
+@param downstreamNodeIdColumnNum table column number (0+) for downstream node identifiers
+@param problems a list of problem strings that will be made visible in command status messages
 */
 private void addNodesUpstreamOfNode ( DataTable table, HydrologyNodeNetwork network, String nodeID,
-    int nodeIdColumn, int nodeNameColumn, int nodeTypeColumn, int downstreamNodeIdColumn,
+    int nodeIdColumnNum, int nodeNameColumnNum, int nodeTypeColumnNum, int downstreamNodeIdColumnNum,
     List<String> problems )
 {   String routine = "AnalyzeNetworkPointFlow_Command.addNodesUpstreamOfNode";
     // Find the table records that have "nodeID" as the downstream node
-    List<TableRecord> records = findTableRecordsWithValue(table, downstreamNodeIdColumn, nodeID, false);
+    List<TableRecord> records = findTableRecordsWithValue(table, downstreamNodeIdColumnNum, nodeID, false);
     String upstreamNodeID;
     String nodeName;
     HydrologyNode node;
     for ( TableRecord record : records ) {
         // Add the node...
         try {
-            upstreamNodeID = (String)record.getFieldValue(nodeIdColumn);
-            nodeName = (String)record.getFieldValue(nodeNameColumn);
+            upstreamNodeID = (String)record.getFieldValue(nodeIdColumnNum);
+            nodeName = (String)record.getFieldValue(nodeNameColumnNum);
         }
         catch ( Exception e ) {
             problems.add ( "Error getting upstream node ID - not adding upstream nodes (" + e + ").");
             continue;
         }
-        Message.printStatus(2,routine,"Adding node \"" + upstreamNodeID + "\" upstream of \"" +
-            nodeID + "\"." );
+        Message.printStatus(2,routine,"Adding node \"" + upstreamNodeID + "\" upstream of \"" + nodeID + "\"." );
         node = network.addNode(upstreamNodeID, HydrologyNode.NODE_TYPE_UNKNOWN,
             null, // Upstream node ID is not yet known
             nodeID, // Downstream node ID
@@ -92,16 +101,36 @@ private void addNodesUpstreamOfNode ( DataTable table, HydrologyNodeNetwork netw
             false ); // Not an import (not significant in general network)
         node.setDescription(nodeName);
         // Recursively add the nodes upstream of the node just added
-        addNodesUpstreamOfNode ( table, network, upstreamNodeID, nodeIdColumn, nodeNameColumn,
-            nodeTypeColumn, downstreamNodeIdColumn, problems );
+        addNodesUpstreamOfNode ( table, network, upstreamNodeID, nodeIdColumnNum, nodeNameColumnNum,
+            nodeTypeColumnNum, downstreamNodeIdColumnNum, problems );
     }
 }
 
 /**
 Analyze the network point flow.
+@param nodeID identifier for node that has already been added (treated as downstream nodes for other nodes to add)
+@param nodeIdColumnNum table column number (0+) for node identifiers
+@param nodeTypeColumnNum table column number (0+) for node types
+@param nodeDistanceColumnNum table column number (0+) for node distance
+@param nodeWeightColumnNum table column number (0+) for node distance
+@param nodeAddTypes node types where time series should be added at the node
+@param nodeAddDataTypes time series data types where time series should be added at the node
+@param nodeSubtractTypes node types where time series should be subtracted at the node
+@param nodeSubtractDataTypes time series data types where time series should be subtracted at the node
+@param nodeOutflowTypes node types where time series should be set at the node
+@param nodeOutflowDataTypes time series data types where time series should be set at the node
+@param nodeFlowThroughTypes node types where node inflow should continue as outflow
+@param network the node network that is was created from the network table
+@param outputTSList list of time series created by the analysis, representing mass balance at each node
+@param interval the time series interval for all time series in the analysis
+@param gainMethod the gain method used when computing gains
+@param analysisStart the date/time to start the analysis
+@param analysisEnd the date/time to end the analysis
+@param problems a list of problem strings that will be made visible in command status messages
 */
-private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int nodeTypeColumnNum, int nodeDistanceColumnNum,
-    int nodeWeightColumnNum, String [] nodeAddTypes, String [] nodeAddDataTypes,
+private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int nodeTypeColumnNum,
+    int nodeDistanceColumnNum, int nodeWeightColumnNum,
+    String [] nodeAddTypes, String [] nodeAddDataTypes,
     String [] nodeSubtractTypes, String [] nodeSubtractDataTypes,
     String [] nodeOutflowTypes, String [] nodeOutflowDataTypes,
     String [] nodeFlowThroughTypes,
@@ -123,8 +152,6 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
     TS nodeStorageTS;
     String description;
     List<HydrologyNode> upstreamNodeList;
-    int intervalBase = interval.getBase();
-    int intervalMult = interval.getMultiplier();
     for (HydrologyNode node = HydrologyNodeNetwork.getUpstreamNode(network.getNodeHead(), HydrologyNodeNetwork.POSITION_ABSOLUTE);
         node.getDownstreamNode() != null;
         node = HydrologyNodeNetwork.getDownstreamNode(node, HydrologyNodeNetwork.POSITION_COMPUTATIONAL)) {
@@ -140,15 +167,15 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
             break;
         }
         // Get the output time series for the node, which were previously created by this command
-        nodeInflowTS = lookupNodeOutputTimeSeries ( nodeID, "NodeInflow", outputTSList );
-        nodeOutflowTS = lookupNodeOutputTimeSeries ( nodeID, "NodeOutflow", outputTSList );
-        nodeAddTS = lookupNodeOutputTimeSeries ( nodeID, "NodeAdd", outputTSList );
-        nodeSubtractTS = lookupNodeOutputTimeSeries ( nodeID, "NodeSubtract", outputTSList );
-        nodeUpstreamGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeUpstreamGain", outputTSList );
-        nodeUpstreamReachGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeUpstreamReachGain", outputTSList );
-        nodeInflowWithGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeInflowWithGain", outputTSList );
-        nodeOutflowWithGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeOutflowWithGain", outputTSList );
-        nodeStorageTS = lookupNodeOutputTimeSeries ( nodeID, "NodeStorage", outputTSList );
+        nodeInflowTS = lookupNodeOutputTimeSeries ( nodeID, "NodeInflow", interval, outputTSList );
+        nodeOutflowTS = lookupNodeOutputTimeSeries ( nodeID, "NodeOutflow", interval, outputTSList );
+        nodeAddTS = lookupNodeOutputTimeSeries ( nodeID, "NodeAdd", interval, outputTSList );
+        nodeSubtractTS = lookupNodeOutputTimeSeries ( nodeID, "NodeSubtract", interval, outputTSList );
+        nodeUpstreamGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeUpstreamGain", interval, outputTSList );
+        nodeUpstreamReachGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeUpstreamReachGain", interval, outputTSList );
+        nodeInflowWithGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeInflowWithGain", interval, outputTSList );
+        nodeOutflowWithGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeOutflowWithGain", interval, outputTSList );
+        nodeStorageTS = lookupNodeOutputTimeSeries ( nodeID, "NodeStorage", interval, outputTSList );
         // Save the description because want to reset at the end
         description = nodeInflowTS.getDescription();
         // Now process the time series based on the time series type
@@ -197,7 +224,8 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
                         continue;
                     }
                     for ( HydrologyNode upstreamNode : upstreamNodes ) {
-                        TS upstreamNodeOutflowTS = lookupNodeOutputTimeSeries ( upstreamNode.getCommonID(), "NodeOutflow", outputTSList );
+                        TS upstreamNodeOutflowTS = lookupNodeOutputTimeSeries ( upstreamNode.getCommonID(), "NodeOutflow",
+                            interval, outputTSList );
                         // Subtract
                         List<TS> tslistSubtract = new Vector<TS>();
                         tslistSubtract.add(upstreamNodeOutflowTS);
@@ -239,12 +267,11 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
                     }
                     else {
                         // Single upstream node so able to compute gain/loss
-                         // Get the list of upstream nodes, starting with the next upstream node (there should be one based on
-                        // the above checks).
+                        // Get the list of upstream nodes, starting with the current node (works because above checks
+                        // for branching network limit recursion).
                         int problemsSize = problems.size();
                         upstreamNodeList = analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss ( null, node,
-                            table, nodeIdColumnNum, nodeTypeColumnNum, nodeOutflowTypes,
-                            problems );
+                            table, nodeIdColumnNum, nodeTypeColumnNum, nodeOutflowTypes, problems );
                         if ( problems.size() > problemsSize ) {
                             // Had issues getting the upstream node list so don't continue with the gain/loss calculations.
                             continue;
@@ -254,7 +281,7 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
                             upstreamNodeList, table, nodeIdColumnNum, nodeWeightColumnNum, nodeDistanceColumnNum, problems );
                         if ( weights != null ) {
                             analyzeNetworkPointFlow_CalculateReachGainLoss ( upstreamNodeList, gainMethod, weights,
-                                outputTSList, intervalBase, intervalMult, analysisStart, analysisEnd, problems );
+                                outputTSList, interval, analysisStart, analysisEnd, problems );
                         }
                     }
                 }
@@ -279,7 +306,7 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
             else {
                 for ( int i = 0; i < upstreamNodeList.size(); i++ ) {
                     TS upstreamOutflowTS = lookupNodeOutputTimeSeries ( upstreamNodeList.get(i).getCommonID(),
-                        "NodeOutflow", outputTSList );
+                        "NodeOutflow", interval, outputTSList );
                     if ( i == 0 ) {
                         // Want to make sure missing is reset
                         try {
@@ -385,14 +412,27 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
 }
 
 /**
-Calculate the gain/loss time series for nodes in a reach, for the entire analysis period.
+Calculate the gain/loss time series for nodes in a reach (between known point flows), for the entire analysis period.
+@param reachUpstreamNodeList list of nodes determined from analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss() method, which
+includes the downstream known flow up to but not including upstream known flow points (since those nodes will be processed
+as part of their upstream reaches).
+@param gainMethod the gain method used when computing gains
+@param weights the weights for each node to be used to distribute reach gain (will be normalized in this method
+to balance the overall reach gain/loss)
+@param outputTSList list of time series created by the analysis, representing mass balance at each node
+@param interval the time series interval for all time series in the analysis
+@param analysisStart the date/time to start the analysis
+@param analysisEnd the date/time to end the analysis
+@param problems a list of problem strings that will be made visible in command status messages
 */
 private void analyzeNetworkPointFlow_CalculateReachGainLoss (
     List<HydrologyNode> reachUpstreamNodeList, NetworkGainMethodType gainMethod, double [] weights,
-    List<TS> outputTSList, int intervalBase, int intervalMult, DateTime analysisStart, DateTime analysisEnd, List<String> problems )
+    List<TS> outputTSList, TimeInterval interval, DateTime analysisStart, DateTime analysisEnd, List<String> problems )
 {   String routine = "analyzeNetworkPointFlow_CalculateReachGainLoss", message;
     double [] gainFraction = new double[reachUpstreamNodeList.size()];
     double weightsTotal = 0.0;
+    int intervalBase = interval.getBase();
+    int intervalMult = interval.getMultiplier();
     // Distance and set weights are now equivalent.  Normalize based on the total weights
     weightsTotal = 0.0;
     for ( int iw = 0; iw < weights.length; iw++ ) {
@@ -403,17 +443,19 @@ private void analyzeNetworkPointFlow_CalculateReachGainLoss (
     }
     for ( int iw = 0; iw < weights.length; iw++ ) {
         if ( gainMethod == NetworkGainMethodType.WEIGHT ) {
-            Message.printStatus(2,routine,"Node \"" + reachUpstreamNodeList.get(iw).getCommonID() + "\" weight=" + weights[iw] +
-                " gainFraction=" + gainFraction[iw] );
+            Message.printStatus(2,routine,"Node \"" + reachUpstreamNodeList.get(iw).getCommonID() + "\" weight=" +
+                StringUtil.formatString(weights[iw],"%.6f") +
+                " gainFraction=" + StringUtil.formatString(gainFraction[iw],"%.6f") );
         }
         else if ( gainMethod == NetworkGainMethodType.DISTANCE ) {
             Message.printStatus(2,routine,"Node \"" + reachUpstreamNodeList.get(iw).getCommonID() + "\" delta distance=" +
-                weights[iw] + " gainFraction=" + gainFraction[iw] );
+                StringUtil.formatString(weights[iw],"%.6f") + " gainFraction=" +
+                StringUtil.formatString(gainFraction[iw],"%.6f") );
         }
     }
     // Figure out the time series for each node corresponding to the weights,
     // which are in the same order as upstreamNodeList
-    TS [] gainTS = new TS[weights.length];
+    TS [] nodeGainTS = new TS[weights.length];
     TS [] reachGainTS = new TS[weights.length];
     TS [] inflowTS = new TS[weights.length];
     TS [] inflowWithGainTS = new TS[weights.length];
@@ -422,18 +464,19 @@ private void analyzeNetworkPointFlow_CalculateReachGainLoss (
     int iNode = -1;
     for ( HydrologyNode node : reachUpstreamNodeList ) {
         ++iNode;
-        gainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeUpstreamGain", outputTSList );
-        reachGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeUpstreamReachGain", outputTSList );
-        inflowTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeInflow", outputTSList );
-        inflowWithGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeInflowWithGain", outputTSList );
-        outflowTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeOutflow", outputTSList );
-        outflowWithGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeOutflowWithGain", outputTSList );
+        nodeGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeUpstreamGain", interval, outputTSList );
+        reachGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeUpstreamReachGain", interval, outputTSList );
+        inflowTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeInflow", interval, outputTSList );
+        inflowWithGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeInflowWithGain", interval, outputTSList );
+        outflowTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeOutflow", interval, outputTSList );
+        outflowWithGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeOutflowWithGain", interval, outputTSList );
     }
     // Have to process each timestep because the gain/loss will vary
     double totalGainValue, reachGainValue, nodeGainValue, inflowValue, outflowValue, newInflowValue, newOutflowValue;
     int iw, iwMax = reachUpstreamNodeList.size() - 1;
     HydrologyNode node;
     List<HydrologyNode> nodeUpstreamNodeList;
+    int dl = 1;
     for ( DateTime dt = new DateTime(analysisStart); dt.lessThanOrEqualTo(analysisEnd);
         dt.addInterval(intervalBase,intervalMult) ) {
         // Starting with the knownFlowNode, go upstream to the top-most known point flow in the reach
@@ -447,8 +490,10 @@ private void analyzeNetworkPointFlow_CalculateReachGainLoss (
             Message.printWarning(3,routine,message);
             continue;
         }
-        Message.printStatus(2,routine,"Reach gain above node " + reachGainTS[0].getIdentifier() + "=" +
-            StringUtil.formatString(totalGainValue,"%.2f") + " for " + dt + " - distributing");
+        if ( Message.isDebugOn ) {
+            Message.printDebug(dl,routine,"Reach gain above node " + reachGainTS[0].getIdentifier() + "=" +
+                StringUtil.formatString(totalGainValue,"%.2f") + " for " + dt + " - distributing");
+        }
         reachGainValue = 0.0; // Cumulative for reach
         for ( iw = iwMax; iw >= 0; iw-- ) {
             // First set the gain/loss value distributed to each node, from most upstream in reach to downstream known
@@ -461,10 +506,13 @@ private void analyzeNetworkPointFlow_CalculateReachGainLoss (
             }
             // Set the gain for the specific node, based on distance, weight, etc.
             nodeGainValue = totalGainValue*gainFraction[iw];
-            gainTS[iw].setDataValue(dt, nodeGainValue);
+            nodeGainTS[iw].setDataValue(dt, nodeGainValue);
             reachGainValue += nodeGainValue;
-            Message.printStatus(2,routine,"Node \"" + node.getCommonID() + "\" gain value = " + totalGainValue + "*" +
-                gainFraction[iw] + "=" + nodeGainValue + ", reachGainValue=" + reachGainValue );
+            if ( Message.isDebugOn ) {
+                Message.printDebug(1,routine,"Node \"" + node.getCommonID() + "\" gain value = " + totalGainValue + "*" +
+                    StringUtil.formatString(gainFraction[iw],"%.6f") + "=" + StringUtil.formatString(nodeGainValue,"%.6f") +
+                    ", reachGainValue=" + StringUtil.formatString(reachGainValue,"%.6f") );
+            }
             if ( iw != 0 ) {
                 // Only set for nodes upstream of known point flow
                 reachGainTS[iw].setDataValue(dt,reachGainValue);
@@ -545,21 +593,30 @@ private void analyzeNetworkPointFlow_CalculateReachGainLoss (
 
 /**
 Get the weights to use for nodes upstream of a known flow point.
+@param gainMethod the gain method used when computing gains
+@param reachUpstreamNodeList list of nodes determined from analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss() method,
+which includes the downstream known flow up to but not including upstream known flow points (since those nodes
+will be processed as part of their upstream reaches).
+@param table the table listing network nodes
+@param nodeIdColumnNum table column number (0+) for node identifiers
+@param nodeWeightColumnNum table column number (0+) for node weight
+@param nodeDistanceColumnNum table column number (0+) for node distance
+@param problems a list of problem strings that will be made visible in command status messages
+@return the weights for each node to be used to distribute reach gain - the weights are not yet normalized to a fraction
 */
 private double [] analyzeNetworkPointFlow_GetReachNodeWeights ( NetworkGainMethodType gainMethod,
-    List<HydrologyNode> upstreamNodeList,
+    List<HydrologyNode> reachUpstreamNodeList,
     DataTable table, int nodeIdColumnNum, int nodeWeightColumnNum, int nodeDistanceColumnNum,
     List<String> problems )
-{
-    // If GainMethod=Weight and no NodeWeightColumn
-    // has been specified, the weight for each node will be 1.0
-    double [] weights = new double[upstreamNodeList.size()];
+{   // If GainMethod=Weight and no NodeWeightColumn has been specified, the weight for each node will be 1.0
+    double [] weights = new double[reachUpstreamNodeList.size()];
+    double [] distance = new double[reachUpstreamNodeList.size()];
     int iNode = -1;
     TableRecord rec = null;
-    for ( HydrologyNode nodeInReach : upstreamNodeList ) {
+    for ( HydrologyNode nodeInReach : reachUpstreamNodeList ) {
         ++iNode;
         // Now figure out how to distribute the gain/loss among nodes in the network
-        if ( gainMethod == NetworkGainMethodType.WEIGHT ) {
+        if ( (gainMethod == NetworkGainMethodType.WEIGHT) || (gainMethod == NetworkGainMethodType.DISTANCE_WEIGHT) ) {
             if ( nodeWeightColumnNum < 0 ) {
                 weights[iNode] = 1.0;
             }
@@ -596,7 +653,7 @@ private double [] analyzeNetworkPointFlow_GetReachNodeWeights ( NetworkGainMetho
                 }
             }
         }
-        else if ( gainMethod == NetworkGainMethodType.DISTANCE ) {
+        else if ( (gainMethod == NetworkGainMethodType.DISTANCE) || (gainMethod == NetworkGainMethodType.DISTANCE_WEIGHT) ) {
             // The weight is the difference in distance between the current node and its upstream node
             double distance2, distance2up;
             // First get the distance for the current node
@@ -669,8 +726,15 @@ private double [] analyzeNetworkPointFlow_GetReachNodeWeights ( NetworkGainMetho
                     "\" (" + e + ") - cannot get distance to calculate gain/loss).");
                 return null;
             }
-            // Weight is the distance between node and upstream node
-            weights[iNode] = Math.abs(distance2 - distance2up);
+            distance[iNode] = Math.abs(distance2 - distance2up);
+            if ( gainMethod == NetworkGainMethodType.DISTANCE ) {
+                // Weight is the distance between node and upstream node
+                weights[iNode] = distance[iNode];
+            }
+            else {
+                // Weight is the product of distance between node and upstream node * weight from above
+                weights[iNode] = distance[iNode]*weights[iNode];
+            }
         }
     }
     return weights;
@@ -678,15 +742,20 @@ private double [] analyzeNetworkPointFlow_GetReachNodeWeights ( NetworkGainMetho
 
 //Copied this from HydrologyNodeNetwork.findUpstreamFlowNodes() and modified as needed.
 /**
-Looks for the nodes upstream of the specified node, following up any tributaries as necessary, and return the list of
+Look for the nodes upstream of the specified node, following up any tributaries as necessary, and return the list of
 nodes up to but NOT including the upstream known flow nodes.  This list of nodes can then be used to distribute gain/loss.
 The order of the nodes will be computation order from downstream to up and consequently it is possible to distribute gains
 by traversing the list in the opposite order and checking where there are multiple upstream nodes.
 @param upstreamGainLossNodes a list that will be filled and used internally during recursion; pass as null initially;
-same as return list
+same as the returned list
 @param node the node from which to look upstream; if not a known flow node, it will be added to the list to return
-@param recursing false if calling from outside this method, true if calling recursively.
+(the first value passed will be the downstream known point flow node)
+@param table the table listing network nodes
+@param nodeIdColumnNum table column number (0+) for node identifiers
+@param nodeTypeColumnNum table column number (0+) for node types
+@param nodeOutflowTypes node types where time series should be set at the node
 @param problems a list of problem strings, to be treated as warnings in calling code
+@return the list of nodes including and upstream of "node", but not including upstream known point flow nodes.
 */
 public List<HydrologyNode> analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss(List upstreamGainLossNodes,
     HydrologyNode node, DataTable table, int nodeIdColumnNum, int nodeTypeColumnNum, String [] nodeOutflowTypes,
@@ -966,7 +1035,7 @@ Find the records matching a string table value, ignoring case.  All matching rec
 @param value string value to match
 @param matchNull if true, match null value
 */
-List<TableRecord> findTableRecordsWithValue ( DataTable table, int col, String value, boolean matchNull )
+private List<TableRecord> findTableRecordsWithValue ( DataTable table, int col, String value, boolean matchNull )
 {
     int nRows = table.getNumberOfRecords();
     List<TableRecord> records = new Vector<TableRecord>();
@@ -1036,13 +1105,14 @@ public List getObjectList ( Class c )
 }
 
 /**
-Initialize the network from a table of information.
+Initialize the network from a table of network node information.
 @param table table containing network information
-@param nodeIdColumnNum the table column number containing node identifiers
-@param nodeNameColumnNum the table column number for node names
-@param nodeTypeColumnNum the table column number for node types
-@param downstreamNodeIdColumnNum the table column number containing downstream node identifiers
-@param network being initialized
+@param nodeIdColumnNum the table column number (0+) containing node identifiers
+@param nodeNameColumnNum the table column number (0+) containing node names
+@param nodeTypeColumnNum the table column number (0+) containing node types
+@param nodeDistanceColumnNum the table column number (0+) containing node distance
+@param downstreamNodeIdColumnNum the table column number (0+) containing downstream node identifiers
+@param network network being initialized
 @param problems the list of problems from processing
 */
 private void initializeNetworkFromTable ( DataTable table, int nodeIdColumnNum, int nodeNameColumnNum,
@@ -1088,7 +1158,15 @@ throws Exception
 }
 
 /**
-Initialize output time series for each node.
+Initialize mass balance output time series for each node in the network.
+@param table the table listing network nodes
+@param network the node network that is being created from the network table
+@param interval the time series interval for all time series in the analysis
+@param analysisStart the date/time to start the analysis
+@param analysisEnd the date/time to end the analysis
+@param units the data units for mass balance time series
+@param problems a list of problem strings that will be made visible in command status messages
+@param return the list of time series created by the analysis, representing mass balance at each node
 */
 private List<TS> initializeNodeTimeSeries ( DataTable table, HydrologyNodeNetwork network,
     TimeInterval interval, DateTime analysisStart, DateTime analysisEnd, String units, List<String> problems )
@@ -1129,7 +1207,7 @@ private List<TS> initializeNodeTimeSeries ( DataTable table, HydrologyNodeNetwor
 
 /**
 Indicate whether the node type is of the analysis type (simple lookup in the array).
-@param nodeAnalysisType the node type
+@param nodeType the node type
 @param nodeAnalysisTypes the node types that indicate how a node should be treated
 @return true if the node type is matched in the array, false if not
 */
@@ -1144,7 +1222,13 @@ private boolean isNodeOfAnalysisType ( String nodeType, String [] nodeAnalysisTy
 }
 
 /**
-Return the list of input time series that are used by a node.
+Return the list of input time series that are used by a node, using TSID=nodeID.*.tsDataTypes.interval, where the
+data types are used one by one in the TSID pattern.
+@param nodeID the location identifier
+@param tsDataTypes time series data types to match
+@param interval time series interval to match
+@param problems a list of problem strings that will be made visible in command status messages
+@return list of matching time series
 */
 private List<TS> lookupAnalysisInputTimeSeries ( String nodeID, String [] tsDataTypes,
     TimeInterval interval, List<String> problems )
@@ -1189,9 +1273,10 @@ private List<TS> lookupAnalysisInputTimeSeries ( String nodeID, String [] tsData
 /**
 Look up the node type from the node identifier by searching the input table.
 @param table the table containing network information
-@param lookupColumnNum the column number for node identifiers
-@param outputColumnNum the node type column number
+@param lookupColumnNum the column number (0+) to match the string
 @param lookupString the string to match in the lookup column
+@param outputColumnNum the column number (0+) for the output value
+@return the string from the output column where the input column string was matched
 */
 private String lookupTableString ( DataTable table, int lookupColumnNum, String lookupString, int outputColumnNum )
 {
@@ -1215,12 +1300,16 @@ private String lookupTableString ( DataTable table, int lookupColumnNum, String 
 Lookup the output time series for the node for the requested data type.
 @param nodeID node identifier, to match location in time series
 @param dataType data type for output time series.
-@return the output time series that matches
+@param interval the data interval for output time series.
+@param outputTSList the list of output time series created by the command, searched to match the requested time series
+@return the specific output time series that matches (first match)
 */
-private TS lookupNodeOutputTimeSeries ( String nodeID, String dataType, List<TS> outputTSList )
+private TS lookupNodeOutputTimeSeries ( String nodeID, String dataType, TimeInterval interval, List<TS> outputTSList )
 {
+    String intervalString = "" + interval;
     for ( TS ts : outputTSList ) {
-        if ( ts.getLocation().equals(nodeID) && ts.getDataType().equals(dataType) ) {
+        if ( ts.getLocation().equalsIgnoreCase(nodeID) && ts.getDataType().equalsIgnoreCase(dataType) &&
+            ts.getIdentifier().getInterval().equalsIgnoreCase(intervalString)) {
             return ts;
         }
     }

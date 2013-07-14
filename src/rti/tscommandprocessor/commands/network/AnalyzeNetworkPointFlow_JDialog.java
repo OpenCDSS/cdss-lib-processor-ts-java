@@ -486,8 +486,9 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     __GainMethod_JComboBox = new SimpleJComboBox ( false );
     List<String> gainChoices = new Vector<String>();
     gainChoices.add ( "" );
-    gainChoices.add ( "" + NetworkGainMethodType.DISTANCE );
     gainChoices.add ( "" + NetworkGainMethodType.NONE );
+    gainChoices.add ( "" + NetworkGainMethodType.DISTANCE );
+    gainChoices.add ( "" + NetworkGainMethodType.DISTANCE_WEIGHT );
     gainChoices.add ( "" + NetworkGainMethodType.WEIGHT );
     __GainMethod_JComboBox.setData(gainChoices);
     __GainMethod_JComboBox.addItemListener ( this );

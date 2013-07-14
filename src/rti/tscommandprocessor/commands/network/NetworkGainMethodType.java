@@ -6,11 +6,15 @@ Gain methods for network.
 public enum NetworkGainMethodType
 {
 /**
-Distance (stream mile, etc.).
+Distance (stream mile, etc.), used when rate of gain/loss is constant through reach.
 */
 DISTANCE("Distance"),
 /**
-Weight (relative gain/loss for node in reach.).
+Product of distance and weight, used when rate of gain/loss is constant along distance.
+*/
+DISTANCE_WEIGHT("DistanceWeight"),
+/**
+Weight (relative gain/loss for node in reach), used when fraction of gain/loss for node is constant.
 */
 WEIGHT("Weight"),
 /**

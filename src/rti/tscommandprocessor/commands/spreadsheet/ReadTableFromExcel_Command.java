@@ -4,7 +4,7 @@ import javax.swing.JFrame;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
+//import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
@@ -226,7 +226,7 @@ Create table columns from the first row of the area.
 private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
     AreaReference area, String excelColumnNames, String comment, String [] excelIntegerColumns,
     boolean readAllAsText, List<String> problems )
-{   String routine = getClass().getName() + ".createTableColumns";
+{   String routine = "ReadTableFromExcel_Command.createTableColumns";
     Row dataRow; // First row of data
     Row headerRow = null; // Row containing column headings
     Cell cell;
@@ -323,7 +323,7 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
     // Now loop through and determine the column data type from the data row
     // and add columns to the table
     columnIndex = -1;
-    CellStyle style = null;
+    //CellStyle style = null;
     for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
         cell = dataRow.getCell(iCol);
         ++columnIndex;
@@ -348,13 +348,24 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                 table.addField ( new TableField(TableField.DATA_TYPE_INT, columnNames[columnIndex], -1, -1), null );
                 continue;
             }
-            if ( cell == null ) {
-                // Treat as a string
-                Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
-                table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
-                continue;
+            cellType = Cell.CELL_TYPE_BLANK;
+            if ( cell != null ) {
+                cellType = cell.getCellType();
             }
-            cellType = cell.getCellType();
+            if ( (cell == null) || (cellType == Cell.CELL_TYPE_BLANK) || (cellType == Cell.CELL_TYPE_ERROR) ) {
+                // Look forward to other rows to see if there is a non-null value that can be used to determine the type
+                Row dataRow2;
+                for ( int iRowSearch = (firstDataRow + 1); iRowSearch <= rowEnd; iRowSearch++ ) {
+                    dataRow2 = sheet.getRow(iRowSearch);
+                    cell = dataRow2.getCell(iCol);
+                    cellType = cell.getCellType();
+                    if ( (cellType == Cell.CELL_TYPE_STRING) || (cellType == Cell.CELL_TYPE_NUMERIC) ||
+                        (cellType == Cell.CELL_TYPE_BOOLEAN) || (cellType == Cell.CELL_TYPE_FORMULA)) {
+                        // Break out and interpret below
+                        break;
+                    }
+                }
+            }
             if ( cellType == Cell.CELL_TYPE_STRING ) {
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
                 table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
@@ -382,17 +393,12 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_INT));
                 table.addField ( new TableField(TableField.DATA_TYPE_INT, columnNames[columnIndex], -1, -1), null );
             }
-            else if ( cellType == Cell.CELL_TYPE_BLANK ) {
-                // TODO SAM 2013-02-22 Evaluate whether should scan down the column to figure out
-                Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
-                table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
-            }
-            else if ( cellType == Cell.CELL_TYPE_ERROR ) {
-                // TODO SAM 2013-02-22 Evaluate whether should scan down the column to figure out
-                Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
-                table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
-            }
             else if ( cellType == Cell.CELL_TYPE_FORMULA ) {
+                Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
+                table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
+            }
+            else {
+                // Default is to treat as a string
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
                 table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
             }
@@ -422,7 +428,7 @@ Get the array of cell ranges based on one of the input address methods.
 */
 private AreaReference getAreaReference ( Workbook wb, Sheet sheet,
     String excelAddress, String excelNamedRange, String excelTableName )
-{   String routine = getClass().getName() + ".getAreaReference";
+{   String routine = "ReadTableFromExcel_Command.getAreaReference";
     if ( (excelTableName != null) && (excelTableName.length() > 0) ) {
         // Table name takes precedence as range name
         excelNamedRange = excelTableName;
@@ -557,7 +563,7 @@ private DataTable readTableFromExcelFile ( String workbookFile, String sheetName
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
     String comment, String [] excelIntegerColumns, boolean readAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
-{   String routine = getClass().getName() + ".readTableFromExcelFile";
+{   String routine = "ReadTableFromExcel_Command.readTableFromExcelFile";
     DataTable table = new DataTable();
     if ( (comment != null) && (comment.trim().length() == 0) ) {
         // Set to null to simplify logic below

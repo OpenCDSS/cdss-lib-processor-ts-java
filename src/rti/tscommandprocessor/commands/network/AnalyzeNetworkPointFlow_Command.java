@@ -30,6 +30,7 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
@@ -66,7 +67,7 @@ Add nodes upstream of the node with the given identifier (which has already been
 private void addNodesUpstreamOfNode ( DataTable table, HydrologyNodeNetwork network, String nodeID,
     int nodeIdColumn, int nodeNameColumn, int nodeTypeColumn, int downstreamNodeIdColumn,
     List<String> problems )
-{   String routine = getClass().getName() + ".addNodesUpstreamOfNode";
+{   String routine = "AnalyzeNetworkPointFlow_Command.addNodesUpstreamOfNode";
     // Find the table records that have "nodeID" as the downstream node
     List<TableRecord> records = findTableRecordsWithValue(table, downstreamNodeIdColumn, nodeID, false);
     String upstreamNodeID;
@@ -106,7 +107,7 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
     String [] nodeFlowThroughTypes,
     HydrologyNodeNetwork network, List<TS> outputTSList, TimeInterval interval, NetworkGainMethodType gainMethod,
     DateTime analysisStart, DateTime analysisEnd, List<String> problems )
-{   String routine = getClass().getName() + ".analyzeNetworkPointFlow";
+{   String routine = "AnalyzeNetworkPointFlow_Command.analyzeNetworkPointFlow";
     TS ts;
     String nodeID;
     String nodeType;
@@ -117,12 +118,13 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
     TS nodeSubtractTS;
     TS nodeUpstreamGainTS;
     TS nodeUpstreamReachGainTS;
+    TS nodeInflowWithGainTS;
+    TS nodeOutflowWithGainTS;
     TS nodeStorageTS;
     String description;
     List<HydrologyNode> upstreamNodeList;
     int intervalBase = interval.getBase();
     int intervalMult = interval.getMultiplier();
-    TableRecord rec; // Used to look up data in the table matching node identifier
     for (HydrologyNode node = HydrologyNodeNetwork.getUpstreamNode(network.getNodeHead(), HydrologyNodeNetwork.POSITION_ABSOLUTE);
         node.getDownstreamNode() != null;
         node = HydrologyNodeNetwork.getDownstreamNode(node, HydrologyNodeNetwork.POSITION_COMPUTATIONAL)) {
@@ -144,6 +146,8 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
         nodeSubtractTS = lookupNodeOutputTimeSeries ( nodeID, "NodeSubtract", outputTSList );
         nodeUpstreamGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeUpstreamGain", outputTSList );
         nodeUpstreamReachGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeUpstreamReachGain", outputTSList );
+        nodeInflowWithGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeInflowWithGain", outputTSList );
+        nodeOutflowWithGainTS = lookupNodeOutputTimeSeries ( nodeID, "NodeOutflowWithGain", outputTSList );
         nodeStorageTS = lookupNodeOutputTimeSeries ( nodeID, "NodeStorage", outputTSList );
         // Save the description because want to reset at the end
         description = nodeInflowTS.getDescription();
@@ -174,12 +178,52 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
                 TSUtil.setConstant(nodeAddTS, 0.0);
                 TSUtil.setConstant(nodeSubtractTS, 0.0);
                 TSUtil.setConstant(nodeStorageTS, 0.0);
-                // Encountering these nodes also allow calculation of gain/loss up to the the previous know flow point
-                // Redistribute the remainder error flowing into the node with known outflow.
-                // Since the network is being processed upstream to downstream, any
-                // occurrence of a known outflow node needs to be processed, compared to its upstream node.
-                // For now, only allow computing gain when there are no branches in the network
+                // Encountering these nodes also allow calculation of gain/loss up to the the previous known flow point
+                //
+                // Compute the reach gain/loss at the downstream known point flow as the error between
+                // the upstream node's outflow, and the known flow.  This can be computed even if the gain/loss
+                // for each node is not computed, and is used as input when distributing gain/loss to nodes in the reach
+                // Set the reach gain at the known point flow to the known flow minus the outflow
+                List<HydrologyNode> upstreamNodes = node.getUpstreamNodes();
+                if ( (upstreamNodes != null) && (upstreamNodes.size() > 0) ) {
+                    try {
+                        Message.printStatus(2, routine, "Initializing known point flow \"" + node.getCommonID() +
+                            "\" reach gain to the node's outflow.");
+                        TSUtil.setFromTS(nodeUpstreamReachGainTS, nodeOutflowTS);
+                    }
+                    catch ( Exception e ) {
+                        problems.add("Error initializing \"" + node.getCommonID() +
+                           "\" reach gain/loss time series to known outflow (" + e + ") - not computing gain/loss.");
+                        continue;
+                    }
+                    for ( HydrologyNode upstreamNode : upstreamNodes ) {
+                        TS upstreamNodeOutflowTS = lookupNodeOutputTimeSeries ( upstreamNode.getCommonID(), "NodeOutflow", outputTSList );
+                        // Subtract
+                        List<TS> tslistSubtract = new Vector<TS>();
+                        tslistSubtract.add(upstreamNodeOutflowTS);
+                        try {
+                            Message.printStatus(2, routine, "Subtracting upstream outflow \"" + upstreamNode.getCommonID() +
+                                "\" from reach gain.");
+                            Message.printStatus(2, routine, "For " + analysisStart + " known outflow from \"" +
+                                node.getCommonID() + "=" + nodeOutflowTS.getDataValue(analysisStart));
+                            Message.printStatus(2, routine, "For " + analysisStart + " upstream outflow from \"" +
+                                upstreamNode.getCommonID() + "=" + upstreamNodeOutflowTS.getDataValue(analysisStart));
+                            TSUtil.subtract(nodeUpstreamReachGainTS,tslistSubtract,TSUtil.SET_MISSING_IF_ANY_MISSING);
+                            Message.printStatus(2, routine, "For " + analysisStart + " calculated error (gain/loss)=" +
+                                nodeUpstreamReachGainTS.getDataValue(analysisStart));
+                        }
+                        catch ( Exception e ) {
+                            problems.add("Error subtracting upstream node outflow to reach gain/loss time series (" + e +
+                                ") - not computing gain/loss.");
+                            continue;
+                        }
+                    }
+                }
                 if ( (gainMethod == NetworkGainMethodType.WEIGHT) || (gainMethod == NetworkGainMethodType.DISTANCE) ) {
+                    // Redistribute the remainder error flowing into the node with known outflow.
+                    // Since the network is being processed upstream to downstream, any
+                    // occurrence of a known outflow node needs to be processed, compared to its upstream node.
+                    // For now, only allow computing gain when there are no branches in the network
                     Message.printStatus(2, routine, "Processing gain/loss in reach above \"" + node.getCommonID() + "\"" );
                     // For now only support gains on linear reaches.
                     upstreamNodeList = node.getUpstreamNodes();
@@ -195,224 +239,22 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
                     }
                     else {
                         // Single upstream node so able to compute gain/loss
-                        //
-                        // The reach gain is the the difference between the upstream nodes' outflow and the input time series
-                        // for the known outflow (which will be the outflow from the current node).
-                        // Start by setting the gain/loss to the first upstream node's time series and then adding the other
-                        // upstream nodes' time series
-                        // Get the list of upstream nodes, starting with the next upstream node (there should be one based on
+                         // Get the list of upstream nodes, starting with the next upstream node (there should be one based on
                         // the above checks).
                         int problemsSize = problems.size();
-                        upstreamNodeList = getUpstreamNodesForGainLoss ( null, node.getUpstreamNode(),
+                        upstreamNodeList = analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss ( null, node,
                             table, nodeIdColumnNum, nodeTypeColumnNum, nodeOutflowTypes,
                             problems );
                         if ( problems.size() > problemsSize ) {
                             // Had issues getting the upstream node list so don't continue with the gain/loss calculations.
                             continue;
                         }
-                        boolean weightsOK = true;
-                        int iNode = -1;
-                        /* FIXME SAM 2013-07-05 Fix this... not clear what is going on
-                        for ( HydrologyNode upstreamNode : upstreamNodeList ) {
-                            ++iNode;
-                            if ( iNode == 0 ) {
-                                // Initialize new outflow time series for upstream node
-                                TS upstreamNodeOutflowTS = lookupNodeOutputTimeSeries ( upstreamNode.getCommonID(), "NodeOutflow", outputTSList );
-                                try {
-                                    TSUtil.setFromTS(nodeUpstreamReachGainTS, upstreamNodeOutflowTS);
-                                }
-                                catch ( Exception e ) {
-                                    problems.add("Error initializing reach gain/loss time series (" + e + ") - not computing gain/loss.");
-                                    continue;
-                                }
-                                // Else add
-                                List<TS> tslistAdd = new Vector<TS>();
-                                tslistAdd.add(upstreamNodeOutflowTS);
-                                try {
-                                    TSUtil.add(nodeUpstreamReachGainTS,tslistAdd,TSUtil.SET_MISSING_IF_ANY_MISSING);
-                                }
-                                catch ( Exception e ) {
-                                    problems.add("Error adding upstream node outflow to reach gain/loss time series (" + e + ") - not computing gain/loss.");
-                                    continue;
-                                }
-                            }
-                        }
-                        */
                         // Get the weights used to distribute the gain/loss.
-                        // If GainMethod=Weight and no NodeWeightColumn
-                        // has been specified, the weight for each node will be 1.0
-                        double [] weights = new double[upstreamNodeList.size()];
-                        double [] gainFraction = new double[upstreamNodeList.size()];
-                        double weightsTotal = 0.0;
-                        iNode = -1;
-                        for ( HydrologyNode nodeInReach : upstreamNodeList ) {
-                            ++iNode;
-                            // Now figure out how to distribute the gain/loss among nodes in the network
-                            if ( gainMethod == NetworkGainMethodType.WEIGHT ) {
-                                if ( nodeWeightColumnNum < 0 ) {
-                                    weights[iNode] = 1.0;
-                                }
-                                else {
-                                    // Get the weight from the table
-                                    try {
-                                        rec = table.getRecord(nodeIdColumnNum,nodeInReach.getCommonID());
-                                        if ( rec == null ) {
-                                            problems.add ( "Cannot find network table row matching node \"" + nodeInReach.getCommonID() +
-                                                "\" - cannot get weight to calculate gain/loss).");
-                                            weightsOK = false;
-                                            break;
-                                        }
-                                    }
-                                    catch ( Exception e ) {
-                                        problems.add ( "Cannot find network table row matching node \"" + nodeInReach.getCommonID() +
-                                            "\" (" + e + ") - cannot get weight to calculate gain/loss).");
-                                        weightsOK = false;
-                                        break;
-                                    }
-                                    Object weightO = null;
-                                    try {
-                                        weightO = rec.getFieldValue(nodeWeightColumnNum);
-                                        if ( weightO == null ) {
-                                            problems.add ( "Cannot determine weight for node \"" + nodeInReach.getCommonID() +
-                                                "\" - cannot calculate gain/loss).");
-                                            weightsOK = false;
-                                            break;
-                                        }
-                                        else {
-                                            weights[iNode] = (Double)weightO;
-                                        }
-                                    }
-                                    catch ( Exception e ) {
-                                        problems.add ( "Cannot determine weight for node \"" + nodeInReach.getCommonID() + "\" - cannot calculate gain/loss).");
-                                        weightsOK = false;
-                                        break;
-                                    }
-                                }
-                            }
-                            else if ( gainMethod == NetworkGainMethodType.DISTANCE ) {
-                                // The weight is the difference in distance between the current node and its upstream node
-                                double distance2, distance2up;
-                                // First get the distance for the current node
-                                try {
-                                    rec = table.getRecord(nodeIdColumnNum,nodeInReach.getCommonID());
-                                    if ( rec == null ) {
-                                        problems.add ( "Cannot find network table row matching node \"" + nodeInReach.getCommonID() +
-                                            "\" - cannot get distance to calculate gain/loss).");
-                                        weightsOK = false;
-                                        break;
-                                    }
-                                }
-                                catch ( Exception e ) {
-                                    problems.add ( "Cannot find network table row matching node \"" + nodeInReach.getCommonID() +
-                                        "\" (" + e + ") - cannot get distance to calculate gain/loss).");
-                                    weightsOK = false;
-                                    break;
-                                }
-                                Object weightO = null;
-                                try {
-                                    weightO = rec.getFieldValue(nodeDistanceColumnNum);
-                                    if ( weightO == null ) {
-                                        problems.add ( "Cannot determine distance from network table for node \"" + nodeInReach.getCommonID() +
-                                            "\" - cannot calculate gain/loss).");
-                                        weightsOK = false;
-                                        break;
-                                    }
-                                    else {
-                                        distance2 = (Double)weightO;
-                                    }
-                                }
-                                catch ( Exception e ) {
-                                    problems.add ( "Cannot determine distance from network table for node \"" + nodeInReach.getCommonID() + "\" (" +
-                                        e + ") - cannot calculate gain/loss).");
-                                    weightsOK = false;
-                                    break;
-                                }
-                                // Now get the distance for the upstream node
-                                try {
-                                    List<HydrologyNode> upstreamNodes = nodeInReach.getUpstreamNodes();
-                                    if ( upstreamNodes.size() != 1 ) {
-                                        problems.add ( "Node \"" + nodeInReach.getCommonID() +
-                                        "\" has " + upstreamNodes.size() + " upstream nodes (expecting 1) - " +
-                                            "calculating gain/loss on branching network is not enabled.");
-                                        weightsOK = false;
-                                        break;
-                                    }
-                                    HydrologyNode upstreamNode = upstreamNodes.get(0);
-                                    rec = table.getRecord(nodeIdColumnNum,upstreamNode.getCommonID());
-                                    if ( rec == null ) {
-                                        problems.add ( "Cannot find network table row matching node \"" + upstreamNode.getCommonID() +
-                                            "\" - cannot get distance to calculate gain/loss).");
-                                        weightsOK = false;
-                                        break;
-                                    }
-                                    weightO = null;
-                                    try {
-                                        weightO = rec.getFieldValue(nodeDistanceColumnNum);
-                                        if ( weightO == null ) {
-                                            problems.add ( "Cannot determine distance from table for upstream node \"" +
-                                                upstreamNode.getCommonID() + "\" - cannot calculate gain/loss).");
-                                            weightsOK = false;
-                                            break;
-                                        }
-                                        else {
-                                            distance2up = (Double)weightO;
-                                        }
-                                    }
-                                    catch ( Exception e ) {
-                                        problems.add ( "Cannot determine distance from table for upstream node \"" +
-                                            upstreamNode.getCommonID() + "\" (" + e + ") - cannot calculate gain/loss).");
-                                        weightsOK = false;
-                                        break;
-                                    }
-                                }
-                                catch ( Exception e ) {
-                                    problems.add ( "Cannot find network table row matching node upstream of \"" + nodeInReach.getCommonID() +
-                                        "\" (" + e + ") - cannot get distance to calculate gain/loss).");
-                                    weightsOK = false;
-                                    break;
-                                }
-                                // Weight is the distance between node and upstream node
-                                weights[iNode] = Math.abs(distance2 - distance2up);
-                            }
-                        }
-                        if ( weightsOK ) {
-                            // Distance and set weights are now equivalent.  Normalize based on the total weights
-                            weightsTotal = 0.0;
-                            for ( int iw = 0; iw < weights.length; iw++ ) {
-                                weightsTotal += weights[iw];
-                            }
-                            for ( int iw = 0; iw < weights.length; iw++ ) {
-                                gainFraction[iw] = weights[iw]/weightsTotal;
-                            }
-                            for ( int iw = 0; iw < weights.length; iw++ ) {
-                                Message.printStatus(2,routine,"Node \"" + upstreamNodeList.get(iw).getCommonID() + "\" weight="+ weights[iw] +
-                                    " gainFraction=" + gainFraction[iw] );
-                            }
-                            // Have to process each timestep because the gain/loss will vary
-                            TS gainTS, reachGainTS, outflowTS;
-                            double reachGainValue, outflowValue;
-                            int iw;
-                            for ( DateTime dt = new DateTime(analysisStart); dt.lessThanOrEqualTo(analysisEnd);
-                                dt.addInterval(intervalBase,intervalMult) ) {
-                                // First set the gain/loss value distributed to each node
-                                iw = -1;
-                                for ( HydrologyNode node2 : upstreamNodeList ) {
-                                    ++iw;
-                                    gainTS = lookupNodeOutputTimeSeries ( node2.getCommonID(), "NodeUpstreamGain", outputTSList );
-                                    gainTS.setDataValue(dt, weightsTotal*gainFraction[iw]);
-                                }
-                                /*
-                                // Next, compute the cumulative reach gain/loss to each node
-                                reachGainTS = lookupNodeOutputTimeSeries ( node2.getCommonID(), "NodeUpstreamReachGain", outputTSList );
-                                reachGainValue = reachGainTS.getDataValue(dt);
-                                // Adjust the outflow by the cumulative reach gain/loss
-                                outflowTS = lookupNodeOutputTimeSeries ( node2.getCommonID(), "NodeOutflow", outputTSList );
-                                outflowValue = outflowTS.getDataValue(dt);
-                                if ( !reachGainTS.isDataMissing(reachGainValue) && !outflowTS.isDataMissing(outflowValue) ) {
-                                    reachGainTS.setDataValue(dt,outflowValue + reachGainValue);
-                                }
-                                */
-                            }
+                        double [] weights = analyzeNetworkPointFlow_GetReachNodeWeights( gainMethod,
+                            upstreamNodeList, table, nodeIdColumnNum, nodeWeightColumnNum, nodeDistanceColumnNum, problems );
+                        if ( weights != null ) {
+                            analyzeNetworkPointFlow_CalculateReachGainLoss ( upstreamNodeList, gainMethod, weights,
+                                outputTSList, intervalBase, intervalMult, analysisStart, analysisEnd, problems );
                         }
                     }
                 }
@@ -441,7 +283,7 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
                     if ( i == 0 ) {
                         // Want to make sure missing is reset
                         try {
-                            Message.printStatus(2,routine,"Setting node \"" + nodeID + "\" inflow to first upstream node \"" +
+                            Message.printStatus(2,routine," Setting node \"" + nodeID + "\" inflow to first upstream node \"" +
                                 upstreamNodeList.get(i).getCommonID() + "\" outflows.");
                             TSUtil.setFromTS(nodeInflowTS, upstreamOutflowTS);
                         }
@@ -535,9 +377,405 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
         nodeAddTS.setDescription(description);
         nodeSubtractTS.setDescription(description);
         nodeUpstreamGainTS.setDescription(description);
+        nodeUpstreamReachGainTS.setDescription(description);
+        nodeInflowWithGainTS.setDescription(description);
+        nodeOutflowWithGainTS.setDescription(description);
         nodeStorageTS.setDescription(description); 
     }
+}
 
+/**
+Calculate the gain/loss time series for nodes in a reach, for the entire analysis period.
+*/
+private void analyzeNetworkPointFlow_CalculateReachGainLoss (
+    List<HydrologyNode> reachUpstreamNodeList, NetworkGainMethodType gainMethod, double [] weights,
+    List<TS> outputTSList, int intervalBase, int intervalMult, DateTime analysisStart, DateTime analysisEnd, List<String> problems )
+{   String routine = "analyzeNetworkPointFlow_CalculateReachGainLoss", message;
+    double [] gainFraction = new double[reachUpstreamNodeList.size()];
+    double weightsTotal = 0.0;
+    // Distance and set weights are now equivalent.  Normalize based on the total weights
+    weightsTotal = 0.0;
+    for ( int iw = 0; iw < weights.length; iw++ ) {
+        weightsTotal += weights[iw];
+    }
+    for ( int iw = 0; iw < weights.length; iw++ ) {
+        gainFraction[iw] = weights[iw]/weightsTotal;
+    }
+    for ( int iw = 0; iw < weights.length; iw++ ) {
+        if ( gainMethod == NetworkGainMethodType.WEIGHT ) {
+            Message.printStatus(2,routine,"Node \"" + reachUpstreamNodeList.get(iw).getCommonID() + "\" weight=" + weights[iw] +
+                " gainFraction=" + gainFraction[iw] );
+        }
+        else if ( gainMethod == NetworkGainMethodType.DISTANCE ) {
+            Message.printStatus(2,routine,"Node \"" + reachUpstreamNodeList.get(iw).getCommonID() + "\" delta distance=" +
+                weights[iw] + " gainFraction=" + gainFraction[iw] );
+        }
+    }
+    // Figure out the time series for each node corresponding to the weights,
+    // which are in the same order as upstreamNodeList
+    TS [] gainTS = new TS[weights.length];
+    TS [] reachGainTS = new TS[weights.length];
+    TS [] inflowTS = new TS[weights.length];
+    TS [] inflowWithGainTS = new TS[weights.length];
+    TS [] outflowTS = new TS[weights.length];
+    TS [] outflowWithGainTS = new TS[weights.length];
+    int iNode = -1;
+    for ( HydrologyNode node : reachUpstreamNodeList ) {
+        ++iNode;
+        gainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeUpstreamGain", outputTSList );
+        reachGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeUpstreamReachGain", outputTSList );
+        inflowTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeInflow", outputTSList );
+        inflowWithGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeInflowWithGain", outputTSList );
+        outflowTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeOutflow", outputTSList );
+        outflowWithGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeOutflowWithGain", outputTSList );
+    }
+    // Have to process each timestep because the gain/loss will vary
+    double totalGainValue, reachGainValue, nodeGainValue, inflowValue, outflowValue, newInflowValue, newOutflowValue;
+    int iw, iwMax = reachUpstreamNodeList.size() - 1;
+    HydrologyNode node;
+    List<HydrologyNode> nodeUpstreamNodeList;
+    for ( DateTime dt = new DateTime(analysisStart); dt.lessThanOrEqualTo(analysisEnd);
+        dt.addInterval(intervalBase,intervalMult) ) {
+        // Starting with the knownFlowNode, go upstream to the top-most known point flow in the reach
+        // TODO SAM 2013-07-08 This will work for non-branching reaches but need to figure out branches - recursion
+        // 1. Get the reach gain (+) or loss (-) - this will be at the most downstream node (time series position 0)
+        totalGainValue = reachGainTS[0].getDataValue(dt);
+        if ( reachGainTS[0].isDataMissing(totalGainValue)) {
+            message = " Reach gain above node " + reachGainTS[0].getLocation() + " is missing for " + dt +
+                ".  Cannot distribute gain/loss.";
+            problems.add(message);
+            Message.printWarning(3,routine,message);
+            continue;
+        }
+        Message.printStatus(2,routine,"Reach gain above node " + reachGainTS[0].getIdentifier() + "=" +
+            StringUtil.formatString(totalGainValue,"%.2f") + " for " + dt + " - distributing");
+        reachGainValue = 0.0; // Cumulative for reach
+        for ( iw = iwMax; iw >= 0; iw-- ) {
+            // First set the gain/loss value distributed to each node, from most upstream in reach to downstream known
+            // point flow (values will not be reset because computed previously as error)
+            node = reachUpstreamNodeList.get(iw);
+            nodeUpstreamNodeList = node.getUpstreamNodes();
+            if ( nodeUpstreamNodeList.size() != 1 ) {
+                problems.add ( "Logic is not enabled to compute gain/loss on branching networks." );
+                return;
+            }
+            // Set the gain for the specific node, based on distance, weight, etc.
+            nodeGainValue = totalGainValue*gainFraction[iw];
+            gainTS[iw].setDataValue(dt, nodeGainValue);
+            reachGainValue += nodeGainValue;
+            Message.printStatus(2,routine,"Node \"" + node.getCommonID() + "\" gain value = " + totalGainValue + "*" +
+                gainFraction[iw] + "=" + nodeGainValue + ", reachGainValue=" + reachGainValue );
+            if ( iw != 0 ) {
+                // Only set for nodes upstream of known point flow
+                reachGainTS[iw].setDataValue(dt,reachGainValue);
+            }
+            else {
+                // Reach gain at bottom node was set previously
+                // Do a check to see if the reach gain value is the original for known flow
+                if ( Math.abs(reachGainValue - reachGainTS[iw].getDataValue(dt)) > .0001 ) {
+                    // TODO SAM 2013-07-08 should add this to table output as cross-check
+                    message = " Known point flow location \"" + reachGainTS[iw].getLocation() +
+                    "\" " + dt + " calculated cumulative gain " + StringUtil.formatString(reachGainValue,"%.2f") +
+                    " is not the same as the original error value " +
+                    StringUtil.formatString(reachGainTS[iw].getDataValue(dt),"%.2f");
+                    problems.add(message);
+                    Message.printWarning(3,routine,message);
+                }
+            }
+            // Adjust the previous inflow and outflow by the cumulative reach gain/loss to the node, essentially a shift
+            inflowValue = inflowTS[iw].getDataValue(dt);
+            if ( !reachGainTS[iw].isDataMissing(reachGainValue) && !inflowTS[iw].isDataMissing(inflowValue) ) {
+                newInflowValue = inflowValue + reachGainValue;
+                if ( iw == 0 ) {
+                    // Do a check to see if the new inflow value is the original for known flow
+                    /* Does not make sense
+                    if ( Math.abs(newInflowValue - inflowValue) > .0001 ) {
+                        // TODO SAM 2013-07-08 should add this to table output as cross-check
+                        message = " Known point flow location \"" + inflowTS[iw].getLocation() +
+                            "\" " + dt + " calculated inflow " + StringUtil.formatString(newInflowValue,"%.2f") +
+                            " is not the same as the original value " + StringUtil.formatString(inflowValue,"%.2f");
+                        problems.add(message);
+                        Message.printWarning(3,routine,message);
+                    }
+                    */
+                    // Value should be the same since known point
+                    inflowWithGainTS[iw].setDataValue(dt,inflowValue);
+                }
+                else {
+                    // Only set non-known flow values
+                    inflowWithGainTS[iw].setDataValue(dt,newInflowValue);
+                    if ( newInflowValue < 0.0 ) {
+                        // TODO SAM 2013-07-08 should add this to table output as cross-check
+                        //problems.add("Point flow location \"" + inflowTS[iw].getLocation() +
+                        //    "\" " + dt + " calculated inflow " + newInflowValue + " is negative." );
+                    }
+                }
+            }
+            outflowValue = outflowTS[iw].getDataValue(dt);
+            if ( !reachGainTS[iw].isDataMissing(reachGainValue) && !outflowTS[iw].isDataMissing(outflowValue) ) {
+                newOutflowValue = outflowValue + reachGainValue;
+                if ( iw == 0 ) {
+                    // Do a check to see if the new outflow value is the original for known flow
+                    /* Does not make sense
+                    if ( Math.abs(newOutflowValue - outflowValue) > .0001 ) {
+                        // TODO SAM 2013-07-08 should add this to table output as cross-check
+                        message = " Known point flow location \"" + outflowTS[iw].getLocation() +
+                            "\" " + dt + " calculated outflow " + StringUtil.formatString(newOutflowValue,"%.2f") +
+                            " is not the same as the original value " + StringUtil.formatString(outflowValue,"%.2f");
+                        problems.add(message);
+                        Message.printWarning(3,routine,message);
+                    }
+                    */
+                    // Value should be the same since a known point
+                    outflowWithGainTS[iw].setDataValue(dt,outflowValue);
+                }
+                else {
+                    // Only set non-known flow values
+                    outflowWithGainTS[iw].setDataValue(dt,newOutflowValue);
+                    if ( newOutflowValue < 0.0 ) {
+                        // TODO SAM 2013-07-08 should add this to table output as cross-check
+                        //problems.add("Point flow location \"" + outflowTS[iw].getLocation() +
+                        //    "\" " + dt + " calculated outflow " + newOutflowValue + " is negative." );
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+Get the weights to use for nodes upstream of a known flow point.
+*/
+private double [] analyzeNetworkPointFlow_GetReachNodeWeights ( NetworkGainMethodType gainMethod,
+    List<HydrologyNode> upstreamNodeList,
+    DataTable table, int nodeIdColumnNum, int nodeWeightColumnNum, int nodeDistanceColumnNum,
+    List<String> problems )
+{
+    // If GainMethod=Weight and no NodeWeightColumn
+    // has been specified, the weight for each node will be 1.0
+    double [] weights = new double[upstreamNodeList.size()];
+    int iNode = -1;
+    TableRecord rec = null;
+    for ( HydrologyNode nodeInReach : upstreamNodeList ) {
+        ++iNode;
+        // Now figure out how to distribute the gain/loss among nodes in the network
+        if ( gainMethod == NetworkGainMethodType.WEIGHT ) {
+            if ( nodeWeightColumnNum < 0 ) {
+                weights[iNode] = 1.0;
+            }
+            else {
+                // Get the weight from the table
+                try {
+                    rec = table.getRecord(nodeIdColumnNum,nodeInReach.getCommonID());
+                    if ( rec == null ) {
+                        problems.add ( "Cannot find network table row matching node \"" + nodeInReach.getCommonID() +
+                            "\" - cannot get weight to calculate gain/loss).");
+                        return null;
+                    }
+                }
+                catch ( Exception e ) {
+                    problems.add ( "Cannot find network table row matching node \"" + nodeInReach.getCommonID() +
+                        "\" (" + e + ") - cannot get weight to calculate gain/loss).");
+                    return null;
+                }
+                Object weightO = null;
+                try {
+                    weightO = rec.getFieldValue(nodeWeightColumnNum);
+                    if ( weightO == null ) {
+                        problems.add ( "Cannot determine weight for node \"" + nodeInReach.getCommonID() +
+                            "\" - cannot calculate gain/loss).");
+                        return null;
+                    }
+                    else {
+                        weights[iNode] = (Double)weightO;
+                    }
+                }
+                catch ( Exception e ) {
+                    problems.add ( "Cannot determine weight for node \"" + nodeInReach.getCommonID() + "\" - cannot calculate gain/loss).");
+                    return null;
+                }
+            }
+        }
+        else if ( gainMethod == NetworkGainMethodType.DISTANCE ) {
+            // The weight is the difference in distance between the current node and its upstream node
+            double distance2, distance2up;
+            // First get the distance for the current node
+            try {
+                rec = table.getRecord(nodeIdColumnNum,nodeInReach.getCommonID());
+                if ( rec == null ) {
+                    problems.add ( "Cannot find network table row matching node \"" + nodeInReach.getCommonID() +
+                        "\" - cannot get distance to calculate gain/loss).");
+                    return null;
+                }
+            }
+            catch ( Exception e ) {
+                problems.add ( "Cannot find network table row matching node \"" + nodeInReach.getCommonID() +
+                    "\" (" + e + ") - cannot get distance to calculate gain/loss).");
+                return null;
+            }
+            Object distanceO = null;
+            try {
+                distanceO = rec.getFieldValue(nodeDistanceColumnNum);
+                if ( distanceO == null ) {
+                    problems.add ( "Cannot determine distance from network table column [" + nodeDistanceColumnNum +
+                        "] for node \"" + nodeInReach.getCommonID() + "\" - cannot calculate gain/loss).");
+                    return null;
+                }
+                else {
+                    distance2 = (Double)distanceO;
+                }
+            }
+            catch ( Exception e ) {
+                problems.add ( "Cannot determine distance from network table column [" + nodeDistanceColumnNum +
+                    "] for node \"" + nodeInReach.getCommonID() + "\" (" + e + ") - cannot calculate gain/loss).");
+                return null;
+            }
+            // Now get the distance for the upstream node
+            try {
+                List<HydrologyNode> upstreamNodes = nodeInReach.getUpstreamNodes();
+                if ( upstreamNodes.size() != 1 ) {
+                    problems.add ( "Node \"" + nodeInReach.getCommonID() +
+                    "\" has " + upstreamNodes.size() + " upstream nodes (expecting 1) - " +
+                        "calculating gain/loss on branching network is not enabled.");
+                    return null;
+                }
+                HydrologyNode upstreamNode = upstreamNodes.get(0);
+                rec = table.getRecord(nodeIdColumnNum,upstreamNode.getCommonID());
+                if ( rec == null ) {
+                    problems.add ( "Cannot find network table row matching node \"" + upstreamNode.getCommonID() +
+                        "\" - cannot get distance to calculate gain/loss).");
+                    return null;
+                }
+                distanceO = null;
+                try {
+                    distanceO = rec.getFieldValue(nodeDistanceColumnNum);
+                    if ( distanceO == null ) {
+                        problems.add ( "Cannot determine distance from table column [" + nodeDistanceColumnNum +
+                            "] for upstream node \"" + upstreamNode.getCommonID() + "\" - cannot calculate gain/loss).");
+                        return null;
+                    }
+                    else {
+                        distance2up = (Double)distanceO;
+                    }
+                }
+                catch ( Exception e ) {
+                    problems.add ( "Cannot determine distance from table column [" + nodeDistanceColumnNum +
+                        "] for upstream node \"" + upstreamNode.getCommonID() + "\" (" + e + ") - cannot calculate gain/loss).");
+                    return null;
+                }
+            }
+            catch ( Exception e ) {
+                problems.add ( "Cannot find network table row matching node upstream of \"" + nodeInReach.getCommonID() +
+                    "\" (" + e + ") - cannot get distance to calculate gain/loss).");
+                return null;
+            }
+            // Weight is the distance between node and upstream node
+            weights[iNode] = Math.abs(distance2 - distance2up);
+        }
+    }
+    return weights;
+}
+
+//Copied this from HydrologyNodeNetwork.findUpstreamFlowNodes() and modified as needed.
+/**
+Looks for the nodes upstream of the specified node, following up any tributaries as necessary, and return the list of
+nodes up to but NOT including the upstream known flow nodes.  This list of nodes can then be used to distribute gain/loss.
+The order of the nodes will be computation order from downstream to up and consequently it is possible to distribute gains
+by traversing the list in the opposite order and checking where there are multiple upstream nodes.
+@param upstreamGainLossNodes a list that will be filled and used internally during recursion; pass as null initially;
+same as return list
+@param node the node from which to look upstream; if not a known flow node, it will be added to the list to return
+@param recursing false if calling from outside this method, true if calling recursively.
+@param problems a list of problem strings, to be treated as warnings in calling code
+*/
+public List<HydrologyNode> analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss(List upstreamGainLossNodes,
+    HydrologyNode node, DataTable table, int nodeIdColumnNum, int nodeTypeColumnNum, String [] nodeOutflowTypes,
+    List<String> problems)
+{
+    String routine = "AnalyzeNetworkPointFlow.getUpstreamNodesForGainLoss";
+    Message.printStatus(2,routine,"Getting upstream nodes, starting with \"" + node.getCommonID() + "\"" );
+
+    if (upstreamGainLossNodes == null) {
+        // Create the list
+        upstreamGainLossNodes = new Vector<HydrologyNode>();
+    }
+    
+    /*
+    String nodeType = lookupTableString ( table, nodeIdColumnNum, node.getCommonID(), nodeTypeColumnNum );
+    if ( nodeType == null ) {
+        problems.add ( "Unable to determine node type for node \"" + node.getCommonID() + "\" - unable to get nodes for gain/loss." );
+        return upstreamGainLossNodes;
+    }
+    if ( isNodeOfAnalysisType(nodeType,nodeOutflowTypes) ) {
+        // Done processing the reach
+        return upstreamGainLossNodes;
+    }
+    else {
+        // Add to the list
+        upstreamGainLossNodes.add(node);
+        Message.printStatus(2, routine, "Added upstream node (first in reach) \"" + node.getCommonID() + "\"" );
+    }
+    */
+
+    // The node passed in initially will be a node above a known flow node.  Continue processing upstream
+
+    List<HydrologyNode> upstreamNodes;
+    //for ( nodePt = HydrologyNodeNetwork.getUpstreamNode(node, HydrologyNodeNetwork.POSITION_COMPUTATIONAL),
+    //    nodePrev = node;
+    //    ; nodePrev = nodePt, nodePt = HydrologyNodeNetwork.getUpstreamNode(nodePt, HydrologyNodeNetwork.POSITION_COMPUTATIONAL)) {
+    int nodesInReach = 0;
+    String nodeType;
+    while ( true ) {
+        Message.printStatus(2, routine, "Checking nodes upstream of node \"" + node.getCommonID() + "\"" );
+        upstreamNodes = node.getUpstreamNodes();
+        if ( (upstreamNodes == null) || (upstreamNodes.size() == 0) ) {
+            // Top node in the reach.  If not a known flow node this is a problem
+            String nodeType2 = lookupTableString ( table, nodeIdColumnNum, node.getCommonID(), nodeTypeColumnNum );
+            if ( nodeType2 == null ) {
+                problems.add ( "Unable to determine node type for node \"" + node.getCommonID() + "\" - unable to get nodes for gain/loss." );
+            }
+            else if ( !isNodeOfAnalysisType(nodeType2,nodeOutflowTypes) ) {
+                // Upstream node is not a know flow type so can't process gain/loss
+                problems.add ( "Most upstream node in reach is not know flow type - unable to determine node type for node \"" +
+                    node.getCommonID() + "\" - unable to get nodes for gain/loss." );
+            }
+            return upstreamGainLossNodes;
+        }
+        else if ( upstreamNodes.size() > 1 ) {
+            // Recurse...
+            for ( HydrologyNode upstreamNode : upstreamNodes ) {
+                upstreamGainLossNodes = analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss( upstreamGainLossNodes,
+                    upstreamNode, table, nodeIdColumnNum, nodeTypeColumnNum, nodeOutflowTypes,
+                    problems);
+            }
+            return upstreamGainLossNodes;
+        }
+        else {
+            // Process the one node
+            nodeType = lookupTableString ( table, nodeIdColumnNum, node.getCommonID(), nodeTypeColumnNum );
+            if ( nodeType == null ) {
+                problems.add ( "Unable to determine node type for node \"" + node.getCommonID() + "\" - unable to get nodes for gain/loss." );
+                return upstreamGainLossNodes;
+            }
+            if ( isNodeOfAnalysisType(nodeType,nodeOutflowTypes) && (nodesInReach != 0) ) {
+                // Done processing the reach
+                return upstreamGainLossNodes;
+            }
+            else {
+                // Add the node to the list and go to the next node
+                upstreamGainLossNodes.add(node);
+                ++nodesInReach;
+                if ( nodesInReach == 1) {
+                    Message.printStatus(2, routine, "Added upstream node (first node in reach) \"" + node.getCommonID() + "\"" );
+                }
+                else {
+                    Message.printStatus(2, routine, "Added upstream node \"" + node.getCommonID() + "\"" );
+                }
+                // Will only be one upstream node at this point.
+                node = node.getUpstreamNode();
+            }
+         }
+    }
 }
 
 /**
@@ -554,10 +792,12 @@ throws InvalidCommandParameterException
     String NodeIDColumn = parameters.getValue ( "NodeIDColumn" );
     String NodeTypeColumn = parameters.getValue ( "NodeTypeColumn" );
     String DownstreamNodeIDColumn = parameters.getValue ( "DownstreamNodeIDColumn" );
+    String NodeDistanceColumn = parameters.getValue ( "NodeDistanceColumn" );
     String Interval = parameters.getValue ( "Interval" );
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String OutputTableID = parameters.getValue ( "OutputTableID" );
+    String GainMethod = parameters.getValue ( "GainMethod" );
 	String warning = "";
     String message;
     
@@ -603,6 +843,27 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the downstream node identifier." ) );
+    }
+    
+    if ( (GainMethod != null) && (GainMethod.length() != 0) ) {
+        NetworkGainMethodType gm = NetworkGainMethodType.valueOfIgnoreCase(GainMethod);
+        if ( gm == null ) {
+            message = "The gain method (" + GainMethod + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid gain method from choices." ) );
+        }
+        else {
+            if ( (gm == NetworkGainMethodType.DISTANCE) &&
+                ((NodeDistanceColumn == null) || (NodeDistanceColumn.length() == 0) ) ) {
+                message = "Specifying GainMethod=" + gm + " requires specifying the node distance column.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the node distance column." ) );
+            }
+        }
     }
     
     if ( (Interval == null) || (Interval.length() == 0) ) {
@@ -774,113 +1035,6 @@ public List getObjectList ( Class c )
     }
 }
 
-// Copied this from HydrologyNodeNetwork.findUpstreamFlowNodes() and modified as needed.
-/**
-Looks for the nodes upstream of the specified node, following any tributaries as necessary, and return the list of
-nodes up to but NOT including the know flow nodes.  This list of nodes can then be used to distribute gain/loss. 
-@param upstreamGainLossNodes a list that will be filled and used internally during recursion; pass as null initially;
-same as return list
-@param node the node from which to look upstream; if not a known flow node, it will be added to the list to return
-@param recursing false if calling from outside this method, true if calling recursively.
-@param problems a list of problem strings, to be treated as warnings in calling code
-*/
-public List<HydrologyNode> getUpstreamNodesForGainLoss(List upstreamGainLossNodes,
-    HydrologyNode node, DataTable table, int nodeIdColumnNum, int nodeTypeColumnNum, String [] nodeOutflowTypes,
-    List<String> problems)
-{
-    String routine = "AnalyzeNetworkPointFlow.getUpstreamNodesForGainLoss";
-    Message.printStatus(2,routine,"Getting upstream nodes, starting with \"" + node.getCommonID() + "\"" );
-
-    boolean didRecurse = false;
-    HydrologyNode nodePrev = null;
-    HydrologyNode nodePt = null;
-    // Node at the top of the reach (node at which to stop)
-    HydrologyNode nodeReachTop = HydrologyNodeNetwork.getUpstreamNode(node, HydrologyNodeNetwork.POSITION_REACH);
-    int dl = 12;
-
-    if (upstreamGainLossNodes == null) {
-        // Create the list
-        upstreamGainLossNodes = new Vector<HydrologyNode>();
-    }
-    
-    /*
-    String nodeType = lookupTableString ( table, nodeIdColumnNum, node.getCommonID(), nodeTypeColumnNum );
-    if ( nodeType == null ) {
-        problems.add ( "Unable to determine node type for node \"" + node.getCommonID() + "\" - unable to get nodes for gain/loss." );
-        return upstreamGainLossNodes;
-    }
-    if ( isNodeOfAnalysisType(nodeType,nodeOutflowTypes) ) {
-        // Done processing the reach
-        return upstreamGainLossNodes;
-    }
-    else {
-        // Add to the list
-        upstreamGainLossNodes.add(node);
-        Message.printStatus(2, routine, "Added upstream node (first in reach) \"" + node.getCommonID() + "\"" );
-    }
-    */
-
-    // The node passed in initially will be a node above a known flow node.  Continue processing upstream
-
-    List<HydrologyNode> upstreamNodes;
-    //for ( nodePt = HydrologyNodeNetwork.getUpstreamNode(node, HydrologyNodeNetwork.POSITION_COMPUTATIONAL),
-    //    nodePrev = node;
-    //    ; nodePrev = nodePt, nodePt = HydrologyNodeNetwork.getUpstreamNode(nodePt, HydrologyNodeNetwork.POSITION_COMPUTATIONAL)) {
-    int nodesInReach = 0;
-    String nodeType;
-    while ( true ) {
-        Message.printStatus(2, routine, "Checking nodes upstream of node \"" + node.getCommonID() + "\"" );
-        upstreamNodes = node.getUpstreamNodes();
-        if ( (upstreamNodes == null) || (upstreamNodes.size() == 0) ) {
-            // Top node in the reach.  If not a known flow node this is a problem
-            String nodeType2 = lookupTableString ( table, nodeIdColumnNum, node.getCommonID(), nodeTypeColumnNum );
-            if ( nodeType2 == null ) {
-                problems.add ( "Unable to determine node type for node \"" + node.getCommonID() + "\" - unable to get nodes for gain/loss." );
-            }
-            else if ( !isNodeOfAnalysisType(nodeType2,nodeOutflowTypes) ) {
-                // Upstream node is not a know flow type so can't process gain/loss
-                problems.add ( "Most upstream node in reach is not know flow type - unable to determine node type for node \"" +
-                    node.getCommonID() + "\" - unable to get nodes for gain/loss." );
-            }
-            return upstreamGainLossNodes;
-        }
-        else if ( upstreamNodes.size() > 1 ) {
-            // Recurse...
-            for ( HydrologyNode upstreamNode : upstreamNodes ) {
-                upstreamGainLossNodes = getUpstreamNodesForGainLoss( upstreamGainLossNodes,
-                    upstreamNode, table, nodeIdColumnNum, nodeTypeColumnNum, nodeOutflowTypes,
-                    problems);
-            }
-            return upstreamGainLossNodes;
-        }
-        else {
-            // Process the one node
-            nodeType = lookupTableString ( table, nodeIdColumnNum, node.getCommonID(), nodeTypeColumnNum );
-            if ( nodeType == null ) {
-                problems.add ( "Unable to determine node type for node \"" + node.getCommonID() + "\" - unable to get nodes for gain/loss." );
-                return upstreamGainLossNodes;
-            }
-            if ( isNodeOfAnalysisType(nodeType,nodeOutflowTypes) ) {
-                // Done processing the reach
-                return upstreamGainLossNodes;
-            }
-            else {
-                // Add the node to the list and go to the next node
-                upstreamGainLossNodes.add(node);
-                ++nodesInReach;
-                if ( nodesInReach == 1) {
-                    Message.printStatus(2, routine, "Added upstream node (first node in reach) \"" + node.getCommonID() + "\"" );
-                }
-                else {
-                    Message.printStatus(2, routine, "Added upstream node \"" + node.getCommonID() + "\"" );
-                }
-                // Will only be one upstream node at this point.
-                node = node.getUpstreamNode();
-            }
-         }
-    }
-}
-
 /**
 Initialize the network from a table of information.
 @param table table containing network information
@@ -895,7 +1049,7 @@ private void initializeNetworkFromTable ( DataTable table, int nodeIdColumnNum, 
     int nodeTypeColumnNum, int nodeDistanceColumnNum, int downstreamNodeIdColumnNum,
     HydrologyNodeNetwork network, List<String> problems )
 throws Exception
-{   String routine = getClass().getName() + ".initializeNetworkFromTable";
+{   String routine = "AnalyzeNetworkPointFlow_Command.initializeNetworkFromTable";
     // First find a table node that has no downstream node
     List <TableRecord> records = findTableRecordsWithValue ( table, downstreamNodeIdColumnNum, "", true );
     if ( records.size() == 0 ) {
@@ -940,7 +1094,7 @@ private List<TS> initializeNodeTimeSeries ( DataTable table, HydrologyNodeNetwor
     TimeInterval interval, DateTime analysisStart, DateTime analysisEnd, String units, List<String> problems )
 {   List<TS> tslist = new Vector<TS>();
     String [] dataTypes = { "NodeInflow", "NodeAdd",
-        "NodeSubtract", "NodeUpstreamGain", "NodeOutflow", "NodeUpstreamReachGain", "NodeStorage" };
+        "NodeSubtract", "NodeUpstreamGain", "NodeOutflow", "NodeUpstreamReachGain", "NodeInflowWithGain", "NodeOutflowWithGain", "NodeStorage" };
     TS ts;
     for (HydrologyNode node = HydrologyNodeNetwork.getUpstreamNode(network.getNodeHead(), HydrologyNodeNetwork.POSITION_ABSOLUTE);
         node.getDownstreamNode() != null;
@@ -961,6 +1115,7 @@ private List<TS> initializeNodeTimeSeries ( DataTable table, HydrologyNodeNetwor
                 ts.setDate2Original(analysisEnd);
                 ts.setDataUnits(units);
                 ts.setDataUnitsOriginal(units);
+                ts.setMissing(Double.NaN);
                 ts.allocateDataSpace();
                 tslist.add(ts);
             }
@@ -1107,7 +1262,7 @@ Run the command.
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommandInternal",message = "";
+{	String routine = "AnalyzeNetworkPointFlow_Command.runCommandInternal",message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -1382,60 +1537,72 @@ CommandWarningException, CommandException
 	try {
     	// Process the network and create the output table...
         if ( command_phase == CommandPhaseType.RUN ) {
-            // Create a new network from the table
-            HydrologyNodeNetwork network = new HydrologyNodeNetwork(true);
-            List<String> problems = new Vector<String>();
-            int nodeIdColumnNum = table.getFieldIndex(NodeIDColumn);
-            int nodeNameColumnNum = table.getFieldIndex(NodeNameColumn);
-            int nodeTypeColumnNum = table.getFieldIndex(NodeTypeColumn);
-            int nodeDistanceColumnNum = -1;
-            if ( (NodeDistanceColumn != null) && !NodeDistanceColumn.equals("") ) {
-                nodeDistanceColumnNum = table.getFieldIndex(NodeDistanceColumn);
+            // Make sure the analysis start and end are not null - this ensures that the time series overlap
+            if ( (analysisStart == null) || (analysisEnd == null) ) {
+                message = "The analysis start and end must be specified.";
+                Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the analysis start and end." ) );
             }
-            int nodeWeightColumnNum = -1;
-            if ( (NodeWeightColumn != null) && !NodeWeightColumn.equals("") ) {
-                nodeWeightColumnNum = table.getFieldIndex(NodeWeightColumn);
+            else {
+                // Create a new network from the table
+                HydrologyNodeNetwork network = new HydrologyNodeNetwork(true);
+                List<String> problems = new Vector<String>();
+                int nodeIdColumnNum = table.getFieldIndex(NodeIDColumn);
+                int nodeNameColumnNum = table.getFieldIndex(NodeNameColumn);
+                int nodeTypeColumnNum = table.getFieldIndex(NodeTypeColumn);
+                int nodeDistanceColumnNum = -1;
+                if ( (NodeDistanceColumn != null) && !NodeDistanceColumn.equals("") ) {
+                    nodeDistanceColumnNum = table.getFieldIndex(NodeDistanceColumn);
+                }
+                int nodeWeightColumnNum = -1;
+                if ( (NodeWeightColumn != null) && !NodeWeightColumn.equals("") ) {
+                    nodeWeightColumnNum = table.getFieldIndex(NodeWeightColumn);
+                }
+                int downstreamNodeIdColumnNum = table.getFieldIndex(DownstreamNodeIDColumn);
+                initializeNetworkFromTable ( table, nodeIdColumnNum, nodeNameColumnNum,
+                    nodeTypeColumnNum, nodeDistanceColumnNum, downstreamNodeIdColumnNum, network, problems );
+                // Create output time series for each node
+                List<TS> outputTSList = initializeNodeTimeSeries ( table, network, interval,
+                    analysisStart, analysisEnd, Units, problems );
+                // Do the point flow analysis
+                analyzeNetworkPointFlow ( table, nodeIdColumnNum, nodeTypeColumnNum, nodeDistanceColumnNum, nodeWeightColumnNum,
+                    nodeAddTypes, nodeAddDataTypes, nodeSubtractTypes, nodeSubtractDataTypes,
+                    nodeOutflowTypes, nodeOutflowDataTypes, nodeFlowThroughTypes,
+                    network, outputTSList, interval, gainMethod, analysisStart, analysisEnd, problems );
+                // Report problems
+                for ( String problem : problems ) {
+                    if ( problem.charAt(0) != ' ' ) {
+                        // Message has not been logged before so log...
+                        Message.printWarning ( 3, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, problem );
+                    }
+                    status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
+                        problem, "Check log file for more details." ) );
+                }
+                // Add the time series to the processor
+                TSCommandProcessorUtil.appendTimeSeriesListToResultsList(processor, this, outputTSList);
+                /*
+                DataTable newTable = table.createCopy ( table, NewTableID, includeColumns,
+                    distinctColumns, columnMap );
+                
+                // Set the table in the processor...
+                
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "Table", newTable );
+                try {
+                    processor.processRequest( "SetTable", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetTable(Table=...) from processor.";
+                    Message.printWarning(warning_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Report problem to software support." ) );
+                }
+                */
             }
-            int downstreamNodeIdColumnNum = table.getFieldIndex(DownstreamNodeIDColumn);
-            initializeNetworkFromTable ( table, nodeIdColumnNum, nodeNameColumnNum,
-                nodeTypeColumnNum, nodeDistanceColumnNum, downstreamNodeIdColumnNum, network, problems );
-            // Create output time series for each node
-            List<TS> outputTSList = initializeNodeTimeSeries ( table, network, interval,
-                analysisStart, analysisEnd, Units, problems );
-            // Do the point flow analysis
-            analyzeNetworkPointFlow ( table, nodeIdColumnNum, nodeTypeColumnNum, nodeDistanceColumnNum, nodeWeightColumnNum,
-                nodeAddTypes, nodeAddDataTypes, nodeSubtractTypes, nodeSubtractDataTypes,
-                nodeOutflowTypes, nodeOutflowDataTypes, nodeFlowThroughTypes,
-                network, outputTSList, interval, gainMethod, analysisStart, analysisEnd, problems );
-            // Report problems
-            for ( String problem : problems ) {
-                Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, problem );
-                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
-                    problem, "Report problem to software support." ) );
-            }
-            // Add the time series to the processor
-            TSCommandProcessorUtil.appendTimeSeriesListToResultsList(processor, this, outputTSList);
-            /*
-            DataTable newTable = table.createCopy ( table, NewTableID, includeColumns,
-                distinctColumns, columnMap );
-            
-            // Set the table in the processor...
-            
-            PropList request_params = new PropList ( "" );
-            request_params.setUsingObject ( "Table", newTable );
-            try {
-                processor.processRequest( "SetTable", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting SetTable(Table=...) from processor.";
-                Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Report problem to software support." ) );
-            }
-            */
         }
         else if ( command_phase == CommandPhaseType.DISCOVERY ) {
             // Create an empty output table and set the ID
@@ -1456,7 +1623,7 @@ CommandWarningException, CommandException
 		message = "Unexpected error analyzing point flow (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
         status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Report problem to software support." ) );
+            message, "Check log file for details." ) );
 		throw new CommandWarningException ( message );
 	}
 	

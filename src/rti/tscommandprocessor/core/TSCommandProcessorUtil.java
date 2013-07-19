@@ -350,7 +350,8 @@ Expand a string using:
 <li> time series  ${ts:Property} strings</li>
 </ol>
 If a property string is not found, it will remain without being replaced.
-@param processor The processor that is being used.
+@param processor The processor that is being used, if a ${property} needs to be expanded (if passed as null,
+the processor property won't be expanded)
 @param ts Time series to be used for metadata string.
 @param s String to expand.  The string can contain % format specifiers used with TS.
 @param status CommandStatus to add messages to if problems occur.
@@ -404,7 +405,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                             propvalString = "" + propO;
                         }
                     }
-                    else {
+                    else if ( processor != null ) {
                         // Get the property from the processor properties
                         PropList request_params = new PropList ( "" );
                         request_params.setUsingObject ( "PropertyName", propname );

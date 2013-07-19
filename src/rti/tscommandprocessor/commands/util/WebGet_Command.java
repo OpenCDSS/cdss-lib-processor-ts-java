@@ -7,6 +7,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -219,6 +222,9 @@ CommandWarningException, CommandException
 	try {
 	    FileOutputStream fos = null;
         try {
+            // Some sites need cookie manager
+            // (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
+            CookieHandler.setDefault(new CookieManager(null,CookiePolicy.ACCEPT_ALL));
             // Open the input stream...
             URL url = new URL(URI);
             URLConnection urlConnection = url.openConnection();

@@ -11,6 +11,7 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import riverside.datastore.DataStore;
+import riverside.datastore.GenericDatabaseDataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
@@ -667,44 +668,44 @@ private void writeTimeSeries ( int its, TS ts, DateTime outputStart, DateTime ou
     boolean dsDataHasFlag = false;
     // Metadata table...
     String timeSeriesMetadataTable = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesMetadataTable" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_META_TABLE_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesMetadataTableLocationTypeColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesMetadataTableLocationTypeColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_META_TABLE_LOCTYPE_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesMetadataTableLocationIdColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesMetadataTableLocationIdColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_META_TABLE_LOCATIONID_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesMetadataTableDataSourceColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesMetadataTableDataSourceColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_META_TABLE_DATASOURCE_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesMetadataTableDataTypeColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesMetadataTableDataTypeColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_META_TABLE_DATATYPE_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesMetadataTableDataIntervalColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesMetadataTableDataIntervalColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_META_TABLE_DATAINTERVAL_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesMetadataTableScenarioColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesMetadataTableScenarioColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_META_TABLE_SCENARIO_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesMetadataTableMetadataIDColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesMetadataTableMetadataIDColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_META_TABLE_ID_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     // Data table...
     String timeSeriesDataTable = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesDataTable" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_DATA_TABLE_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesDataTableMetadataIDColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesDataTableMetadataIDColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_DATA_TABLE_METAID_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesDataTableDateTimeColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesDataTableDateTimeColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_DATA_TABLE_DATETIME_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesDataTableValueColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesDataTableValueColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_DATA_TABLE_VALUE_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     String timeSeriesDataTableFlagColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-        processor, ts, dataStore.getProperty ( "TimeSeriesDataTableFlagColumn" ),
+        processor, ts, dataStore.getProperty ( GenericDatabaseDataStore.TS_DATA_TABLE_FLAG_COLUMN_PROP ),
         status, CommandPhaseType.RUN );
     // Make sure the metadata table and columns exist...
     try {

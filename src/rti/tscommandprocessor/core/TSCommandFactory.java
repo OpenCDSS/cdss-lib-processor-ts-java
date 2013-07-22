@@ -42,6 +42,7 @@ import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemb
 
 // GRTS commands (time series products).
 
+import rti.tscommandprocessor.commands.products.ProcessRasterGraph_Command;
 import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
 
 // HEC-DSS commands.
@@ -616,6 +617,9 @@ throws UnknownCommandException
 
     else if ( commandName.equalsIgnoreCase("PrintTextFile") ) {
         return new PrintTextFile_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ProcessRasterGraph") ) {
+        return new ProcessRasterGraph_Command ();
     }
 	else if ( commandName.equalsIgnoreCase("ProcessTSProduct") ) {
 		return new ProcessTSProduct_Command ();

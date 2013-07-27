@@ -450,17 +450,13 @@ private void refresh()
 			// Select default...
 			__FillDirection_JComboBox.select ( __command._Forward );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__FillDirection_JComboBox,
-				FillDirection, JGUIUtil.NONE, null, null ) ) {
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(__FillDirection_JComboBox,FillDirection, JGUIUtil.NONE, null, null ) ) {
 				__FillDirection_JComboBox.select(FillDirection);
 			}
-			else {	Message.printWarning ( 1,
-				routine,
-				"Existing command " +
-				"references an invalid\nrun mode \"" +
-				FillDirection +
-				"\".  Select a different run mode or Cancel.");
+			else {
+			    Message.printWarning ( 1, routine, "Existing command references an invalid fill direction \"" +
+				FillDirection + "\".  Select a different run mode or Cancel.");
 				__error_wait = true;
 			}
 		}

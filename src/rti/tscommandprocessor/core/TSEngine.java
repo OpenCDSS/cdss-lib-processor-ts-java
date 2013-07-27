@@ -782,6 +782,7 @@ public final int OUTPUT_SUMMARY_HTML = 29; // Summary as HTML, annotated with fi
 public final int OUTPUT_AREA_GRAPH = 30; // Area graph
 public final int OUTPUT_AREA_STACKED_GRAPH = 31; // Stacked area graph
 public final int OUTPUT_EXCEEDANCE_PROBABILITY_GRAPH = 32; // Exceedance probability graph
+public final int OUTPUT_RASTER_GRAPH = 33;  // Raster graph
 
 /**
 Filter indicating that output should be data (default).
@@ -836,7 +837,7 @@ private int	_fatal_error_count = 0;
 HydroBase DMI instance list, to allow more than one database instance to be open at a time.
 TODO SAM 2012-09-25 Phase this out once legacy HydroBase login dialog is restructured.
 */
-private List<HydroBaseDMI> __hbdmi_Vector = new Vector();
+private List<HydroBaseDMI> __hbdmi_Vector = new Vector<HydroBaseDMI>();
 
 /**
 Indicates whether values <= 0 should be treated as missing when calculating historical averages.
@@ -861,12 +862,12 @@ private DateTime __InputEnd_DateTime = null;
 /**
 List of time series identifiers that are not found.
 */
-private List<String> __missing_ts = new Vector();
+private List<String> __missing_ts = new Vector<String>();
 
 /**
 List of NWSRFS_DMI to use to read from NWSRFS FS5Files.
 */
-private List<NWSRFS_DMI> __nwsrfs_dmi_Vector = new Vector();
+private List<NWSRFS_DMI> __nwsrfs_dmi_Vector = new Vector<NWSRFS_DMI>();
 
 /**
 Default output file name.
@@ -3409,6 +3410,9 @@ throws IOException
 		else if ( prop_value.equalsIgnoreCase("-oPredictedValueResidual_graph")){
 			output_format = OUTPUT_PredictedValueResidual_GRAPH;
 		}
+		else if ( prop_value.equalsIgnoreCase("-oraster_graph")){
+            output_format = OUTPUT_RASTER_GRAPH;
+        }
 		else if ( prop_value.equalsIgnoreCase("-oxyscatter_graph")){
 			output_format = OUTPUT_XY_SCATTER_GRAPH;
 		}
@@ -3908,8 +3912,9 @@ throws IOException
 			(output_format == OUTPUT_PORGRAPH) ||
 			(output_format == OUTPUT_PredictedValue_GRAPH) ||
 			(output_format == OUTPUT_PredictedValueResidual_GRAPH)||
+			(output_format == OUTPUT_RASTER_GRAPH)||
 			(output_format == OUTPUT_XY_SCATTER_GRAPH) ) {
-		// A graph type.  Temporary copy of data...
+		// A graph type.
 		List<TS> tslist = tslist_output;
 		try {
     		if ( IOUtil.isBatch() ) {
@@ -4032,6 +4037,9 @@ throws IOException
     		else if ( output_format == OUTPUT_PredictedValueResidual_GRAPH){
     			graphprops.set("GraphType=PredictedValueResidual");
     		}
+            else if ( output_format == OUTPUT_RASTER_GRAPH ) {
+                graphprops.set("GraphType=Raster");
+            }
     		else if ( output_format == OUTPUT_XY_SCATTER_GRAPH ) {
     			graphprops.set("GraphType=XY-Scatter");
     		}
@@ -5404,8 +5412,6 @@ private void updateHydroBaseComments ( TS ts )
 			comments.set( i, comment.substring(0,pos + 2) + ts.getDescription() );
 		}
 	}
-	comments = null;
-	comment = null;
 }
 
 /**

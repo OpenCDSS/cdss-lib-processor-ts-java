@@ -41,6 +41,12 @@ This class initializes, checks, and runs the CopyTimeSeriesPropertiesToTable() c
 public class CopyTimeSeriesPropertiesToTable_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider
 {
+
+/**
+Used with AllowDuplicates.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
     
 /**
 The table that is created (when not operating on an existing table).
@@ -68,6 +74,7 @@ throws InvalidCommandParameterException
 {   String PropertyNames = parameters.getValue ( "PropertyNames" );
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    String AllowDuplicates = parameters.getValue ( "AllowDuplicates" );
     String TableOutputColumns = parameters.getValue ( "TableOutputColumns" );
     String warning = "";
     String message;
@@ -102,8 +109,16 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (AllowDuplicates != null) && !AllowDuplicates.equals("") && !AllowDuplicates.equalsIgnoreCase(_False) &&
+        !AllowDuplicates.equalsIgnoreCase(_True) ) {
+        message = "The AllowDuplicates value (" + AllowDuplicates + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specity the value as " + _False + " or " + _True + " (default)." ) );
+    }
+    
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -111,6 +126,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "TableTSIDColumn" );
     valid_Vector.add ( "TableTSIDFormat" );
+    valid_Vector.add ( "AllowDuplicates" );
     valid_Vector.add ( "TableOutputColumns" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -225,6 +241,11 @@ CommandWarningException, CommandException
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    String AllowDuplicates = parameters.getValue ( "AllowDuplicates" );
+    boolean allowDuplicates = false; // Default
+    if ( (AllowDuplicates != null) && AllowDuplicates.equalsIgnoreCase(_True) ) {
+        allowDuplicates = true;
+    }
     String TableOutputColumns = parameters.getValue ( "TableOutputColumns" );
     String [] tableOutputColumnNames = null;
     if ( (TableOutputColumns != null) && !TableOutputColumns.equals("") ) {
@@ -513,7 +534,11 @@ CommandWarningException, CommandException
                         tsid = ts.getIdentifierString();
                     }
                 }
-                TableRecord rec = table.getRecord ( TableTSIDColumn, tsid );
+                TableRecord rec = null;
+                if ( !allowDuplicates ) {
+                    // Try to match the TSID 
+                    rec = table.getRecord ( TableTSIDColumn, tsid );
+                }
                 if ( rec == null ) {
                     //message = "Cannot find table \"" + TableID + "\" cell in column \"" + TableTSIDColumn +
                     //    "\" matching TSID formatted as \"" + tsid + "\" - skipping time series \"" +
@@ -643,6 +668,7 @@ public String toString ( PropList parameters )
     String TableID = parameters.getValue( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    String AllowDuplicates = parameters.getValue ( "AllowDuplicates" );
     String TableOutputColumns = parameters.getValue ( "TableOutputColumns" );
         
     StringBuffer b = new StringBuffer ();
@@ -688,6 +714,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
+    }
+    if ( (AllowDuplicates != null) && (AllowDuplicates.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AllowDuplicates=\"" + AllowDuplicates + "\"" );
     }
     if ( (TableOutputColumns != null) && (TableOutputColumns.length() > 0) ) {
         if ( b.length() > 0 ) {

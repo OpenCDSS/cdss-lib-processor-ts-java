@@ -52,6 +52,7 @@ private JTextField __PropertyNames_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers
+private SimpleJComboBox __AllowDuplicates_JComboBox = null;
 private JTextField __TableOutputColumns_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
@@ -157,6 +158,7 @@ private void checkInput ()
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    String AllowDuplicates = __AllowDuplicates_JComboBox.getSelected();
     String TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
 	PropList parameters = new PropList ( "" );
 
@@ -182,6 +184,12 @@ private void checkInput ()
     }
     if ( TableTSIDFormat.length() > 0 ) {
         parameters.set ( "TableTSIDFormat", TableTSIDFormat );
+    }
+    if ( AllowDuplicates.length() > 0 ) {
+        parameters.set ( "TableTSIDFormat", TableTSIDFormat );
+    }
+    if ( AllowDuplicates.length() > 0 ) {
+        parameters.set ( "AllowDuplicates", AllowDuplicates );
     }
     if ( TableOutputColumns.length() > 0 ) {
         parameters.set ( "TableOutputColumns", TableOutputColumns );
@@ -209,6 +217,7 @@ private void commitEdits ()
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    String AllowDuplicates = __AllowDuplicates_JComboBox.getSelected();
     String TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
@@ -217,6 +226,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
+    __command.setCommandParameter ( "AllowDuplicates", AllowDuplicates );
     __command.setCommandParameter ( "TableOutputColumns", TableOutputColumns );
 }
 
@@ -265,7 +275,7 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
         "the specified TSID format." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "If the formatted TSID is not matched, a row will be created for the properties." ), 
+        "If the formatted TSID is not matched or AllowDuplicates=True, a new row will be created for the properties." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST); 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The table output columns will default to the property names.  Use * to match one property name " +
@@ -330,6 +340,18 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Allow duplicates?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AllowDuplicates_JComboBox = new SimpleJComboBox ( false );
+    __AllowDuplicates_JComboBox.add ( "" );
+    __AllowDuplicates_JComboBox.add ( __command._False );
+    __AllowDuplicates_JComboBox.add ( __command._True );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __AllowDuplicates_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - allow multiple rows for same TSID? (default=" + __command._False+ ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table output columns:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -416,7 +438,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "TableTimeSeriesMath_JDialog.refresh";
+{	String routine = "CopyTimeSeriesPropertiesToTable_JDialog.refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -424,6 +446,7 @@ private void refresh ()
     String TableID = "";
     String TableTSIDColumn = "";
     String TableTSIDFormat = "";
+    String AllowDuplicates = "";
     String TableOutputColumns = "";
 
 	PropList props = __command.getCommandParameters();
@@ -437,6 +460,7 @@ private void refresh ()
         TableID = props.getValue ( "TableID" );
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
+        AllowDuplicates = props.getValue ( "AllowDuplicates" );
         TableOutputColumns = props.getValue ( "TableOutputColumns" );
         if ( TSList == null ) {
             // Select default...
@@ -510,6 +534,20 @@ private void refresh ()
         if (TableTSIDFormat != null ) {
             __TableTSIDFormat_JTextField.setText(TableTSIDFormat.trim());
         }
+        if ( AllowDuplicates == null ) {
+            // Select default...
+            __AllowDuplicates_JComboBox.select ( "" );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem(__AllowDuplicates_JComboBox,AllowDuplicates, JGUIUtil.NONE, null, null ) ) {
+                __AllowDuplicates_JComboBox.select(AllowDuplicates);
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid AllowDuplicates value \"" +
+                AllowDuplicates + "\".  Select a different run mode or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( TableOutputColumns != null ) {
             __TableOutputColumns_JTextField.setText ( TableOutputColumns );
         }
@@ -522,6 +560,7 @@ private void refresh ()
 	TableID = __TableID_JComboBox.getSelected();
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    AllowDuplicates = __AllowDuplicates_JComboBox.getSelected();
     TableOutputColumns = __TableOutputColumns_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
@@ -531,6 +570,7 @@ private void refresh ()
     props.add ( "TableID=" + TableID );
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
+    props.add ( "AllowDuplicates=" + AllowDuplicates );
     props.add ( "TableOutputColumns=" + TableOutputColumns );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }

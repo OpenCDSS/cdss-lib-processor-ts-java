@@ -215,7 +215,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "A" );
     valid_Vector.add ( "B" );
@@ -425,6 +425,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             "Do not use the command on UNIX/Linux"));
         throw new CommandException ( message );
     }
+    
+    
+    if ( System.getProperty("os.arch").contains("64") && !System.getProperty("os.arch").equals("IA64N") ) {
+    	//note: os.arch actually gets the bits of the JVM, not the OS
+    	//but that still works because the JVM, not the OS, is loading the DLLs
+    	//so a 32 bit JVM on a 64 bit OS can still use the DLLs (tested)
+    	
+    	//IA64N, despite its name, is not actually 64 bit. Not that I think we'll run into it,
+    	//but accounting for edge cases is good
+    	//see http://h30499.www3.hp.com/t5/System-Administration/Java-SDK-What-are-IA64N-and-IA64W/td-p/4863858
+    	
+    	//possible edge case: a 64 bit machine that does not say "64" in its architecture
+    	//however, everything I've seen online does (amd64, x86_64, ppc64...)
+    	message = "The command is not supported on 64 bit systems.";
+    	Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+    	status.addToLog(command_phase, new CommandLogRecord( CommandStatusType.FAILURE, message,
+        	"Do not use the command on 64 bit systems."));
+    	throw new CommandException ( message );
+    }
 	
     String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
@@ -577,7 +597,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
         }
         // TODO SAM 2007-12-27 - should enable EnsembleID if traces
-		List<String> aliasList = new Vector();
+		List<String> aliasList = new Vector<String>();
 		if ( tslist != null ) {
 			int tscount = tslist.size();
 			message = "Read " + tscount + " time series from \"" + InputFile_full + "\"";
@@ -685,7 +705,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

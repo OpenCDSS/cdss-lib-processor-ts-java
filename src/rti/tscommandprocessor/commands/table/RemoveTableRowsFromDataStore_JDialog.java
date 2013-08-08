@@ -391,7 +391,7 @@ private void populateDataStoreTableChoices ( DMI dmi )
     }
     else {
         try {
-            tableList = DMIUtil.getDatabaseTableNames(dmi, true, notIncluded);
+            tableList = DMIUtil.getDatabaseTableNames(dmi, null, null, true, notIncluded);
         }
         catch ( Exception e ) {
             Message.printWarning ( 1, routine, "Error getting tables table list (" + e + ")." );

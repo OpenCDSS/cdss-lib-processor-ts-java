@@ -936,7 +936,8 @@ throws CommandWarningException, CommandException
                         new CommandLogRecord(CommandStatusType.WARNING,
                                 message, "Report the problem to software support." ) );
         	}
-        	try { Object o = processor.getPropContents ( "OutputEnd" );
+        	try {
+        	    Object o = processor.getPropContents ( "OutputEnd" );
     			if ( o != null ) {
     				OutputEnd_DateTime = (DateTime)o;
     			}
@@ -948,9 +949,24 @@ throws CommandWarningException, CommandException
                         new CommandLogRecord(CommandStatusType.WARNING,
                                 message, "Report the problem to software support." ) );
         	}
+            // Get the comments to add to the top of the file.
+
+            List<String> outputCommentsList = null;
+            try {
+                Object o = processor.getPropContents ( "OutputComments" );
+                // Comments are available so use them...
+                if ( o != null ) {
+                    outputCommentsList = (List<String>)o;
+                }
+            }
+            catch ( Exception e ) {
+                // Not fatal, but of use to developers.
+                message = "Error requesting OutputComments from processor - not using.";
+                Message.printDebug(10, routine, message );
+            }
             OutputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile));
-    		StateMod_TS.writePatternTimeSeriesList(OutputFile_full, 
+    		StateMod_TS.writePatternTimeSeriesList(OutputFile_full, outputCommentsList,
 				StringMonthTS_List, OutputStart_DateTime, OutputEnd_DateTime, props );
     		// Save the output file name...
             setOutputFile ( new File(OutputFile_full));

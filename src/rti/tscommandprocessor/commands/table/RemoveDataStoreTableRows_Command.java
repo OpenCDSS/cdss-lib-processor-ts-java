@@ -27,9 +27,9 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 
 /**
-This class initializes, checks, and runs the RemoveTableRowsFromDataStore() command.
+This class initializes, checks, and runs the RemoveDataStoreTableRows() command.
 */
-public class RemoveTableRowsFromDataStore_Command extends AbstractCommand implements Command
+public class RemoveDataStoreTableRows_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -41,9 +41,9 @@ protected final String _True = "True";
 /**
 Constructor.
 */
-public RemoveTableRowsFromDataStore_Command ()
+public RemoveDataStoreTableRows_Command ()
 {	super();
-	setCommandName ( "RemoveTableRowsFromDataStore" );
+	setCommandName ( "RemoveDataStoreTableRows" );
 }
 
 /**
@@ -127,7 +127,7 @@ public boolean editCommand ( JFrame parent )
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
     // The command will be modified if changed...
-	return (new RemoveTableRowsFromDataStore_JDialog ( parent, this, tableIDChoices )).ok();
+	return (new RemoveDataStoreTableRows_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 // Use base class parseCommand()

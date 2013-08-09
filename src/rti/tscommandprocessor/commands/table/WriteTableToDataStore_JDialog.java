@@ -32,6 +32,7 @@ import RTi.DMI.DMI;
 import RTi.DMI.DMIUtil;
 import RTi.DMI.DMIWriteModeType;
 import RTi.DMI.DatabaseDataStore;
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -58,6 +59,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private WriteTableToDataStore_Command __command = null;
 private boolean __ok = false;
+private JFrame __parent = null;
 
 private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
 
@@ -94,6 +96,26 @@ public void actionPerformed(ActionEvent event)
 			response ( true );
 		}
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnMap") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnMap = __ColumnMap_JTextArea.getText().trim();
+        String dict = (new DictionaryJDialog ( __parent, true, ColumnMap,
+            "Edit ColumnMap Parameter", "Table Column", "Datastore Column",10)).response();
+        if ( dict != null ) {
+            __ColumnMap_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditDataStoreRelatedColumnsMap") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextArea.getText().trim();
+        String dict = (new DictionaryJDialog ( __parent, true, DataStoreRelatedColumnsMap,
+            "Edit DataStoreRelatedColumnsMap Parameter", "Datastore Column", "Datastore [RelatedTable.]RelatedColumn",10)).response();
+        if ( dict != null ) {
+            __DataStoreRelatedColumnsMap_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
 }
 
 /**
@@ -228,6 +250,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, WriteTableToDataStore_Command command, List<String> tableIDChoices )
 {	__command = command;
+    __parent = parent;
 	CommandProcessor processor = __command.getCommandProcessor();
 
 	addWindowListener(this);
@@ -322,28 +345,32 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table to datastore column map:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnMap_JTextArea = new JTextArea (6,35);
     __ColumnMap_JTextArea.setLineWrap ( true );
     __ColumnMap_JTextArea.setWrapStyleWord ( true );
     __ColumnMap_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
     __ColumnMap_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnMap_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - if column names differ (default=names are same)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnMap",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Datastore related columns map:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreRelatedColumnsMap_JTextArea = new JTextArea (6,35);
     __DataStoreRelatedColumnsMap_JTextArea.setLineWrap ( true );
     __DataStoreRelatedColumnsMap_JTextArea.setWrapStyleWord ( true );
     __DataStoreRelatedColumnsMap_JTextArea.setToolTipText("DatastoreColumn:RelatedTable.RelatedColumn,...");
     __DataStoreRelatedColumnsMap_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__DataStoreRelatedColumnsMap_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 2, 2, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - if datastore column matches from related column."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditDataStoreRelatedColumnsMap",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // How to write the data...
     
@@ -456,7 +483,7 @@ private void populateDataStoreTableChoices ( DMI dmi )
     }
     else {
         try {
-            tableList = DMIUtil.getDatabaseTableNames(dmi, true, notIncluded);
+            tableList = DMIUtil.getDatabaseTableNames(dmi, null, null, true, notIncluded);
         }
         catch ( Exception e ) {
             Message.printWarning ( 1, routine, "Error getting tables table list (" + e + ")." );

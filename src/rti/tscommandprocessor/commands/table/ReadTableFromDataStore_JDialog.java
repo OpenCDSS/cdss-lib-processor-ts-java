@@ -61,6 +61,8 @@ private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private JTextField __TableID_JTextField = null;
 private JTabbedPane __sql_JTabbedPane = null;
+private SimpleJComboBox __DataStoreCatalog_JComboBox = null;
+private SimpleJComboBox __DataStoreSchema_JComboBox = null;
 private SimpleJComboBox __DataStoreTable_JComboBox = null;
 private JTextField __DataStoreColumns_JTextField = null;
 private JTextField __OrderBy_JTextField = null;
@@ -154,9 +156,23 @@ public void actionPerformed(ActionEvent event)
 }
 
 /**
-Refresh the data type choices in response to the currently selected RiversideDB data store.
-@param value if non-null, then the selection is from the command initialization, in which case the
-specified data type should be selected
+Refresh the schema choices in response to the currently selected datastore.
+*/
+private void actionPerformedDataStoreCatalogSelected ( )
+{
+    if ( __DataStoreCatalog_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    __dataStore = getSelectedDataStore();
+    __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+    //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
+    // Now populate the schema choices corresponding to the database
+    populateDataStoreSchemaChoices ( __dmi );
+}
+
+/**
+Refresh the database choices in response to the currently selected datastore.
 */
 private void actionPerformedDataStoreSelected ( )
 {
@@ -167,7 +183,23 @@ private void actionPerformedDataStoreSelected ( )
     __dataStore = getSelectedDataStore();
     __dmi = ((DatabaseDataStore)__dataStore).getDMI();
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
-    // Now populate the data type choices corresponding to the data store
+    // Now populate the database choices corresponding to the datastore
+    populateDataStoreCatalogChoices ( __dmi );
+}
+
+/**
+Refresh the table choices in response to the currently selected schema.
+*/
+private void actionPerformedDataStoreSchemaSelected ( )
+{
+    if ( __DataStoreSchema_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    __dataStore = getSelectedDataStore();
+    __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+    //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
+    // Now populate the table choices corresponding to the schema
     populateDataStoreTableChoices ( __dmi );
 }
 
@@ -187,6 +219,8 @@ private void checkInput ()
     else {
         props.set ( "DataStore", "" );
     }
+    String DataStoreCatalog = __DataStoreCatalog_JComboBox.getSelected();
+    String DataStoreSchema = __DataStoreSchema_JComboBox.getSelected();
 	String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
 	String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
 	String OrderBy = __OrderBy_JTextField.getText().trim();
@@ -197,10 +231,12 @@ private void checkInput ()
     String TableID = __TableID_JTextField.getText().trim();
 	__error_wait = false;
 
-    //if ( __DataStore_JComboBox.getSelected() == null ) {
-        // Startup initialization
-    //    return;
-    //}
+    if ( DataStoreCatalog.length() > 0 ) {
+        props.set ( "DataStoreCatalog", DataStoreCatalog );
+    }
+    if ( DataStoreSchema.length() > 0 ) {
+        props.set ( "DataStoreSchema", DataStoreSchema );
+    }
 	if ( DataStoreTable.length() > 0 ) {
 		props.set ( "DataStoreTable", DataStoreTable );
 	}
@@ -242,6 +278,8 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
+    String DataStoreCatalog = __DataStoreCatalog_JComboBox.getSelected();
+    String DataStoreSchema = __DataStoreSchema_JComboBox.getSelected();
     String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
     String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
     String OrderBy = __OrderBy_JTextField.getText().trim();
@@ -251,6 +289,8 @@ private void commitEdits ()
     String DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
     String TableID = __TableID_JTextField.getText().trim();
     __command.setCommandParameter ( "DataStore", DataStore );
+    __command.setCommandParameter ( "DataStoreCatalog", DataStoreCatalog );
+    __command.setCommandParameter ( "DataStoreSchema", DataStoreSchema );
 	__command.setCommandParameter ( "DataStoreTable", DataStoreTable );
 	__command.setCommandParameter ( "DataStoreColumns", DataStoreColumns );
 	__command.setCommandParameter ( "OrderBy", OrderBy );
@@ -380,6 +420,35 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JPanel table_JPanel = new JPanel();
     table_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "Table and columns", table_JPanel );
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "Specify the catalog and schema as non-blank only if the datastore connection is defined at a higher level and requires " +
+        "additional information to locate the table."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "Database catalog and schema choices currently do not cascade because database driver metadata features are limited or may " +
+        "be disabled and not provide information."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+ 
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Datastore catalog (database):"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreCatalog_JComboBox = new SimpleJComboBox ( false );
+    __DataStoreCatalog_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __DataStoreCatalog_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
+        "<html>Optional - specify if needed for <b>[Database]</b>.[Schema].[Table].</html>"), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Datastore schema:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreSchema_JComboBox = new SimpleJComboBox ( false );
+    __DataStoreSchema_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __DataStoreSchema_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
+        "<html>Optional - specify if needed for [Database].<b>[Schema]</b>.[Table].</html>"), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Datastore table:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -523,8 +592,16 @@ public void itemStateChanged (ItemEvent event)
 {
     if ( !__ignoreItemEvents ) {
         if ( (event.getSource() == __DataStore_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
-            // User has selected a data store.
+            // User has selected a datastore.
             actionPerformedDataStoreSelected ();
+        }
+        else if ( (event.getSource() == __DataStoreCatalog_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
+            // User has selected a catalog.
+            actionPerformedDataStoreCatalogSelected ();
+        }
+        else if ( (event.getSource() == __DataStoreSchema_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
+            // User has selected a schema.
+            actionPerformedDataStoreSchemaSelected ();
         }
     }
     refresh();
@@ -557,6 +634,49 @@ Indicate if the user pressed OK (cancel otherwise).
 */
 public boolean ok ()
 {	return __ok;
+}
+
+/**
+Populate the database list based on the selected datastore.
+@param dmi DMI to use when selecting database list
+*/
+private void populateDataStoreCatalogChoices ( DMI dmi )
+{   String routine = getClass().getName() + "populateDataStoreDatastoreChoices";
+    List<String> catalogList = null;
+    List<String> notIncluded = new Vector<String>();
+    if ( dmi == null ) {
+        catalogList = new Vector<String>();
+    }
+    else {
+        // TODO SAM 2013-07-22 Improve this - it should only be shown when the master DB is used
+        if ( (dmi.getDatabaseEngineType() == DMI.DBENGINE_SQLSERVER) ) {
+            try {
+                catalogList = DMIUtil.getDatabaseCatalogNames(dmi, true, notIncluded);
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, routine, "Error getting database catalog (" + e + ")." );
+                Message.printWarning ( 3, routine, e );
+                catalogList = null;
+            }
+        }
+    }
+    if ( catalogList == null ) {
+        catalogList = new Vector();
+    }
+    // Always add a blank option at the start to help with initialization
+    catalogList.add ( 0, "" );
+    __DataStoreCatalog_JComboBox.removeAll();
+    for ( String catalog : catalogList ) {
+        __DataStoreCatalog_JComboBox.add( catalog );
+    }
+    // Set large so that new catalog list from selected datastore does not foul up layout
+    String longest = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    __DataStoreCatalog_JComboBox.setPrototypeDisplayValue(longest);
+    // Select first choice (may get reset from existing parameter values).
+    __DataStoreCatalog_JComboBox.select ( null );
+    if ( __DataStoreCatalog_JComboBox.getItemCount() > 0 ) {
+        __DataStoreCatalog_JComboBox.select ( 0 );
+    }
 }
 
 /**
@@ -600,6 +720,51 @@ private void populateDataStoreProcedureChoices ( DMI dmi )
 }
 
 /**
+Populate the schema list based on the selected database.
+@param dmi DMI to use when selecting schema list
+*/
+private void populateDataStoreSchemaChoices ( DMI dmi )
+{   String routine = getClass().getName() + "populateDataStoreSchemaChoices";
+    List<String> schemaList = null;
+    List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system tables
+    if ( dmi == null ) {
+        schemaList = new Vector<String>();
+    }
+    else {
+        // TODO SAM 2013-07-22 Improve this - it should only be shown when the master DB is used
+        try {
+            String catalog = __DataStoreCatalog_JComboBox.getSelected();
+            if ( catalog.equals("") ) {
+                catalog = null;
+            }
+            schemaList = DMIUtil.getDatabaseSchemaNames(dmi, catalog, true, notIncluded);
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 1, routine, "Error getting database schemas (" + e + ")." );
+            Message.printWarning ( 3, routine, e );
+            schemaList = null;
+        }
+    }
+    if ( schemaList == null ) {
+        schemaList = new Vector<String>();
+    }
+    // Always add a blank option at the start to help with initialization
+    schemaList.add ( 0, "" );
+    __DataStoreSchema_JComboBox.removeAll();
+    for ( String schema : schemaList ) {
+        __DataStoreSchema_JComboBox.add( schema );
+    }
+    // Set large so that new database list from selected schema does not foul up layout
+    String longest = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    __DataStoreSchema_JComboBox.setPrototypeDisplayValue(longest);
+    // Select first choice (may get reset from existing parameter values).
+    __DataStoreSchema_JComboBox.select ( null );
+    if ( __DataStoreSchema_JComboBox.getItemCount() > 0 ) {
+        __DataStoreSchema_JComboBox.select ( 0 );
+    }
+}
+
+/**
 Populate the table list based on the selected database.
 @param dmi DMI to use when selecting table list
 */
@@ -608,11 +773,19 @@ private void populateDataStoreTableChoices ( DMI dmi )
     List<String> tableList = null;
     List<String> notIncluded = new Vector(); // TODO SAM 2012-01-31 need to omit system tables
     if ( dmi == null ) {
-        tableList = new Vector();
+        tableList = new Vector<String>();
     }
     else {
         try {
-            tableList = DMIUtil.getDatabaseTableNames(dmi, true, notIncluded);
+            String dbName = __DataStoreCatalog_JComboBox.getSelected();
+            if ( dbName.equals("")) {
+                dbName = null;
+            }
+            String schema = __DataStoreSchema_JComboBox.getSelected();
+            if ( schema.equals("")) {
+                schema = null;
+            }
+            tableList = DMIUtil.getDatabaseTableNames(dmi, dbName, schema, true, notIncluded);
         }
         catch ( Exception e ) {
             Message.printWarning ( 1, routine, "Error getting table list (" + e + ")." );
@@ -621,7 +794,7 @@ private void populateDataStoreTableChoices ( DMI dmi )
         }
     }
     if ( tableList == null ) {
-        tableList = new Vector();
+        tableList = new Vector<String>();
     }
     // Always add a blank option at the start to help with initialization
     tableList.add ( 0, "" );
@@ -646,6 +819,8 @@ private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
 try{
     String DataStore = "";
+    String DataStoreCatalog = "";
+    String DataStoreSchema = "";
     String DataStoreTable = "";
     String DataStoreColumns = "";
     String OrderBy = "";
@@ -658,6 +833,8 @@ try{
 	if (__first_time) {
 		__first_time = false;
 		DataStore = props.getValue ( "DataStore" );
+		DataStoreCatalog = props.getValue ( "DataStoreCatalog" );
+		DataStoreSchema = props.getValue ( "DataStoreSchema" );
 		DataStoreTable = props.getValue ( "DataStoreTable" );
 		DataStoreColumns = props.getValue ( "DataStoreColumns" );
 		OrderBy = props.getValue ( "OrderBy" );
@@ -683,8 +860,39 @@ try{
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        if ( TableID != null ) {
-            __TableID_JTextField.setText ( TableID );
+        // First populate the database choices...
+        populateDataStoreCatalogChoices(getDMI() );
+        // Now select what the command had previously (if specified)...
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreCatalog_JComboBox, DataStoreCatalog, JGUIUtil.NONE, null, null ) ) {
+            __DataStoreCatalog_JComboBox.select ( DataStoreCatalog );
+        }
+        else {
+            if ( (DataStoreCatalog == null) || DataStoreCatalog.equals("") ) {
+                // New command...select the default...
+                __DataStoreCatalog_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "DataStoreCatalog parameter \"" + DataStoreCatalog + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
+        // First populate the database schema...
+        populateDataStoreSchemaChoices(getDMI() );
+        // Now select what the command had previously (if specified)...
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataStoreSchema_JComboBox, DataStoreSchema, JGUIUtil.NONE, null, null ) ) {
+            __DataStoreSchema_JComboBox.select ( DataStoreSchema );
+        }
+        else {
+            if ( (DataStoreSchema == null) || DataStoreSchema.equals("") ) {
+                // New command...select the default...
+                __DataStoreSchema_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "DataStoreSchema parameter \"" + DataStoreSchema + "\".  Select a\ndifferent value or Cancel." );
+            }
         }
         // First populate the table choices...
         populateDataStoreTableChoices(getDMI() );
@@ -741,13 +949,23 @@ try{
                   "DataStoreProcedure parameter \"" + DataStoreProcedure + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+        if ( TableID != null ) {
+            __TableID_JTextField.setText ( TableID );
+        }
 	}
 	// Regardless, reset the command from the fields...
     DataStore = __DataStore_JComboBox.getSelected();
     if ( DataStore == null ) {
         DataStore = "";
     }
-    TableID = __TableID_JTextField.getText().trim();
+    DataStoreCatalog = __DataStoreCatalog_JComboBox.getSelected();
+    if ( DataStoreCatalog == null ) {
+        DataStoreCatalog = "";
+    }
+    DataStoreSchema = __DataStoreSchema_JComboBox.getSelected();
+    if ( DataStoreSchema == null ) {
+        DataStoreSchema = "";
+    }
     DataStoreTable = __DataStoreTable_JComboBox.getSelected();
     if ( DataStoreTable == null ) {
         DataStoreTable = "";
@@ -761,8 +979,11 @@ try{
     if ( DataStoreProcedure == null ) {
         DataStoreProcedure = "";
     }
+    TableID = __TableID_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
+	props.add ( "DataStoreCatalog=" + DataStoreCatalog );
+	props.add ( "DataStoreSchema=" + DataStoreSchema );
 	props.add ( "DataStoreTable=" + DataStoreTable );
 	props.add ( "DataStoreColumns=" + DataStoreColumns );
 	props.add ( "OrderBy=" + OrderBy );

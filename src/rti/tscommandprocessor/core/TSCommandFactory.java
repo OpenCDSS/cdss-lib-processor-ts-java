@@ -12,9 +12,6 @@ import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
-// Colorado IPP commands
-
-
 // Data checks (for now keep separate from logging and data tests)
 import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
@@ -127,12 +124,14 @@ import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
 import rti.tscommandprocessor.commands.table.FormatTableString_Command;
 import rti.tscommandprocessor.commands.table.FreeTable_Command;
+import rti.tscommandprocessor.commands.table.JoinTables_Command;
 import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
 import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
-import rti.tscommandprocessor.commands.table.RemoveTableRowsFromDataStore_Command;
+import rti.tscommandprocessor.commands.table.RemoveDataStoreTableRows_Command;
+import rti.tscommandprocessor.commands.table.SetTableValues_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.TableMath_Command;
 import rti.tscommandprocessor.commands.table.TableTimeSeriesMath_Command;
@@ -546,6 +545,12 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("InsertTimeSeriesIntoEnsemble") ) {
         return new InsertTimeSeriesIntoEnsemble_Command ();
     }
+    
+    // "J" commands...
+
+    else if ( commandName.equalsIgnoreCase("JoinTables") ) {
+        return new JoinTables_Command ();
+    }
 	
 	// "L" commands...
 
@@ -738,8 +743,12 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("RemoveFile") ) {
         return new RemoveFile_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("RemoveDataStoreTableRows") ) {
+        return new RemoveDataStoreTableRows_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("RemoveTableRowsFromDataStore") ) {
-        return new RemoveTableRowsFromDataStore_Command ();
+        // Automatically change the name
+        return new RemoveDataStoreTableRows_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReplaceValue") ) {
         return new ReplaceValue_Command ();
@@ -823,6 +832,9 @@ throws UnknownCommandException
 		// Phasing into new syntax...
 		return new SetInputPeriod_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("SetTableValues") ) {
+        return new SetTableValues_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("SetTimeSeriesPropertiesFromTable") ) {
         return new SetTimeSeriesPropertiesFromTable_Command ();
     }

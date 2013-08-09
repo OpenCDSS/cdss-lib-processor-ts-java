@@ -58,7 +58,7 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
-    String NewTableID = parameters.getValue ( "NewTableID" );
+    String TableToJoinID = parameters.getValue ( "TableToJoinID" );
 	String warning = "";
     String message;
     
@@ -73,27 +73,27 @@ throws InvalidCommandParameterException
                 message, "Specify the table identifier." ) );
     }
     
-    if ( (NewTableID == null) || (NewTableID.length() == 0) ) {
-        message = "The new table identifier must be specified.";
+    if ( (TableToJoinID == null) || (TableToJoinID.length() == 0) ) {
+        message = "The table to join identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the new table identifier." ) );
+                message, "Specify the table to join identifier." ) );
     }
     
-    if ( (TableID != null) && (TableID.length() != 0) && (NewTableID != null) && (NewTableID.length() != 0) &&
-        TableID.equalsIgnoreCase(NewTableID) ) {
-        message = "The original and new table identifiers are the same.";
+    if ( (TableID != null) && (TableID.length() != 0) && (TableToJoinID != null) && (TableToJoinID.length() != 0) &&
+        TableID.equalsIgnoreCase(TableToJoinID) ) {
+        message = "The original and table to join identifiers are the same.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the new table identifier different from the original table identifier." ) );
+                message, "Specify the table to join identifier different from the original table identifier." ) );
     }
  
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "NewTableID" );
+    valid_Vector.add ( "TableToJoinID" );
     valid_Vector.add ( "IncludeColumns" );
     valid_Vector.add ( "ColumnMap" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
@@ -190,13 +190,11 @@ CommandWarningException, CommandException
         setDiscoveryTable ( null );
     }
 
-	// Make sure there are time series available to operate on...
-	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
-    String NewTableID = parameters.getValue ( "NewTableID" );
+    String TableToJoinID = parameters.getValue ( "TableToJoinID" );
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
     String [] includeColumns = null;
     if ( (IncludeColumns != null) && !IncludeColumns.equals("") ) {
@@ -217,7 +215,7 @@ CommandWarningException, CommandException
         }
     }
     
-    // Get the table to process.
+    // Get the tables to process.
 
     DataTable table = null;
     if ( command_phase == CommandPhaseType.RUN ) {
@@ -251,6 +249,39 @@ CommandWarningException, CommandException
             }
         }
     }
+    
+    DataTable tableToJoin = null;
+    if ( command_phase == CommandPhaseType.RUN ) {
+        PropList request_params = null;
+        CommandProcessorRequestResultsBean bean = null;
+        if ( (TableID != null) && !TableID.equals("") ) {
+            // Get the table to be updated
+            request_params = new PropList ( "" );
+            request_params.set ( "TableID", TableToJoinID );
+            try {
+                bean = processor.processRequest( "GetTable", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTable(TableID=\"" + TableToJoinID + "\") from processor.";
+                Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report problem to software support." ) );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_Table = bean_PropList.getContents ( "Table" );
+            if ( o_Table == null ) {
+                message = "Unable to find table to process using TableID=\"" + TableToJoinID + "\".";
+                Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that a table exists with the requested ID." ) );
+            }
+            else {
+                tableToJoin = (DataTable)o_Table;
+            }
+        }
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
@@ -261,40 +292,19 @@ CommandWarningException, CommandException
 	}
 
 	try {
-    	// Create the table...
+    	// Join the tables...
     
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	        //table.join ( table, NewTableID, includeColumns, columnMap );
-            
-            // Set the table in the processor...
-/*            
-            PropList request_params = new PropList ( "" );
-            request_params.setUsingObject ( "Table", newTable );
-            try {
-                processor.processRequest( "SetTable", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting SetTable(Table=...) from processor.";
-                Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Report problem to software support." ) );
-            }
-            */
+	        // TODO SAM 2013-07-31 Evaluate whether columnFilters is needed
+	        Hashtable columnFilters = new Hashtable();
+	        table.joinTable ( table, tableToJoin, includeColumns, columnMap, columnFilters );
+	        // Table is already in the processor so no need to resubmit
+	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names
         }
-	    /*
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
-            // Create an empty table and set the ID
-            table = new DataTable();
-            table.setTableID ( NewTableID );
-            setDiscoveryTable ( table );
-        }*/
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Unexpected joining tables (" + e + ").";
+		message = "Unexpected error joining tables (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
         status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
@@ -327,7 +337,7 @@ public String toString ( PropList props )
 		return getCommandName() + "()";
 	}
     String TableID = props.getValue( "TableID" );
-    String NewTableID = props.getValue( "NewTableID" );
+    String TableJoinID = props.getValue( "TableJoinID" );
 	String IncludeColumns = props.getValue( "IncludeColumns" );
 	String ColumnMap = props.getValue( "ColumnMap" );
 	StringBuffer b = new StringBuffer ();
@@ -337,11 +347,11 @@ public String toString ( PropList props )
         }
         b.append ( "TableID=\"" + TableID + "\"" );
     }
-    if ( (NewTableID != null) && (NewTableID.length() > 0) ) {
+    if ( (TableJoinID != null) && (TableJoinID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "NewTableID=\"" + NewTableID + "\"" );
+        b.append ( "TableJoinID=\"" + TableJoinID + "\"" );
     }
 	if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
 		if ( b.length() > 0 ) {

@@ -38,7 +38,7 @@ private boolean __error_wait = false; // To track errors
 private boolean __first_time = true; // Indicate first time display
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
-private JTextField __NewTableID_JTextField = null;
+private SimpleJComboBox __TableToJoinID_JComboBox = null;
 private JTextField __IncludeColumns_JTextField = null;
 private JTextArea __ColumnMap_JTextArea = null;
 private SimpleJButton __cancel_JButton = null;
@@ -85,7 +85,7 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
-    String NewTableID = __NewTableID_JTextField.getText().trim();
+	String TableToJoinID = __TableToJoinID_JComboBox.getSelected();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
 	__error_wait = false;
@@ -93,8 +93,8 @@ private void checkInput ()
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
     }
-    if ( NewTableID.length() > 0 ) {
-        props.set ( "NewTableID", NewTableID );
+    if ( TableToJoinID.length() > 0 ) {
+        props.set ( "TableToJoinID", TableToJoinID );
     }
 	if ( IncludeColumns.length() > 0 ) {
 		props.set ( "IncludeColumns", IncludeColumns );
@@ -119,11 +119,11 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
-    String NewTableID = __NewTableID_JTextField.getText().trim();
+    String TableToJoinID = __TableToJoinID_JComboBox.getSelected();
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     String ColumnMap = __ColumnMap_JTextArea.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
-    __command.setCommandParameter ( "NewTableID", NewTableID );
+    __command.setCommandParameter ( "TableToJoinID", TableToJoinID );
 	__command.setCommandParameter ( "IncludeColumns", IncludeColumns );
 	__command.setCommandParameter ( "ColumnMap", ColumnMap );
 }
@@ -165,10 +165,10 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 	int yy = 0;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command creates a new table by copying another table."),
+        "This command modifies a table by joining columns from another table."),
         0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "For example, single column tables can be created from a larger table to use as a list with a template."),
+        "For example, match a common column value in two tables."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -176,25 +176,28 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, false );
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table (first table)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to join ID:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableToJoinID_JComboBox = new SimpleJComboBox ( 12, false );
+    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableToJoinID_JComboBox.setData ( tableIDChoices );
+    __TableToJoinID_JComboBox.addItemListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table being joined (second table)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("New table ID:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NewTableID_JTextField = new JTextField (10);
-    __NewTableID_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __NewTableID_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the new table."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column names to copy:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (10);
@@ -292,14 +295,14 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
     String TableID = "";
-    String NewTableID = "";
+    String TableToJoinID = "";
     String IncludeColumns = "";
     String ColumnMap = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
-        NewTableID = props.getValue ( "NewTableID" );
+        TableToJoinID = props.getValue ( "TableToJoinID" );
         IncludeColumns = props.getValue ( "IncludeColumns" );
         ColumnMap = props.getValue ( "ColumnMap" );
         if ( TableID == null ) {
@@ -317,8 +320,20 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( NewTableID != null ) {
-            __NewTableID_JTextField.setText ( NewTableID );
+        if ( TableToJoinID == null ) {
+            // Select default...
+            __TableToJoinID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TableToJoinID_JComboBox, TableToJoinID, JGUIUtil.NONE, null, null ) ) {
+                __TableToJoinID_JComboBox.select ( TableToJoinID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTableToJoinID value \"" + TableToJoinID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
         }
 		if ( IncludeColumns != null ) {
 			__IncludeColumns_JTextField.setText ( IncludeColumns );
@@ -329,12 +344,12 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
-    NewTableID = __NewTableID_JTextField.getText().trim();
+    TableToJoinID = __TableToJoinID_JComboBox.getSelected();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	ColumnMap = __ColumnMap_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
-    props.add ( "NewTableID=" + NewTableID );
+    props.add ( "TableToJoinID=" + TableToJoinID );
 	props.add ( "IncludeColumns=" + IncludeColumns );
 	props.add ( "ColumnMap=" + ColumnMap );
 	__command_JTextArea.setText( __command.toString ( props ) );
@@ -368,11 +383,11 @@ public void windowClosing(WindowEvent event) {
 }
 
 // The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+public void windowActivated(WindowEvent evt) {}
+public void windowClosed(WindowEvent evt) {}
+public void windowDeactivated(WindowEvent evt) {}
+public void windowDeiconified(WindowEvent evt) {}
+public void windowIconified(WindowEvent evt) {}
+public void windowOpened(WindowEvent evt) {}
 
 }

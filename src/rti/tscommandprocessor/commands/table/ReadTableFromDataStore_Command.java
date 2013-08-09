@@ -178,6 +178,8 @@ throws InvalidCommandParameterException
 	//  Check for invalid parameters...
 	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "DataStore" );
+    valid_Vector.add ( "DataStoreCatalog" );
+    valid_Vector.add ( "DataStoreSchema" );
     valid_Vector.add ( "DataStoreTable" );
     valid_Vector.add ( "DataStoreColumns" );
     valid_Vector.add ( "OrderBy" );
@@ -283,6 +285,14 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
 
     String DataStore = parameters.getValue ( "DataStore" );
+    String DataStoreCatalog = parameters.getValue ( "DataStoreCatalog" );
+    if ( (DataStoreCatalog != null) && DataStoreCatalog.equals("") ) {
+        DataStoreCatalog = null; // Simplifies logic below
+    }
+    String DataStoreSchema = parameters.getValue ( "DataStoreSchema" );
+    if ( (DataStoreSchema != null) && DataStoreSchema.equals("") ) {
+        DataStoreSchema = null; // Simplifies logic below
+    }
     String DataStoreTable = parameters.getValue ( "DataStoreTable" );
     if ( (DataStoreTable != null) && DataStoreTable.equals("") ) {
         DataStoreTable = null; // Simplifies logic below
@@ -330,7 +340,30 @@ CommandWarningException, CommandException
         // Create the query.
         DMISelectStatement q = new DMISelectStatement(dmi);
         if ( DataStoreTable != null ) {
-            q.addTable(DataStoreTable);
+            StringBuffer dataStoreTable = new StringBuffer();
+            if ( DataStoreCatalog != null ) {
+                // Prepend the database to the table
+                dataStoreTable.append(DMIUtil.escapeField(dmi,DataStoreCatalog));
+            }
+            if ( DataStoreSchema != null ) {
+                // Prepend the database to the table
+                if ( dataStoreTable.length() > 0 ) {
+                    dataStoreTable.append(".");
+                }
+                dataStoreTable.append(DMIUtil.escapeField(dmi,DataStoreSchema));
+            }
+            if ( dataStoreTable.length() > 0 ) {
+                dataStoreTable.append(".");
+            }
+            if ( DataStoreTable.indexOf('.') > 0 ) {
+                // Table already has the parts so just add
+                dataStoreTable.append(DMIUtil.escapeField(dmi,DataStoreTable));
+            }
+            else {
+                // Assume it is a simple table name so escape
+                dataStoreTable.append(DMIUtil.escapeField(dmi,DataStoreTable));
+            }
+            q.addTable(dataStoreTable.toString());
             // Always get the columns from the database to check parameters, to guard against SQL injection
             List<String> columns = null;
             try {
@@ -364,9 +397,11 @@ CommandWarningException, CommandException
             }
             else {
                 // Use all the columns from the database
-                for ( String column: columns ) {
-                    q.addField(column);
-                }
+                //for ( String column: columns ) {
+                //    q.addField(column);
+                //}
+                // This is simpler than adding the long list of columns.
+                q.addField("*");
             }
             // Set the order by information to query
             if ( (OrderBy != null) && !OrderBy.equals("") ) {
@@ -395,7 +430,7 @@ CommandWarningException, CommandException
         ResultSet rs = null;
         try {
             if ( DataStoreTable != null ) {
-                // Query using the statement that was built
+                // Query using the statement that was built above
                 queryString = q.toString();
                 rs = dmi.dmiSelect(q);
             }
@@ -451,7 +486,7 @@ CommandWarningException, CommandException
             }
         }
         catch ( Exception e ) {
-            message = "Error querying data store \"" + DataStore + "\" (" + e + ").";
+            message = "Error querying data store \"" + DataStore + "\" using SQL \"" + queryString + " (" + e + ").";
             Message.printWarning ( 2, routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -496,6 +531,8 @@ public String toString ( PropList props )
 		return getCommandName() + "()";
 	}
 	String DataStore = props.getValue( "DataStore" );
+	String DataStoreCatalog = props.getValue( "DataStoreCatalog" );
+	String DataStoreSchema = props.getValue( "DataStoreSchema" );
 	String DataStoreTable = props.getValue( "DataStoreTable" );
 	String DataStoreColumns = props.getValue( "DataStoreColumns" );
 	String OrderBy = props.getValue( "OrderBy" );
@@ -510,6 +547,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "DataStore=\"" + DataStore + "\"" );
+    }
+    if ( (DataStoreCatalog != null) && (DataStoreCatalog.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStoreCatalog=\"" + DataStoreCatalog + "\"" );
+    }
+    if ( (DataStoreSchema != null) && (DataStoreSchema.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStoreSchema=\"" + DataStoreSchema + "\"" );
     }
     if ( (DataStoreTable != null) && (DataStoreTable.length() > 0) ) {
         if ( b.length() > 0 ) {

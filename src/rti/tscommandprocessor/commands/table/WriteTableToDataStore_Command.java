@@ -93,7 +93,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the datastore table." ) );
     }
-    if ( (WriteMode != null) && (DMIWriteModeType.valueOf(WriteMode) == null) ) {
+    if ( (WriteMode != null) && (DMIWriteModeType.valueOfIgnoreCase(WriteMode) == null) ) {
         message = "The write mode (" + WriteMode + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,

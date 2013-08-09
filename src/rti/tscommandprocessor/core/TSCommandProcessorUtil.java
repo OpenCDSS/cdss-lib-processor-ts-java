@@ -1304,7 +1304,7 @@ protected static List<String> getTableIdentifiersFromCommands ( List<Command> co
         if ( in_comment ) {
             continue;
         }
-        // Commands that provide a list of time series (so add to the list)
+        // Commands that provide a list of tables (so add to the list)
         if ( command instanceof ObjectListProvider ) {
             List<DataTable> list = ((ObjectListProvider)command).getObjectList ( new DataTable().getClass() );
             String id;
@@ -1314,7 +1314,7 @@ protected static List<String> getTableIdentifiersFromCommands ( List<Command> co
                 for ( int its = 0; its < tablesize; its++ ) {
                     table = list.get(its);
                     id = table.getTableID();
-                    if ( !id.equals("") ) {
+                    if ( (id != null) && !id.equals("") ) {
                         tableIDList.add( id );
                     }
                 }

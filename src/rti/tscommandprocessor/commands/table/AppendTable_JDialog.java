@@ -187,6 +187,7 @@ private void initialize ( JFrame parent, AppendTable_Command command, List<Strin
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -198,6 +199,7 @@ private void initialize ( JFrame parent, AppendTable_Command command, List<Strin
     __AppendTableID_JComboBox = new SimpleJComboBox ( 12, true );
     __AppendTableID_JComboBox.setData ( tableIDChoices );
     __AppendTableID_JComboBox.addItemListener ( this );
+    __AppendTableID_JComboBox.addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __AppendTableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -284,8 +286,8 @@ Respond to KeyEvents.
 public void keyPressed (KeyEvent event) {
 	int code = event.getKeyCode();
 
+    refresh ();
 	if (code == KeyEvent.VK_ENTER) {
-		refresh ();
 		checkInput();
 		if (!__error_wait) {
 			response ( true );

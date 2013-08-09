@@ -358,11 +358,13 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                 for ( int iRowSearch = (firstDataRow + 1); iRowSearch <= rowEnd; iRowSearch++ ) {
                     dataRow2 = sheet.getRow(iRowSearch);
                     cell = dataRow2.getCell(iCol);
-                    cellType = cell.getCellType();
-                    if ( (cellType == Cell.CELL_TYPE_STRING) || (cellType == Cell.CELL_TYPE_NUMERIC) ||
-                        (cellType == Cell.CELL_TYPE_BOOLEAN) || (cellType == Cell.CELL_TYPE_FORMULA)) {
-                        // Break out and interpret below
-                        break;
+                    if ( cell != null ) {
+                        cellType = cell.getCellType();
+                        if ( (cellType == Cell.CELL_TYPE_STRING) || (cellType == Cell.CELL_TYPE_NUMERIC) ||
+                            (cellType == Cell.CELL_TYPE_BOOLEAN) || (cellType == Cell.CELL_TYPE_FORMULA)) {
+                            // Break out and interpret below
+                            break;
+                        }
                     }
                 }
             }

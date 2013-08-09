@@ -24,6 +24,7 @@ import java.awt.event.WindowListener;
 
 import java.util.List;
 
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -46,6 +47,7 @@ private JTextArea __ColumnFilters_JTextArea = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private CopyTable_Command __command = null;
+private JFrame __parent = null;
 private boolean __ok = false;
 
 /**
@@ -77,6 +79,26 @@ public void actionPerformed(ActionEvent event)
 			response ( true );
 		}
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnMap") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnMap = __ColumnMap_JTextArea.getText().trim();
+        String dict = (new DictionaryJDialog ( __parent, true, ColumnMap,
+            "Edit ColumnMap Parameter", "Original Column Name", "Column Name in New Table",10)).response();
+        if ( dict != null ) {
+            __ColumnMap_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnFilters") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+        String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
+            "Column Name", "Column Value Filter Pattern",10)).response();
+        if ( columnFilters != null ) {
+            __ColumnFilters_JTextArea.setText ( columnFilters );
+            refresh();
+        }
+    }
 }
 
 /**
@@ -162,6 +184,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, CopyTable_Command command, List<String> tableIDChoices )
 {	__command = command;
+    __parent = parent;
 
 	addWindowListener(this);
 
@@ -228,28 +251,32 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column map:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnMap_JTextArea = new JTextArea (6,35);
     __ColumnMap_JTextArea.setLineWrap ( true );
     __ColumnMap_JTextArea.setWrapStyleWord ( true );
     __ColumnMap_JTextArea.setToolTipText("OriginalColumn1:NewColumn1,OriginalColumn2:NewColumn2");
     __ColumnMap_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnMap_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - to change names (default=names are same)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnMap",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnFilters_JTextArea = new JTextArea (3,35);
     __ColumnFilters_JTextArea.setLineWrap ( true );
     __ColumnFilters_JTextArea.setWrapStyleWord ( true );
     __ColumnFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
     __ColumnFilters_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnFilters_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - filter output by matching column pattern (default=copy all rows)."),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - filter rows to copy by matching column pattern (default=copy all rows)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnFilters",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

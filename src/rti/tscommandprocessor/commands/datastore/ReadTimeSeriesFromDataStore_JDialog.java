@@ -800,7 +800,7 @@ private void refresh ()
         //    __DataType_JComboBox.select ( index[0] );
         // }
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.NONE, null, null ) ) {
-            __Interval_JComboBox.select ( DataType );
+            __DataType_JComboBox.select ( DataType );
         }
         else {
             if ( (DataType == null) || DataType.equals("") ) {

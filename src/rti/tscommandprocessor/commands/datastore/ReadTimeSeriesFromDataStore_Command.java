@@ -514,7 +514,7 @@ CommandWarningException, CommandException
 			    ++i;
 				tsidentString = meta.getTSID(ds);
 	
-				message = "Reading datastore time series " + (i + 1) + " of " + size + " \"" + tsidentString + "\"...";
+				message = "Reading datastore time series " + (i + 1) + " of " + size + " \"" + tsidentString + "\"";
 				Message.printStatus ( 2, routine, message );
 				notifyCommandProgressListeners ( i, size, (float)-1.0, message );
 				try {

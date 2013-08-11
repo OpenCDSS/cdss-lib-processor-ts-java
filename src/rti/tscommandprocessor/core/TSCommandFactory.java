@@ -21,6 +21,7 @@ import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 
 import rti.tscommandprocessor.commands.datastore.ReadTimeSeriesFromDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.WriteTimeSeriesToDataStore_Command;
+import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
 import rti.tscommandprocessor.commands.datevalue.ReadDateValue_Command;
 import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
 
@@ -961,6 +962,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToDataStore") ) {
         return new WriteTimeSeriesToDataStore_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToDataStream") ) {
+        return new WriteTimeSeriesToDataStream_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToJson") ) {
         return new WriteTimeSeriesToJson_Command ();

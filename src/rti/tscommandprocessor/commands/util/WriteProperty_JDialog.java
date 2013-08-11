@@ -157,10 +157,11 @@ private void checkInput ()
 	if ( PropertyName.length() > 0 ) {
 		parameters.set ( "PropertyName", PropertyName );
 	}
-	if ( PropertyName.length() > 0 ) {
+	if ( Append.length() > 0 ) {
 		parameters.set ( "Append", Append );
 	}
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {

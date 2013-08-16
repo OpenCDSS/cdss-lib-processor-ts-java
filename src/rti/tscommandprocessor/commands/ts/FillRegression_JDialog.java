@@ -61,6 +61,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -86,6 +87,7 @@ implements ActionListener, KeyListener, ItemListener, ListSelectionListener, Win
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JTextArea __command_JTextArea=null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextField __AnalysisStart_JTextField;
 private JTextField __AnalysisEnd_JTextField;
 private JTextField __FillStart_JTextField;
@@ -339,10 +341,7 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int yMain = -1;
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command is in the process of being enhanced to include the check criteria and table output.</b></html>."),
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Fill missing data using ordinary least squares (OLS) regression."),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -357,17 +356,23 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 		"use blank for all available data, OutputStart, or OutputEnd."),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    // Tabbed pane for parameters
+ 
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
     // Panel for data
-    int yData = 0;
+    int yData = -1;
     JPanel mainData_JPanel = new JPanel();
     mainData_JPanel.setLayout( new GridBagLayout() );
-    mainData_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),"Data for Analysis" ));
-    JGUIUtil.addComponent( main_JPanel, mainData_JPanel,
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __main_JTabbedPane.addTab ( "Data for Analysis", mainData_JPanel );
+    JGUIUtil.addComponent(mainData_JPanel, new JLabel (
+        "Specify the time series to be processed and parameters to control processing."),
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Time series to fill (dependent):" ),
-		0, yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );
 
 	// Get the time series identifiers from the processor...
@@ -476,18 +481,17 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for criteria checks
-    int yCheck = 0;
+    int yCheck = -1;
     JPanel mainCheck_JPanel = new JPanel();
     mainCheck_JPanel.setLayout( new GridBagLayout() );
-    mainCheck_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),
-        "Criteria for Valid Relationships (filling will only occur if criteria are met)" ));
-    JGUIUtil.addComponent( main_JPanel, mainCheck_JPanel,
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __main_JTabbedPane.addTab ( "Criteria for Valid Relationships", mainCheck_JPanel );
+    JGUIUtil.addComponent(mainCheck_JPanel, new JLabel (
+        "Specify criteria to indicate valid relationships.  Filling will only occur if criteria are met."),
+        0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Minimum sample size
     JGUIUtil.addComponent(mainCheck_JPanel, new JLabel ( "Minimum sample size:" ),
-        0, yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MinimumSampleSize_JTextField = new JTextField ( 10 );
     __MinimumSampleSize_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainCheck_JPanel, __MinimumSampleSize_JTextField,
@@ -519,16 +523,16 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel to control filling
-    int yFill = 0;
+    int yFill = -1;
     JPanel mainFill_JPanel = new JPanel();
     mainFill_JPanel.setLayout( new GridBagLayout() );
-    mainFill_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),"Control Filling" ));
-    JGUIUtil.addComponent( main_JPanel, mainFill_JPanel,
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __main_JTabbedPane.addTab ( "Fill Period and Flag", mainFill_JPanel );
+    JGUIUtil.addComponent(mainFill_JPanel, new JLabel (
+        "Indicate the period to fill and whether filled values should be flagged."),
+        0, ++yFill, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Fill:" ), 
-        0, yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Fill_JComboBox = new SimpleJComboBox ( false );
     __Fill_JComboBox.addItem ( "" );
     __Fill_JComboBox.addItem ( "" + __command._False );
@@ -583,16 +587,16 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
         3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for output statistics
-    int yTable = 0;
+    int yTable = -1;
     JPanel mainTable_JPanel = new JPanel();
     mainTable_JPanel.setLayout( new GridBagLayout() );
-    mainTable_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),"Specify Table for Analysis Statistics Output" ));
-    JGUIUtil.addComponent( main_JPanel, mainTable_JPanel,
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __main_JTabbedPane.addTab ( "Output Table", mainTable_JPanel );
+    JGUIUtil.addComponent(mainTable_JPanel, new JLabel (
+        "Specify the table to receive output analysis statistics."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(mainTable_JPanel, new JLabel ( "Table ID for output:" ), 
-        0, yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );

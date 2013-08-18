@@ -241,7 +241,7 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "Table1ID" );
     valid_Vector.add ( "Table2ID" );
     valid_Vector.add ( "CompareColumns1" );
@@ -293,7 +293,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new Vector();
+    List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -408,7 +408,7 @@ CommandWarningException, CommandException
         newTableID = NewTableID;
     }
     String OutputFile = parameters.getValue ( "OutputFile" );
-    if ( OutputFile.equals("") ) {
+    if ( (OutputFile != null) && OutputFile.equals("") ) {
         OutputFile = null; // Easier for checks below
     }
     String IfDifferent = parameters.getValue ( "IfDifferent" );
@@ -544,13 +544,15 @@ CommandWarningException, CommandException
 	            table2, StringUtil.toList(compareColumns2),
 	            matchColumnsByName, Precision_Integer, Tolerance_Double, newTableID );
 	        comparer.compare ();
-	        comparer.writeHtmlFile ( OutputFile_full );
 	        DataTable comparisonTable = comparer.getComparisonTable();
 	        tableCellCount = comparisonTable.getNumberOfRecords()*comparisonTable.getNumberOfFields();
 	        diffCount = comparer.getDifferenceCount();
 	        
-	        // Save the output file name...
-	        setOutputFile ( new File(OutputFile_full));
+	        // If an output file is desired, write to it and save the name.
+	        if ( OutputFile != null ) {
+	            comparer.writeHtmlFile ( OutputFile_full );
+	            setOutputFile ( new File(OutputFile_full));
+	        }
             
             // Set the table in the processor if the user has specific a name (otherwise the table is used
 	        // internally, for example to create the HTML file)...

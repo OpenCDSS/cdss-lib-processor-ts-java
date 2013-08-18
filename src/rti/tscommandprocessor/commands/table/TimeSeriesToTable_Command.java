@@ -83,6 +83,7 @@ throws InvalidCommandParameterException
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String IncludeMissingValues = parameters.getValue ( "IncludeMissingValues" );
     String ValueColumn = parameters.getValue ( "ValueColumn" );
+    String OutputPrecision = parameters.getValue ( "OutputPrecision" );
     String FlagColumn = parameters.getValue ( "FlagColumn" );
     String DataRow = parameters.getValue ( "DataRow" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -163,6 +164,18 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify ValueColumn as table column name." ) );
+    }
+    if ( (OutputPrecision != null) && (OutputPrecision.length() != 0) ) {
+        try {
+            Integer.parseInt(OutputPrecision);
+        }
+        catch ( NumberFormatException e ) {
+            message = "The output precision (" + OutputPrecision + ") is invalid .";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify output precision as an integer (0+)." ) );
+        }
     }
     if ( (DataRow == null) || (DataRow.length() == 0) ) {
         message = "The DataRow is required but has not been specified.";
@@ -249,7 +262,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -259,6 +272,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TableTSIDFormat" );
     valid_Vector.add ( "IncludeMissingValues" );
     valid_Vector.add ( "ValueColumn" );
+    valid_Vector.add ( "OutputPrecision" );
     valid_Vector.add ( "FlagColumn" );
     valid_Vector.add ( "DataRow" );
     valid_Vector.add ( "OutputStart" );
@@ -285,14 +299,15 @@ Create a blank table to contain the time series.
 @param dateTimeColumn name for date/time column
 @param tableTSIDColumn name for TSID column (can be missing)
 @param valueColumns the names of data value columns
+@param outputPrecision precision for data values transferred to table
 @param flagColumns the names of data flag columns
 @param dataRow the first row for data (0+, command parameter is 1+ for users).
 @return A new table with columns set up to receive the time series.
 */
 private DataTable createTable ( List<TS> tslist, String tableID, String dateTimeColumn,
-    String tableTSIDColumn, List<String> valueColumns, List<String> flagColumns, int dataRow )
+    String tableTSIDColumn, List<String> valueColumns, int outputPrecision, List<String> flagColumns, int dataRow )
 {   // Create the table
-    List<TableField> tableFields = new Vector(3);
+    List<TableField> tableFields = new Vector<TableField>(3);
     // TODO SAM 2013-05-12 evaluate whether to use DATA_TYPE_DATETIME
     // DateTime column (always)
     tableFields.add ( new TableField ( TableField.DATA_TYPE_DATE, dateTimeColumn, 12 ) );
@@ -305,9 +320,8 @@ private DataTable createTable ( List<TS> tslist, String tableID, String dateTime
         // The data column may include %-specifiers if specifying one column per time series
         ++i;
         int width = 12; // TODO SAM 2012-08-24 Figure out width from data type or data?
-        int precision = 2; // TODO SAM 2012-08-24 Figure out precision from data type?
-        tableFields.add ( new TableField ( TableField.DATA_TYPE_DOUBLE, valueColumn,
-            width, precision ) );
+        // TODO SAM 2012-08-24 Figure out precision from data type?
+        tableFields.add ( new TableField ( TableField.DATA_TYPE_DOUBLE, valueColumn, width, outputPrecision ) );
         // If flags are to be written, then create a column only if the flag column corresponding to data
         // is not an empty string
         if ( flagColumns.size() > i ) {
@@ -334,7 +348,7 @@ determine the column name
 */
 private List<String> determineValueColumnNames ( List<TS> tslist, String tableTSIDColumn, String tableColumn )
 {
-    List<String> tableColumnNames = new Vector();
+    List<String> tableColumnNames = new Vector<String>();
     if ( (tableTSIDColumn != null) && !tableTSIDColumn.equals("") ) {
         // Single column output
         tableColumnNames.add ( tableColumn );
@@ -771,19 +785,23 @@ CommandWarningException, CommandException
     	
         String DateTimeColumn = parameters.getValue("DateTimeColumn");
         String ValueColumn = parameters.getValue("ValueColumn");
+        String OutputPrecision = parameters.getValue("OutputPrecision");
+        int outputPrecision = 2;
+        if ( (OutputPrecision != null) && !OutputPrecision.equals("") ) {
+            outputPrecision = Integer.parseInt(OutputPrecision);
+        }
         String FlagColumn = parameters.getValue("FlagColumn");
         String DataRow = parameters.getValue("DataRow");
         DataRow_int = Integer.parseInt(DataRow) - 1; // Zero offset
         if ( createTable ) {
             List<String> valueColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, ValueColumn);
-            List<String> flagColumnNames = new Vector(); 
+            List<String> flagColumnNames = new Vector<String>(); 
             if ( (FlagColumn != null) && !FlagColumn.equals("") ) {
                 flagColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, FlagColumn);
             }
-            // No existing table was found and a new table should be created with columns for data values and
-            // flags
+            // No existing table was found and a new table should be created with columns for data values and flags
             table = createTable(tslist, TableID, DateTimeColumn, TableTSIDColumn,
-                valueColumnNames, flagColumnNames, DataRow_int );
+                valueColumnNames, outputPrecision, flagColumnNames, DataRow_int );
             // Get the column numbers from the table that was created, to ensure proper order
             try {
                 DateTimeColumn_int = table.getFieldIndex(DateTimeColumn);
@@ -934,6 +952,7 @@ public String toString ( PropList props )
     String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
     String IncludeMissingValues = props.getValue ( "IncludeMissingValues" );
     String ValueColumn = props.getValue( "ValueColumn" );
+    String OutputPrecision = props.getValue( "OutputPrecision" );
     String FlagColumn = props.getValue( "FlagColumn" );
     String DataRow = props.getValue( "DataRow" );
 	String OutputStart = props.getValue("OutputStart");
@@ -992,6 +1011,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ValueColumn=\"" + ValueColumn + "\"");
+    }
+    if ( (OutputPrecision != null) && (OutputPrecision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputPrecision=" + OutputPrecision );
     }
     if ( (FlagColumn != null) && (FlagColumn.length() > 0) ) {
         if ( b.length() > 0 ) {

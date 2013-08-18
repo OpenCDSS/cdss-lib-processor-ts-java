@@ -67,6 +67,7 @@ private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for TSID column output
 private SimpleJComboBox __IncludeMissingValues_JComboBox = null;
 private TSFormatSpecifiersJPanel __ValueColumn_JTextField = null;
+private JTextField __OutputPrecision_JTextField = null;
 private TSFormatSpecifiersJPanel __FlagColumn_JTextField = null;
 private JTextField __DataRow_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
@@ -196,6 +197,7 @@ private void checkInput ()
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String IncludeMissingValues = __IncludeMissingValues_JComboBox.getSelected();
     String ValueColumn = __ValueColumn_JTextField.getText().trim();
+    String OutputPrecision = __OutputPrecision_JTextField.getText().trim();
     String FlagColumn = __FlagColumn_JTextField.getText().trim();
     String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -229,6 +231,9 @@ private void checkInput ()
     }
     if ( ValueColumn.length() > 0 ) {
         props.set ( "ValueColumn", ValueColumn );
+    }
+    if ( OutputPrecision.length() > 0 ) {
+        props.set ( "OutputPrecision", OutputPrecision );
     }
     if ( FlagColumn.length() > 0 ) {
         props.set ( "FlagColumn", FlagColumn );
@@ -279,6 +284,7 @@ private void commitEdits ()
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String IncludeMissingValues = __IncludeMissingValues_JComboBox.getSelected();
     String ValueColumn = __ValueColumn_JTextField.getText().trim();
+    String OutputPrecision = __OutputPrecision_JTextField.getText().trim();
     String FlagColumn = __FlagColumn_JTextField.getText().trim();
     String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -293,6 +299,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "IncludeMissingValues", IncludeMissingValues );
     __command.setCommandParameter ( "ValueColumn", ValueColumn );
+    __command.setCommandParameter ( "OutputPrecision", OutputPrecision );
     __command.setCommandParameter ( "FlagColumn", FlagColumn );
     __command.setCommandParameter ( "DataRow", DataRow );
     __command.setCommandParameter ( "OutputStart", OutputStart );
@@ -453,6 +460,15 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - value column name(s) for 1+ time series."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Output precision:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputPrecision_JTextField = new JTextField ( "", 10 );
+    __OutputPrecision_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __OutputPrecision_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - precision for value column(s) in table (default=2)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Flag column(s) in table:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FlagColumn_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -611,6 +627,7 @@ private void refresh ()
     String TableTSIDFormat = "";
     String IncludeMissingValues = "";
     String ValueColumn = "";
+    String OutputPrecision = "";
     String FlagColumn = "";
     String DataRow = "";
     String OutputStart = "";
@@ -635,6 +652,7 @@ private void refresh ()
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
         IncludeMissingValues = props.getValue ( "IncludeMissingValues" );
         ValueColumn = props.getValue ( "ValueColumn" );
+        OutputPrecision = props.getValue ( "OutputPrecision" );
         FlagColumn = props.getValue ( "FlagColumn" );
         DataRow = props.getValue ( "DataRow" );
         IfTableNotFound = props.getValue ( "IfTableNotFound" );
@@ -729,6 +747,9 @@ private void refresh ()
         if ( ValueColumn != null ) {
             __ValueColumn_JTextField.setText ( ValueColumn );
         }
+        if ( OutputPrecision != null ) {
+            __OutputPrecision_JTextField.setText ( OutputPrecision );
+        }
         if ( FlagColumn != null ) {
             __FlagColumn_JTextField.setText ( FlagColumn );
         }
@@ -803,6 +824,7 @@ private void refresh ()
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     IncludeMissingValues = __IncludeMissingValues_JComboBox.getSelected();
     ValueColumn = __ValueColumn_JTextField.getText().trim();
+    OutputPrecision = __OutputPrecision_JTextField.getText().trim();
     FlagColumn = __FlagColumn_JTextField.getText().trim();
     DataRow = __DataRow_JTextField.getText().trim();
     OutputStart = __OutputStart_JTextField.getText().trim();
@@ -818,6 +840,7 @@ private void refresh ()
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "IncludeMissingValues=" + IncludeMissingValues );
     props.add ( "ValueColumn=" + ValueColumn );
+    props.add ( "OutputPrecision=" + OutputPrecision );
     props.add ( "FlagColumn=" + FlagColumn );
     props.add ( "DataRow=" + DataRow );
     props.add ( "Transformation=" + IfTableNotFound );

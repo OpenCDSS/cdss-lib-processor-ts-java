@@ -100,6 +100,7 @@ throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String InputFile = parameters.getValue ( "InputFile" );
     String ExcelColumnNames = parameters.getValue ( "ExcelColumnNames" );
+    String NumberPrecision = parameters.getValue ( "NumberPrecision" );
 	String ReadAllAsText = parameters.getValue ( "ReadAllAsText" );
 	String warning = "";
     String message;
@@ -167,15 +168,36 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-   if ( ExcelColumnNames != null && !ExcelColumnNames.equalsIgnoreCase(_ColumnN) && 
-       !ExcelColumnNames.equalsIgnoreCase(_FirstRowInRange) &&
-       !ExcelColumnNames.equalsIgnoreCase(_RowBeforeRange) && !ExcelColumnNames.equalsIgnoreCase("")) {
-       message = "ExcelColumnNames is invalid.";
-       warning += "\n" + message;
-       status.addToLog ( CommandPhaseType.INITIALIZATION,
-           new CommandLogRecord(CommandStatusType.FAILURE,
-               message, "ExcelColumnNames must " + _False + " (default) or " + _True ) );
-   }
+    if ( ExcelColumnNames != null && !ExcelColumnNames.equalsIgnoreCase(_ColumnN) && 
+        !ExcelColumnNames.equalsIgnoreCase(_FirstRowInRange) &&
+        !ExcelColumnNames.equalsIgnoreCase(_RowBeforeRange) && !ExcelColumnNames.equalsIgnoreCase("")) {
+        message = "ExcelColumnNames is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "ExcelColumnNames must " + _False + " (default) or " + _True ) );
+    }
+    
+    if ( NumberPrecision != null && !NumberPrecision.equals("") ) {
+        int numberPrecision = 0;
+        boolean bad = false;
+        try {
+            numberPrecision = Integer.parseInt(NumberPrecision);
+            if ( numberPrecision < 0 ) {
+                bad = true;
+            }
+        }
+        catch ( NumberFormatException e ) {
+            bad = true;
+        }
+        if ( bad ) {
+            message = "The NumberPrecision value (" + NumberPrecision + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify NumberPrecision as a positive integer." ) );
+        }
+    }
 	
 	if ( ReadAllAsText != null && !ReadAllAsText.equalsIgnoreCase(_True) && 
         !ReadAllAsText.equalsIgnoreCase(_False) && !ReadAllAsText.equalsIgnoreCase("") ) {
@@ -199,6 +221,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "ExcelColumnNames" );
     valid_Vector.add ( "Comment" );
     valid_Vector.add ( "ExcelIntegerColumns" );
+    valid_Vector.add ( "NumberPrecision" );
     valid_Vector.add ( "ReadAllAsText" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
@@ -220,11 +243,12 @@ Create table columns from the first row of the area.
 @param excelColumnNames indicate how to determine column names from the Excel worksheet
 @param comment if non-null indicates character(s) that indicate comment lines
 @param excelIntegerColumns names of columns that should be treated as integers, or null if none
+@param precisionForFloats number of digits after decimal for double columns
 @param readAllAsText if True, treat all data as text values
 @param problems list of problems encountered during processing
 */
 private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
-    AreaReference area, String excelColumnNames, String comment, String [] excelIntegerColumns,
+    AreaReference area, String excelColumnNames, String comment, String [] excelIntegerColumns, int precisionForFloats,
     boolean readAllAsText, List<String> problems )
 {   String routine = "ReadTableFromExcel_Command.createTableColumns";
     Row dataRow; // First row of data
@@ -353,6 +377,8 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                 cellType = cell.getCellType();
             }
             if ( (cell == null) || (cellType == Cell.CELL_TYPE_BLANK) || (cellType == Cell.CELL_TYPE_ERROR) ) {
+                Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is BLANK or ERROR.  " +
+                	"Examining rows to find data to determine column type.");
                 // Look forward to other rows to see if there is a non-null value that can be used to determine the type
                 Row dataRow2;
                 for ( int iRowSearch = (firstDataRow + 1); iRowSearch <= rowEnd; iRowSearch++ ) {
@@ -369,10 +395,12 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                 }
             }
             if ( cellType == Cell.CELL_TYPE_STRING ) {
+                Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is STRING." );
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
                 table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
             }
             else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
+                Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is NUMERIC");
                 if (DateUtil.isCellDateFormatted(cell)) {
                     // TODO SAM 2013-05-12 Evaluate whether to use DATA_TYPE_DATETIME
                     //table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
@@ -387,20 +415,23 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                     //short format = style.getDataFormat();
                     //CellStyle style2 = wb.getCellStyleAt(format);
                     Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_DOUBLE));
-                    table.addField ( new TableField(TableField.DATA_TYPE_DOUBLE, columnNames[columnIndex], -1, 6), null );
+                    table.addField ( new TableField(TableField.DATA_TYPE_DOUBLE, columnNames[columnIndex], -1, precisionForFloats), null );
                 }
             }
             else if ( cellType == Cell.CELL_TYPE_BOOLEAN ) {
+                Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is BOOLEAN.  Treat as integer 0/1.");
                 // Use integer for boolean
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_INT));
                 table.addField ( new TableField(TableField.DATA_TYPE_INT, columnNames[columnIndex], -1, -1), null );
             }
             else if ( cellType == Cell.CELL_TYPE_FORMULA ) {
+                Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is FORMULA.  Treat as String.");
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
                 table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
             }
             else {
                 // Default is to treat as a string
+                Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel (" + cellType + ") is unknown.  Treating as string.");
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_STRING));
                 table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
             }
@@ -557,13 +588,14 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 @param excelColumnNames indicate how to determine column names from the Excel worksheet
 @param comment character that if at start of first column indicates row is a comment
 @param excelIntegerColumns names of columns that should be treated as integers, or null if none
+@param numberPrecision digits after decimal for floating point numbers (can't yet determine from Excel)
 @param readAllAsText if True, treat all data as text values
 @param problems list of problems encountered during read, for formatted logging in calling code
 @return a DataTable with the Excel contents
 */
 private DataTable readTableFromExcelFile ( String workbookFile, String sheetName,
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
-    String comment, String [] excelIntegerColumns, boolean readAllAsText, List<String> problems )
+    String comment, String [] excelIntegerColumns, int numberPrecision, boolean readAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = "ReadTableFromExcel_Command.readTableFromExcelFile";
     DataTable table = new DataTable();
@@ -615,7 +647,7 @@ throws FileNotFoundException, IOException
         }
         Message.printStatus(2,routine,"Excel address block to read: " + area );
         // Create the table based on the first row of the area
-        createTableColumns ( table, wb, sheet, area, excelColumnNames, comment, excelIntegerColumns,
+        createTableColumns ( table, wb, sheet, area, excelColumnNames, comment, excelIntegerColumns, numberPrecision,
              readAllAsText, problems );
         int [] tableColumnTypes = table.getFieldDataTypes();
         // Read the data from the area and transfer to the table.
@@ -945,6 +977,14 @@ CommandWarningException, CommandException
 	        excelIntegerColumns[i] = excelIntegerColumns[i].trim();
 	    }
 	}
+	String NumberPrecision = parameters.getValue ( "NumberPrecision" );
+	int numberPrecision = 6; // default
+	try {
+	    numberPrecision = Integer.parseInt(NumberPrecision);
+	}
+	catch ( NumberFormatException e ) {
+	    numberPrecision = 6;
+	}
 	String ReadAllAsText = parameters.getValue ( "ReadAllAsText" );
 	boolean readAllAsText = false;
 	if ( (ReadAllAsText != null) && ReadAllAsText.equalsIgnoreCase("True") ) {
@@ -975,7 +1015,7 @@ CommandWarningException, CommandException
 	try {
 	    if ( command_phase == CommandPhaseType.RUN ) {
             table = readTableFromExcelFile ( InputFile_full, Worksheet,
-                ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, comment, excelIntegerColumns,
+                ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, comment, excelIntegerColumns, numberPrecision,
                 readAllAsText, problems );
             for ( String problem: problems ) {
                 Message.printWarning ( 3, routine, problem );
@@ -1070,6 +1110,7 @@ public String toString ( PropList props )
 	String ExcelColumnNames = props.getValue("ExcelColumnNames");
 	String Comment = props.getValue("Comment");
 	String ExcelIntegerColumns = props.getValue("ExcelIntegerColumns");
+	String NumberPrecision = props.getValue("NumberPrecision");
 	String ReadAllAsText = props.getValue("ReadAllAsText");
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
@@ -1125,6 +1166,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ExcelIntegerColumns=\"" + ExcelIntegerColumns + "\"" );
+    }
+    if ( (NumberPrecision != null) && (NumberPrecision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NumberPrecision=" + NumberPrecision );
     }
     if ( (ReadAllAsText != null) && (ReadAllAsText.length() > 0) ) {
         if ( b.length() > 0 ) {

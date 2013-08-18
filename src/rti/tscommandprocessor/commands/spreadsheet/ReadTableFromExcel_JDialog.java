@@ -66,6 +66,7 @@ private JTextField __ExcelTableName_JTextField = null;
 private JTextField __Comment_JTextField = null;
 private SimpleJComboBox __ExcelColumnNames_JComboBox = null;
 private JTextField __ExcelIntegerColumns_JTextField = null;
+private JTextField __NumberPrecision_JTextField = null;
 private SimpleJComboBox __ReadAllAsText_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
@@ -161,6 +162,7 @@ private void checkInput ()
 	String Comment = __Comment_JTextField.getText().trim();
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
 	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
+	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
 	__error_wait = false;
 
@@ -191,6 +193,9 @@ private void checkInput ()
     if ( ExcelIntegerColumns.length() > 0 ) {
         props.set ( "ExcelIntegerColumns", ExcelIntegerColumns );
     }
+    if ( NumberPrecision.length() > 0 ) {
+        props.set ( "NumberPrecision", NumberPrecision );
+    }
     if ( ReadAllAsText.length() > 0 ) {
         props.set ( "ReadAllAsText", ReadAllAsText );
     }
@@ -219,6 +224,7 @@ private void commitEdits ()
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
 	String Comment = __Comment_JTextField.getText().trim();
 	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
+	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
@@ -229,6 +235,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ExcelColumnNames", ExcelColumnNames );
 	__command.setCommandParameter ( "Comment", Comment );
 	__command.setCommandParameter ( "ExcelIntegerColumns", ExcelIntegerColumns );
+	__command.setCommandParameter ( "NumberPrecision", NumberPrecision );
 	__command.setCommandParameter ( "ReadAllAsText", ReadAllAsText );
 }
 
@@ -407,6 +414,16 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
         new JLabel ("Optional - columns that are integers, separated by commas."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Number precision:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NumberPrecision_JTextField = new JTextField (10);
+    __NumberPrecision_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __NumberPrecision_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ("Optional - precision for numbers (default=6)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Read all as text?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ReadAllAsText_JComboBox = new SimpleJComboBox ( false );
@@ -509,6 +526,7 @@ private void refresh ()
 	String ExcelColumnNames = "";
     String Comment = "";
 	String ExcelIntegerColumns = "";
+	String NumberPrecision = "";
 	String ReadAllAsText = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
@@ -522,6 +540,7 @@ private void refresh ()
 		ExcelColumnNames = props.getValue ( "ExcelColumnNames" );
 		Comment = props.getValue ( "Comment" );
 		ExcelIntegerColumns = props.getValue ( "ExcelIntegerColumns" );
+		NumberPrecision = props.getValue ( "NumberPrecision" );
 		ReadAllAsText = props.getValue ( "ReadAllAsText" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
@@ -564,6 +583,9 @@ private void refresh ()
         if ( ExcelIntegerColumns != null ) {
             __ExcelIntegerColumns_JTextField.setText ( ExcelIntegerColumns );
         }
+        if ( NumberPrecision != null ) {
+            __NumberPrecision_JTextField.setText ( NumberPrecision );
+        }
         if ( ReadAllAsText == null || ReadAllAsText.equals("") ) {
             // Select a default...
             __ReadAllAsText_JComboBox.select ( 0 );
@@ -588,6 +610,7 @@ private void refresh ()
 	ExcelColumnNames = __ExcelColumnNames_JComboBox.getSelected();
 	Comment = __Comment_JTextField.getText().trim();
 	ExcelIntegerColumns = __ExcelIntegerColumns_JTextField.getText().trim();
+	NumberPrecision = __NumberPrecision_JTextField.getText().trim();
 	ReadAllAsText = __ReadAllAsText_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
@@ -599,6 +622,7 @@ private void refresh ()
 	props.add ( "ExcelColumnNames=" + ExcelColumnNames );
 	props.add ( "Comment=" + Comment );
 	props.add ( "ExcelIntegerColumns=" + ExcelIntegerColumns );
+	props.add ( "NumberPrecision=" + NumberPrecision );
 	props.add ( "ReadAllAsText=" + ReadAllAsText );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...

@@ -1,15 +1,14 @@
 package rti.tscommandprocessor.commands.network;
 
-import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -292,15 +291,22 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
+    // Tabbed pane for parameters
+	 
+    JTabbedPane main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JPanel table_JPanel = new JPanel ();
     table_JPanel.setLayout( new GridBagLayout() );
     int yTable = -1;
-    table_JPanel.setBorder(
-        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify how to map table columns to the network" ));
     JGUIUtil.addComponent(main_JPanel, table_JPanel,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    main_JTabbedPane.addTab ( "Map Table Columns to Network Nodes", table_JPanel );
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "Specify table columns that provide data to define the network."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -371,12 +377,21 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JPanel analysis_JPanel = new JPanel ();
     analysis_JPanel.setLayout( new GridBagLayout() );
     int yAnalysis = -1;
-    analysis_JPanel.setBorder(
-        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify node type behavior for the point flow analysis" ));
-    JGUIUtil.addComponent(main_JPanel, analysis_JPanel,
-        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
+    main_JTabbedPane.addTab ( "Define Node Type Behavior", analysis_JPanel );
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "Specify node type behavior for the point flow analysis.  Each node type indicates how mass balance is calculated for the type."),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Time series for each node are matched as follows:"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("    Location ID - match Node ID column"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("    Data source - currently not matched"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("    Data type - match data types listed below, specific to node type"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("    Interval - match Interval parameter"),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Node types that add:"), 
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NodeAddTypes_JTextField = new JTextField (10);
@@ -508,7 +523,7 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__command_JTextArea = new JTextArea (4,40);
+	__command_JTextArea = new JTextArea (7,60);
 	__command_JTextArea.setLineWrap ( true );
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable (false);

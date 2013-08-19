@@ -24,6 +24,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -43,6 +45,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableColumnType;
 import RTi.Util.Table.TableField;
@@ -86,6 +89,47 @@ public ReadTableFromExcel_Command ()
 {	super();
 	setCommandName ( "ReadTableFromExcel" );
 }
+
+// TODO SAM 2013-08-12 This can be optimized to not have to check column name and do upper-case conversions
+/**
+Evaluate whether a cell value matches an exclude pattern.
+@param columnName name of Excel column being checked
+@param cellValue cell value as string, to check
+@param filtersMap map of column 
+@return true if the cell matches a filter
+*/
+private boolean cellMatchesFilter ( String columnName, String cellValue, Hashtable<String,String> filtersMap )
+{
+    if ( filtersMap == null ) {
+        return false;
+    }
+    Enumeration keys = filtersMap.keys();
+    String key = null;
+    // Compare as upper case to treat as case insensitive
+    String cellValueUpper = null;
+    if ( cellValue != null ) {
+        cellValueUpper = cellValue.toUpperCase();
+    }
+    String columnNameUpper = columnName.toUpperCase();
+    String pattern;
+    while ( keys.hasMoreElements() ) {
+        key = (String)keys.nextElement();
+        pattern = filtersMap.get(key);
+        //Message.printStatus(2,"","Checking column \"" + columnNameUpper + "\" against key \"" + key +
+        //    "\" for cell value \"" + cellValueUpper + "\" and pattern \"" + pattern + "\"" );
+        if ( columnNameUpper.equals(key) ) {
+            if ( ((cellValue == null) || (cellValue.length() == 0)) &&
+                ((pattern == null) || (pattern.length() == 0)) ) {
+                // Blank cell should be ignored
+                return true;
+            }
+            else if ( (cellValueUpper != null) && cellValueUpper.matches(pattern) ) {
+                return true;
+            }
+        }
+    }
+    return false;
+} 
 
 /**
 Check the command parameter for valid values, combination, etc.
@@ -219,6 +263,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "ExcelNamedRange" );
     valid_Vector.add ( "ExcelTableName" );
     valid_Vector.add ( "ExcelColumnNames" );
+    valid_Vector.add ( "ColumnExcludeFilters" );
     valid_Vector.add ( "Comment" );
     valid_Vector.add ( "ExcelIntegerColumns" );
     valid_Vector.add ( "NumberPrecision" );
@@ -246,8 +291,9 @@ Create table columns from the first row of the area.
 @param precisionForFloats number of digits after decimal for double columns
 @param readAllAsText if True, treat all data as text values
 @param problems list of problems encountered during processing
+@return the names of the output columns or null if cannot create
 */
-private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
+private String [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
     AreaReference area, String excelColumnNames, String comment, String [] excelIntegerColumns, int precisionForFloats,
     boolean readAllAsText, List<String> problems )
 {   String routine = "ReadTableFromExcel_Command.createTableColumns";
@@ -301,7 +347,7 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                 if ( headerRow == null ) {
                     problems.add ( "Specified ExcelColumnNames=" + _RowBeforeRange +
                         " but this results in row not on sheet.  Check address range." );
-                    return;
+                    return null;
                 }
             }
         }
@@ -383,13 +429,15 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
                 Row dataRow2;
                 for ( int iRowSearch = (firstDataRow + 1); iRowSearch <= rowEnd; iRowSearch++ ) {
                     dataRow2 = sheet.getRow(iRowSearch);
-                    cell = dataRow2.getCell(iCol);
-                    if ( cell != null ) {
-                        cellType = cell.getCellType();
-                        if ( (cellType == Cell.CELL_TYPE_STRING) || (cellType == Cell.CELL_TYPE_NUMERIC) ||
-                            (cellType == Cell.CELL_TYPE_BOOLEAN) || (cellType == Cell.CELL_TYPE_FORMULA)) {
-                            // Break out and interpret below
-                            break;
+                    if ( dataRow2 != null ) {
+                        cell = dataRow2.getCell(iCol);
+                        if ( cell != null ) {
+                            cellType = cell.getCellType();
+                            if ( (cellType == Cell.CELL_TYPE_STRING) || (cellType == Cell.CELL_TYPE_NUMERIC) ||
+                                (cellType == Cell.CELL_TYPE_BOOLEAN) || (cellType == Cell.CELL_TYPE_FORMULA)) {
+                                // Break out and interpret below
+                                break;
+                            }
                         }
                     }
                 }
@@ -437,6 +485,7 @@ private void createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
             }
         }
     }
+    return columnNames;
 }
 
 /**
@@ -586,6 +635,7 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 @param excelNamedRange a named range
 @param excelTableName a table name
 @param excelColumnNames indicate how to determine column names from the Excel worksheet
+@param columnExcludeFiltersMap a map indicating patters for column values, to exclude rows
 @param comment character that if at start of first column indicates row is a comment
 @param excelIntegerColumns names of columns that should be treated as integers, or null if none
 @param numberPrecision digits after decimal for floating point numbers (can't yet determine from Excel)
@@ -595,7 +645,7 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 */
 private DataTable readTableFromExcelFile ( String workbookFile, String sheetName,
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
-    String comment, String [] excelIntegerColumns, int numberPrecision, boolean readAllAsText, List<String> problems )
+    Hashtable columnExcludeFiltersMap, String comment, String [] excelIntegerColumns, int numberPrecision, boolean readAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = "ReadTableFromExcel_Command.readTableFromExcelFile";
     DataTable table = new DataTable();
@@ -647,8 +697,8 @@ throws FileNotFoundException, IOException
         }
         Message.printStatus(2,routine,"Excel address block to read: " + area );
         // Create the table based on the first row of the area
-        createTableColumns ( table, wb, sheet, area, excelColumnNames, comment, excelIntegerColumns, numberPrecision,
-             readAllAsText, problems );
+        String [] columnNames =
+            createTableColumns ( table, wb, sheet, area, excelColumnNames, comment, excelIntegerColumns, numberPrecision, readAllAsText, problems );
         int [] tableColumnTypes = table.getFieldDataTypes();
         // Read the data from the area and transfer to the table.
         Row row;
@@ -657,10 +707,9 @@ throws FileNotFoundException, IOException
         int rowEnd = area.getLastCell().getRow();
         int colStart = area.getFirstCell().getCol();
         int colEnd = area.getLastCell().getCol();
-        Message.printStatus(2, routine, "Cell range is [" + rowStart + "][" + colStart + "] to [" + rowEnd +
-            "][" + colEnd + "]");
+        Message.printStatus(2, routine, "Cell range is [" + rowStart + "][" + colStart + "] to [" + rowEnd + "][" + colEnd + "]");
         int cellType;
-        int iRowOut, iColOut;
+        int iRowOut = -1, iColOut;
         String cellValueString;
         boolean cellValueBoolean;
         double cellValueDouble;
@@ -668,20 +717,23 @@ throws FileNotFoundException, IOException
         CellValue formulaCellValue = null; // Cell value after formula evaluation
         DateTime dt;
         boolean cellIsFormula; // Used to know when the evaluate cell formula to get output object
+        boolean needToSkipRow = false; // Whether a row should be skipped
         for ( int iRow = rowStart; iRow <= rowEnd; iRow++ ) {
             row = sheet.getRow(iRow);
             if ( row == null ) {
                 // Seems to happen at bottom of worksheets where there are extra junk rows
                 continue;
             }
-            iRowOut = iRow - rowStart;
+            ++iRowOut;
             Message.printStatus(2, routine, "Processing row [" + iRow + "] end at [" + rowEnd + "]" );
             if ( (comment != null) && rowIsComment(sheet, iRow, comment) ) {
                 // No need to process the row.
                 continue;
             }
+            needToSkipRow = false;
+            iColOut = -1;
             for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
-                iColOut = iCol - colStart;
+                ++iColOut;
                 cell = row.getCell(iCol);
                 if ( cell == null ) {
                     Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\"" );
@@ -691,6 +743,11 @@ throws FileNotFoundException, IOException
                     else {
                         table.setFieldValue(iRowOut, iColOut, null, true);
                     }
+                    if ( (columnExcludeFiltersMap != null) &&
+                        cellMatchesFilter(columnNames[iCol], null, columnExcludeFiltersMap) ) {
+                        // Row was added but will remove at the end after all columns are processed
+                        needToSkipRow = true;
+                    }
                     continue;
                 }
                 // First get the data using the type indicated for the cell.  Then translate to
@@ -699,8 +756,7 @@ throws FileNotFoundException, IOException
                 // The checks are exhaustive, so list in the order that is most likely (string, double,
                 // boolean, blank, error, formula).
                 cellType = cell.getCellType();
-                Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" +
-                    cellType );
+                Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" + cellType );
                 cellIsFormula = false;
                 if ( cellType == Cell.CELL_TYPE_FORMULA ) {
                     // Have to evaluate the cell and get the value as the result
@@ -726,6 +782,11 @@ throws FileNotFoundException, IOException
                     }
                     else {
                         cellValueString = cell.getStringCellValue();
+                    }
+                    if ( (columnExcludeFiltersMap != null) &&
+                        cellMatchesFilter(columnNames[iCol], cellValueString,columnExcludeFiltersMap) ) {
+                            // Add the row but will remove at the end after all columns are processed
+                            needToSkipRow = true;
                     }
                     if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
                         // Just set
@@ -853,6 +914,10 @@ throws FileNotFoundException, IOException
                 }
                 else if ( cellType == Cell.CELL_TYPE_BLANK ) {
                     // Null works for all object types.  If truly a blank string in text cell, use "" as text
+                    if ( cellMatchesFilter(columnNames[iCol],"",columnExcludeFiltersMap) ) {
+                        // Add the row but will remove at the end after all columns are processed
+                        needToSkipRow = true;
+                    }
                     if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
                         table.setFieldValue(iRowOut, iColOut, "", true);
                     }
@@ -871,6 +936,13 @@ throws FileNotFoundException, IOException
                 else {
                     table.setFieldValue(iRowOut, iColOut, null, true);
                 }
+            }
+            if ( needToSkipRow ) {
+                // Because columns are added individually, need to remove rows that were added but should not have because
+                // an exclude filter was matched
+                table.deleteRecord(iRowOut);
+                --iRowOut; // Will be incremented for next row
+                continue;
             }
         }
     }
@@ -964,6 +1036,24 @@ CommandWarningException, CommandException
 	if ( (ExcelColumnNames == null) || ExcelColumnNames.equals("") ) {
 	    ExcelColumnNames = _ColumnN; // Default
 	}
+    String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );
+    Hashtable<String,String> columnExcludeFiltersMap = null;
+    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) && (ColumnExcludeFilters.indexOf(":") > 0) ) {
+        columnExcludeFiltersMap = new Hashtable<String,String>();
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(ColumnExcludeFilters, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            String tableColumn = parts[0].trim().toUpperCase();
+            String pattern = "";
+            if ( parts.length > 1 ) {
+                // Use upper-case to facilitate case-independent comparisons, and replace * globbing with internal Java notation
+                pattern = parts[1].trim().toUpperCase().replace("*", ".*");
+            }
+            columnExcludeFiltersMap.put(tableColumn, pattern );
+        }
+    }
 	String Comment = parameters.getValue ( "Comment" );
 	String comment = null;
 	if ( (Comment != null) && Comment.length() > 0 ) {
@@ -1015,7 +1105,7 @@ CommandWarningException, CommandException
 	try {
 	    if ( command_phase == CommandPhaseType.RUN ) {
             table = readTableFromExcelFile ( InputFile_full, Worksheet,
-                ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, comment, excelIntegerColumns, numberPrecision,
+                ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, columnExcludeFiltersMap, comment, excelIntegerColumns, numberPrecision,
                 readAllAsText, problems );
             for ( String problem: problems ) {
                 Message.printWarning ( 3, routine, problem );
@@ -1108,6 +1198,7 @@ public String toString ( PropList props )
 	String ExcelNamedRange = props.getValue("ExcelNamedRange");
 	String ExcelTableName = props.getValue("ExcelTableName");
 	String ExcelColumnNames = props.getValue("ExcelColumnNames");
+	String ColumnExcludeFilters = props.getValue("ColumnExcludeFilters");
 	String Comment = props.getValue("Comment");
 	String ExcelIntegerColumns = props.getValue("ExcelIntegerColumns");
 	String NumberPrecision = props.getValue("NumberPrecision");
@@ -1154,6 +1245,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ExcelColumnNames=" + ExcelColumnNames );
+    }
+    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnExcludeFilters=\"" + ColumnExcludeFilters + "\"" );
     }
     if ( (Comment != null) && (Comment.length() > 0) ) {
         if ( b.length() > 0 ) {

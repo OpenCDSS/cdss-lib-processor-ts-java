@@ -15,6 +15,7 @@ import RTi.TS.TSRegressionAnalysis;
 import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_FillRegression;
 
+import RTi.Util.Math.BestFitIndicatorType;
 import RTi.Util.Math.DataTransformationType;
 import RTi.Util.Math.NumberOfEquationsType;
 import RTi.Util.Math.RegressionType;
@@ -994,6 +995,7 @@ CommandWarningException, CommandException
                 }
 	        }
 	        else {
+	            /* XXX
 	            // New code that is more modular and consistent with FillMixedStation().
 	            // First analyze the time series
 	            TSUtil_FillRegression tsufr = new TSUtil_FillRegression (
@@ -1070,6 +1072,7 @@ CommandWarningException, CommandException
                             message, "Verify that time series have overlapping periods." ) );
                     throw new CommandException ( message );
                 }
+                XXX */
 	        }
 	    }
 	}

@@ -110,7 +110,7 @@ public void actionPerformed(ActionEvent event)
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextArea.getText().trim();
         String dict = (new DictionaryJDialog ( __parent, true, DataStoreRelatedColumnsMap,
-            "Edit DataStoreRelatedColumnsMap Parameter", "Datastore Column", "Datastore [RelatedTable.]RelatedColumn",10)).response();
+            "Edit DataStoreRelatedColumnsMap Parameter", "Related Tabke Key Column", "Related Table Value Column [RelatedTable.]RelatedColumn for Value",10)).response();
         if ( dict != null ) {
             __DataStoreRelatedColumnsMap_JTextArea.setText ( dict );
             refresh();
@@ -367,7 +367,7 @@ private void initialize ( JFrame parent, WriteTableToDataStore_Command command, 
     __DataStoreRelatedColumnsMap_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__DataStoreRelatedColumnsMap_JTextArea),
         1, y, 2, 2, 2, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - if datastore column matches from related column."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - table column to datatstore value column map."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditDataStoreRelatedColumnsMap",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );

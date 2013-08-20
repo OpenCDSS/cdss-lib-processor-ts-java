@@ -467,12 +467,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     }
                 }
                 else if ( StringUtil.indexOf(datastoreTableColumns,tableFieldNamesMapped[iCol]) < 0 ) {
-                    message = "Datastore table/view \"" + DataStoreTable + "\" does not contain column \"" +
+                    message = "Datastore \"" + dataStore.getName() + "\" table/view \"" + DataStoreTable + "\" does not contain column \"" +
                         tableFieldNamesMapped[iCol] + "\".";
                     Message.printWarning ( 2, routine, message );
                     status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the database table/view \"" +
+                            message, "Verify that the database \"" + dataStore.getName() + "\" table/view \"" +
                             DataStoreTable + "\" contains column \"" + tableFieldNamesMapped[iCol] + "\".") );
                 }
             }

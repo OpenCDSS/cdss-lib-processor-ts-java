@@ -23,12 +23,15 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
 import java.util.List;
+import java.util.Vector;
 
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Table.DataTableJoinMethodType;
 
 public class JoinTables_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -39,12 +42,16 @@ private boolean __first_time = true; // Indicate first time display
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private SimpleJComboBox __TableToJoinID_JComboBox = null;
+private JTextArea __JoinColumns_JTextArea = null;
 private JTextField __IncludeColumns_JTextField = null;
 private JTextArea __ColumnMap_JTextArea = null;
+private JTextArea __ColumnFilters_JTextArea = null;
+private SimpleJComboBox __JoinMethod_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JoinTables_Command __command = null;
 private boolean __ok = false;
+private JFrame __parent = null;
 
 /**
 Command dialog constructor.
@@ -75,6 +82,36 @@ public void actionPerformed(ActionEvent event)
 			response ( true );
 		}
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnMap") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnMap = __ColumnMap_JTextArea.getText().trim();
+        String dict = (new DictionaryJDialog ( __parent, true, ColumnMap,
+            "Edit ColumnMap Parameter", "Column Name in Join Table", "Column Name in Joined Table",10)).response();
+        if ( dict != null ) {
+            __ColumnMap_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditJoinColumns") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String JoinColumns = __JoinColumns_JTextArea.getText().trim();
+        String dict = (new DictionaryJDialog ( __parent, true, JoinColumns,
+            "Edit JoinColumns Parameter", "Column Name in First Table", "Column Name in Join (Second) Table",10)).response();
+        if ( dict != null ) {
+            __JoinColumns_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnFilters") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+        String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
+            "Join Column Name", "Column Value Filter Pattern",10)).response();
+        if ( columnFilters != null ) {
+            __ColumnFilters_JTextArea.setText ( columnFilters );
+            refresh();
+        }
+    }
 }
 
 /**
@@ -86,8 +123,11 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String TableToJoinID = __TableToJoinID_JComboBox.getSelected();
+	String JoinColumns = __JoinColumns_JTextArea.getText().trim().replace("\n"," ");
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
+	String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
+	String JoinMethod = __JoinMethod_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -96,11 +136,20 @@ private void checkInput ()
     if ( TableToJoinID.length() > 0 ) {
         props.set ( "TableToJoinID", TableToJoinID );
     }
+    if ( JoinColumns.length() > 0 ) {
+        props.set ( "JoinColumns", JoinColumns );
+    }
 	if ( IncludeColumns.length() > 0 ) {
 		props.set ( "IncludeColumns", IncludeColumns );
 	}
     if ( ColumnMap.length() > 0 ) {
         props.set ( "ColumnMap", ColumnMap );
+    }
+    if ( ColumnFilters.length() > 0 ) {
+        props.set ( "ColumnFilters", ColumnFilters );
+    }
+    if ( JoinMethod.length() > 0 ) {
+        props.set ( "JoinMethod", JoinMethod );
     }
 	try {
 	    // This will warn the user...
@@ -120,25 +169,18 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
     String TableToJoinID = __TableToJoinID_JComboBox.getSelected();
+    String JoinColumns = __JoinColumns_JTextArea.getText().trim().replace("\n"," ");
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
-    String ColumnMap = __ColumnMap_JTextArea.getText().trim();
+    String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
+    String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
+    String JoinMethod = __JoinMethod_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableToJoinID", TableToJoinID );
+    __command.setCommandParameter ( "JoinColumns", JoinColumns );
 	__command.setCommandParameter ( "IncludeColumns", IncludeColumns );
 	__command.setCommandParameter ( "ColumnMap", ColumnMap );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__IncludeColumns_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
+	__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
+	__command.setCommandParameter ( "JoinMethod", JoinMethod );
 }
 
 /**
@@ -148,6 +190,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, JoinTables_Command command, List<String> tableIDChoices )
 {	__command = command;
+    __parent = parent;
 
 	addWindowListener(this);
 
@@ -158,66 +201,116 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
 	getContentPane().add ("North", main_JPanel);
-	int y = 0;
+	int y = -1;
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
-	int yy = 0;
+	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command modifies a table by joining columns from another table."),
-        0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "For example, match a common column value in two tables."),
+        "Specify 1+ join columns to match column values in each table."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Columns will be added to the original table."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "The rows being added from the second table can be filtered."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, false );
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table (first table)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to modify (first table)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to join ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableToJoinID_JComboBox = new SimpleJComboBox ( 12, false );
-    tableIDChoices.add(0,""); // Add blank to ignore table
     __TableToJoinID_JComboBox.setData ( tableIDChoices );
     __TableToJoinID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __TableToJoinID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table being joined (second table)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to join to the first table."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Columns to join:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __JoinColumns_JTextArea = new JTextArea (3,35);
+    __JoinColumns_JTextArea.setLineWrap ( true );
+    __JoinColumns_JTextArea.setWrapStyleWord ( true );
+    __JoinColumns_JTextArea.setToolTipText("Table1Column1:Table2Column1,Table1Column2:Table2Column2");
+    __JoinColumns_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__JoinColumns_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - columns to match in each table."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditJoinColumns",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column names to copy:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (10);
     __IncludeColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to copy (default=copy all)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns in second table to copy (default=copy all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
+	
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column map:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnMap_JTextArea = new JTextArea (6,35);
     __ColumnMap_JTextArea.setLineWrap ( true );
     __ColumnMap_JTextArea.setWrapStyleWord ( true );
     __ColumnMap_JTextArea.setToolTipText("OriginalColumn1:NewColumn1,OriginalColumn2:NewColumn2");
     __ColumnMap_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnMap_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - to change names (default=names are same)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnMap",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnFilters_JTextArea = new JTextArea (3,35);
+    __ColumnFilters_JTextArea.setLineWrap ( true );
+    __ColumnFilters_JTextArea.setWrapStyleWord ( true );
+    __ColumnFilters_JTextArea.setToolTipText("JoinTableColumnName1:FilterPattern1,JoinTableColumnName2:FilterPattern2");
+    __ColumnFilters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnFilters_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - filter rows to copy by matching column pattern."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnFilters",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Join method:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __JoinMethod_JComboBox = new SimpleJComboBox ( 12, false );
+    List<String> choices = new Vector<String>();
+    choices.add("");
+    choices.add("" + DataTableJoinMethodType.JOIN_ALWAYS);
+    choices.add("" + DataTableJoinMethodType.JOIN_IF_IN_BOTH);
+    __JoinMethod_JComboBox.setData ( choices );
+    __JoinMethod_JComboBox.addItemListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __JoinMethod_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - join method (default=" + DataTableJoinMethodType.JOIN_IF_IN_BOTH + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -296,15 +389,21 @@ private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
     String TableID = "";
     String TableToJoinID = "";
+    String JoinColumns = "";
     String IncludeColumns = "";
     String ColumnMap = "";
+    String ColumnFilters = "";
+    String JoinMethod = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         TableToJoinID = props.getValue ( "TableToJoinID" );
+        JoinColumns = props.getValue ( "JoinColumns" );
         IncludeColumns = props.getValue ( "IncludeColumns" );
         ColumnMap = props.getValue ( "ColumnMap" );
+        ColumnFilters = props.getValue ( "ColumnFilters" );
+        JoinMethod = props.getValue ( "JoinMethod" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -335,23 +434,50 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( JoinColumns != null ) {
+            __JoinColumns_JTextArea.setText ( JoinColumns );
+        }
 		if ( IncludeColumns != null ) {
 			__IncludeColumns_JTextField.setText ( IncludeColumns );
 		}
         if ( ColumnMap != null ) {
             __ColumnMap_JTextArea.setText ( ColumnMap );
         }
+        if ( ColumnFilters != null ) {
+            __ColumnFilters_JTextArea.setText ( ColumnFilters );
+        }
+        if ( JoinMethod == null ) {
+            // Select default...
+            __JoinMethod_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __JoinMethod_JComboBox,JoinMethod, JGUIUtil.NONE, null, null ) ) {
+                __JoinMethod_JComboBox.select ( JoinMethod );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nJoinMethod value \"" + JoinMethod +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
     TableToJoinID = __TableToJoinID_JComboBox.getSelected();
+    JoinColumns = __JoinColumns_JTextArea.getText().trim();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	ColumnMap = __ColumnMap_JTextArea.getText().trim();
+	JoinMethod = __JoinMethod_JComboBox.getSelected();
+	ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "TableToJoinID=" + TableToJoinID );
+    props.add ( "JoinColumns=" + JoinColumns );
 	props.add ( "IncludeColumns=" + IncludeColumns );
 	props.add ( "ColumnMap=" + ColumnMap );
+	props.add ( "ColumnFilters=" + ColumnFilters );
+	props.add ( "JoinMethod=" + JoinMethod );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

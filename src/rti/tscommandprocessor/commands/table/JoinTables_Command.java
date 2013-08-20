@@ -13,7 +13,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandDiscoverable;
+//import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -23,15 +23,18 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.ObjectListProvider;
+//import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.DataTableJoinMethodType;
 
+// TODO SAM 2013-08-19 Don't make discoverable because new table is not created.  In the future may allow the
+// joined table to be a copy
 /**
 This class initializes, checks, and runs the JoinTables() command.
 */
-public class JoinTables_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class JoinTables_Command extends AbstractCommand implements Command //, CommandDiscoverable, ObjectListProvider
 {
     
 /**
@@ -59,6 +62,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String TableToJoinID = parameters.getValue ( "TableToJoinID" );
+    String JoinMethod = parameters.getValue ( "JoinMethod" );
 	String warning = "";
     String message;
     
@@ -89,13 +93,27 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table to join identifier different from the original table identifier." ) );
     }
+    
+    if ( (JoinMethod != null) && (JoinMethod.length() != 0) && !JoinMethod.equalsIgnoreCase("" + DataTableJoinMethodType.JOIN_ALWAYS) &&
+        !JoinMethod.equalsIgnoreCase("" + DataTableJoinMethodType.JOIN_IF_IN_BOTH)) {
+        message = "The join method (" + JoinMethod + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the join method as " + DataTableJoinMethodType.JOIN_ALWAYS + " or " +
+                DataTableJoinMethodType.JOIN_IF_IN_BOTH) );
+    }
+     
  
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "TableToJoinID" );
+    valid_Vector.add ( "JoinColumns" );
     valid_Vector.add ( "IncludeColumns" );
     valid_Vector.add ( "ColumnMap" );
+    valid_Vector.add ( "ColumnFilters" );
+    valid_Vector.add ( "JoinMethod" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -179,7 +197,7 @@ Run the command.
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "NewTable_Command.runCommand",message = "";
+{	String routine = "JoinTables_Command.runCommand",message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -195,6 +213,17 @@ CommandWarningException, CommandException
 
     String TableID = parameters.getValue ( "TableID" );
     String TableToJoinID = parameters.getValue ( "TableToJoinID" );
+    String JoinColumns = parameters.getValue ( "JoinColumns" );
+    Hashtable<String,String> joinColumnsMap = new Hashtable<String,String>();
+    if ( (JoinColumns != null) && (JoinColumns.length() > 0) && (JoinColumns.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(JoinColumns, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            joinColumnsMap.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
     String [] includeColumns = null;
     if ( (IncludeColumns != null) && !IncludeColumns.equals("") ) {
@@ -204,7 +233,7 @@ CommandWarningException, CommandException
         }
     }
     String ColumnMap = parameters.getValue ( "ColumnMap" );
-    Hashtable columnMap = new Hashtable();
+    Hashtable<String,String> columnMap = new Hashtable<String,String>();
     if ( (ColumnMap != null) && (ColumnMap.length() > 0) && (ColumnMap.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(ColumnMap, ",", 0 );
@@ -213,6 +242,22 @@ CommandWarningException, CommandException
             String [] parts = pair.split(":");
             columnMap.put(parts[0].trim(), parts[1].trim() );
         }
+    }
+    String ColumnFilters = parameters.getValue ( "ColumnFilters" );
+    Hashtable<String,String> columnFilters = new Hashtable<String,String>();
+    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            columnFilters.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
+    String JoinMethod = parameters.getValue ( "JoinMethod" );
+    DataTableJoinMethodType joinMethodType = DataTableJoinMethodType.valueOfIgnoreCase(JoinMethod);
+    if ( joinMethodType == null ) {
+        joinMethodType = DataTableJoinMethodType.JOIN_IF_IN_BOTH;
     }
     
     // Get the tables to process.
@@ -295,9 +340,7 @@ CommandWarningException, CommandException
     	// Join the tables...
     
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	        // TODO SAM 2013-07-31 Evaluate whether columnFilters is needed
-	        Hashtable columnFilters = new Hashtable();
-	        table.joinTable ( table, tableToJoin, includeColumns, columnMap, columnFilters );
+	        table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters, joinMethodType );
 	        // Table is already in the processor so no need to resubmit
 	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names
         }
@@ -337,9 +380,12 @@ public String toString ( PropList props )
 		return getCommandName() + "()";
 	}
     String TableID = props.getValue( "TableID" );
-    String TableJoinID = props.getValue( "TableJoinID" );
+    String TableToJoinID = props.getValue( "TableToJoinID" );
+    String JoinColumns = props.getValue( "JoinColumns" );
 	String IncludeColumns = props.getValue( "IncludeColumns" );
 	String ColumnMap = props.getValue( "ColumnMap" );
+	String ColumnFilters = props.getValue( "ColumnFilters" );
+	String JoinMethod = props.getValue( "JoinMethod" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -347,11 +393,17 @@ public String toString ( PropList props )
         }
         b.append ( "TableID=\"" + TableID + "\"" );
     }
-    if ( (TableJoinID != null) && (TableJoinID.length() > 0) ) {
+    if ( (TableToJoinID != null) && (TableToJoinID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "TableJoinID=\"" + TableJoinID + "\"" );
+        b.append ( "TableToJoinID=\"" + TableToJoinID + "\"" );
+    }
+    if ( (JoinColumns != null) && (JoinColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "JoinColumns=\"" + JoinColumns + "\"" );
     }
 	if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -364,6 +416,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ColumnMap=\"" + ColumnMap + "\"" );
+    }
+    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnFilters=\"" + ColumnFilters + "\"" );
+    }
+    if ( (JoinMethod != null) && (JoinMethod.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "JoinMethod=" + JoinMethod );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

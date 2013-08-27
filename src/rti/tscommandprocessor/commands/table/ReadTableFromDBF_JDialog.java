@@ -51,6 +51,7 @@ private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
 private JTextField  __TableID_JTextField = null;
 private JTextField __InputFile_JTextField = null;
+private JTextField __Top_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
@@ -137,6 +138,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
     String TableID = __TableID_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
+	String Top = __Top_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -145,6 +147,9 @@ private void checkInput ()
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
+    if ( Top.length() > 0 ) {
+        props.set ( "Top", Top );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -163,24 +168,10 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TableID = __TableID_JTextField.getText().trim();
     String InputFile = __InputFile_JTextField.getText().trim();
+    String Top = __Top_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__InputFile_JTextField = null;
-	__browse_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__working_dir = null;
-	super.finalize ();
+	__command.setCommandParameter ( "Top", Top );
 }
 
 /**
@@ -241,6 +232,15 @@ private void initialize ( JFrame parent, ReadTableFromDBF_Command command )
 	__browse_JButton = new SimpleJButton ("Browse", this);
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Top N rows:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Top_JTextField = new JTextField (10);
+    __Top_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Top_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - return top N rows (default=return all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -323,24 +323,31 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String TableID = "";
     String InputFile = "";
+    String Top = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
 		InputFile = props.getValue ( "InputFile" );
+		Top = props.getValue ( "Top" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
         }
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
+        if ( Top != null ) {
+            __Top_JTextField.setText ( Top );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TableID = __TableID_JTextField.getText().trim();
 	InputFile = __InputFile_JTextField.getText().trim();
+	Top = __Top_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
+	props.add ( "Top=" + Top );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

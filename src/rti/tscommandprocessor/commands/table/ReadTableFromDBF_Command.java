@@ -24,6 +24,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.DbaseDataTable;
 
@@ -58,6 +59,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String InputFile = parameters.getValue ( "InputFile" );
+    String Top = parameters.getValue ( "Top" );
 	String warning = "";
     String message;
     
@@ -123,13 +125,21 @@ throws InvalidCommandParameterException
                         message, "Verify that input file and working directory paths are compatible." ) );
 		}
 	}
+    if ( (Top != null) && (Top.length() != 0) && !StringUtil.isInteger(Top)) {
+        message = "The Top value (" + Top +") is not an integer.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the Top parameter as an integer." ) );
+    }
  
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "InputFile" );
+    valid_Vector.add ( "Top" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -228,6 +238,11 @@ CommandWarningException, CommandException
 
     String TableID = parameters.getValue ( "TableID" );
 	String InputFile = parameters.getValue ( "InputFile" );
+    String Top = parameters.getValue ( "Top" );
+    Integer top = 0;
+    if ( (Top != null) && !Top.equals("") ) {
+        top = Integer.parseInt(Top);
+    }
 
 	String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
@@ -253,6 +268,13 @@ CommandWarningException, CommandException
 	    if ( command_phase == CommandPhaseType.RUN ) {
 	        table = new DbaseDataTable ( InputFile_full, true, false );
 	        table.setTableID ( TableID );
+	        // Remove records if smaller number is requested.
+	        // TODO SAM 2013-08-25 update the above method to only read top - for now process after
+	        if ( (top != null) && (top != 0) ) {
+	            for ( int i = table.getNumberOfRecords() - 1; i >= top; i-- ) {
+	                table.deleteRecord(i);
+	            }
+	        }
 	    }
 	}
 	catch ( Exception e ) {
@@ -315,6 +337,7 @@ public String toString ( PropList props )
 	}
     String TableID = props.getValue( "TableID" );
 	String InputFile = props.getValue( "InputFile" );
+	String Top = props.getValue( "Top" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -328,6 +351,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "InputFile=\"" + InputFile + "\"" );
 	}
+    if ( (Top != null) && (Top.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Top=" + Top );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

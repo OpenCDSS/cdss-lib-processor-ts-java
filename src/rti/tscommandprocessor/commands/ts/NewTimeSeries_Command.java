@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSData;
 import RTi.TS.TSFunctionType;
 import RTi.TS.TSIdent;
+import RTi.TS.TSIterator;
 import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_SetDataValuesUsingFunction;
 
@@ -207,7 +209,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "NewTSID" );
     valid_Vector.add ( "Description" );
@@ -216,6 +218,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Units" );
     valid_Vector.add ( "MissingValue" );
     valid_Vector.add ( "InitialValue" );
+    valid_Vector.add ( "InitialFlag" );
     valid_Vector.add ( "InitialFunction" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -415,6 +418,7 @@ CommandWarningException, CommandException
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
 		InitialValue_double = Double.parseDouble ( InitialValue );
 	}
+	String InitialFlag = parameters.getValue ( "InitialFlag" );
 	String InitialFunction = parameters.getValue ( "InitialFunction" );
 	TSFunctionType initialFunction = null;
 	if ( InitialFunction != null ) {
@@ -519,6 +523,15 @@ CommandWarningException, CommandException
     		    TSUtil_SetDataValuesUsingFunction tsu = new TSUtil_SetDataValuesUsingFunction ( ts, initialFunction );
     		    tsu.setDataValuesUsingFunction ();
     		}
+    		if ( (InitialFlag != null) && !InitialFlag.equals("") ) {
+    		    // Iterate through the data and set the flag
+    		    TSIterator it = ts.iterator();
+    		    TSData tsdata = null;
+    		    while ( (tsdata = it.next()) != null ) {
+    		        // Reset the same values and additional the initial flag.
+    		        ts.setDataValue(it.getDate(), it.getDataValue(), InitialFlag, tsdata.getDuration() );
+    		    }
+    		}
 		}
         if ( (Alias != null) && !Alias.equals("") ) {
             String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
@@ -602,6 +615,7 @@ public String toString ( PropList props, int majorVersion )
 	String Units = props.getValue( "Units" );
 	String MissingValue = props.getValue( "MissingValue" );
 	String InitialValue = props.getValue( "InitialValue" );
+	String InitialFlag = props.getValue( "InitialFlag" );
 	String InitialFunction = props.getValue( "InitialFunction" );
 	StringBuffer b = new StringBuffer ();
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
@@ -646,6 +660,12 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "InitialValue=" + InitialValue );
 	}
+    if ( (InitialFlag != null) && (InitialFlag.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InitialFlag=\"" + InitialFlag + "\"" );
+    }
     if ( (InitialFunction != null) && (InitialFunction.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

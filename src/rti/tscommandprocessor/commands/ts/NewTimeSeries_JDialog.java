@@ -53,6 +53,7 @@ private JTextField __SetEnd_JTextField = null;
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
 private JTextField __InitialValue_JTextField = null;
+private JTextField __InitialFlag_JTextField = null;
 private SimpleJComboBox __InitialFunction_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
@@ -164,6 +165,7 @@ private void checkInput ()
 	String Units = __Units_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String InitialValue = __InitialValue_JTextField.getText().trim();
+	String InitialFlag = __InitialFlag_JTextField.getText().trim();
 	String InitialFunction = __InitialFunction_JComboBox.getSelected();
 	__error_wait = false;
 
@@ -191,6 +193,9 @@ private void checkInput ()
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
 		props.set ( "InitialValue", InitialValue );
 	}
+	if ( (InitialFlag != null) && (InitialFlag.length() > 0) ) {
+        props.set ( "InitialFlag", InitialFlag );
+    }
     if ( (InitialFunction != null) && (InitialFunction.length() > 0) ) {
         props.set ( "InitialFunction", InitialFunction );
     }
@@ -217,6 +222,7 @@ private void commitEdits ()
 	String Units = __Units_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String InitialValue = __InitialValue_JTextField.getText().trim();
+	String InitialFlag = __InitialFlag_JTextField.getText().trim();
 	String InitialFunction = __InitialFunction_JComboBox.getSelected();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
@@ -226,27 +232,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Units", Units );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
 	__command.setCommandParameter ( "InitialValue", InitialValue );
+	__command.setCommandParameter ( "InitialFlag", InitialFlag );
 	__command.setCommandParameter ( "InitialFunction", InitialFunction );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__NewTSID_JTextArea = null;
-	__Description_JTextField = null;
-	__SetStart_JTextField = null;
-	__SetEnd_JTextField = null;
-	__Units_JTextField = null;
-	__InitialValue_JTextField = null;
-	__ok_JButton = null;
-	__parent_JFrame = null;
-	super.finalize ();
 }
 
 /**
@@ -368,6 +355,15 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 		"Optional - default is to initialize with the missing value."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial flag:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InitialFlag_JTextField = new JTextField ( "", 10 );
+    JGUIUtil.addComponent(main_JPanel, __InitialFlag_JTextField,
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __InitialFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - default is no flag is set."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial function:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InitialFunction_JComboBox = new SimpleJComboBox(false);
@@ -449,7 +445,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -468,6 +464,7 @@ private void refresh ()
 	String Units = "";
 	String MissingValue = "";
 	String InitialValue = "";
+	String InitialFlag = "";
 	String InitialFunction = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -480,6 +477,7 @@ private void refresh ()
 		Units = props.getValue ( "Units" );
 		MissingValue = props.getValue ( "MissingValue" );
 		InitialValue = props.getValue ( "InitialValue" );
+		InitialValue = props.getValue ( "InitialFlag" );
 		InitialFunction = props.getValue ( "InitialFunction" );
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
@@ -505,6 +503,9 @@ private void refresh ()
 		if ( InitialValue != null ) {
 			__InitialValue_JTextField.setText ( InitialValue );
 		}
+        if ( InitialFlag != null ) {
+            __InitialFlag_JTextField.setText ( InitialFlag );
+        }
         if ( InitialFunction == null ) {
             // Select default...
             __InitialFunction_JComboBox.select ( 0 );
@@ -530,6 +531,7 @@ private void refresh ()
 	Units = __Units_JTextField.getText().trim();
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	InitialValue = __InitialValue_JTextField.getText();
+	InitialFlag = __InitialFlag_JTextField.getText();
 	InitialFunction = __InitialFunction_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
@@ -540,6 +542,7 @@ private void refresh ()
 	props.add ( "Units=" + Units );
 	props.add ( "MissingValue=" + MissingValue );
 	props.add ( "InitialValue=" + InitialValue );
+	props.add ( "InitialFlag=" + InitialFlag );
 	props.add ( "InitialFunction=" + InitialFunction );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }

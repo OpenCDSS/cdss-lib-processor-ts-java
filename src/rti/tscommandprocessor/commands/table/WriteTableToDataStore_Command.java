@@ -384,7 +384,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         String [] foreignKeyTableAndColumn =
                             DMIUtil.getTableForeignKeyTableAndColumn(dmi, DataStoreTable, tableFieldNamesMapped[iCol]);
                         if ( foreignKeyTableAndColumn == null ) {
-                            message = "Datastore related column information \"" + (String)relatedColumnO +
+                            message = "Datastore column \"" + tableFieldNamesMapped[iCol] + "\" related column information \"" +
+                                (String)relatedColumnO +
                                 "\" does not provide a table and no foreign key information is available in the database";
                             Message.printWarning ( 2, routine, message );
                             status.addToLog ( commandPhase,
@@ -398,7 +399,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     else {
                         parts = relatedColumn.split("\\.");
                         if ( parts.length != 2 ){
-                            message = "Datastore related column information \"" + (String)relatedColumnO +
+                            message = "Datastore related column \"" + tableFieldNamesMapped[iCol] + "\" information \"" +
+                                (String)relatedColumnO +
                                 "\" does not appear to be in format RelatedColumn or RelatedTable.RelatedColumn";
                             Message.printWarning ( 2, routine, message );
                             status.addToLog ( commandPhase,

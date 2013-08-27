@@ -776,7 +776,20 @@ private void writeTimeSeries ( int its, TS ts, DateTime outputStart, DateTime ou
             problems.add ( "Database time series data table \"" + timeSeriesDataTable +
                 "\" does not contain requested metadata ID column \"" + timeSeriesDataTableMetadataIDColumn + "\"" );
         }
+        // The time series data table can match a table or can be specified as a dictionary with syntax
+        // DataTable1:DateColumn1,DataTable2:DateColumn2
+        if ( timeSeriesDataTableDateTimeColumn.indexOf(":") > 0 ) {
+            // Need to parse out the dictionary
+            String [] parts = timeSeriesDataTableDateTimeColumn.split(",");
+            for ( int ipart = 0; ipart < parts.length; ipart++ ) {
+                String [] parts2 = parts[ipart].split(":");
+                if ( timeSeriesDataTable.equalsIgnoreCase(parts2[0]) ) {
+                    timeSeriesDataTableDateTimeColumn = parts2[1];
+                }
+            }
+        }
         if ( !DMIUtil.databaseTableHasColumn(dbMeta, timeSeriesDataTable, timeSeriesDataTableDateTimeColumn) ) {
+
             problems.add ( "Database time series data table \"" + timeSeriesDataTable +
                 "\" does not contain requested date/time column \"" + timeSeriesDataTableDateTimeColumn + "\"" );
         }
@@ -890,11 +903,13 @@ private void writeTimeSeries ( int its, TS ts, DateTime outputStart, DateTime ou
             }
         }
         if ( rowCount != 1 ) {
-            problems.add ( "Was expecting exactly 1 time series metadata record, got " + rowCount ); 
+            problems.add ( "Was expecting exactly 1 time series metadata record for \"" + ts.getIdentifier().toString() +
+                "\", got " + rowCount ); 
         }
     }
     catch ( Exception e ) {
-        problems.add ( "Error reading time series metadata from database with statement \"" + sqlString + "\" (" + e + ")."); 
+        problems.add ( "Error reading time series metadata from database for \"" + ts.getIdentifier().toString() +
+            "\" with statement \"" + sqlString + "\" (" + e + ")."); 
     }
     finally {
         DMI.closeResultSet(rs);

@@ -353,49 +353,49 @@ CommandWarningException, CommandException
 
 	// Now process the file...
 
-	DataTable table = null;
-	PropList props = new PropList ( "DataTable" );
-	props.set ( "Delimiter", "," );	// Default
-	props.set ( "CommentLineIndicator=#" );	// Skip comment lines
-	props.set ( "TrimInput=True" );		// Trim strings after reading.
-	props.set ( "TrimStrings=True" );	// Trim strings after parsing
-	//props.set ( "ColumnDataTypes=Auto" );  // Automatically determine column data types
-	if ( (SkipLines != null) && (SkipLines.length() > 0) ) {
-	    props.set ( "SkipLines=" + StringUtil.convertNumberSequenceToZeroOffset(SkipLines) );
-	}
-    if ( (HeaderLines != null) && (HeaderLines.length() > 0) ) {
-        props.set ( "HeaderLines=" + StringUtil.convertNumberSequenceToZeroOffset(HeaderLines) );
-    }
-    Message.printStatus( 2, routine, "parameter zero index SkipLines=\"" + props.getValue("SkipLines") + "\"");
-    Message.printStatus( 2, routine, "parameter zero index HeaderLines=\"" + props.getValue("HeaderLines") + "\"");
-	try {
-	    // Always try to read object data types
-	    props.set("ColumnDataTypes=Auto");
-        table = DataTable.parseFile ( InputFile_full, props );
-        
-        // Set the table identifier...
-        
-        table.setTableID ( TableID );
-	}
-	catch ( Exception e ) {
-		Message.printWarning ( 3, routine, e );
-		message = "Unexpected error read table from delimited file \"" + InputFile_full + "\" (" + e + ").";
-		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Verify that the file exists and is readable." ) );
-		throw new CommandWarningException ( message );
-	}
-	
-	if ( warning_count > 0 ) {
-		message = "There were " + warning_count + " warnings processing the command.";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
-		throw new CommandWarningException ( message );
-	}
-    
-    // Set the table in the processor...
-    
     if ( command_phase == CommandPhaseType.RUN ) {
+    	DataTable table = null;
+    	PropList props = new PropList ( "DataTable" );
+    	props.set ( "Delimiter", "," );	// Default
+    	props.set ( "CommentLineIndicator=#" );	// Skip comment lines
+    	props.set ( "TrimInput=True" );		// Trim strings after reading.
+    	props.set ( "TrimStrings=True" );	// Trim strings after parsing
+    	//props.set ( "ColumnDataTypes=Auto" );  // Automatically determine column data types
+    	if ( (SkipLines != null) && (SkipLines.length() > 0) ) {
+    	    props.set ( "SkipLines=" + StringUtil.convertNumberSequenceToZeroOffset(SkipLines) );
+    	}
+        if ( (HeaderLines != null) && (HeaderLines.length() > 0) ) {
+            props.set ( "HeaderLines=" + StringUtil.convertNumberSequenceToZeroOffset(HeaderLines) );
+        }
+        Message.printStatus( 2, routine, "parameter zero index SkipLines=\"" + props.getValue("SkipLines") + "\"");
+        Message.printStatus( 2, routine, "parameter zero index HeaderLines=\"" + props.getValue("HeaderLines") + "\"");
+    	try {
+    	    // Always try to read object data types
+    	    props.set("ColumnDataTypes=Auto");
+            table = DataTable.parseFile ( InputFile_full, props );
+            
+            // Set the table identifier...
+            
+            table.setTableID ( TableID );
+    	}
+    	catch ( Exception e ) {
+    		Message.printWarning ( 3, routine, e );
+    		message = "Unexpected error read table from delimited file \"" + InputFile_full + "\" (" + e + ").";
+    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the file exists and is readable." ) );
+    		throw new CommandWarningException ( message );
+    	}
+    	
+    	if ( warning_count > 0 ) {
+    		message = "There were " + warning_count + " warnings processing the command.";
+    		Message.printWarning ( warning_level,
+    			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
+    		throw new CommandWarningException ( message );
+    	}
+        
+        // Set the table in the processor...
+
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "Table", table );
         try {
@@ -412,6 +412,9 @@ CommandWarningException, CommandException
         }
     }
     else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        // Create an empty table and set the ID
+        DataTable table = new DataTable();
+        table.setTableID ( TableID );
         setDiscoveryTable ( table );
     }
 

@@ -647,7 +647,7 @@ private DataTable readTableFromExcelFile ( String workbookFile, String sheetName
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
     Hashtable columnExcludeFiltersMap, String comment, String [] excelIntegerColumns, int numberPrecision, boolean readAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
-{   String routine = "ReadTableFromExcel_Command.readTableFromExcelFile";
+{   String routine = "ReadTableFromExcel_Command.readTableFromExcelFile", message;
     DataTable table = new DataTable();
     if ( (comment != null) && (comment.trim().length() == 0) ) {
         // Set to null to simplify logic below
@@ -718,6 +718,7 @@ throws FileNotFoundException, IOException
         DateTime dt;
         boolean cellIsFormula; // Used to know when the evaluate cell formula to get output object
         boolean needToSkipRow = false; // Whether a row should be skipped
+        int nRowsToRead = rowEnd - rowStart + 1;
         for ( int iRow = rowStart; iRow <= rowEnd; iRow++ ) {
             row = sheet.getRow(iRow);
             if ( row == null ) {
@@ -726,6 +727,11 @@ throws FileNotFoundException, IOException
             }
             ++iRowOut;
             Message.printStatus(2, routine, "Processing row [" + iRow + "] end at [" + rowEnd + "]" );
+            if ( (iRow == rowStart) || (iRow == rowEnd) || (iRow%25 == 0) ) {
+                // Update the progress bar every 5%
+                message = "Reading row " + (iRow - rowStart + 1) + " of " + nRowsToRead;
+                notifyCommandProgressListeners ( (iRow - rowStart), nRowsToRead, (float)-1.0, message );
+            }
             if ( (comment != null) && rowIsComment(sheet, iRow, comment) ) {
                 // No need to process the row.
                 continue;

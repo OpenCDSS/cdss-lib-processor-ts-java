@@ -151,7 +151,7 @@ public void actionPerformed(ActionEvent event)
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
         String dict = (new DictionaryJDialog ( __parent, true, ColumnExcludeFilters,
-            "Edit ColumnExcludeFilters Parameter", "Excel Column", "Pattern to exclude rows (* allowed)",10)).response();
+            "Edit ColumnExcludeFilters Parameter", null, "Excel Column", "Pattern to exclude rows (* allowed)",10)).response();
         if ( dict != null ) {
             __ColumnExcludeFilters_JTextArea.setText ( dict );
             refresh();

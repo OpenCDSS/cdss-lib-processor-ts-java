@@ -81,7 +81,8 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide a column name as Input1." ) );
     }
-    
+
+    DataTableMathOperatorType operatorType = null;
     if ( (Operator == null) || Operator.equals("") ) {
         message = "The operator must be specified.";
         warning += "\n" + message;
@@ -91,7 +92,6 @@ throws InvalidCommandParameterException
     else {
         // Make sure that the operator is known in general
         boolean supported = false;
-        DataTableMathOperatorType operatorType = null;
         try {
             operatorType = DataTableMathOperatorType.valueOfIgnoreCase(Operator);
             supported = true;
@@ -188,12 +188,14 @@ throws InvalidCommandParameterException
             }
         }*/
     }
-    
-    if ( (Input2 == null) || Input2.equals("") ) {
-        message = "The Input2 column/value must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Provide a column name or numeric constant as Input2." ) );
+
+    if ( (operatorType != null) && (operatorType != DataTableMathOperatorType.TO_INTEGER) ) {
+        if ( (Input2 == null) || Input2.equals("") ) {
+            message = "The Input2 column/value must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Provide a column name or numeric constant as Input2." ) );
+        }
     }
     
     if ( (Output == null) || Output.equals("") ) {

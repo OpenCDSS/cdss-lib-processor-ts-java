@@ -679,10 +679,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     }
                 }
             }
-            // Query using the statement that was built
+            // Write data using the statement that was built
             sqlString = ws.toString();
             int rowCount = dmi.dmiWrite(ws, writeMode.getCode());
-            Message.printStatus(2, routine, "Wrote " + rowCount + " rows with query \"" + dmi.getLastQueryString() + "\".");
+            Message.printStatus(2, routine, "Wrote " + rowCount + " rows with SQL \"" + dmi.getLastQueryString() + "\".");
         }
     }
     catch ( Exception e ) {

@@ -99,8 +99,12 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnMap") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnMap = __ColumnMap_JTextArea.getText().trim();
+        String [] notes = { "Table Column - specify the TSTool table column being written.",
+            "Datastore Column - specify the datastore table column being written",
+            "If the first column is actual data values and the second is a foreign key column,",
+            "then use the related table parameter to indicate how to look up the foreign key value."};
         String dict = (new DictionaryJDialog ( __parent, true, ColumnMap,
-            "Edit ColumnMap Parameter", "Table Column", "Datastore Column",10)).response();
+            "Edit ColumnMap Parameter", notes, "Table Column", "Datastore Column",10)).response();
         if ( dict != null ) {
             __ColumnMap_JTextArea.setText ( dict );
             refresh();
@@ -109,8 +113,16 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditDataStoreRelatedColumnsMap") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String DataStoreRelatedColumnsMap = __DataStoreRelatedColumnsMap_JTextArea.getText().trim();
+        String [] notes = { "Related Table Key Column - specify the foreign key column " +
+        		"(table is determined by database key relationship, if defined).",
+                "Related Table Value Column - specify the foreign table column used to look up the foreign key from data value",
+                "For example, specify Related Table Key Column = DataTypeID to indicate the foreign key being processed,",
+                "and specify Related Table Value Column = DataTypeAbbreviation to indicate the string DataType value to look up.",
+                "When writing an association (relation) table, it is OK to specify the Related Table Value Column as",
+                "The original data table and matching data value column (e.g., DataTypes.DataTypesID."};
         String dict = (new DictionaryJDialog ( __parent, true, DataStoreRelatedColumnsMap,
-            "Edit DataStoreRelatedColumnsMap Parameter", "Related Tabke Key Column", "Related Table Value Column [RelatedTable.]RelatedColumn for Value",10)).response();
+            "Edit DataStoreRelatedColumnsMap Parameter", notes, "Related Table Key Column",
+            "Related Table Value Column [RelatedTable.]RelatedColumn for Value",10)).response();
         if ( dict != null ) {
             __DataStoreRelatedColumnsMap_JTextArea.setText ( dict );
             refresh();

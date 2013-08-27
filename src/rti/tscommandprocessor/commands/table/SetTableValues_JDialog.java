@@ -79,7 +79,7 @@ public void actionPerformed(ActionEvent event)
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
-            "Column", "Column Value Filter Pattern",10)).response();
+            null, "Column", "Column Value",10)).response();
         if ( columnFilters != null ) {
             __ColumnFilters_JTextArea.setText ( columnFilters );
             refresh();
@@ -89,7 +89,7 @@ public void actionPerformed(ActionEvent event)
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnValues = __ColumnValues_JTextArea.getText().trim();
         String columnValues = (new DictionaryJDialog ( __parent, true, ColumnValues, "Edit ColumnValues Parameter",
-            "Column", "Value",10)).response();
+            null, "Column", "Value",10)).response();
         if ( columnValues != null ) {
             __ColumnValues_JTextArea.setText ( columnValues );
             refresh();

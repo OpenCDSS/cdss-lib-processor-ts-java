@@ -86,7 +86,7 @@ public void actionPerformed(ActionEvent event)
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnMap = __ColumnMap_JTextArea.getText().trim();
         String dict = (new DictionaryJDialog ( __parent, true, ColumnMap,
-            "Edit ColumnMap Parameter", "Column Name in Join Table", "Column Name in Joined Table",10)).response();
+            "Edit ColumnMap Parameter", null, "Column Name in Join Table", "Column Name in Joined Table",10)).response();
         if ( dict != null ) {
             __ColumnMap_JTextArea.setText ( dict );
             refresh();
@@ -96,7 +96,7 @@ public void actionPerformed(ActionEvent event)
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String JoinColumns = __JoinColumns_JTextArea.getText().trim();
         String dict = (new DictionaryJDialog ( __parent, true, JoinColumns,
-            "Edit JoinColumns Parameter", "Column Name in First Table", "Column Name in Join (Second) Table",10)).response();
+            "Edit JoinColumns Parameter", null, "Column Name in First Table", "Column Name in Join (Second) Table",10)).response();
         if ( dict != null ) {
             __JoinColumns_JTextArea.setText ( dict );
             refresh();
@@ -106,7 +106,7 @@ public void actionPerformed(ActionEvent event)
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
-            "Join Column Name", "Column Value Filter Pattern",10)).response();
+            null, "Join Column Name", "Column Value Filter Pattern",10)).response();
         if ( columnFilters != null ) {
             __ColumnFilters_JTextArea.setText ( columnFilters );
             refresh();

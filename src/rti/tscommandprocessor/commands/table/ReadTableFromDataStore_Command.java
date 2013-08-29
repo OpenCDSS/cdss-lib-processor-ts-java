@@ -433,11 +433,13 @@ CommandWarningException, CommandException
                 // Query using the statement that was built above
                 queryString = q.toString();
                 rs = dmi.dmiSelect(q);
+                Message.printStatus(2, routine, "Executed query \"" + queryString + "\".");
             }
             else if ( (Sql != null) && !Sql.equals("") ) {
                 // Query using the SQL string.  Expand first using ${Property} notation
                 queryString = TSCommandProcessorUtil.expandParameterValue(processor, this, Sql);
                 rs = dmi.dmiSelect(queryString);
+                Message.printStatus(2, routine, "Executed query \"" + queryString + "\".");
             }
             else if ( (SqlFile != null) && !SqlFile.equals("") ) {
                 // Query using the contents of the SQL file
@@ -458,13 +460,14 @@ CommandWarningException, CommandException
                 queryString = TSCommandProcessorUtil.expandParameterValue(processor, this,
                     StringUtil.toString(IOUtil.fileToStringList(SqlFile_full), " "));
                 rs = dmi.dmiSelect(queryString);
+                Message.printStatus(2, routine, "Executed query \"" + queryString + "\".");
             }
             else if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
                 // Run a stored procedure
                 q.setStoredProcedureData(new DMIStoredProcedureData(dmi,DataStoreProcedure));
                 rs = q.executeStoredProcedure();
+                Message.printStatus(2, routine, "Executed query \"" + dmi.getLastQueryString() + "\".");
             }
-            Message.printStatus(2, routine, "Executed query \"" + dmi.getLastQueryString() + "\".");
             ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
             table = factory.createDataTable(rs, TableID);
             

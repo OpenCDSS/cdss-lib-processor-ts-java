@@ -684,7 +684,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Write data using the statement that was built
             sqlString = ws.toString();
             int rowCount = dmi.dmiWrite(ws, writeMode.getCode());
-            Message.printStatus(2, routine, "Wrote " + rowCount + " rows with SQL \"" + dmi.getLastQueryString() + "\".");
+            Message.printStatus(2, routine, "Wrote " + rowCount + " rows with SQL \"" + sqlString + "\".");
         }
     }
     catch ( Exception e ) {

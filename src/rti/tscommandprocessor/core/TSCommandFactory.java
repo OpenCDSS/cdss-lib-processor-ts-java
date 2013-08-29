@@ -20,6 +20,7 @@ import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 // DateValue commands
 
 import rti.tscommandprocessor.commands.datastore.ReadTimeSeriesFromDataStore_Command;
+import rti.tscommandprocessor.commands.datastore.RunSql_Command;
 import rti.tscommandprocessor.commands.datastore.WriteTimeSeriesToDataStore_Command;
 import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
 import rti.tscommandprocessor.commands.datevalue.ReadDateValue_Command;
@@ -774,6 +775,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("RunningStatisticTimeSeries") ) {
         return new RunningStatisticTimeSeries_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("RunSql") ) {
+        return new RunSql_Command ();
     }
 
 	// "S" commands...

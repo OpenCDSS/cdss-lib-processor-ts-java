@@ -658,6 +658,7 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import DWR.DMI.HydroBaseDMI.HydroBaseDataStore;
 
 import riverside.datastore.DataStore;
+import riverside.datastore.GenericDatabaseDataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
 import rti.tscommandprocessor.commands.nrcs.awdb.NrcsAwdbDataStore;
 import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
@@ -4344,6 +4345,25 @@ throws Exception
 			}
 		}
 	}
+    else if ((dataStore != null) && (dataStore instanceof GenericDatabaseDataStore) ) {
+        GenericDatabaseDataStore ds = (GenericDatabaseDataStore)dataStore;
+        if ( ds.getDMI() == null ) {
+            Message.printWarning ( 3, routine, "Unable to get GenericDatabaseDataStore connection for " +
+            "data store name \"" + inputName +  "\".  Unable to read time series." );
+            ts = null;
+        }
+        else {
+            try {
+                ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+            }
+            catch ( Exception te ) {
+                Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+                    "\" from \"" + ds.getName() + "\" datastore" );
+                Message.printWarning ( 3, routine, te );
+                ts = null;
+            }
+        }
+    }
     else if ( source.equalsIgnoreCase("HEC-DSS") ) {
         if ( IOUtil.isUNIXMachine() ) {
             // Probably OK to warn and ignore - UI should not allow HEC-DSS commands to be used on UNIX/Linux

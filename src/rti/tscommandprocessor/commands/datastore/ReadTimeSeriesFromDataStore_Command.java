@@ -432,7 +432,7 @@ CommandWarningException, CommandException
 	        // The LocationID is specified so read one time series.  Do this by initializing a single metadata object.
 	        tsMetaList = new Vector<TimeSeriesMeta>();
 	        TimeSeriesMeta tsMetadata = new TimeSeriesMeta ( LocationType, LocationID, DataSource, DataType, Interval,
-	            Scenario, "", -1 );
+	            Scenario, "", "", -1 );
 	        tsMetaList.add ( tsMetadata );
 	        Message.printStatus ( 2, routine, "Single time series was requested for location ID \"" + LocationID + "\"." );
 	    }

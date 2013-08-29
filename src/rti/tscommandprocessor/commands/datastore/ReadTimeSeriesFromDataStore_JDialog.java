@@ -317,14 +317,13 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Read one or more time series from a database datastore that has been configured to provide time series " +
-    	"metadata."),
+    	"Read one or more time series from a database datastore that has been configured to provide time series metadata."),
     	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Refer to the Generic Database Datastore documentation for more information." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If not specified, the input period defaults to the input period from SetInputPeriod()."),
+		"If not specified, the global input period is used (see SetInputPeriod())."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
     __ignoreEvents = true; // So that a full pass of initialization can occur
@@ -388,7 +387,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
     
     int ySingle = -1;
     JGUIUtil.addComponent(singleTS_JPanel,
-        new JLabel ("Specify a location ID when a specific time series is being processed."), 
+        new JLabel ("Specify a location ID when a specific time series is being processed.  Choices will cascade based in selections."), 
         0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location type:"), 
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -447,7 +446,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
 	Insets insets = new Insets(0,buffer,0,0);
 	try {
 	    JGUIUtil.addComponent(multipleTS_JPanel,
-            new JLabel ("Specify filters when multiple time series are being processed."), 
+            new JLabel ("Specify filters when multiple time series are being processed.  Choices do not cascade based on previous selections."), 
             0, ++yMultiple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	    // Add input filters for time series metadata...
 		__inputFilter_JPanel = new GenericDatabaseDataStore_TimeSeries_InputFilter_JPanel(

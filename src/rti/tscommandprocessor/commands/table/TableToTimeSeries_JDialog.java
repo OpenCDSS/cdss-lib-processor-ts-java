@@ -59,6 +59,7 @@ private JTabbedPane __location_JTabbedPane = null;
 private JTextField __ValueColumn_JTextField = null;
 private JTextField __FlagColumn_JTextField = null;
 //private JTextField __SkipRows_JTextField = null;
+private JTextField __LocationType_JTextField = null;
 private JTextField __LocationID_JTextField = null;
 private JTextField __LocationTypeColumn_JTextField = null;
 private JTextField __LocationColumn_JTextField = null;
@@ -172,6 +173,7 @@ private void checkInput () {
 	String DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
 	String ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
 	String UnitsColumn = __UnitsColumn_JTextField.getText().trim();
+	String LocationType = __LocationType_JTextField.getText().trim();
 	String LocationID = __LocationID_JTextField.getText().trim();
 	String ValueColumn = __ValueColumn_JTextField.getText().trim();
 	String FlagColumn = __FlagColumn_JTextField.getText().trim();
@@ -222,6 +224,9 @@ private void checkInput () {
     }
     if (UnitsColumn.length() > 0) {
         props.set("UnitsColumn", UnitsColumn);
+    }
+    if (LocationType.length() > 0) {
+        props.set("LocationType", LocationType);
     }
     if (LocationID.length() > 0) {
         props.set("LocationID", LocationID);
@@ -289,6 +294,7 @@ private void commitEdits() {
     String DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
     String ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
     String UnitsColumn = __UnitsColumn_JTextField.getText().trim();
+    String LocationType = __LocationType_JTextField.getText().trim();
     String LocationID = __LocationID_JTextField.getText().trim();
     String DataSource = __DataSource_JTextField.getText().trim();
     String DataType = __DataType_JTextField.getText().trim();
@@ -312,6 +318,7 @@ private void commitEdits() {
     __command.setCommandParameter("DataTypeColumn", DataTypeColumn);
     __command.setCommandParameter("ScenarioColumn", ScenarioColumn);
     __command.setCommandParameter("UnitsColumn", UnitsColumn);
+    __command.setCommandParameter("LocationType", LocationType);
     __command.setCommandParameter("LocationID", LocationID);
 	__command.setCommandParameter("ValueColumn", ValueColumn);
 	__command.setCommandParameter("FlagColumn", FlagColumn);
@@ -370,9 +377,6 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "For example, \"Date,TC[2:]\" defines the first column as \"Date\" and column names " +
         "2+ will be taken from the table." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "If used, specify input start and end to a precision appropriate for the data." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
@@ -452,7 +456,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     multTS_JPanel.setLayout(new GridBagLayout());
     __location_JTabbedPane.addTab ( "Multiple Data Value (Number) Columns", multTS_JPanel );
     int yMult = -1;
-    
+
     JGUIUtil.addComponent(multTS_JPanel, new JLabel ("Location ID(s):"),
         0, ++yMult, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationID_JTextField = new JTextField (10);
@@ -475,7 +479,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(singleTS_JPanel, __LocationTypeColumn_JTextField,
         1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
-        "Optional - column name for location type"),
+        "Optional - column name for location type if not provided with LocationType"),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location column:"),
@@ -527,7 +531,17 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for units, if not provided as Units."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Location type(s):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LocationType_JTextField = new JTextField (10);
+    __LocationType_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __LocationType_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - location types for each value column, separated by commas (default=no location type)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Value column(s):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueColumn_JTextField = new JTextField (20);
@@ -535,7 +549,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, __ValueColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - specify column names for time series values, separated by commas (can use \"TC[N:N]\")."),
+        "Required - specify column names for time series values, comma-separated (can use \"TC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Flag column(s):"),
@@ -545,17 +559,17 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, __FlagColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - specify column names for time series flags, separated by commas (can use \"TC[N:N]\")."),
+        "Optional - specify column names for time series flags, comma-separated (can use \"TC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data source:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data source(s):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataSource_JTextField = new JTextField (10);
     __DataSource_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - data source (provider) for the data (default=blank)."),
+        "Optional - data source(s)/provider(s) for the data, comma-separated (default=blank)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data type(s):"),
@@ -565,7 +579,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - data type for each value column, separated by commas (default=value column name(s))."),
+        "Optional - data type for each value column, comma-separated (default=value column name(s))."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Data interval:"),
@@ -590,7 +604,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, __Scenario_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - scenario for the time series (comma-separated, default=blank)."),
+        "Optional - scenario(s) for the time series, comma-separated (default=blank)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Units of data:"),
@@ -600,7 +614,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 	JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - separate by commas (default=blank)."),
+        "Optional - data units, comma-separated (default=blank)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Missing value(s):"),
@@ -610,7 +624,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - missing value indicator(s) for table data (default=blank values)."),
+        "Optional - missing value indicator(s) for table data, comma-separated (default=blank values)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
@@ -645,7 +659,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Command_JTextArea = new JTextArea(7, 55);
+	__Command_JTextArea = new JTextArea(4, 55);
 	__Command_JTextArea.setLineWrap ( true );
 	__Command_JTextArea.setWrapStyleWord ( true );	
 	__Command_JTextArea.setEditable ( false );
@@ -734,6 +748,7 @@ private void refresh()
     String DataTypeColumn = "";
     String ScenarioColumn = "";
     String UnitsColumn = "";
+    String LocationType = "";
     String LocationID = "";
     String ValueColumn = "";
     String FlagColumn = "";
@@ -766,6 +781,7 @@ private void refresh()
         DataTypeColumn = props.getValue("DataTypeColumn");
         ScenarioColumn = props.getValue("ScenarioColumn");
         UnitsColumn = props.getValue("UnitsColumn");
+        LocationType = props.getValue("LocationType");
         LocationID = props.getValue("LocationID");
 	    ValueColumn = props.getValue("ValueColumn");
 	    FlagColumn = props.getValue("FlagColumn");
@@ -848,6 +864,9 @@ private void refresh()
         if (UnitsColumn != null) {
             __UnitsColumn_JTextField.setText(UnitsColumn);
         }
+        if (LocationType != null) {
+            __LocationType_JTextField.setText(LocationType);
+        }
         if (LocationID != null) {
             __LocationID_JTextField.setText(LocationID);
             if ( !LocationID.equals("") ) {
@@ -914,6 +933,7 @@ private void refresh()
     DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
     ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
     UnitsColumn = __UnitsColumn_JTextField.getText().trim();
+    LocationType = __LocationType_JTextField.getText().trim();
     LocationID = __LocationID_JTextField.getText().trim();
     ValueColumn = __ValueColumn_JTextField.getText().trim();
     FlagColumn = __FlagColumn_JTextField.getText().trim();
@@ -940,6 +960,7 @@ private void refresh()
     props.add("DataTypeColumn=" + DataTypeColumn );
     props.add("ScenarioColumn=" + ScenarioColumn );
     props.add("UnitsColumn=" + UnitsColumn );
+    props.add("LocationType=" + LocationType );
     props.add("LocationID=" + LocationID );
     props.add("ValueColumn=" + ValueColumn );
     props.add("FlagColumn=" + FlagColumn );

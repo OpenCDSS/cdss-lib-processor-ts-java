@@ -107,6 +107,16 @@ Location column for each time series being processed, expanded for runtime.
 private String __locationColumnRuntime = null;
 
 /**
+Location Type for each time series being processed, expanded for runtime.
+*/
+private List<String> __locationTypeRuntime = new Vector<String>();
+
+/**
+Location type for each time series being processed.
+*/
+private List<String> __locationType = new Vector<String>();
+
+/**
 Location ID for each time series being processed, expanded for runtime.
 */
 private List<String> __locationIDRuntime = new Vector<String>();
@@ -186,6 +196,7 @@ throws InvalidCommandParameterException
     String ValueColumn = parameters.getValue("ValueColumn" );
     String FlagColumn = parameters.getValue("FlagColumn" );
     //String SkipRows = parameters.getValue("SkipRows" );
+    String LocationType = parameters.getValue("LocationType" );
     String LocationID = parameters.getValue("LocationID" );
     String LocationTypeColumn = parameters.getValue("LocationTypeColumn" );
     String LocationColumn = parameters.getValue("LocationColumn" );
@@ -565,6 +576,16 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify LocationID or LocationColumn but not both." ) );
     }
+
+    if ( ((LocationType != null) && !LocationType.equals("")) &&
+        ((LocationTypeColumn != null) && !LocationTypeColumn.equals("")) ) {
+        // Can only specify location type one way
+        message = "LocationType and LocationTypeColumn cannot both be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify LocationType or LocationTypeColumn but not both." ) );
+    }
     
     if ( ((DataSource != null) && !DataSource.equals("")) &&
         ((DataSourceColumn != null) && !DataSourceColumn.equals("")) ) {
@@ -604,6 +625,14 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify Units or UnitsColumn but not both." ) );
+    }
+    
+    List<String> locationType = new Vector<String>();
+    setLocationType ( locationType );
+    if ( (LocationType != null) && !LocationType.equals("") ) {
+        // Can have one value that is re-used, or LocationType for each time series
+        List<String>tokens = StringUtil.breakStringList(LocationType, ",", 0);
+        setLocationType(tokens);
     }
 
     List<String> dataSource = new Vector<String>();
@@ -858,6 +887,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataTypeColumn" );
     valid_Vector.add ( "ScenarioColumn" );
     valid_Vector.add ( "UnitsColumn" );
+    valid_Vector.add ( "LocationType" );
     valid_Vector.add ( "LocationID" );
     valid_Vector.add ( "ValueColumn" );
     valid_Vector.add ( "FlagColumn" );
@@ -886,7 +916,7 @@ throws InvalidCommandParameterException
 Create a list of metadata for time series for use at runtime considering all of the command parameter
 and dynamic input.  For example, this creates the list of data source strings that should be used for each time series.
 @param singleColumn indicates whether single column values are being processed
-@param locationIdsFromTable the list of location identifiers from the table, used with single column tables
+@param locationIdsFromTable the list of location identifiers from the table, used with single column tables to indicate number of time series
 @param metadataFromTable the list of metadata values determined from the table (one metadata value per location ID).
 @param numTS the number of data value sets (columns in multi-column or subsets of single column) being processed,
 which is the number of time series.
@@ -1237,8 +1267,8 @@ private List<String> getLocationIDRuntime()
 Return the location type list.
 */
 private List<String> getLocationType()
-{   // TODO SAM 2013-06-28 allow to be set as constant like other metadata
-    return new Vector();
+{
+    return __locationType;
 }
 
 /**
@@ -1341,6 +1371,7 @@ Read a list of time series from a multiple column data table.
 @param dataTypeColumn the column to use for data types, if single column data table
 @param scenarioColumn the column to use for scenarios, if single column data table
 @param unitsColumn the column to use for units, if single column data table
+@param locationTypes location types to use for time series instead of default value column names
 @param locationIds identifiers to use for time series instead of default value column names
 @param dataSources list of data sources (providers) to use for time series
 @param dataTypes list of data types to use for time series
@@ -1358,7 +1389,7 @@ private List<TS> readTimeSeriesListMultiple ( DataTable table,
     String dateColumn, String timeColumn, List<String> valueColumns, List<String> flagColumns,
     int[][] skipRows, String locationTypeColumn, String locationColumn, String dataSourceColumn,
     String dataTypeColumn, String scenarioColumn, String unitsColumn,
-    List<String> locationIds, List<String> dataSources, List<String> dataTypes, TimeInterval interval,
+    List<String> locationTypes, List<String> locationIds, List<String> dataSources, List<String> dataTypes, TimeInterval interval,
     List<String> scenarios, List<String> units, List<String> missing,
     DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
@@ -1491,7 +1522,7 @@ throws IOException
     // Create lists of metadata to initialize each time series
     // Create location types for each time series
     List<String>locationTypesForTS = createMetadataRuntime ( false, locationIdsFromTable,
-        locationTypesFromTable, valueColumns.size(), dataSources);
+        locationTypesFromTable, valueColumns.size(), locationTypes);
     // Create data sources for each time series
     List<String>dataSourcesForTS = createMetadataRuntime ( false, locationIdsFromTable,
         dataSourcesFromTable, valueColumns.size(), dataSources);
@@ -1506,7 +1537,9 @@ throws IOException
     // Create units for each time series
     List<String>unitsForTS = createMetadataRuntime ( false, locationIdsFromTable, unitsFromTable,
         valueColumns.size(), units );
-    Message.printStatus(2,routine,"Sizes: locationIdsForTS=" + locationIdsForTS.size() +
+    Message.printStatus(2,routine,"Sizes:" +
+        " locationTypesForTS=" + locationTypesForTS.size() +
+        " locationIdsForTS=" + locationIdsForTS.size() +
         " dataTypesForTS=" + dataTypesForTS.size() +
         " scenariosForTS=" + scenariosForTS.size() +
         " dataSourcesForTS=" + dataSourcesForTS.size() +
@@ -2092,6 +2125,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String TableID = parameters.getValue("TableID");
+	String LocationType = parameters.getValue("LocationType");
 	String LocationID = parameters.getValue("LocationID");
 	String LocationTypeColumn = parameters.getValue("LocationTypeColumn");
 	String LocationColumn = parameters.getValue("LocationColumn");
@@ -2356,7 +2390,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 DateTimeFormat, getDateColumnRuntime(),
                 getTimeColumnRuntime(), getValueColumnsRuntime(), getFlagColumnsRuntime(), getSkipRows(),
                 LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
-                getLocationIDRuntime(), getDataSource(), getDataType(), getInterval(), getScenario(),
+                getLocationType(), getLocationIDRuntime(), getDataSource(), getDataType(), getInterval(), getScenario(),
                 getUnits(), getMissingValue(),
                 InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
         }
@@ -2459,6 +2493,14 @@ private void setDateColumnRuntime ( String dateColumnRuntime )
 }
 
 /**
+Set the data source strings for each time series.
+*/
+private void setDataSource ( List<String> dataSource )
+{
+    __dataSource = dataSource;
+}
+
+/**
 Set date/time column expanded for runtime.
 */
 private void setDateTimeColumnRuntime ( String dateTimeColumnRuntime )
@@ -2499,19 +2541,19 @@ private void setLocationIDRuntime ( List<String> locationIDRuntime )
 }
 
 /**
+Set the location type strings for each time series.
+*/
+private void setLocationType ( List<String> locationType )
+{
+    __locationType = locationType;
+}
+
+/**
 Set the missing value strings.
 */
 private void setMissingValue ( List<String> missingValue )
 {
     __missingValue = missingValue;
-}
-
-/**
-Set the data source strings for each time series.
-*/
-private void setDataSource ( List<String> dataSource )
-{
-    __dataSource = dataSource;
 }
 
 /**
@@ -2573,6 +2615,7 @@ public String toString ( PropList props )
     String DataTypeColumn = props.getValue("DataTypeColumn" );
     String ScenarioColumn = props.getValue("ScenarioColumn" );
     String UnitsColumn = props.getValue("UnitsColumn" );
+    String LocationType = props.getValue("LocationType" );
     String LocationID = props.getValue("LocationID" );
     String ValueColumn = props.getValue("ValueColumn" );
     String FlagColumn = props.getValue("FlagColumn" );
@@ -2652,6 +2695,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("LocationID=\"" + LocationID + "\"");
+    }
+    if ((LocationType != null) && (LocationType.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("LocationType=\"" + LocationType + "\"");
     }
     if ((ValueColumn != null) && (ValueColumn.length() > 0)) {
         if (b.length() > 0) {

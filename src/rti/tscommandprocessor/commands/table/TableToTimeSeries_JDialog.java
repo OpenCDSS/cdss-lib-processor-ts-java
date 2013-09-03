@@ -454,7 +454,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JPanel multTS_JPanel = new JPanel();
     multTS_JPanel.setLayout(new GridBagLayout());
-    __location_JTabbedPane.addTab ( "Multiple Data Value (Number) Columns", multTS_JPanel );
+    __location_JTabbedPane.addTab ( "Multiple Data Value (Number) Columns (only 1 location ID in column)", multTS_JPanel );
     int yMult = -1;
 
     JGUIUtil.addComponent(multTS_JPanel, new JLabel ("Location ID(s):"),
@@ -469,7 +469,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JPanel singleTS_JPanel = new JPanel();
     singleTS_JPanel.setLayout(new GridBagLayout());
-    __location_JTabbedPane.addTab ( "Single Data Value (Number) Column", singleTS_JPanel );
+    __location_JTabbedPane.addTab ( "Single Data Value (Number) Column (vertical \"stream\" of location/value data)", singleTS_JPanel );
     int ySingle = -1;
     
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location type column:"),

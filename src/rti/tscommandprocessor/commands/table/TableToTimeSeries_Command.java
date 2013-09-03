@@ -68,12 +68,12 @@ Column names for each time series being processed, from the ColumnNames paramete
 has been expanded to reflect file column names.
 See also __columnNamesRuntime.
 */
-private List<String> __columnNamesRuntime = new Vector();
+private List<String> __columnNamesRuntime = new Vector<String>();
 
 /**
 Data types for each time series being processed.
 */
-private List<String> __dataType = new Vector();
+private List<String> __dataType = new Vector<String>();
 
 /**
 Date column name, expanded for runtime, consistent with the ColumnNames runtime values.
@@ -737,7 +737,7 @@ throws InvalidCommandParameterException
     }
     setInterval ( interval );
     
-    List<String> scenario = new Vector();
+    List<String> scenario = new Vector<String>();
     setScenario ( scenario );
     if ( (Scenario != null) && !Scenario.equals("") ) {
         // Can have one value that is re-used, or Scenario for each time series
@@ -916,25 +916,19 @@ throws InvalidCommandParameterException
 Create a list of metadata for time series for use at runtime considering all of the command parameter
 and dynamic input.  For example, this creates the list of data source strings that should be used for each time series.
 @param singleColumn indicates whether single column values are being processed
-@param locationIdsFromTable the list of location identifiers from the table, used with single column tables to indicate number of time series
+@param nMetadata the number of time series being processed, and therefore the number of metadata values
 @param metadataFromTable the list of metadata values determined from the table (one metadata value per location ID).
 @param numTS the number of data value sets (columns in multi-column or subsets of single column) being processed,
 which is the number of time series.
 @param metadataFromParameter the list of metadata from parameter expansion, for example the data sources.  The list can have
-a single value, in which case the metadata value will be re-used, or a list of values can be provided, which will
+a single value, in which case the single value will be used for each time series, or a list of values can be provided, which will
 correspond to the time series
 */
-private List<String> createMetadataRuntime ( boolean singleColumn, List<String> locationIdsFromTable,
+private List<String> createMetadataRuntime ( boolean singleColumn,
     List<String> metadataFromTable, int numTS, List<String> metadataFromParameter )
 {   List<String> metadataForTS = new Vector<String>();
-    int nMetadata = 0;
-    if ( singleColumn ) {
-        nMetadata = locationIdsFromTable.size();
-    }
-    else {
-        nMetadata = numTS;
-    }
     // Initialize...
+    int nMetadata = numTS;
     for ( int i = 0; i < nMetadata; i++ ) {
         if ( singleColumn && (metadataFromTable.size() > 0) ) {
             // Single column output and data sources were determined from the table
@@ -1070,14 +1064,14 @@ private List<String> getColumnNamesFromNotation ( DataTable table, String column
             Message.printStatus(2, routine, "Got " + tableColPos.length + " columns from slice \"" + slice + "\"" );
             for ( int ipos = 0; ipos <tableColPos.length; ipos++ ) {
                 // Positions from parameter parsing are 1+ so need to decrement to get 0+ indices
-                Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(tableColPos[ipos] - 1).trim() + "\"" );
+                Message.printStatus(2, routine, "Adding table column name \"" + columnHeadingList.get(tableColPos[ipos] - 1).trim() + "\"" );
                 columnNames.add ( columnHeadingList.get(tableColPos[ipos] - 1).trim() );
             }
         }
         else {
             // Use all the file field names
             for ( int ipos = 0; ipos <nColumnHeadings; ipos++ ) {
-                Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(ipos).trim() + "\"" );
+                Message.printStatus(2, routine, "Adding table column name \"" + columnHeadingList.get(ipos).trim() + "\"" );
                 columnNames.add ( columnHeadingList.get(ipos).trim() );
             }
         }
@@ -1521,21 +1515,30 @@ throws IOException
         ", max date/time from table = " + dtMaxFromTable );
     // Create lists of metadata to initialize each time series
     // Create location types for each time series
-    List<String>locationTypesForTS = createMetadataRuntime ( false, locationIdsFromTable,
+    boolean singleColumnFalse = false;
+    List<String>locationTypesForTS = createMetadataRuntime ( singleColumnFalse,
         locationTypesFromTable, valueColumns.size(), locationTypes);
     // Create data sources for each time series
-    List<String>dataSourcesForTS = createMetadataRuntime ( false, locationIdsFromTable,
+    List<String>dataSourcesForTS = createMetadataRuntime ( singleColumnFalse,
         dataSourcesFromTable, valueColumns.size(), dataSources);
     // Create data types for each time series
-    List<String>dataTypesForTS = createMetadataRuntime ( false, locationIdsFromTable,
-        dataTypesFromTable, valueColumns.size(), dataTypes);
-    List<String> locationIdsForTS = createMetadataRuntime ( false, locationIdsFromTable, locationIdsFromTable,
+    // Data types can be specified as single value for all data columns, list of data type strings (number matches number of values),
+    // or if not specified, use the value column names.
+    List<String> dataTypesForTS = new Vector<String>();
+    if ( dataTypes.size() == 0 ) {
+        // Use the data value columns
+        dataTypesForTS = valueColumns;
+    }
+    else {
+        dataTypesForTS = createMetadataRuntime ( singleColumnFalse, dataTypesFromTable, valueColumns.size(), dataTypes);
+    }
+    List<String> locationIdsForTS = createMetadataRuntime ( singleColumnFalse, locationIdsFromTable,
         valueColumns.size(), locationIds );
     // Create scenarios for each time series
-    List<String>scenariosForTS = createMetadataRuntime ( false, locationIdsFromTable,
+    List<String>scenariosForTS = createMetadataRuntime ( singleColumnFalse,
         scenariosFromTable, valueColumns.size(), scenarios);
     // Create units for each time series
-    List<String>unitsForTS = createMetadataRuntime ( false, locationIdsFromTable, unitsFromTable,
+    List<String>unitsForTS = createMetadataRuntime ( singleColumnFalse, unitsFromTable,
         valueColumns.size(), units );
     Message.printStatus(2,routine,"Sizes:" +
         " locationTypesForTS=" + locationTypesForTS.size() +
@@ -2182,10 +2185,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 table = (DataTable)o_Table;
                 // TODO SAM 2012-11-15 Evaluate doing this in discovery mode in checkCommandParameters() but
                 // for now figure out the information here and set for use below.
-                if ( (LocationID != null) && !LocationID.equals("") &&
-                    StringUtil.indexOfIgnoreCase(LocationID,_TC, 0) >= 0 ) {
-                    List<String> cols = getColumnNamesFromNotation ( table, LocationID );
-                    setLocationIDRuntime(cols);
+                if ( (LocationID != null) && !LocationID.equals("") ) {
+                    if ( StringUtil.indexOfIgnoreCase(LocationID,_TC, 0) >= 0 ) {
+                        List<String> cols = getColumnNamesFromNotation ( table, LocationID );
+                        setLocationIDRuntime(cols);
+                    }
+                    else if ( LocationID.indexOf(",") > 0 ) {
+                        // A list of identifiers has been specified
+                        List<String> ids = StringUtil.breakStringList(LocationID, ",", 0);
+                        setLocationIDRuntime(ids);
+                    }
+                    else {
+                        // A single identifier has been specified (will be reused)
+                        List<String> ids = new Vector<String>();
+                        ids.add(LocationID);
+                        setLocationIDRuntime(ids);
+                    }
                 }
                 if ( (DateTimeColumn != null) && !DateTimeColumn.equals("") &&
                     StringUtil.indexOfIgnoreCase(DateTimeColumn,_TC, 0) >= 0 ) {

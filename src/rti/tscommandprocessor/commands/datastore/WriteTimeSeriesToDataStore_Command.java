@@ -162,6 +162,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "OutputEnd" );
 	valid_Vector.add ( "DataStore" );
 	valid_Vector.add ( "DataStoreLocationType" );
+	valid_Vector.add ( "DataStoreLocationID" );
     valid_Vector.add ( "DataStoreDataSource" );
     valid_Vector.add ( "DataStoreDataType" );
     valid_Vector.add ( "DataStoreInterval" );
@@ -279,6 +280,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreLocationType = parameters.getValue ( "DataStoreLocationType" );
+    String DataStoreLocationID = parameters.getValue ( "DataStoreLocationID" );
     String DataStoreDataSource = parameters.getValue ( "DataStoreDataSource" );
     String DataStoreDataType = parameters.getValue ( "DataStoreDataType" );
     String DataStoreInterval = parameters.getValue ( "DataStoreInterval" );
@@ -484,8 +486,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Message.printStatus ( 2, routine, "Writing time series " +
                     ts.getIdentifier().toStringAliasAndTSID() + " to datastore \"" + DataStore + "\"" );
                 writeTimeSeries ( its, ts, OutputStart_DateTime, OutputEnd_DateTime, dataStore, dmi, dbMeta,
-                    DataStoreLocationType, DataStoreDataSource, DataStoreDataType, DataStoreInterval, DataStoreScenario,
-                    DataStoreUnits, DataStoreMissingValue, writeMode, WriteMode, problems );
+                    DataStoreLocationType, DataStoreLocationID, DataStoreDataSource, DataStoreDataType, DataStoreInterval,
+                    DataStoreScenario, DataStoreUnits, DataStoreMissingValue, writeMode, WriteMode, problems );
                 for ( String problem : problems ) {
                     Message.printWarning ( 3, routine, problem );
                     status.addToLog ( commandPhase,
@@ -537,6 +539,7 @@ public String toString ( PropList parameters )
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String DataStore = parameters.getValue ( "DataStore" );
 	String DataStoreLocationType = parameters.getValue( "DataStoreLocationType" );
+	String DataStoreLocationID = parameters.getValue( "DataStoreLocationID" );
     String DataStoreDataSource = parameters.getValue( "DataStoreDataSource" );
     String DataStoreDataType = parameters.getValue( "DataStoreDataType" );
     String DataStoreInterval = parameters.getValue( "DataStoreInterval" );
@@ -585,37 +588,43 @@ public String toString ( PropList parameters )
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataStoreLocationType=" + DataStoreLocationType );
+        b.append ( "DataStoreLocationType=\"" + DataStoreLocationType + "\"" );
+    }
+    if ( (DataStoreLocationID != null) && (DataStoreLocationID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStoreLocationID=\"" + DataStoreLocationID + "\"");
     }
     if ( (DataStoreDataSource != null) && (DataStoreDataSource.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataStoreDataSource=" + DataStoreDataSource );
+        b.append ( "DataStoreDataSource=\"" + DataStoreDataSource + "\"");
     }
     if ( (DataStoreDataType != null) && (DataStoreDataType.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataStoreDataType=" + DataStoreDataType );
+        b.append ( "DataStoreDataType=\"" + DataStoreDataType + "\"");
     }
     if ( (DataStoreInterval != null) && (DataStoreInterval.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataStoreInterval=" + DataStoreInterval );
+        b.append ( "DataStoreInterval=\"" + DataStoreInterval + "\"" );
     }
     if ( (DataStoreScenario != null) && (DataStoreScenario.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataStoreScenario=" + DataStoreScenario );
+        b.append ( "DataStoreScenario=\"" + DataStoreScenario + "\"");
     }
     if ( (DataStoreUnits != null) && (DataStoreUnits.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataStoreUnits=" + DataStoreUnits );
+        b.append ( "DataStoreUnits=\"" + DataStoreUnits + "\"" );
     }
     if ( (DataStoreMissingValue != null) && (DataStoreMissingValue.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -641,16 +650,22 @@ Write a single time series to the datastore.
 @param outputEnd end of period to write
 @param dataStore DataStore to write to
 @param dmi database DMI to write to
-@param dbMeta database metadata
-@param matchLocationType indicate whether to match the location type in the prefix - if true then the location ID
-in the time series is of the form LocationType:LocationID
+@param dbMeta database metadata for the database being written, used to map data
+@param dataStoreLocationType if specified, use instead of the time series location type when determining the database time series to write
+@param dataStoreLocationID if specified, use instead of the time series location ID when determining the database time series to write
+@param dataStoreDataSource if specified, use instead of the time series data source when determining the database time series to write
+@param dataStoreDataSource if specified, use instead of the time series data type when determining the database time series to write
+@param dataStoreDataSource if specified, use instead of the time series interval when determining the database time series to write
+@param dataStoreDataSource if specified, use instead of the time series scenario when determining the database time series to write
+@param missingValue missing value for floating point values, as a string to allow "null" and "NaN" to be specified literally
 @param writeMode mode to write data records
-@param missingValue missing value for floating point values, as a string to allow "null" to be specified literally
-@param list of strings to be populated with problems if they occur
+@param writeModeString write mode string write mode as string, for messaging
+@param problems list of strings to be populated with problems if they occur
 */
 private void writeTimeSeries ( int its, TS ts, DateTime outputStart, DateTime outputEnd,
-    DataStore dataStore, DMI dmi, DatabaseMetaData dbMeta, String dataStoreLocationType, String dataStoreDataSource, String dataSourceDataType,
-    String dataSourceInterval, String dataSourceScenario, String dataSourceUnits, String missingValue,
+    DataStore dataStore, DMI dmi, DatabaseMetaData dbMeta, String dataStoreLocationType, String dataStoreLocationID,
+    String dataStoreDataSource, String dataStoreDataType,
+    String dataStoreInterval, String dataStoreScenario, String dataStoreUnits, String missingValue,
     DMIWriteModeType writeMode, String writeModeString, List<String> problems )
 {   String routine = "WriteTimeSeriesToDataStore.writeTimeSeries";
     // Get the properties necessary to map the time series to the database
@@ -845,43 +860,83 @@ private void writeTimeSeries ( int its, TS ts, DateTime outputStart, DateTime ou
         if ( dsMetaHasLocationType ) {
             ss.addField(timeSeriesMetadataTableLocationTypeColumn);
             if ( (dataStoreLocationType != null) && !dataStoreLocationType.equals("") ) {
-                ss.addWhereClause(timeSeriesMetadataTableLocationIdColumn + "='" +
+                // Location type specified by command parameter
+                ss.addWhereClause(timeSeriesMetadataTableLocationTypeColumn + "='" +
                     TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts,
-                         ts.getIdentifier().getLocationType(), status, CommandPhaseType.RUN) + "'");
+                         dataStoreLocationType, status, CommandPhaseType.RUN) + "'");
+            }
+            else {
+                // Use time series location type
+                ss.addWhereClause(timeSeriesMetadataTableLocationTypeColumn + "='" + ts.getIdentifier().getLocationType() + "'" );
             }
         }
         // Location ID is required
         ss.addField(timeSeriesMetadataTableLocationIdColumn);
-        ss.addWhereClause(timeSeriesMetadataTableLocationIdColumn + "='" +
-            TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, ts.getLocation(), status,
-                 CommandPhaseType.RUN) + "'");
+        if ( (dataStoreLocationID != null) && !dataStoreLocationID.equals("") ) {
+            // Location ID specified by command parameter
+            ss.addWhereClause(timeSeriesMetadataTableLocationIdColumn + "='" +
+                TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, dataStoreLocationID, status,
+                     CommandPhaseType.RUN) + "'");
+        }
+        else {
+            // Use time series location ID
+            ss.addWhereClause(timeSeriesMetadataTableLocationIdColumn + "='" + ts.getLocation() + "'");
+        }
         // Data source is optional and may not have been configured for datastore
         if ( dsMetaHasDataSource ) {
             ss.addField(timeSeriesMetadataTableDataSourceColumn);
-            ss.addWhereClause(timeSeriesMetadataTableDataSourceColumn + "='" +
-                TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, ts.getIdentifier().getSource(), status,
-                     CommandPhaseType.RUN) + "'");
+            if ( (dataStoreDataSource != null) && !dataStoreDataSource.equals("") ) {
+                // Data source specified by command parameter
+                ss.addWhereClause(timeSeriesMetadataTableDataSourceColumn + "='" +
+                    TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, dataStoreDataSource, status,
+                         CommandPhaseType.RUN) + "'");
+            }
+            else {
+                // Use time series data source
+                ss.addWhereClause(timeSeriesMetadataTableDataSourceColumn + "='" + ts.getIdentifier().getSource() + "'");
+            }
         }
         // Data type is optional and may not have been configured for datastore
         if ( dsMetaHasDataType ) {
             ss.addField(timeSeriesMetadataTableDataTypeColumn);
-            ss.addWhereClause(timeSeriesMetadataTableDataTypeColumn + "='" +
-                TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, ts.getDataType(), status,
-                     CommandPhaseType.RUN) + "'");
+            if ( (dataStoreDataType != null) && !dataStoreDataType.equals("") ) {
+                // Data type specified by command parameter
+                ss.addWhereClause(timeSeriesMetadataTableDataTypeColumn + "='" +
+                    TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, dataStoreDataType, status,
+                         CommandPhaseType.RUN) + "'");
+            }
+            else {
+                // use time series data type
+                ss.addWhereClause(timeSeriesMetadataTableDataTypeColumn + "='" + ts.getDataType() + "'");
+            }
         }
         // Interval is optional and may not have been configured for datastore
         if ( dsMetaHasInterval ) {
             ss.addField(timeSeriesMetadataTableDataIntervalColumn);
-            ss.addWhereClause(timeSeriesMetadataTableDataIntervalColumn + "='" +
-                TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, ts.getIdentifier().getInterval(), status,
-                     CommandPhaseType.RUN) + "'");
+            if ( (dataStoreInterval != null) && !dataStoreInterval.equals("") ) {
+                // Data interval specified by command parameter
+                ss.addWhereClause(timeSeriesMetadataTableDataIntervalColumn + "='" +
+                    TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, dataStoreInterval, status,
+                         CommandPhaseType.RUN) + "'");
+            }
+            else {
+                // Use time series interval
+                ss.addWhereClause(timeSeriesMetadataTableDataIntervalColumn + "='" + ts.getIdentifier().getInterval() + "'");
+            }
         }
         // Scenario is optional and may not have been configured for datastore
         if ( dsMetaHasScenario ) {
             ss.addField(timeSeriesMetadataTableScenarioColumn);
-            ss.addWhereClause(timeSeriesMetadataTableScenarioColumn + "='" +
-                TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, ts.getIdentifier().getScenario(), status,
-                     CommandPhaseType.RUN) + "'");
+            if ( (dataStoreScenario != null) && !dataStoreScenario.equals("") ) {
+                // Scenario specified by command parameter
+                ss.addWhereClause(timeSeriesMetadataTableScenarioColumn + "='" +
+                    TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, dataStoreScenario, status,
+                         CommandPhaseType.RUN) + "'");
+            }
+            else {
+                // Use time series scenario
+                ss.addWhereClause(timeSeriesMetadataTableScenarioColumn + "='" + ts.getIdentifier().getScenario() + "'");
+            }
         }
     }
     catch ( Exception e ) {
@@ -904,7 +959,7 @@ private void writeTimeSeries ( int its, TS ts, DateTime outputStart, DateTime ou
         }
         if ( rowCount != 1 ) {
             problems.add ( "Was expecting exactly 1 time series metadata record for \"" + ts.getIdentifier().toString() +
-                "\", got " + rowCount ); 
+                "\", got " + rowCount + " using SQL \"" + sqlString + "\"" ); 
         }
     }
     catch ( Exception e ) {
@@ -917,7 +972,7 @@ private void writeTimeSeries ( int its, TS ts, DateTime outputStart, DateTime ou
     if ( problems.size() > 0 ) {
         return;
     }
-    // If requested, delete all the records or records in the period.  These options allow writign the data in bulk
+    // If requested, delete all the records or records in the period.  These options allow writing the data in bulk
     // rather than checking each value
     boolean usePreparedStatement = false;
     if ( (writeModeString != null) && (writeModeString.equalsIgnoreCase(_DeleteAllThenInsert) ||

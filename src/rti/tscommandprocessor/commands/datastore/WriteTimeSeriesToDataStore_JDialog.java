@@ -61,6 +61,7 @@ private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private JTextField __DataStoreLocationType_JTextField = null;
+private JTextField __DataStoreLocationID_JTextField = null;
 private JTextField __DataStoreDataSource_JTextField = null;
 private JTextField __DataStoreDataType_JTextField = null;
 private JTextField __DataStoreScenario_JTextField = null;
@@ -156,6 +157,7 @@ private void checkInput ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String DataStore = __DataStore_JComboBox.getSelected();
     String DataStoreLocationType = __DataStoreLocationType_JTextField.getText().trim();
+    String DataStoreLocationID = __DataStoreLocationID_JTextField.getText().trim();
     String DataStoreDataSource = __DataStoreDataSource_JTextField.getText().trim();
     String DataStoreDataType = __DataStoreDataType_JTextField.getText().trim();
     String DataStoreScenario = __DataStoreScenario_JTextField.getText().trim();
@@ -187,6 +189,9 @@ private void checkInput ()
     }
     else {
         parameters.set ( "DataStore", "" );
+    }
+    if ( DataStoreLocationID.length() > 0 ) {
+        parameters.set ( "DataStoreLocationID", DataStoreLocationID );
     }
     if ( DataStoreLocationType.length() > 0 ) {
         parameters.set ( "DataStoreLocationType", DataStoreLocationType );
@@ -235,6 +240,7 @@ private void commitEdits ()
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
     String DataStore = __DataStore_JComboBox.getSelected();
     String DataStoreLocationType = __DataStoreLocationType_JTextField.getText().trim();
+    String DataStoreLocationID = __DataStoreLocationID_JTextField.getText().trim();
     String DataStoreDataSource = __DataStoreDataSource_JTextField.getText().trim();
     String DataStoreDataType = __DataStoreDataType_JTextField.getText().trim();
     String DataStoreScenario = __DataStoreScenario_JTextField.getText().trim();
@@ -249,6 +255,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
     __command.setCommandParameter ( "DataStore", DataStore );
     __command.setCommandParameter ( "DataStoreLocationType", DataStoreLocationType );
+    __command.setCommandParameter ( "DataStoreLocationID", DataStoreLocationID );
     __command.setCommandParameter ( "DataStoreDataSource", DataStoreDataSource );
     __command.setCommandParameter ( "DataStoreDataType", DataStoreDataType );
     __command.setCommandParameter ( "DataStoreScenario", DataStoreScenario );
@@ -311,6 +318,10 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
 		"Write time series to a database datastore," +
 		" where time series to database table mapping is defined in the datastore configuration." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Currently the choices do not cascade.  In the future, cascading set of choices may be implemented to help with writing " +
+        "single time series." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Enter date/times to a precision appropriate for output time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -389,7 +400,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ds_JPanel, new JLabel("Required - database datastore to receive data."), 
         3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore location type:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreLocationType_JTextField = new JTextField ( 10 );
@@ -397,6 +408,15 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, __DataStoreLocationType_JTextField,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - specify location type to use in datastore (default=time series location type)."), 
+        3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore location ID:"),
+        0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStoreLocationID_JTextField = new JTextField ( 10 );
+    __DataStoreLocationID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ds_JPanel, __DataStoreLocationID_JTextField,
+        1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ds_JPanel, new JLabel("Optional - specify location identifier to use in datastore (default=time series location ID)."), 
         3, yDS, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore data source:"),
@@ -565,6 +585,7 @@ private void refresh ()
     String EnsembleID = "";
     String DataStore = "";
     String DataStoreLocationType = "";
+    String DataStoreLocationID = "";
     String DataStoreDataSource = "";
     String DataStoreDataType = "";
     String DataStoreInterval = "";
@@ -584,6 +605,7 @@ private void refresh ()
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
         DataStore = parameters.getValue ( "DataStore" );
+        DataStoreLocationID = parameters.getValue ( "DataStoreLocationID" );
         DataStoreLocationType = parameters.getValue ( "DataStoreLocationType" );
         DataStoreDataSource = parameters.getValue ( "DataStoreDataSource" );
         DataStoreDataType = parameters.getValue ( "DataStoreDataType" );
@@ -663,6 +685,9 @@ private void refresh ()
         if ( DataStoreLocationType != null ) {
             __DataStoreLocationType_JTextField.setText (DataStoreLocationType);
         }
+        if ( DataStoreLocationID != null ) {
+            __DataStoreLocationID_JTextField.setText (DataStoreLocationID);
+        }
         if ( DataStoreDataSource != null ) {
             __DataStoreDataSource_JTextField.setText (DataStoreDataSource);
         }
@@ -708,6 +733,7 @@ private void refresh ()
         DataStore = "";
     }
     DataStoreLocationType = __DataStoreLocationType_JTextField.getText().trim();
+    DataStoreLocationID = __DataStoreLocationID_JTextField.getText().trim();
     DataStoreDataSource = __DataStoreDataSource_JTextField.getText().trim();
     DataStoreDataType = __DataStoreDataType_JTextField.getText().trim();
     DataStoreInterval = __DataStoreInterval_JTextField.getText().trim();
@@ -723,6 +749,7 @@ private void refresh ()
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	parameters.add ( "DataStore=" + DataStore );
 	parameters.add ( "DataStoreLocationType=" + DataStoreLocationType );
+	parameters.add ( "DataStoreLocationID=" + DataStoreLocationID );
 	parameters.add ( "DataStoreDataSource=" + DataStoreDataSource );
 	parameters.add ( "DataStoreDataType=" + DataStoreDataType );
 	parameters.add ( "DataStoreInterval" + DataStoreInterval );

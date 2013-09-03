@@ -1,6 +1,9 @@
 package rti.tscommandprocessor.commands.usgs.nwis.daily;
 
 import java.io.IOException;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -481,6 +484,9 @@ throws MalformedURLException, IOException, Exception
         urlString.append ( queryParameters.get(i) );
     }
     Message.printStatus(2, routine, "Performing the following request:  " + urlString.toString() );
+    // Some sites need cookie manager
+    // (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
+    CookieHandler.setDefault(new CookieManager(null,CookiePolicy.ACCEPT_ALL));
     String resultString = IOUtil.readFromURL(urlString.toString());
     // TODO SAM 2012-02-29 Might want to constrain this more based on error codes
     // so it does not bloat the log, especially since the response can be written to the output file

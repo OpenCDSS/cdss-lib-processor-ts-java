@@ -266,6 +266,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "ColumnExcludeFilters" );
     valid_Vector.add ( "Comment" );
     valid_Vector.add ( "ExcelIntegerColumns" );
+    valid_Vector.add ( "ExcelDateTimeColumns" );
     valid_Vector.add ( "NumberPrecision" );
     valid_Vector.add ( "ReadAllAsText" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
@@ -288,14 +289,15 @@ Create table columns from the first row of the area.
 @param excelColumnNames indicate how to determine column names from the Excel worksheet
 @param comment if non-null indicates character(s) that indicate comment lines
 @param excelIntegerColumns names of columns that should be treated as integers, or null if none
+@param excelDateTimeColumns names of columns that should be treated as dates, or null if none
 @param precisionForFloats number of digits after decimal for double columns
 @param readAllAsText if True, treat all data as text values
 @param problems list of problems encountered during processing
 @return the names of the output columns or null if cannot create
 */
 private String [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
-    AreaReference area, String excelColumnNames, String comment, String [] excelIntegerColumns, int precisionForFloats,
-    boolean readAllAsText, List<String> problems )
+    AreaReference area, String excelColumnNames, String comment, String [] excelIntegerColumns,
+    String [] excelDateTimeColumns, int precisionForFloats, boolean readAllAsText, List<String> problems )
 {   String routine = "ReadTableFromExcel_Command.createTableColumns";
     Row dataRow; // First row of data
     Row headerRow = null; // Row containing column headings
@@ -406,8 +408,18 @@ private String [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet
             if ( excelIntegerColumns != null ) {
                 for ( int i = 0; i < excelIntegerColumns.length; i++ ) {
                     if ( columnNames[columnIndex].equalsIgnoreCase(excelIntegerColumns[i]) ) {
-                        // Treat as a string
+                        // Treat as an integer
                         isInteger = true;
+                        break;
+                    }
+                }
+            }
+            boolean isDate = false;
+            if ( excelDateTimeColumns != null ) {
+                for ( int i = 0; i < excelDateTimeColumns.length; i++ ) {
+                    if ( columnNames[columnIndex].equalsIgnoreCase(excelDateTimeColumns[i]) ) {
+                        // Treat as a date
+                        isDate = true;
                         break;
                     }
                 }
@@ -416,6 +428,11 @@ private String [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet
             if ( isInteger ) {
                 Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_INT));
                 table.addField ( new TableField(TableField.DATA_TYPE_INT, columnNames[columnIndex], -1, -1), null );
+                continue;
+            }
+            else if ( isDate ) {
+                Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.valueOf(TableField.DATA_TYPE_DATETIME));
+                table.addField ( new TableField(TableField.DATA_TYPE_DATETIME, columnNames[columnIndex], -1, -1), null );
                 continue;
             }
             cellType = Cell.CELL_TYPE_BLANK;
@@ -645,7 +662,8 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 */
 private DataTable readTableFromExcelFile ( String workbookFile, String sheetName,
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
-    Hashtable columnExcludeFiltersMap, String comment, String [] excelIntegerColumns, int numberPrecision, boolean readAllAsText, List<String> problems )
+    Hashtable columnExcludeFiltersMap, String comment, String [] excelIntegerColumns, String [] excelDateTimeColumns,
+    int numberPrecision, boolean readAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = "ReadTableFromExcel_Command.readTableFromExcelFile", message;
     DataTable table = new DataTable();
@@ -697,8 +715,8 @@ throws FileNotFoundException, IOException
         }
         Message.printStatus(2,routine,"Excel address block to read: " + area );
         // Create the table based on the first row of the area
-        String [] columnNames =
-            createTableColumns ( table, wb, sheet, area, excelColumnNames, comment, excelIntegerColumns, numberPrecision, readAllAsText, problems );
+        String [] columnNames = createTableColumns ( table, wb, sheet, area, excelColumnNames, comment,
+            excelIntegerColumns, excelDateTimeColumns, numberPrecision, readAllAsText, problems );
         int [] tableColumnTypes = table.getFieldDataTypes();
         // Read the data from the area and transfer to the table.
         Row row;
@@ -829,6 +847,17 @@ throws FileNotFoundException, IOException
                             table.setFieldValue(iRowOut, iColOut, null, true);
                         }
                     }
+                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATETIME ) {
+                        // Try to parse to a date/time string
+                        try {
+                            dt = DateTime.parse(cellValueString);
+                            table.setFieldValue(iRowOut, iColOut, dt, true);
+                        }
+                        catch ( Exception e ) {
+                            // Set to null
+                            table.setFieldValue(iRowOut, iColOut, null, true);
+                        }
+                    }
                     else {
                         // Other cell types don't translate
                         table.setFieldValue(iRowOut, iColOut, null, true);
@@ -846,6 +875,10 @@ throws FileNotFoundException, IOException
                         if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
                             // date to date
                             table.setFieldValue(iRowOut, iColOut, cellValueDate, true);
+                        }
+                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATETIME ) {
+                            // date to date/time
+                            table.setFieldValue(iRowOut, iColOut, new DateTime(cellValueDate), true);
                         }
                         else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
                             // date to string
@@ -1073,6 +1106,14 @@ CommandWarningException, CommandException
 	        excelIntegerColumns[i] = excelIntegerColumns[i].trim();
 	    }
 	}
+    String ExcelDateTimeColumns = parameters.getValue ( "ExcelDateTimeColumns" );
+    String [] excelDateTimeColumns = null;
+    if ( (ExcelDateTimeColumns != null) && !ExcelDateTimeColumns.equals("") ) {
+        excelDateTimeColumns = ExcelDateTimeColumns.split(",");
+        for ( int i = 0; i < excelDateTimeColumns.length; i++ ) {
+            excelDateTimeColumns[i] = excelDateTimeColumns[i].trim();
+        }
+    }
 	String NumberPrecision = parameters.getValue ( "NumberPrecision" );
 	int numberPrecision = 6; // default
 	try {
@@ -1111,8 +1152,8 @@ CommandWarningException, CommandException
 	try {
 	    if ( command_phase == CommandPhaseType.RUN ) {
             table = readTableFromExcelFile ( InputFile_full, Worksheet,
-                ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, columnExcludeFiltersMap, comment, excelIntegerColumns, numberPrecision,
-                readAllAsText, problems );
+                ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, columnExcludeFiltersMap, comment,
+                excelIntegerColumns, excelDateTimeColumns, numberPrecision, readAllAsText, problems );
             for ( String problem: problems ) {
                 Message.printWarning ( 3, routine, problem );
                 message = "Error reading from Excel: " + problem;
@@ -1207,6 +1248,7 @@ public String toString ( PropList props )
 	String ColumnExcludeFilters = props.getValue("ColumnExcludeFilters");
 	String Comment = props.getValue("Comment");
 	String ExcelIntegerColumns = props.getValue("ExcelIntegerColumns");
+	String ExcelDateTimeColumns = props.getValue("ExcelDateTimeColumns");
 	String NumberPrecision = props.getValue("NumberPrecision");
 	String ReadAllAsText = props.getValue("ReadAllAsText");
 	StringBuffer b = new StringBuffer ();
@@ -1269,6 +1311,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ExcelIntegerColumns=\"" + ExcelIntegerColumns + "\"" );
+    }
+    if ( (ExcelDateTimeColumns != null) && (ExcelDateTimeColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcelDateTimeColumns=\"" + ExcelDateTimeColumns + "\"" );
     }
     if ( (NumberPrecision != null) && (NumberPrecision.length() > 0) ) {
         if ( b.length() > 0 ) {

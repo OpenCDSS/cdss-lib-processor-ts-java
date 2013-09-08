@@ -124,6 +124,7 @@ import rti.tscommandprocessor.commands.table.AppendTable_Command;
 import rti.tscommandprocessor.commands.table.CompareTables_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
+import rti.tscommandprocessor.commands.table.CreateTimeSeriesEventTable_Command;
 import rti.tscommandprocessor.commands.table.FormatTableString_Command;
 import rti.tscommandprocessor.commands.table.FreeTable_Command;
 import rti.tscommandprocessor.commands.table.JoinTables_Command;
@@ -444,6 +445,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("CreateFromList") ) {
         return new CreateFromList_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("CreateTimeSeriesEventTable") ) {
+        return new CreateTimeSeriesEventTable_Command ();
     }
 	else if ( commandName.equalsIgnoreCase("CreateRegressionTestCommandFile") ) {
 		return new CreateRegressionTestCommandFile_Command ();

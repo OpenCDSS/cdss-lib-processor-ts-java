@@ -10,6 +10,11 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
+
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -27,6 +32,8 @@ import java.awt.event.WindowListener;
 
 import java.util.List;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -41,21 +48,30 @@ private boolean __error_wait = false; // To track errors
 private boolean __first_time = true; // Indicate first time display
 private JTextArea __command_JTextArea = null;
 private JTabbedPane __main_JTabbedPane = null;
+private SimpleJComboBox __TSList_JComboBox = null;
+private JLabel __TSID_JLabel = null;
+private SimpleJComboBox __TSID_JComboBox = null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __NewTableID_JTextField = null;
+private JTextArea __TimeSeriesLocations_JTextArea = null;
 private JTextField __IncludeColumns_JTextField = null;
 private JTextField __InputTableEventIDColumn_JTextField = null;
 private JTextField __InputTableEventTypeColumn_JTextField = null;
+private JTextField __IncludeInputTableEventTypes_JTextField = null;
 private JTextField __InputTableEventStartColumn_JTextField = null;
 private JTextField __InputTableEventEndColumn_JTextField = null;
-private JTextField __InputTableEventLocationTypeColumn_JTextField = null;
-private JTextField __InputTableEventLocationIDColumn_JTextField = null;
+private JTextArea __InputTableEventLocationColumns_JTextArea = null;
 private JTextField __InputTableEventLabelColumn_JTextField = null;
 private JTextField __InputTableEventDescriptionColumn_JTextField = null;
+private JTextField __OutputTableTSIDColumn_JTextField = null;
+private TSFormatSpecifiersJPanel __OutputTableTSIDFormat_JTextField = null; // Format for time series identifiers
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private CreateTimeSeriesEventTable_Command __command = null;
 private boolean __ok = false;
+private JFrame __parent = null;
 
 /**
 Command dialog constructor.
@@ -86,6 +102,63 @@ public void actionPerformed(ActionEvent event)
 			response ( true );
 		}
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditInputTableEventLocationColumns") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String InputTableEventLocationColumns = __InputTableEventLocationColumns_JTextArea.getText().trim();
+        String [] notes = { "Specify the event table columns for:",
+                "Location Type - location type (e.g., \"County\" or \"Basin\")",
+                "Location Column Name - name of column containing location identifiers (e.g., county name) for the above."};
+        String dict = (new DictionaryJDialog ( __parent, true, InputTableEventLocationColumns,
+            "Edit InputTableEventLocationColumns Parameter", notes, "Location Type", "Location ID Column Name",10)).response();
+        if ( dict != null ) {
+            __InputTableEventLocationColumns_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditTimeSeriesLocations") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String TimeSeriesLocations = __TimeSeriesLocations_JTextArea.getText().trim();
+        String [] notes = { "Specify the time series data lookup for:",
+            "Time Series Location Type - location type (e.g., \"County\" or \"Basin\")",
+            "Location ID Format Specifier - for example %L for time series identifer location ID, ${TS:property} for time series property.",
+            "The time series location type and identifier are matched against the event table data to associate events with time series."};
+        String dict = (new DictionaryJDialog ( __parent, true, TimeSeriesLocations,
+            "Edit TimeSeriesLocations Parameter", notes, "Time Series Location Type", "Location ID Format Specifier",10)).response();
+        if ( dict != null ) {
+            __TimeSeriesLocations_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
+	else {
+        checkGUIState();
+        refresh();
+	}
+}
+
+/**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __TSID_JComboBox.setEnabled(false);
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JComboBox.setEnabled(true);
+        __EnsembleID_JLabel.setEnabled ( true );
+    }
+    else {
+        __EnsembleID_JComboBox.setEnabled(false);
+        __EnsembleID_JLabel.setEnabled ( false );
+    }
 }
 
 /**
@@ -95,24 +168,39 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
+	String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String TimeSeriesLocations = __TimeSeriesLocations_JTextArea.getText().trim().replace("\n"," ");
 	String TableID = __TableID_JComboBox.getSelected();
-    String NewTableID = __NewTableID_JTextField.getText().trim();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	String InputTableEventIDColumn = __InputTableEventIDColumn_JTextField.getText().trim();
 	String InputTableEventTypeColumn = __InputTableEventTypeColumn_JTextField.getText().trim();
+	String IncludeInputTableEventTypes = __IncludeInputTableEventTypes_JTextField.getText().trim();
 	String InputTableEventStartColumn = __InputTableEventStartColumn_JTextField.getText().trim();
 	String InputTableEventEndColumn = __InputTableEventEndColumn_JTextField.getText().trim();
-	String InputTableEventLocationTypeColumn = __InputTableEventLocationTypeColumn_JTextField.getText().trim();
-	String InputTableEventLocationIDColumn = __InputTableEventLocationIDColumn_JTextField.getText().trim();
+	String InputTableEventLocationColumns = __InputTableEventLocationColumns_JTextArea.getText().trim().replace("\n"," ");
 	String InputTableEventLabelColumn = __InputTableEventLabelColumn_JTextField.getText().trim();
 	String InputTableEventDescriptionColumn = __InputTableEventDescriptionColumn_JTextField.getText().trim();
+    String NewTableID = __NewTableID_JTextField.getText().trim();
+	String OutputTableTSIDColumn = __OutputTableTSIDColumn_JTextField.getText().trim();
+	String OutputTableTSIDFormat = __OutputTableTSIDFormat_JTextField.getText().trim();
 	__error_wait = false;
 
+    if ( TSList.length() > 0 ) {
+        props.set ( "TSList", TSList );
+    }
+    if ( TSID.length() > 0 ) {
+        props.set ( "TSID", TSID );
+    }
+    if ( EnsembleID.length() > 0 ) {
+        props.set ( "EnsembleID", EnsembleID );
+    }
+    if ( TimeSeriesLocations.length() > 0 ) {
+        props.set ( "TimeSeriesLocations", TimeSeriesLocations );
+    }
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
-    }
-    if ( NewTableID.length() > 0 ) {
-        props.set ( "NewTableID", NewTableID );
     }
 	if ( IncludeColumns.length() > 0 ) {
 		props.set ( "IncludeColumns", IncludeColumns );
@@ -123,23 +211,32 @@ private void checkInput ()
     if ( InputTableEventTypeColumn.length() > 0 ) {
         props.set ( "InputTableEventTypeColumn", InputTableEventTypeColumn );
     }
+    if ( IncludeInputTableEventTypes.length() > 0 ) {
+        props.set ( "IncludeInputTableEventTypes", IncludeInputTableEventTypes );
+    }
     if ( InputTableEventStartColumn.length() > 0 ) {
         props.set ( "InputTableEventStartColumn", InputTableEventStartColumn );
     }
     if ( InputTableEventEndColumn.length() > 0 ) {
         props.set ( "InputTableEventEndColumn", InputTableEventEndColumn );
     }
-    if ( InputTableEventLocationTypeColumn.length() > 0 ) {
-        props.set ( "InputTableEventLocationTypeColumn", InputTableEventLocationTypeColumn );
-    }
-    if ( InputTableEventLocationIDColumn.length() > 0 ) {
-        props.set ( "InputTableEventLocationIDColumn", InputTableEventLocationIDColumn );
+    if ( InputTableEventLocationColumns.length() > 0 ) {
+        props.set ( "InputTableEventLocationColumns", InputTableEventLocationColumns );
     }
     if ( InputTableEventLabelColumn.length() > 0 ) {
         props.set ( "InputTableEventLabelColumn", InputTableEventLabelColumn );
     }
     if ( InputTableEventDescriptionColumn.length() > 0 ) {
         props.set ( "InputTableEventDescriptionColumn", InputTableEventDescriptionColumn );
+    }
+    if ( NewTableID.length() > 0 ) {
+        props.set ( "NewTableID", NewTableID );
+    }
+    if ( OutputTableTSIDColumn.length() > 0 ) {
+        props.set ( "OutputTableTSIDColumn", OutputTableTSIDColumn );
+    }
+    if ( OutputTableTSIDFormat.length() > 0 ) {
+        props.set ( "OutputTableTSIDFormat", OutputTableTSIDFormat );
     }
 	try {
 	    // This will warn the user...
@@ -157,41 +254,40 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String TableID = __TableID_JComboBox.getSelected();
-    String NewTableID = __NewTableID_JTextField.getText().trim();
+{	String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String TimeSeriesLocations = __TimeSeriesLocations_JTextArea.getText().trim().replace("\n"," ");
+    String TableID = __TableID_JComboBox.getSelected();
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     String InputTableEventIDColumn = __InputTableEventIDColumn_JTextField.getText().trim();
     String InputTableEventTypeColumn = __InputTableEventTypeColumn_JTextField.getText().trim();
+    String IncludeInputTableEventTypes = __IncludeInputTableEventTypes_JTextField.getText().trim();
     String InputTableEventStartColumn = __InputTableEventStartColumn_JTextField.getText().trim();
     String InputTableEventEndColumn = __InputTableEventEndColumn_JTextField.getText().trim();
-    String InputTableEventLocationTypeColumn = __InputTableEventLocationTypeColumn_JTextField.getText().trim();
-    String InputTableEventLocationIDColumn = __InputTableEventLocationIDColumn_JTextField.getText().trim();
+    String InputTableEventLocationColumns = __InputTableEventLocationColumns_JTextArea.getText().trim().replace("\n"," ");
     String InputTableEventLabelColumn = __InputTableEventLabelColumn_JTextField.getText().trim();
     String InputTableEventDescriptionColumn = __InputTableEventDescriptionColumn_JTextField.getText().trim();
+    String NewTableID = __NewTableID_JTextField.getText().trim();
+    String OutputTableTSIDColumn = __OutputTableTSIDColumn_JTextField.getText().trim();
+    String OutputTableTSIDFormat = __OutputTableTSIDFormat_JTextField.getText().trim();
+    __command.setCommandParameter ( "TSList", TSList );
+    __command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
+    __command.setCommandParameter ( "TimeSeriesLocations", TimeSeriesLocations );
     __command.setCommandParameter ( "TableID", TableID );
-    __command.setCommandParameter ( "NewTableID", NewTableID );
     __command.setCommandParameter ( "IncludeColumns", IncludeColumns );
 	__command.setCommandParameter ( "InputTableEventIDColumn", InputTableEventIDColumn );
 	__command.setCommandParameter ( "InputTableEventTypeColumn", InputTableEventTypeColumn );
+	__command.setCommandParameter ( "IncludeInputTableEventTypes", IncludeInputTableEventTypes );
 	__command.setCommandParameter ( "InputTableEventStartColumn", InputTableEventStartColumn );
 	__command.setCommandParameter ( "InputTableEventEndColumn", InputTableEventEndColumn );
-	__command.setCommandParameter ( "InputTableEventLocationTypeColumn", InputTableEventLocationTypeColumn );
-	__command.setCommandParameter ( "InputTableEventLocationIDColumn", InputTableEventLocationIDColumn );
+	__command.setCommandParameter ( "InputTableEventLocationColumns", InputTableEventLocationColumns );
 	__command.setCommandParameter ( "InputTableEventLabelColumn", InputTableEventLabelColumn );
 	__command.setCommandParameter ( "InputTableEventDescriptionColumn", InputTableEventDescriptionColumn );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__IncludeColumns_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
+    __command.setCommandParameter ( "NewTableID", NewTableID );
+	__command.setCommandParameter ( "OutputTableTSIDColumn", OutputTableTSIDColumn );
+    __command.setCommandParameter ( "OutputTableTSIDFormat", OutputTableTSIDFormat );
 }
 
 /**
@@ -201,6 +297,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command command, List<String> tableIDChoices )
 {	__command = command;
+    __parent = parent;
 
 	addWindowListener(this);
 
@@ -228,6 +325,22 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
+
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+	
     __main_JTabbedPane = new JTabbedPane ();
     __main_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
@@ -240,6 +353,20 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
     JPanel table_JPanel = new JPanel();
     table_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Create from existing table", table_JPanel );
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Time series location type and ID:"),
+        0, ++yTable, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeSeriesLocations_JTextArea = new JTextArea (4,35);
+    __TimeSeriesLocations_JTextArea.setLineWrap ( true );
+    __TimeSeriesLocations_JTextArea.setWrapStyleWord ( true );
+    __TimeSeriesLocations_JTextArea.setToolTipText("LocationType1:TimeSeriesFormatSpecifier1,LocationType2:TimeSeriesFormatSpecifier2");
+    __TimeSeriesLocations_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(table_JPanel, new JScrollPane(__TimeSeriesLocations_JTextArea),
+        1, yTable, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - time series location type and ID."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(table_JPanel, new SimpleJButton ("Edit","EditTimeSeriesLocations",this),
+        3, ++yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -250,18 +377,9 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - original table."), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - input event table."), 
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("New table ID:"),
-        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NewTableID_JTextField = new JTextField (10);
-    __NewTableID_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(table_JPanel, __NewTableID_JTextField,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - unique identifier for the new table."),
-        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Column names to copy:"), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (10);
@@ -289,6 +407,15 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for event type."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event types to include:"), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeInputTableEventTypes_JTextField = new JTextField (10);
+    __IncludeInputTableEventTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __IncludeInputTableEventTypes_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - input table event types to include (default=all)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Event start column:"), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputTableEventStartColumn_JTextField = new JTextField (10);
@@ -307,23 +434,19 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for event end."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event location type column:"), 
-        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InputTableEventLocationTypeColumn_JTextField = new JTextField (10);
-    __InputTableEventLocationTypeColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(table_JPanel, __InputTableEventLocationTypeColumn_JTextField,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for location type."),
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event location type and ID columns:"),
+        0, ++yTable, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputTableEventLocationColumns_JTextArea = new JTextArea (4,35);
+    __InputTableEventLocationColumns_JTextArea.setLineWrap ( true );
+    __InputTableEventLocationColumns_JTextArea.setWrapStyleWord ( true );
+    __InputTableEventLocationColumns_JTextArea.setToolTipText("OriginalColumn1:NewColumn1,OriginalColumn2:NewColumn2");
+    __InputTableEventLocationColumns_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(table_JPanel, new JScrollPane(__InputTableEventLocationColumns_JTextArea),
+        1, yTable, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column names for location type and ID."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Event location ID column:"), 
-        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InputTableEventLocationIDColumn_JTextField = new JTextField (10);
-    __InputTableEventLocationIDColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(table_JPanel, __InputTableEventLocationIDColumn_JTextField,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for location ID."),
-        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(table_JPanel, new SimpleJButton ("Edit","EditInputTableEventLocationColumns",this),
+        3, ++yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Event label column:"), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -343,6 +466,35 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - input table column name for event description."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("New table ID:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewTableID_JTextField = new JTextField (10);
+    __NewTableID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __NewTableID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the new table."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output table TSID column:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputTableTSIDColumn_JTextField = new JTextField ( 10 );
+    __OutputTableTSIDColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputTableTSIDColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if using table - column name for TSID."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Output table format for TSID:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputTableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
+    __OutputTableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __OutputTableTSIDFormat_JTextField.addKeyListener ( this );
+    __OutputTableTSIDFormat_JTextField.setToolTipText("%L for location, %T for data type.");
+    JGUIUtil.addComponent(main_JPanel, __OutputTableTSIDFormat_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
@@ -353,6 +505,7 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
+    checkGUIState();
 	refresh ();
 
 	// South JPanel: North
@@ -372,7 +525,6 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 	setResizable (false);
     pack();
     JGUIUtil.center(this);
-	refresh();
     super.setVisible(true);
 }
 
@@ -380,7 +532,9 @@ private void initialize ( JFrame parent, CreateTimeSeriesEventTable_Command comm
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent e) {
+public void itemStateChanged (ItemEvent e)
+{
+    checkGUIState();
 	refresh();
 }
 
@@ -418,31 +572,90 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
+    String TSList = "";
+    String TSID = "";
+    String EnsembleID = "";
+    String TimeSeriesLocations = "";
     String TableID = "";
-    String NewTableID = "";
     String IncludeColumns = "";
     String InputTableEventIDColumn = "";
     String InputTableEventTypeColumn = "";
+    String IncludeInputTableEventTypes = "";
     String InputTableEventStartColumn = "";
     String InputTableEventEndColumn = "";
-    String InputTableEventLocationTypeColumn = "";
-    String InputTableEventLocationIDColumn = "";
+    String InputTableEventLocationColumns = "";
     String InputTableEventLabelColumn = "";
     String InputTableEventDescriptionColumn = "";
+    String NewTableID = "";
+    String OutputTableTSIDColumn = "";
+    String OutputTableTSIDFormat = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
+        TSList = props.getValue ( "TSList" );
+        TSID = props.getValue ( "TSID" );
+        EnsembleID = props.getValue ( "EnsembleID" );
+        TimeSeriesLocations = props.getValue ( "TimeSeriesLocations" );
         TableID = props.getValue ( "TableID" );
-        NewTableID = props.getValue ( "NewTableID" );
         IncludeColumns = props.getValue ( "IncludeColumns" );
         InputTableEventIDColumn = props.getValue ( "InputTableEventIDColumn" );
         InputTableEventTypeColumn = props.getValue ( "InputTableEventTypeColumn" );
+        IncludeInputTableEventTypes = props.getValue ( "IncludeInputTableEventTypes" );
         InputTableEventStartColumn = props.getValue ( "InputTableEventStartColumn" );
         InputTableEventEndColumn = props.getValue ( "InputTableEventEndColumn" );
-        InputTableEventLocationTypeColumn = props.getValue ( "InputTableEventLocationTypeColumn" );
-        InputTableEventLocationIDColumn = props.getValue ( "InputTableEventLocationIDColumn" );
+        InputTableEventLocationColumns = props.getValue ( "InputTableEventLocationColumns" );
         InputTableEventLabelColumn = props.getValue ( "InputTableEventLabelColumn" );
         InputTableEventDescriptionColumn = props.getValue ( "InputTableEventDescriptionColumn" );
+        NewTableID = props.getValue ( "NewTableID" );
+        OutputTableTSIDColumn = props.getValue ( "OutputTableTSIDColumn" );
+        OutputTableTSIDFormat = props.getValue ( "OutputTableTSIDFormat" );
+        if ( TSList == null ) {
+            // Select default...
+            __TSList_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TSList_JComboBox,TSList, JGUIUtil.NONE, null, null ) ) {
+                __TSList_JComboBox.select ( TSList );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\nTSList value \"" + TSList +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+            __TSID_JComboBox.select ( TSID );
+        }
+        else {
+            // Automatically add to the list after the blank...
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+                // Select...
+                __TSID_JComboBox.select ( TSID );
+            }
+            else {
+                // Select the blank...
+                __TSID_JComboBox.select ( 0 );
+            }
+        }
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( TimeSeriesLocations != null ) {
+            __TimeSeriesLocations_JTextArea.setText ( TimeSeriesLocations );
+        }
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -458,9 +671,6 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( NewTableID != null ) {
-            __NewTableID_JTextField.setText ( NewTableID );
-        }
 		if ( IncludeColumns != null ) {
 			__IncludeColumns_JTextField.setText ( IncludeColumns );
 		}
@@ -470,17 +680,17 @@ private void refresh ()
         if ( InputTableEventTypeColumn != null ) {
             __InputTableEventTypeColumn_JTextField.setText ( InputTableEventTypeColumn );
         }
+        if ( IncludeInputTableEventTypes != null ) {
+            __IncludeInputTableEventTypes_JTextField.setText ( IncludeInputTableEventTypes );
+        }
         if ( InputTableEventStartColumn != null ) {
             __InputTableEventStartColumn_JTextField.setText ( InputTableEventStartColumn );
         }
         if ( InputTableEventEndColumn != null ) {
             __InputTableEventEndColumn_JTextField.setText ( InputTableEventEndColumn );
         }
-        if ( InputTableEventLocationTypeColumn != null ) {
-            __InputTableEventLocationTypeColumn_JTextField.setText ( InputTableEventLocationTypeColumn );
-        }
-        if ( InputTableEventLocationIDColumn != null ) {
-            __InputTableEventLocationIDColumn_JTextField.setText ( InputTableEventLocationIDColumn );
+        if ( InputTableEventLocationColumns != null ) {
+            __InputTableEventLocationColumns_JTextArea.setText ( InputTableEventLocationColumns );
         }
         if ( InputTableEventLabelColumn != null ) {
             __InputTableEventLabelColumn_JTextField.setText ( InputTableEventLabelColumn );
@@ -488,31 +698,53 @@ private void refresh ()
         if ( InputTableEventDescriptionColumn != null ) {
             __InputTableEventDescriptionColumn_JTextField.setText ( InputTableEventDescriptionColumn );
         }
+        if ( NewTableID != null ) {
+            __NewTableID_JTextField.setText ( NewTableID );
+        }
+        if ( OutputTableTSIDColumn != null ) {
+            __OutputTableTSIDColumn_JTextField.setText ( OutputTableTSIDColumn );
+        }
+        if (OutputTableTSIDFormat != null ) {
+            __OutputTableTSIDFormat_JTextField.setText(OutputTableTSIDFormat.trim());
+        }
 	}
 	// Regardless, reset the command from the fields...
+	checkGUIState();
+	TSList = __TSList_JComboBox.getSelected();
+    TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
+    TimeSeriesLocations = __TimeSeriesLocations_JTextArea.getText().trim();
 	TableID = __TableID_JComboBox.getSelected();
-    NewTableID = __NewTableID_JTextField.getText().trim();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	InputTableEventIDColumn = __InputTableEventIDColumn_JTextField.getText().trim();
 	InputTableEventTypeColumn = __InputTableEventTypeColumn_JTextField.getText().trim();
+	IncludeInputTableEventTypes = __IncludeInputTableEventTypes_JTextField.getText().trim();
 	InputTableEventStartColumn = __InputTableEventStartColumn_JTextField.getText().trim();
 	InputTableEventEndColumn = __InputTableEventEndColumn_JTextField.getText().trim();
-	InputTableEventLocationTypeColumn = __InputTableEventLocationTypeColumn_JTextField.getText().trim();
-	InputTableEventLocationIDColumn = __InputTableEventLocationIDColumn_JTextField.getText().trim();
+	InputTableEventLocationColumns = __InputTableEventLocationColumns_JTextArea.getText().trim();
 	InputTableEventLabelColumn = __InputTableEventLabelColumn_JTextField.getText().trim();
 	InputTableEventDescriptionColumn = __InputTableEventDescriptionColumn_JTextField.getText().trim();
+    NewTableID = __NewTableID_JTextField.getText().trim();
+    OutputTableTSIDColumn = __OutputTableTSIDColumn_JTextField.getText().trim();
+    OutputTableTSIDFormat = __OutputTableTSIDFormat_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
+    props.add ( "TSList=" + TSList );
+    props.add ( "TSID=" + TSID );
+    props.add ( "EnsembleID=" + EnsembleID );
+    props.add ( "TimeSeriesLocations=" + TimeSeriesLocations );
     props.add ( "TableID=" + TableID );
-    props.add ( "NewTableID=" + NewTableID );
     props.add ( "IncludeColumns=" + IncludeColumns );
 	props.add ( "InputTableEventIDColumn=" + InputTableEventIDColumn );
 	props.add ( "InputTableEventTypeColumn=" + InputTableEventTypeColumn );
+	props.add ( "IncludeInputTableEventTypes=" + IncludeInputTableEventTypes );
 	props.add ( "InputTableEventStartColumn=" + InputTableEventStartColumn );
 	props.add ( "InputTableEventEndColumn=" + InputTableEventEndColumn );
-	props.add ( "InputTableEventLocationTypeColumn=" + InputTableEventLocationTypeColumn );
-	props.add ( "InputTableEventLocationIDColumn=" + InputTableEventLocationIDColumn );
+	props.add ( "InputTableEventLocationColumns=" + InputTableEventLocationColumns );
 	props.add ( "InputTableEventLabelColumn=" + InputTableEventLabelColumn );
 	props.add ( "InputTableEventDescriptionColumn=" + InputTableEventDescriptionColumn );
+    props.add ( "NewTableID=" + NewTableID );
+    props.add ( "OutputTableTSIDColumn=" + OutputTableTSIDColumn );
+    props.add ( "OutputTableTSIDFormat=" + OutputTableTSIDFormat );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

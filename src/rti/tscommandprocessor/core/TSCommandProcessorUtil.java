@@ -353,12 +353,12 @@ If a property string is not found, it will remain without being replaced.
 @param processor The processor that is being used, if a ${property} needs to be expanded (if passed as null,
 the processor property won't be expanded)
 @param ts Time series to be used for metadata string.
-@param s String to expand.  The string can contain % format specifiers used with TS.
-@param status CommandStatus to add messages to if problems occur.
-@param commandPhase command phase (for logging)
+@param s String to expand, which includes format specifiers and literal strings.
+@param status CommandStatus to add messages to if problems occur, or null to ignore.
+@param commandPhase command phase (for logging), can be null to ignore logging.
 */
 public static String expandTimeSeriesMetadataString ( CommandProcessor processor, TS ts, String s,
-        CommandStatus status, CommandPhaseType commandPhase )
+    CommandStatus status, CommandPhaseType commandPhase )
 {   String routine = "TSCommandProcessorUtil.expandTimeSeriesMetadataString";
     if ( s == null ) {
         return "";
@@ -371,22 +371,24 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
     int pos2 = 0;
     // Put the most specific first so it is matched first
     String [] startStrings = { "${ts:", "${" };
+    int [] startStringsLength = { 5, 2 };
     String [] endStrings = { "}", "}" };
     boolean isTsProp = false;
     Object propO;
+    // Loop through and expand the string, first by expanding the time series properties and then the processor properties
     for ( int ipat = 0; ipat < startStrings.length; ipat++ ) {
         isTsProp = false;
-        if ( startStrings[ipat].equals("${ts:") || startStrings[ipat].equals("${TS:") ) {
+        if ( startStrings[ipat].equalsIgnoreCase("${ts:") ) {
             isTsProp = true; // Time series property
         }
         while ( pos2 < s2.length() ) {
-            int pos1 = s2.indexOf( startStrings[ipat], start );
+            int pos1 = StringUtil.indexOfIgnoreCase(s2, startStrings[ipat], start );
             if ( pos1 >= 0 ) {
                 // Find the end of the property
                 pos2 = s2.indexOf( endStrings[ipat], pos1 );
                 if ( pos2 > 0 ) {
                     // Get the property...
-                    String propname = s2.substring(pos1+2,pos2);
+                    String propname = s2.substring(pos1+startStringsLength[ipat],pos2);
                     String propvalString = "";
                     if ( isTsProp ) {
                         // Get the property out of the time series
@@ -402,6 +404,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                             }
                         }
                         else {
+                            // This handles conversion of integers to strings
                             propvalString = "" + propO;
                         }
                     }
@@ -445,15 +448,15 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                             Message.printWarning ( 3, routine, message );
                             if ( status != null ) {
                                 status.addToLog ( commandPhase,
-                                    new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message,
+                                    new CommandLogRecord(CommandStatusType.FAILURE, message,
                                         "Verify that the property name is valid - must match case." ) );
                             }
                             start = pos2;
                             continue;
                         }
                         else {
-                            propvalString = o_PropertyValue.toString();
+                            // This handles conversion of integers to strings
+                            propvalString = "" + o_PropertyValue;
                             start = pos2;
                         }
                     }
@@ -462,7 +465,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                 }
                 else {
                     // No closing character so march on...
-                    start = pos1 + 2;
+                    start = pos1 + startStringsLength[ipat];
                     if ( start > s2.length() ) {
                         break;
                     }

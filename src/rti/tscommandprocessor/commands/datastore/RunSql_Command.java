@@ -13,7 +13,6 @@ import java.util.Vector;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMISelectStatement;
-import RTi.DMI.DMIStatement;
 import RTi.DMI.DMIStoredProcedureData;
 import RTi.DMI.DatabaseDataStore;
 import RTi.Util.Message.Message;
@@ -228,8 +227,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
 	
-    // Create the query.
-    DMIStatement s = new DMIStatement(dmi);
     String sqlString = "";
     // Execute the query as appropriate depending on how the query was specified
     int nEffected = 0;
@@ -239,7 +236,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Query using the SQL string.  Expand first using ${Property} notation
             sqlString = TSCommandProcessorUtil.expandParameterValue(processor, this, Sql);
             nEffected = dmi.dmiExecute(sqlString);
-            Message.printStatus(2, routine, "Executed SQL \"" + dmi.getLastQueryString() + "\".  Rows effected=" + nEffected);
+            Message.printStatus(2, routine, "Executed SQL \"" + sqlString + "\".  Rows effected=" + nEffected);
         }
         else if ( (SqlFile != null) && !SqlFile.equals("") ) {
             // Query using the contents of the SQL file
@@ -260,7 +257,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             sqlString = TSCommandProcessorUtil.expandParameterValue(processor, this,
                 StringUtil.toString(IOUtil.fileToStringList(SqlFile_full), " "));
             nEffected = dmi.dmiExecute(sqlString);
-            Message.printStatus(2, routine, "Executed SQL \"" + dmi.getLastQueryString() + "\".  Rows effected=" + nEffected);
+            Message.printStatus(2, routine, "Executed SQL \"" + sqlString + "\".  Rows effected=" + nEffected);
         }
         else if ( (DataStoreProcedure != null) && !DataStoreProcedure.equals("") ) {
             // Run a stored procedure

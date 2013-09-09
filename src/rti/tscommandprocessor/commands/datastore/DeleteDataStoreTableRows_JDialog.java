@@ -47,7 +47,7 @@ private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private SimpleJComboBox __DataStoreTable_JComboBox = null;
 //private SimpleJComboBox __TableID_JComboBox = null;
-private SimpleJComboBox __RemoveAllRows_JComboBox = null;
+private SimpleJComboBox __DeleteAllRows_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private DeleteDataStoreTableRows_Command __command = null;
@@ -117,7 +117,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
     String DataStore = __DataStore_JComboBox.getSelected();
 	String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
-	String RemoveAllRows = __RemoveAllRows_JComboBox.getSelected();
+	String DeleteAllRows = __DeleteAllRows_JComboBox.getSelected();
 	//String TableID = __TableID_JComboBox.getSelected();
 	//String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
 	__error_wait = false;
@@ -133,8 +133,8 @@ private void checkInput ()
 	if ( DataStoreTable.length() > 0 ) {
 		props.set ( "DataStoreTable", DataStoreTable );
 	}
-    if ( RemoveAllRows.length() > 0 ) {
-        props.set ( "RemoveAllRows", RemoveAllRows );
+    if ( DeleteAllRows.length() > 0 ) {
+        props.set ( "DeleteAllRows", DeleteAllRows );
     }
     //if ( TableID.length() > 0 ) {
     //    props.set ( "TableID", TableID );
@@ -163,12 +163,12 @@ private void commitEdits ()
     String DataStoreTable = __DataStoreTable_JComboBox.getSelected();
     //String DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
     //String TableID = __TableID_JComboBox.getSelected();
-    String RemoveAllRows = __RemoveAllRows_JComboBox.getSelected();
+    String DeleteAllRows = __DeleteAllRows_JComboBox.getSelected();
     __command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "DataStoreTable", DataStoreTable );
     //__command.setCommandParameter ( "TableID", TableID );
 	//__command.setCommandParameter ( "DataStoreColumns", DataStoreColumns );
-	__command.setCommandParameter ( "RemoveAllRows", RemoveAllRows );
+	__command.setCommandParameter ( "DeleteAllRows", DeleteAllRows );
 }
 
 /**
@@ -222,10 +222,13 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
 	int yy = -1;
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command removes rows from a datastore table."),
+        "This command deletes rows (records) from a database datastore table."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Currently the RemoveAllRows parameter is the only way to control what is removed."),
+        "Currently the DeleteAllRows parameter is the only way to control the deletion."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "In the future the command will be updated to include a WHERE capability."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -249,7 +252,7 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - database datastore to receive data."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - database datastore to delete rows."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Data tables are particular to the data store...
@@ -260,7 +263,7 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     __DataStoreTable_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStoreTable_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - database table/view to receive data."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - database table/view to delete rows."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*
@@ -286,16 +289,17 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         */
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Remove all rows?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delete all rows?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __RemoveAllRows_JComboBox = new SimpleJComboBox ( false );
-    List<String> removeAllRowsChoices = new Vector<String>();
-    removeAllRowsChoices.add("");
-    removeAllRowsChoices.add(__command._False);
-    removeAllRowsChoices.add(__command._True);
-    __RemoveAllRows_JComboBox.setData ( removeAllRowsChoices );
-    __RemoveAllRows_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __RemoveAllRows_JComboBox,
+    __DeleteAllRows_JComboBox = new SimpleJComboBox ( false );
+    List<String> deleteAllRowsChoices = new Vector<String>();
+    deleteAllRowsChoices.add("");
+    deleteAllRowsChoices.add(__command._False);
+    deleteAllRowsChoices.add(__command._True);
+    deleteAllRowsChoices.add(__command._Truncate);
+    __DeleteAllRows_JComboBox.setData ( deleteAllRowsChoices );
+    __DeleteAllRows_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DeleteAllRows_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - remove all rows? (default=" + __command._False + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -428,7 +432,7 @@ try{
     String DataStoreTable = "";
     //String TableID = "";
     //String DataStoreColumns = "";
-    String RemoveAllRows = "";
+    String DeleteAllRows = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -436,7 +440,7 @@ try{
 		DataStoreTable = props.getValue ( "DataStoreTable" );
         //TableID = props.getValue ( "TableID" );
 		//DataStoreColumns = props.getValue ( "DataStoreColumns" );
-		RemoveAllRows = props.getValue ( "RemoveAllRows" );
+		DeleteAllRows = props.getValue ( "DeleteAllRows" );
         // The data store list is set up in initialize() but is selected here
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
@@ -491,18 +495,18 @@ try{
             __DataStoreColumns_JTextField.setText ( DataStoreColumns );
         }
         */
-        if ( JGUIUtil.isSimpleJComboBoxItem(__RemoveAllRows_JComboBox, RemoveAllRows, JGUIUtil.NONE, null, null ) ) {
-            __RemoveAllRows_JComboBox.select ( RemoveAllRows );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DeleteAllRows_JComboBox, DeleteAllRows, JGUIUtil.NONE, null, null ) ) {
+            __DeleteAllRows_JComboBox.select ( DeleteAllRows );
         }
         else {
-            if ( (RemoveAllRows == null) || RemoveAllRows.equals("") ) {
+            if ( (DeleteAllRows == null) || DeleteAllRows.equals("") ) {
                 // New command...select the default...
-                __RemoveAllRows_JComboBox.select ( 0 );
+                __DeleteAllRows_JComboBox.select ( 0 );
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "RemoveAllRows parameter \"" + RemoveAllRows + "\".  Select a\ndifferent value or Cancel." );
+                  "DeleteAllRows parameter \"" + DeleteAllRows + "\".  Select a\ndifferent value or Cancel." );
             }
         }
 	}
@@ -517,13 +521,13 @@ try{
     }
     //TableID = __TableID_JComboBox.getSelected();
 	//DataStoreColumns = __DataStoreColumns_JTextField.getText().trim();
-    RemoveAllRows = __RemoveAllRows_JComboBox.getSelected();
+    DeleteAllRows = __DeleteAllRows_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "DataStoreTable=" + DataStoreTable );
     //props.add ( "TableID=" + TableID );
 	//props.add ( "DataStoreColumns=" + DataStoreColumns );
-	props.add ( "RemoveAllRows=" + RemoveAllRows );
+	props.add ( "DeleteAllRows=" + DeleteAllRows );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 catch ( Exception e ) {

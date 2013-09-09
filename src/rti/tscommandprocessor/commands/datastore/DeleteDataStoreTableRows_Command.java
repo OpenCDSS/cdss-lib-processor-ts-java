@@ -24,6 +24,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
 
 /**
@@ -33,10 +34,11 @@ public class DeleteDataStoreTableRows_Command extends AbstractCommand implements
 {
 
 /**
-Possible values for RemoveAllRows parameter.
+Possible values for DeleteAllRows parameter.
 */
 protected final String _False = "False";
 protected final String _True = "True";
+protected final String _Truncate = "Truncate";
     
 /**
 Constructor.
@@ -59,7 +61,7 @@ throws InvalidCommandParameterException
 {   String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreTable = parameters.getValue ( "DataStoreTable" );
     //String TableID = parameters.getValue ( "TableID" );
-    String RemoveAllRows = parameters.getValue ( "RemoveAllRows" );
+    String DeleteAllRows = parameters.getValue ( "DeleteAllRows" );
 
 	String warning = "";
     String message;
@@ -89,13 +91,13 @@ throws InvalidCommandParameterException
     //            message, "Specify the output table identifier." ) );
     //}
     
-    if ( (RemoveAllRows != null) && !RemoveAllRows.equals("") &&
-        !RemoveAllRows.equalsIgnoreCase(_True) && !RemoveAllRows.equalsIgnoreCase(_False) ) {
-        message = "The RemoveAllRows (" + RemoveAllRows + ") parameter value is invalid.";
+    if ( (DeleteAllRows != null) && !DeleteAllRows.equals("") &&
+        !DeleteAllRows.equalsIgnoreCase(_True) && !DeleteAllRows.equalsIgnoreCase(_False) && !DeleteAllRows.equalsIgnoreCase(_Truncate)) {
+        message = "The DeleteAllRows (" + DeleteAllRows + ") parameter value is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify as " + _False + " (default) or " + _True + "." ) );
+                message, "Specify as " + _False + " (default), " + _True + ", or" + _Truncate + "." ) );
     }
     
 	//  Check for invalid parameters...
@@ -104,7 +106,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataStoreTable" );
     //valid_Vector.add ( "TableID" );
     //valid_Vector.add ( "TableColumns" );
-    valid_Vector.add ( "RemoveAllRows" );
+    valid_Vector.add ( "DeleteAllRows" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -130,7 +132,25 @@ public boolean editCommand ( JFrame parent )
 	return (new DeleteDataStoreTableRows_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
-// Use base class parseCommand()
+/**
+Parse the command string into a PropList of parameters.
+The method is needed here because the legacy RemoveAllRows parameter has been changed to DeleteAllRows.
+@param commandString A string command to parse.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
+*/
+public void parseCommand ( String commandString )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{
+    super.parseCommand( commandString);
+    // Replace the old syntax with the new
+    PropList props = getCommandParameters();
+    String propValue = props.getValue("RemoveAllRows");
+    if ( propValue != null ) {
+        props.set("DeleteAllRows",propValue);
+        props.unSet("RemoveAllRows");
+    }
+}
 
 /**
 Run the command.
@@ -160,11 +180,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (DataStoreTable != null) && DataStoreTable.equals("") ) {
         DataStoreTable = null; // Simplifies logic below
     }
-    String RemoveAllRows = parameters.getValue ( "RemoveAllRows" );
-    boolean RemoveAllRows_boolean = false;
-    if ( (RemoveAllRows != null) && RemoveAllRows.equalsIgnoreCase(_True) ) {
-        RemoveAllRows_boolean = true;
-    }
+    String DeleteAllRows = parameters.getValue ( "DeleteAllRows" );
     
     // Find the datastore to use...
     DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
@@ -192,10 +208,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     String sqlString = "";
     try {
-        // Create the delete statement.
-        DMIDeleteStatement q = new DMIDeleteStatement(dmi);
-        if ( RemoveAllRows_boolean ) {
-            q.addTable(DataStoreTable);
+        if ( (DeleteAllRows != null) && DeleteAllRows.equalsIgnoreCase(_True) ) {
+            // Create the delete statement.
+            DMIDeleteStatement d = new DMIDeleteStatement(dmi);
+            d.addTable(DataStoreTable);
+            if ( DataStoreTable != null ) {
+                // Execute the delete statement that was built
+                sqlString = d.toString();
+                int delCount = dmi.dmiDelete(d);
+                Message.printStatus(2, routine, "Deleted " + delCount + " rows from table \"" +
+                        DataStoreTable + "\" with SQL statement \"" + sqlString + "\".");
+            }
+        }
+        else if ( (DeleteAllRows != null) && DeleteAllRows.equalsIgnoreCase(_Truncate) ) {
+            sqlString = "TRUNCATE TABLE " + DataStoreTable;
+            int nEffected = dmi.dmiExecute(sqlString);
+            Message.printStatus(2, routine, "Truncated " + nEffected + " rows from table \"" +
+                DataStoreTable + "\" with SQL statement \"" + sqlString + "\".");
         }
         else {
             // To be implemented in the future...
@@ -204,13 +233,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Software requires an enhancement.") );
-        }
-        if ( DataStoreTable != null ) {
-            // Query using the statement that was built
-            sqlString = q.toString();
-            int delCount = dmi.dmiDelete(q);
-            Message.printStatus(2, routine, "Deleted " + delCount + " rows from table \"" +
-                    DataStoreTable + "\" with SQL statement \"" + dmi.getLastQueryString() + "\".");
         }
     }
     catch ( Exception e ) {
@@ -245,7 +267,7 @@ public String toString ( PropList props )
 	String DataStoreTable = props.getValue( "DataStoreTable" );
     //String TableID = props.getValue( "TableID" );
 	//String DataStoreColumns = props.getValue( "DataStoreColumns" );
-	String RemoveAllRows = props.getValue( "RemoveAllRows" );
+	String DeleteAllRows = props.getValue( "DeleteAllRows" );
 	StringBuffer b = new StringBuffer ();
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -273,11 +295,11 @@ public String toString ( PropList props )
         b.append ( "DataStoreColumns=\"" + DataStoreColumns + "\"" );
     }
     */
-    if ( (RemoveAllRows != null) && (RemoveAllRows.length() > 0) ) {
+    if ( (DeleteAllRows != null) && (DeleteAllRows.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "RemoveAllRows=\"" + RemoveAllRows + "\"" );
+        b.append ( "DeleteAllRows=\"" + DeleteAllRows + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -4,7 +4,6 @@ package rti.tscommandprocessor.core;
 // avoid mixing with lower-level code.
 //import RTi.DataServices.Adapter.NDFD.openNDFD_Command;
 //import RTi.DataServices.Adapter.NDFD.readNDFD_Command;
-
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;
 import RTi.Util.IO.UnknownCommand;
@@ -17,21 +16,21 @@ import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
 import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 
-// DateValue commands
+// Datastream commands
+import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
 
+// DateValue commands
+import rti.tscommandprocessor.commands.datastore.DeleteDataStoreTableRows_Command;
 import rti.tscommandprocessor.commands.datastore.ReadTimeSeriesFromDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.RunSql_Command;
 import rti.tscommandprocessor.commands.datastore.WriteTimeSeriesToDataStore_Command;
-import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
 import rti.tscommandprocessor.commands.datevalue.ReadDateValue_Command;
 import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
 
 // Delimited time series file commands
-
 import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 
 // Ensemble commands
-
 import rti.tscommandprocessor.commands.ensemble.CopyEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.CreateEnsembleFromOneTimeSeries_Command;
 import rti.tscommandprocessor.commands.ensemble.InsertTimeSeriesIntoEnsemble_Command;
@@ -40,36 +39,34 @@ import rti.tscommandprocessor.commands.ensemble.NewStatisticEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemble_Command;
 
 // GRTS commands (time series products).
-
 import rti.tscommandprocessor.commands.products.ProcessRasterGraph_Command;
 import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
 
 // HEC-DSS commands.
-
 import rti.tscommandprocessor.commands.hecdss.ReadHecDss_Command;
 import rti.tscommandprocessor.commands.hecdss.WriteHecDss_Command;
 
 // HydroBase commands.
-
 import rti.tscommandprocessor.commands.hydrobase.FillUsingDiversionComments_Command;
 import rti.tscommandprocessor.commands.hydrobase.OpenHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrobase.ReadHydroBase_Command;
 import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
 
 // Logging commands.
-
 import rti.tscommandprocessor.commands.logging.SetDebugLevel_Command;
 import rti.tscommandprocessor.commands.logging.SetWarningLevel_Command;
 import rti.tscommandprocessor.commands.logging.StartLog_Command;
 
 // MODSIM commands
-
 import rti.tscommandprocessor.commands.modsim.ReadMODSIM_Command;
 
-// NWSRFS commands.
-
+// Network commands
 import rti.tscommandprocessor.commands.network.AnalyzeNetworkPointFlow_Command;
+
+// NRCS commands
 import rti.tscommandprocessor.commands.nrcs.awdb.ReadNrcsAwdb_Command;
+
+// NWSRFS commands.
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsEspTraceEnsemble_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsFS5Files_Command;
@@ -77,49 +74,45 @@ import rti.tscommandprocessor.commands.nwsrfs.SetPropertyFromNwsrfsAppDefault_Co
 import rti.tscommandprocessor.commands.nwsrfs.WriteNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.WriteNWSRFSESPTraceEnsemble_Command;
 
-// Reclamation HDB commands
-
+// RCC ACIS commands
 import rti.tscommandprocessor.commands.rccacis.ReadRccAcis_Command;
+
+// Reclamation HDB commands
 import rti.tscommandprocessor.commands.reclamationhdb.ReadReclamationHDB_Command;
 import rti.tscommandprocessor.commands.reclamationhdb.WriteReclamationHDB_Command;
 
 // RiversideDB commands
-
 import rti.tscommandprocessor.commands.riversidedb.ReadRiversideDB_Command;
 import rti.tscommandprocessor.commands.riversidedb.WriteRiversideDB_Command;
 
 // RiverWare commands
-
 import rti.tscommandprocessor.commands.riverware.ReadRiverWare_Command;
 import rti.tscommandprocessor.commands.riverware.WriteRiverWare_Command;
 
 // SHEF commands.
-
 import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 
 // Spatial commands.
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 
-// StateCU commands.
-
+// Spreadsheet commands
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableFromExcel_Command;
+
+// StateCU commands.
 import rti.tscommandprocessor.commands.statecu.ReadStateCU_Command;
 import rti.tscommandprocessor.commands.statecu.ReadStateCUB_Command;
 import rti.tscommandprocessor.commands.statecu.WriteStateCU_Command;
 
 // StateMod commands.
-
 import rti.tscommandprocessor.commands.statemod.ReadStateMod_Command;
 import rti.tscommandprocessor.commands.statemod.ReadStateModB_Command;
 import rti.tscommandprocessor.commands.statemod.StateModMax_Command;
 import rti.tscommandprocessor.commands.statemod.WriteStateMod_Command;
 
 // Summary commands.
-
 import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 
 // Table commands.
-
 import rti.tscommandprocessor.commands.table.AppendTable_Command;
 import rti.tscommandprocessor.commands.table.CompareTables_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
@@ -133,7 +126,6 @@ import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
-import rti.tscommandprocessor.commands.table.RemoveDataStoreTableRows_Command;
 import rti.tscommandprocessor.commands.table.SetTableValues_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.TableMath_Command;
@@ -145,18 +137,15 @@ import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToHTML_Command;
 
 // Template commands
-
 import rti.tscommandprocessor.commands.template.ExpandTemplateFile_Command;
 
 // Time-related commands.
-
 import rti.tscommandprocessor.commands.time.SetAveragePeriod_Command;
 import rti.tscommandprocessor.commands.time.SetInputPeriod_Command;
 import rti.tscommandprocessor.commands.time.SetOutputPeriod_Command;
 import rti.tscommandprocessor.commands.time.SetOutputYearType_Command;
 
 // Time series general commands.
-
 import rti.tscommandprocessor.commands.ts.Add_Command;
 import rti.tscommandprocessor.commands.ts.AddConstant_Command;
 import rti.tscommandprocessor.commands.ts.AdjustExtremes_Command;
@@ -229,14 +218,12 @@ import rti.tscommandprocessor.commands.ts.WeightTraces_Command;
 import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
 // USGS commands
-
 import rti.tscommandprocessor.commands.usgs.nwis.rdb.ReadUsgsNwisRdb_Command;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.ReadUsgsNwisDaily_Command;
 import rti.tscommandprocessor.commands.usgs.nwis.groundwater.ReadUsgsNwisGroundwater_Command;
 import rti.tscommandprocessor.commands.usgs.nwis.instantaneous.ReadUsgsNwisInstantaneous_Command;
 
 // Utility commands.
-
 import rti.tscommandprocessor.commands.util.AppendFile_Command;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
@@ -265,12 +252,10 @@ import rti.tscommandprocessor.commands.util.WriteProperty_Command;
 import rti.tscommandprocessor.commands.view.NewTreeView_Command;
 
 // WaterML commands
-
 import rti.tscommandprocessor.commands.waterml.ReadWaterML_Command;
 import rti.tscommandprocessor.commands.waterml.WriteWaterML_Command;
 
 // WaterOneFlow commands
-
 import rti.tscommandprocessor.commands.wateroneflow.ws.ReadWaterOneFlow_Command;
 
 /**
@@ -457,7 +442,11 @@ throws UnknownCommandException
 	}
     
     // "D" commands...
-    
+
+    else if ( commandName.equalsIgnoreCase("DeleteDataStoreTableRows") ) {
+        // Automatically change the name
+        return new DeleteDataStoreTableRows_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("Delta") ) {
         return new Delta_Command ();
     }
@@ -750,11 +739,12 @@ throws UnknownCommandException
         return new RemoveFile_Command ();
     }
     else if ( commandName.equalsIgnoreCase("RemoveDataStoreTableRows") ) {
-        return new RemoveDataStoreTableRows_Command ();
+        // Automatically change the name
+        return new DeleteDataStoreTableRows_Command ();
     }
     else if ( commandName.equalsIgnoreCase("RemoveTableRowsFromDataStore") ) {
         // Automatically change the name
-        return new RemoveDataStoreTableRows_Command ();
+        return new DeleteDataStoreTableRows_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReplaceValue") ) {
         return new ReplaceValue_Command ();

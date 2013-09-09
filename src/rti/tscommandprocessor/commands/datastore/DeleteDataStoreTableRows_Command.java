@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.table;
+package rti.tscommandprocessor.commands.datastore;
 
 import javax.swing.JFrame;
 
@@ -29,7 +29,7 @@ import RTi.Util.IO.PropList;
 /**
 This class initializes, checks, and runs the RemoveDataStoreTableRows() command.
 */
-public class RemoveDataStoreTableRows_Command extends AbstractCommand implements Command
+public class DeleteDataStoreTableRows_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -41,9 +41,9 @@ protected final String _True = "True";
 /**
 Constructor.
 */
-public RemoveDataStoreTableRows_Command ()
+public DeleteDataStoreTableRows_Command ()
 {	super();
-	setCommandName ( "RemoveDataStoreTableRows" );
+	setCommandName ( "DeleteDataStoreTableRows" );
 }
 
 /**
@@ -127,7 +127,7 @@ public boolean editCommand ( JFrame parent )
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
     // The command will be modified if changed...
-	return (new RemoveDataStoreTableRows_JDialog ( parent, this, tableIDChoices )).ok();
+	return (new DeleteDataStoreTableRows_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 // Use base class parseCommand()

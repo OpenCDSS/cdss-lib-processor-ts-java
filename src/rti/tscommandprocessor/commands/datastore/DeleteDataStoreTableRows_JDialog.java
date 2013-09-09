@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.table;
+package rti.tscommandprocessor.commands.datastore;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -37,7 +37,7 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class RemoveDataStoreTableRows_JDialog extends JDialog
+public class DeleteDataStoreTableRows_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
@@ -50,7 +50,7 @@ private SimpleJComboBox __DataStoreTable_JComboBox = null;
 private SimpleJComboBox __RemoveAllRows_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
-private RemoveDataStoreTableRows_Command __command = null;
+private DeleteDataStoreTableRows_Command __command = null;
 private boolean __ok = false;
 
 private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
@@ -64,7 +64,7 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public RemoveDataStoreTableRows_JDialog ( JFrame parent, RemoveDataStoreTableRows_Command command,
+public DeleteDataStoreTableRows_JDialog ( JFrame parent, DeleteDataStoreTableRows_Command command,
     List<String> tableIDChoices )
 {	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
@@ -202,7 +202,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, RemoveDataStoreTableRows_Command command, List<String> tableIDChoices )
+private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command command, List<String> tableIDChoices )
 {	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 

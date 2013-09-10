@@ -82,8 +82,11 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnMap") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnMap = __ColumnMap_JTextArea.getText().trim();
+        String [] notes = {
+            "Column names in the original table can be renamed in the copy by specifying information below."
+        };
         String dict = (new DictionaryJDialog ( __parent, true, ColumnMap,
-            "Edit ColumnMap Parameter", null, "Original Column Name", "Column Name in New Table",10)).response();
+            "Edit ColumnMap Parameter", notes, "Original Column Name", "Column Name in New Table",10)).response();
         if ( dict != null ) {
             __ColumnMap_JTextArea.setText ( dict );
             refresh();
@@ -92,8 +95,14 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnFilters") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+        String [] notes = {
+            "Rows in the original table can be excluded from the copy by filtering on column values:",
+            "Column Name - column name in the original table to filter",
+            "Column Value Filter Pattern - a literal value to match, or a pattern using * as a wildcard",
+            "(specify blank to filter out columns with no values)"
+        };
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
-            null, "Column Name", "Column Value Filter Pattern",10)).response();
+            notes, "Column Name", "Column Value Filter Pattern",10)).response();
         if ( columnFilters != null ) {
             __ColumnFilters_JTextArea.setText ( columnFilters );
             refresh();
@@ -154,8 +163,8 @@ private void commitEdits ()
     String NewTableID = __NewTableID_JTextField.getText().trim();
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     String DistinctColumns = __DistinctColumns_JTextField.getText().trim();
-    String ColumnMap = __ColumnMap_JTextArea.getText().trim();
-    String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+    String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
+    String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "NewTableID", NewTableID );
 	__command.setCommandParameter ( "IncludeColumns", IncludeColumns );
@@ -404,8 +413,8 @@ private void refresh ()
     NewTableID = __NewTableID_JTextField.getText().trim();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	DistinctColumns = __DistinctColumns_JTextField.getText().trim();
-	ColumnMap = __ColumnMap_JTextArea.getText().trim();
-	ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+	ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
+	ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "NewTableID=" + NewTableID );

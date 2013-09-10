@@ -21,7 +21,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -33,7 +36,7 @@ import RTi.Util.Time.TimeInterval;
 Editor for the ReadTimeSeriesList() command.
 */
 public class ReadTimeSeriesList_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, WindowListener
+implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 
 private SimpleJButton __cancel_JButton = null;
@@ -42,7 +45,9 @@ private ReadTimeSeriesList_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __LocationColumn_JTextField = null;
+private JTextField __DataSourceColumn_JTextField = null;
 private JTextField __DataSource_JTextField = null;
+private JTextField __DataTypeColumn_JTextField = null;
 private JTextField __DataType_JTextField = null;
 private SimpleJComboBox __Interval_JComboBox = null;
 private JTextField __Scenario_JTextField = null;
@@ -50,6 +55,7 @@ private JTextField __DataStore_JTextField = null;
 private JTextField __InputName_JTextField = null;
 private SimpleJComboBox	__IfNotFound_JComboBox = null;
 private JTextField __DefaultUnits_JTextField = null; // Default units when blank time series is created.
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;// Field for time series alias
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -83,6 +89,37 @@ public void actionPerformed( ActionEvent event )
 	}
 }
 
+//Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{
+    refresh();
+}
+
+// ...End event handlers for DocumentListener
+
 /**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
@@ -92,7 +129,9 @@ private void checkInput ()
     PropList parameters = new PropList ( "" );
     String TableID = __TableID_JComboBox.getSelected();
     String LocationColumn = __LocationColumn_JTextField.getText().trim();
+    String DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
     String DataSource = __DataSource_JTextField.getText().trim();
+    String DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
     String DataType = __DataType_JTextField.getText().trim();
     String Interval = __Interval_JComboBox.getSelected();
     String Scenario = __Scenario_JTextField.getText().trim();
@@ -100,6 +139,7 @@ private void checkInput ()
     String InputName = __InputName_JTextField.getText().trim();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
+    String Alias = __Alias_JTextField.getText().trim();
     
     __error_wait = false;
 
@@ -109,8 +149,14 @@ private void checkInput ()
     if ( LocationColumn.length() > 0 ) {
         parameters.set ( "LocationColumn", LocationColumn );
     }
+    if ( DataSourceColumn.length() > 0 ) {
+        parameters.set ( "DataSourceColumn", DataSourceColumn );
+    }
     if ( DataSource.length() > 0 ) {
         parameters.set ( "DataSource", DataSource );
+    }
+    if ( DataTypeColumn.length() > 0 ) {
+        parameters.set ( "DataTypeColumn", DataTypeColumn );
     }
     if ( DataType.length() > 0 ) {
         parameters.set ( "DataType", DataType );
@@ -133,6 +179,9 @@ private void checkInput ()
     if ( DefaultUnits.length() > 0 ) {
         parameters.set ( "DefaultUnits", DefaultUnits );
     }
+    if ( Alias.length() > 0 ) {
+        parameters.set ( "Alias", Alias );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -150,7 +199,9 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {   String TableID = __TableID_JComboBox.getSelected();
     String LocationColumn = __LocationColumn_JTextField.getText().trim();
+    String DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
     String DataSource = __DataSource_JTextField.getText().trim();
+    String DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
     String DataType = __DataType_JTextField.getText().trim();
     String Interval = __Interval_JComboBox.getSelected();
     String Scenario = __Scenario_JTextField.getText().trim();
@@ -158,9 +209,12 @@ private void commitEdits ()
     String InputName = __InputName_JTextField.getText().trim();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
+    String Alias = __Alias_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "LocationColumn", LocationColumn );
+    __command.setCommandParameter ( "DataSourceColumn", DataSourceColumn );
     __command.setCommandParameter ( "DataSource", DataSource );
+    __command.setCommandParameter ( "DataTypeColumn", DataTypeColumn );
     __command.setCommandParameter ( "DataType", DataType );
     __command.setCommandParameter ( "Interval", Interval );
     __command.setCommandParameter ( "Scenario", Scenario );
@@ -168,22 +222,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "InputName", InputName );
     __command.setCommandParameter ( "IfNotFound", IfNotFound );
     __command.setCommandParameter ( "DefaultUnits", DefaultUnits );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__IfNotFound_JComboBox = null;
-	__DataType_JTextField = null;
-	__DefaultUnits_JTextField = null;
-	__ok_JButton = null;
-	super.finalize ();
+    __command.setCommandParameter ( "Alias", Alias );
 }
 
 /**
@@ -219,7 +258,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
 		"  LocationID.DataSource.DataType.Interval.Scenario~DataStore~InputName"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The term \"DataStore\" is used generically to mean a database, web service, or file supplying time series data " +
+        "The \"DataStore\" parameter is used generically to mean a database, web service, or file supplying time series data " +
         "(also called \"Input Type\" elsewhere)."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -247,16 +286,35 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - name of column containing location IDs."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data source:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data source column:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataSourceColumn_JTextField = new JTextField ( "", 20 );
+    __DataSourceColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DataSourceColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional or required depending on datastore."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "OR data source:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DataSource_JTextField = new JTextField ( "", 20 );
+	__DataSource_JTextField.setToolTipText("Specify more than one data source separated by columns to try multiple data sources.");
 	__DataSource_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional or required depending on datastore."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type column:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataTypeColumn_JTextField = new JTextField ( "", 20 );
+    __DataTypeColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DataTypeColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional or required depending on datastore."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "OR data type:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DataType_JTextField = new JTextField ( "", 20 );
 	__DataType_JTextField.addKeyListener ( this );
@@ -293,6 +351,16 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - needed to identify input database, file, etc."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input name:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -400,12 +468,15 @@ private void refresh ()
 {   String routine = "ReadTimeSeriesList_JDialog.refresh";
     String TableID = "";
     String LocationColumn = "";
+    String DataSourceColumn = "";
     String DataSource = "";
+    String DataTypeColumn = "";
     String DataType = "";
     String Interval = "";
     String Scenario = "";
     String DataStore = "";
     String InputName = "";
+    String Alias = "";
     String IfNotFound = "";
     String DefaultUnits = "";
     PropList props = __command.getCommandParameters();
@@ -414,12 +485,15 @@ private void refresh ()
         // Get the parameters from the command...
         TableID = props.getValue ( "TableID" );
         LocationColumn = props.getValue ( "LocationColumn" );
+        DataSourceColumn = props.getValue ( "DataSourceColumn" );
         DataSource = props.getValue ( "DataSource" );
+        DataTypeColumn = props.getValue ( "DataTypeColumn" );
         DataType = props.getValue ( "DataType" );
         Interval = props.getValue ( "Interval" );
         Scenario = props.getValue ( "Scenario" );
         DataStore = props.getValue ( "DataStore" );
         InputName = props.getValue ( "InputName" );
+        Alias = props.getValue ( "Alias" );
         IfNotFound = props.getValue ( "IfNotFound" );
         DefaultUnits = props.getValue ( "DefaultUnits" );
         if ( TableID == null ) {
@@ -440,8 +514,14 @@ private void refresh ()
         if ( LocationColumn != null ) {
             __LocationColumn_JTextField.setText ( LocationColumn );
         }
+        if ( DataSourceColumn != null ) {
+            __DataSourceColumn_JTextField.setText ( DataSourceColumn );
+        }
         if ( DataSource != null ) {
             __DataSource_JTextField.setText ( DataSource );
+        }
+        if ( DataTypeColumn != null ) {
+            __DataTypeColumn_JTextField.setText ( DataTypeColumn );
         }
         if ( DataType != null ) {
             __DataType_JTextField.setText ( DataType );
@@ -469,6 +549,9 @@ private void refresh ()
         if ( InputName != null ) {
             __InputName_JTextField.setText ( InputName );
         }
+        if ( Alias != null ) {
+            __Alias_JTextField.setText ( Alias );
+        }
         if ( __IfNotFound_JComboBox != null ) {
             if ( IfNotFound == null ) {
                 // Select default...
@@ -492,23 +575,29 @@ private void refresh ()
     // Regardless, reset the command from the fields...
     TableID = __TableID_JComboBox.getSelected();
     LocationColumn = __LocationColumn_JTextField.getText().trim();
+    DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
     DataSource = __DataSource_JTextField.getText().trim();
+    DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
     DataType = __DataType_JTextField.getText().trim();
     Interval = __Interval_JComboBox.getSelected();
     Scenario = __Scenario_JTextField.getText().trim();
     DataStore = __DataStore_JTextField.getText().trim();
     InputName = __InputName_JTextField.getText().trim();
+    Alias = __Alias_JTextField.getText().trim();
     IfNotFound = __IfNotFound_JComboBox.getSelected();
     DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "LocationColumn=" + LocationColumn );
+    props.add ( "DataSourceColumn=" + DataSourceColumn );
     props.add ( "DataSource=" + DataSource );
+    props.add ( "DataTypeColumn=" + DataTypeColumn );
     props.add ( "DataType=" + DataType );
     props.add ( "Interval=" + Interval );
     props.add ( "Scenario=" + Scenario );
     props.add ( "DataStore=" + DataStore );
     props.add ( "InputName=" + InputName );
+    props.add ( "Alias=" + Alias );
     props.add ( "IfNotFound=" + IfNotFound );
     props.add ( "DefaultUnits=" + DefaultUnits );
     __command_JTextArea.setText( __command.toString ( props ) );

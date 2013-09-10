@@ -75,6 +75,10 @@ throws InvalidCommandParameterException
 	// Get the property values. 
 	String TableID = parameters.getValue("TableID");
 	String LocationColumn = parameters.getValue("LocationColumn");
+	String DataSourceColumn = parameters.getValue("DataSourceColumn");
+	String DataSource = parameters.getValue("DataSource");
+	String DataTypeColumn = parameters.getValue("DataTypeColumn");
+    String DataType = parameters.getValue("DataType");
 	String DataStore = parameters.getValue("DataStore");
 	String Interval = parameters.getValue("Interval");
 	String IfNotFound = parameters.getValue("IfNotFound");
@@ -94,7 +98,25 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the location column." ) );
     }
-
+    
+    if ( (DataSourceColumn != null) && (DataSourceColumn.length() > 0) &&
+        (DataSource != null) && (DataSource.length() > 0)) {
+        message = "DataSourceColumn and DataSource cannot both be specified";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify only DataSourceColumn or DataSource, or neither if appropriate." ) );
+    }
+    
+    if ( (DataTypeColumn != null) && (DataTypeColumn.length() > 0) &&
+        (DataType != null) && (DataType.length() > 0)) {
+        message = "DataTypeColumn and DataType cannot both be specified";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify only DataTypeColumn or DataType, or neither if appropriate." ) );
+    }
+    
 	// Interval
 	if ((Interval == null) || Interval.equals("")) {
         message = "The interval must be specified.";
@@ -141,12 +163,15 @@ throws InvalidCommandParameterException
 	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "LocationColumn" );
+    valid_Vector.add ( "DataSourceColumn" );
     valid_Vector.add ( "DataSource" );
+    valid_Vector.add ( "DataTypeColumn" );
     valid_Vector.add ( "DataType" );
     valid_Vector.add ( "Interval" );
     valid_Vector.add ( "Scenario" );
     valid_Vector.add ( "DataStore" );
     valid_Vector.add ( "InputName" );
+    valid_Vector.add ( "Alias" );
     valid_Vector.add ( "IfNotFound" );
     valid_Vector.add ( "DefaultUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -174,15 +199,6 @@ public boolean editCommand ( JFrame parent )
             (TSCommandProcessor)getCommandProcessor(), this);
 	// The command will be modified if changed...
 	return ( new ReadTimeSeriesList_JDialog ( parent, this, tableIDChoices ) ).ok();
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{
-	super.finalize();
 }
 
 /**
@@ -251,9 +267,7 @@ command could produce some results).
 parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-       CommandWarningException,
-       CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getClass() + ".runCommand", message;
 	int warning_level = 2;
     //int log_level = 3;
@@ -270,6 +284,7 @@ throws InvalidCommandParameterException,
 	PropList parameters = getCommandParameters();
 	String TableID = parameters.getValue("TableID");
     String LocationColumn = parameters.getValue ( "LocationColumn" );
+    String DataSourceColumn = parameters.getValue ( "DataSourceColumn" );
     String DataSource = parameters.getValue ( "DataSource" );
     String [] dataSourceList = new String[0];
     if ( (DataSource != null) && !DataSource.equals("") ) {
@@ -281,6 +296,7 @@ throws InvalidCommandParameterException,
             dataSourceList = DataSource.split(",");
         }
     }
+    String DataTypeColumn = parameters.getValue ( "DataTypeColumn" );
     String DataType = parameters.getValue ( "DataType" );
     if ( DataType == null ) {
         DataType = "";
@@ -299,6 +315,7 @@ throws InvalidCommandParameterException,
         // Set to empty string so check to facilitate processing...
         InputName = "";
     }
+    String Alias = parameters.getValue ( "Alias" );
     String IfNotFound = parameters.getValue("IfNotFound");
     if ( (IfNotFound == null) || IfNotFound.equals("")) {
         IfNotFound = _Warn; // default
@@ -308,7 +325,7 @@ throws InvalidCommandParameterException,
     // Get the table to process.
 
     DataTable table = null;
-    int locationColumnNum = -1;
+    int locationColumnNum = -1, dataSourceColumnNum = -1, dataTypeColumnNum = -1;
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
@@ -347,6 +364,30 @@ throws InvalidCommandParameterException,
                     status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that a table exists with the column \"" + LocationColumn + "\"." ) );
                 }
+                if ( (DataSourceColumn != null) && (DataSourceColumn.length() > 0) ) {
+                    try {
+                        dataSourceColumnNum = table.getFieldIndex(DataSourceColumn);
+                    }
+                    catch ( Exception e ) {
+                        message = "Unable to find data source column \"" + DataSourceColumn + "\" for TableID=\"" + TableID + "\".";
+                        Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that a table exists with the column \"" + DataSourceColumn + "\"." ) );
+                    }
+                }
+                if ( (DataTypeColumn != null) && (DataTypeColumn.length() > 0) ) {
+                    try {
+                        dataTypeColumnNum = table.getFieldIndex(DataTypeColumn);
+                    }
+                    catch ( Exception e ) {
+                        message = "Unable to find data type column \"" + DataTypeColumn + "\" for TableID=\"" + TableID + "\".";
+                        Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that a table exists with the column \"" + DataTypeColumn + "\"." ) );
+                    }
+                }
             }
         }
     }
@@ -375,21 +416,24 @@ throws InvalidCommandParameterException,
         
             StringBuffer tsidentString = new StringBuffer();
             TableRecord rec = null;
-            Object o;
             String locationID;
             TS ts = null;
+            String dataType;
             String tsid1 = null; // The TSID corresponding to the first data source, used for default time series
             int tsize = table.getNumberOfRecords();
             for ( int i = 0; i < tsize; i++ ) {
                 rec = table.getRecord ( i );
-                o = rec.getFieldValue ( locationColumnNum );
+                locationID = rec.getFieldValueString ( locationColumnNum );
                 // Skip blank location identifiers
-                if ( o == null ) {
+                if ( (locationID == null) || (locationID.trim().length() == 0) ) {
                     continue;
                 }
-                locationID = (String)o;
-                if ( locationID.equals("") ) {
-                    continue;
+                // Data type
+                if ( dataTypeColumnNum >= 0 ) {
+                    dataType = rec.getFieldValueString ( dataTypeColumnNum );
+                }
+                else {
+                    dataType = DataType;
                 }
                 // Allow more than one data source to be specified, which is useful when there is mixed ownership of stations
                 int nDataSource = 1;
@@ -400,12 +444,18 @@ throws InvalidCommandParameterException,
                 for ( int iDataSource = 0; iDataSource < nDataSource; iDataSource++ ) {
                     tsidentString.setLength(0);
                     if ( dataSourceList.length == 0 ) {
-                        dataSource = "";
+                        if ( dataSourceColumnNum >= 0 ) {
+                            // Get the data source from the table
+                            dataSource = rec.getFieldValueString ( dataSourceColumnNum );
+                        }
+                        else {
+                            dataSource = "";
+                        }
                     }
                     else {
                         dataSource = dataSourceList[iDataSource];
                     }
-                    tsidentString.append ( locationID + "." + dataSource + "." + DataType + "." + Interval + "~" + DataStore );
+                    tsidentString.append ( locationID + "." + dataSource + "." + dataType + "." + Interval + "~" + DataStore );
                     if ( InputName.length() > 0 ) {
                         tsidentString.append ( "~" + InputName );
                     }
@@ -504,6 +554,11 @@ throws InvalidCommandParameterException,
                                 // Time series has no units so assign default.
                                 ts.setDataUnits ( DefaultUnits );
                             }
+                            if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
+                                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                                    processor, ts, Alias, status, commandPhase);
+                                ts.setAlias ( alias );
+                            }
                             tslist.add ( ts );
                             break;
                         }
@@ -591,12 +646,15 @@ public String toString ( PropList props )
 
     String TableID = props.getValue ( "TableID" );
     String LocationColumn = props.getValue ( "LocationColumn" );
+    String DataSourceColumn = props.getValue ( "DataSourceColumn" );
     String DataSource = props.getValue ( "DataSource" );
+    String DataTypeColumn = props.getValue ( "DataTypeColumn" );
     String DataType = props.getValue ( "DataType" );
     String Interval = props.getValue ( "Interval" );
     String Scenario = props.getValue ( "Scenario" );
     String DataStore = props.getValue ( "DataStore" );
     String InputName = props.getValue ( "InputName" );
+    String Alias = props.getValue ( "Alias" );
     String IfNotFound = props.getValue ( "IfNotFound" );
     String DefaultUnits = props.getValue ( "DefaultUnits" );
 
@@ -611,12 +669,24 @@ public String toString ( PropList props )
         }
         b.append("LocationColumn=\"" + LocationColumn + "\"");
     }
+    if ((DataSourceColumn != null) && (DataSourceColumn.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("DataSourceColumn=\"" + DataSourceColumn + "\"");
+    }
 	if ((DataSource != null) && (DataSource.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
 		}
 		b.append("DataSource=\"" + DataSource + "\"");
 	}
+    if ((DataTypeColumn != null) && (DataTypeColumn.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("DataTypeColumn=\"" + DataTypeColumn + "\"");
+    }
     if ((DataType != null) && (DataType.length() > 0)) {
         if (b.length() > 0) {
             b.append(",");
@@ -646,6 +716,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("InputName=\"" + InputName + "\"");
+    }
+    if ((Alias != null) && (Alias.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Alias=\"" + Alias + "\"");
     }
     if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
         if (b.length() > 0) {

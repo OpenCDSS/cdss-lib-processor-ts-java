@@ -21,6 +21,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import java.io.File;
 import java.util.List;
@@ -40,21 +42,27 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
+import RTi.Util.Time.DateTimeFormatterType;
 
 /**
 Command editor dialog for the WriteTimeSeriesToDataStream() command.
 */
 public class WriteTimeSeriesToDataStream_JDialog extends JDialog
-implements ActionListener, KeyListener, ItemListener, WindowListener
+implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
 
-private final String __AddWorkingDirectory = "Add Working Directory";
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory_Output = "Add Working Directory (Output File)";
+private final String __RemoveWorkingDirectory_Output = "Remove Working Directory (Output File)";
+private final String __AddWorkingDirectory_Format = "Add Working Directory (Format File)";
+private final String __RemoveWorkingDirectory_Format = "Remove Working Directory (Format File)";
 
 private SimpleJButton __cancel_JButton = null;
-private SimpleJButton __browse_JButton = null;
+private SimpleJButton __browseOutput_JButton = null;
+private SimpleJButton __browseFormat_JButton = null;
 private SimpleJButton __ok_JButton = null;
-private SimpleJButton __path_JButton = null;
+private SimpleJButton __pathOutput_JButton = null;
+private SimpleJButton __pathFormat_JButton = null;
 private WriteTimeSeriesToDataStream_Command __command = null;
 private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
@@ -62,6 +70,8 @@ private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __Append_JComboBox = null;
 private JTextArea __OutputFileHeader_JTextArea = null;
 private JTextArea __OutputLineFormat_JTextArea = null;
+private JTextField __OutputLineFormatFile_JTextField = null;
+private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private JTextArea __OutputFileFooter_JTextArea = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
@@ -93,7 +103,7 @@ Responds to ActionEvents.
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
-	if ( o == __browse_JButton ) {
+	if ( o == __browseOutput_JButton ) {
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
@@ -102,10 +112,10 @@ public void actionPerformed( ActionEvent event )
 		else {
 		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
-		fc.setDialogTitle("Select DateValue Time Series File to Write");
-		SimpleFileFilter sff = new SimpleFileFilter("txt", "DateValue Time Series File");
+		fc.setDialogTitle("Select Data Stream Time Series File to Write");
+		SimpleFileFilter sff = new SimpleFileFilter("txt", "Data Stream Text Time Series File");
 		fc.addChoosableFileFilter(sff);
-		sff = new SimpleFileFilter("dv", "DateValue Time Series File");
+		sff = new SimpleFileFilter("xml", "Data Strem XML Time Series File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -124,6 +134,37 @@ public void actionPerformed( ActionEvent event )
 			}
 		}
 	}
+	else if ( o == __browseFormat_JButton ) {
+        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+        JFileChooser fc = null;
+        if ( last_directory_selected != null ) {
+            fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+        }
+        else {
+            fc = JFileChooserFactory.createJFileChooser( __working_dir );
+        }
+        fc.setDialogTitle("Select Data Line Format File");
+        SimpleFileFilter sff = new SimpleFileFilter("txt", "Data Line Format File (text)");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("xml", "Data Line Format File (XML)");
+        fc.addChoosableFileFilter(sff);
+        
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String directory = fc.getSelectedFile().getParent();
+            String filename = fc.getSelectedFile().getName(); 
+            String path = fc.getSelectedFile().getPath(); 
+    
+            if (filename == null || filename.equals("")) {
+                return;
+            }
+    
+            if (path != null) {
+                __OutputLineFormatFile_JTextField.setText(path );
+                JGUIUtil.setLastFileDialogDirectory(directory );
+                refresh();
+            }
+        }
+    }
 	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
@@ -134,23 +175,70 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
-	else if ( o == __path_JButton ) {
-		if ( __path_JButton.getText().equals(__AddWorkingDirectory) ) {
+	else if ( o == __pathOutput_JButton ) {
+		if ( __pathOutput_JButton.getText().equals(__AddWorkingDirectory_Output) ) {
 			__OutputFile_JTextField.setText (
 			IOUtil.toAbsolutePath(__working_dir, __OutputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(__RemoveWorkingDirectory) ) {
+		else if ( __pathOutput_JButton.getText().equals(__RemoveWorkingDirectory_Output) ) {
 			try {
 			    __OutputFile_JTextField.setText (
 				IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1, "WriteDateValue_JDialog", "Error converting file to relative path." );
+				Message.printWarning ( 1, "WriteTimeSeriesToDataStream", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
 	}
+    else if ( o == __pathFormat_JButton ) {
+        if ( __pathFormat_JButton.getText().equals(__AddWorkingDirectory_Format) ) {
+            __OutputLineFormatFile_JTextField.setText (
+            IOUtil.toAbsolutePath(__working_dir, __OutputLineFormatFile_JTextField.getText() ) );
+        }
+        else if ( __pathFormat_JButton.getText().equals(__RemoveWorkingDirectory_Format) ) {
+            try {
+                __OutputLineFormatFile_JTextField.setText (
+                IOUtil.toRelativePath ( __working_dir, __OutputLineFormatFile_JTextField.getText() ) );
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, "WriteTimeSeriesToDataStream", "Error converting file to relative path." );
+            }
+        }
+        refresh ();
+    }
 }
+
+//Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+// ...End event handlers for DocumentListener
 
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
@@ -192,6 +280,9 @@ private void checkInput ()
 	String Append = __Append_JComboBox.getSelected();
 	String OutputFileHeader = __OutputFileHeader_JTextArea.getText().trim();
 	String OutputLineFormat = __OutputLineFormat_JTextArea.getText().trim();
+	String OutputLineFormatFile = __OutputLineFormatFile_JTextField.getText().trim();
+    String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
+    String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	String OutputFileFooter = __OutputFileFooter_JTextArea.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
@@ -220,6 +311,15 @@ private void checkInput ()
     }
     if ( OutputLineFormat.length() > 0 ) {
         parameters.set ( "OutputLineFormat", OutputLineFormat );
+    }
+    if ( OutputLineFormatFile.length() > 0 ) {
+        parameters.set ( "OutputLineFormatFile", OutputLineFormatFile );
+    }
+    if ( DateTimeFormatterType.length() > 0 ) {
+        parameters.set ( "DateTimeFormatterType", DateTimeFormatterType );
+    }
+    if ( DateTimeFormat.length() > 0 ) {
+        parameters.set ( "DateTimeFormat", DateTimeFormat );
     }
     if ( OutputFileFooter.length() > 0 ) {
         parameters.set ( "OutputFileFooter", OutputFileFooter );
@@ -259,6 +359,9 @@ private void commitEdits ()
 	String Append = __Append_JComboBox.getSelected();
 	String OutputFileHeader = __OutputFileHeader_JTextArea.getText().trim();
 	String OutputLineFormat = __OutputLineFormat_JTextArea.getText().trim();
+	String OutputLineFormatFile = __OutputLineFormatFile_JTextField.getText().trim();
+    String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
+    String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	String OutputFileFooter = __OutputFileFooter_JTextArea.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -271,6 +374,9 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Append", Append );
 	__command.setCommandParameter ( "OutputFileHeader", OutputFileHeader );
 	__command.setCommandParameter ( "OutputLineFormat", OutputLineFormat );
+	__command.setCommandParameter ( "OutputLineFormatFile", OutputLineFormatFile );
+	__command.setCommandParameter ( "DateTimeFormatterType", DateTimeFormatterType );
+	__command.setCommandParameter ( "DateTimeFormat", DateTimeFormat );
 	__command.setCommandParameter ( "OutputFileFooter", OutputFileFooter );
 	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
@@ -297,12 +403,9 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 	getContentPane().add ( "North", main_JPanel );
 	int y = -1;
 
-   JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "<html><b>This command is under development.</b></html>" ),
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a data stream format file," +
-		" which consists of a simple header, data records for each value, and a simple footer." ),
+		" which consists of a simple header, a \"stream\" of time series value data records, and a simple footer." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -313,7 +416,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 		"The output filename can be specified using ${Property} notation to utilize global properties."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Enter date/times to a precision appropriate for output time series."),
+        "Specify output period date/times to a precision appropriate for time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -334,12 +437,12 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data stream file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputFile_JTextField = new JTextField ( 50 );
+	__OutputFile_JTextField = new JTextField ( 45 );
 	__OutputFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ( "Browse", this );
-    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+	__browseOutput_JButton = new SimpleJButton ( "Browse", this );
+    JGUIUtil.addComponent(main_JPanel, __browseOutput_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Append to file?:"),
@@ -354,7 +457,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - whether to append to output file (default=" + __command._True + ")."),
+        "Optional - whether to append to output file (default=" + __command._False + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file header:"),
@@ -378,8 +481,32 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     __OutputLineFormat_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__OutputLineFormat_JTextArea),
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - format for each data line."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required (if format file not specified) - format for each data line."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "OR data line format file:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputLineFormatFile_JTextField = new JTextField ( 45 );
+    __OutputLineFormatFile_JTextField.setToolTipText("Specify a file that provides a template for the output line.");
+    __OutputLineFormatFile_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputLineFormatFile_JTextField,
+        1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __browseFormat_JButton = new SimpleJButton ( "Browse", this );
+    JGUIUtil.addComponent(main_JPanel, __browseFormat_JButton,
+        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
+    // is supported by the panel
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time format:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true );
+    __DateTimeFormat_JPanel.addKeyListener ( this );
+    __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
+    __DateTimeFormat_JPanel.getDocument().addDocumentListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DateTimeFormat_JPanel,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - format string for data date/time formatter."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file footer:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -449,8 +576,10 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
-		button_JPanel.add ( __path_JButton );
+		__pathOutput_JButton = new SimpleJButton( __RemoveWorkingDirectory_Output, __RemoveWorkingDirectory_Output, this);
+		button_JPanel.add ( __pathOutput_JButton );
+       __pathFormat_JButton = new SimpleJButton( __RemoveWorkingDirectory_Format, __RemoveWorkingDirectory_Format, this);
+        button_JPanel.add ( __pathFormat_JButton );
 	}
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
@@ -518,6 +647,9 @@ private void refresh ()
 	String Append = "";
 	String OutputFileHeader = "";
 	String OutputLineFormat = "";
+	String OutputLineFormatFile = "";
+    String dateTimeFormatterType = "";
+    String DateTimeFormat = "";
 	String OutputFileFooter = "";
 	String Precision = "";
 	String MissingValue = "";
@@ -539,6 +671,9 @@ private void refresh ()
 		Append = parameters.getValue ( "Append" );
 		OutputFileHeader = parameters.getValue ( "OutputFileHeader" );
 		OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
+		dateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
+        DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
+		OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
 		OutputFileFooter = parameters.getValue ( "OutputFileFooter" );
 	    Precision = parameters.getValue("Precision");
 	    MissingValue = parameters.getValue("MissingValue");
@@ -611,7 +746,28 @@ private void refresh ()
 	    }
         if (OutputLineFormat != null) {
             __OutputLineFormat_JTextArea.setText(OutputLineFormat);
-       }
+        }
+        if (OutputLineFormatFile != null) {
+            __OutputLineFormatFile_JTextField.setText(OutputLineFormatFile);
+        }
+        if ( (dateTimeFormatterType == null) || dateTimeFormatterType.equals("") ) {
+            // Select default...
+            __DateTimeFormat_JPanel.selectFormatterType(null);
+        }
+        else {
+            try {
+                __DateTimeFormat_JPanel.selectFormatterType(DateTimeFormatterType.valueOfIgnoreCase(dateTimeFormatterType));
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nDateTimeFormatterType value \"" + dateTimeFormatterType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( DateTimeFormat != null ) {
+            __DateTimeFormat_JPanel.setText ( DateTimeFormat );
+        }
         if (OutputFileFooter != null) {
              __OutputFileFooter_JTextArea.setText(OutputFileFooter);
         }
@@ -636,6 +792,9 @@ private void refresh ()
 	Append = __Append_JComboBox.getSelected();
 	OutputFileHeader = __OutputFileHeader_JTextArea.getText().trim();
 	OutputLineFormat = __OutputLineFormat_JTextArea.getText().trim();
+	OutputLineFormatFile = __OutputLineFormatFile_JTextField.getText().trim();
+    dateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
+    DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	OutputFileFooter = __OutputFileFooter_JTextArea.getText().trim();
 	Precision = __Precision_JTextField.getText().trim();
 	MissingValue = __MissingValue_JTextField.getText().trim();
@@ -649,6 +808,9 @@ private void refresh ()
 	parameters.add ( "Append=" + Append );
 	parameters.add ( "OutputFileHeader=" + OutputFileHeader );
 	parameters.add ( "OutputLineFormat=" + OutputLineFormat );
+	parameters.add ( "OutputLineFormatFile=" + OutputLineFormatFile );
+	parameters.add ( "DateTimeFormatterType=" + dateTimeFormatterType );
+	parameters.add ( "DateTimeFormat=" + DateTimeFormat );
 	parameters.add ( "OutputFileFooter=" + OutputFileFooter );
 	parameters.add ( "Precision=" + Precision );
 	parameters.add ( "MissingValue=" + MissingValue );
@@ -656,26 +818,40 @@ private void refresh ()
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
-		if ( __path_JButton != null ) {
-			__path_JButton.setEnabled ( false );
+		if ( __pathOutput_JButton != null ) {
+			__pathOutput_JButton.setEnabled ( false );
 		}
 	}
-	if ( __path_JButton != null ) {
-		__path_JButton.setEnabled ( true );
+	if ( __pathOutput_JButton != null ) {
+		__pathOutput_JButton.setEnabled ( true );
 		File f = new File ( OutputFile );
 		if ( f.isAbsolute() ) {
-			__path_JButton.setText ( __RemoveWorkingDirectory );
+			__pathOutput_JButton.setText ( __RemoveWorkingDirectory_Output );
 		}
 		else {
-            __path_JButton.setText ( __AddWorkingDirectory );
+            __pathOutput_JButton.setText ( __AddWorkingDirectory_Output );
 		}
 	}
+    if ( (OutputLineFormatFile == null) || (OutputLineFormatFile.length() == 0) ) {
+        if ( __pathFormat_JButton != null ) {
+            __pathFormat_JButton.setEnabled ( false );
+        }
+    }
+    if ( __pathFormat_JButton != null ) {
+        __pathFormat_JButton.setEnabled ( true );
+        File f = new File ( OutputLineFormatFile );
+        if ( f.isAbsolute() ) {
+            __pathFormat_JButton.setText ( __RemoveWorkingDirectory_Format );
+        }
+        else {
+            __pathFormat_JButton.setText ( __AddWorkingDirectory_Format );
+        }
+    }
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()

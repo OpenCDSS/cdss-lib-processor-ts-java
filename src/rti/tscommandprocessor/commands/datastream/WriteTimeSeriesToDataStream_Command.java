@@ -33,6 +33,8 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTimeFormatterType;
+import RTi.Util.Time.TimeUtil;
 
 /**
 This class initializes, checks, and runs the WriteTimeSeriesToDataStream() command.
@@ -45,6 +47,11 @@ Values for Append parameter.
 */
 protected final String _False = "False";
 protected final String _True = "True";
+
+/**
+Values for MissingValue parameter.
+*/
+protected final String _Blank = "Blank";
 
 /**
 Output file that is created by this command.
@@ -72,6 +79,9 @@ throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
     String Append = parameters.getValue ( "Append" );
     String OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
+    String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
+    String dateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
+    String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
     String MissingValue = parameters.getValue("MissingValue" );
     String Precision = parameters.getValue ( "Precision" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -107,7 +117,7 @@ throws InvalidCommandParameterException
 
 		try {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
-                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+                TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -139,11 +149,77 @@ throws InvalidCommandParameterException
                 message, "Specify as True or false." ) );
     }
    
-    if ( (OutputLineFormat == null) || (OutputLineFormat.length() == 0) ) {
-        message = "The output line format must be specified.";
+    if ( ((OutputLineFormat == null) || (OutputLineFormat.length() == 0)) &&
+        ((OutputLineFormatFile == null) || (OutputLineFormatFile.length() == 0)) ) {
+        message = "The output line format or format file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify an output line format." ) );
+            message, "Specify an output line format OR format file." ) );
+    }
+    if ( ((OutputLineFormat != null) && (OutputLineFormat.length() == 0)) &&
+        ((OutputLineFormatFile != null) && (OutputLineFormatFile.length() == 0)) ) {
+        message = "The output line format or format file cannot both be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify an output line format OR format file." ) );
+    }
+    
+    if ( (OutputLineFormatFile != null) && (OutputLineFormatFile.length() > 0) ) {
+        String working_dir = null;
+        try {
+            Object o = processor.getPropContents ( "WorkingDir" );
+            if ( o != null ) {
+                working_dir = (String)o;
+            }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Software error - report the problem to support." ) );
+        }
+
+        try {
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor,this,OutputLineFormatFile)));
+            File f = new File ( adjusted_path );
+            File f2 = new File ( f.getParent() );
+            if ( !f2.exists() ) {
+                message = "The output line format file parent directory does not exist for: \"" + adjusted_path + "\".";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Create the input directory and file." ) );
+            }
+            f = null;
+            f2 = null;
+        }
+        catch ( Exception e ) {
+            message = "The format file:\n" +
+            "    \"" + OutputLineFormatFile +
+            "\"\ncannot be adjusted using the working directory:\n" +
+            "    \"" + working_dir + "\".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that format file and working directory paths are compatible." ) );
+        }
+    }
+    
+    if ( (dateTimeFormatterType != null) && !dateTimeFormatterType.equals("") ) {
+        // Check the value given the type - only support types that are enabled in this command.
+        if ( !dateTimeFormatterType.equalsIgnoreCase(""+DateTimeFormatterType.C) ) {
+            message = "The date/time formatter \"" + dateTimeFormatterType + "\" is not recognized.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the date/time formatter type as " + DateTimeFormatterType.C ));
+        }
+    }
+    if ( (DateTimeFormat == null) || DateTimeFormat.equals("") ) {
+        message = "The format must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Provide a date/time format." ) );
     }
 	
     if ( (Precision != null) && !Precision.equals("") ) {
@@ -204,6 +280,9 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "Append" );
     valid_Vector.add ( "OutputFileHeader" );
     valid_Vector.add ( "OutputLineFormat" );
+    valid_Vector.add ( "OutputLineFormatFile" );
+    valid_Vector.add ( "DateTimeFormatterType" );
+    valid_Vector.add ( "DateTimeFormat" );
 	valid_Vector.add ( "OutputFileFooter" );
 	valid_Vector.add ( "Precision" );
 	valid_Vector.add ( "MissingValue" );
@@ -260,7 +339,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "WriteDateValue_Command.runCommand", message;
+{	String routine = "WriteDataStream_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -289,9 +368,9 @@ CommandWarningException, CommandException
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Append = parameters.getValue ( "Append" );
-	boolean append = true;
-	if ( (Append != null) && Append.equalsIgnoreCase("False") ) {
-	    append = false;
+	boolean append = false; // Default
+	if ( (Append != null) && Append.equalsIgnoreCase("True") ) {
+	    append = true;
 	}
 	String OutputFileHeader = parameters.getValue ( "OutputFileHeader" );
 	String OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
@@ -299,6 +378,13 @@ CommandWarningException, CommandException
 	    // FIXME SAM 2013-08-10 Need to figure out how to merge TS and label formats or use ${ts:...}
 	    OutputLineFormat = "%v";
 	}
+	String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
+    String DateTimeFormatterType0 = parameters.getValue ( "DateTimeFormatterType" );
+    if ( (DateTimeFormatterType0 == null) || DateTimeFormatterType0.equals("") ) {
+        DateTimeFormatterType0 = "" + DateTimeFormatterType.C;
+    }
+    DateTimeFormatterType dateTimeFormatterType = DateTimeFormatterType.valueOfIgnoreCase(DateTimeFormatterType0);
+    String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
 	String OutputFileFooter = parameters.getValue ( "OutputFileFooter" );
     String Precision = parameters.getValue ( "Precision" );
     Integer precision = null;
@@ -306,10 +392,6 @@ CommandWarningException, CommandException
         precision = Integer.parseInt(Precision);
     }
     String MissingValue = parameters.getValue ( "MissingValue" );
-    Double missingValue = null;
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        missingValue = Double.parseDouble(MissingValue);
-    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -328,7 +410,7 @@ CommandWarningException, CommandException
 				routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
+						message, "Check TSList, TSID, EnsembleID parameters." ) );
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -340,7 +422,7 @@ CommandWarningException, CommandException
 		command_tag,++warning_count), routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
+						message, "Check TSList, TSID, EnsembleID parameters." ) );
 	}
 	List<TS> tslist = (List<TS>)o_TSList;
 	if ( tslist.size() == 0 ) {
@@ -476,10 +558,34 @@ CommandWarningException, CommandException
         OutputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
-        Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
+        Message.printStatus ( 2, routine, "Writing DataStream file \"" + OutputFile_full + "\"" );
         List<String> problems = new Vector<String>();
-        writeTimeSeries ( tslist, OutputFile_full, append, OutputFileHeader, OutputLineFormat, OutputFileFooter,
-			precision, missingValue, OutputStart_DateTime, OutputEnd_DateTime, problems );
+        String outputLineFormat = OutputLineFormat;
+        if ( (OutputLineFormatFile != null) && !OutputLineFormatFile.equals("") ) {
+            // Read the format from the file
+            String formatFileFull = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputLineFormatFile)));
+            if ( !IOUtil.fileReadable(formatFileFull) || !IOUtil.fileExists(formatFileFull)) {
+                message = "Format file \"" + formatFileFull + "\" is not found or accessible.";
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord( CommandStatusType.FAILURE, message,
+                        "Verify that the file exists and is readable."));
+                throw new CommandException ( message );
+            }
+            // Expand the format here to deal with processor properties, leaving only time series properties
+            outputLineFormat = StringUtil.toString(IOUtil.fileToStringList(formatFileFull), " ");
+        }
+        // Expand the format here to deal with processor properties, leaving only time series properties
+        // This improves performance a bit
+        outputLineFormat = TSCommandProcessorUtil.expandParameterValue(processor,this,outputLineFormat);
+        // Now write the data records and expand the output line format dynamically for each time series and data value
+        Message.printStatus(2, "", "Calling writeTimeSeries");
+        writeTimeSeries ( tslist, OutputFile_full, append, OutputFileHeader, outputLineFormat, dateTimeFormatterType, DateTimeFormat,
+            OutputFileFooter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime, problems, processor,
+            status, CommandPhaseType.RUN );
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));
     }
@@ -520,6 +626,9 @@ public String toString ( PropList parameters )
 	String Append = parameters.getValue ( "Append" );
 	String OutputFileHeader = parameters.getValue ( "OutputFileHeader" );
 	String OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
+	String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
+	String DateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
+	String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
 	String OutputFileFooter = parameters.getValue ( "OutputFileFooter" );
 	String Precision = parameters.getValue("Precision");
 	String MissingValue = parameters.getValue("MissingValue");
@@ -568,6 +677,24 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputLineFormat=\"" + OutputLineFormat + "\"" );
     }
+    if ( (OutputLineFormatFile != null) && (OutputLineFormatFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputLineFormatFile=\"" + OutputLineFormatFile + "\"" );
+    }
+    if ( (DateTimeFormatterType != null) && (DateTimeFormatterType.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DateTimeFormatterType=\"" + DateTimeFormatterType + "\"" );
+    }
+    if ( (DateTimeFormat != null) && (DateTimeFormat.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DateTimeFormat=\"" + DateTimeFormat + "\"" );
+    }
     if ( (OutputFileFooter != null) && (OutputFileFooter.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -609,15 +736,18 @@ Write a time series to the output file.
 @param outputFileHeader the header content to add at the top of the output file
 @param outputLineFormat output line format to be used for each value, using TS % specifiers, similar to graph
 data point labeling
+@param dateTimeFormatterType formatter type for date/times
+@param dateTimeFormat the format to use for date/times, when processed by the date/time formatter
 @param outputFileFooter the footer content to add at the bottom of the output file
 @param precision precision for output value (default is from data units, or 4)
-@param missingValue missing value to output
+@param missingValue requested missing value to output, or null to output time series missing value
 @param outputStart start for output values
 @param output End end for output values
 */
 private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean append,
-    String outputFileHeader, String outputLineFormat, String outputFileFooter,
-    Integer precision, Double missingValue, DateTime outputStart, DateTime outputEnd, List<String> problems )
+    String outputFileHeader, String outputLineFormat, DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat,
+    String outputFileFooter, Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
+    List<String> problems, CommandProcessor processor, CommandStatus status, CommandPhaseType commandPhase )
 {   String message;
     PrintWriter fout = null;
     try {
@@ -629,17 +759,69 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
         if ( tslist == null ) {
             return;
         }
+        String dataLineExpanded;
+        if ( precision == null ) {
+            precision = 4;
+        }
+        String valueFormat = "%." + precision + "f";
+        String missingValueString = "";
+        // Create a DateTimeFormatter to format the data values
+        if ( dateTimeFormatterType == null ) {
+            dateTimeFormatterType = DateTimeFormatterType.C;
+        }
+        if ( (dateTimeFormat != null) && dateTimeFormat.equals("") ) {
+            // Set to null to simplify checks below
+            dateTimeFormat = null;
+        }
         for ( TS ts : tslist ) {
+            // Missing value can be output as a string so check
+            if ( missingValue == null ) {
+                // Use the time series value
+                if ( Double.isNaN(ts.getMissing()) ) {
+                    missingValueString = "NaN";
+                }
+                else {
+                    missingValueString = StringUtil.formatString(ts.getMissing(),valueFormat);
+                }
+            }
+            else if ( missingValue.equalsIgnoreCase(_Blank) ) {
+                missingValueString = "";
+            }
             // Iterate through data in the time series and output each value according to the format.
             TSIterator it = ts.iterator(outputStart, outputEnd);
             TSData tsdata = null;
-            String units = ts.getDataUnits();
-            String valueFormat = "%.4f";
+            //String units = ts.getDataUnits();
             double value;
+            String valueString, dateTimeString = "";
+            CommandStatus cs = null;//status; // Set to null once debugged
             while ( (tsdata = it.next()) != null ) {
+                // First expand the line to replace time series properties
                 value = tsdata.getDataValue();
-                fout.println(TSData.toString(outputLineFormat,valueFormat, tsdata.getDate(), value, 0.0,
-                    tsdata.getDataFlag().trim(),units));
+                //Message.printStatus(2, "", "Processing " + tsdata.getDate() + " " + value );
+                dataLineExpanded = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+                    processor, ts, outputLineFormat, cs, commandPhase ); // Comment status to avoid many messages
+                if ( ts.isDataMissing(value) ) {
+                    valueString = missingValueString;
+                }
+                else {
+                    valueString = StringUtil.formatString(value, valueFormat);
+                }
+                // Do a brute force replace of the ${tsdata:value} and ${tsdata:datetime} properties with the value
+                dataLineExpanded = dataLineExpanded.replace("${tsdata:value}", valueString);
+                if ( dateTimeFormatterType == DateTimeFormatterType.C ) {
+                    if ( dateTimeFormat == null ) {
+                        // Just use the default
+                        dateTimeString = tsdata.getDate().toString();
+                    }
+                    else {
+                        // Format according to the requested
+                        dateTimeString = TimeUtil.formatDateTime(tsdata.getDate(), dateTimeFormat);
+                    }
+                }
+                dataLineExpanded = dataLineExpanded.replace("${tsdata:datetime}", dateTimeString );
+                dataLineExpanded = dataLineExpanded.replace("${tsdata:flag}", "" + tsdata.getDataFlag());
+                //TSData.toString(outputLineFormat,valueFormat, tsdata.getDate(), value, 0.0, tsdata.getDataFlag().trim(),units);
+                fout.println(dataLineExpanded);
             }
         }
         if ( (outputFileFooter != null) && (outputFileFooter.length() > 0) ) {

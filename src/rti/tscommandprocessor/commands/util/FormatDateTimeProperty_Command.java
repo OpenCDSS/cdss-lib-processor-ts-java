@@ -111,7 +111,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "PropertyName" );
     valid_Vector.add ( "DateTimePropertyName" );
     valid_Vector.add ( "FormatterType" );

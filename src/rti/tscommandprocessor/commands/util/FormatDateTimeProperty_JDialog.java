@@ -261,7 +261,7 @@ private void initialize ( JFrame parent, FormatDateTimeProperty_Command command 
     // is supported by the panel
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Format:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Format_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null );
+	__Format_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true );
 	__Format_JPanel.addKeyListener ( this );
 	__Format_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
 	__Format_JPanel.getDocument().addDocumentListener ( this );

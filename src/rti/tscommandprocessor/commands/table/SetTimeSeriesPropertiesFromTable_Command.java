@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -24,6 +25,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 
@@ -33,16 +35,6 @@ This class initializes, checks, and runs the SetTimeSeriesPropertiesFromTable() 
 public class SetTimeSeriesPropertiesFromTable_Command extends AbstractCommand implements Command
 {
     
-/**
-Time series table column names.
-*/
-private String [] __tableInputColumnNames = null;
-
-/**
-Time series property names.
-*/
-private String [] __tsPropertyNames = null;
-
 /**
 Constructor.
 */
@@ -65,7 +57,6 @@ throws InvalidCommandParameterException
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableInputColumns = parameters.getValue ( "TableInputColumns" );
-    String TSPropertyNames = parameters.getValue ( "TSPropertyNames" );
     String warning = "";
     String message;
     
@@ -92,31 +83,9 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide one or more table column names for properties." ) );
     }
-    else {
-        if ( (TSPropertyNames != null) && !TSPropertyNames.equals("") ) {
-            // Make sure that the length of the property names is the same as the column names
-            __tableInputColumnNames = new String[1];
-            __tableInputColumnNames[0] = TableInputColumns;
-            if ( TableInputColumns.indexOf(",") > 0 ) {
-                __tableInputColumnNames = TableInputColumns.split(",");
-            }
-            __tsPropertyNames = new String[1];
-            __tsPropertyNames[0] = TSPropertyNames;
-            if ( TSPropertyNames.indexOf(",") > 0 ) {
-                __tsPropertyNames = TSPropertyNames.split(",");
-            }
-            if ( __tableInputColumnNames.length != __tsPropertyNames.length ) {
-                message = "The number of table input column(s) must be the same as the number " +
-                	"of time series property names (or blank).";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a list of time series property names of same length as the table column names." ) );
-            }
-        }
-    }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -157,8 +126,7 @@ Method to execute the command.
 @exception Exception if there is an error processing the command.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {   String message, routine = getCommandName() + "_Command.runCommand";
     int warning_level = 2;
     String command_tag = "" + command_number;
@@ -180,8 +148,41 @@ CommandWarningException, CommandException
     String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String TableID = parameters.getValue ( "TableID" );
+    String TableInputColumns = parameters.getValue ( "TableInputColumns" );
+    String [] tableInputColumns = new String[0];
+    if ( (TableInputColumns != null) && (TableInputColumns.length() > 0) ) {
+        tableInputColumns = TableInputColumns.split(",");
+    }
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    String TSPropertyNames = parameters.getValue ( "TSPropertyNames" );
+    Hashtable<String,String> tsPropertyNamesMap = new Hashtable<String,String>();
+    if ( (TSPropertyNames != null) && (TSPropertyNames.length() > 0) ) {
+        if ( TSPropertyNames.indexOf(":") > 0 ) {
+            // Newer style property that is a dictionary
+            // First break map pairs by comma
+            List<String>pairs = StringUtil.breakStringList(TSPropertyNames, ",", 0 );
+            // Now break pairs and put in hashtable
+            for ( String pair : pairs ) {
+                String [] parts = pair.split(":");
+                if ( parts.length == 1 ) {
+                    // Should not happen - invalid input
+                    tsPropertyNamesMap.put(parts[0].trim(), "" );
+                }
+                else {
+                    tsPropertyNamesMap.put(parts[0].trim(), parts[1].trim() );
+                }
+            }
+        }
+        else {
+            // Older syntax that expects property name to be matched with table column name
+            // Don't error check that array lengths are the same because older TSTool should have enforced this
+            String [] tsPropertyNames = TSPropertyNames.split(",");
+            for ( int i = 0; i < tsPropertyNames.length; i++ ) {
+                tsPropertyNamesMap.put(tableInputColumns[i],tsPropertyNames[i]);
+            }
+        }
+    }
 
     // Get the table to process.
 
@@ -217,17 +218,14 @@ CommandWarningException, CommandException
     }
     
     // Get the column from the table to be used as input...
-    
-    int [] tableInputColumns = new int[0];
-    if ( __tableInputColumnNames != null ) {
-        tableInputColumns = new int[__tableInputColumnNames.length];
-    }
+
+    int [] tableInputColumnNums = new int[tableInputColumns.length];
     for ( int i = 0; i < tableInputColumns.length; i++ ) {
         try {
-            tableInputColumns[i] = table.getFieldIndex(__tableInputColumnNames[i]);
+            tableInputColumnNums[i] = table.getFieldIndex(tableInputColumns[i]);
         }
         catch ( Exception e2 ) {
-            message = "Table \"" + TableID + "\" does not have column \"" + __tableInputColumnNames[i] + "\".";
+            message = "Table \"" + TableID + "\" does not have column \"" + tableInputColumns[i] + "\".";
             Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -302,99 +300,115 @@ CommandWarningException, CommandException
         TS ts = null;
         Object o_ts = null;
         Object tableObject; // The table value as a generic object
-        for ( int its = 0; its < nts; its++ ) {
-            // The the time series to process, from the list that was returned above.
-            o_ts = tslist.get(its);
-            if ( o_ts == null ) {
-                message = "Time series to process is null.";
-                Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-                    "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
-                // Go to next time series.
-                continue;
-            }
-            ts = (TS)o_ts;
-            
-            for ( int icolumn = 0; icolumn < tableInputColumns.length; icolumn++ ) {
-                try {
-                    // Get the value from the table
-                    // See if a matching row exists using the specified TSID column...
-                    String tsid = null;
-                    if ( (TableTSIDFormat != null) && !TableTSIDFormat.equals("") ) {
-                        // Format the TSID using the specified format
-                        tsid = ts.formatLegend ( TableTSIDFormat );
-                    }
-                    else {
-                        // Use the alias if available and then the TSID
-                        tsid = ts.getAlias();
-                        if ( (tsid == null) || tsid.equals("") ) {
-                            tsid = ts.getIdentifierString();
-                        }
-                    }
-                    TableRecord rec = table.getRecord ( TableTSIDColumn, tsid );
-                    if ( rec == null ) {
-                        message = "Cannot find table \"" + TableID + "\" cell in column \"" + TableTSIDColumn +
-                            "\" matching TSID formatted as \"" + tsid + "\" - skipping time series \"" +
-                            ts.getIdentifierString() + "\".";
-                        Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                            routine, message );
-                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-                            "Verify that table \"" + TableID + "\" column TSID matches one or more time series." ) );
-                        // Go to next time series.
-                        continue;
-                    }
-                    // Get the value from the table...
-                    tableObject = rec.getFieldValue(tableInputColumns[icolumn]);
-                    // Allow the value to be any number
-                    if ( tableObject == null ) {
-                        // Blank cell values are allowed - just don't set the property
-                        message = "Table \"" + TableID + "\" value in column \"" + __tableInputColumnNames[icolumn] +
-                        "\" matching TSID \"" + tsid + "\" is null - skipping time series \"" +
-                        ts.getIdentifierString() + "\".";
-                        Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                            routine, message );
-                        // Don't add to command log because warnings will result.
-                        //status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-                        //    "Verify that the proper table input column is specified and that column values are numbers." ) );
-                        // Go to next time series.
-                        continue;
-                    }
-                    else {
-                        // Treat all time series properties as strings
-                        String tableObjectAsString = "" + tableObject;
-                        tableObjectAsString = tableObjectAsString.trim();
-                        if ( (__tsPropertyNames == null) || (__tsPropertyNames[icolumn].equals("") ) ) {
-                            // Use the table column name for the property
-                            ts.setProperty(__tableInputColumnNames[icolumn], tableObjectAsString );
-                            ts.addToGenesis( "Set table property from table \"" + TableID + "\", column \"" +
-                                __tableInputColumnNames[icolumn] + "\", \"" +
-                                __tableInputColumnNames[icolumn] + "\" = " + tableObjectAsString );
+        // Get the table column number for the TSID
+        int tableTSIDColumnNum = -1;
+        try {
+            tableTSIDColumnNum = table.getFieldIndex(TableTSIDColumn);
+        }
+        catch ( Exception e ) {
+            message = "Table column for TSID \"" + TableTSIDColumn + "\" is not found in table \"" + TableID +
+                "\".  Cannot match time series.";
+            Message.printWarning ( warning_level, 
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid TSID column." ) );
+        }
+        if ( tableTSIDColumnNum >= 0 ) {
+            for ( int its = 0; its < nts; its++ ) {
+                // The the time series to process, from the list that was returned above.
+                o_ts = tslist.get(its);
+                if ( o_ts == null ) {
+                    message = "Time series to process is null.";
+                    Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+                    // Go to next time series.
+                    continue;
+                }
+                ts = (TS)o_ts;
+                
+                for ( int icolumn = 0; icolumn < tableInputColumns.length; icolumn++ ) {
+                    try {
+                        // Get the value from the table
+                        // See if a matching row exists using the specified TSID column...
+                        String tsid = null;
+                        if ( (TableTSIDFormat != null) && !TableTSIDFormat.equals("") ) {
+                            // Format the TSID using the specified format
+                            tsid = ts.formatLegend ( TableTSIDFormat );
                         }
                         else {
-                            // Else, use the specified property name for the time series property
-                            // If the property name matches a special name, set specifically
-                            if ( __tsPropertyNames[icolumn].equalsIgnoreCase("TS:Description") ) {
-                                ts.setDescription(tableObjectAsString);
-                                ts.addToGenesis( "Set table description from table \"" + TableID + "\", column \"" +
-                                    __tsPropertyNames[icolumn] + "\", description = " + tableObjectAsString );
+                            // Use the alias if available and then the TSID
+                            tsid = ts.getAlias();
+                            if ( (tsid == null) || tsid.equals("") ) {
+                                tsid = ts.getIdentifierString();
+                            }
+                        }
+                        TableRecord rec = table.getRecord ( tableTSIDColumnNum, tsid );
+                        if ( rec == null ) {
+                            message = "Cannot find table \"" + TableID + "\" cell in column \"" + TableTSIDColumn +
+                                "\" matching TSID formatted as \"" + tsid + "\" - skipping time series \"" +
+                                ts.getIdentifierString() + "\".";
+                            Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                                routine, message );
+                            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                                "Verify that table \"" + TableID + "\" column TSID matches one or more time series." ) );
+                            // Go to next time series.
+                            continue;
+                        }
+                        // Get the value from the table...
+                        tableObject = rec.getFieldValue(tableInputColumnNums[icolumn]);
+                        // Allow the value to be any number
+                        if ( tableObject == null ) {
+                            // Blank cell values are allowed - just don't set the property
+                            message = "Table \"" + TableID + "\" value in column \"" + tableInputColumns[icolumn] +
+                            "\" matching TSID \"" + tsid + "\" is null - skipping time series \"" +
+                            ts.getIdentifierString() + "\".";
+                            Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                                routine, message );
+                            // Don't add to command log because warnings will result.
+                            //status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                            //    "Verify that the proper table input column is specified and that column values are numbers." ) );
+                            // Go to next time series.
+                            continue;
+                        }
+                        else {
+                            // Treat all time series properties as strings
+                            // TODO SAM 2013-09-10 Why treat all as strings?
+                            String tableObjectAsString = "" + tableObject;
+                            tableObjectAsString = tableObjectAsString.trim();
+                            String tsPropertyName = tsPropertyNamesMap.get(tableInputColumns[icolumn]);
+                            if ( tsPropertyName == null ) {
+                                // Use the table column name for the property
+                                ts.setProperty(tableInputColumns[icolumn], tableObjectAsString );
+                                ts.addToGenesis( "Set table property from table \"" + TableID + "\", column \"" +
+                                    tableInputColumns[icolumn] + "\", \"" +
+                                    tableInputColumns[icolumn] + "\" = " + tableObjectAsString );
                             }
                             else {
-                                ts.setProperty(__tsPropertyNames[icolumn], tableObjectAsString );
-                                ts.addToGenesis( "Set table property from table \"" + TableID + "\", column \"" +
-                                    __tsPropertyNames[icolumn] + "\", \"" +
-                                    __tableInputColumnNames[icolumn] + "\" = " + tableObjectAsString );
+                                // Else, use the specified property name for the time series property
+                                // If the property name matches a special name, set specifically
+                                if ( tsPropertyName.equalsIgnoreCase("${TS:Description}") ) {
+                                    ts.setDescription(tableObjectAsString);
+                                    ts.addToGenesis( "Set table description from table \"" + TableID + "\", column \"" +
+                                        tsPropertyName + "\", description = " + tableObjectAsString );
+                                }
+                                else {
+                                    ts.setProperty(tsPropertyName, tableObjectAsString );
+                                    ts.addToGenesis( "Set table property from table \"" + TableID + "\", column \"" +
+                                        tsPropertyName + "\", \"" + tsPropertyName + "\" = " + tableObjectAsString );
+                                }
                             }
                         }
                     }
-                }
-                catch ( Exception e ) {
-                    message = "Unexpected error processing time series \""+ ts.getIdentifier() + " (" + e + ").";
-                    Message.printWarning ( warning_level,
-                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-                    Message.printWarning(3,routine,e);
-                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "See the log file for details - report the problem to software support." ) );
+                    catch ( Exception e ) {
+                        message = "Unexpected error processing time series \""+ ts.getIdentifier() + " (" + e + ").";
+                        Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+                        Message.printWarning(3,routine,e);
+                        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "See the log file for details - report the problem to software support." ) );
+                    }
                 }
             }
         }

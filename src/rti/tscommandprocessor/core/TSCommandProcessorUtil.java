@@ -269,12 +269,12 @@ throws Exception
 }
 
 /**
-Expand a parameter value to recognize processor-level properties.  For example, a parameter value like
+Expand a string containing processor-level properties.  For example, a parameter value like
 "${WorkingDir}/morepath" will be expanded to include the working directory.
-The characters \" will be replaced by a literal ".
+The characters \" will be replaced by a literal quote (").  Properties that cannot be expanded will remain.
 @param processor the CommandProcessor that has a list of named properties.
 @param command the command that is being processed (may be used later for context sensitive values).
-@param parameterValue the parameter value being expanded.
+@param parameterValue the parameter value being expanded, containing literal substrings and optionally ${Property} properties.
 */
 public static String expandParameterValue( CommandProcessor processor, Command command, String parameterValue )
 {   String routine = "TSCommandProcessorUtil.expandParameterValue";
@@ -287,12 +287,12 @@ public static String expandParameterValue( CommandProcessor processor, Command c
     // Evaluate whether to write a general method for this - for now only handle // \" and \' replacement.
     parameterValue = parameterValue.replace("\\\"", "\"" );
     parameterValue = parameterValue.replace("\\'", "'" );
-    // Else see if the parameter value can be expanded to replace $ symbolic references with other values
+    // Else see if the parameter value can be expanded to replace ${} symbolic references with other values
     // Search the parameter string for $ until all processor parameters have been resolved
-    int searchPos = 0; // Position in the "parameter_val" string to search for $ references
+    int searchPos = 0; // Position in the "parameter_val" string to search for ${} references
     int foundPos; // Position when leading ${ is found
     int foundPosEnd; // Position when ending } is found
-    String foundProp = null; // Whether a property is found that matches the $ symbol
+    String propname = null; // Whether a property is found that matches the $ symbol
     String delimStart = "${";
     String delimEnd = "}";
     while ( searchPos < parameterValue.length() ) {
@@ -305,22 +305,22 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         // Else found the delimiter so continue with the replacement
         Message.printStatus ( 2, routine, "Found " + delimStart + " at position [" + foundPos + "]");
         // Get the name of the property
-        foundProp = parameterValue.substring((foundPos+2),foundPosEnd);
+        propname = parameterValue.substring((foundPos+2),foundPosEnd);
         // Try to get the property from the processor
         // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show null in result.
         Object propval = null;
-        String propvalString = null;
+        String propvalString = "";
         try {
-            propval = processor.getPropContents ( foundProp );
+            propval = processor.getPropContents ( propname );
             propvalString = "" + propval;
         }
         catch ( Exception e ) {
             // Keep the original literal value to alert user that property could not be expanded
-            propvalString = delimStart + propval + delimEnd;
+            propvalString = delimStart + propname + delimEnd;
         }
         if ( propval == null ) {
             // Keep the original literal value to alert user that property could not be expanded
-            propvalString = delimStart + propval + delimEnd;
+            propvalString = delimStart + propname + delimEnd;
         }
         StringBuffer b = new StringBuffer();
         // Append the start of the string
@@ -336,7 +336,7 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         // Now reset the search position to finish evaluating whether to expand the string.
         parameterValue = b.toString();
         searchPos = foundPos + propvalString.length(); // Expanded so no need to consider delim*
-        Message.printStatus( 2, routine, "Expanded property value is \"" + parameterValue +
+        Message.printStatus( 2, routine, "Expanded parameter value is \"" + parameterValue +
             "\" searchpos is now " + searchPos + " in string \"" + parameterValue + "\"" );
     }
     return parameterValue;
@@ -378,8 +378,10 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
     // Loop through and expand the string, first by expanding the time series properties and then the processor properties
     for ( int ipat = 0; ipat < startStrings.length; ipat++ ) {
         isTsProp = false;
-        if ( startStrings[ipat].equalsIgnoreCase("${ts:") ) {
-            isTsProp = true; // Time series property
+        if ( ipat == 0 ) {
+            // Time series property corresponding to startStrings[0] for loop below.
+            // The fundamental logic is the same but getting the property is different whether from TS or processor
+            isTsProp = true;
         }
         while ( pos2 < s2.length() ) {
             int pos1 = StringUtil.indexOfIgnoreCase(s2, startStrings[ipat], start );
@@ -389,15 +391,17 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                 if ( pos2 > 0 ) {
                     // Get the property...
                     String propname = s2.substring(pos1+startStringsLength[ipat],pos2);
-                    String propvalString = "";
+                    //Message.printStatus(2, routine, "Property=\"" + propname + "\" isTSProp=" + isTsProp + " pos1=" + pos1 + " pos2=" + pos2 );
+                    // By convention if the property is not found, keep the original string so can troubleshoot property issues
+                    String propvalString = s2.substring(pos1,(pos2 + 1));
                     if ( isTsProp ) {
                         // Get the property out of the time series
                         propO = ts.getProperty(propname);
                         if ( propO == null ) {
-                            String message = "Time series \"" + ts.getIdentifierString() + "\" property=\"" +
-                                propname + "\" has a null value.";
-                            Message.printWarning ( 3,routine, message );
                             if ( status != null ) {
+                                String message = "Time series \"" + ts.getIdentifierString() + "\" property=\"" +
+                                propname + "\" has a null value.";
+                                Message.printWarning ( 3,routine, message );
                                 status.addToLog ( commandPhase,
                                     new CommandLogRecord(CommandStatusType.FAILURE,
                                         message, "Verify that the property is set for the time series." ) );
@@ -409,62 +413,66 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                         }
                     }
                     else if ( processor != null ) {
+                        // Not a time series property so this is a processor property
                         // Get the property from the processor properties
                         PropList request_params = new PropList ( "" );
                         request_params.setUsingObject ( "PropertyName", propname );
                         CommandProcessorRequestResultsBean bean = null;
+                        boolean processorError = false;
                         try {
                             bean = processor.processRequest( "GetProperty", request_params);
                         }
                         catch ( Exception e ) {
-                            String message = "Error requesting GetProperty(Property=\"" + propname + "\") from processor.";
-                            Message.printWarning ( 3,routine, message );
                             if ( status != null ) {
+                                String message = "Error requesting GetProperty(Property=\"" + propname + "\") from processor.";
+                                Message.printWarning ( 3,routine, message );
                                 status.addToLog ( commandPhase,
                                     new CommandLogRecord(CommandStatusType.FAILURE,
                                         message, "Report the problem to software support." ) );
                             }
-                            start = pos2;
-                            continue;
+                            processorError = true;
                         }
-                        if ( bean == null ) {
-                            String message =
-                                "Unable to find property from processor using GetProperty(Property=\"" + propname + "\").";
-                            Message.printWarning ( 3,routine, message );
-                            if ( status != null ) {
-                                status.addToLog ( commandPhase,
-                                    new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message,
-                                        "Verify that the property name is valid - must match case." ) );
+                        if ( !processorError ) {
+                            if ( bean == null ) {
+                                // Not an exception but the property was not found in the processor
+                                if ( status != null ) {
+                                    String message =
+                                        "Unable to find property from processor using GetProperty(Property=\"" + propname + "\").";
+                                    Message.printWarning ( 3,routine, message );
+                                    status.addToLog ( commandPhase,
+                                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                            message, "Verify that the property name is valid - must match case." ) );
+                                }
                             }
-                            start = pos2;
-                            continue;
-                        }
-                        PropList bean_PropList = bean.getResultsPropList();
-                        Object o_PropertyValue = bean_PropList.getContents ( "PropertyValue" );
-                        if ( o_PropertyValue == null ) {
-                            String message =
-                                "Null PropertyValue returned from processor for GetProperty(PropertyName=\"" + propname + "\").";
-                            Message.printWarning ( 3, routine, message );
-                            if ( status != null ) {
-                                status.addToLog ( commandPhase,
-                                    new CommandLogRecord(CommandStatusType.FAILURE, message,
-                                        "Verify that the property name is valid - must match case." ) );
+                            else {
+                                // Have a property, but still need to check for null value
+                                // TODO SAM 2013-09-09 should this be represented as "null" in output?
+                                PropList bean_PropList = bean.getResultsPropList();
+                                Object o_PropertyValue = bean_PropList.getContents ( "PropertyValue" );
+                                if ( o_PropertyValue == null ) {
+                                    if ( status != null ) {
+                                        String message =
+                                            "Null PropertyValue returned from processor for GetProperty(PropertyName=\"" + propname + "\").";
+                                        Message.printWarning ( 3, routine, message );
+                                        status.addToLog ( commandPhase,
+                                            new CommandLogRecord(CommandStatusType.FAILURE, message,
+                                                "Verify that the property name is valid - must match case." ) );
+                                    }
+                                }
+                                else {
+                                    // This handles conversion of integers to strings
+                                    propvalString = "" + o_PropertyValue;
+                                }
                             }
-                            start = pos2;
-                            continue;
-                        }
-                        else {
-                            // This handles conversion of integers to strings
-                            propvalString = "" + o_PropertyValue;
-                            start = pos2;
                         }
                     }
                     // Replace the string and continue to evaluate s2
                     s2 = s2.substring ( 0, pos1 ) + propvalString + s2.substring (pos2 + 1);
+                    // Next search will be at the end of the expanded string (end delimiter will be skipped in any case)
+                    start = pos1 + propvalString.length();
                 }
                 else {
-                    // No closing character so march on...
+                    // No closing character so leave the property string as is and march on...
                     start = pos1 + startStringsLength[ipat];
                     if ( start > s2.length() ) {
                         break;
@@ -472,7 +480,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                 }
             }
             else {
-                // Done processing properties.
+                // No more ${} property strings so done processing properties.
                 break;
             }
         }

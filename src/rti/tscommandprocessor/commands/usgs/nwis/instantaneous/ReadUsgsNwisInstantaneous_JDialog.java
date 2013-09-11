@@ -419,7 +419,8 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
 	int yMain = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Read one or more time series from the USGS NWIS instantaneous values web service."),
+    	"Read one or more time series from the USGS NWIS instantaneous values web service.  " +
+    	"The data interval is set to 15min."),
     	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>WARNING - This command can be slow.  Constrain the query to improve performance.</b></html>"),

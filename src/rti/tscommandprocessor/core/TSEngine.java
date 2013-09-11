@@ -4277,7 +4277,7 @@ throws Exception
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 +
-                "\" from ColoradoWaterSMS web service." );
+                "\" from ColoradoWaterSMS web service (" + te + ")." );
             Message.printWarning ( 3, routine, te );
             ts = null;
         }
@@ -4288,7 +4288,7 @@ throws Exception
 		    ts = DateValueTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
-		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from DateValue file." );
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from DateValue file (" + te + "." );
 			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
@@ -4299,7 +4299,7 @@ throws Exception
 		    ts = DateValueTS.readTimeSeries ( tsidentString, readStart, readEnd, units, readData );
 		}
 		catch ( Exception e ) {
-		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString + "\" from DateValue file." );
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString + "\" from DateValue file (" + e + ")." );
 			Message.printWarning ( 3, routine, e );
 			ts = null;
 		}
@@ -4330,7 +4330,7 @@ throws Exception
 		    ts = __DIADvisor_dmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
-			Message.printWarning ( 2, routine, "Error reading time series \"" + tsidentString2 + "\" from DIADvisor" );
+			Message.printWarning ( 2, routine, "Error reading time series \"" + tsidentString2 + "\" from DIADvisor (" + te + ")." );
 			Message.printWarning ( 3, routine, te );
 			Message.printWarning ( 3, routine, "Op:" +__DIADvisor_dmi.getLastSQLString() );
 			Message.printWarning ( 3, routine, "Archive:" +	__DIADvisor_archive_dmi.getLastSQLString() );
@@ -4358,7 +4358,7 @@ throws Exception
             }
             catch ( Exception te ) {
                 Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                    "\" from \"" + ds.getName() + "\" datastore" );
+                    "\" from \"" + ds.getName() + "\" datastore (" + te + ")." );
                 Message.printWarning ( 3, routine, te );
                 ts = null;
             }
@@ -4376,7 +4376,7 @@ throws Exception
                 ts = HecDssAPI.readTimeSeries ( new File(inputNameFull), tsidentString, readStart, readEnd, units, readData );
             }
             catch ( Exception e ) {
-                Message.printWarning ( 2, routine, "Error reading \"" + tsidentString + "\" from HEC-DSS file." );
+                Message.printWarning ( 2, routine, "Error reading \"" + tsidentString + "\" from HEC-DSS file (" + e + ")." );
                 Message.printWarning ( 3, routine, e );
                 ts = null;
             }
@@ -4439,7 +4439,7 @@ throws Exception
 			}
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 3, routine, "Error from HydroBaseDMI.readTimeSeries" );
+			Message.printWarning ( 3, routine, "Error from HydroBaseDMI.readTimeSeries (" + e + ")." );
 			Message.printWarning ( 3, routine, e );
 			ts = null;
 		}
@@ -4452,7 +4452,7 @@ throws Exception
 				inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
-		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from MexicoCSMN file." );
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from MexicoCSMN file (" + te + ")." );
             Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
@@ -4463,7 +4463,7 @@ throws Exception
             ts = ModsimTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
-		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from MODSIM file." );
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from MODSIM file (" + te + ")." );
             Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
@@ -4476,7 +4476,7 @@ throws Exception
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                "\" from NRCS AWCB daily value web service." );
+                "\" from NRCS AWCB daily value web service (" + te + ")." );
             Message.printWarning ( 3, routine, te );
             ts = null;
         }
@@ -4517,7 +4517,7 @@ throws Exception
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine, "Error reading \"" +	tsidentString2 +
-			"\" from ESP trace ensemble binary file." );
+			"\" from ESP trace ensemble binary file (" + te + ")." );
 			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
@@ -4545,7 +4545,7 @@ throws Exception
             }
 			catch ( Exception te ) {
 				Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-				    "\" from RiversideDB \"" + dataStore.getName() + "\"." );
+				    "\" from RiversideDB \"" + dataStore.getName() + "\" (" + te + ")." );
 				Message.printWarning ( 3, routine, te );
 				ts = null;
 			}
@@ -4575,7 +4575,7 @@ throws Exception
             }
             catch ( Exception te ) {
                 Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                    "\" from ReclamationHDB database" );
+                    "\" from ReclamationHDB database (" + te + ")." );
                 Message.printWarning ( 3, routine, te );
                 ts = null;
             }
@@ -4589,7 +4589,7 @@ throws Exception
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                "\" from RCC ACIS web service." );
+                "\" from RCC ACIS web service (" + te + ")." );
             Message.printWarning ( 3, routine, te );
             ts = null;
         }
@@ -4600,7 +4600,7 @@ throws Exception
             ts = RiverWareTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
-		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from RiverWare file." );
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from RiverWare file (" + te + ")." );
             Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
@@ -4634,7 +4634,7 @@ throws Exception
 			}
 		}
 		catch ( Exception te ) {
-			Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from StateCU file." );
+			Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from StateCU file (" + te + ")." );
 			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
@@ -4645,7 +4645,7 @@ throws Exception
             ts = StateCU_BTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
         }
         catch ( Exception te ) {
-            Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from StateCU binary file." );
+            Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from StateCU binary file (" + te + ")." );
             Message.printWarning ( 3, routine, te );
             ts = null;
         }
@@ -4656,7 +4656,7 @@ throws Exception
             ts = StateMod_TS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
-			Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from StateMod file." );
+			Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from StateMod file (" + te + ")." );
 			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
@@ -4667,7 +4667,7 @@ throws Exception
             ts = StateMod_BTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
-			Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from StateMod binary file." );
+			Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from StateMod binary file (" + te + ")." );
 			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
@@ -4680,7 +4680,7 @@ throws Exception
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                "\" from USGS NWIS daily value web service." );
+                "\" from USGS NWIS daily value web service (" + te + ")." );
             Message.printWarning ( 3, routine, te );
             ts = null;
         }
@@ -4693,7 +4693,7 @@ throws Exception
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                "\" from USGS NWIS groundwater web service." );
+                "\" from USGS NWIS groundwater web service (" + te + ")." );
             Message.printWarning ( 3, routine, te );
             ts = null;
         }
@@ -4706,7 +4706,7 @@ throws Exception
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                "\" from USGS NWIS instantaneous value web service." );
+                "\" from USGS NWIS instantaneous value web service (" + te + "." );
             Message.printWarning ( 3, routine, te );
             ts = null;
         }
@@ -4719,7 +4719,7 @@ throws Exception
             ts = UsgsNwisRdbTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
-		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from USGS NWIS Rdb file." );
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from USGS NWIS Rdb file (" + te + ")." );
             Message.printWarning ( 3, routine, te );
 			ts = null;
 		}

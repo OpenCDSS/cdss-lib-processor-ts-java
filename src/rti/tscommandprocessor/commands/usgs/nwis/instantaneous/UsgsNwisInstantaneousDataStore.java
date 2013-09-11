@@ -211,11 +211,11 @@ not read the data
 public TS readTimeSeries ( String tsid, DateTime readStart, DateTime readEnd, boolean readData )
 throws MalformedURLException, IOException, Exception
 {   // Initialize empty query parameters.
-    List<String> siteList = new Vector();
-    List<String> stateList = new Vector();
-    List<String> hucList = new Vector();
+    List<String> siteList = new Vector<String>();
+    List<String> stateList = new Vector<String>();
+    List<String> hucList = new Vector<String>();
     double [] boundingBox = null;
-    List<String> countyList = new Vector();
+    List<String> countyList = new Vector<String>();
     List<UsgsNwisParameterType> parameterList = new Vector<UsgsNwisParameterType>();
     UsgsNwisSiteStatusType siteStatus = UsgsNwisSiteStatusType.ALL;
     List<UsgsNwisSiteType> siteTypeList = new Vector<UsgsNwisSiteType>();
@@ -224,6 +224,10 @@ throws MalformedURLException, IOException, Exception
     String outputFile = null;
     // Parse the TSID string and set in the query parameters
     TSIdent tsident = TSIdent.parseIdentifier(tsid);
+    // Currently the interval must be 15Min
+    if ( (tsident.getIntervalBase() != TimeInterval.MINUTE) && (tsident.getIntervalMult() != 15) ) {
+        throw new RuntimeException ( "Only 15Min interval is supported for NWIS Instantaneous.  Can't read \"" + tsid + "\"");
+    }
     siteList.add ( tsident.getLocation() );
     parameterList.add ( new UsgsNwisParameterType(tsident.getMainType(), "", "", "", "", "") );
     // The following should return one and only one time series.
@@ -257,13 +261,13 @@ public List<TS> readTimeSeriesList ( List<String> siteList, List<String> stateLi
 throws MalformedURLException, IOException, Exception
 {
     String routine = getClass().getName() + ".readTimeSeriesList";
-    List<TS> tslist = new Vector();
+    List<TS> tslist = new Vector<TS>();
 
     // Form the URL, starting with the root
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() );
     // Specify these in the order of the web service API documentation
     // Major filter - location, pick the first one specified
-    List<String> queryParameters = new Vector(); // Correspond to each query argument - ? and & handled later
+    List<String> queryParameters = new Vector<String>(); // Correspond to each query argument - ? and & handled later
     // Site list
     if ( siteList.size() > 0 ) {
         StringBuffer b = new StringBuffer("sites=");

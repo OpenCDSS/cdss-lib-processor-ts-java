@@ -304,7 +304,7 @@ throws IOException
     TSIdent ident = readTimeSeries_ParseIdent(watermlVersion, interval,
         sourceInfoElement, variableElement, valuesElement);
     if ( Message.isDebugOn ) {
-        Message.printDebug(1,routine,"...back from parsing TSIdent");
+        Message.printDebug(1,routine,"...back from parsing TSIdent, tsident=" + ident );
     }
 
     TS ts;
@@ -620,11 +620,21 @@ throws IOException
     catch (Exception ex) {
         throw new IOException("Error parsing date/time \"" + dateTimeString + "\"", ex);
     }
+    // Problem... if the input period does not align with the data interval, then the dates are off during iteration.
+    // Consequently, make sure the readStart and readEnd align with the interval
     if ( readStart == null ) {
         readStart = new DateTime(dataStart);
     }
+    else {
+        readStart = new DateTime(readStart);
+        readStart.round(-1, ts.getDataIntervalBase(), ts.getDataIntervalMult());
+    }
     if ( readEnd == null ) {
         readEnd = new DateTime(dataEnd);
+    }
+    else {
+        readEnd = new DateTime(readEnd);
+        readEnd.round(1, ts.getDataIntervalBase(), ts.getDataIntervalMult());
     }
     ts.setDate1(readStart);
     ts.setDate1Original(dataStart);

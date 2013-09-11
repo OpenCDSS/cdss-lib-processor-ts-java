@@ -483,7 +483,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             }
                         }
                         catch ( TimeSeriesNotFoundException e ) {
-                            message = "Time series could not be found using identifier \"" + tsid + "\".";
+                            message = "Time series could not be found using identifier \"" + tsid + "\" (" + e + ").";
                             if ( IfNotFound.equalsIgnoreCase(_Warn) && (iDataSource == (nDataSource - 1)) ) {
                                 status.addToLog ( commandPhase,
                                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -507,8 +507,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             notFoundLogged = true;
                         }
                         catch ( Exception e ) {
-                            message = "Error requesting ReadTimeSeries(TSID=\"" + tsid + "\") from processor + (exception: " +
-                            e + ").";
+                            message = "Error requesting ReadTimeSeries(TSID=\"" + tsid + "\") from processor + (" + e + ").";
                             //Message.printWarning(3, routine, e );
                             Message.printWarning(warning_level,
                                 MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );

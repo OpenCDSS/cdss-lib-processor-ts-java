@@ -376,7 +376,7 @@ CommandWarningException, CommandException
 	String OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
 	if ( (OutputLineFormat == null) || (OutputLineFormat.length() == 0) ) {
 	    // FIXME SAM 2013-08-10 Need to figure out how to merge TS and label formats or use ${ts:...}
-	    OutputLineFormat = "%v";
+	    OutputLineFormat = "${tsdata:datetime} %{tsdata:value}";
 	}
 	String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
     String DateTimeFormatterType0 = parameters.getValue ( "DateTimeFormatterType" );

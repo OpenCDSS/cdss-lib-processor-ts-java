@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSIdent;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
@@ -74,6 +75,8 @@ throws InvalidCommandParameterException
 	
 	// Get the property values. 
 	String TableID = parameters.getValue("TableID");
+    String LocationTypeColumn = parameters.getValue("LocationTypeColumn");
+    String LocationType = parameters.getValue("LocationType");
 	String LocationColumn = parameters.getValue("LocationColumn");
 	String DataSourceColumn = parameters.getValue("DataSourceColumn");
 	String DataSource = parameters.getValue("DataSource");
@@ -89,6 +92,15 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
+    }
+    
+    if ( (LocationTypeColumn != null) && (LocationTypeColumn.length() > 0) &&
+        (LocationType != null) && (LocationType.length() > 0)) {
+        message = "LocationTypeColumn and LocationType cannot both be specified";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify only LocationTypeColumn or LocationType, or neither if appropriate." ) );
     }
     
     if ( (LocationColumn == null) || (LocationColumn.length() == 0) ) {
@@ -162,6 +174,8 @@ throws InvalidCommandParameterException
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TableID" );
+    valid_Vector.add ( "LocationTypeColumn" );
+    valid_Vector.add ( "LocationType" );
     valid_Vector.add ( "LocationColumn" );
     valid_Vector.add ( "DataSourceColumn" );
     valid_Vector.add ( "DataSource" );
@@ -283,6 +297,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String TableID = parameters.getValue("TableID");
+    String LocationTypeColumn = parameters.getValue ( "LocationTypeColumn" );
+    String LocationType = parameters.getValue ( "LocationType" );
     String LocationColumn = parameters.getValue ( "LocationColumn" );
     String DataSourceColumn = parameters.getValue ( "DataSourceColumn" );
     String DataSource = parameters.getValue ( "DataSource" );
@@ -325,7 +341,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // Get the table to process.
 
     DataTable table = null;
-    int locationColumnNum = -1, dataSourceColumnNum = -1, dataTypeColumnNum = -1;
+    int locationTypeColumnNum = -1, locationColumnNum = -1, dataSourceColumnNum = -1, dataTypeColumnNum = -1;
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
@@ -354,6 +370,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             else {
                 table = (DataTable)o_Table;
+                if ( (LocationTypeColumn != null) && (LocationTypeColumn.length() > 0) ) {
+                    try {
+                        locationTypeColumnNum = table.getFieldIndex(LocationTypeColumn);
+                    }
+                    catch ( Exception e ) {
+                        message = "Unable to find location type column \"" + LocationTypeColumn + "\" for TableID=\"" + TableID + "\".";
+                        Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that a table exists with the column \"" + LocationTypeColumn + "\"." ) );
+                    }
+                }
                 try {
                     locationColumnNum = table.getFieldIndex(LocationColumn);
                 }
@@ -418,11 +446,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TableRecord rec = null;
             String locationID;
             TS ts = null;
-            String dataType;
+            String dataType, locationType;
             String tsid1 = null; // The TSID corresponding to the first data source, used for default time series
             int tsize = table.getNumberOfRecords();
             for ( int i = 0; i < tsize; i++ ) {
                 rec = table.getRecord ( i );
+                // Location type
+                if ( locationTypeColumnNum >= 0 ) {
+                    locationType = rec.getFieldValueString ( locationTypeColumnNum );
+                }
+                else {
+                    locationType = LocationType;
+                }
                 locationID = rec.getFieldValueString ( locationColumnNum );
                 // Skip blank location identifiers
                 if ( (locationID == null) || (locationID.trim().length() == 0) ) {
@@ -455,6 +490,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     else {
                         dataSource = dataSourceList[iDataSource];
                     }
+                    if ( (locationType != null) && (locationType.length() > 0) ) {
+                        tsidentString.append ( locationType + TSIdent.LOC_TYPE_SEPARATOR );
+                    }
                     tsidentString.append ( locationID + "." + dataSource + "." + dataType + "." + Interval + "~" + DataStore );
                     if ( InputName.length() > 0 ) {
                         tsidentString.append ( "~" + InputName );
@@ -466,7 +504,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     }
                     try {
                         // Make a request to the processor to read a time series...
-                        notifyCommandProgressListeners ( i, tsize, (float)-1.0, "Creating time series " + tsid);
+                        notifyCommandProgressListeners ( i, tsize, (float)-1.0, "Reading time series " + tsid);
                         PropList request_params = new PropList ( "" );
                         request_params.set ( "TSID", tsidentString.toString() );
                         request_params.setUsingObject ( "WarningLevel", new Integer(warning_level) );
@@ -644,6 +682,8 @@ public String toString ( PropList props )
 	}
 
     String TableID = props.getValue ( "TableID" );
+    String LocationTypeColumn = props.getValue ( "LocationTypeColumn" );
+    String LocationType = props.getValue ( "LocationType" );
     String LocationColumn = props.getValue ( "LocationColumn" );
     String DataSourceColumn = props.getValue ( "DataSourceColumn" );
     String DataSource = props.getValue ( "DataSource" );
@@ -662,6 +702,18 @@ public String toString ( PropList props )
 	if ((TableID != null) && (TableID.length() > 0)) {
 		b.append("TableID=\"" + TableID + "\"");
 	}
+    if ((LocationTypeColumn != null) && (LocationTypeColumn.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("LocationTypeColumn=\"" + LocationTypeColumn + "\"");
+    }
+    if ((LocationType != null) && (LocationType.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("LocationType=\"" + LocationType + "\"");
+    }
     if ((LocationColumn != null) && (LocationColumn.length() > 0)) {
         if (b.length() > 0) {
             b.append(",");

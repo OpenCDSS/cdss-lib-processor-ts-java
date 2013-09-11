@@ -82,7 +82,6 @@ throws InvalidCommandParameterException
     String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
     String dateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
     String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
-    String MissingValue = parameters.getValue("MissingValue" );
     String Precision = parameters.getValue ( "Precision" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
@@ -215,7 +214,7 @@ throws InvalidCommandParameterException
         }
     }
     if ( (DateTimeFormat == null) || DateTimeFormat.equals("") ) {
-        message = "The format must be specified.";
+        message = "The date/time format must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -232,17 +231,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (MissingValue != null) && !MissingValue.equals("") ) {
-        if ( !StringUtil.isDouble(MissingValue) ) {
-            message = "The missing value \"" + MissingValue + "\" is not a number.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify the missing value as a number." ) );
-        }
-    }
-
-	if ( (OutputStart != null) && !OutputStart.equals("")) {
+    if ( (OutputStart != null) && !OutputStart.equals("")) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
 				throw new Exception ("bad date");
@@ -775,7 +764,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
         }
         for ( TS ts : tslist ) {
             // Missing value can be output as a string so check
-            if ( missingValue == null ) {
+            if ( (missingValue == null) || missingValue.equals("") ) {
                 // Use the time series value
                 if ( Double.isNaN(ts.getMissing()) ) {
                     missingValueString = "NaN";
@@ -784,8 +773,13 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
                     missingValueString = StringUtil.formatString(ts.getMissing(),valueFormat);
                 }
             }
-            else if ( missingValue.equalsIgnoreCase(_Blank) ) {
-                missingValueString = "";
+            else {
+                if ( missingValue.equalsIgnoreCase(_Blank) ) {
+                    missingValueString = "";
+                }
+                else {
+                    missingValueString = missingValue;
+                }
             }
             // Iterate through data in the time series and output each value according to the format.
             TSIterator it = ts.iterator(outputStart, outputEnd);

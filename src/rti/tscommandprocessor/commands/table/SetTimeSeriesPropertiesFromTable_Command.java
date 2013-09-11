@@ -162,15 +162,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Newer style property that is a dictionary
             // First break map pairs by comma
             List<String>pairs = StringUtil.breakStringList(TSPropertyNames, ",", 0 );
-            // Now break pairs and put in hashtable
+            // Have to handle manually because right side can be ${TS:Description}, for example
             for ( String pair : pairs ) {
-                String [] parts = pair.split(":");
-                if ( parts.length == 1 ) {
+                int colonPos = pair.indexOf(":");
+                if ( colonPos < 0 ) {
                     // Should not happen - invalid input
-                    tsPropertyNamesMap.put(parts[0].trim(), "" );
+                    tsPropertyNamesMap.put(pair, "" );
                 }
                 else {
-                    tsPropertyNamesMap.put(parts[0].trim(), parts[1].trim() );
+                    String key = pair.substring(0,colonPos).trim();
+                    if ( colonPos == (pair.length() - 1) ) {
+                        // Colon is at the end of the string
+                        tsPropertyNamesMap.put(key, "" );
+                    }
+                    else {
+                        tsPropertyNamesMap.put(key, pair.substring(colonPos + 1) );
+                    }
                 }
             }
         }

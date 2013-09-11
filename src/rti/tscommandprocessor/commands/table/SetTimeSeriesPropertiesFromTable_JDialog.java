@@ -85,7 +85,8 @@ public void actionPerformed( ActionEvent event )
         String TSPropertyNames = __TSPropertyNames_JTextArea.getText().trim();
         String [] notes = {
             "By default, time series property names are the same as the table column names.",
-            "However, time series property names can be changed by specifying information below."
+            "However, time series property names can be changed by specifying information below.",
+            "The special value ${TS:Description} can be specified as the property name to set the internal description property."
         };
         String columnFilters = (new DictionaryJDialog ( __parent, true, TSPropertyNames, "Edit TSPropertyNames Parameter",
             notes, "Table Column Name", "Time Series Property Name",10)).response();

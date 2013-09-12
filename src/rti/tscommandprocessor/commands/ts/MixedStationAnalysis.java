@@ -102,7 +102,7 @@ private Double __intercept = null;
 /**
 Data value substituted when log transform is used and original value is <= 0.
 */
-private Double __leZeroLogValue = null;
+private String __leZeroLogValue = null;
 
 /**
 Minimum overlapping data count required for acceptable analysis.
@@ -173,7 +173,7 @@ public MixedStationAnalysis ( List<TS> dependentTSList, List<TS> independentTSLi
     List<RegressionType> regressionTypeList, List<NumberOfEquationsType> numberOfEquations,
     int[] analysisMonths, DateTime analysisStart, DateTime analysisEnd,
     DateTime fillStart, DateTime fillEnd,
-    List<DataTransformationType> transformationList, Double LEZeroLogValue, Double intercept,
+    List<DataTransformationType> transformationList, String LEZeroLogValue, Double intercept,
     Integer minimumDataCount, Double minimumR, Double confidenceLevel, String fillFlag,
     String fillFlagDesc, DataTable table, String tableTSIDColumnName, String tableTSIDFormat )
 {
@@ -226,9 +226,16 @@ public void analyze()
 	for (TS independent: __independentTSList) {
 		TS copy = (TS) independent.clone();
 		copyTS.add(copy);
-		//make 0 an unacceptable value, since it is excluded from the analysis in the original program
-		if (copy.getMissing() == -999) {
-			double[] missing = {0,-999};
+		//make 0 an unacceptable value if so desired by the user
+		if (__leZeroLogValue != null && __leZeroLogValue.equalsIgnoreCase("Missing")) {
+			double[] missing = copy.getMissingRange();
+			//replace the one closer to 0 with 0....
+			if (Math.abs(missing[0] - 0) < Math.abs(missing[1] - 0)) {
+				missing[0] = 0;
+			}
+			else {
+				missing[1] = 0;
+			}
 			copy.setMissingRange(missing);
 		}
 	}
@@ -240,9 +247,15 @@ public void analyze()
 		//copy so filling does not mess up analysis....
 		TS newDependent = (TS) dependent.clone();
 		
-		//make 0 an unacceptable value, since it is excluded from the analysis in the original program
-		if (newDependent.getMissing() != Double.NaN) {
-			double[] missing = {0,newDependent.getMissing()};
+		if (__leZeroLogValue != null && __leZeroLogValue.equalsIgnoreCase("Missing")) {
+			double[] missing = newDependent.getMissingRange();
+			//replace the one closer to 0 with 0....
+			if (Math.abs(missing[0] - 0) < Math.abs(missing[1] - 0)) {
+				missing[0] = 0;
+			}
+			else {
+				missing[1] = 0;
+			}
 			newDependent.setMissingRange(missing);
 		}
 		

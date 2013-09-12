@@ -169,12 +169,13 @@ throws InvalidCommandParameterException
 		}
 	}
     // Make sure LEZeroLogValue, if given is a valid double.
-    if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") && !StringUtil.isDouble( LEZeroLogValue ) ) {
-        message = "The <= zero log value (" + LEZeroLogValue + ") is not a number.";
+    if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") && 
+    		!StringUtil.isDouble( LEZeroLogValue ) && !LEZeroLogValue.equalsIgnoreCase("Missing") ) {
+        message = "The <= zero log value (" + LEZeroLogValue + ") is not valid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the <= log value as a number." ) );
+                message, "Specify the <= log value as a number or \"missing\"." ) );
     }
 	if ( (Intercept != null) && !Intercept.equals("") ) {
 		if ( !StringUtil.isDouble(Intercept) ) {
@@ -729,10 +730,6 @@ CommandWarningException, CommandException
 	}
 	
     String LEZeroLogValue = parameters.getValue("LEZeroLogValue");
-    Double leZeroLogValue = null;
-    if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") ) {
-        leZeroLogValue = Double.parseDouble(LEZeroLogValue);
-    }
     String MinimumSampleSize = parameters.getValue("MinimumSampleSize");
     Integer minimumSampleSize = null;
     if ( (MinimumSampleSize != null) && !MinimumSampleSize.equals("") ) {
@@ -941,7 +938,7 @@ CommandWarningException, CommandException
 
 			TSRegressionAnalysis ra = new TSRegressionAnalysis(tsIndependent, tsToFill, RegressionType.OLS_REGRESSION,
 				fillSingle, fillMonthly, analysisMonths,
-				transformation, leZeroLogValue, forcedIntercept,
+				transformation, LEZeroLogValue, forcedIntercept,
 				dependentAnalysisStart, dependentAnalysisEnd,
 				dependentAnalysisStart, dependentAnalysisEnd,
 				confidenceInterval);
@@ -951,7 +948,7 @@ CommandWarningException, CommandException
 				if ( ra.getTSRegressionData().getSingleEquationRegressionData().getN1() == 0 ) {
 					message = "Number of overlapping points is 0.";
 					Message.printWarning ( warning_level,
-						MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+					    MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 					status.addToLog ( commandPhase,
 						new CommandLogRecord(CommandStatusType.WARNING,
 							message, "Verify that time series have overlapping periods." ) );
@@ -979,7 +976,7 @@ CommandWarningException, CommandException
 			//now do the filling....
 			TSUtil_FillRegression tsufr = new TSUtil_FillRegression(tsToFill, RegressionType.OLS_REGRESSION,
 				analysisMonths,
-				leZeroLogValue,
+				LEZeroLogValue,
 				forcedIntercept, dependentAnalysisStart,
 				dependentAnalysisEnd, dependentAnalysisStart,
 				dependentAnalysisEnd, minimumSampleSize,

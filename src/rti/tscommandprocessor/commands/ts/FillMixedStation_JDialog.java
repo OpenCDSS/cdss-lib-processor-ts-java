@@ -570,7 +570,7 @@ already been checked and no errors were detected (check input).
 			__command.setCommandParameter ("Fill", Fill);
 		}
 	}
-	
+
 	/**
 Add the vector of FillRegression and FillMOVE2 commands to the TSTool.
 	 */
@@ -886,7 +886,7 @@ Instantiates the GUI components.
 	//Value to replace zero with if log transform
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ("Value to use when log and <=0:" ),
 			0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
-	__LEZeroLogValue_JTextField = new JTextField (5);
+	__LEZeroLogValue_JTextField = new JTextField (10);
 	__LEZeroLogValue_JTextField.addKeyListener( this );
 	JGUIUtil.addComponent(mainAnalysis_JPanel, __LEZeroLogValue_JTextField,
 			1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
@@ -903,9 +903,9 @@ Instantiates the GUI components.
 	JGUIUtil.addComponent(mainAnalysis_JPanel, __Intercept_JTextField,
 			1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel(
-	"Optional - 0.0 is allowed with Transformation=None (default=no fixed intercept)."),
-	3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
-
+		"Optional - 0.0 is allowed with Transformation=None (default=no fixed intercept)."),
+		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+	
 	// Analysis period
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Analysis period:" ),
 			0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
@@ -1527,7 +1527,7 @@ Refresh the command from the other text field contents.
 					}
 				}
 			}
-
+			
 			// Check AnalysisStart and update the text field
 			if ( AnalysisStart == null ) {
 				__AnalysisStart_JTextField.setText ( "" );

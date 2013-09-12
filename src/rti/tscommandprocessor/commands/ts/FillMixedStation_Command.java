@@ -209,12 +209,12 @@ throws InvalidCommandParameterException
     }
     
     if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") ) {
-    	if (!StringUtil.isDouble(LEZeroLogValue)) {
-    		message = "The replacement value (" + LEZeroLogValue + ") is not a valid number.";
+    	if (!StringUtil.isDouble(LEZeroLogValue) && !LEZeroLogValue.equalsIgnoreCase("Missing")) {
+    		message = "The replacement value (" + LEZeroLogValue + ") is not valid.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the replacement value as a number." ));
+                    message, "Specify the replacement value as a number or \"missing\"." ));
     	}
     }
 	                            
@@ -682,10 +682,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Transformation = "" + DataTransformationType.NONE; // default
     }
     String LEZeroLogValue = parameters.getValue("LEZeroLogValue");
-    Double leZeroLogValue = null;
-    if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") ) {
-        leZeroLogValue = Double.parseDouble(LEZeroLogValue);
-    }
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	Integer MinimumDataCount_int = new Integer(10); // default
@@ -855,7 +851,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		__MixedStationAnalysis = new MixedStationAnalysis( dependentTSList, independentTSList,
     				bestFitIndicator, analysisMethodList, numberOfEquations, analysisMonths,
     				AnalysisStart_DateTime, AnalysisEnd_DateTime, FillStart_DateTime, FillEnd_DateTime,
-    				transformationList, leZeroLogValue, Intercept_double, MinimumDataCount_int,
+    				transformationList, LEZeroLogValue, Intercept_double, MinimumDataCount_int,
     				MinimumR_double, ConfidenceInterval_Double, FillFlag, FillFlagDesc, getDiscoveryTable(),
     				TableTSIDColumn, TableTSIDFormat );
 
@@ -913,6 +909,7 @@ public String toString ( PropList props )
 	String AnalysisMonth = props.getValue ( "AnalysisMonth" );
 	String Transformation = props.getValue ( "Transformation" );
 	String LEZeroLogValue = props.getValue ( "LEZeroLogValue" );
+	String IgnoreIndependentZeroes = props.getValue( "IgnoreIndependentZeroes" );
 	String AnalysisStart = props.getValue ( "AnalysisStart" );
 	String AnalysisEnd = props.getValue ( "AnalysisEnd" );
 	String MinimumDataCount = props.getValue ( "MinimumDataCount" );
@@ -990,7 +987,7 @@ public String toString ( PropList props )
         if ( b.length() > 0 ) b.append ( "," );
         b.append ( "ConfidenceInterval=" + ConfidenceInterval );
     }
-
+    
 	if ( AnalysisStart != null && AnalysisStart.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );

@@ -306,22 +306,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__cancel_JButton = null;
-	__NumberOfEquations_JComboBox = null;
-	__command = null;
-	__command_JTextArea = null;
-	__IndependentTSID_JComboBox = null;
-	__ok_JButton = null;
-	__Transformation_JComboBox = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -342,23 +326,23 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Fill missing data using ordinary least squares (OLS) regression."),
-		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The analysis period is used to determine relationships used for filling." ),
-		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Use a SetOutputPeriod() command before reading to extend the dependent time series, if necessary." ),
-		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify dates with precision appropriate for the data, " +
 		"use blank for all available data, OutputStart, or OutputEnd."),
-		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     // Tabbed pane for parameters
  
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
-        0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.LINE_START);
     
     // Panel for data
     int yData = -1;
@@ -367,10 +351,10 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     __main_JTabbedPane.addTab ( "Data for Analysis", mainData_JPanel );
     JGUIUtil.addComponent(mainData_JPanel, new JLabel (
         "Specify the time series to be processed and parameters to control processing."),
-        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Time series to fill (dependent):" ),
-		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__TSID_JComboBox = new SimpleJComboBox ( true );
 
 	// Get the time series identifiers from the processor...
@@ -382,19 +366,19 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 	__TSID_JComboBox.addKeyListener ( this );
 	__TSID_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(mainData_JPanel, __TSID_JComboBox,
-		1, yData, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, yData, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ("Independent time series:"),
-		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__IndependentTSID_JComboBox = new SimpleJComboBox ( true );
 	__IndependentTSID_JComboBox.setData ( tsids );
 	__IndependentTSID_JComboBox.addKeyListener ( this );
 	__IndependentTSID_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(mainData_JPanel, __IndependentTSID_JComboBox,
-		1, yData, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, yData, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Number of equations:"),
-		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__NumberOfEquations_JComboBox = new SimpleJComboBox ( false );
 	__NumberOfEquations_JComboBox.addItem ( "" );	// Default
 	__NumberOfEquations_JComboBox.addItem ( "" + NumberOfEquationsType.ONE_EQUATION );
@@ -402,13 +386,13 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 	__NumberOfEquations_JComboBox.select ( 0 );
 	__NumberOfEquations_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(mainData_JPanel, __NumberOfEquations_JComboBox,
-		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainData_JPanel, new JLabel(
 		"Optional - number of equations (default=" + NumberOfEquationsType.ONE_EQUATION + ")."), 
-		3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Analysis month:"),
-		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__AnalysisMonth_JComboBox = new SimpleJComboBox ( false );
 	__AnalysisMonth_JComboBox.setMaximumRowCount ( 13 );
 	__AnalysisMonth_JComboBox.addItem ( "" );
@@ -418,13 +402,13 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 	__AnalysisMonth_JComboBox.select ( 0 );	// No analysis month
 	__AnalysisMonth_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(mainData_JPanel, __AnalysisMonth_JComboBox,
-		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainData_JPanel, new JLabel(
 		"Optional - use with monthly equations (default=process all months)."), 
-		3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Transformation:" ), 
-		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__Transformation_JComboBox = new SimpleJComboBox ( false );
 	__Transformation_JComboBox.addItem ( "" );
 	__Transformation_JComboBox.addItem ( "" + DataTransformationType.NONE );
@@ -432,51 +416,51 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 	__Transformation_JComboBox.select ( 0 );
 	__Transformation_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(mainData_JPanel, __Transformation_JComboBox,
-		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainData_JPanel, new JLabel(
 		"Optional - how to transform data before analysis (blank=" + DataTransformationType.NONE + ")."), 
-		3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Value to use when log and <= 0:" ), 
-        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __LEZeroLogValue_JTextField = new JTextField ( 5 );
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
+    __LEZeroLogValue_JTextField = new JTextField ( 10 );
     __LEZeroLogValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainData_JPanel, __LEZeroLogValue_JTextField,
-        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainData_JPanel, new JLabel(
         "Optional - value to substitute when original is <= 0 and log transform (default=" +
         TSRegression.getDefaultLEZeroLogValue() + ")."), 
-        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Intercept:" ), 
-		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__Intercept_JTextField = new JTextField ( 5 );
 	__Intercept_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainData_JPanel, __Intercept_JTextField,
-		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainData_JPanel, new JLabel(
 		"Optional - blank or 0.0 are allowed with no transformation."), 
-		3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Analysis start:" ),
-        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
     __AnalysisStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainData_JPanel, __AnalysisStart_JTextField,
-        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainData_JPanel, new JLabel(
         "Optional - analysis start date/time (default=full period)."),
-        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Analysis end:" ), 
-        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
     __AnalysisEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainData_JPanel, __AnalysisEnd_JTextField,
-        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainData_JPanel, new JLabel(
         "Optional - analysis end date/time (default=full period)."),
-        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     // Panel for criteria checks
     int yCheck = -1;
@@ -485,40 +469,40 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     __main_JTabbedPane.addTab ( "Criteria for Valid Relationships", mainCheck_JPanel );
     JGUIUtil.addComponent(mainCheck_JPanel, new JLabel (
         "Specify criteria to indicate valid relationships.  Filling will only occur if criteria are met."),
-        0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     // Minimum sample size
     JGUIUtil.addComponent(mainCheck_JPanel, new JLabel ( "Minimum sample size:" ),
-        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __MinimumSampleSize_JTextField = new JTextField ( 10 );
     __MinimumSampleSize_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainCheck_JPanel, __MinimumSampleSize_JTextField,
-        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainCheck_JPanel, new JLabel(
         "Optional - minimum number of overlapping points for relationship (default=minimum computational requirement)."),
-        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     // Minimum R
     JGUIUtil.addComponent(mainCheck_JPanel, new JLabel ( "Minimum R:" ),
-        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __MinimumR_JTextField = new JTextField ( 10 );
     __MinimumR_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainCheck_JPanel, __MinimumR_JTextField,
-        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainCheck_JPanel, new JLabel(
         "Optional - minimum correlation coefficient R required for a best fit (default=not checked)."),
-        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     // Confidence interval
     JGUIUtil.addComponent(mainCheck_JPanel, new JLabel ( "Confidence interval:" ),
-        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __ConfidenceInterval_JTextField = new JTextField ( 10 );
     __ConfidenceInterval_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainCheck_JPanel, __ConfidenceInterval_JTextField,
-        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainCheck_JPanel, new JLabel(
         "Optional - confidence interval (%) for line slope (default=do not check interval)."),
-        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     // Panel to control filling
     int yFill = -1;
@@ -527,10 +511,10 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     __main_JTabbedPane.addTab ( "Fill Period and Flag", mainFill_JPanel );
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel (
         "Indicate the period to fill and whether filled values should be flagged."),
-        0, ++yFill, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yFill, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Fill:" ), 
-        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __Fill_JComboBox = new SimpleJComboBox ( false );
     __Fill_JComboBox.addItem ( "" );
     __Fill_JComboBox.addItem ( "" + __command._False );
@@ -539,50 +523,50 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     __Fill_JComboBox.setToolTipText ( "Use False to calculate statistics but do not fill." );
     __Fill_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(mainFill_JPanel, __Fill_JComboBox,
-        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel(
         "Optional - fill missing values in dependent time series (blank=" + __command._True + ", " +
         __command._False + "=analyze only)."), 
-        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainFill_JPanel,new JLabel( "Fill start:"),
-        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __FillStart_JTextField = new JTextField ( "", 10 );
     __FillStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainFill_JPanel, __FillStart_JTextField,
-        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel(
         "Optional - fill start date/time (default=full period)."), 
-        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainFill_JPanel,new JLabel("Fill end:"),
-        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __FillEnd_JTextField = new JTextField ( "", 10 );
     __FillEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainFill_JPanel, __FillEnd_JTextField,
-        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel(
         "Optional - fill end date/time (default=full period)."), 
-        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Fill flag:" ), 
-		0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__FillFlag_JTextField = new JTextField ( 5 );
 	__FillFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainFill_JPanel, __FillFlag_JTextField,
-		1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel( "Optional - string to indicate filled values."), 
-		3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     __FillFlag_JTextField.setToolTipText ( "Specify with leading + to append." );
     
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Fill flag description:" ), 
-        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __FillFlagDesc_JTextField = new JTextField ( 25 );
     __FillFlagDesc_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainFill_JPanel, __FillFlagDesc_JTextField,
-        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel( "Optional - description for fill flag used in report legends."), 
-        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     // Panel for output statistics
     int yTable = -1;
@@ -591,49 +575,49 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     __main_JTabbedPane.addTab ( "Output Table", mainTable_JPanel );
     JGUIUtil.addComponent(mainTable_JPanel, new JLabel (
         "Specify the table to receive output analysis statistics."),
-        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     JGUIUtil.addComponent(mainTable_JPanel, new JLabel ( "Table ID for output:" ), 
-        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(mainTable_JPanel, __TableID_JComboBox,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainTable_JPanel, new JLabel(
         "Optional - specify to output statistics to table."), 
-        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     JGUIUtil.addComponent(mainTable_JPanel, new JLabel ( "Table TSID column:" ), 
-        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __TableTSIDColumn_JTextField = new JTextField ( 10 );
     __TableTSIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainTable_JPanel, __TableTSIDColumn_JTextField,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainTable_JPanel, new JLabel( "Required if using table - column name for dependent TSID."), 
-        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
     
     JGUIUtil.addComponent(mainTable_JPanel, new JLabel("Format of TSID:"),
-        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __TableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
     __TableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __TableTSIDFormat_JTextField.addKeyListener ( this );
     __TableTSIDFormat_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(mainTable_JPanel, __TableTSIDFormat_JTextField,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.LINE_START);
     JGUIUtil.addComponent(mainTable_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
-        3, yTable, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yTable, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
-		0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__command_JTextArea = new JTextArea ( 5, 65 );
 	__command_JTextArea.setLineWrap ( true );
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, yMain, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, yMain, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.LINE_START);
 
 	// Refresh the contents...
 	refresh();

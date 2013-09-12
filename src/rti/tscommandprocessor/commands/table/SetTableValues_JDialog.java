@@ -78,8 +78,12 @@ public void actionPerformed(ActionEvent event)
 	else if ( event.getActionCommand().equalsIgnoreCase("EditColumnFilters") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+        String [] notes = { "Filter to indicate which rows should be modified",
+            "Column to Filter - table column to check for values (currently can only be columns containing strings)",
+            "Filter Value - value in columns to match, to determine rows to set values"
+        };
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
-            null, "Column", "Column Value",10)).response();
+            notes, "Column to Filter", "Filter Value (can include * wildcards)",10)).response();
         if ( columnFilters != null ) {
             __ColumnFilters_JTextArea.setText ( columnFilters );
             refresh();
@@ -88,8 +92,9 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnValues") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnValues = __ColumnValues_JTextArea.getText().trim();
+        String [] notes = { "Specify the column names and corresponding values to set." };
         String columnValues = (new DictionaryJDialog ( __parent, true, ColumnValues, "Edit ColumnValues Parameter",
-            null, "Column", "Value",10)).response();
+            notes, "Column", "Value",10)).response();
         if ( columnValues != null ) {
             __ColumnValues_JTextArea.setText ( columnValues );
             refresh();

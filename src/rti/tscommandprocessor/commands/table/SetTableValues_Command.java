@@ -131,7 +131,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String ColumnValues = parameters.getValue ( "ColumnValues" );
     // Used LinkedHashMap because want insert order to be retained in new columns, if columns are created
-    LinkedHashMap<String,Object> columnValues = new LinkedHashMap<String,Object>();
+    LinkedHashMap<String,String> columnValues = new LinkedHashMap<String,String>();
     if ( (ColumnValues != null) && (ColumnValues.length() > 0) && (ColumnValues.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(ColumnValues, ",", 0 );

@@ -2016,11 +2016,11 @@ throws Exception
     
     boolean isReal = true;
     String tsType = "Real";
-    if ( StringUtil.startsWithIgnoreCase(tsident.getLocation(), "Real:") ) {
+    if ( tsident.getLocationType().equalsIgnoreCase("Real") ) {
         isReal = true;
         tsType = "Real";
     }
-    else if ( StringUtil.startsWithIgnoreCase(tsident.getLocation(), "Model:") ) {
+    else if ( tsident.getLocationType().equalsIgnoreCase("Model") ) {
         isReal = false;
         tsType = "Model";
     }

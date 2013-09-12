@@ -26,6 +26,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -80,6 +81,8 @@ Since there is no command in tool mode, this can't just be obtained from the com
 	// Members controlling the execution mode. This class can run as a command or as a tool from the tool menu.
 	private JTextArea __Command_JTextArea = null; // Command as JTextArea
 
+	private JTabbedPane __main_JTabbedPane = null;
+	
 	//labels are used to easily add TSID's to list of selectable ones
 	private SimpleJComboBox	__DependentTSList_JComboBox = null;
 	private JLabel __DependentTSID_JLabel = null;
@@ -752,15 +755,18 @@ Instantiates the GUI components.
 	0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 	JGUIUtil.addComponent( main_JPanel, mainNotes_JPanel,
 			0, yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+	
+	// Tabbed pane for parameters
+	
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.LINE_START);
 
 	// Panel for data for analysis
 	int yAnalysis = 0;
 	JPanel mainAnalysis_JPanel = new JPanel();
 	mainAnalysis_JPanel.setLayout( new GridBagLayout() );
-	mainAnalysis_JPanel.setBorder( BorderFactory.createTitledBorder (
-			BorderFactory.createLineBorder(Color.black),"Edit Mixed Station Analysis Parameters" ));
-	JGUIUtil.addComponent( main_JPanel, mainAnalysis_JPanel,
-			0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+	__main_JTabbedPane.addTab ( "Data for Analysis", mainAnalysis_JPanel );
 
 	__DependentTSList_JComboBox = new SimpleJComboBox(false);
 	yAnalysis = CommandEditorUtil.addTSListToEditorDialogPanel ( this, mainAnalysis_JPanel,
@@ -920,10 +926,7 @@ Instantiates the GUI components.
 	int yRelate = 0;
 	JPanel mainRelate_JPanel = new JPanel();
 	mainRelate_JPanel.setLayout( new GridBagLayout() );
-	mainRelate_JPanel.setBorder( BorderFactory.createTitledBorder (
-			BorderFactory.createLineBorder(Color.black),"Criteria for Valid Relationship" ));
-	JGUIUtil.addComponent( main_JPanel, mainRelate_JPanel,
-			0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+    __main_JTabbedPane.addTab ( "Criteria for Valid Relationships", mainRelate_JPanel );
 
 	// Best fit indicator
 	JGUIUtil.addComponent(mainRelate_JPanel, new JLabel ( "Best Fit:" ),
@@ -977,10 +980,7 @@ Instantiates the GUI components.
 	int yFill = 0;
 	JPanel mainFill_JPanel = new JPanel();
 	mainFill_JPanel.setLayout( new GridBagLayout() );
-	mainFill_JPanel.setBorder( BorderFactory.createTitledBorder (
-			BorderFactory.createLineBorder(Color.black),"Control Filling" ));
-	JGUIUtil.addComponent( main_JPanel, mainFill_JPanel,
-			0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+	__main_JTabbedPane.addTab ( "Control Filling", mainFill_JPanel );
 
 	//Fill or not?
 	if (__commandUI == null) {
@@ -1043,10 +1043,7 @@ Instantiates the GUI components.
 	int yOutput = 0;
 	JPanel mainOutput_JPanel = new JPanel();
 	mainOutput_JPanel.setLayout( new GridBagLayout() );
-	mainOutput_JPanel.setBorder( BorderFactory.createTitledBorder (
-			BorderFactory.createLineBorder(Color.black),"Output settings" ));
-	JGUIUtil.addComponent( main_JPanel, mainOutput_JPanel,
-			0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+    __main_JTabbedPane.addTab ( "Output Table", mainOutput_JPanel );
 	
 	// Table to save statistics
 	JGUIUtil.addComponent(mainOutput_JPanel, new JLabel ( "Table ID for output:" ), 

@@ -10,9 +10,7 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
-import RTi.TS.TSRegression;
 import RTi.TS.TSRegressionAnalysis;
-import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_FillRegression;
 
 import RTi.Util.Math.BestFitIndicatorType;
@@ -39,6 +37,7 @@ import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeUtil;
 
@@ -51,7 +50,7 @@ public class FillRegression_Command extends AbstractCommand implements Command, 
 /**
 Protected data members shared with the dialog and other related classes.
 */
-protected final String _Linear = "Linear";	// obsolete... use DataTransformationType.NONE
+protected final String _Linear = "Linear";  // obsolete... use DataTransformationType.NONE
 
 /**
 Possible data values for Fill parameter.
@@ -154,10 +153,10 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( Transformation != null ) {
-		if ( Transformation.equalsIgnoreCase(_Linear) ) {
-			// Convert old to new...
-			Transformation = "" + DataTransformationType.NONE;
-		}
+	    if ( Transformation.equalsIgnoreCase(_Linear) ) {
+            // Convert old to new...
+            Transformation = "" + DataTransformationType.NONE;
+        }
 		if ( !Transformation.equalsIgnoreCase(""+DataTransformationType.LOG) &&
 		    !Transformation.equalsIgnoreCase(""+DataTransformationType.NONE) ) {
             message = "The transformation (" + Transformation +
@@ -302,7 +301,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "IndependentTSID" );
     valid_Vector.add ( "NumberOfEquations" );
@@ -777,7 +776,7 @@ CommandWarningException, CommandException
             Message.printStatus ( 2, routine, "Unable to find table to process using TableID=\"" + TableID +
                 "\" - creating empty table." );
             // Create an empty table matching the identifier
-            table = new DataTable( new Vector() );
+            table = new DataTable( new Vector<TableField>() );
             table.setTableID ( TableID );
             newTable = true;
         }
@@ -918,163 +917,98 @@ CommandWarningException, CommandException
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
             status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputEnd." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 	
 	// Fill the dependent time series...
 	// This will result in the time series in the original data being modified...
 	try {
-	    if ( commandPhase == CommandPhaseType.RUN ) {
-	        boolean doLegacy = false;
-	        if ( doLegacy ) {
-        	    TSRegression regressionResults = TSUtil.fillRegress ( 
-        			tsToFill, tsIndependent,
-        			null, // No previously computed TSRegression object
-        			RegressionType.OLS_REGRESSION,
-        			numberOfEquations,
-                    forcedIntercept,
-                    analysisMonths,
-                    transformation,
-                    leZeroLogValue,
-                    minimumSampleSize,
-                    minimumR,
-                    confidenceInterval,
-                    dependentAnalysisStart, dependentAnalysisEnd,
-                    null, //independentAnalysisStart - used with MOVE2 but not OLS_REGRESSION
-                    null, //independentAnalysisEnd - used with MOVE2 but not OLS_REGRESSION
-                    FillStart_DateTime, FillEnd_DateTime,
-                    FillFlag,
-                    FillFlagDesc,
-                    Fill_boolean );
-                if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
-                    if ( regressionResults.getN1() == 0 ) {
-                        message = "Number of overlapping points is 0.";
-                        Message.printWarning ( warning_level,
-                        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                        status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.WARNING,
-                                message, "Verify that time series have overlapping periods." ) );
-                    }
-                }
-                else {
-                    for ( int i = 1; i <= 12; i++ ) {
-                        if ( regressionResults.getN1(i) == 0 ) {
-                            message = "Number of overlapping points in month " + i + " (" +
-                            TimeUtil.monthAbbreviation(i) + ") is 0.";
-                            Message.printWarning ( warning_level,
-                            MessageUtil.formatMessageTag(
-                            command_tag,++warning_count), routine, message );
-                            status.addToLog ( commandPhase,
-                                new CommandLogRecord(CommandStatusType.WARNING,
-                                    message, "Verify that time series have overlapping periods." ) );
-                        }
-                    }
-                }
-                // Print the results to the log file and optionally an output table...
-                if ( regressionResults != null ) {
-                    Message.printStatus ( 2, routine, "Fill results are..." );
-                    Message.printStatus ( 2, routine, regressionResults.toString() );
-                    // Now set in the table
-                    // TODO SAM 2012-01-15 Not enabled for legacy code
-                    //if ( (TableID != null) && !TableID.equals("") ) {
-                    //    tsufr.saveStatisticsToTable ( tsToFill, regressionResults, table,
-                    //        TableTSIDColumn, TableTSIDFormat, numberOfEquations );
-                    //}
-                }
-                else {
-                    message = "Unable to compute regression.";
-                    Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(
-                    command_tag,++warning_count), routine, message );
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that time series have overlapping periods." ) );
-                    throw new CommandException ( message );
-                }
-	        }
-	        else {
-	            /* XXX
-	            // New code that is more modular and consistent with FillMixedStation().
-	            // First analyze the time series
-	            TSUtil_FillRegression tsufr = new TSUtil_FillRegression (
-                    tsToFill, tsIndependent,
-                    RegressionType.OLS_REGRESSION,
-                    numberOfEquations,
-                    analysisMonths,
-                    transformation,
-                    leZeroLogValue,
-                    forcedIntercept,
-                    dependentAnalysisStart, dependentAnalysisEnd,
-                    null, //independentAnalysisStart - used with MOVE2 but not OLS_REGRESSION
-                    null, //independentAnalysisEnd - used with MOVE2 but not OLS_REGRESSION
-                    minimumSampleSize,
-                    minimumR,
-                    confidenceInterval,
-                    FillStart_DateTime, FillEnd_DateTime,
-                    FillFlag,
-                    FillFlagDesc,
-                    Fill_boolean, // Whether to fill or just analyze for filling (but don't fill) 
-                    null ); // No user-specified description
-	            // Fill the missing values in the dependent
-	            tsufr.fillRegression ();
-	            TSRegressionAnalysis ra = tsufr.getTSRegressionAnalysis();
-	            List<String> problems = tsufr.getProblems();
-	            for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
-	                message = problems.get(iprob);
-	                Message.printWarning ( warning_level,
-	                    MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-	                // No recommendation since it is a user-defined check
-	                // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-	                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, message, "" ) );
-	            }
-                if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
-                    if ( ra.getTSRegressionData().getSingleEquationRegressionData().getN1() == 0 ) {
-                        message = "Number of overlapping points is 0.";
-                        Message.printWarning ( warning_level,
-                        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                        status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.WARNING,
-                                message, "Verify that time series have overlapping periods." ) );
-                    }
-                }
-                else {
-                    for ( int iMonth = 1; iMonth <= 12; iMonth++ ) {
-                        if ( ra.getTSRegressionData().getMonthlyEquationRegressionData(iMonth).getN1() == 0 ) {
-                            message = "Number of overlapping points in month " + iMonth + " (" +
-                            TimeUtil.monthAbbreviation(iMonth) + ") is 0.";
-                            Message.printWarning ( warning_level,
-                            MessageUtil.formatMessageTag(
-                            command_tag,++warning_count), routine, message );
-                            status.addToLog ( commandPhase,
-                                new CommandLogRecord(CommandStatusType.WARNING,
-                                    message, "Verify that time series have overlapping periods." ) );
-                        }
-                    }
-                }
-                // Print the results to the log file and optionally an output table...
-                if ( ra != null ) {
-                    // Now set in the table
-                    if ( (TableID != null) && !TableID.equals("") ) {
-                        tsufr.saveStatisticsToTable ( tsToFill, table,
-                            TableTSIDColumn, TableTSIDFormat, RegressionType.OLS_REGRESSION,
-                            numberOfEquations, transformation );
-                    }
-                }
-                else {
-                    message = "Unable to compute regression.";
-                    Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(
-                    command_tag,++warning_count), routine, message );
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that time series have overlapping periods." ) );
-                    throw new CommandException ( message );
-                }
-                XXX */
-	        }
-	    }
+		if ( commandPhase == CommandPhaseType.RUN ) {
+			// New code that is more modular and consistent with FillMixedStation().
+			// First analyze the time series
+
+			boolean fillSingle = false;
+			boolean fillMonthly = false;
+
+			if (numberOfEquations == NumberOfEquationsType.ONE_EQUATION) {
+				fillSingle = true;
+			}
+			if (numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS) {
+				fillMonthly = true;
+			}
+
+			TSRegressionAnalysis ra = new TSRegressionAnalysis(tsIndependent, tsToFill, RegressionType.OLS_REGRESSION,
+				fillSingle, fillMonthly, analysisMonths,
+				transformation, leZeroLogValue, forcedIntercept,
+				dependentAnalysisStart, dependentAnalysisEnd,
+				dependentAnalysisStart, dependentAnalysisEnd,
+				confidenceInterval);
+
+			//error checking
+			if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
+				if ( ra.getTSRegressionData().getSingleEquationRegressionData().getN1() == 0 ) {
+					message = "Number of overlapping points is 0.";
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+					status.addToLog ( commandPhase,
+						new CommandLogRecord(CommandStatusType.WARNING,
+							message, "Verify that time series have overlapping periods." ) );
+				}
+			}
+			else {
+				for ( int iMonth = 1; iMonth <= 12; iMonth++ ) {
+					if ( ra.getTSRegressionData().getMonthlyEquationRegressionData(iMonth).getN1() == 0 ) {
+						message = "Number of overlapping points in month " + iMonth + " (" +
+						TimeUtil.monthAbbreviation(iMonth) + ") is 0.";
+						Message.printWarning ( warning_level,
+							MessageUtil.formatMessageTag(
+								command_tag,++warning_count), routine, message );
+						status.addToLog ( commandPhase,
+							new CommandLogRecord(CommandStatusType.WARNING,
+								message, "Verify that time series have overlapping periods." ) );
+					}
+				}
+			}
+			
+			ra.analyzeForFilling(minimumSampleSize, minimumR, confidenceInterval);
+			List<TSRegressionAnalysis> analyses = new Vector<TSRegressionAnalysis>();
+			analyses.add(ra);
+			
+			//now do the filling....
+			TSUtil_FillRegression tsufr = new TSUtil_FillRegression(tsToFill, RegressionType.OLS_REGRESSION,
+				analysisMonths,
+				leZeroLogValue,
+				forcedIntercept, dependentAnalysisStart,
+				dependentAnalysisEnd, dependentAnalysisStart,
+				dependentAnalysisEnd, minimumSampleSize,
+				minimumR, confidenceInterval, FillStart_DateTime,
+				FillEnd_DateTime, FillFlag, FillFlagDesc,
+				null, BestFitIndicatorType.NONE, analyses);
+			if (Fill_boolean) {
+				tsufr.fill();
+			}
+			
+			// Print the results to the log file and optionally an output table...
+			if ( ra != null ) {
+				// Now set in the table
+				if ( (TableID != null) && !TableID.equals("") ) {
+					tsufr.saveStatisticsToTable ( tsToFill, table, TableTSIDColumn, 
+						TableTSIDFormat, RegressionType.OLS_REGRESSION, numberOfEquations);
+				}
+			}
+			else {
+				message = "Unable to compute regression.";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag(
+						command_tag,++warning_count), routine, message );
+				status.addToLog ( commandPhase,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify that time series have overlapping periods." ) );
+				throw new CommandException ( message );
+			}
+		}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error performing regression for \""+toString() +"\" (" + e + ").";

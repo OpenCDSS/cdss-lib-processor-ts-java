@@ -426,7 +426,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         throw new CommandException ( message );
     }
     
-    
     if ( System.getProperty("os.arch").contains("64") && !System.getProperty("os.arch").equals("IA64N") ) {
     	//note: os.arch actually gets the bits of the JVM, not the OS
     	//but that still works because the JVM, not the OS, is loading the DLLs

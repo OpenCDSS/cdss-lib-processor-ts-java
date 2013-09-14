@@ -42,6 +42,11 @@ protected final String _False = "False";
 protected final String _True = "True";
 
 /**
+Value to use for NaNValue.
+*/
+protected final String _Blank = "Blank";
+
+/**
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
@@ -162,6 +167,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "WriteHeaderComments" );
 	valid_Vector.add ( "AlwaysQuoteStrings" );
 	valid_Vector.add ( "NewlineReplacement" );
+	valid_Vector.add ( "NaNValue" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -258,6 +264,15 @@ CommandWarningException, CommandException
     if ( (NewlineReplacement != null) && NewlineReplacement.equals("") ) {
         newlineReplacement = null; // User must use \s to indicate space
     }
+    String NaNValue = parameters.getValue ( "NaNValue" );
+    if ( NaNValue != null ) {
+        if ( NaNValue.equals("") ) {
+            NaNValue = null; // Will result in "NaN" in output
+        }
+        else if ( NaNValue.equals(_Blank) ) {
+            NaNValue = "";
+        }
+    }
 
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
@@ -304,7 +319,7 @@ CommandWarningException, CommandException
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
 		warning_count = writeTable ( table, OutputFile_full, WriteHeaderComments_boolean,
-		    AlwaysQuoteStrings_boolean, StringUtil.literalToInternal(newlineReplacement),
+		    AlwaysQuoteStrings_boolean, StringUtil.literalToInternal(newlineReplacement), NaNValue,
 		        warning_level, command_tag, warning_count );
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
@@ -350,6 +365,7 @@ public String toString ( PropList parameters )
 	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 	String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
 	String NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
+	String NaNValue = parameters.getValue ( "NaNValue" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TableID != null) && (TableID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -381,6 +397,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "NewlineReplacement=\"" + NewlineReplacement + "\"" );
     }
+    if ( (NaNValue != null) && (NaNValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NaNValue=\"" + NaNValue + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
@@ -393,10 +415,11 @@ do not handle comments)
 @param alwaysQuoteStrings if true, then always surround strings with double quotes; if false strings will only
 be quoted when they include the delimiter
 @param newlineReplacement if non-null, string to replace newlines in strings when writing the file
+@param NaNValue value to write for NaN (null will result in "NaN" being output).
 @exception IOException if there is an error writing the file.
 */
 private int writeTable ( DataTable table, String OutputFile, boolean writeHeaderComments,
-	boolean alwaysQuoteStrings, String newlineReplacement,
+	boolean alwaysQuoteStrings, String newlineReplacement, String NaNValue,
 	int warning_level, String command_tag, int warning_count )
 throws IOException
 {	String routine = getClass().getName() + ".writeTable";
@@ -438,7 +461,7 @@ throws IOException
 	try {
 		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
 		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList, "#", alwaysQuoteStrings,
-		    newlineReplacement );
+		    newlineReplacement, NaNValue );
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table to file \"" + OutputFile + "\" (" + e + ")";

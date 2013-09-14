@@ -26,7 +26,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Vector;
 
-import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.GUI.JFileChooserFactory;
@@ -57,6 +56,7 @@ private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 private SimpleJComboBox __AlwaysQuoteStrings_JComboBox = null;
 private JTextField __NewlineReplacement_JTextField = null;
+private JTextField __NaNValue_JTextField = null;
 private String __working_dir = null; // Working directory.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -154,6 +154,7 @@ private void checkInput ()
     String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
     String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
+    String NaNValue = __NaNValue_JTextField.getText().trim();
 
 	__error_wait = false;
 	
@@ -171,6 +172,9 @@ private void checkInput ()
     }
     if ( (NewlineReplacement != null) && (NewlineReplacement.length() > 0) ) {
         parameters.set ( "NewlineReplacement", NewlineReplacement );
+    }
+    if ( (NaNValue != null) && (NaNValue.length() > 0) ) {
+        parameters.set ( "NaNValue", NaNValue );
     }
 	try {
 	    // This will warn the user...
@@ -193,27 +197,13 @@ private void commitEdits ()
 	String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
 	String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
 	String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
+	String NaNValue = __NaNValue_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
 	__command.setCommandParameter ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
 	__command.setCommandParameter ( "NewlineReplacement", NewlineReplacement );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__browse_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__working_dir = null;
-	super.finalize ();
+	__command.setCommandParameter ( "NaNValue", NaNValue );
 }
 
 /**
@@ -311,6 +301,16 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
          "Optional - replacement for newline character (use \\t for tab or \\s for space)."),
          3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
      
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("NaN value:"),
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __NaNValue_JTextField = new JTextField (10);
+     __NaNValue_JTextField.addKeyListener (this);
+     JGUIUtil.addComponent(main_JPanel, __NaNValue_JTextField,
+         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Optional - value to use for NaN (use " + __command._Blank + " to write a blank)."),
+         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
@@ -394,6 +394,7 @@ private void refresh ()
     String WriteHeaderComments = "";
     String AlwaysQuoteStrings = "";
     String NewlineReplacement = "";
+    String NaNValue = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -405,6 +406,7 @@ private void refresh ()
         WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
         AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
         NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
+        NaNValue = parameters.getValue ( "NaNValue" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -459,7 +461,10 @@ private void refresh ()
         }
         if (NewlineReplacement != null) {
             __NewlineReplacement_JTextField.setText(NewlineReplacement);
-       }
+        }
+        if (NaNValue != null) {
+            __NaNValue_JTextField.setText(NaNValue);
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -467,6 +472,7 @@ private void refresh ()
     WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
     NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
+    NaNValue = __NaNValue_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
 	if ( TableID != null ) {
@@ -479,6 +485,7 @@ private void refresh ()
         parameters.add ( "AlwaysQuoteStrings=" + AlwaysQuoteStrings );
     }
     parameters.add("NewlineReplacement=" + NewlineReplacement );
+    parameters.add("NaNValue=" + NaNValue );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

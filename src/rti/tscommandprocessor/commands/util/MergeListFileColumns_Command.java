@@ -497,7 +497,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			true, // Write column names
 			IOUtil.formatCreatorHeader ( "#", 80, false ), "", // Comments for header
 			false, // Always quote strings
-			null ); // Do not replace newlines in strings
+			null, // Do not replace newlines in strings
+			null ); // Write NaN as is
 		// TODO SAM 2005-11-18
 		// Need a general IOUtil method to format the header strings
 		// (and NOT also open the file).

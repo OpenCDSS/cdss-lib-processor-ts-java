@@ -68,6 +68,7 @@ throws InvalidCommandParameterException
 	String SampleMethod = parameters.getValue ( "SampleMethod" );
     String Bracket = parameters.getValue ( "Bracket" );
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
+    String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
     //String Alias = parameters.getValue ( "Alias" );
     String ProbabilityUnits = parameters.getValue ( "ProbabilityUnits" );
 	String warning = "";
@@ -141,7 +142,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "SampleMethod must be one of: " + b ) );
 	}
-    if ( averageType != RunningAverageType.N_ALL_YEAR ) {
+    if ( (averageType != RunningAverageType.ALL_YEARS) && (averageType != RunningAverageType.N_ALL_YEAR) ) {
         if ( (Bracket == null) || Bracket.equals("") ) {
             message = "The Bracket parameter must be specified.";
             warning += "\n" + message;
@@ -179,6 +180,27 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (MinimumSampleSize != null) && !MinimumSampleSize.equals("") ) {
+        if ( !StringUtil.isInteger(MinimumSampleSize) ) {
+            message = "The MinimumSampleSize value (" + MinimumSampleSize + ") is not an integer.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify an integer for MinimumSampleSize." ) );
+        }
+        else {
+            // Make sure it is an allowable value >= 0...
+            int i = Integer.parseInt(MinimumSampleSize);
+            if ( i <= 0 ) {
+                message = "The MinimumSampleSize value (" + MinimumSampleSize + ") must be > 0.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify a value > 0." ) );
+            }
+        }
+    }
+    
     /*
     if ( (Alias == null) || Alias.equals("") ) {
         message = "The time series alias must be specified.";
@@ -198,7 +220,7 @@ throws InvalidCommandParameterException
     }
       
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -206,6 +228,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "SampleMethod" );
     valid_Vector.add ( "Bracket" );
     valid_Vector.add ( "AllowMissingCount" );
+    valid_Vector.add ( "MinimumSampleSize" );
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "ProbabilityUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -330,9 +353,14 @@ CommandWarningException, CommandException
         Bracket_int = Integer.valueOf ( Bracket );
     }
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
-    int AllowMissingCount_int = 0;
+    int allowMissingCount = 0;
     if ( (AllowMissingCount != null) && AllowMissingCount.length() > 0) {
-        AllowMissingCount_int = Integer.valueOf ( AllowMissingCount );
+        allowMissingCount = Integer.valueOf ( AllowMissingCount );
+    }
+    String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
+    int minimumSampleSize = 0;
+    if ( (MinimumSampleSize != null) && MinimumSampleSize.length() > 0) {
+        minimumSampleSize = Integer.valueOf ( MinimumSampleSize );
     }
     String Alias = parameters.getValue ( "Alias" );
     String ProbabilityUnits = parameters.getValue ( "ProbabilityUnits" );
@@ -428,10 +456,10 @@ CommandWarningException, CommandException
             // Do the processing...
 		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Running statistic for " +
 	            ts.getIdentifier().toStringAliasAndTSID() );
-			Message.printStatus ( 2, routine, "Calculating running statistic: \"" + ts.getIdentifier() + "\"." );
+			Message.printStatus ( 2, routine, "Calculating running statistic for: \"" + ts.getIdentifier() + "\"." );
 			TSUtil_RunningStatistic tsu =
-			    new TSUtil_RunningStatistic(ts, Bracket_int, statisticType, sampleMethod, AllowMissingCount_int,
-			        ProbabilityUnits );
+			    new TSUtil_RunningStatistic(ts, Bracket_int, statisticType, sampleMethod, allowMissingCount,
+			        minimumSampleSize, ProbabilityUnits );
 			newts = tsu.runningStatistic(createData);
 			if ( (Alias != null) && !Alias.equals("") ) {
                 String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
@@ -506,6 +534,7 @@ public String toString ( PropList props )
 	String SampleMethod = props.getValue("SampleMethod");
 	String Bracket = props.getValue("Bracket");
 	String AllowMissingCount = props.getValue("AllowMissingCount");
+	String MinimumSampleSize = props.getValue("MinimumSampleSize");
 	String Alias = props.getValue("Alias");
 	String ProbabilityUnits = props.getValue("ProbabilityUnits");
 	StringBuffer b = new StringBuffer ();
@@ -550,6 +579,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "AllowMissingCount=" + AllowMissingCount );
+    }
+    if ( (MinimumSampleSize != null) && (MinimumSampleSize.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MinimumSampleSize=" + MinimumSampleSize );
     }
     if ( (Alias != null) && (Alias.length() > 0) ) {
         if ( b.length() > 0 ) {

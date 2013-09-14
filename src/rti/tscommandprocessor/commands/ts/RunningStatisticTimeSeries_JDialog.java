@@ -64,6 +64,7 @@ private SimpleJComboBox __Statistic_JComboBox = null;
 private SimpleJComboBox __SampleMethod_JComboBox = null;
 private JTextField __Bracket_JTextField = null;
 private JTextField __AllowMissingCount_JTextField = null;
+private JTextField __MinimumSampleSize_JTextField = null;
 private JLabel __Bracket_JLabel = null; // Label for bracket
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox __ProbabilityUnits_JComboBox = null;
@@ -196,6 +197,7 @@ private void checkInput ()
     String SampleMethod = __SampleMethod_JComboBox.getSelected();
     String Bracket = __Bracket_JTextField.getText().trim();
     String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
+    String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
     String ProbabilityUnits = __ProbabilityUnits_JComboBox.getSelected();
     __error_wait = false;
@@ -220,6 +222,9 @@ private void checkInput ()
     }
     if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
         parameters.set ( "AllowMissingCount", AllowMissingCount );
+    }
+    if ( (MinimumSampleSize != null) && (MinimumSampleSize.length() > 0) ) {
+        parameters.set ( "MinimumSampleSize", MinimumSampleSize );
     }
     if (Alias.length() > 0) {
         parameters.set("Alias", Alias);
@@ -249,6 +254,7 @@ private void commitEdits ()
     String SampleMethod = __SampleMethod_JComboBox.getSelected();
     String Bracket = __Bracket_JTextField.getText().trim();
     String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
+    String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
     String ProbabilityUnits = __ProbabilityUnits_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
@@ -258,24 +264,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "SampleMethod", SampleMethod );
     __command.setCommandParameter ( "Bracket", Bracket );
     __command.setCommandParameter ( "AllowMissingCount", AllowMissingCount);
+    __command.setCommandParameter ( "MinimumSampleSize", MinimumSampleSize);
     __command.setCommandParameter ( "Alias", Alias );
     __command.setCommandParameter ( "ProbabilityUnits", ProbabilityUnits );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__SampleMethod_JComboBox = null;
-	__Bracket_JLabel = null;
-	__Bracket_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -359,7 +350,8 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
 	__Bracket_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Bracket_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (except for " + RunningAverageType.N_ALL_YEAR + ")."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (except for " + RunningAverageType.N_ALL_YEAR + "," +
+        RunningAverageType.ALL_YEARS + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Allow missing count:"),
@@ -370,6 +362,16 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - number of missing values allowed in sample (default=no limit)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Minimum sample size:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MinimumSampleSize_JTextField = new JTextField (10);
+    __MinimumSampleSize_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __MinimumSampleSize_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - minimum sample size to do calculation (default=no limit)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
@@ -481,6 +483,7 @@ private void refresh ()
     String SampleMethod = "";
     String Bracket = "";
     String AllowMissingCount = "";
+    String MinimumSampleSize = "";
     String Alias = "";
     String ProbabilityUnits = "";
     PropList props = __command.getCommandParameters();
@@ -494,6 +497,7 @@ private void refresh ()
         SampleMethod = props.getValue ( "SampleMethod" );
         Bracket = props.getValue ( "Bracket" );
         AllowMissingCount = props.getValue ( "AllowMissingCount" );
+        MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
         Alias = props.getValue ( "Alias" );
         ProbabilityUnits = props.getValue ( "ProbabilityUnits" );
         if ( TSList == null ) {
@@ -576,6 +580,9 @@ private void refresh ()
         if ( AllowMissingCount != null ) {
             __AllowMissingCount_JTextField.setText ( AllowMissingCount );
         }
+        if ( MinimumSampleSize != null ) {
+            __MinimumSampleSize_JTextField.setText ( MinimumSampleSize );
+        }
         if (Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
@@ -602,6 +609,7 @@ private void refresh ()
     SampleMethod = __SampleMethod_JComboBox.getSelected();
     Bracket = __Bracket_JTextField.getText().trim();
     AllowMissingCount = __AllowMissingCount_JTextField.getText();
+    MinimumSampleSize = __MinimumSampleSize_JTextField.getText();
     Alias = __Alias_JTextField.getText().trim();
     ProbabilityUnits = __ProbabilityUnits_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
@@ -612,6 +620,7 @@ private void refresh ()
     props.add ( "SampleMethod=" + SampleMethod );
     props.add ( "Bracket=" + Bracket );
     props.add ( "AllowMissingCount=" + AllowMissingCount );
+    props.add ( "MinimumSampleSize=" + MinimumSampleSize );
     props.add ( "Alias=" + Alias );
     props.add ( "ProbabilityUnits=" + ProbabilityUnits );
     __command_JTextArea.setText( __command.toString ( props ) );

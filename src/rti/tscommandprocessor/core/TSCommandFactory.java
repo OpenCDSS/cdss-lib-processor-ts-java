@@ -128,6 +128,7 @@ import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.SetTableValues_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
+import rti.tscommandprocessor.commands.table.SortTable_Command;
 import rti.tscommandprocessor.commands.table.TableMath_Command;
 import rti.tscommandprocessor.commands.table.TableTimeSeriesMath_Command;
 import rti.tscommandprocessor.commands.table.TableToTimeSeries_Command;
@@ -855,6 +856,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ShiftTimeByInterval") ) {
         return new ShiftTimeByInterval_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("SortTable") ) {
+        return new SortTable_Command ();
     }
     else if ( commandName.equalsIgnoreCase("SortTimeSeries") ) {
         return new SortTimeSeries_Command ();

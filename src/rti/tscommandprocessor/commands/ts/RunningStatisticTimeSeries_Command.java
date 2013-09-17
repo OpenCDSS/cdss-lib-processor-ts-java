@@ -427,13 +427,22 @@ CommandWarningException, CommandException
     
     int nts = tslist.size();
     if ( nts == 0 ) {
-        message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
+                "\", EnsembleID=\"" + EnsembleID + "\".  May be OK if time series are not yet created.";
+            Message.printWarning ( warning_level, MessageUtil.formatMessageTag(
+                command_tag,++warning_count), routine, message );
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, message,
+                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        }
+        else {
+            message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
             "\", EnsembleID=\"" + EnsembleID + "\".";
-        Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message,
-            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+            Message.printWarning ( warning_level, MessageUtil.formatMessageTag(
+                command_tag,++warning_count), routine, message );
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        }
     }
     
     if ( warning_count > 0 ) {

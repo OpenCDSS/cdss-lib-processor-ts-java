@@ -293,7 +293,7 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
             //network.findUpstreamFlowNodes(upstreamNodeList, node, true);
             upstreamNodeList = node.getUpstreamNodes();
             Message.printStatus(2,routine,"Setting node \"" + nodeID + "\" inflow to total of upstream node outflows.");
-            if ( upstreamNodeList.size() == 0 ) {
+            if ( (upstreamNodeList == null) || (upstreamNodeList.size() == 0) ) {
                 // Headwater node so no upstream outflow, therefore no inflow
                 try {
                     Message.printStatus(2,routine,"Setting node \"" + nodeID + "\" inflow zero since headwater node.");
@@ -1128,8 +1128,11 @@ throws Exception
         return;
     }
     else if ( records.size() != 1 ) {
-        problems.add ( "Found " + records.size() + " nodes with no downstream node in table. " +
-            "Only one is expected.  Cannot initialize network from table." );
+        problems.add ( "Found " + records.size() + " nodes with no downstream node in table (below). " +
+            "Exactly one downstream node per node is expected.  Cannot initialize network from table." );
+        for ( TableRecord rec: records ) {
+            problems.add ( "Node with no downstream node: \"" + rec.getFieldValueString(downstreamNodeIdColumnNum) + "\"");
+        }
         return;
     }
     TableRecord rec = records.get(0);

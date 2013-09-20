@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.riverware;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -11,12 +12,14 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
@@ -29,6 +32,7 @@ import java.io.File;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
+import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -45,17 +49,18 @@ private final String
     __RemoveWorkingDirectory = "Remove Working Directory",
     __AddWorkingDirectory = "Add Working Directory";
     
-private SimpleJButton	__browse_JButton = null,// File browse button
-			__path_JButton = null,	// Convert between relative and absolute path.
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private ReadRiverWare_Command __command = null;
-private String __working_dir = null;	// Working directory.
+private String __working_dir = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-private JTextField __InputStart_JTextField,
-			__InputEnd_JTextField,
-			__InputFile_JTextField = null;
-			//__Units_JTextField = null;// Units to convert to at read
+private JTextField __InputStart_JTextField;
+private JTextField __InputEnd_JTextField;
+private JTextField __InputFile_JTextField = null;
+//__Units_JTextField = null;// Units to convert to at read
+private JTabbedPane __rw_JTabbedPane = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up
 private boolean __first_time = true;
@@ -82,6 +87,8 @@ public void actionPerformed( ActionEvent event )
 		// Browse for the file to read...
 		JFileChooser fc = new JFileChooser();
 		fc.setDialogTitle( "Select RiverWare Time Series File");
+        SimpleFileFilter sff = new SimpleFileFilter("rdf","RiverWare Data Format (RDF) File (*.rdf)");
+        fc.addChoosableFileFilter(sff);
 		
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		if ( last_directory_selected != null ) {
@@ -301,6 +308,32 @@ private void initialize ( JFrame parent, ReadRiverWare_Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    __rw_JTabbedPane = new JTabbedPane ();
+    __rw_JTabbedPane.setBorder(
+        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+        "Specify SQL" ));
+    JGUIUtil.addComponent(main_JPanel, __rw_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for single column output
+    int ySingle = -1;
+    JPanel singleJPanel = new JPanel();
+    singleJPanel.setLayout( new GridBagLayout() );
+    __rw_JTabbedPane.addTab ( "Time Series File", singleJPanel );
+    
+    JGUIUtil.addComponent(singleJPanel, new JLabel (
+        "Single time series files are read into a single time series in TSTool."),
+        0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    int yRdf = -1;
+    JPanel rdfJPanel = new JPanel();
+    rdfJPanel.setLayout( new GridBagLayout() );
+    __rw_JTabbedPane.addTab ( "RDF File", rdfJPanel );
+    
+    JGUIUtil.addComponent(rdfJPanel, new JLabel (
+        "RiverWare Data Format (RDF) files are read into an ensemble or list of time series."),
+        0, ++yRdf, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

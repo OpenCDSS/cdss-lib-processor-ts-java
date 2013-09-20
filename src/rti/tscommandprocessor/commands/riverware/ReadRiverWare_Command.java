@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -421,9 +422,9 @@ throws InvalidCommandParameterException,
     
     CommandStatus status = getCommandStatus();
     status.clearLog(command_phase);
-    boolean read_data = true;
+    boolean readData = true;
     if ( command_phase == CommandPhaseType.DISCOVERY ){
-        read_data = false;
+        readData = false;
     }
     CommandProcessor processor = getCommandProcessor();
 
@@ -570,12 +571,13 @@ throws InvalidCommandParameterException,
     }
 
 	// Read the file.
-    TS ts = null;
+    List<TS> tslist = new ArrayList<TS>();
     String InputFile_full = InputFile;
+    boolean isRdf = false;
 	try {
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                        TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         if ( !IOUtil.fileExists(InputFile_full)) {
             message = "The RiverWare file \"" + InputFile_full + "\" does not exist.";
             status.addToLog(command_phase,
@@ -583,17 +585,29 @@ throws InvalidCommandParameterException,
                 CommandStatusType.FAILURE, message,"Verify that the filename is correct."));
         }
         else {
-            ts = RiverWareTS.readTimeSeries ( InputFile_full, InputStart_DateTime, InputEnd_DateTime, Units, read_data );
-            if ( ts == null ) {
-                message = "Unable to read time series from RiverWare file \"" + InputFile_full + "\".";
-                status.addToLog(command_phase,
-                        new CommandLogRecord(
-                                CommandStatusType.FAILURE, message,"See the log file."));
+            isRdf = RiverWareTS.isRiverWareFile ( InputFile_full, true );
+            if ( isRdf ) {
+                // Read multiple time series from the file
+                Message.printStatus(2, routine, "Reading RiverWare RDF file \"" + InputFile_full + "\"" );
+                tslist = RiverWareTS.readTimeSeriesListFromRdf ( InputFile_full, InputStart_DateTime, InputEnd_DateTime, Units, readData );
             }
-            if ( (Alias != null) && !Alias.equals("") ) {
-                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                    processor, ts, Alias, status, command_phase);
-                ts.setAlias ( alias );
+            else {
+                // Read a single time series
+                TS ts = RiverWareTS.readTimeSeries ( InputFile_full, InputStart_DateTime, InputEnd_DateTime, Units, readData );
+                if ( ts == null ) {
+                    message = "Unable to read time series from RiverWare file \"" + InputFile_full + "\".";
+                    status.addToLog(command_phase,
+                            new CommandLogRecord(
+                                    CommandStatusType.FAILURE, message,"See the log file."));
+                }
+                else {
+                    tslist.add ( ts );
+                    if ( (Alias != null) && !Alias.equals("") ) {
+                        String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, Alias, status, command_phase);
+                        ts.setAlias ( alias );
+                    }
+                }
             }
         }
 	} 
@@ -612,10 +626,10 @@ throws InvalidCommandParameterException,
     Message.printStatus ( 2, routine, "Read " + size + " RiverWare time series." );
 
     if ( command_phase == CommandPhaseType.RUN ) {
-        if ( ts != null ) {
+        if ( tslist.size() > 0 ) {
             // Further process the time series...
             // This makes sure the period is at least as long as the output period...
-            int wc = TSCommandProcessorUtil.processTimeSeriesAfterRead( processor, this, ts );
+            int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
             if ( wc > 0 ) {
                 message = "Error post-processing RiverWare time series after read.";
                 Message.printWarning ( warning_level, 
@@ -629,7 +643,7 @@ throws InvalidCommandParameterException,
     
             // Now add the list in the processor...
             
-            int wc2 = TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, ts );
+            int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
             if ( wc2 > 0 ) {
                 message = "Error adding RiverWare time series after read.";
                 Message.printWarning ( warning_level, 
@@ -643,8 +657,6 @@ throws InvalidCommandParameterException,
         }
     }
     else if ( command_phase == CommandPhaseType.DISCOVERY ) {
-    	List<TS> tslist = new Vector(1);
-        tslist.add ( ts );
         setDiscoveryTSList ( tslist );
     }
 

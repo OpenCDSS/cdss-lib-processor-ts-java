@@ -55,7 +55,7 @@ private DateTime __InputEnd   = null;
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discovery_TS_List = null;
 
 /**
 Constructor.
@@ -264,7 +264,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discovery_TS_List;
 }
 
 /**
@@ -402,16 +402,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number The number of the command being run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
-throws InvalidCommandParameterException,
-       CommandWarningException,
-       CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "ReadRiverWare_Command.runCommand", message;
 	int warning_level = 2;
     int log_level = 3;
@@ -602,11 +598,13 @@ throws InvalidCommandParameterException,
                 }
                 else {
                     tslist.add ( ts );
-                    if ( (Alias != null) && !Alias.equals("") ) {
-                        String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                            processor, ts, Alias, status, command_phase);
-                        ts.setAlias ( alias );
-                    }
+                }
+            }
+            if ( (Alias != null) && !Alias.equals("") ) {
+                for ( TS ts2 : tslist ) {
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts2, Alias, status, command_phase);
+                    ts2.setAlias ( alias );
                 }
             }
         }
@@ -676,7 +674,7 @@ Set the list of time series read in discovery phase.
 */
 private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discovery_TS_List = discovery_TS_Vector;
 }
 
 /**

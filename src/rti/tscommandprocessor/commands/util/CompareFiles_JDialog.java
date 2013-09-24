@@ -25,7 +25,6 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -50,7 +49,8 @@ private SimpleJButton __ok_JButton = null; // Ok Button
 private JTextField __InputFile1_JTextField = null; // First file
 private JTextField __InputFile2_JTextField = null; // Second file
 private JTextField __CommentLineChar_JTextField = null;
-private SimpleJComboBox __IgnoreWhitespace_JComboBox =null;
+private SimpleJComboBox __MatchCase_JComboBox = null;
+private SimpleJComboBox __IgnoreWhitespace_JComboBox = null;
 private JTextField __AllowedDiff_JTextField = null;
 private SimpleJComboBox __IfDifferent_JComboBox =null;
 private SimpleJComboBox __IfSame_JComboBox =null;
@@ -66,7 +66,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public CompareFiles_JDialog ( JFrame parent, Command command )
+public CompareFiles_JDialog ( JFrame parent, CompareFiles_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -192,6 +192,7 @@ private void checkInput ()
 	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
 	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
+	String MatchCase = __MatchCase_JComboBox.getSelected();
 	String IgnoreWhitespace = __IgnoreWhitespace_JComboBox.getSelected();
 	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
@@ -205,6 +206,9 @@ private void checkInput ()
 	}
     if ( CommentLineChar.length() > 0 ) {
         props.set ( "CommentLineChar", CommentLineChar );
+    }
+    if ( MatchCase.length() > 0 ) {
+        props.set ( "MatchCase", MatchCase );
     }
     if ( IgnoreWhitespace.length() > 0 ) {
         props.set ( "IgnoreWhitespace", IgnoreWhitespace );
@@ -235,6 +239,7 @@ private void commitEdits ()
 {	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
 	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
+	String MatchCase = __MatchCase_JComboBox.getSelected();
 	String IgnoreWhitespace = __IgnoreWhitespace_JComboBox.getSelected();
 	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
@@ -242,6 +247,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "InputFile1", InputFile1 );
 	__command.setCommandParameter ( "InputFile2", InputFile2 );
 	__command.setCommandParameter ( "CommentLineChar", CommentLineChar );
+	__command.setCommandParameter ( "MatchCase", MatchCase );
 	__command.setCommandParameter ( "IgnoreWhitespace", IgnoreWhitespace );
 	__command.setCommandParameter ( "AllowedDiff", AllowedDiff );
 	__command.setCommandParameter ( "IfDifferent", IfDifferent );
@@ -249,28 +255,12 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__InputFile1_JTextField = null;
-	__InputFile2_JTextField = null;
-	__IfDifferent_JComboBox = null;
-	__IfSame_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (CompareFiles_Command)command;
+private void initialize ( JFrame parent, CompareFiles_Command command )
+{	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -330,6 +320,20 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __CommentLineChar_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - must be first char on line (default=#)"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match case:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MatchCase_JComboBox = new SimpleJComboBox ( false );
+    __MatchCase_JComboBox.addItem ( "" );
+    __MatchCase_JComboBox.addItem ( __command._False );
+    __MatchCase_JComboBox.addItem ( __command._True );
+    __MatchCase_JComboBox.select ( 0 );
+    __MatchCase_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MatchCase_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - match case (default=" + __command._True + ")"), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ignore whitespace:"),
@@ -455,6 +459,7 @@ private void refresh ()
 	String InputFile1 = "";
 	String InputFile2 = "";
 	String CommentLineChar = "";
+	String MatchCase = "";
 	String IgnoreWhitespace = "";
 	String AllowedDiff = "";
 	String IfDifferent = "";
@@ -466,6 +471,7 @@ private void refresh ()
 		InputFile1 = parameters.getValue ( "InputFile1" );
 		InputFile2 = parameters.getValue ( "InputFile2" );
 		CommentLineChar = parameters.getValue ( "CommentLineChar" );
+		MatchCase = parameters.getValue ( "MatchCase" );
 		IgnoreWhitespace = parameters.getValue ( "IgnoreWhitespace" );
 		AllowedDiff = parameters.getValue ( "AllowedDiff" );
 		IfDifferent = parameters.getValue ( "IfDifferent" );
@@ -478,6 +484,20 @@ private void refresh ()
 		}
         if ( CommentLineChar != null ) {
             __CommentLineChar_JTextField.setText ( CommentLineChar );
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__MatchCase_JComboBox, MatchCase, JGUIUtil.NONE, null, null ) ) {
+            __MatchCase_JComboBox.select ( MatchCase );
+        }
+        else {
+            if ( (MatchCase == null) || MatchCase.equals("") ) {
+                // New command...select the default...
+                __MatchCase_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "MatchCase parameter \"" + MatchCase + "\".  Select a\ndifferent value or Cancel." );
+            }
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IgnoreWhitespace_JComboBox, IgnoreWhitespace, JGUIUtil.NONE, null, null ) ) {
 			__IgnoreWhitespace_JComboBox.select ( IgnoreWhitespace );
@@ -532,6 +552,7 @@ private void refresh ()
 	InputFile1 = __InputFile1_JTextField.getText().trim();
 	InputFile2 = __InputFile2_JTextField.getText().trim();
 	CommentLineChar = __CommentLineChar_JTextField.getText().trim();
+	MatchCase = __MatchCase_JComboBox.getSelected();
 	IgnoreWhitespace = __IgnoreWhitespace_JComboBox.getSelected();
 	AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	IfDifferent = __IfDifferent_JComboBox.getSelected();
@@ -540,6 +561,7 @@ private void refresh ()
 	props.add ( "InputFile1=" + InputFile1 );
 	props.add ( "InputFile2=" + InputFile2 );
 	props.add ( "CommentLineChar=" + CommentLineChar );
+	props.add ( "MatchCase=" + MatchCase );
 	props.add ( "IgnoreWhitespace=" + IgnoreWhitespace );
 	props.add ( "AllowedDiff=" + AllowedDiff );
 	props.add ( "IfDifferent=" + IfDifferent );

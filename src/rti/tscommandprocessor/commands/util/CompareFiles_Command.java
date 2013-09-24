@@ -27,7 +27,7 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 
 /**
-This class initializes, checks, and runs the compareFiles() command.
+This class initializes, checks, and runs the CompareFiles() command.
 */
 public class CompareFiles_Command extends AbstractCommand
 implements Command
@@ -65,6 +65,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
+	String MatchCase = parameters.getValue ( "MatchCase" );
 	String IgnoreWhitespace = parameters.getValue ( "IgnoreWhitespace" );
 	String AllowedDiff = parameters.getValue ( "AllowedDiff" );
 	String IfDifferent = parameters.getValue ( "IfDifferent" );
@@ -93,15 +94,22 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify the second file name."));
 	}
+    if ( (MatchCase != null) && !MatchCase.equals("") && !MatchCase.equalsIgnoreCase(_False) &&
+        !MatchCase.equalsIgnoreCase(_True) ) {
+        message = "The MatchCase parameter \"" + MatchCase + "\" is not a valid value.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + _False + " or " + _True + " (default)"));
+    }
 	if ( (IgnoreWhitespace != null) && !IgnoreWhitespace.equals("") && !IgnoreWhitespace.equalsIgnoreCase(_False) &&
-			!IgnoreWhitespace.equalsIgnoreCase(_True)  ) {
-				message = "The IgnoreWhitespace parameter \"" + IgnoreWhitespace + "\" is not a valid value.";
-				warning += "\n" + message;
-				status.addToLog(CommandPhaseType.INITIALIZATION,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify the parameter as " + _False + " (default) or " +
-							_True ));
-		}
+		!IgnoreWhitespace.equalsIgnoreCase(_True) ) {
+		message = "The IgnoreWhitespace parameter \"" + IgnoreWhitespace + "\" is not a valid value.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the parameter as " + _False + " (default) or " + _True ));
+	}
     if ( (AllowedDiff != null) && !AllowedDiff.equals("") && !StringUtil.isInteger(AllowedDiff) ) {
             message = "The number of allowed differences \"" + AllowedDiff + "\" is invalid.";
             warning += "\n" + message;
@@ -128,10 +136,11 @@ throws InvalidCommandParameterException
 					_Warn + ", or " + _Fail + "."));
 	}
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
 	valid_Vector.add ( "InputFile1" );
 	valid_Vector.add ( "InputFile2" );
 	valid_Vector.add ( "CommentLineChar" );
+	valid_Vector.add ( "MatchCase" );
 	valid_Vector.add ( "IgnoreWhitespace" );
 	valid_Vector.add ( "AllowedDiff" );
 	valid_Vector.add ( "IfDifferent" );
@@ -277,8 +286,13 @@ CommandWarningException, CommandException
 	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
 	String CommentLineChar = parameters.getValue ( "CommentLineChar" );
-	String IgnoreWhitespace = parameters.getValue ( "IgnoreWhitespace" );
-	boolean IgnoreWhitespace_boolean = false;
+	String MatchCase = parameters.getValue ( "MatchCase" );
+    boolean MatchCase_boolean = true; // Default
+    if ( (MatchCase != null) && MatchCase.equalsIgnoreCase(_False)) {
+        MatchCase_boolean = false;
+    }
+    String IgnoreWhitespace = parameters.getValue ( "IgnoreWhitespace" );
+	boolean IgnoreWhitespace_boolean = false; // Default
 	if ( (IgnoreWhitespace != null) && IgnoreWhitespace.equalsIgnoreCase(_True)) {
 		IgnoreWhitespace_boolean = true;
 	}
@@ -372,8 +386,15 @@ CommandWarningException, CommandException
 				break;
 			}
 			++lineCountCompared;
-			if ( !iline1.equals(iline2) ) {
-				++diff_count;
+			if ( MatchCase_boolean ) {
+    			if ( !iline1.equals(iline2) ) {
+    				++diff_count;
+    			}
+			}
+			else {
+			    if ( !iline1.equalsIgnoreCase(iline2) ) {
+                    ++diff_count;
+                }
 			}
 			if ( Message.isDebugOn ) {
 				Message.printDebug (dl,routine,"Compared:\n\"" + iline1 + "\"\n\"" + iline2 + "\"\nDiffCount=" +
@@ -437,6 +458,7 @@ public String toString ( PropList parameters )
 	String InputFile1 = parameters.getValue("InputFile1");
 	String InputFile2 = parameters.getValue("InputFile2");
 	String CommentLineChar = parameters.getValue("CommentLineChar");
+	String MatchCase = parameters.getValue("MatchCase");
 	String IgnoreWhitespace = parameters.getValue("IgnoreWhitespace");
 	String AllowedDiff = parameters.getValue("AllowedDiff");
 	String IfDifferent = parameters.getValue("IfDifferent");
@@ -456,6 +478,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "CommentLineChar=\"" + CommentLineChar + "\"" );
+    }
+    if ( (MatchCase != null) && (MatchCase.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MatchCase=" + MatchCase );
     }
     if ( (IgnoreWhitespace != null) && (IgnoreWhitespace.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -1,6 +1,5 @@
 package rti.tscommandprocessor.commands.riverware;
 
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -12,7 +11,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
-import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -34,6 +32,7 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -55,6 +54,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private ReadRiverWare_Command __command = null;
 private String __working_dir = null;
+private SimpleJComboBox __Output_JComboBox = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
@@ -140,6 +140,9 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+	else {
+	    refresh();
+	}
 }
 
 // Start event handlers for DocumentListener...
@@ -182,13 +185,17 @@ private void checkInput ()
     // Put together a list of parameters to check...
     PropList props = new PropList ( "" );
     String InputFile = __InputFile_JTextField.getText().trim();
+    String Output = __Output_JComboBox.getSelected();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
     //String Units = __Units_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
     
     __error_wait = false;
-    
+
+    if (Output.length() > 0) {
+        props.set("Output", Output);
+    }
     if (InputFile.length() > 0) {
         props.set("InputFile", InputFile);
     }
@@ -222,32 +229,18 @@ already been checked and no errors were detected.
 private void commitEdits()
 {
     String InputFile = __InputFile_JTextField.getText().trim();
+    String Output = __Output_JComboBox.getSelected();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
     //String Units = __Units_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
 
     __command.setCommandParameter("InputFile", InputFile);
+    __command.setCommandParameter("Output", Output);
     __command.setCommandParameter("InputStart", InputStart);
     __command.setCommandParameter("InputEnd", InputEnd);
     //__command.setCommandParameter("Units", Units);
     __command.setCommandParameter("Alias", Alias);
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__browse_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__InputFile_JTextField = null;
-	__ok_JButton = null;
-	__working_dir = null;
-	super.finalize ();
 }
 
 /**
@@ -269,22 +262,13 @@ private void initialize ( JFrame parent, ReadRiverWare_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from a RiverWare time series file." ),
+		"Read time series from a RiverWare time series file." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"It is assumed that the filename follows the convention ObjectName.SlotName."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The ObjectName and SlotName will be used for the time series identifier location and data type, " +
-		"respectively." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full path or relative path (relative to working " +
-		"directory) for a RiverWare file to read." ), 
+		"Specify a full path or relative path (relative to working directory) for a RiverWare file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying the period will limit data that are available " +
-		"for fill commands but can increase performance." ), 
+		"Specifying the period will limit data that are available for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    //	JGUIUtil.addComponent(main_JPanel, new JLabel (
 	//	"Specifying units causes conversion during the read " +
@@ -310,9 +294,6 @@ private void initialize ( JFrame parent, ReadRiverWare_Command command )
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     
     __rw_JTabbedPane = new JTabbedPane ();
-    __rw_JTabbedPane.setBorder(
-        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify SQL" ));
     JGUIUtil.addComponent(main_JPanel, __rw_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
@@ -325,6 +306,12 @@ private void initialize ( JFrame parent, ReadRiverWare_Command command )
     JGUIUtil.addComponent(singleJPanel, new JLabel (
         "Single time series files are read into a single time series in TSTool."),
         0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleJPanel, new JLabel (
+        "It is assumed that the filename follows the convention ObjectName.SlotName."),
+        0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleJPanel, new JLabel (
+        "The ObjectName and SlotName will be used for the time series identifier location and data type, respectively." ),
+        0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     int yRdf = -1;
     JPanel rdfJPanel = new JPanel();
@@ -332,8 +319,28 @@ private void initialize ( JFrame parent, ReadRiverWare_Command command )
     __rw_JTabbedPane.addTab ( "RDF File", rdfJPanel );
     
     JGUIUtil.addComponent(rdfJPanel, new JLabel (
-        "RiverWare Data Format (RDF) files are read into an ensemble or list of time series."),
+        "RiverWare Data Format (RDF) files are read into a list of time series and optionally ensemble(s)."),
         0, ++yRdf, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(rdfJPanel, new JLabel (
+        "Each ensemble time series has location ID = ObjectName, data type = SlotName, and the sequence identifier = run number (1+)."),
+        0, ++yRdf, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(rdfJPanel, new JLabel (
+        "The ensemble ID is set to ObjectName_SlotName."),
+        0, ++yRdf, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(rdfJPanel, new JLabel ( "Output"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Output_JComboBox = new SimpleJComboBox ( false );
+    __Output_JComboBox.addItem ( "" );
+    __Output_JComboBox.addItem ( __command._TimeSeries );
+    __Output_JComboBox.addItem ( __command._TimeSeriesAndEnsembles );
+    __Output_JComboBox.select ( 0 );
+    __Output_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(rdfJPanel, __Output_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(rdfJPanel, new JLabel(
+        "Optional - output to generate (default=" + __command._TimeSeries + ")"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -445,8 +452,10 @@ public boolean ok() {
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh() {
+private void refresh()
+{   String routine = "ReadRiverWare_JDialog.refresh";
     String InputFile = "";
+    String Output = "";
     String InputStart = "";
     String InputEnd = "";
     //String NewUnits = "";
@@ -460,6 +469,7 @@ private void refresh() {
         // Get the properties from the command
         props = __command.getCommandParameters();
         InputFile = props.getValue("InputFile");
+        Output = props.getValue("Output");
         InputStart = props.getValue("InputStart");
         InputEnd = props.getValue("InputEnd");
         //NewUnits = props.getValue("NewUnits");
@@ -471,6 +481,23 @@ private void refresh() {
         }
         if (InputFile != null) {
             __InputFile_JTextField.setText(InputFile);
+            if ( InputFile.toUpperCase().endsWith("RDF") ) {
+                __rw_JTabbedPane.setSelectedIndex(1);
+            }
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Output_JComboBox, Output, JGUIUtil.NONE, null, null ) ) {
+            __Output_JComboBox.select ( Output );
+        }
+        else {
+            if ( (Output == null) || Output.equals("") ) {
+                // New command...select the default...
+                __Output_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "Output parameter \"" + Output + "\".  Select a\ndifferent value or Cancel." );
+            }
         }
         if (InputStart != null) {
             __InputStart_JTextField.setText(InputStart);
@@ -487,6 +514,7 @@ private void refresh() {
     // Regardless, reset the command from the fields.  This is only  visible
     // information that has not been committed in the command.
     InputFile = __InputFile_JTextField.getText().trim();
+    Output = __Output_JComboBox.getSelected();
     InputStart = __InputStart_JTextField.getText().trim();
     InputEnd = __InputEnd_JTextField.getText().trim();
     //NewUnits = __NewUnits_JTextField.getText().trim();
@@ -494,6 +522,7 @@ private void refresh() {
 
     props = new PropList(__command.getCommandName());
     props.add("InputFile=" + InputFile);
+    props.add("Output=" + Output);
     props.add("InputStart=" + InputStart);
     props.add("InputEnd=" + InputEnd);
     //props.add("NewUnits=" + NewUnits);
@@ -535,8 +564,7 @@ private void refreshPathControl()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok ) {
     __ok = ok;

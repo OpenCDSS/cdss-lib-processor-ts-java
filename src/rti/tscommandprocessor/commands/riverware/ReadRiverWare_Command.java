@@ -10,6 +10,7 @@ import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.RiverWareTS;
+import RTi.TS.TSEnsemble;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
@@ -40,22 +41,30 @@ public class ReadRiverWare_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
-protected static final String
-	_FALSE = "False",
-	_TRUE = "True";
+protected final String _FALSE = "False";
+protected final String _TRUE = "True";
+
+protected final String _TimeSeries = "TimeSeries";
+protected final String _TimeSeriesAndEnsembles = "TimeSeriesAndEnsembles";
 
 /**
 Private data members shared between the checkCommandParameter() and the 
 runCommand() methods (prevent code duplication parsing dateTime strings).  
 */
 private DateTime __InputStart = null;
-private DateTime __InputEnd   = null;
+private DateTime __InputEnd = null;
 
 /**
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_List = null;
+private List<TS> __discoveryTSList = null;
+
+/**
+List of ensembles read during discovery.  These are TSEnsemble objects but with mainly the
+metadata (identifier) filled in.
+*/
+private List<TSEnsemble> __discoveryEnsembleList = null;
 
 /**
 Constructor.
@@ -87,6 +96,7 @@ throws InvalidCommandParameterException
 	
 	// Get the property values. 
 	String InputFile = parameters.getValue("InputFile");
+	String Output = parameters.getValue("Output");
 	//String Units  = parameters.getValue("Units");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd   = parameters.getValue("InputEnd");
@@ -158,6 +168,16 @@ throws InvalidCommandParameterException
                         message, "Verify that input file and working directory paths are compatible." ) );
         }
     }
+    
+    if ( Output != null && !Output.equals("") && !Output.equalsIgnoreCase(_TimeSeries) &&
+        !Output.equalsIgnoreCase(_TimeSeriesAndEnsembles) ) {
+        message = "Output (" + Output  + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify Output as " + _TimeSeries + " (default) or " + _TimeSeriesAndEnsembles + ".") );
+    }
+    
 
     /*
 	if ( Units != null ) {
@@ -216,9 +236,10 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "InputFile" );
+    valid_Vector.add ( "Output" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Units" );
@@ -237,6 +258,52 @@ throws InvalidCommandParameterException
 }
 
 /**
+Create the list of ensembles from the list of time series.  The object name and slot name combinations make the unique
+ensemble identifiers.
+@param tslist list of time series to process
+@return list of TSEnsemble determined from the time series
+*/
+private List<TSEnsemble> createEnsembleList ( List<TS> tslist )
+{
+    List<TSEnsemble> ensembleList = new ArrayList<TSEnsemble>();
+    List<String> objectNames = new ArrayList<String>();
+    List<String> slotNames = new ArrayList<String>();
+    String objectName, slotName;
+    boolean found;
+    for ( TS ts : tslist ) {
+        objectName = ts.getLocation();
+        slotName = ts.getDataType();
+        found = false;
+        for ( int i = 0; i < objectNames.size(); i++ ) {
+            if ( objectNames.get(i).equalsIgnoreCase(objectName) && slotNames.get(i).equalsIgnoreCase(slotName)) {
+                found = true;
+                break;
+            }
+        }
+        if ( !found ) {
+            // Create an ensemble and save the names to check against the other time series
+            objectNames.add(objectName);
+            slotNames.add(slotName);
+        }
+    }
+    // Now have a unique set of object name and slot name pairs.  Loop and create the ensembles
+    List<TS> ensembleTS = null;
+    for ( int i = 0; i < objectNames.size(); i++ ) {
+        // Get the list of matching time series
+        ensembleTS = new ArrayList<TS>();
+        objectName = objectNames.get(i);
+        slotName = slotNames.get(i);
+        for ( TS ts : tslist ) {
+            if ( ts.getLocation().equalsIgnoreCase(objectName) && ts.getDataType().equalsIgnoreCase(slotName) ) {
+                ensembleTS.add(ts);
+            }
+        }
+        ensembleList.add ( new TSEnsemble(objectName + "_" + slotName, objectName + "_" + slotName, ensembleTS));
+    }
+    return ensembleList;
+}
+
+/**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if
@@ -249,14 +316,11 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
-Free memory for garbage collection.
+Return the list of ensembles read in discovery phase.
 */
-protected void finalize ()
-throws Throwable
+private List<TSEnsemble> getDiscoveryEnsembleList ()
 {
-	__InputStart = null;
-	__InputEnd   = null;
-	super.finalize();
+    return __discoveryEnsembleList;
 }
 
 /**
@@ -264,7 +328,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_List;
+    return __discoveryTSList;
 }
 
 /**
@@ -273,6 +337,10 @@ Return the list of data objects read by this object in discovery mode.
 public List getObjectList ( Class c )
 {
 	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
+	if ( c == TSEnsemble.class ) {
+        return getDiscoveryEnsembleList();
+    }
+	// Time series
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
@@ -421,12 +489,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     boolean readData = true;
     if ( command_phase == CommandPhaseType.DISCOVERY ){
         readData = false;
+        setDiscoveryTSList ( new ArrayList<TS>() );
+        setDiscoveryEnsembleList ( new ArrayList<TSEnsemble>() );
     }
     CommandProcessor processor = getCommandProcessor();
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue("InputFile");
+	String Output = parameters.getValue("Output");
+	if ( (Output == null) || Output.equals("") ) {
+	    Output = _TimeSeries; // default
+	}
 	String Units = parameters.getValue("Units");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
@@ -568,6 +642,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	// Read the file.
     List<TS> tslist = new ArrayList<TS>();
+    List<TSEnsemble> ensembleList = new ArrayList<TSEnsemble>();
     String InputFile_full = InputFile;
     boolean isRdf = false;
 	try {
@@ -586,6 +661,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 // Read multiple time series from the file
                 Message.printStatus(2, routine, "Reading RiverWare RDF file \"" + InputFile_full + "\"" );
                 tslist = RiverWareTS.readTimeSeriesListFromRdf ( InputFile_full, InputStart_DateTime, InputEnd_DateTime, Units, readData );
+                if ( Output.equalsIgnoreCase(_TimeSeriesAndEnsembles) ) {
+                    // Create a list of ensemble from the time series list
+                    ensembleList = createEnsembleList ( tslist );
+                }
             }
             else {
                 // Read a single time series
@@ -653,9 +732,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 throw new CommandException ( message );
             }
         }
+        if ( Output.equalsIgnoreCase(_TimeSeriesAndEnsembles) ) {
+            for ( TSEnsemble ensemble : ensembleList ) {
+                TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble );
+            }
+        }
     }
     else if ( command_phase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( tslist );
+        if ( Output.equalsIgnoreCase(_TimeSeriesAndEnsembles) ) {
+            setDiscoveryEnsembleList ( ensembleList );
+        }
     }
 
 	// Throw CommandWarningException in case of problems.
@@ -670,11 +757,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 }
 
 /**
+Set the list of ensembles read in discovery phase.
+*/
+private void setDiscoveryEnsembleList ( List<TSEnsemble> discoveryEnsembleList )
+{
+    __discoveryEnsembleList = discoveryEnsembleList;
+}
+
+/**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
-    __discovery_TS_List = discovery_TS_Vector;
+    __discoveryTSList = discoveryTSList;
 }
 
 /**
@@ -704,6 +799,7 @@ public String toString ( PropList props, int majorVersion )
 
 	String Alias = props.getValue("Alias");
 	String InputFile = props.getValue("InputFile" );
+	String Output = props.getValue("Output" );
 	String Units = props.getValue("Units");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
@@ -714,6 +810,12 @@ public String toString ( PropList props, int majorVersion )
 	if ((InputFile != null) && (InputFile.length() > 0)) {
 		b.append("InputFile=\"" + InputFile + "\"");
 	}
+    if ((Output != null) && (Output.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Output=" + Output );
+    }
     if ( majorVersion >= 10 ) {
         // Add as a parameter
         if ( (Alias != null) && (Alias.length() > 0) ) {

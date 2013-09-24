@@ -594,12 +594,15 @@ CommandWarningException, CommandException
         if ( doWrite && (tslist != null) ) {
             for ( TS ts : tslist ) {
                 if ( EnsembleName != null ) {
-                    // Writing an ensemble so get the model_run_id for the specific trace using the
-                    // ensemble information
+                    // Writing an ensemble so get the model_run_id for the specific trace using the ensemble information
                     // First get the trace number based on the EnsembleTraceID parameter
                     if ( EnsembleTraceID == null ) {
                         // Use the time series sequence number and if that is not set generate an error
-                        traceNumber = ts.getSequenceNumber();
+                        String sequenceID = ts.getSequenceID();
+                        traceNumber = -1;
+                        if ( StringUtil.isInteger(sequenceID) ) {
+                            traceNumber = Integer.parseInt(sequenceID);
+                        }
                         if ( traceNumber < 0 ) {
                             // No sequence number set so skip the time series
                             message = "Unable to determine trace number for \"" +

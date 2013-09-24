@@ -1784,7 +1784,7 @@ public List<ReclamationHDB_SiteTimeSeriesMetadata> readSiteTimeSeriesMetadataLis
     InputFilter_JPanel ifp)
 throws SQLException
 {   String routine = getClass().getName() + ".readSiteTimeSeriesMetadataList";
-    List<ReclamationHDB_SiteTimeSeriesMetadata> results = new Vector();
+    List<ReclamationHDB_SiteTimeSeriesMetadata> results = new Vector<ReclamationHDB_SiteTimeSeriesMetadata>();
     // Form where clauses based on the data type
     String dataTypeWhereString = "";
     if ( (dataType != null) && !dataType.equals("") && !dataType.equals("*") ) {

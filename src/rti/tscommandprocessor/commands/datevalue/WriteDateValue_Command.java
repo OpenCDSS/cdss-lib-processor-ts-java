@@ -69,6 +69,7 @@ throws InvalidCommandParameterException
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
+	String Version = parameters.getValue ( "Version" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -193,9 +194,17 @@ throws InvalidCommandParameterException
                     "Specify a standard interval (e.g., 6Hour, Day, Month)."));
         }
     }
+    
+    if ( (Version != null) && !Version.equals("1.4") && !Version.equals("1.5")) {
+        message = "The version \"" + Version + "\" is not recognized.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the version as 1.4 or 1.5 (default)." ) );
+    }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "Delimiter" );
 	valid_Vector.add ( "Precision" );
@@ -206,6 +215,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "IrregularInterval" );
+    valid_Vector.add ( "Version" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -330,6 +340,7 @@ CommandWarningException, CommandException
     catch ( Exception e ) {
         // Will have been checked previously
     }
+    String Version = parameters.getValue ( "Version" );
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -487,6 +498,9 @@ CommandWarningException, CommandException
     if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
         props.set("MissingValue=" + MissingValue);
     }
+    if ( (Version != null) && (Version.length() > 0) ) {
+        props.set("Version=" + Version);
+    }
     
     // Get the comments to add to the top of the file.
 
@@ -565,6 +579,7 @@ public String toString ( PropList parameters )
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
     String IrregularInterval = parameters.getValue( "IrregularInterval" );
+    String Version = parameters.getValue( "Version" );
 	StringBuffer b = new StringBuffer ();
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -625,6 +640,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "IrregularInterval=" + IrregularInterval );
+    }
+    if ( (Version != null) && (Version.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Version=" + Version );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

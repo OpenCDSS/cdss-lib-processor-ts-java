@@ -70,6 +70,7 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __MissingValue_JTextField = null;// Missing value for output
+private SimpleJComboBox __Version_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false;		// Has user pressed OK to close the dialog.
@@ -193,6 +194,7 @@ private void checkInput ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
+    String Version = __Version_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -226,6 +228,9 @@ private void checkInput ()
     if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
         parameters.set ( "IrregularInterval", IrregularInterval );
     }
+    if ( (Version != null) && (Version.length() > 0) ) {
+        parameters.set ( "Version", Version );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -252,6 +257,7 @@ private void commitEdits ()
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
+    String Version = __Version_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -262,25 +268,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
 	__command.setCommandParameter ( "IrregularInterval", IrregularInterval );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	__OutputStart_JTextField = null;
-	__OutputEnd_JTextField = null;
-	__TSList_JComboBox = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__browse_JButton = null;
-	__working_dir = null;
-	super.finalize ();
+	__command.setCommandParameter ( "Version", Version );
 }
 
 /**
@@ -349,14 +337,14 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     __Delimiter_JTextField = new JTextField (10);
     __Delimiter_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - delimiter between values (default=space, comma is only other allowed delimiter)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output precision:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Precision_JTextField = new JTextField ( "", 20 );
+    __Precision_JTextField = new JTextField ( "", 10 );
     __Precision_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -365,7 +353,7 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MissingValue_JTextField = new JTextField ( "", 20 );
+    __MissingValue_JTextField = new JTextField ( "", 10 );
     __MissingValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -410,6 +398,22 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Required for irregular time series - used to process date/times."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "DateValue format version:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Version_JComboBox = new SimpleJComboBox ( false );
+    List<String> versionChoices = new Vector();
+    versionChoices.add("");
+    versionChoices.add("1.4");
+    versionChoices.add("1.5");
+    __Version_JComboBox.setData ( versionChoices );
+    __Version_JComboBox.select(0);
+    __Version_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __Version_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - DateValue file format version (default=current)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -504,6 +508,7 @@ private void refresh ()
     String TSID = "";
     String EnsembleID = "";
     String IrregularInterval = "";
+    String Version = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -520,6 +525,7 @@ private void refresh ()
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
         IrregularInterval = parameters.getValue ( "IrregularInterval" );
+        Version = parameters.getValue ( "Version" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -598,6 +604,21 @@ private void refresh ()
                 __IrregularInterval_JComboBox.select ( 0 );
             }
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem( __Version_JComboBox, Version, JGUIUtil.NONE, null, null ) ) {
+            __Version_JComboBox.select ( Version );
+        }
+        else {
+            // Automatically add to the list after the blank (might be a multiple)...
+            if ( (Version != null) && (Version.length() > 0) ) {
+                __Version_JComboBox.insertItemAt ( Version, 1 );
+                // Select...
+                __Version_JComboBox.select ( Version );
+            }
+            else {
+                // Select the blank...
+                __Version_JComboBox.select ( 0 );
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -610,6 +631,7 @@ private void refresh ()
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     IrregularInterval = __IrregularInterval_JComboBox.getSelected();
+    Version = __Version_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
@@ -621,6 +643,7 @@ private void refresh ()
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	parameters.add ( "IrregularInterval=" + IrregularInterval );
+	parameters.add ( "Version=" + Version );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

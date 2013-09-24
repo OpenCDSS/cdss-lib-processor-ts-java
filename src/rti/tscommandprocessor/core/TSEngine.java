@@ -2073,18 +2073,18 @@ protected boolean getPreviewExportedOutput()
 }
 
 /**
-Return a time series from the __tslist vector.
+Return a time series from the __tslist list.
 The search is performed backwards in the
 list, assuming that the commands are being processed sequentially and therefore
 any reference to a duplicate ID would intuitively be referring to the latest
-instance in the list.  For this version of the method, the trace (sequence number) is ignored.
+instance in the list.  For this version of the method, the sequence identifier is ignored.
 @param id Time series identifier (either an alias or TSIdent string).
 @return a time series from the requested position or null if none is available.
 @exception Exception if there is an error getting the time series.
 */
 protected TS getTimeSeries ( String command_tag, String id )
 throws Exception
-{	return getTimeSeries ( command_tag, id, -1 );
+{	return getTimeSeries ( command_tag, id, null );
 }
 
 /**
@@ -2093,15 +2093,15 @@ list, assuming that the commands are being processed sequentially and therefore
 any reference to a duplicate ID would intuitively be referring to the latest
 instance in the list.
 @param id Time series identifier (either an alias or TSIdent string).
-@param sequence_number If >= 0, the sequence number of the time series is also checked to make a match.
+@param sequenceID if non-null and non-blank, the sequence ID of the time series is also checked to make a match.
 @return a time series from the requested position or null if none is available.
 @exception Exception if there is an error getting the time series.
 */
-protected TS getTimeSeries ( String command_tag, String id, int sequence_number )
+protected TS getTimeSeries ( String command_tag, String id, String sequenceID )
 throws Exception
 {
     // Expect the time series to be in memory or BinaryTS file...
-	int pos = indexOf ( id, sequence_number );
+	int pos = indexOf ( id, sequenceID );
 	if ( pos < 0 ) {
 		return null;
 	}
@@ -2360,17 +2360,17 @@ protected boolean haveOutputPeriod ()
 }
 
 /**
-Return the position of a time series from either the __tslist vector.
-See the overloaded method for full documentation.  This version assumes that no sequence number is used.
+Return the position of a time series from either the __tslist list.
+See the overloaded method for full documentation.  This version assumes that no sequence ID is used.
 @param string the alias and/or time series identifier to look for.
 @return Position in time series list (0 index), or -1 if not in the list.
 */
 protected int indexOf ( String string )
-{	return indexOf ( string, -1 );
+{	return indexOf ( string, null );
 }
 
 /**
-Return the position of a time series from the __tslist vector.  The search is done as follows:
+Return the position of a time series from the __tslist list.  The search is done as follows:
 <ol>
 <li>	If string matches a TS alias matches, return the TS index.  This is
 	the most specific match where an alias is being specified in the search string.</li>
@@ -2384,18 +2384,17 @@ The search is performed backwards in the list, assuming that the commands are
 being processed sequentially and therefore any reference to a duplicate ID would
 intuitively be referring to the latest instance in the list.
 @param string the alias and/or time series identifier to look for.
-@param sequence_number If specified as >= 0, the sequence number is also
-checked to find a match.
+@param traceID If specified as non-null and non-blank, the trace identifier is also checked to find a match.
 @return Position in time series list (0 index), or -1 if not in the list.
 */
-private int indexOf ( String string, int sequence_number )
+private int indexOf ( String string, String traceID )
 {	// First search the aliases in the BinaryTS and in memory list...
 	int pos = -1;
 	if ( (string == null) || string.equals("") ) {
 		return -1;
 	}
-	if ( sequence_number >= 0 ) {
-	    pos = TSUtil.indexOf ( __tslist, string, "Alias", sequence_number, -1 );
+	if ( (traceID != null) && !traceID.equals("") ) {
+	    pos = TSUtil.indexOf ( __tslist, string, "Alias", traceID, -1 );
 	}
 	else {
         pos = TSUtil.indexOf ( __tslist, string, "Alias", -1 );
@@ -2412,13 +2411,13 @@ private int indexOf ( String string, int sequence_number )
         TS ts = null;
 		size = __tslist.size();
 		for ( int i = (size - 1); i >= 0; i-- ) {
-			ts = (TS)__tslist.get(i);
+			ts = __tslist.get(i);
 			if ( ts == null ) {
 				continue;
 			}
 			if ( ts.getIdentifier().equals(string) ) {//&& ts.getAlias().equals("") ) {}
-				if ( sequence_number >= 0 ) {
-					if ( ts.getSequenceNumber() == sequence_number ) {
+				if ( (traceID != null) && !traceID.equals("") ) {
+					if ( ts.getSequenceID().equalsIgnoreCase(traceID) ) {
 						return i;
 					}
 				}

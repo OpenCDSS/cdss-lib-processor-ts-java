@@ -444,12 +444,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         
         int size_ensemble = tsensemble.size();
         for ( int iyear = 0; iyear < __Year_int.length; iyear++ ) {
-            int year = __Year_int[iyear];   // Year to be weighted
-            TS ts = null;   // Time series in ensemble
-            boolean found = false;  // Is year trace found?
+            int year = __Year_int[iyear]; // Year to be weighted
+            TS ts = null; // Time series in ensemble
+            boolean found = false; // Is year trace found?
             for ( int i = 0; i < size_ensemble; i++ ) {
                 ts = tsensemble.get(i);
-                if ( ts.getIdentifier().getSequenceNumber() == year ) {
+                // TODO SAM 2013-09-22 Need to allow non-integer trace identifiers in command parameter
+                if ( ts.getIdentifier().getSequenceID().equalsIgnoreCase("" + year) ) {
                     found = true;
                     break;
                 }

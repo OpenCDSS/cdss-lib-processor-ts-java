@@ -307,7 +307,7 @@ private void initialize ( JFrame parent, ReadRiverWare_Command command )
         "Single time series files are read into a single time series in TSTool."),
         0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleJPanel, new JLabel (
-        "It is assumed that the filename follows the convention ObjectName.SlotName."),
+        "It is assumed that the filename starts with ObjectName.SlotName."),
         0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleJPanel, new JLabel (
         "The ObjectName and SlotName will be used for the time series identifier location and data type, respectively." ),
@@ -339,7 +339,7 @@ private void initialize ( JFrame parent, ReadRiverWare_Command command )
     JGUIUtil.addComponent(rdfJPanel, __Output_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(rdfJPanel, new JLabel(
-        "Optional - output to generate (default=" + __command._TimeSeries + ")"), 
+        "Optional - output to generate (default=" + __command._TimeSeries + ")."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),

@@ -313,7 +313,7 @@ public List<ReclamationHDB_ModelRun> findModelRun( List<ReclamationHDB_ModelRun>
     int modelID, String modelRunName, String modelRunDate, String hydrologicIndicator )
 {
     List<ReclamationHDB_ModelRun> foundList = new ArrayList<ReclamationHDB_ModelRun>();
-    Message.printStatus(2, "", "Have " + modelRunList.size() + " model runs to check" );
+    //Message.printStatus(2, "", "Have " + modelRunList.size() + " model runs to check" );
     for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
         if ( (modelID >= 0) && (modelRun.getModelID() != modelID) ) {
             // Model name to match was specified but did not match
@@ -332,21 +332,20 @@ public List<ReclamationHDB_ModelRun> findModelRun( List<ReclamationHDB_ModelRun>
                 continue;
             }
         }
-        Message.printStatus(2, "", "Checking data hydrologic indicator \"" + modelRun.getHydrologicIndicator() +
-            "\" with filter \"" + hydrologicIndicator + "\" for run date " + new DateTime(modelRun.getRunDate()) + 
-            " model run ID=" + modelRun.getModelRunID());
+        //Message.printStatus(2, "", "Checking data hydrologic indicator \"" + modelRun.getHydrologicIndicator() +
+        //    "\" with filter \"" + hydrologicIndicator + "\" for run date " + new DateTime(modelRun.getRunDate()) + 
+        //    " model run ID=" + modelRun.getModelRunID());
         if ( (hydrologicIndicator != null) &&
             !modelRun.getHydrologicIndicator().equalsIgnoreCase(hydrologicIndicator) ) {
             // Allow filter to be an empty string since database can have blanks/nulls
             // Hydrologic indicator (can be a blank string) to match was specified but did not match
-            Message.printStatus(2, "", "Not match" );
+            //Message.printStatus(2, "", "Not match" );
             continue;
         }
         // If here OK to add to the list.
-        Message.printStatus(2, "", "Found match for run date " + new DateTime(modelRun.getRunDate()) );
+        //Message.printStatus(2, "", "Found match for run date " + new DateTime(modelRun.getRunDate()) );
         foundList.add ( modelRun );
     }
-    Message.printStatus(2, "", "Found " + foundList.size() + " matches overall." );
     return foundList;
 }
 

@@ -376,13 +376,13 @@ private void checkInput ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String SiteCommonName = __SiteCommonName_JComboBox.getSelected();
     String DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
-    String SiteDataTypeID = __SiteDataTypeID_JComboBox.getSelected();
+    String SiteDataTypeID = getSelectedSiteDataTypeID();
     String ModelName = __ModelName_JComboBox.getSelected();
     String ModelRunName = __ModelRunName_JComboBox.getSelected();
     String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
     String HydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
     String NewModelRunDate = __NewModelRunDate_JTextField.getText().trim();
-    String ModelRunID = __ModelRunID_JComboBox.getSelected();
+    String ModelRunID = getSelectedModelRunID();
     String EnsembleName = getSelectedEnsembleName();
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
     String EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
@@ -505,13 +505,13 @@ private void commitEdits ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String SiteCommonName = __SiteCommonName_JComboBox.getSelected();
     String DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
-    String SiteDataTypeID = __SiteDataTypeID_JComboBox.getSelected();
+    String SiteDataTypeID = getSelectedSiteDataTypeID();
     String ModelName = __ModelName_JComboBox.getSelected();
     String ModelRunName = __ModelRunName_JComboBox.getSelected();
     String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
     String NewModelRunDate = __NewModelRunDate_JTextField.getText().trim();
     String HydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
-    String ModelRunID = __ModelRunID_JComboBox.getSelected();
+    String ModelRunID = getSelectedModelRunID();
     String EnsembleName = getSelectedEnsembleName();
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
     String EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
@@ -607,16 +607,34 @@ Return the selected ensemble name, which can be from the choice or user-supplied
 */
 private String getSelectedEnsembleName()
 {   String EnsembleName = __EnsembleName_JComboBox.getSelected();
-    Message.printStatus(2, "", "EnsembleName from choice is \"" + EnsembleName + "\"" );
+    //Message.printStatus(2, "", "EnsembleName from choice is \"" + EnsembleName + "\"" );
     if ( (EnsembleName == null) || EnsembleName.equals("") ) {
         // See if user has specified by typing in the box.
         String text = __EnsembleName_JComboBox.getFieldText().trim();
-        Message.printStatus(2, "", "EnsembleName from text is \"" + EnsembleName + "\"" );
+        //Message.printStatus(2, "", "EnsembleName from text is \"" + EnsembleName + "\"" );
         if ( !text.equals("") ) {
             return text;
         }
     }
     return "";
+}
+
+/**
+Return the selected model run ID, used to provide intelligent parameter choices.
+The displayed format is:  "MRI - Other information"
+@return the selected MRI, or "" if nothing selected
+*/
+private String getSelectedModelRunID()
+{   String mri = __ModelRunID_JComboBox.getSelected();
+    if ( mri == null ) {
+        return "";
+    }
+    else if ( mri.indexOf(" ") > 0 ) {
+        return mri.substring(0,mri.indexOf(" ")).trim();
+    }
+    else {
+        return mri.trim();
+    }
 }
 
 /**
@@ -634,6 +652,24 @@ private String getSelectedOverwriteFlag()
     }
     else {
         return overwriteFlag.trim();
+    }
+}
+
+/**
+Return the selected SDI, used to provide intelligent parameter choices.
+The displayed format is:  "SDI - Other information"
+@return the selected SDMI, or "" if nothing selected
+*/
+private String getSelectedSiteDataTypeID()
+{   String sdi = __SiteDataTypeID_JComboBox.getSelected();
+    if ( sdi == null ) {
+        return "";
+    }
+    else if ( sdi.indexOf(" ") > 0 ) {
+        return sdi.substring(0,sdi.indexOf(" ")).trim();
+    }
+    else {
+        return sdi.trim();
     }
 }
 
@@ -739,7 +775,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __sdi_JTabbedPane.addTab ( "Select site_datatype_id (SDI)", sdi_JPanel );
     
     JGUIUtil.addComponent(sdi_JPanel, new JLabel (
-        "The choices below include: \"site_datatype_id - site name - datatype name\", sorted by site name."), 
+        "The choices below include: \"site_datatype_id - site common name - site name - datatype name\", sorted by site name."), 
         0, ++ysdi, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(sdi_JPanel, new JLabel ("Site data type ID:"), 
@@ -879,6 +915,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewModelRunDate_JTextField = new JTextField (20);
     __NewModelRunDate_JTextField.addKeyListener (this);
+    __NewModelRunDate_JTextField.setToolTipText("Run date in form YYYY-MM-DD hh:mm or use ${Property} to use property.");
     JGUIUtil.addComponent(model_JPanel, __NewModelRunDate_JTextField,
         1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(model_JPanel, new JLabel (
@@ -1496,17 +1533,23 @@ private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
     List<String> sortStrings = new ArrayList<String>();
     modelRunIDStrings.add ( "" ); // Always add blank because user may not want model time series
     sortStrings.add("");
+    String mriString;
     try {
-        // There may be no run names for the model id.
+        // This is the full list of model run identifiers.
         List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunListForModelID(-1);
         String hydrologicIndicator;
+        Message.printStatus(2,routine,"Have " + modelRunList.size() + " model runs." );
         for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
             hydrologicIndicator = modelRun.getHydrologicIndicator();
             if ( hydrologicIndicator.equals("") ) {
                 hydrologicIndicator = "no hydrologic indicator";
             }
-            modelRunIDStrings.add ( "" + modelRun.getModelRunID() + " - " + modelRun.getModelRunName() + " - " +
-                hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","") );
+            mriString = modelRun.getModelRunID() + " - " + modelRun.getModelRunName() + " - " +
+                hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","");
+            if ( mriString.length() > 85 ) {
+                mriString = mriString.substring(0,85) + "...";
+            }
+            modelRunIDStrings.add ( "" + mriString );
             // Only show the date to the minute
             sortStrings.add ( modelRun.getModelRunName() + " - " +
                 hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","") );
@@ -1633,7 +1676,7 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
     sortStrings.add("");
     ReclamationHDB_DataType dt;
     ReclamationHDB_Site site;
-    String dtString, siteString;
+    String dtString, siteCommonName, siteName, sdiString;
     try {
         // The following are not currently cached in the DMI so read here
         List<ReclamationHDB_SiteDataType> siteDataTypeList = rdmi.readHdbSiteDataTypeList();
@@ -1649,13 +1692,20 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
             }
             site = rdmi.lookupSite(siteList, siteDataType.getSiteID());
             if ( site == null ) {
-                siteString = "site name unknown";
+                siteName = "site name unknown";
+                siteCommonName = "site common name unknown";
             }
             else {
-                siteString = site.getSiteName().trim();
+                siteName = site.getSiteName().trim();
+                siteCommonName = site.getSiteCommonName().trim();
             }
-            siteDataTypeIDStrings.add ( "" + siteDataType.getSiteDataTypeID() + " - " + siteString + " - " + dtString );
-            sortStrings.add ( siteString + " - " + dtString );
+            sdiString = "" + siteDataType.getSiteDataTypeID() + " - " + siteCommonName + " - " + siteName + " - " + dtString;
+            // Truncate what is shown to the user if too long (length determined from UI inspection)
+            if ( sdiString.length() > 120 ) {
+                sdiString = sdiString.substring(0,120) + "...";
+            }
+            siteDataTypeIDStrings.add ( sdiString );
+            sortStrings.add ( siteCommonName + " - " + siteName + " - " + dtString );
         }
         // Sort the descriptive strings and then resort the main list to be in the same order
         int [] sortOrder = new int[sortStrings.size()];
@@ -2029,7 +2079,8 @@ private void refresh ()
         populateSiteCommonNameChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__SiteCommonName_JComboBox, SiteCommonName, JGUIUtil.NONE, null, null ) ) {
             __SiteCommonName_JComboBox.select ( SiteCommonName );
-            if ( (SiteDataTypeID != null) && !SiteDataTypeID.equals("") ) {
+            if ( (__SiteDataTypeID_JComboBox.getSelected() != null) && !__SiteDataTypeID_JComboBox.getSelected().equals("") ) {
+                // Only set this tab if the SiteDataTypeID was not able to be set above
                 __sdi_JTabbedPane.setSelectedIndex(1);
             }
         }
@@ -2152,8 +2203,10 @@ private void refresh ()
         }
         // First populate the choices...
         populateModelRunIDChoices(getReclamationHDB_DMI() );
-        if ( JGUIUtil.isSimpleJComboBoxItem(__ModelRunID_JComboBox, ModelRunID, JGUIUtil.NONE, null, null ) ) {
-            __ModelRunID_JComboBox.select ( ModelRunID );
+        // Select based on the first token
+        index = new int[1];
+        if ( JGUIUtil.isSimpleJComboBoxItem(__ModelRunID_JComboBox, ModelRunID, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, false) ) {
+            __ModelRunID_JComboBox.select ( index[0] );
         }
         else {
             if ( (ModelRunID == null) || ModelRunID.equals("") ) {
@@ -2172,7 +2225,9 @@ private void refresh ()
         populateEnsembleNameChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__EnsembleName_JComboBox, EnsembleName, JGUIUtil.NONE, null, null ) ) {
             __EnsembleName_JComboBox.select ( EnsembleName );
-            __model_JTabbedPane.setSelectedIndex(1);
+            if ( (EnsembleName != null) && !EnsembleName.equals("") ) {
+                __model_JTabbedPane.setSelectedIndex(1);
+            }
             if ( __ignoreEvents ) {
                 // Also need to make sure that the __modelRunList is populated
                 // Call manually because events are disabled at startup to allow cascade to work properly
@@ -2350,10 +2405,7 @@ private void refresh ()
     if ( DataTypeCommonName == null ) {
         DataTypeCommonName = "";
     }
-    SiteDataTypeID = __SiteDataTypeID_JComboBox.getSelected();
-    if ( SiteDataTypeID == null ) {
-        SiteDataTypeID = "";
-    }
+    SiteDataTypeID = getSelectedSiteDataTypeID();
     ModelName = __ModelName_JComboBox.getSelected();
     if ( ModelName == null ) {
         ModelName = "";
@@ -2371,10 +2423,7 @@ private void refresh ()
     if ( HydrologicIndicator == null ) {
         HydrologicIndicator = "";
     }
-    ModelRunID = __ModelRunID_JComboBox.getSelected();
-    if ( ModelRunID == null ) {
-        ModelRunID = "";
-    }
+    ModelRunID = getSelectedModelRunID();
     EnsembleName = getSelectedEnsembleName();
     NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
     EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
@@ -2595,8 +2644,7 @@ private void updateSiteIDTextFields ()
 {
     List<ReclamationHDB_SiteDataType> stdList = null;
     try {
-        stdList = __dmi.findSiteDataType(__siteDataTypeList,
-            __SiteCommonName_JComboBox.getSelected(), null );
+        stdList = __dmi.findSiteDataType(__siteDataTypeList, __SiteCommonName_JComboBox.getSelected(), null );
     }
     catch ( Exception e ) {
         // Generally at startup with a bad datastore configuration
@@ -2626,15 +2674,17 @@ private void updateSiteIDTextFields ()
     else if ( stdList.size() == 1 ) {
         String sdi = "" + stdList.get(0).getSiteDataTypeID();
         __selectedSiteDataTypeID_JLabel.setText ( "" + sdi );
-        // Select the item in the SiteDataTypeID choice
-        int [] index = new int[1];
-        if ( JGUIUtil.isSimpleJComboBoxItem(__SiteDataTypeID_JComboBox, sdi, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, false) ) {
-            __SiteDataTypeID_JComboBox.select ( index[0] );
-        }
-        else {
-            // New command...select the default...
-            if ( __SiteDataTypeID_JComboBox.getItemCount() > 0 ) {
-                __SiteDataTypeID_JComboBox.select ( 0 );
+        // Select the item in the SiteDataTypeID choice, but only if it is not already set (want SDI to take precedence if specified)
+        if ( (__SiteDataTypeID_JComboBox.getSelected() == null) || __SiteDataTypeID_JComboBox.getSelected().equals("") ) {
+            int [] index = new int[1];
+            if ( JGUIUtil.isSimpleJComboBoxItem(__SiteDataTypeID_JComboBox, sdi, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, false) ) {
+                __SiteDataTypeID_JComboBox.select ( index[0] );
+            }
+            else {
+                // New command...select the default...
+                if ( __SiteDataTypeID_JComboBox.getItemCount() > 0 ) {
+                    __SiteDataTypeID_JComboBox.select ( 0 );
+                }
             }
         }
     }

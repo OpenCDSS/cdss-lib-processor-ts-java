@@ -63,6 +63,7 @@ throws InvalidCommandParameterException
     String ModelRunName = parameters.getValue ( "ModelRunName" );
     String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
     String ModelRunDate = parameters.getValue ( "ModelRunDate" );
+    String NewModelRunDate = parameters.getValue ( "NewModelRunDate" );
     String ModelRunID = parameters.getValue ( "ModelRunID" );
     String EnsembleName = parameters.getValue ( "EnsembleName" );
     String EnsembleModelName = parameters.getValue ( "EnsembleModelName" );
@@ -309,11 +310,14 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "ModelRunName" );
     valid_Vector.add ( "HydrologicIndicator" );
     valid_Vector.add ( "ModelRunDate" );
+    valid_Vector.add ( "NewModelRunDate" );
     valid_Vector.add ( "ModelRunID" );
     valid_Vector.add ( "EnsembleName" );
+    valid_Vector.add ( "NewEnsembleName" );
     valid_Vector.add ( "EnsembleTraceID" );
     valid_Vector.add ( "EnsembleModelName" );
     valid_Vector.add ( "EnsembleModelRunDate" );
+    valid_Vector.add ( "NewEnsembleModelRunDate" );
     valid_Vector.add ( "Agency" );
     valid_Vector.add ( "ValidationFlag" );
     valid_Vector.add ( "OverwriteFlag" );
@@ -691,12 +695,15 @@ public String toString ( PropList parameters )
     String ModelName = parameters.getValue( "ModelName" );
     String ModelRunName = parameters.getValue( "ModelRunName" );
     String ModelRunDate = parameters.getValue( "ModelRunDate" );
+    String NewModelRunDate = parameters.getValue( "NewModelRunDate" );
     String HydrologicIndicator = parameters.getValue( "HydrologicIndicator" );
     String ModelRunID = parameters.getValue( "ModelRunID" );
     String EnsembleName = parameters.getValue( "EnsembleName" );
+    String NewEnsembleName = parameters.getValue( "NewEnsembleName" );
     String EnsembleTraceID = parameters.getValue( "EnsembleTraceID" );
     String EnsembleModelName = parameters.getValue( "EnsembleModelName" );
     String EnsembleModelRunDate = parameters.getValue( "EnsembleModelRunDate" );
+    String NewEnsembleModelRunDate = parameters.getValue( "NewEnsembleModelRunDate" );
     String Agency = parameters.getValue( "Agency" );
     String ValidationFlag = parameters.getValue( "ValidationFlag" );
     String OverwriteFlag = parameters.getValue( "OverwriteFlag" );
@@ -767,6 +774,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "ModelRunDate=\"" + ModelRunDate + "\"" );
     }
+    if ( (NewModelRunDate != null) && (NewModelRunDate.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewModelRunDate=\"" + NewModelRunDate + "\"" );
+    }
     if ( (HydrologicIndicator != null) && (HydrologicIndicator.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -785,6 +798,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
     }
+    if ( (NewEnsembleName != null) && (NewEnsembleName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewEnsembleName=\"" + NewEnsembleName + "\"" );
+    }
     if ( (EnsembleTraceID != null) && (EnsembleTraceID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -802,6 +821,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "EnsembleModelRunDate=\"" + EnsembleModelRunDate + "\"" );
+    }
+    if ( (NewEnsembleModelRunDate != null) && (NewEnsembleModelRunDate.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewEnsembleModelRunDate=\"" + NewEnsembleModelRunDate + "\"" );
     }
     if ( (Agency != null) && (Agency.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -31,7 +31,7 @@ public int getAgenID ()
     return __agenID;
 }
 
-public String allowableIntervals ()
+public String getAllowableIntervals ()
 {
     return __allowableIntervals;
 }
@@ -41,7 +41,7 @@ public String getCmmnt ()
     return __cmmnt;
 }
 
-public String dataTypeCommonName ()
+public String getDataTypeCommonName ()
 {
     return __dataTypeCommonName;
 }
@@ -51,7 +51,7 @@ public int getDataTypeID ()
     return __dataTypeID;
 }
 
-public String dataTypeName ()
+public String getDataTypeName ()
 {
     return __dataTypeName;
 }

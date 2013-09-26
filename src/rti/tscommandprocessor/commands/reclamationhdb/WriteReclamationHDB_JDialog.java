@@ -26,6 +26,7 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -47,7 +48,6 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeInterval;
 
 /**
 Command editor dialog for the WriteReclamationHDB() command.
@@ -68,6 +68,7 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private WriteReclamationHDB_Command __command = null;
 private JTextArea __command_JTextArea = null;
+private JTabbedPane __sdi_JTabbedPane = null;
 private SimpleJComboBox __SiteCommonName_JComboBox = null;
 private SimpleJComboBox __DataTypeCommonName_JComboBox = null;
 private JLabel __selectedSiteID_JLabel = null;
@@ -77,14 +78,17 @@ private JTabbedPane __model_JTabbedPane = null;
 private SimpleJComboBox __ModelName_JComboBox = null;
 private SimpleJComboBox __ModelRunName_JComboBox = null;
 private SimpleJComboBox __ModelRunDate_JComboBox = null;
+private JTextField __NewModelRunDate_JTextField = null;
 private SimpleJComboBox __HydrologicIndicator_JComboBox = null;
 private JLabel __selectedModelID_JLabel = null;
 private JLabel __selectedModelRunID_JLabel = null;
 private SimpleJComboBox __ModelRunID_JComboBox = null;
 private SimpleJComboBox __EnsembleName_JComboBox = null;
+private JTextField __NewEnsembleName_JTextField = null;
 private TSFormatSpecifiersJPanel __EnsembleTraceID_JTextField = null;
 private SimpleJComboBox __EnsembleModelName_JComboBox = null;
 private SimpleJComboBox __EnsembleModelRunDate_JComboBox = null;
+private JTextField __NewEnsembleModelRunDate_JTextField = null;
 private JLabel __selectedEnsembleID_JLabel = null;
 private JLabel __selectedEnsembleModelID_JLabel = null;
 private JLabel __selectedEnsembleModelRunID_JLabel = null;
@@ -109,10 +113,10 @@ private boolean __ignoreEvents = false; // Used to ignore cascading events when 
 private ReclamationHDBDataStore __dataStore = null; // selected ReclamationHDBDataStore
 private ReclamationHDB_DMI __dmi = null; // ReclamationHDB_DMI to do queries.
 
-private List<ReclamationHDB_Ensemble> __ensembleList = new Vector<ReclamationHDB_Ensemble>(); // Corresponds to displayed list (has ensemble_id)
-private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new Vector<ReclamationHDB_SiteDataType>(); // Corresponds to displayed list
-private List<ReclamationHDB_Model> __modelList = new Vector<ReclamationHDB_Model>(); // Corresponds to displayed list (has model_id)
-private List<ReclamationHDB_ModelRun> __modelRunList = new Vector<ReclamationHDB_ModelRun>(); // Corresponds to models matching model_id
+private List<ReclamationHDB_Ensemble> __ensembleList = new ArrayList<ReclamationHDB_Ensemble>(); // Corresponds to displayed list (has ensemble_id)
+private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new ArrayList<ReclamationHDB_SiteDataType>(); // Corresponds to displayed list
+private List<ReclamationHDB_Model> __modelList = new ArrayList<ReclamationHDB_Model>(); // Corresponds to displayed list (has model_id)
+private List<ReclamationHDB_ModelRun> __modelRunList = new ArrayList<ReclamationHDB_ModelRun>(); // Corresponds to models matching model_id
 
 /**
 Command editor constructor.
@@ -180,7 +184,7 @@ private void actionPerformedDataTypeCommonNameSelected ( )
         return;
     }
     // No further action needed to populate choices but show selected site_datatype_id for those who
-    // are familiar with the database internals
+    // are familiar with the database internals.  Also select the SiteDataTypeID since that is the new convention.
     updateSiteIDTextFields();
 }
 
@@ -230,7 +234,8 @@ private void actionPerformedHydrologicIndicatorSelected ( )
     }
     // No further action needed to populate choices but show selected model_run_id for those who
     // are familiar with the database internals
-    updateModelIDTextFields ();
+    //updateModelIDTextFields ();
+    populateModelRunDateChoices ( __dmi );
 }
 
 /**
@@ -263,7 +268,7 @@ private void actionPerformedModelRunDateSelected ( )
     // are familiar with the database internals
     updateModelIDTextFields ();
     // Now populate the hydrologic indicator choices corresponding to the model run date
-    populateHydrologicIndicatorChoices ( __dmi );
+    //populateHydrologicIndicatorChoices ( __dmi );
 }
 
 /**
@@ -279,7 +284,8 @@ private void actionPerformedModelRunNameSelected ( )
     // are familiar with the database internals
     updateModelIDTextFields ();
     // Now populate the model run choices corresponding to the model run name
-    populateModelRunDateChoices ( __dmi );
+    //populateModelRunDateChoices ( __dmi );
+    populateHydrologicIndicatorChoices( __dmi );
 }
 
 /**
@@ -375,11 +381,14 @@ private void checkInput ()
     String ModelRunName = __ModelRunName_JComboBox.getSelected();
     String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
     String HydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
+    String NewModelRunDate = __NewModelRunDate_JTextField.getText().trim();
     String ModelRunID = __ModelRunID_JComboBox.getSelected();
     String EnsembleName = getSelectedEnsembleName();
+    String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
     String EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
     String EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     String EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
+    String NewEnsembleModelRunDate = __NewEnsembleModelRunDate_JTextField.getText().trim();
     String Agency = getSelectedAgency();
     String ValidationFlag = getSelectedValidationFlag();
     String OverwriteFlag = getSelectedOverwriteFlag();
@@ -422,6 +431,9 @@ private void checkInput ()
     if ( (ModelRunDate != null) && (ModelRunDate.length() > 0) ) {
         parameters.set ( "ModelRunDate", ModelRunDate );
     }
+    if ( (NewModelRunDate != null) && (NewModelRunDate.length() > 0) ) {
+        parameters.set ( "NewModelRunDate", NewModelRunDate );
+    }
     if ( HydrologicIndicator.length() > 0 ) {
         parameters.set ( "HydrologicIndicator", HydrologicIndicator );
     }
@@ -431,6 +443,9 @@ private void checkInput ()
     if ( (EnsembleName != null) && (EnsembleName.length() > 0) ) {
         parameters.set ( "EnsembleName", EnsembleName );
     }
+    if ( (NewEnsembleName != null) && (NewEnsembleName.length() > 0) ) {
+        parameters.set ( "NewEnsembleName", NewEnsembleName );
+    }
     if ( EnsembleTraceID.length() > 0 ) {
         parameters.set ( "EnsembleTraceID", EnsembleTraceID );
     }
@@ -439,6 +454,9 @@ private void checkInput ()
     }
     if ( (EnsembleModelRunDate != null) && (EnsembleModelRunDate.length() > 0) ) {
         parameters.set ( "EnsembleModelRunDate", EnsembleModelRunDate );
+    }
+    if ( (NewEnsembleModelRunDate != null) && (NewEnsembleModelRunDate.length() > 0) ) {
+        parameters.set ( "NewEnsembleModelRunDate", NewEnsembleModelRunDate );
     }
     if ( (Agency != null) && (Agency.length() > 0) ) {
         parameters.set ( "Agency", Agency );
@@ -491,12 +509,15 @@ private void commitEdits ()
     String ModelName = __ModelName_JComboBox.getSelected();
     String ModelRunName = __ModelRunName_JComboBox.getSelected();
     String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
+    String NewModelRunDate = __NewModelRunDate_JTextField.getText().trim();
     String HydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
     String ModelRunID = __ModelRunID_JComboBox.getSelected();
     String EnsembleName = getSelectedEnsembleName();
+    String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
     String EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
     String EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     String EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
+    String NewEnsembleModelRunDate = __NewEnsembleModelRunDate_JTextField.getText().trim();
     String Agency = getSelectedAgency();
     String ValidationFlag = getSelectedValidationFlag();
     String OverwriteFlag = getSelectedOverwriteFlag();
@@ -515,12 +536,15 @@ private void commitEdits ()
     __command.setCommandParameter ( "ModelName", ModelName );
     __command.setCommandParameter ( "ModelRunName", ModelRunName );
     __command.setCommandParameter ( "ModelRunDate", ModelRunDate );
+    __command.setCommandParameter ( "NewModelRunDate", NewModelRunDate );
     __command.setCommandParameter ( "HydrologicIndicator", HydrologicIndicator );
     __command.setCommandParameter ( "ModelRunID", ModelRunID );
     __command.setCommandParameter ( "EnsembleName", EnsembleName );
+    __command.setCommandParameter ( "NewEnsembleName", NewEnsembleName );
     __command.setCommandParameter ( "EnsembleTraceID", EnsembleTraceID );
     __command.setCommandParameter ( "EnsembleModelName", EnsembleModelName );
     __command.setCommandParameter ( "EnsembleModelRunDate", EnsembleModelRunDate );
+    __command.setCommandParameter ( "NewEnsembleModelRunDate", NewEnsembleModelRunDate );
     __command.setCommandParameter ( "Agency", Agency );
     __command.setCommandParameter ( "ValidationFlag", ValidationFlag );
     __command.setCommandParameter ( "OverwriteFlag", OverwriteFlag );
@@ -529,21 +553,6 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	//__command.setCommandParameter ( "IntervalOverride", IntervalOverride );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputStart_JTextField = null;
-	__OutputEnd_JTextField = null;
-	__TSList_JComboBox = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -665,13 +674,9 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
 	int yMain = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write a single \"real\" or model time series, or write an ensemble of time series to a Reclamation HDB database." ),
+		"Write a single \"real\" or model time series, or write an ensemble of model time series to a Reclamation HDB database." ),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The parameters are used to determine database internal numeric primary keys " +
-        "(site_datatype_id and optionally model_run_id for model data)."),
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+   JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The HDB time series table is determined from the data interval, with irregular data being written to the " +
         "instantaneous data table." ),
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -691,8 +696,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
-    List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
-        ReclamationHDBDataStore.class );
+    List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType( ReclamationHDBDataStore.class );
     for ( DataStore dataStore: dataStoreList ) {
         __DataStore_JComboBox.addItem ( dataStore.getName() );
     }
@@ -721,62 +725,79 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     yMain = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yMain );
     
-    // Panel to control site_datatype_id selection
-    int ySiteDataType = -1;
-    JPanel siteDataType_JPanel = new JPanel();
-    siteDataType_JPanel.setLayout( new GridBagLayout() );
-    siteDataType_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),"Specify how to match the HDB site_datatype_id (required for all time series and ensembles)" ));
-    JGUIUtil.addComponent( main_JPanel, siteDataType_JPanel,
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __sdi_JTabbedPane = new JTabbedPane ();
+    __sdi_JTabbedPane.setBorder(
+        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+        "Specify how to match the HDB site_datatype_id (required for all time series and ensembles)" ));
+    JGUIUtil.addComponent(main_JPanel, __sdi_JTabbedPane,
+        0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel ("Site common name:"), 
-        0, ++ySiteDataType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SiteCommonName_JComboBox = new SimpleJComboBox (false);
-    __SiteCommonName_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(siteDataType_JPanel, __SiteCommonName_JComboBox,
-        1, ySiteDataType, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel (
-        "Required - used with data type common name to determine site_datatype_id."),
-        3, ySiteDataType, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    // Panel to select site_datatype_id directly
+    int ysdi = -1;
+    JPanel sdi_JPanel = new JPanel();
+    sdi_JPanel.setLayout( new GridBagLayout() );
+    __sdi_JTabbedPane.addTab ( "Select site_datatype_id (SDI)", sdi_JPanel );
     
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel ("Data type common name:"), 
-        0, ++ySiteDataType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataTypeCommonName_JComboBox = new SimpleJComboBox (false);
-    __DataTypeCommonName_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(siteDataType_JPanel, __DataTypeCommonName_JComboBox,
-        1, ySiteDataType, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel (
-        "Required - used with site common name to determine site_datatype_id."),
-        3, ySiteDataType, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(sdi_JPanel, new JLabel (
+        "The choices below include: \"site_datatype_id - site name - datatype name\", sorted by site name."), 
+        0, ++ysdi, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel ("Matching site_id:"), 
-        0, ++ySiteDataType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __selectedSiteID_JLabel = new JLabel ( "");
-    JGUIUtil.addComponent(siteDataType_JPanel, __selectedSiteID_JLabel,
-        1, ySiteDataType, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel (
-        "Information - useful when comparing to database contents."),
-        3, ySiteDataType, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel ("Matching site_datatype_id:"), 
-        0, ++ySiteDataType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __selectedSiteDataTypeID_JLabel = new JLabel ( "");
-    JGUIUtil.addComponent(siteDataType_JPanel, __selectedSiteDataTypeID_JLabel,
-        1, ySiteDataType, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel (
-        "Information - useful when comparing to database contents."),
-        3, ySiteDataType, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel ("Site data type ID:"), 
-        0, ++ySiteDataType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(sdi_JPanel, new JLabel ("Site data type ID:"), 
+        0, ++ysdi, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SiteDataTypeID_JComboBox = new SimpleJComboBox (false);
     __SiteDataTypeID_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(siteDataType_JPanel, __SiteDataTypeID_JComboBox,
-        1, ySiteDataType, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel (
-        "Optional - alternative to selecting above choices."),
-        3, ySiteDataType, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(sdi_JPanel, __SiteDataTypeID_JComboBox,
+        1, ysdi, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(sdi_JPanel, new JLabel ( "Required."),
+        3, ysdi, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel to control site_datatype_id selection
+    int ySiteCommonName = -1;
+    JPanel siteCommon_JPanel = new JPanel();
+    siteCommon_JPanel.setLayout( new GridBagLayout() );
+    __sdi_JTabbedPane.addTab ( "OBSOLETE - select SDI using site common name", siteCommon_JPanel );
+    
+    JGUIUtil.addComponent(siteCommon_JPanel, new JLabel (
+        "The following parameters, if specified, cause a matching SDI to be selected in the other tab.  DO NOT SPECIFY HERE."), 
+        0, ++ySiteCommonName, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(siteCommon_JPanel, new JLabel ("Site common name:"), 
+        0, ++ySiteCommonName, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SiteCommonName_JComboBox = new SimpleJComboBox (false);
+    __SiteCommonName_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(siteCommon_JPanel, __SiteCommonName_JComboBox,
+        1, ySiteCommonName, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(siteCommon_JPanel, new JLabel (
+        "Required - used with data type common name to determine site_datatype_id."),
+        3, ySiteCommonName, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(siteCommon_JPanel, new JLabel ("Data type common name:"), 
+        0, ++ySiteCommonName, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataTypeCommonName_JComboBox = new SimpleJComboBox (false);
+    __DataTypeCommonName_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(siteCommon_JPanel, __DataTypeCommonName_JComboBox,
+        1, ySiteCommonName, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(siteCommon_JPanel, new JLabel (
+        "Required - used with site common name to determine site_datatype_id."),
+        3, ySiteCommonName, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(siteCommon_JPanel, new JLabel ("Matching site_id:"), 
+        0, ++ySiteCommonName, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __selectedSiteID_JLabel = new JLabel ( "");
+    JGUIUtil.addComponent(siteCommon_JPanel, __selectedSiteID_JLabel,
+        1, ySiteCommonName, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(siteCommon_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, ySiteCommonName, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(siteCommon_JPanel, new JLabel ("Matching site_datatype_id:"), 
+        0, ++ySiteCommonName, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __selectedSiteDataTypeID_JLabel = new JLabel ( "");
+    JGUIUtil.addComponent(siteCommon_JPanel, __selectedSiteDataTypeID_JLabel,
+        1, ySiteCommonName, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(siteCommon_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, ySiteCommonName, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     __model_JTabbedPane = new JTabbedPane ();
     __model_JTabbedPane.setBorder(
@@ -792,7 +813,8 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __model_JTabbedPane.addTab ( "Single model time series", model_JPanel );
     
     JGUIUtil.addComponent(model_JPanel, new JLabel (
-        "Use these parameters to write a single model time series to HDB."), 
+        "Use these parameters to write a single model time series to HDB.  The model_run_id choices show model_run_id " +
+        "- model run name - hydrologic indicator - model run date"), 
         0, ++yModel, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(model_JPanel, new JLabel ("Model name:"), 
@@ -800,36 +822,6 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __ModelName_JComboBox = new SimpleJComboBox (false);
     __ModelName_JComboBox.addItemListener (this);
     JGUIUtil.addComponent(model_JPanel, __ModelName_JComboBox,
-        1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(model_JPanel, new JLabel (
-        "Required - used to determine the model_run_id."),
-        3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(model_JPanel, new JLabel ("Model run name:"), 
-        0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ModelRunName_JComboBox = new SimpleJComboBox (false);
-    __ModelRunName_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(model_JPanel, __ModelRunName_JComboBox,
-        1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(model_JPanel, new JLabel (
-        "Required - used to determine the model_run_id."),
-        3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(model_JPanel, new JLabel ("Model run date:"), 
-        0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ModelRunDate_JComboBox = new SimpleJComboBox (false);
-    __ModelRunDate_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(model_JPanel, __ModelRunDate_JComboBox,
-        1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(model_JPanel, new JLabel (
-        "Required - YYYY-MM-DD hh:mm, used to determine the model_run_id."),
-        3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(model_JPanel, new JLabel ("Hydrologic indicator:"), 
-        0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __HydrologicIndicator_JComboBox = new SimpleJComboBox (false);
-    __HydrologicIndicator_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(model_JPanel, __HydrologicIndicator_JComboBox,
         1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(model_JPanel, new JLabel (
         "Required - used to determine the model_run_id."),
@@ -844,6 +836,36 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "Information - useful when comparing to database contents."),
         3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(model_JPanel, new JLabel ("Model run name:"), 
+        0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ModelRunName_JComboBox = new SimpleJComboBox (false);
+    __ModelRunName_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(model_JPanel, __ModelRunName_JComboBox,
+        1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(model_JPanel, new JLabel (
+        "Required - used to determine the model_run_id."),
+        3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(model_JPanel, new JLabel ("Hydrologic indicator:"), 
+        0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __HydrologicIndicator_JComboBox = new SimpleJComboBox (false);
+    __HydrologicIndicator_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(model_JPanel, __HydrologicIndicator_JComboBox,
+        1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(model_JPanel, new JLabel (
+        "Required - used to determine the model_run_id (can be blank)."),
+        3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(model_JPanel, new JLabel ("Model run date:"), 
+        0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ModelRunDate_JComboBox = new SimpleJComboBox (false);
+    __ModelRunDate_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(model_JPanel, __ModelRunDate_JComboBox,
+        1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(model_JPanel, new JLabel (
+        "Required - YYYY-MM-DD hh:mm, used to determine the model_run_id."),
+        3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(model_JPanel, new JLabel ("Selected model_run_id:"), 
         0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __selectedModelRunID_JLabel = new JLabel ( "");
@@ -853,7 +875,17 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "Information - useful when comparing to database contents."),
         3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(model_JPanel, new JLabel ("Model run ID:"), 
+    JGUIUtil.addComponent(model_JPanel, new JLabel ("OR new  model run date:"), 
+        0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewModelRunDate_JTextField = new JTextField (20);
+    __NewModelRunDate_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(model_JPanel, __NewModelRunDate_JTextField,
+        1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(model_JPanel, new JLabel (
+        "Optional - specify if new model run date is being defined (default=specify existing)."),
+        3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(model_JPanel, new JLabel ("Model run ID (model_run_id):"), 
         0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ModelRunID_JComboBox = new SimpleJComboBox (false);
     __ModelRunID_JComboBox.addItemListener (this);
@@ -870,11 +902,8 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __model_JTabbedPane.addTab ( "Ensemble of model time series", ensemble_JPanel );
 
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Use these parameters to write an ensemble of model time series to HDB."), 
-        0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Match an existing ensemble name and model run date, or specify new values to create a new ensemble " +
-        "(model name must have been defined)."), 
+        "Use these parameters to write an ensemble of model time series to an existing or new HDB ensemble.  " +
+        "The model name must exist but a new run date can be specified."), 
         0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
         "The trace number for each time series in the ensemble will be determined from ensemble traces at run time."), 
@@ -886,13 +915,23 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble name:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __EnsembleName_JComboBox = new SimpleJComboBox (true); // Allow new user-specified value
+    __EnsembleName_JComboBox = new SimpleJComboBox (false); // New value is specified with separate text field for clarity
     __EnsembleName_JComboBox.addItemListener (this);
     __EnsembleName_JComboBox.addKeyListener (this);
     JGUIUtil.addComponent(ensemble_JPanel, __EnsembleName_JComboBox,
         1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
         "Required - used to determine the ensemble model_run_id."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("OR new ensemble name:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewEnsembleName_JTextField = new JTextField (20);
+    __NewEnsembleName_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ensemble_JPanel, __NewEnsembleName_JTextField,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Optional - specify if new ensemble is being defined (default=specify existing)."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble model name:"), 
@@ -917,12 +956,12 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(ensemble_JPanel, __EnsembleTraceID_JTextField,
         1, yEnsemble, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Optional - use %z for sequence number, etc. or ${TS:property} (default=sequence number)."),
+        "Optional - use %z for sequence (trace) ID, etc. or ${TS:property} (default=sequence ID)."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble model run date:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __EnsembleModelRunDate_JComboBox = new SimpleJComboBox (true); // Allow user-specified value
+    __EnsembleModelRunDate_JComboBox = new SimpleJComboBox (false); // New value is specified with separate text field for clarity
     __EnsembleModelRunDate_JComboBox.setPrototypeDisplayValue("MMMM-MM-MM MM:MM   ");
     __EnsembleModelRunDate_JComboBox.addItemListener (this);
     __EnsembleModelRunDate_JComboBox.addKeyListener (this);
@@ -930,6 +969,16 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
         "Optional - YYYY-MM-DD hh:mm, used to determine the ensemble model_run_id (default=run date not used)."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("OR new ensemble model run date:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewEnsembleModelRunDate_JTextField = new JTextField (20);
+    __NewEnsembleModelRunDate_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ensemble_JPanel, __NewEnsembleModelRunDate_JTextField,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Optional - specify if new model run date is being defined (default=specify existing)."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble_id:"), 
@@ -958,7 +1007,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     //JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
     //    ""),
     //    3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
+    
     // Additional general write parameters...
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Agency:"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -1318,7 +1367,7 @@ private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
     }
     String selectedModelName = __ModelName_JComboBox.getSelected();
     String selectedModelRunName = __ModelRunName_JComboBox.getSelected();
-    String selectedModelRunDate = __ModelRunDate_JComboBox.getSelected();
+    //String selectedModelRunDate = __ModelRunDate_JComboBox.getSelected();
     List<ReclamationHDB_Model> modelList = rdmi.findModel(__modelList, selectedModelName);
     List<String> hydrologicIndicatorStrings = new Vector();
     hydrologicIndicatorStrings.add ( "" ); // Always add blank because user may not want model time series
@@ -1327,7 +1376,7 @@ private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
         int modelID = model.getModelID();
         List<ReclamationHDB_ModelRun> modelRunList = rdmi.findModelRun(__modelRunList, modelID,
                 selectedModelRunName,
-                selectedModelRunDate,
+                null,
                 null); // Don't match on hydrologic indicator
         // Results should list unique hydrologic indicators
         for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
@@ -1392,8 +1441,12 @@ private void populateModelRunDateChoices ( ReclamationHDB_DMI rdmi )
     }
     String selectedModelName = __ModelName_JComboBox.getSelected();
     String selectedModelRunName = __ModelRunName_JComboBox.getSelected();
+    String hydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
+    if ( hydrologicIndicator == null ) {
+        hydrologicIndicator = "";
+    }
     List<ReclamationHDB_Model> modelList = rdmi.findModel(__modelList, selectedModelName);
-    List<String> runDateStrings = new Vector();
+    List<String> runDateStrings = new ArrayList<String>();
     runDateStrings.add ( "" ); // Always add blank because user may not want model time series
     if ( modelList.size() == 1 ) {
         ReclamationHDB_Model model = modelList.get(0);
@@ -1401,7 +1454,7 @@ private void populateModelRunDateChoices ( ReclamationHDB_DMI rdmi )
         List<ReclamationHDB_ModelRun> modelRunList = rdmi.findModelRun(__modelRunList, modelID,
             selectedModelRunName,
             null, // Don't match on run date
-            null); // Don't match on hydrologic indicator
+            hydrologicIndicator);
         // Results should list unique hydrologic indicators
         // Model run date is formatted to minute
         Date d;
@@ -1414,7 +1467,8 @@ private void populateModelRunDateChoices ( ReclamationHDB_DMI rdmi )
             runDateStrings.add ( "" + dt.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm) );
         }
         Collections.sort(runDateStrings,String.CASE_INSENSITIVE_ORDER);
-        StringUtil.removeDuplicates(runDateStrings, true, true);
+        // There should not be duplicates
+        //StringUtil.removeDuplicates(runDateStrings, true, true);
     }
     else {
         Message.printStatus ( 2, routine, "Have " + modelList.size() + " models matching name \"" +
@@ -1438,20 +1492,33 @@ private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
         // Initialization
         return;
     }
-    List<String> modelRunIDStrings = new Vector();
+    List<String> modelRunIDStrings = new ArrayList<String>();
+    List<String> sortStrings = new ArrayList<String>();
     modelRunIDStrings.add ( "" ); // Always add blank because user may not want model time series
+    sortStrings.add("");
     try {
         // There may be no run names for the model id.
         List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunListForModelID(-1);
+        String hydrologicIndicator;
         for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
-            modelRunIDStrings.add ( "" + modelRun.getModelRunID() );
+            hydrologicIndicator = modelRun.getHydrologicIndicator();
+            if ( hydrologicIndicator.equals("") ) {
+                hydrologicIndicator = "no hydrologic indicator";
+            }
+            modelRunIDStrings.add ( "" + modelRun.getModelRunID() + " - " + modelRun.getModelRunName() + " - " +
+                hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","") );
+            // Only show the date to the minute
+            sortStrings.add ( modelRun.getModelRunName() + " - " +
+                hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","") );
         }
-        Collections.sort(modelRunIDStrings,String.CASE_INSENSITIVE_ORDER);
-        StringUtil.removeDuplicates(modelRunIDStrings, true, true);
+        // Sort the descriptive strings and then resort the main list to be in the same order
+        int [] sortOrder = new int[sortStrings.size()];
+        StringUtil.sortStringList(sortStrings, StringUtil.SORT_ASCENDING, sortOrder, true, true);
+        StringUtil.reorderStringList(modelRunIDStrings,sortOrder,false);
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB model run list (" + e + ")." );
-        modelRunIDStrings = new Vector();
+        modelRunIDStrings = new ArrayList<String>();
     }
     __ModelRunID_JComboBox.removeAll ();
     __ModelRunID_JComboBox.setData(modelRunIDStrings);
@@ -1472,7 +1539,7 @@ private void populateModelRunNameChoices ( ReclamationHDB_DMI rdmi )
         return;
     }
     readModelRunListForSelectedModel(rdmi);
-    List<String> modelRunNameStrings = new Vector();
+    List<String> modelRunNameStrings = new ArrayList<String>();
     modelRunNameStrings.add ( "" );
     for ( ReclamationHDB_ModelRun modelRun: __modelRunList ) {
         modelRunNameStrings.add ( modelRun.getModelRunName() );
@@ -1560,19 +1627,45 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
         // Initialization
         return;
     }
-    List<String> siteDataTypeIDStrings = new Vector();
+    List<String> siteDataTypeIDStrings = new ArrayList<String>();
+    List<String> sortStrings = new ArrayList<String>();
     siteDataTypeIDStrings.add ( "" );
+    sortStrings.add("");
+    ReclamationHDB_DataType dt;
+    ReclamationHDB_Site site;
+    String dtString, siteString;
     try {
+        // The following are not currently cached in the DMI so read here
         List<ReclamationHDB_SiteDataType> siteDataTypeList = rdmi.readHdbSiteDataTypeList();
+        List<ReclamationHDB_Site> siteList = rdmi.readHdbSiteList();
         for ( ReclamationHDB_SiteDataType siteDataType: siteDataTypeList ) {
-            siteDataTypeIDStrings.add ( "" + siteDataType.getSiteDataTypeID() );
+            // Since user is selecting SDI directly, provide site name and datatype name as FYI
+            dt = rdmi.lookupDataType(siteDataType.getDataTypeID());
+            if ( dt == null ) {
+                dtString = "data type unknown";
+            }
+            else {
+                dtString = dt.getDataTypeName().trim();
+            }
+            site = rdmi.lookupSite(siteList, siteDataType.getSiteID());
+            if ( site == null ) {
+                siteString = "site name unknown";
+            }
+            else {
+                siteString = site.getSiteName().trim();
+            }
+            siteDataTypeIDStrings.add ( "" + siteDataType.getSiteDataTypeID() + " - " + siteString + " - " + dtString );
+            sortStrings.add ( siteString + " - " + dtString );
         }
-        Collections.sort(siteDataTypeIDStrings,String.CASE_INSENSITIVE_ORDER);
-        StringUtil.removeDuplicates(siteDataTypeIDStrings, true, true);
+        // Sort the descriptive strings and then resort the main list to be in the same order
+        int [] sortOrder = new int[sortStrings.size()];
+        StringUtil.sortStringList(sortStrings, StringUtil.SORT_ASCENDING, sortOrder, true, true);
+        StringUtil.reorderStringList(siteDataTypeIDStrings,sortOrder,false);
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB site data type list (" + e + ")." );
-        siteDataTypeIDStrings = new Vector();
+        Message.printWarning(3,routine,e);
+        siteDataTypeIDStrings = new ArrayList<String>();
     }
     __SiteDataTypeID_JComboBox.removeAll ();
     __SiteDataTypeID_JComboBox.setData(siteDataTypeIDStrings);
@@ -1605,7 +1698,7 @@ Populate the time zone label, which uses the HDB default time zone.
 private void populateTimeZoneLabel ( ReclamationHDB_DMI rdmi )
 {
     String defaultTZ = __dmi.getDatabaseTimeZone();
-    __TimeZone_JLabel.setText("Optional - time zone for instantaneous and daily data (default="+
+    __TimeZone_JLabel.setText("Optional - time zone for instantaneous and hourly data (default="+
         defaultTZ + ").");
 }
 
@@ -1739,11 +1832,14 @@ private void refresh ()
     String ModelRunName = "";
     String HydrologicIndicator = "";
     String ModelRunDate = "";
+    String NewModelRunDate = "";
     String ModelRunID = "";
     String EnsembleName = "";
+    String NewEnsembleName = "";
     String EnsembleTraceID = "";
     String EnsembleModelName = "";
     String EnsembleModelRunDate = "";
+    String NewEnsembleModelRunDate = "";
     String Agency = "";
     String ValidationFlag = "";
     String OverwriteFlag = "";
@@ -1751,7 +1847,6 @@ private void refresh ()
     String DataFlags = "";
 	String OutputStart = "";
 	String OutputEnd = "";
-	String IntervalOverride = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -1769,11 +1864,14 @@ private void refresh ()
         ModelRunName = parameters.getValue ( "ModelRunName" );
         HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
         ModelRunDate = parameters.getValue ( "ModelRunDate" );
+        NewModelRunDate = parameters.getValue ( "NewModelRunDate" );
         ModelRunID = parameters.getValue ( "ModelRunID" );
         EnsembleName = parameters.getValue ( "EnsembleName" );
+        NewEnsembleName = parameters.getValue ( "NewEnsembleName" );
         EnsembleTraceID = parameters.getValue ( "EnsembleTraceID" );
         EnsembleModelName = parameters.getValue ( "EnsembleModelName" );
         EnsembleModelRunDate = parameters.getValue ( "EnsembleModelRunDate" );
+        NewEnsembleModelRunDate = parameters.getValue ( "NewEnsembleModelRunDate" );
         Agency = parameters.getValue ( "Agency" );
         ValidationFlag = parameters.getValue ( "ValidationFlag" );
         OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
@@ -1781,7 +1879,6 @@ private void refresh ()
         TimeZone = parameters.getValue ( "TimeZone" );
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
-		IntervalOverride = parameters.getValue ( "IntervalOverride" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( DataStore );
             if ( __ignoreEvents ) {
@@ -1908,9 +2005,33 @@ private void refresh ()
             }
         }
         // First populate the choices...
+        populateSiteDataTypeIDChoices(getReclamationHDB_DMI() );
+        // Select based on the first token
+        int [] index = new int[1];
+        if ( JGUIUtil.isSimpleJComboBoxItem(__SiteDataTypeID_JComboBox, SiteDataTypeID, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, false) ) {
+            __SiteDataTypeID_JComboBox.select ( index[0] );
+            __sdi_JTabbedPane.setSelectedIndex(0);
+        }
+        else {
+            if ( (SiteDataTypeID == null) || SiteDataTypeID.equals("") ) {
+                // New command...select the default...
+                if ( __SiteDataTypeID_JComboBox.getItemCount() > 0 ) {
+                    __SiteDataTypeID_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "SateDataTypeID parameter \"" + SiteDataTypeID + "\".  Select a different value or Cancel." );
+            }
+        }
+        // First populate the choices...
         populateSiteCommonNameChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__SiteCommonName_JComboBox, SiteCommonName, JGUIUtil.NONE, null, null ) ) {
             __SiteCommonName_JComboBox.select ( SiteCommonName );
+            if ( (SiteDataTypeID != null) && !SiteDataTypeID.equals("") ) {
+                __sdi_JTabbedPane.setSelectedIndex(1);
+            }
         }
         else {
             if ( (SiteCommonName == null) || SiteCommonName.equals("") ) {
@@ -1941,24 +2062,6 @@ private void refresh ()
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataTypeCommonName parameter \"" + DataTypeCommonName + "\".  Select a different value or Cancel." );
-            }
-        }
-        // First populate the choices...
-        populateSiteDataTypeIDChoices(getReclamationHDB_DMI() );
-        if ( JGUIUtil.isSimpleJComboBoxItem(__SiteDataTypeID_JComboBox, SiteDataTypeID, JGUIUtil.NONE, null, null ) ) {
-            __SiteDataTypeID_JComboBox.select ( SiteDataTypeID );
-        }
-        else {
-            if ( (SiteDataTypeID == null) || SiteDataTypeID.equals("") ) {
-                // New command...select the default...
-                if ( __SiteDataTypeID_JComboBox.getItemCount() > 0 ) {
-                    __SiteDataTypeID_JComboBox.select ( 0 );
-                }
-            }
-            else {
-                // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "SateDataTypeID parameter \"" + SiteDataTypeID + "\".  Select a different value or Cancel." );
             }
         }
         // First populate the choices...
@@ -2009,6 +2112,24 @@ private void refresh ()
             }
         }
         // First populate the choices...
+        populateHydrologicIndicatorChoices(getReclamationHDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__HydrologicIndicator_JComboBox, HydrologicIndicator, JGUIUtil.NONE, null, null ) ) {
+            __HydrologicIndicator_JComboBox.select ( HydrologicIndicator );
+        }
+        else {
+            if ( (HydrologicIndicator == null) || HydrologicIndicator.equals("") ) {
+                // New command...select the default...
+                if ( __HydrologicIndicator_JComboBox.getItemCount() > 0 ) {
+                    __HydrologicIndicator_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "HydrologicIndicator parameter \"" + HydrologicIndicator + "\".  Select a different value or Cancel." );
+            }
+        }
+        // First populate the choices...
         populateModelRunDateChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__ModelRunDate_JComboBox, ModelRunDate, JGUIUtil.NONE, null, null ) ) {
             __ModelRunDate_JComboBox.select ( ModelRunDate );
@@ -2026,23 +2147,8 @@ private void refresh ()
                   "ModelRunDate parameter \"" + ModelRunDate + "\".  Select a different value or Cancel." );
             }
         }
-        // First populate the choices...
-        populateHydrologicIndicatorChoices(getReclamationHDB_DMI() );
-        if ( JGUIUtil.isSimpleJComboBoxItem(__HydrologicIndicator_JComboBox, HydrologicIndicator, JGUIUtil.NONE, null, null ) ) {
-            __HydrologicIndicator_JComboBox.select ( HydrologicIndicator );
-        }
-        else {
-            if ( (HydrologicIndicator == null) || HydrologicIndicator.equals("") ) {
-                // New command...select the default...
-                if ( __HydrologicIndicator_JComboBox.getItemCount() > 0 ) {
-                    __HydrologicIndicator_JComboBox.select ( 0 );
-                }
-            }
-            else {
-                // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "HydrologicIndicator parameter \"" + HydrologicIndicator + "\".  Select a different value or Cancel." );
-            }
+        if ( NewModelRunDate != null ) {
+            __NewModelRunDate_JTextField.setText ( NewModelRunDate );
         }
         // First populate the choices...
         populateModelRunIDChoices(getReclamationHDB_DMI() );
@@ -2093,14 +2199,35 @@ private void refresh ()
                 __EnsembleName_JComboBox.select(__EnsembleName_JComboBox.getItemCount() - 1);
             }
         }
+        if ( NewEnsembleName != null ) {
+            __NewEnsembleName_JTextField.setText ( NewEnsembleName );
+        }
         if ( EnsembleTraceID != null ) {
             __EnsembleTraceID_JTextField.setText ( EnsembleTraceID );
         }
+        /* TODO SAM 2013-09-24 Is this needed?
+        // First populate the choices...
+        populateEnsembleModelRunDateChoices(getReclamationHDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__EnsembleModelRunDate_JComboBox, EnsembleModelRunDate, JGUIUtil.NONE, null, null ) ) {
+            __EnsembleModelRunDate_JComboBox.select ( EnsembleModelRunDate );
+        }
+        else {
+            if ( (EnsembleModelRunDate == null) || EnsembleModelRunDate.equals("") ) {
+                // New command...select the default...
+                if ( __EnsembleModelRunDate_JComboBox.getItemCount() > 0 ) {
+                    __EnsembleModelRunDate_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "EnsembleModelRunDate parameter \"" + EnsembleModelRunDate + "\".  Select a different value or Cancel." );
+            }
+        }
+        */
         // First populate the choices...
         populateAgencyChoices(getReclamationHDB_DMI() );
-        int [] index = new int[1];
-        if ( JGUIUtil.isSimpleJComboBoxItem(__Agency_JComboBox, Agency, JGUIUtil.CHECK_SUBSTRINGS,
-            " ", 0, index, true ) ) {
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Agency_JComboBox, Agency, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, true ) ) {
             __Agency_JComboBox.select ( index[0] );
         }
         else {
@@ -2239,6 +2366,7 @@ private void refresh ()
     if ( ModelRunDate == null ) {
         ModelRunDate = "";
     }
+    NewModelRunDate = __NewModelRunDate_JTextField.getText().trim();
     HydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
     if ( HydrologicIndicator == null ) {
         HydrologicIndicator = "";
@@ -2248,6 +2376,7 @@ private void refresh ()
         ModelRunID = "";
     }
     EnsembleName = getSelectedEnsembleName();
+    NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
     EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
     EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     if ( EnsembleModelName == null ) {
@@ -2257,6 +2386,7 @@ private void refresh ()
     if ( EnsembleModelRunDate == null ) {
         EnsembleModelRunDate = "";
     }
+    NewEnsembleModelRunDate = __NewEnsembleModelRunDate_JTextField.getText().trim();
     Agency = getSelectedAgency();
     ValidationFlag = getSelectedValidationFlag();
     OverwriteFlag = getSelectedOverwriteFlag();
@@ -2284,13 +2414,16 @@ private void refresh ()
     parameters.add ( "SiteDataTypeID=" + SiteDataTypeID );
     parameters.add ( "ModelName=" + ModelName );
     parameters.add ( "ModelRunName=" + ModelRunName );
+    parameters.add ( "NewModelRunDate=" + NewModelRunDate );
     parameters.add ( "ModelRunDate=" + ModelRunDate );
     parameters.add ( "HydrologicIndicator=" + HydrologicIndicator );
     parameters.add ( "ModelRunID=" + ModelRunID );
     parameters.add ( "EnsembleName=" + EnsembleName );
+    parameters.add ( "NewEnsembleName=" + NewEnsembleName );
     parameters.add ( "EnsembleTraceID=" + EnsembleTraceID );
     parameters.add ( "EnsembleModelName=" + EnsembleModelName );
     parameters.add ( "EnsembleModelRunDate=" + EnsembleModelRunDate );
+    parameters.add ( "NewEnsembleModelRunDate=" + NewEnsembleModelRunDate );
     parameters.add ( "Agency=" + Agency );
     parameters.add ( "ValidationFlag=" + ValidationFlag );
     parameters.add ( "OverwriteFlag=" + OverwriteFlag );
@@ -2430,18 +2563,20 @@ private void updateModelIDTextFields ()
     // Model run information...
     List<ReclamationHDB_ModelRun> modelRunList = null;
     try {
-        modelRunList = new Vector();
+        String hydrologicIndicator = __HydrologicIndicator_JComboBox.getSelected();
+        if ( hydrologicIndicator == null ) {
+            hydrologicIndicator = ""; // There are nulls/blanks in the database so need to match
+        }
+        modelRunList = __dmi.findModelRun(__modelRunList,
+            Integer.parseInt(__selectedModelID_JLabel.getText()),
+            __ModelRunName_JComboBox.getSelected(),
+            __ModelRunDate_JComboBox.getSelected(),
+            hydrologicIndicator );
     }
     catch ( Exception e ) {
         // Generally due to startup with bad datastore
         modelRunList = null;
     }
-    // TODO SAM 2012-03-25 Need to enable
-    //__dmi.findModelRun(__modelRunList,
-    //    __ModelName_JComboBox.getSelected(),
-    //    __ModelRunName_JComboBox.getSelected(),
-    //    __ModelRunDate_JComboBox.getSelected(),
-    //    __HydrologicIndicator_JTextField.getText().trim() );
     if ( (modelRunList == null) || (modelRunList.size() == 0) ) {
         __selectedModelRunID_JLabel.setText ( "No matches" );
     }
@@ -2471,8 +2606,7 @@ private void updateSiteIDTextFields ()
         __selectedSiteID_JLabel.setText ( "No matches" );
     }
     else if ( stdList.size() > 0 ) {
-        __selectedSiteID_JLabel.setText ( "" + stdList.get(0).getSiteID() +
-            " (" + stdList.size() + " matches)" );
+        __selectedSiteID_JLabel.setText ( "" + stdList.get(0).getSiteID() + " (" + stdList.size() + " matches)" );
     }
     else {
         __selectedSiteID_JLabel.setText ( "" + stdList.size() + " matches" );
@@ -2490,7 +2624,19 @@ private void updateSiteIDTextFields ()
         __selectedSiteDataTypeID_JLabel.setText ( "No matches" );
     }
     else if ( stdList.size() == 1 ) {
-        __selectedSiteDataTypeID_JLabel.setText ( "" + stdList.get(0).getSiteDataTypeID() );
+        String sdi = "" + stdList.get(0).getSiteDataTypeID();
+        __selectedSiteDataTypeID_JLabel.setText ( "" + sdi );
+        // Select the item in the SiteDataTypeID choice
+        int [] index = new int[1];
+        if ( JGUIUtil.isSimpleJComboBoxItem(__SiteDataTypeID_JComboBox, sdi, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, false) ) {
+            __SiteDataTypeID_JComboBox.select ( index[0] );
+        }
+        else {
+            // New command...select the default...
+            if ( __SiteDataTypeID_JComboBox.getItemCount() > 0 ) {
+                __SiteDataTypeID_JComboBox.select ( 0 );
+            }
+        }
     }
     else {
         __selectedSiteDataTypeID_JLabel.setText ( "" + stdList.size() + " matches" );

@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
@@ -15,7 +16,6 @@ import java.util.Vector;
 import javax.swing.SwingUtilities;
 
 import rti.tscommandprocessor.commands.reclamationhdb.java_lib.hdbLib.JavaConnections;
-import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMISelectStatement;
@@ -59,14 +59,14 @@ Database parameters from REF_DB_PARAMETER.
 private Hashtable<String, String> __databaseParameterList = new Hashtable();
 
 /**
-Data types from HDB_AGEN.
+Agencies from HDB_AGEN.
 */
-private List<ReclamationHDB_Agency> __agencyList = new Vector();
+private List<ReclamationHDB_Agency> __agencyList = new Vector<ReclamationHDB_Agency>();
 
 /**
 Data types from HDB_DATATYPE.
 */
-private List<ReclamationHDB_DataType> __dataTypeList = new Vector();
+private List<ReclamationHDB_DataType> __dataTypeList = new Vector<ReclamationHDB_DataType>();
 
 /**
 Keep alive SQL string and frequency.  If specified in configuration file and set with
@@ -78,17 +78,17 @@ private String __keepAliveFrequency = null;
 /**
 Loading applications from HDB_LOADING_APPLICATION.
 */
-private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new Vector();
+private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new Vector<ReclamationHDB_LoadingApplication>();
 
 /**
 Models from HDB_MODEL.
 */
-private List<ReclamationHDB_Model> __modelList = new Vector();
+private List<ReclamationHDB_Model> __modelList = new Vector<ReclamationHDB_Model>();
 
 /**
 Overwrite flags from HDB_OVERWRITE_FLAG.
 */
-private List<ReclamationHDB_OverwriteFlag> __overwriteFlagList = new Vector();
+private List<ReclamationHDB_OverwriteFlag> __overwriteFlagList = new Vector<ReclamationHDB_OverwriteFlag>();
 
 /**
 Time zones supported when writing time series.
@@ -98,7 +98,7 @@ private List<String> __timeZoneList = new Vector<String>();
 /**
 Loading applications from HDB_VALIDATION.
 */
-private List<ReclamationHDB_Validation> __validationList = new Vector();
+private List<ReclamationHDB_Validation> __validationList = new Vector<ReclamationHDB_Validation>();
 
 /** 
 Constructor for a database server and database name, to use an automatically created URL.
@@ -301,14 +301,19 @@ public List<ReclamationHDB_Model> findModel( List<ReclamationHDB_Model> modelLis
 
 /**
 Find an instance of ReclamationHDB_ModelRun given information about the model run.
+Any of the search criteria can be null or blank.
 @return the list of matching items (a non-null list is guaranteed)
 @param modelRunList a list of ReclamationHDB_ModelRun to search
-@param  modelName the model name to match (case-insensitive)
+@param modelID the model identifier
+@param modelRunName the model run name
+@param modelRunDate the model run date in form "YYYY-MM-DD hh:mm"
+@param hydrologicIndicator the model run hydrologic indicator
 */
 public List<ReclamationHDB_ModelRun> findModelRun( List<ReclamationHDB_ModelRun> modelRunList,
     int modelID, String modelRunName, String modelRunDate, String hydrologicIndicator )
 {
-    List<ReclamationHDB_ModelRun> foundList = new Vector();
+    List<ReclamationHDB_ModelRun> foundList = new ArrayList<ReclamationHDB_ModelRun>();
+    Message.printStatus(2, "", "Have " + modelRunList.size() + " model runs to check" );
     for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
         if ( (modelID >= 0) && (modelRun.getModelID() != modelID) ) {
             // Model name to match was specified but did not match
@@ -319,20 +324,29 @@ public List<ReclamationHDB_ModelRun> findModelRun( List<ReclamationHDB_ModelRun>
             // Model run name to match was specified but did not match
             continue;
         }
-        /* TODO SAM 2012-03-26 Need to enable - deal with date/time formatting
-        if ( (modelRunDate != null) && !modelRun.getModelRunDate().equalsIgnoreCase(modelRunDate) ) {
-            // Model run date to match was specified but did not match
-            continue;
+        // Model run date is compared to the minute.
+        if ( (modelRunDate != null) && !modelRunDate.equals("") ) {
+            DateTime dt = new DateTime(modelRun.getRunDate(),DateTime.PRECISION_MINUTE);
+            if ( !dt.toString().equalsIgnoreCase(modelRunDate) ) {
+                // Model run date to match was specified but did not match
+                continue;
+            }
         }
-        */
-        if ( (hydrologicIndicator != null) && !hydrologicIndicator.equals("") &&
+        Message.printStatus(2, "", "Checking data hydrologic indicator \"" + modelRun.getHydrologicIndicator() +
+            "\" with filter \"" + hydrologicIndicator + "\" for run date " + new DateTime(modelRun.getRunDate()) + 
+            " model run ID=" + modelRun.getModelRunID());
+        if ( (hydrologicIndicator != null) &&
             !modelRun.getHydrologicIndicator().equalsIgnoreCase(hydrologicIndicator) ) {
-            // Hydrologic indicator to match was specified but did not match
+            // Allow filter to be an empty string since database can have blanks/nulls
+            // Hydrologic indicator (can be a blank string) to match was specified but did not match
+            Message.printStatus(2, "", "Not match" );
             continue;
         }
         // If here OK to add to the list.
+        Message.printStatus(2, "", "Found match for run date " + new DateTime(modelRun.getRunDate()) );
         foundList.add ( modelRun );
     }
+    Message.printStatus(2, "", "Found " + foundList.size() + " matches overall." );
     return foundList;
 }
 
@@ -408,8 +422,7 @@ throws SQLException
         " order by HDB_OBJECTTYPE.OBJECTTYPE_NAME, HDB_DATATYPE.DATATYPE_COMMON_NAME";
     List<String> types = new Vector<String>();
     
-    try
-    {
+    try {
         stmt = __hdbConnection.ourConn.createStatement();
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
@@ -419,8 +432,7 @@ throws SQLException
             Message.printWarning(3, routine, "Resultset is null.");
         }
         String objectType = null, dataType = null;
-        while (rs.next())
-        {
+        while (rs.next()) {
             objectType = rs.getString(1);
             if ( rs.wasNull() ) {
                 objectType = "";
@@ -437,16 +449,14 @@ throws SQLException
             }
         }
     }
-    catch (SQLException e)
-    {
+    catch (SQLException e) {
         Message.printWarning(3, routine, "Error getting object/data types from HDB (" + e + ")." );
         Message.printWarning(3, routine, "State:" + e.getSQLState() );
         Message.printWarning(3, routine, "ErrorCode:" + e.getErrorCode() );
         Message.printWarning(3, routine, "Message:" + e.getMessage() );
         Message.printWarning(3, routine, e );
     }
-    finally
-    {
+    finally {
         rs.close();
         stmt.close();
     }
@@ -720,6 +730,37 @@ private ReclamationHDB_Agency lookupAgency ( List<ReclamationHDB_Agency> agencyL
     for ( ReclamationHDB_Agency a: agencyList ) {
         if ( (a != null) && (a.getAgenAbbrev() != null) && a.getAgenAbbrev().equalsIgnoreCase(agenAbbrev) ) {
             return a;
+        }
+    }
+    return null;
+}
+
+/**
+Lookup the ReclamationHDB_DataType given the data type ID.
+@return the matching data type object, or null if not found
+@param dataTypeID the data type ID to match
+*/
+public ReclamationHDB_DataType lookupDataType ( int dataTypeID )
+{
+    for ( ReclamationHDB_DataType dt: __dataTypeList ) {
+        if ( (dt != null) && (dt.getDataTypeID() == dataTypeID) ) {
+            return dt;
+        }
+    }
+    return null;
+}
+
+/**
+Lookup the ReclamationHDB_Site given the site ID.
+@return the matching site object, or null if not found
+@param siteList a list of ReclamationHDB_Siteto search
+@param siteID the site ID to match
+*/
+public ReclamationHDB_Site lookupSite ( List<ReclamationHDB_Site> siteList, int siteID )
+{
+    for ( ReclamationHDB_Site site: siteList ) {
+        if ( (site != null) && (site.getSiteID() == siteID) ) {
+            return site;
         }
     }
     return null;
@@ -2778,8 +2819,7 @@ throws SQLException
     }
     else if ( (outputIntervalBase != TimeInterval.IRREGULAR) && outputIntervalMult != 1 ) {
         // Not able to handle multipliers for non-hourly
-        throw new IllegalArgumentException(
-            "Data interval must be 1 for intervals other than hour." );
+        throw new IllegalArgumentException( "Data interval must be 1 for intervals other than hour." );
     }
     // Repeatedly call the stored procedure that writes the data
     while ( (tsdata = tsi.next()) != null ) {

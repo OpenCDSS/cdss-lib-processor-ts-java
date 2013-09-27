@@ -85,14 +85,14 @@ private JLabel __selectedModelRunID_JLabel = null;
 private SimpleJComboBox __ModelRunID_JComboBox = null;
 private SimpleJComboBox __EnsembleName_JComboBox = null;
 private JTextField __NewEnsembleName_JTextField = null;
-private TSFormatSpecifiersJPanel __EnsembleTraceID_JTextField = null;
+private TSFormatSpecifiersJPanel __EnsembleTrace_JTextField = null;
 private SimpleJComboBox __EnsembleModelName_JComboBox = null;
 private SimpleJComboBox __EnsembleModelRunDate_JComboBox = null;
 private JTextField __NewEnsembleModelRunDate_JTextField = null;
 private JLabel __selectedEnsembleID_JLabel = null;
 private JLabel __selectedEnsembleModelID_JLabel = null;
 private JLabel __selectedEnsembleModelRunID_JLabel = null;
-//private SimpleJComboBox __EnsembleModelRunID_JComboBox = null;
+private SimpleJComboBox __EnsembleModelRunID_JComboBox = null;
 private SimpleJComboBox __Agency_JComboBox = null;
 private SimpleJComboBox __ValidationFlag_JComboBox = null;
 private SimpleJComboBox __OverwriteFlag_JComboBox = null;
@@ -167,6 +167,7 @@ private void actionPerformedDataStoreSelected ( )
     populateModelRunIDChoices ( __dmi );
     populateEnsembleNameChoices ( __dmi );
     populateEnsembleModelNameChoices ( __dmi );
+    populateEnsembleModelRunIDChoices ( __dmi );
     populateAgencyChoices ( __dmi );
     populateValidationFlagChoices ( __dmi );
     populateOverwriteFlagChoices ( __dmi );
@@ -385,10 +386,11 @@ private void checkInput ()
     String ModelRunID = getSelectedModelRunID();
     String EnsembleName = getSelectedEnsembleName();
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
-    String EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
+    String EnsembleTrace = __EnsembleTrace_JTextField.getText().trim();
     String EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     String EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
     String NewEnsembleModelRunDate = __NewEnsembleModelRunDate_JTextField.getText().trim();
+    String EnsembleModelRunID = getSelectedEnsembleModelRunID();
     String Agency = getSelectedAgency();
     String ValidationFlag = getSelectedValidationFlag();
     String OverwriteFlag = getSelectedOverwriteFlag();
@@ -446,8 +448,8 @@ private void checkInput ()
     if ( (NewEnsembleName != null) && (NewEnsembleName.length() > 0) ) {
         parameters.set ( "NewEnsembleName", NewEnsembleName );
     }
-    if ( EnsembleTraceID.length() > 0 ) {
-        parameters.set ( "EnsembleTraceID", EnsembleTraceID );
+    if ( EnsembleTrace.length() > 0 ) {
+        parameters.set ( "EnsembleTrace", EnsembleTrace );
     }
     if ( (EnsembleModelName != null) && (EnsembleModelName.length() > 0) ) {
         parameters.set ( "EnsembleModelName", EnsembleModelName );
@@ -457,6 +459,9 @@ private void checkInput ()
     }
     if ( (NewEnsembleModelRunDate != null) && (NewEnsembleModelRunDate.length() > 0) ) {
         parameters.set ( "NewEnsembleModelRunDate", NewEnsembleModelRunDate );
+    }
+    if ( (EnsembleModelRunID != null) && (EnsembleModelRunID.length() > 0) ) {
+        parameters.set ( "EnsembleModelRunID", EnsembleModelRunID );
     }
     if ( (Agency != null) && (Agency.length() > 0) ) {
         parameters.set ( "Agency", Agency );
@@ -514,10 +519,11 @@ private void commitEdits ()
     String ModelRunID = getSelectedModelRunID();
     String EnsembleName = getSelectedEnsembleName();
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
-    String EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
+    String EnsembleTrace = __EnsembleTrace_JTextField.getText().trim();
     String EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     String EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
     String NewEnsembleModelRunDate = __NewEnsembleModelRunDate_JTextField.getText().trim();
+    String EnsembleModelRunID = getSelectedEnsembleModelRunID();
     String Agency = getSelectedAgency();
     String ValidationFlag = getSelectedValidationFlag();
     String OverwriteFlag = getSelectedOverwriteFlag();
@@ -541,10 +547,11 @@ private void commitEdits ()
     __command.setCommandParameter ( "ModelRunID", ModelRunID );
     __command.setCommandParameter ( "EnsembleName", EnsembleName );
     __command.setCommandParameter ( "NewEnsembleName", NewEnsembleName );
-    __command.setCommandParameter ( "EnsembleTraceID", EnsembleTraceID );
+    __command.setCommandParameter ( "EnsembleTrace", EnsembleTrace );
     __command.setCommandParameter ( "EnsembleModelName", EnsembleModelName );
     __command.setCommandParameter ( "EnsembleModelRunDate", EnsembleModelRunDate );
     __command.setCommandParameter ( "NewEnsembleModelRunDate", NewEnsembleModelRunDate );
+    __command.setCommandParameter ( "EnsembleModelRunID", EnsembleModelRunID );
     __command.setCommandParameter ( "Agency", Agency );
     __command.setCommandParameter ( "ValidationFlag", ValidationFlag );
     __command.setCommandParameter ( "OverwriteFlag", OverwriteFlag );
@@ -600,6 +607,24 @@ private ReclamationHDBDataStore getSelectedDataStore ()
         }
     }
     return null;
+}
+
+/**
+Return the selected ensemble model run ID, used to provide intelligent parameter choices.
+The displayed format is:  "MRI - Other information"
+@return the selected MRI, or "" if nothing selected
+*/
+private String getSelectedEnsembleModelRunID()
+{   String mri = __EnsembleModelRunID_JComboBox.getSelected();
+    if ( mri == null ) {
+        return "";
+    }
+    else if ( mri.indexOf(" ") > 0 ) {
+        return mri.substring(0,mri.indexOf(" ")).trim();
+    }
+    else {
+        return mri.trim();
+    }
 }
 
 /**
@@ -712,17 +737,10 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write a single \"real\" or model time series, or write an ensemble of model time series to a Reclamation HDB database." ),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The HDB time series table is determined from the data interval, with irregular data being written to the " +
         "instantaneous data table." ),
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "TSTool will only write time series records and will not write records for " +
-        "time series metadata (site, data type, and model data must have been previously defined)."),
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Specify output date/times to a " +
-		"precision appropriate for output time series."),
-		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __ignoreEvents = true; // So that a full pass of initialization can occur
     
@@ -764,7 +782,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __sdi_JTabbedPane = new JTabbedPane ();
     __sdi_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify how to match the HDB site_datatype_id (required for all time series and ensembles)" ));
+        "Specify how to match the HDB site_datatype_id (required for all time series and ensembles) AND provide general command parameters" ));
     JGUIUtil.addComponent(main_JPanel, __sdi_JTabbedPane,
         0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
@@ -915,7 +933,8 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewModelRunDate_JTextField = new JTextField (20);
     __NewModelRunDate_JTextField.addKeyListener (this);
-    __NewModelRunDate_JTextField.setToolTipText("Run date in form YYYY-MM-DD hh:mm or use ${Property} to use property.");
+    __NewModelRunDate_JTextField.setToolTipText("Run date in form YYYY-MM-DD hh:mm or use ${Property} to use processor " +
+        "property, ${ts:Property} to use time series property." );
     JGUIUtil.addComponent(model_JPanel, __NewModelRunDate_JTextField,
         1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(model_JPanel, new JLabel (
@@ -945,10 +964,6 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
         "The trace number for each time series in the ensemble will be determined from ensemble traces at run time."), 
         0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "If the run date is specified, the ensemble time series will be uniquely identified with the " +
-        "run date (to the minute)."), 
-        0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble name:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -961,6 +976,15 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "Required - used to determine the ensemble model_run_id."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble_id:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __selectedEnsembleID_JLabel = new JLabel ( "");
+    JGUIUtil.addComponent(ensemble_JPanel, __selectedEnsembleID_JLabel,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("OR new ensemble name:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewEnsembleName_JTextField = new JTextField (20);
@@ -969,6 +993,19 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
         "Optional - specify if new ensemble is being defined (default=specify existing)."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel("Ensemble trace number:"),
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleTrace_JTextField = new TSFormatSpecifiersJPanel(10);
+    __EnsembleTrace_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __EnsembleTrace_JTextField.addKeyListener ( this );
+    __EnsembleTrace_JTextField.getDocument().addDocumentListener(this);
+    __EnsembleTrace_JTextField.setToolTipText("%L for location, %T for data type, ${TS:property} to use property.");
+    JGUIUtil.addComponent(ensemble_JPanel, __EnsembleTrace_JTextField,
+        1, yEnsemble, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Optional - use %z for sequence (trace) ID or ${TS:property} (default=sequence ID)."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble model name:"), 
@@ -983,17 +1020,13 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "Required - used to determine the ensemble model_run_id."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(ensemble_JPanel, new JLabel("Ensemble trace ID:"),
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble model_id:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __EnsembleTraceID_JTextField = new TSFormatSpecifiersJPanel(10);
-    __EnsembleTraceID_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
-    __EnsembleTraceID_JTextField.addKeyListener ( this );
-    __EnsembleTraceID_JTextField.getDocument().addDocumentListener(this);
-    __EnsembleTraceID_JTextField.setToolTipText("%L for location, %T for data type, ${TS:property} to use property.");
-    JGUIUtil.addComponent(ensemble_JPanel, __EnsembleTraceID_JTextField,
-        1, yEnsemble, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __selectedEnsembleModelID_JLabel = new JLabel ( "");
+    JGUIUtil.addComponent(ensemble_JPanel, __selectedEnsembleModelID_JLabel,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Optional - use %z for sequence (trace) ID, etc. or ${TS:property} (default=sequence ID)."),
+        "Information - useful when comparing to database contents."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble model run date:"), 
@@ -1005,12 +1038,14 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(ensemble_JPanel, __EnsembleModelRunDate_JComboBox,
         1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Optional - YYYY-MM-DD hh:mm, used to determine the ensemble model_run_id (default=run date not used)."),
+        "Optional - used to determine model_run_id (default=run date not used)."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("OR new ensemble model run date:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewEnsembleModelRunDate_JTextField = new JTextField (20);
+    __NewEnsembleModelRunDate_JTextField.setToolTipText("Run date in form YYYY-MM-DD hh:mm or use ${Property} to use processor " +
+        "property, ${ts:Property} to use time series property.");
     __NewEnsembleModelRunDate_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ensemble_JPanel, __NewEnsembleModelRunDate_JTextField,
         1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -1018,102 +1053,102 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "Optional - specify if new model run date is being defined (default=specify existing)."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble_id:"), 
-        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __selectedEnsembleID_JLabel = new JLabel ( "");
-    JGUIUtil.addComponent(ensemble_JPanel, __selectedEnsembleID_JLabel,
-        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Information - useful when comparing to database contents."),
-        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble model_id:"), 
-        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __selectedEnsembleModelID_JLabel = new JLabel ( "");
-    JGUIUtil.addComponent(ensemble_JPanel, __selectedEnsembleModelID_JLabel,
-        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Information - useful when comparing to database contents."),
-        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble model_run_id:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __selectedEnsembleModelRunID_JLabel = new JLabel ( "Determined when command is run");
+    __selectedEnsembleModelRunID_JLabel = new JLabel ( "Determined from model name and run date when command is run");
     JGUIUtil.addComponent(ensemble_JPanel, __selectedEnsembleModelRunID_JLabel,
         1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     //JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
     //    ""),
     //    3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble model run ID (model_run_id):"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleModelRunID_JComboBox = new SimpleJComboBox (false);
+    __EnsembleModelRunID_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(ensemble_JPanel, __EnsembleModelRunID_JComboBox,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Optional - alternative to selecting above choices."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for other parameters (mainly needed to help with screen real estate problems)
+    int yGeneral = -1;
+    JPanel general_JPanel = new JPanel();
+    general_JPanel.setLayout( new GridBagLayout() );
+    __sdi_JTabbedPane.addTab ( "General parameters", general_JPanel );
+    
     // Additional general write parameters...
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Agency:"), 
-        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Agency:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Agency_JComboBox = new SimpleJComboBox ( false );
     __Agency_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Agency_JComboBox,
-        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - agency supplying data (default=no agency)."),
-        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(general_JPanel, __Agency_JComboBox,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Optional - agency supplying data (default=no agency)."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Validation flag:"), 
-        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Validation flag:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValidationFlag_JComboBox = new SimpleJComboBox ( false );
     __ValidationFlag_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ValidationFlag_JComboBox,
-        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - validation flag (default=no flag)."),
-        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(general_JPanel, __ValidationFlag_JComboBox,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Optional - validation flag (default=no flag)."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Overwrite flag:"), 
-        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Overwrite flag:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OverwriteFlag_JComboBox = new SimpleJComboBox ( false );
     __OverwriteFlag_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OverwriteFlag_JComboBox,
-        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - overwrite flag (default=O)."),
-        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(general_JPanel, __OverwriteFlag_JComboBox,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Optional - overwrite flag (default=O)."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data flags:"), 
-        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Data flags:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataFlags_JTextField = new JTextField (20);
     __DataFlags_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __DataFlags_JTextField,
-        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(general_JPanel, __DataFlags_JTextField,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel (
         "Optional - user-defined flag (default=no flag)."),
-        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Time zone:"), 
-        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Time zone:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeZone_JComboBox = new SimpleJComboBox ( false );
     __TimeZone_JComboBox.addItemListener (this);
     __TimeZone_JComboBox.setToolTipText ( "The time zone in time series is NOT used by default.  " +
     	"Use this parameter to tell the database the time zone for data." );
-    JGUIUtil.addComponent(main_JPanel, __TimeZone_JComboBox,
-        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, __TimeZone_JComboBox,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __TimeZone_JLabel = new JLabel ("");
-    JGUIUtil.addComponent(main_JPanel, __TimeZone_JLabel,
-        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(general_JPanel, __TimeZone_JLabel,
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
-		0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Output start:"), 
+		0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputStart_JTextField = new JTextField (20);
+	__OutputStart_JTextField.setToolTipText ( "Specify to precision appropriate for interval using YYYY-MM-DD hh");
 	__OutputStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
-		1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(general_JPanel, __OutputStart_JTextField,
+		1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel (
 		"Optional - override the global output start (default=write all data)."),
-		3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-		0, ++yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Output end:"), 
+		0, ++yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputEnd_JTextField = new JTextField (20);
+	__OutputEnd_JTextField.setToolTipText ( "Specify to precision appropriate for interval using YYYY-MM-DD hh");
 	__OutputEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-		1, yMain, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(general_JPanel, __OutputEnd_JTextField,
+		1, yGeneral, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel (
 		"Optional - override the global output end (default=write all data)."),
-		3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
     /*
@@ -1336,27 +1371,86 @@ private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
-Populate the ensemble model name list based on the selected datastore.
-The model names are the same as the non-ensemble list so reuse what was read from HDB.
+Populate the model name list based on the selected datastore.
 */
 private void populateEnsembleModelNameChoices ( ReclamationHDB_DMI rdmi )
-{   if ( (rdmi == null) || (__EnsembleModelName_JComboBox == null) ) {
+{   String routine = getClass().getName() + ".populateEnsembleModelNameChoices";
+    if ( (rdmi == null) || (__EnsembleModelName_JComboBox == null) ) {
         // Initialization
         return;
     }
     List<String> modelNameStrings = new Vector();
     modelNameStrings.add ( "" ); // Always add blank because user may not want model time series
-    for ( ReclamationHDB_Model model: __modelList ) {
-        modelNameStrings.add ( model.getModelName() );
+    try {
+        readModelList(rdmi);
+        for ( ReclamationHDB_Model model: __modelList ) {
+            modelNameStrings.add ( model.getModelName() );
+        }
+        Collections.sort(modelNameStrings,String.CASE_INSENSITIVE_ORDER);
+        StringUtil.removeDuplicates(modelNameStrings, true, true);
     }
-    Collections.sort(modelNameStrings,String.CASE_INSENSITIVE_ORDER);
-    StringUtil.removeDuplicates(modelNameStrings, true, true);
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error getting HDB model list (" + e + ")." );
+        modelNameStrings = new Vector();
+    }
     __EnsembleModelName_JComboBox.removeAll ();
     __EnsembleModelName_JComboBox.setData(modelNameStrings);
     // Select first choice (may get reset from existing parameter values).
     __EnsembleModelName_JComboBox.select ( null );
     if ( __EnsembleModelName_JComboBox.getItemCount() > 0 ) {
         __EnsembleModelName_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Populate the model run ID list based on the selected datastore.
+*/
+private void populateEnsembleModelRunIDChoices ( ReclamationHDB_DMI rdmi )
+{   String routine = getClass().getName() + ".populateEnsembleModelRunIDhoices";
+    if ( (rdmi == null) || (__EnsembleModelRunID_JComboBox == null) ) {
+        // Initialization
+        return;
+    }
+    List<String> modelRunIDStrings = new ArrayList<String>();
+    List<String> sortStrings = new ArrayList<String>();
+    modelRunIDStrings.add ( "" ); // Always add blank because user may not want model time series
+    sortStrings.add("");
+    String mriString;
+    try {
+        // This is the full list of model run identifiers.
+        List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunListForModelID(-1);
+        String hydrologicIndicator;
+        Message.printStatus(2,routine,"Have " + modelRunList.size() + " model runs." );
+        for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
+            hydrologicIndicator = modelRun.getHydrologicIndicator();
+            if ( hydrologicIndicator.equals("") ) {
+                hydrologicIndicator = "no hydrologic indicator";
+            }
+            mriString = modelRun.getModelRunID() + " - " + modelRun.getModelRunName() + " - " +
+                hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","");
+            if ( mriString.length() > 85 ) {
+                mriString = mriString.substring(0,85) + "...";
+            }
+            modelRunIDStrings.add ( "" + mriString );
+            // Only show the date to the minute
+            sortStrings.add ( modelRun.getModelRunName() + " - " +
+                hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","") );
+        }
+        // Sort the descriptive strings and then resort the main list to be in the same order
+        int [] sortOrder = new int[sortStrings.size()];
+        StringUtil.sortStringList(sortStrings, StringUtil.SORT_ASCENDING, sortOrder, true, true);
+        StringUtil.reorderStringList(modelRunIDStrings,sortOrder,false);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error getting HDB model run list (" + e + ")." );
+        modelRunIDStrings = new ArrayList<String>();
+    }
+    __EnsembleModelRunID_JComboBox.removeAll ();
+    __EnsembleModelRunID_JComboBox.setData(modelRunIDStrings);
+    // Select first choice (may get reset from existing parameter values).
+    __EnsembleModelRunID_JComboBox.select ( null );
+    if ( __EnsembleModelRunID_JComboBox.getItemCount() > 0 ) {
+        __EnsembleModelRunID_JComboBox.select ( 0 );
     }
 }
 
@@ -1371,7 +1465,6 @@ private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
     }
     List<String> ensembleNameStrings = new Vector();
     ensembleNameStrings.add ( "" ); // Always add blank because user may not want ensemble time series
-    ensembleNameStrings.add ( "HardcodedTest" ); // Add so something is in the list, FIXME SAM 2013-03-23 remove when code tested
     try {
         readEnsembleList(rdmi);
         for ( ReclamationHDB_Ensemble ensemble: __ensembleList ) {
@@ -1382,7 +1475,7 @@ private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB ensemble list (" + e + ")." );
-        ensembleNameStrings = new Vector();
+        ensembleNameStrings = new ArrayList<String>();
     }
     __EnsembleName_JComboBox.removeAll ();
     __EnsembleName_JComboBox.setData(ensembleNameStrings);
@@ -1886,10 +1979,11 @@ private void refresh ()
     String ModelRunID = "";
     String EnsembleName = "";
     String NewEnsembleName = "";
-    String EnsembleTraceID = "";
+    String EnsembleTrace = "";
     String EnsembleModelName = "";
     String EnsembleModelRunDate = "";
     String NewEnsembleModelRunDate = "";
+    String EnsembleModelRunID = "";
     String Agency = "";
     String ValidationFlag = "";
     String OverwriteFlag = "";
@@ -1918,10 +2012,11 @@ private void refresh ()
         ModelRunID = parameters.getValue ( "ModelRunID" );
         EnsembleName = parameters.getValue ( "EnsembleName" );
         NewEnsembleName = parameters.getValue ( "NewEnsembleName" );
-        EnsembleTraceID = parameters.getValue ( "EnsembleTraceID" );
+        EnsembleTrace = parameters.getValue ( "EnsembleTrace" );
         EnsembleModelName = parameters.getValue ( "EnsembleModelName" );
         EnsembleModelRunDate = parameters.getValue ( "EnsembleModelRunDate" );
         NewEnsembleModelRunDate = parameters.getValue ( "NewEnsembleModelRunDate" );
+        EnsembleModelRunID = parameters.getValue ( "EnsembleModelRunID" );
         Agency = parameters.getValue ( "Agency" );
         ValidationFlag = parameters.getValue ( "ValidationFlag" );
         OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
@@ -2079,7 +2174,7 @@ private void refresh ()
         populateSiteCommonNameChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__SiteCommonName_JComboBox, SiteCommonName, JGUIUtil.NONE, null, null ) ) {
             __SiteCommonName_JComboBox.select ( SiteCommonName );
-            if ( (__SiteDataTypeID_JComboBox.getSelected() != null) && !__SiteDataTypeID_JComboBox.getSelected().equals("") ) {
+            if ( (__SiteDataTypeID_JComboBox.getSelected() == null) || __SiteDataTypeID_JComboBox.getSelected().equals("") ) {
                 // Only set this tab if the SiteDataTypeID was not able to be set above
                 __sdi_JTabbedPane.setSelectedIndex(1);
             }
@@ -2225,9 +2320,6 @@ private void refresh ()
         populateEnsembleNameChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__EnsembleName_JComboBox, EnsembleName, JGUIUtil.NONE, null, null ) ) {
             __EnsembleName_JComboBox.select ( EnsembleName );
-            if ( (EnsembleName != null) && !EnsembleName.equals("") ) {
-                __model_JTabbedPane.setSelectedIndex(1);
-            }
             if ( __ignoreEvents ) {
                 // Also need to make sure that the __modelRunList is populated
                 // Call manually because events are disabled at startup to allow cascade to work properly
@@ -2257,29 +2349,62 @@ private void refresh ()
         if ( NewEnsembleName != null ) {
             __NewEnsembleName_JTextField.setText ( NewEnsembleName );
         }
-        if ( EnsembleTraceID != null ) {
-            __EnsembleTraceID_JTextField.setText ( EnsembleTraceID );
+        if ( EnsembleTrace != null ) {
+            __EnsembleTrace_JTextField.setText ( EnsembleTrace );
         }
-        /* TODO SAM 2013-09-24 Is this needed?
         // First populate the choices...
-        populateEnsembleModelRunDateChoices(getReclamationHDB_DMI() );
-        if ( JGUIUtil.isSimpleJComboBoxItem(__EnsembleModelRunDate_JComboBox, EnsembleModelRunDate, JGUIUtil.NONE, null, null ) ) {
-            __EnsembleModelRunDate_JComboBox.select ( EnsembleModelRunDate );
+        populateEnsembleModelNameChoices(getReclamationHDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__EnsembleModelName_JComboBox, EnsembleModelName, JGUIUtil.NONE, null, null ) ) {
+            __EnsembleModelName_JComboBox.select ( EnsembleModelName );
+            __model_JTabbedPane.setSelectedIndex(0);
+            /*
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the __modelRunList is populated
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                readModelRunListForSelectedModel(__dmi);
+            }
+            */
         }
         else {
-            if ( (EnsembleModelRunDate == null) || EnsembleModelRunDate.equals("") ) {
+            if ( (EnsembleModelName == null) || EnsembleModelName.equals("") ) {
                 // New command...select the default...
-                if ( __EnsembleModelRunDate_JComboBox.getItemCount() > 0 ) {
-                    __EnsembleModelRunDate_JComboBox.select ( 0 );
+                if ( __EnsembleModelName_JComboBox.getItemCount() > 0 ) {
+                    __EnsembleModelName_JComboBox.select ( 0 );
+                    /*
+                    if ( __ignoreEvents ) {
+                        // Also need to make sure that the __modelRunList is populated
+                        // Call manually because events are disabled at startup to allow cascade to work properly
+                        readModelRunListForSelectedModel(__dmi);
+                    }
+                    */
                 }
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "EnsembleModelRunDate parameter \"" + EnsembleModelRunDate + "\".  Select a different value or Cancel." );
+                  "EnsembleModelName parameter \"" + EnsembleModelName + "\".  Select a different value or Cancel." );
             }
         }
-        */
+        // First populate the choices...
+        populateEnsembleModelRunIDChoices(getReclamationHDB_DMI() );
+        // Select based on the first token
+        index = new int[1];
+        if ( JGUIUtil.isSimpleJComboBoxItem(__EnsembleModelRunID_JComboBox, EnsembleModelRunID, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, false) ) {
+            __EnsembleModelRunID_JComboBox.select ( index[0] );
+        }
+        else {
+            if ( (EnsembleModelRunID == null) || EnsembleModelRunID.equals("") ) {
+                // New command...select the default...
+                if ( __EnsembleModelRunID_JComboBox.getItemCount() > 0 ) {
+                    __EnsembleModelRunID_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "EnsembleModelRunID parameter \"" + EnsembleModelRunID + "\".  Select a different value or Cancel." );
+            }
+        }
         // First populate the choices...
         populateAgencyChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__Agency_JComboBox, Agency, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, true ) ) {
@@ -2383,6 +2508,12 @@ private void refresh ()
             }
         }
         */
+		// Select tabs based on specified parameters
+		if ( ((EnsembleName != null) && !EnsembleName.equals("")) ||
+            ((NewEnsembleName != null) && !NewEnsembleName.equals("")) ||
+            ((EnsembleModelRunID != null) && !EnsembleModelRunID.equals(""))) {
+            __model_JTabbedPane.setSelectedIndex(1);
+        }
 	}
 	// Regardless, reset the command from the fields...
 	DataStore = __DataStore_JComboBox.getSelected();
@@ -2426,7 +2557,7 @@ private void refresh ()
     ModelRunID = getSelectedModelRunID();
     EnsembleName = getSelectedEnsembleName();
     NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
-    EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
+    EnsembleTrace = __EnsembleTrace_JTextField.getText().trim();
     EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     if ( EnsembleModelName == null ) {
         EnsembleModelName = "";
@@ -2436,6 +2567,7 @@ private void refresh ()
         EnsembleModelRunDate = "";
     }
     NewEnsembleModelRunDate = __NewEnsembleModelRunDate_JTextField.getText().trim();
+    EnsembleModelRunID = getSelectedEnsembleModelRunID();
     Agency = getSelectedAgency();
     ValidationFlag = getSelectedValidationFlag();
     OverwriteFlag = getSelectedOverwriteFlag();
@@ -2469,10 +2601,11 @@ private void refresh ()
     parameters.add ( "ModelRunID=" + ModelRunID );
     parameters.add ( "EnsembleName=" + EnsembleName );
     parameters.add ( "NewEnsembleName=" + NewEnsembleName );
-    parameters.add ( "EnsembleTraceID=" + EnsembleTraceID );
+    parameters.add ( "EnsembleTrace=" + EnsembleTrace );
     parameters.add ( "EnsembleModelName=" + EnsembleModelName );
     parameters.add ( "EnsembleModelRunDate=" + EnsembleModelRunDate );
     parameters.add ( "NewEnsembleModelRunDate=" + NewEnsembleModelRunDate );
+    parameters.add ( "EnsembleModelRunID=" + EnsembleModelRunID );
     parameters.add ( "Agency=" + Agency );
     parameters.add ( "ValidationFlag=" + ValidationFlag );
     parameters.add ( "OverwriteFlag=" + OverwriteFlag );

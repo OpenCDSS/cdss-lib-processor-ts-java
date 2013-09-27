@@ -3,6 +3,7 @@ package rti.tscommandprocessor.commands.reclamationhdb;
 import java.security.InvalidParameterException;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -99,6 +100,11 @@ private List<String> __timeZoneList = new Vector<String>();
 Loading applications from HDB_VALIDATION.
 */
 private List<ReclamationHDB_Validation> __validationList = new Vector<ReclamationHDB_Validation>();
+
+/**
+Indicate whether the database has ensemble tables, which will be true if the table REF_ENSEMBLE is present.
+*/
+private boolean __dbHasEnsembles = false;
 
 /** 
 Constructor for a database server and database name, to use an automatically created URL.
@@ -379,6 +385,14 @@ Return the list of agencies (global data initialized when database connection is
 public List<ReclamationHDB_Agency> getAgencyList ()
 {
     return __agencyList;
+}
+
+/**
+Indicate whether the database supports ensembles in the design.
+*/
+public boolean getDatabaseHasEnsembles ()
+{
+    return __dbHasEnsembles;
 }
 
 /**
@@ -896,6 +910,17 @@ public void readGlobalData()
     __timeZoneList.add ( "MST" );
     __timeZoneList.add ( "PDT" );
     __timeZoneList.add ( "PST" );
+    // Save a flag indicating whether ensembles are in the database
+    try {
+        //DatabaseMetaData meta = getConnection().getMetaData();
+        //if ( DMIUtil.databaseHasTable(meta, "REF_ENSEMBLE") ) {
+        //    __dbHasEnsembles = true;
+        //}
+    }
+    catch ( Exception e ) {
+        // For now nothing to do but assume no ensembles
+        Message.printWarning(3, routine, e);
+    }
 }
 
 /**
@@ -1568,70 +1593,48 @@ This procedure was written exclusively for TsTool use with the following Busines
     16. For REF_ENSEMBLE_TRACE records at a minimum, either column TRACE_NUMERIC or TRACE_NAME must be populated.
     17. For TsTool, creation of REF_ENSEMBLE_TRACE records TRACE_ID, TRACE_NUMERIC and TRACE_NAME will be populated with P_TRACE_NUMBER from the TsTool procedure call
 </pre>
+@param ensembleName ensemble name (REF_ENSEMBLE.ENSEMBLE_NAME)
+@param traceNumber trace number (REF_ENSEMBLE_TRACE.TRACE_NUMERIC)
+@param ensembleModelName model name (will be used with the run date to match REF_ENSEMBLE_TRACE.MODEL_RUN_ID)
+@param ensembleModelRunDate (will be used with the model name to match REF_ENSEMBLE_TRACE.MODEL_RUN_ID)
+@return the model run identifier to use for the ensemble trace, or null if not able to determine
 */
 public Long readModelRunIDForEnsembleTrace ( String ensembleName, int traceNumber,
     String ensembleModelName, DateTime ensembleModelRunDate )
 {   String routine = getClass().getName() + ".readModelRunIDForEnsembleTrace";
-    DMISelectStatement selectStatement = null;
     CallableStatement cs = null;
     try {
-        DMIStoredProcedureData spData = new DMIStoredProcedureData(this, "ENSEMBLE.GET_TSTOOL_ENSEMBLE_MRI");
-        selectStatement.setStoredProcedureData(spData);
+        // Argument list includes output
+        cs = getConnection().prepareCall("{call ENSEMBLE.GET_TSTOOL_ENSEMBLE_MRI (?,?,?,?,?,?)}");
         int iParam = 1;
-        selectStatement.setValue(ensembleName,iParam++); // Cannot be null
-        selectStatement.setValue(traceNumber,iParam++); // Cannot be null
-        selectStatement.setValue(ensembleModelName,iParam++); // Cannot be null
-        selectStatement.setValue(ensembleModelRunDate,iParam++); // Can be null
-        String isRundateKey = "N";
-        if ( ensembleModelRunDate != null ) {
-            isRundateKey = "Y";
-        }
-        selectStatement.setValue(isRundateKey,iParam++); // Cannot be null
-        /*
-        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?)}");
-        cs.setString(iParam++,ensembleName); // Cannot be null
-        cs.setInt(iParam++,traceNumber); // Cannot be null
-        cs.setString(iParam++,ensembleModelName); // Cannot be null
+        // Have to register the output, in same order as procedure expects
+        cs.registerOutParameter(iParam++,java.sql.Types.INTEGER); // 1 - OP_MODEL_RUN_ID
+        cs.setString(iParam++,ensembleName); // 2- P_ENSEMBLE_NAME - cannot be null
+        cs.setInt(iParam++,traceNumber); // 3 - P_TRACE_NUMBER - cannot be null
+        cs.setString(iParam++,ensembleModelName); // 4- P_MODEL_NAME - cannot be null
         if ( ensembleModelRunDate == null ) {
-            // Date is not being used
-            cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
+            // Run date is not being used
+            cs.setNull(iParam++,java.sql.Types.TIMESTAMP); // 5 - P_RUN_DATE
+            cs.setString(iParam++,"N"); // 6 - P_IS_RUNDATE_KEY
         }
         else {
-            cs.setTimestamp(iParam++,new Timestamp(ensembleModelRunDate.getDate().getTime()));
+            cs.setTimestamp(iParam++,new Timestamp(ensembleModelRunDate.getDate().getTime())); // 5 - P_RUN_DATE
+            cs.setString(iParam++,"Y"); // 6 - P_IS_RUNDATE_KEY
         }
-        cs.addBatch();
-        */
-    }
-    catch ( Exception e ) {
-        throw new RuntimeException ( "Error constructing statement (" + e + " )" );
-    }
-    /*
-    try {
-        // TODO SAM 2012-03-28 Figure out how to use to compare values updated with expected number
-        //int [] updateCounts =
-        cs.executeBatch();
-        cs.get
+        cs.executeUpdate();
+        int mri = cs.getInt(1);
         cs.close();
-        return mri;
+        return new Long(mri);
     }
     catch (BatchUpdateException e) {
         // Will happen if any of the batch commands fail.
         Message.printWarning(3,routine,e);
-        throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
+        throw new RuntimeException ( "Error executing  callable statement (" + e + ").", e );
     }
     catch (SQLException e) {
         Message.printWarning(3,routine,e);
-        throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
+        throw new RuntimeException ( "Error executing  callable statement (" + e + ").", e );
     }
-    */
-    try {
-        dmiSelect(selectStatement);
-    }
-    catch ( Exception e ) {
-        Message.printWarning(3,routine,e);
-        return new Long(-1);
-    }
-    return new Long(-1);
 }
 
 /**
@@ -1693,7 +1696,65 @@ throws SQLException
 }
 
 /**
-Read the database models from the HDB_MODEL table.
+Read the ensemble key value pairs from the REF_ENSEMBLE_KEYVAL table.
+@return the list of ensemble key value pairs
+*/
+public List<ReclamationHDB_EnsembleKeyVal> readRefEnsembleKeyValList ( int ensembleID )
+throws SQLException
+{   String routine = getClass().getName() + ".readRefEnsembleKeyValList";
+    List<ReclamationHDB_EnsembleKeyVal> results = new ArrayList<ReclamationHDB_EnsembleKeyVal>();
+    StringBuilder sqlCommand = new StringBuilder("select REF_ENSEMBLE_KEYVAL.ENSEMBLE_ID, " +
+    "REF_ENSEMBLE_KEYVAL.TRACE_ID, REF_ENSEMBLE_KEYVAL.TRACE_NUMERIC from REF_ENSEMBLE_KEYVAL" );
+    if ( ensembleID >= 0 ) {
+        sqlCommand.append (" WHERE REF_ENSEMBLE_KEYVALUE.ENSEMBLE_ID = " + ensembleID );
+    }
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand.toString());
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_EnsembleKeyVal data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_EnsembleKeyVal();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setEnsembleID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setKeyName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setKeyValue(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting ensemble key/value data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    return results;
+}
+
+/**
+Read the ensembles from the REF_ENSEMBLE table.
 @return the list of ensembles
 */
 public List<ReclamationHDB_Ensemble> readRefEnsembleList ( )
@@ -1745,6 +1806,93 @@ throws SQLException
     }
     catch (SQLException e) {
         Message.printWarning(3, routine, "Error getting ensemble data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the ensemble traces from the REF_ENSEMBLE_TRACE table.
+@param ensembleID ensemble ID for which to read data or -1 to read all
+@param traceID trace ID for which to read data or -1 to read all
+@param modelRunID model run ID for which to read data or -1 to read all
+@return the list of ensemble traces
+*/
+public List<ReclamationHDB_EnsembleTrace> readRefEnsembleTraceList ( int ensembleID, int traceID, int modelRunID )
+throws SQLException
+{   String routine = getClass().getName() + ".readRefEnsembleTraceList";
+    List<ReclamationHDB_EnsembleTrace> results = new ArrayList<ReclamationHDB_EnsembleTrace>();
+    StringBuilder sqlCommand = new StringBuilder("select REF_ENSEMBLE_TRACE.ENSEMBLE_ID, " +
+    "REF_ENSEMBLE_TRACE.TRACE_ID, REF_ENSEMBLE_TRACE.TRACE_NUMERIC, REF_ENSEMBLE_TRACE.TRACE_NAME, " +
+    "REF_ENSEMBLE_TRACE.MODEL_RUN_ID from REF_ENSEMBLE_TRACE");
+    boolean where = false;
+    if ( ensembleID >= 0 ) {
+        where = true;
+        sqlCommand.append (" WHERE REF_ENSEMBLE_TRACE.ENSEMBLE_ID = " + ensembleID );
+    }
+    if ( traceID >= 0 ) {
+        if ( where ) {
+            sqlCommand.append ( " AND ");
+        }
+        sqlCommand.append (" WHERE REF_ENSEMBLE_TRACE.TRACE_ID = " + traceID );
+        where = true;
+    }
+    if ( modelRunID >= 0 ) {
+        if ( where ) {
+            sqlCommand.append ( " AND ");
+        }
+        sqlCommand.append (" WHERE REF_ENSEMBLE_TRACE.MODEL_RUN_ID = " + modelRunID );
+        where = true;
+    }
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand.toString());
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_EnsembleTrace data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_EnsembleTrace();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setEnsembleID(i);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setTraceID(i);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setTraceNumeric(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setTraceName(s);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setModelRunID(i);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting ensemble trace data from HDB (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
     finally {
@@ -1824,7 +1972,7 @@ public List<ReclamationHDB_SiteTimeSeriesMetadata> readSiteTimeSeriesMetadataLis
     InputFilter_JPanel ifp)
 throws SQLException
 {   String routine = getClass().getName() + ".readSiteTimeSeriesMetadataList";
-    List<ReclamationHDB_SiteTimeSeriesMetadata> results = new Vector<ReclamationHDB_SiteTimeSeriesMetadata>();
+    List<ReclamationHDB_SiteTimeSeriesMetadata> results = new ArrayList<ReclamationHDB_SiteTimeSeriesMetadata>();
     // Form where clauses based on the data type
     String dataTypeWhereString = "";
     if ( (dataType != null) && !dataType.equals("") && !dataType.equals("*") ) {
@@ -1863,7 +2011,7 @@ throws SQLException
     // Process the where clauses.
     // Include where clauses for specific tables.  Do this rather than in bulk to make sure that
     // inappropriate filters are not applied (e.g., model filters when only real data are queried)
-    List<String> whereClauses = new Vector();
+    List<String> whereClauses = new ArrayList<String>();
     whereClauses.add ( dataTypeWhereString );
     whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "HDB_OBJECTTYPE", true ) );
     whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "HDB_SITE", true ) );
@@ -2676,7 +2824,7 @@ public void writeTimeSeries ( TS ts, String loadingApp,
     String agency, String validationFlag, String overwriteFlag, String dataFlags,
     String timeZone, DateTime outputStartReq, DateTime outputEndReq ) //, TimeInterval intervalOverride )
 throws SQLException
-{   String routine = getClass().getName() + ".writeTimeSeries";
+{   String routine = "ReclamationHDB_DMI.writeTimeSeries";
     if ( ts == null ) {
         return;
     }

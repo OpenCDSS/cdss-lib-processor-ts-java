@@ -103,6 +103,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the SiteCommonName or SiteDataTypeID." ) );
     }
+    
     /* Now optional 
     if ( (SiteCommonName == null) || SiteCommonName.equals("") ) {
         message = "The site common name must be specified.";
@@ -643,13 +644,17 @@ CommandWarningException, CommandException
             throw new RuntimeException ( message );
         }
         ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
-        Message.printStatus ( 2, routine, "Writing ReclamationHDB time series to data store \"" +
-            dataStore.getName() + "\"" );
+        Message.printStatus ( 2, routine, "Writing ReclamationHDB time series to data store \"" + dataStore.getName() + "\"" );
         String loadingApp = "TSTool";
         boolean doWrite = true;
         int traceNumber = 0;
+        int its = 0;
         if ( doWrite && (tslist != null) ) {
+            // Update the progress
             for ( TS ts : tslist ) {
+                ++its;
+                message = "Writing HDB time series " + its + " of " + tslist.size();
+                notifyCommandProgressListeners ( (its - 1), tslist.size(), (float)-1.0, message );
                 // The following were set to null above if blank strings
                 if ( (EnsembleName != null) || (NewEnsembleName != null) || (ensembleModelRunID != null) ) {
                     // Writing an ensemble so get the model_run_id for the specific trace using the ensemble information

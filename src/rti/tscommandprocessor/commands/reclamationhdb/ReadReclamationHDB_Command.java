@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -28,6 +29,7 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the ReadReclamationHDB() command.
@@ -84,6 +86,7 @@ throws InvalidCommandParameterException
     String DataType = parameters.getValue ( "DataType" );
     String Interval = parameters.getValue ( "Interval" );
     String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
+    String SiteDataTypeID = parameters.getValue ( "SiteDataTypeID" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
 
@@ -97,14 +100,15 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store." ) );
     }
-    
+    // Data type must be specified with filters, but not if SDI or site common name is specified
     if ( ((DataType == null) || DataType.equals("")) &&
-        ((DataTypeCommonName == null) || DataTypeCommonName.equals("")) ) {
-        message = "The data type must be specified.";
+        ((DataTypeCommonName == null) || DataTypeCommonName.equals("")) &&
+        ((SiteDataTypeID == null) || SiteDataTypeID.equals(""))) {
+        message = "The data type must be specified with filters or specify the site data type ID.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data type." ) );
+                message, "Specify the data type with filters or specify the site data type ID." ) );
     }
     
     if ( ((DataType != null) && !DataType.equals("")) &&
@@ -122,6 +126,18 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data interval." ) );
+    }
+    else {
+        try {
+            TimeInterval.parseInterval(Interval);
+        }
+        catch ( Exception e ) {
+            message = "The data interval (" + Interval + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid data interval." ) );
+        }
     }
 
 	// TODO SAM 2006-04-24 Need to check the WhereN parameters.
@@ -170,9 +186,10 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "ModelRunDate" );
     valid_Vector.add ( "ModelRunID" );
     valid_Vector.add ( "EnsembleName" );
-    valid_Vector.add ( "EnsembleTraceID" );
+    //valid_Vector.add ( "EnsembleTraceID" );
     valid_Vector.add ( "EnsembleModelName" );
     valid_Vector.add ( "EnsembleModelRunDate" );
+    valid_Vector.add ( "EnsembleModelRunID" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Alias" );
@@ -289,12 +306,38 @@ CommandWarningException, CommandException
     String DataStore = parameters.getValue("DataStore");
     String DataType = parameters.getValue("DataType");
     String Interval = parameters.getValue("Interval");
+    TimeInterval interval = null;
+    interval = TimeInterval.parseInterval(Interval);
     String SiteCommonName = parameters.getValue("SiteCommonName");
     String DataTypeCommonName = parameters.getValue("DataTypeCommonName");
+    String SiteDataTypeID = parameters.getValue("SiteDataTypeID");
+    int siteDataTypeID = -1;
+    if ( (SiteDataTypeID != null) && !SiteDataTypeID.equals("") ) {
+        siteDataTypeID = Integer.parseInt(SiteDataTypeID);
+    }
     String ModelName = parameters.getValue("ModelName");
     String ModelRunName = parameters.getValue("ModelRunName");
+    String HydrologicIndicator = parameters.getValue("HydrologicIndicator");
+    if ( HydrologicIndicator == null ) {
+        HydrologicIndicator = "";
+    }
     String ModelRunDate = parameters.getValue("ModelRunDate");
+    DateTime modelRunDate = null;
+    if ( (ModelRunDate != null) && !ModelRunDate.equals("") ) {
+        modelRunDate = DateTime.parse(ModelRunDate);
+    }
+    String ModelRunID = parameters.getValue("ModelRunID");
+    int modelRunID = -1;
+    if ( (ModelRunID != null) && !ModelRunID.equals("") ) {
+        modelRunID = Integer.parseInt(ModelRunID);
+    }
+    String EnsembleName = parameters.getValue("EnsembleName");
     String EnsembleModelName = parameters.getValue("EnsembleModelName");
+    String EnsembleModelRunID = parameters.getValue("EnsembleModelRunID");
+    int ensembleModelRunID = -1;
+    if ( (EnsembleModelRunID != null) && !EnsembleModelRunID.equals("") ) {
+        ensembleModelRunID = Integer.parseInt(EnsembleModelRunID);
+    }
     String Alias = parameters.getValue("Alias");
     
 	String InputStart = parameters.getValue ( "InputStart" );
@@ -413,7 +456,7 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	List<TS> tslist = new Vector();	// Vector for time series results.
+	List<TS> tslist = new ArrayList<TS>();	// Time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -539,25 +582,11 @@ CommandWarningException, CommandException
     			}
     		}
 	    }
-	    else if ( (EnsembleModelName != null) && !EnsembleModelName.equals("") ) {
-            // Reading an ensemble of model time series 
-        }
-	    else {
-	        String tsidentString = null;
-	        // Reading a single time series
-	        if ( (ModelName != null) && !ModelName.equals("") ) {
-	            // Single model time series
-	            tsidentString = "Model:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval + "." +
-                    ModelName + "-" + ModelRunName + "HydrologicIndicator" + "-" + ModelRunDate + "~" + DataStore;
-	        }
-    
-	        else {
-	            // Simple real time series
-	            tsidentString = "Real:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval +
-	                "~" + DataStore;
-	        }
-	        try {
- 	            TS ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
+        else if ( ensembleModelRunID >= 0 ) {
+            // Reading a single trace from an ensemble - put before reading full ensemble
+            try {
+                TS ts = dmi.readTimeSeries ( siteDataTypeID, ensembleModelRunID, true, interval,
+                    InputStart_DateTime, InputEnd_DateTime, readData );
                 // Set the alias to the desired string - this is impacted by the Location parameter
                 String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
                     processor, ts, Alias, status, commandPhase);
@@ -566,7 +595,8 @@ CommandWarningException, CommandException
                 tslist.add ( ts );
             }
             catch ( Exception e ) {
-                message = "Unexpected error reading Reclamation HDB time series (" + e + ").";
+                message = "Unexpected error reading Reclamation HDB time series for SDI=" + siteDataTypeID + " MRI=" +
+                   ensembleModelRunID + " (" + e + ").";
                 Message.printWarning ( 2, routine, message );
                 Message.printWarning ( 2, routine, e );
                 ++warning_count;
@@ -574,6 +604,131 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report the problem to software support - also see the log file." ) );
             }
+        }
+	    else if ( (EnsembleName != null) && !EnsembleName.equals("") ) {
+            // Reading an ensemble of model time series 
+        }
+        else if ( modelRunID >= 0 ) {
+            // Reading a single model time series put before reading full ensemble
+            try {
+                TS ts = dmi.readTimeSeries ( siteDataTypeID, modelRunID, false, interval,
+                    InputStart_DateTime, InputEnd_DateTime, readData );
+                // Set the alias to the desired string - this is impacted by the Location parameter
+                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                    processor, ts, Alias, status, commandPhase);
+                ts.setAlias ( alias );
+                // Add the time series to the temporary list.  It will be further processed below...
+                tslist.add ( ts );
+            }
+            catch ( Exception e ) {
+                message = "Unexpected error reading Reclamation HDB time series for SDI=" + siteDataTypeID + " MRI=" +
+                   modelRunID + " (" + e + ").";
+                Message.printWarning ( 2, routine, message );
+                Message.printWarning ( 2, routine, e );
+                ++warning_count;
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                       message, "Report the problem to software support - also see the log file." ) );
+            }
+        }
+	    else {
+	        // Reading a single time series, either real or model
+	        String tsidentString = null;
+	        // Reading a single time series
+	        if ( siteDataTypeID >= 0 ) {
+	            // Need to use the SDI to get metadata because SiteCommonName is not unique
+	            // Model run ID was not specified (otherwise would have read above).  If the model name is specified,
+	            // use it to get the model run ID and then use with the SDI to read
+	            boolean okToRead = true;
+	            if ( (ModelName != null) && !ModelName.equals("") ) {
+	                // Get the model corresponding to the model name
+	                List<ReclamationHDB_Model> models = dmi.readHdbModelList(ModelName);
+	                int modelID = -1;
+                    if ( models.size() != 1 ) {
+                         message = "Reading model data for ModelName=\"" + ModelName + "\" have " + models.size() + " models.  Expecting exactly 1.  Cannot read time series.";
+                         Message.printWarning ( 3, routine, message );
+                         ++warning_count;
+                         status.addToLog ( commandPhase,
+                             new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Check input to verify that parameters match one model." ) );
+                         okToRead = false;
+                    }
+                    else {
+                        modelID = models.get(0).getModelID();
+                    }
+                    if ( okToRead ) {
+    	                // Get the model runs corresponding to command parameters
+                        List<ReclamationHDB_ModelRun> runs = dmi.readHdbModelRunList(modelID,null,ModelRunName,HydrologicIndicator,modelRunDate);
+                        if ( runs.size() != 1 ) {
+                            message = "Reading model run data for ModelID=\"" + modelID + "\" ModelRunName=\"" +
+                                ModelRunName + "\" HydrologicIndicator=\"" + HydrologicIndicator + "\" RunDate=\"" +
+                                ModelRunDate + "\" have " + runs.size() + " runs.  Expecting exactly 1.  Cannot read time series.";
+                             Message.printWarning ( 3, routine, message );
+                             ++warning_count;
+                             status.addToLog ( commandPhase,
+                                 new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Check input to verify that parameters match one model run." ) );
+                             okToRead = false;
+                        }
+                        else {
+                            modelRunID = runs.get(0).getModelRunID();
+                        }
+                    }
+                }
+	            if ( okToRead ) {
+    	            try {
+    	                TS ts = dmi.readTimeSeries ( siteDataTypeID, modelRunID, false, interval,
+    	                    InputStart_DateTime, InputEnd_DateTime, readData );
+    	                // Set the alias to the desired string - this is impacted by the Location parameter
+    	                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+    	                    processor, ts, Alias, status, commandPhase);
+    	                ts.setAlias ( alias );
+    	                // Add the time series to the temporary list.  It will be further processed below...
+    	                tslist.add ( ts );
+    	            }
+    	            catch ( Exception e ) {
+    	                message = "Unexpected error reading Reclamation HDB time series for SDI=" + siteDataTypeID + " MRI=" +
+    	                   modelRunID + " (" + e + ").";
+    	                Message.printWarning ( 2, routine, message );
+    	                Message.printWarning ( 2, routine, e );
+    	                ++warning_count;
+    	                status.addToLog ( commandPhase,
+    	                    new CommandLogRecord(CommandStatusType.FAILURE,
+    	                       message, "Report the problem to software support - also see the log file." ) );
+    	            }
+	            }
+	        }
+	        else {
+	            // Legacy functionality...
+    	        if ( (ModelName != null) && !ModelName.equals("") ) {
+    	            // Single model time series
+    	            tsidentString = "Model:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval + "." +
+                        ModelName + "-" + ModelRunName + "-" + HydrologicIndicator + "-" + ModelRunDate + "~" + DataStore;
+    	        }
+    	        else {
+    	            // Simple real time series
+    	            tsidentString = "Real:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval +
+    	                "~" + DataStore;
+    	        }
+    	        try {
+     	            TS ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
+                    // Set the alias to the desired string - this is impacted by the Location parameter
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, commandPhase);
+                    ts.setAlias ( alias );
+                    // Add the time series to the temporary list.  It will be further processed below...
+                    tslist.add ( ts );
+                }
+                catch ( Exception e ) {
+                    message = "Unexpected error reading Reclamation HDB time series (" + e + ").";
+                    Message.printWarning ( 2, routine, message );
+                    Message.printWarning ( 2, routine, e );
+                    ++warning_count;
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Report the problem to software support - also see the log file." ) );
+                }
+	        }
 	    }
     
         int nts = 0;
@@ -761,6 +916,7 @@ public String toString ( PropList props )
         }
         b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
     }
+    /*
     String EnsembleTraceID = props.getValue( "EnsembleTraceID" );
     if ( (EnsembleTraceID != null) && (EnsembleTraceID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -768,6 +924,7 @@ public String toString ( PropList props )
         }
         b.append ( "EnsembleTraceID=\"" + EnsembleTraceID + "\"" );
     }
+    */
     String EnsembleModelName = props.getValue( "EnsembleModelName" );
     if ( (EnsembleModelName != null) && (EnsembleModelName.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -781,6 +938,13 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "EnsembleModelRunDate=\"" + EnsembleModelRunDate + "\"" );
+    }
+    String EnsembleModelRunID = props.getValue( "EnsembleModelRunID" );
+    if ( (EnsembleModelRunID != null) && (EnsembleModelRunID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleModelRunID=\"" + EnsembleModelRunID + "\"" );
     }
 	String InputStart = props.getValue("InputStart");
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {

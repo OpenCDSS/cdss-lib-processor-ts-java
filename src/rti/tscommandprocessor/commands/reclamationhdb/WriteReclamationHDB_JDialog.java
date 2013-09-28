@@ -645,6 +645,30 @@ private String getSelectedEnsembleName()
 }
 
 /**
+Return the selected model ID corresponding to the selected model name by querying the database.
+@return the selected model ID or -1 if the model ID cannot be determined.
+*/
+private int getSelectedModelID()
+{   String modelName = __ModelName_JComboBox.getSelected();
+    ReclamationHDB_DMI rdmi = getReclamationHDB_DMI();
+    if ( (rdmi == null) || (modelName == null) ) {
+        return -1;
+    }
+    // Get the corresponding model object
+    try {
+        List<ReclamationHDB_Model> models = rdmi.readHdbModelList(modelName);
+        if ( models.size() == 1 ) {
+            return models.get(0).getModelID();
+        }
+    }
+    catch ( Exception e ) {
+        // Should not happen
+        Message.printWarning(3,"",e);
+    }
+    return -1;
+}
+
+/**
 Return the selected model run ID, used to provide intelligent parameter choices.
 The displayed format is:  "MRI - Other information"
 @return the selected MRI, or "" if nothing selected
@@ -1418,7 +1442,7 @@ private void populateEnsembleModelRunIDChoices ( ReclamationHDB_DMI rdmi )
     String mriString;
     try {
         // This is the full list of model run identifiers.
-        List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunListForModelID(-1);
+        List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunList(-1,null,null,null,null);
         String hydrologicIndicator;
         Message.printStatus(2,routine,"Have " + modelRunList.size() + " model runs." );
         for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
@@ -1495,30 +1519,22 @@ private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
         // Initialization
         return;
     }
-    String selectedModelName = __ModelName_JComboBox.getSelected();
     String selectedModelRunName = __ModelRunName_JComboBox.getSelected();
-    //String selectedModelRunDate = __ModelRunDate_JComboBox.getSelected();
-    List<ReclamationHDB_Model> modelList = rdmi.findModel(__modelList, selectedModelName);
-    List<String> hydrologicIndicatorStrings = new Vector();
+    List<String> hydrologicIndicatorStrings = new ArrayList();
     hydrologicIndicatorStrings.add ( "" ); // Always add blank because user may not want model time series
-    if ( modelList.size() == 1 ) {
-        ReclamationHDB_Model model = modelList.get(0);
-        int modelID = model.getModelID();
+    int modelID = getSelectedModelID();
+    if ( modelID >= 0 ) {
         List<ReclamationHDB_ModelRun> modelRunList = rdmi.findModelRun(__modelRunList, modelID,
                 selectedModelRunName,
-                null,
-                null); // Don't match on hydrologic indicator
-        // Results should list unique hydrologic indicators
+                null, // Date not yet selected
+                null); // Don't match on hydrologic indicator since processing that here
         for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
             hydrologicIndicatorStrings.add ( modelRun.getHydrologicIndicator() );
         }
-        Collections.sort(hydrologicIndicatorStrings,String.CASE_INSENSITIVE_ORDER);
-        StringUtil.removeDuplicates(hydrologicIndicatorStrings, true, true);
     }
-    else {
-        Message.printStatus ( 2, routine, "Have " + modelList.size() + " models matching name \"" +
-            selectedModelName + "\" - unable to find matching model runs." );
-    }
+    Collections.sort(hydrologicIndicatorStrings,String.CASE_INSENSITIVE_ORDER);
+    // Results should list unique hydrologic indicators
+    StringUtil.removeDuplicates(hydrologicIndicatorStrings, true, true);
     __HydrologicIndicator_JComboBox.removeAll ();
     __HydrologicIndicator_JComboBox.setData(hydrologicIndicatorStrings);
     // Select first choice (may get reset from existing parameter values).
@@ -1629,7 +1645,7 @@ private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
     String mriString;
     try {
         // This is the full list of model run identifiers.
-        List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunListForModelID(-1);
+        List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunList(-1,null,null,null,null);
         String hydrologicIndicator;
         Message.printStatus(2,routine,"Have " + modelRunList.size() + " model runs." );
         for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
@@ -1677,11 +1693,22 @@ private void populateModelRunNameChoices ( ReclamationHDB_DMI rdmi )
     readModelRunListForSelectedModel(rdmi);
     List<String> modelRunNameStrings = new ArrayList<String>();
     modelRunNameStrings.add ( "" );
-    for ( ReclamationHDB_ModelRun modelRun: __modelRunList ) {
-        modelRunNameStrings.add ( modelRun.getModelRunName() );
+    // This is filtered by the model name that was selected
+    int modelID = getSelectedModelID();
+    if ( modelID >= 0 ) {
+        try {
+            List<ReclamationHDB_ModelRun> modelRuns = rdmi.readHdbModelRunList(modelID, null, null, null, null); 
+            for ( ReclamationHDB_ModelRun modelRun: modelRuns ) {
+                modelRunNameStrings.add ( modelRun.getModelRunName() );
+            }
+            Collections.sort(modelRunNameStrings,String.CASE_INSENSITIVE_ORDER);
+            StringUtil.removeDuplicates(modelRunNameStrings, true, true);
+        }
+        catch ( Exception e ) {
+            // Should not happen
+            Message.printWarning(3,"",e);
+        }
     }
-    Collections.sort(modelRunNameStrings,String.CASE_INSENSITIVE_ORDER);
-    StringUtil.removeDuplicates(modelRunNameStrings, true, true);
     __ModelRunName_JComboBox.removeAll ();
     __ModelRunName_JComboBox.setData(modelRunNameStrings);
     // Select first choice (may get reset from existing parameter values).
@@ -1732,7 +1759,9 @@ private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
         // Initialization
         return;
     }
-    List<String> siteCommonNameStrings = new Vector();
+    List<String> siteCommonNameStrings = new ArrayList<String>();
+    // Add a blank since SDI can be specified directly
+    siteCommonNameStrings.add("");
     try {
         readSiteDataTypeList(rdmi);
         for ( ReclamationHDB_SiteDataType siteDataType: __siteDataTypeList ) {
@@ -1905,7 +1934,7 @@ private void readModelList ( ReclamationHDB_DMI rdmi )
 throws Exception
 {
     try {
-        List<ReclamationHDB_Model> modelList = rdmi.readHdbModelList();
+        List<ReclamationHDB_Model> modelList = rdmi.readHdbModelList(null);
         setModelList(modelList);
     }
     catch ( Exception e ) {
@@ -1929,7 +1958,7 @@ private void readModelRunListForSelectedModel ( ReclamationHDB_DMI rdmi )
         Message.printStatus ( 2, routine, "Model ID=" + modelID + " for model name \"" + selectedModelName + "\"" );
         try {
             // There may be no run names for the model id.
-            List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunListForModelID( modelID );
+            List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunList( modelID,null,null,null,null );
             // The following list matches the model_id and can be used for further filtering
             setModelRunList(modelRunList);
         }

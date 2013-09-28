@@ -764,6 +764,21 @@ public ReclamationHDB_DataType lookupDataType ( int dataTypeID )
 }
 
 /**
+Lookup the ReclamationHDB_Model given the data type ID.
+@return the matching data type object, or null if not found
+@param dataTypeID the data type ID to match
+*/
+public ReclamationHDB_Model lookupModel ( int modelID )
+{
+    for ( ReclamationHDB_Model m: __modelList ) {
+        if ( (m != null) && (m.getModelID() == modelID) ) {
+            return m;
+        }
+    }
+    return null;
+}
+
+/**
 Lookup the ReclamationHDB_Site given the site ID.
 @return the matching site object, or null if not found
 @param siteList a list of ReclamationHDB_Siteto search
@@ -890,7 +905,7 @@ public void readGlobalData()
     }
     // Models, used when writing time series
     try {
-        __modelList = readHdbModelList();
+        __modelList = readHdbModelList(null);
     }
     catch ( SQLException e ) {
         Message.printWarning(3,routine,e);
@@ -1125,20 +1140,24 @@ throws SQLException
 
 /**
 Read the database models from the HDB_MODEL table.
+@param modelName model name to match (null or blank to ignore filter)
 @return the list of models
 */
-public List<ReclamationHDB_Model> readHdbModelList ( )
+public List<ReclamationHDB_Model> readHdbModelList ( String modelName )
 throws SQLException
 {   String routine = getClass().getName() + ".readHdbModelList";
-    List<ReclamationHDB_Model> results = new Vector();
-    String sqlCommand = "select HDB_MODEL.MODEL_ID, " +
+    List<ReclamationHDB_Model> results = new ArrayList<ReclamationHDB_Model>();
+    StringBuilder sqlCommand = new StringBuilder("select HDB_MODEL.MODEL_ID, " +
         "HDB_MODEL.MODEL_NAME, HDB_MODEL.COORDINATED, " +
-        "HDB_MODEL.CMMNT from HDB_MODEL";
+        "HDB_MODEL.CMMNT from HDB_MODEL");
+    if ( (modelName != null) && !modelName.equals("") ) {
+        sqlCommand.append ( " WHERE upper(HDB_MODEL.MODEL_NAME) = '" + modelName.toUpperCase() + "'" );
+    }
     ResultSet rs = null;
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
-        rs = stmt.executeQuery(sqlCommand);
+        rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
         rs.setFetchSize(10000);
@@ -1185,20 +1204,70 @@ throws SQLException
 }
 
 /**
-Read the database model runs from the HDB_MODEL_RUN table given the model ID.
-@param modelID the model identifier to match, if >= 0
+Read the database model runs from the HDB_MODEL_RUN table.
+@param modelID the model identifier to match, or -1 to ignore.
+@param modelRunIDList list of model_run_id to filter the query (for example this may be from the time series tables)
+@param modelRunName the model name to match, or null to ignore (blank is treated like null).
+@param hydrologicIndicator the hydrologic indicator to match, or null to ignore (null will be matched).
+@param runDate the run date to match, or null to ignore.
 @return the list of model runs
 */
-public List<ReclamationHDB_ModelRun> readHdbModelRunListForModelID ( int modelID )
+public List<ReclamationHDB_ModelRun> readHdbModelRunList ( int modelID, List<Integer> modelRunIDList,
+    String modelRunName, String hydrologicIndicator, DateTime runDate )
 throws SQLException
 {   String routine = getClass().getName() + ".readHdbModelRunListForModelID";
-    List<ReclamationHDB_ModelRun> results = new Vector();
-    StringBuffer sqlCommand = new StringBuffer (
+    List<ReclamationHDB_ModelRun> results = new ArrayList<ReclamationHDB_ModelRun>();
+    StringBuilder sqlCommand = new StringBuilder (
         "select REF_MODEL_RUN.MODEL_ID, REF_MODEL_RUN.MODEL_RUN_ID, REF_MODEL_RUN.MODEL_RUN_NAME," +
         "REF_MODEL_RUN.HYDROLOGIC_INDICATOR, REF_MODEL_RUN.RUN_DATE from REF_MODEL_RUN" );
+    StringBuilder where = new StringBuilder();
     if ( modelID >= 0 ) {
-        sqlCommand.append ( " WHERE REF_MODEL_RUN.MODEL_ID = " + modelID );
+        where.append ( " WHERE REF_MODEL_RUN.MODEL_ID = " + modelID );
     }
+    if ( (modelRunIDList != null) && (modelRunIDList.size() > 0) ) {
+        if ( where.length() > 0 ) {
+            where.append ( " AND " );
+        }
+        else {
+            where.append ( " WHERE " );
+        }
+        where.append ( " REF_MODEL_RUN.MODEL_RUN_ID IN (" );
+        for ( int i = 0; i < modelRunIDList.size(); i++ ) {
+            if ( i > 0 ) {
+                where.append(",");
+            }
+            where.append("" + modelRunIDList.get(i));
+        }
+        where.append ( ")" );
+    }
+    if ( (modelRunName != null) && !modelRunName.equals("") ) {
+        if ( where.length() > 0 ) {
+            where.append ( " AND " );
+        }
+        else {
+            where.append ( " WHERE " );
+        }
+        where.append ( "upper(REF_MODEL_RUN.MODEL_RUN_NAME) = '" + modelRunName.toUpperCase() + "'" );
+    }
+    if ( hydrologicIndicator != null ) {
+        if ( where.length() > 0 ) {
+            where.append ( " AND " );
+        }
+        else {
+            where.append ( " WHERE " );
+        }
+        if ( hydrologicIndicator.equals("") ) {
+            where.append ( "(REF_MODEL_RUN.HYDROLOGIC_INDICATOR = '' OR REF_MODEL_RUN.HYDROLOGIC_INDICATOR is null)" );
+        }
+        else {
+            where.append ( "upper(REF_MODEL_RUN.HYDROLOGIC_INDICATOR) = '" + hydrologicIndicator.toUpperCase() + "'" );
+        }
+    }
+    String runDateFormatted = null;
+    if ( runDate != null ) {
+        runDateFormatted = runDate.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm);
+    }
+    sqlCommand.append(where.toString());
     ResultSet rs = null;
     Statement stmt = null;
     try {
@@ -1210,6 +1279,7 @@ throws SQLException
         int i;
         String s;
         Date date;
+        DateTime dt;
         int record = 0;
         int col;
         ReclamationHDB_ModelRun data;
@@ -1237,11 +1307,22 @@ throws SQLException
             if ( !rs.wasNull() ) {
                 data.setRunDate(date);
             }
+            // Do the check on the run date here since formatting takes some care
+            if ( runDate != null ) {
+                if ( date == null ) {
+                    continue;
+                }
+                dt = new DateTime(date);
+                if ( !runDateFormatted.equals(dt.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm)) ) {
+                    // Did not match so do not add
+                    continue;
+                }
+            }
             results.add ( data );
         }
     }
     catch (SQLException e) {
-        Message.printWarning(3, routine, "Error getting model run data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, "Error getting model run data from HDB using SQL: " + sqlCommand );
         Message.printWarning(3, routine, e );
     }
     finally {
@@ -1251,6 +1332,45 @@ throws SQLException
         stmt.close();
     }
     
+    return results;
+}
+
+/**
+Read the list of model_run_id from a model data table given a site_datatype_id and data interval.
+*/
+public List<Integer> readHdbModelRunListForModelTable ( int siteDataTypeID, String interval )
+throws SQLException
+{   String routine = "ReclamationHDB_DMI.readHdbModelRunListForModelTable";
+    List<Integer> results = new ArrayList<Integer>();
+    String table = getTimeSeriesTableFromInterval(interval, false);
+    
+    String sqlCommand = "select distinct MODEL_RUN_ID from " + table + " where " + table + ".SITE_DATATYPE_ID = " + siteDataTypeID;
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        while (rs.next()) {
+            i = rs.getInt(1);
+            if ( !rs.wasNull() ) {
+                results.add ( new Integer(i));
+            }
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error distinct model_run_id from HDB " + table + " table (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
     return results;
 }
 
@@ -1963,6 +2083,37 @@ throws SQLException
 }
 
 /**
+Read a list of ReclamationHDB_SiteTimeSeriesMetadata objects given specific input to constrain the query.
+This version uses as input the SDI amd MRI keys that have been previously determined.
+@param siteDataTypeID the SDI for the time series to query
+@param timeStep the timestep that allows the table to be determined ("Hour", "6Hour", "Day", etc.)
+@param modelRunID the MRI for the model time series to query or -1 if a real time series is being queried
+*/
+private List<ReclamationHDB_SiteTimeSeriesMetadata> readSiteTimeSeriesMetadataList(
+    int siteDataTypeID, String timeStep, int modelRunID )
+throws SQLException
+{   
+    StringBuffer whereString = new StringBuffer();
+    whereString.append( "(HDB_SITE_DATATYPE.SITE_DATATYPE_ID = " + siteDataTypeID + ")" );
+
+    boolean isReal = true;
+    if ( modelRunID >= 0 ) {
+        isReal = false;
+        if ( whereString.length() > 0 ) {
+            whereString.append ( " and " );
+        }
+        whereString.append( "(REF_MODEL_RUN.MODEL_RUN_ID = " + modelRunID + ")" );
+    }
+    if ( whereString.length() > 0 ) {
+        // The keyword was not added above so add here
+        whereString.insert(0, "where ");
+    }
+    List<ReclamationHDB_SiteTimeSeriesMetadata> results = readSiteTimeSeriesMetadataListHelper (
+        timeStep, whereString.toString(), isReal );
+    return results;
+}
+
+/**
 Read a list of ReclamationHDB_SiteTimeSeriesMetadata objects given an input filter to use for the query.
 @param objectTypeDataType a string of the form "ObjectType - DataTypeCommonName" - the object type will
 be stripped off before using the data type.
@@ -2069,7 +2220,7 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> readSiteTimeSeriesMetadataLi
 throws SQLException
 {   String routine = getClass().getName() + ".readSiteTimeSeriesMetadataListHelper";
     String tsTableName = getTimeSeriesTableFromInterval ( timeStep, isReal );
-    List<ReclamationHDB_SiteTimeSeriesMetadata> results = new Vector();
+    List<ReclamationHDB_SiteTimeSeriesMetadata> results = new ArrayList<ReclamationHDB_SiteTimeSeriesMetadata>();
     String tsType = "Real";
     if ( !isReal ) {
         tsType = "Model";
@@ -2178,11 +2329,87 @@ throws SQLException
 }
 
 /**
-Read a time series from the ReclamationHDB database.
+Read a time series using the SDI and MRI keys that match time series metadata.
+@param siteDataType SDI (must be >= 0)
+@param modelRunID MRI, which can be for single model time series or an ensemble trace
+(-1 to not use, in which case a real time series will be read)
+@param readingEnsemble if true, then the read is for ensemble traces and the generated TSID will have sequence ID
+@param interval interval for time series, required to know what data table to read from and the time series interval
+(for example to specify NHour interval)
+@param readStart the starting date/time to read, or null to read all available
+@param readEnd the ending date/time to read, or null to read all available
+@param readData if true, read the data; if false, only read the time series metadata
+@return the time series
+*/
+public TS readTimeSeries ( int siteDataTypeID, int modelRunID, boolean readingEnsemble, TimeInterval interval,
+    DateTime readStart, DateTime readEnd, boolean readData )
+throws Exception
+{
+    // Call the helper method that is shared between read methods
+
+    boolean isReal = true;
+    String tsType = "Real";
+    String seqID = "";
+    if ( modelRunID >= 0 ) {
+        // Model data since specifying the modelRunID
+        isReal = false;
+        tsType = "Model";
+        if ( readingEnsemble ) {
+            // Read the trace information for the MRI in order to get the trace identifier
+            List<ReclamationHDB_EnsembleTrace> traceList = readRefEnsembleTraceList(-1, -1, modelRunID);
+            if ( traceList.size() == 1 ) {
+                
+            }
+        }
+    }
+    int intervalBase = interval.getBase();
+    int intervalMult = interval.getMultiplier();
+    List<ReclamationHDB_SiteTimeSeriesMetadata> tsMetadataList = readSiteTimeSeriesMetadataList(
+        siteDataTypeID, interval.toString(), modelRunID );
+    if ( tsMetadataList.size() != 1 ) {
+        throw new InvalidParameterException ( "Time series SDI " + siteDataTypeID +
+            " and MRI " + modelRunID + " matches " + tsMetadataList.size() + " time series - should match exactly one." );
+    }
+    ReclamationHDB_SiteTimeSeriesMetadata tsMetadata = (ReclamationHDB_SiteTimeSeriesMetadata)tsMetadataList.get(0);
+    // Because a TSID string is not used as input for the read, need to construct to use for identification.
+    // TODO SAM 2013-09-25 Need to figure out how the unique values for the TSID can be guaranteed
+    // The user can always assign an alias to the time series using ${ts:MODEL_RUN_ID}, etc
+    // Replace . with ? in strings, but this does not seem to be a problem with the common names
+    StringBuilder tsidentString = new StringBuilder(tsType + TSIdent.LOC_TYPE_SEPARATOR +
+        tsMetadata.getSiteCommonName().replace(".", "?") + TSIdent.SEPARATOR +
+        "HDB" + TSIdent.SEPARATOR +
+        tsMetadata.getDataTypeCommonName().replace(".","?") + TSIdent.SEPARATOR +
+        interval );
+    String modelRunDate = "";
+    Date date = tsMetadata.getModelRunDate();
+    if ( date != null ) {
+        DateTime d = new DateTime(date);
+        d.setPrecision(DateTime.PRECISION_MINUTE);
+        modelRunDate = d.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm);
+    }
+    if ( !isReal ) {
+        // Add the model parts of the TSID
+        tsidentString.append ( TSIdent.SEPARATOR +
+            tsMetadata.getModelName() + "-" +
+            tsMetadata.getModelRunName() + "-" +
+            tsMetadata.getHydrologicIndicator() + "-" +
+            modelRunDate );
+        if ( seqID.length() > 0 ) {
+            tsidentString.append ( TSIdent.SEQUENCE_NUMBER_LEFT + seqID + TSIdent.SEQUENCE_NUMBER_RIGHT );
+        }
+    }
+    TSIdent tsident = TSIdent.parseIdentifier(tsidentString.toString());
+    return readTimeSeriesHelper ( tsidentString.toString(), tsident, intervalBase, intervalMult,
+        siteDataTypeID, modelRunID, tsMetadata, isReal, tsType, readStart, readEnd, readData );
+}
+
+/**
+Read a time series from the ReclamationHDB database using the string time series identifier.
 @param tsidentString time series identifier string.
 @param readStart the starting date/time to read.
 @param readEnd the ending date/time to read
-@param readData if true, read the data; if false, only read the time series metadata.
+@param readData if true, read the data; if false, only read the time series metadata
+@return the time series
 */
 public TS readTimeSeries ( String tsidentString, DateTime readStart, DateTime readEnd, boolean readData )
 throws Exception
@@ -2192,13 +2419,8 @@ throws Exception
     if ( (tsident.getIntervalBase() != TimeInterval.HOUR) && (tsident.getIntervalBase() != TimeInterval.IRREGULAR) &&
          (tsident.getIntervalMult() != 1) ) {
         // Not able to handle multiples for non-hourly
-        throw new IllegalArgumentException(
-            "Data interval must be 1 for intervals other than hour." );
+        throw new IllegalArgumentException("Data interval must be 1 for intervals other than hour." );
     }
-    // Create the time series...
-    
-    TS ts = TSUtil.newTimeSeries(tsidentString, true);
-    ts.setIdentifier(tsident);
     
     // Read the time series metadata...
     
@@ -2265,6 +2487,26 @@ throws Exception
     int siteDataTypeID = tsMetadata.getSiteDataTypeID();
     int refModelRunID = tsMetadata.getModelRunID();
     
+    // Call the helper method that is shared between read methods
+
+    return readTimeSeriesHelper ( tsidentString, tsident, intervalBase, intervalMult,
+        siteDataTypeID, refModelRunID, tsMetadata, isReal, tsType, readStart, readEnd, readData );
+}
+
+/**
+Helper method to create and read the time series, once the HDB metadata has been determined.
+@return the time series that was read
+*/
+private TS readTimeSeriesHelper ( String tsidentString, TSIdent tsident, int intervalBase, int intervalMult,
+    int siteDataTypeID, int modelRunID, ReclamationHDB_SiteTimeSeriesMetadata tsMetadata,
+    boolean isReal, String tsType, DateTime readStart, DateTime readEnd, boolean readData )
+throws Exception
+{   String routine = "ReclamationHDB_DMI.readTimeSeriesHelper";
+
+    // Create the time series...
+    TS ts = TSUtil.newTimeSeries(tsidentString, true);
+    ts.setIdentifier(tsident);   
+
     // Set the time series metadata in core TSTool data as well as general property list...
     
     String timeZone = getDatabaseTimeZone();
@@ -2336,7 +2578,7 @@ throws Exception
             " where " + tsTableName + ".SITE_DATATYPE_ID = " + siteDataTypeID );
         if ( !isReal ) {
             // Also select on the model run identifier
-            selectSQL.append ( " and " + tsTableName + ".MODEL_RUN_ID = " + refModelRunID );
+            selectSQL.append ( " and " + tsTableName + ".MODEL_RUN_ID = " + modelRunID );
         }
         if ( readStart != null ) {
             selectSQL.append ( " and " + tsTableName + ".START_DATE_TIME >= to_date('" + hdbReqStartDateMin +

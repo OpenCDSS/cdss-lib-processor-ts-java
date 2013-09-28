@@ -885,7 +885,8 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     __inner_JTabbedPane.addTab ( "Single model time series", model_JPanel );
     
     JGUIUtil.addComponent(model_JPanel, new JLabel (
-        "Use these parameters to read a single model time series from HDB."), 
+        "Use these parameters to read a single model time series from HDB.  The site_datatype_id and data interval are used " +
+        "to limit selections to available time series."), 
         0, ++yModel, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(model_JPanel, new JLabel ("Model name:"), 
@@ -1610,34 +1611,41 @@ private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
             Integer.parseInt(selectedSiteDataTypeID),selectedInterval);
         Message.printStatus(2, routine, "Have " + modelRunIDs.size() +
              " distinct model run IDs for SDI=" + selectedSiteDataTypeID + " and interval=" + selectedInterval);
-        // This is the full list of model run identifiers.
-        List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunList(-1,modelRunIDs,null,null,null);
-        // Save for use by other parameters
-        setModelRunList(modelRunList);
-        String hydrologicIndicator, modelName;
-        ReclamationHDB_Model model;
-        Message.printStatus(2,routine,"Have " + modelRunList.size() + " model runs." );
-        for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
-            model = rdmi.lookupModel ( modelRun.getModelID() );
-            if ( model == null ) {
-                modelName = "model unknown";
+        if ( modelRunIDs.size() == 0 ) {
+            // No matching SDI for the time series interval data table
+            List<ReclamationHDB_ModelRun> modelRunList = new ArrayList<ReclamationHDB_ModelRun>();
+            setModelRunList(modelRunList);
+        }
+        else {
+            // This is the full list of model run identifiers.
+            List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunList(-1,modelRunIDs,null,null,null);
+            // Save for use by other parameters
+            setModelRunList(modelRunList);
+            String hydrologicIndicator, modelName;
+            ReclamationHDB_Model model;
+            Message.printStatus(2,routine,"Have " + modelRunList.size() + " model runs." );
+            for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
+                model = rdmi.lookupModel ( modelRun.getModelID() );
+                if ( model == null ) {
+                    modelName = "model unknown";
+                }
+                else {
+                    modelName = model.getModelName();
+                }
+                hydrologicIndicator = modelRun.getHydrologicIndicator();
+                if ( hydrologicIndicator.equals("") ) {
+                    hydrologicIndicator = "no hydrologic indicator";
+                }
+                mriString = modelRun.getModelRunID() + " - " + modelName + " - " + modelRun.getModelRunName() + " - " +
+                    hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","");
+                if ( mriString.length() > 120 ) {
+                    mriString = mriString.substring(0,120) + "...";
+                }
+                modelRunIDStrings.add ( "" + mriString );
+                // Only show the date to the minute
+                sortStrings.add ( modelName + " - " + modelRun.getModelRunName() + " - " +
+                    hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","") );
             }
-            else {
-                modelName = model.getModelName();
-            }
-            hydrologicIndicator = modelRun.getHydrologicIndicator();
-            if ( hydrologicIndicator.equals("") ) {
-                hydrologicIndicator = "no hydrologic indicator";
-            }
-            mriString = modelRun.getModelRunID() + " - " + modelName + " - " + modelRun.getModelRunName() + " - " +
-                hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","");
-            if ( mriString.length() > 120 ) {
-                mriString = mriString.substring(0,120) + "...";
-            }
-            modelRunIDStrings.add ( "" + mriString );
-            // Only show the date to the minute
-            sortStrings.add ( modelName + " - " + modelRun.getModelRunName() + " - " +
-                hydrologicIndicator + " - " + modelRun.getRunDate().toString().replace(":00.0","") );
         }
         // Sort the descriptive strings and then resort the main list to be in the same order
         int [] sortOrder = new int[sortStrings.size()];

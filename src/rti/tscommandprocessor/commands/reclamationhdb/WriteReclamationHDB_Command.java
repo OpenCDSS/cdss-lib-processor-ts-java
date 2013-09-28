@@ -56,6 +56,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TSList = parameters.getValue ( "TSList" );
     String DataStore = parameters.getValue ( "DataStore" );
+    String IntervalHint = parameters.getValue ( "IntervalHint" );
     String SiteCommonName = parameters.getValue ( "SiteCommonName" );
     String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
     String SiteDataTypeID = parameters.getValue ( "SiteDataTypeID" );
@@ -124,6 +125,19 @@ throws InvalidCommandParameterException
     
     // Single model time series
     
+    if ( (IntervalHint != null) && !IntervalHint.equals("") ) {
+        try {
+            TimeInterval.parseInterval(IntervalHint);
+        }
+        catch ( Exception e ) {
+            message = "The data interval hint (" + IntervalHint + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid data interval hint." ) );
+        }
+    }
+    
     /* Now optional
     if ( (ModelName == null) || ModelName.equals("") ) {
         message = "The model name must be specified.";
@@ -152,7 +166,6 @@ throws InvalidCommandParameterException
     
     if ( (ModelRunDate != null) && !ModelRunDate.equals("") ) {
         // If the date/time has a trailing .0, remove because the parse code does not handle the hundredths
-        // TODO SAM 2013-04-07 Check the precision after parsing to make sure to minute
         int pos = ModelRunDate.indexOf(".0");
         DateTime dt = null;
         if ( pos > 0 ) {
@@ -175,6 +188,34 @@ throws InvalidCommandParameterException
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the model run date as YYYY-MM-DD hh:mm." ) );
+            }
+        }
+    }
+    
+    if ( (NewModelRunDate != null) && !NewModelRunDate.equals("") ) {
+        // If the date/time has a trailing .0, remove because the parse code does not handle the hundredths
+        int pos = NewModelRunDate.indexOf(".0");
+        DateTime dt = null;
+        if ( pos > 0 ) {
+            NewModelRunDate = NewModelRunDate.substring(0,pos);
+        }
+        try { 
+            dt = DateTime.parse(NewModelRunDate);
+        }
+        catch ( Exception e ) {
+            message = "The new model run date is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the new model run date as YYYY-MM-DD hh:mm." ) );
+        }
+        if ( dt != null ) {
+            if ( dt.getPrecision() != DateTime.PRECISION_MINUTE ) {
+                message = "The new model run date must be specified to minute precision.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the new model run date as YYYY-MM-DD hh:mm." ) );
             }
         }
     }
@@ -350,6 +391,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "SiteCommonName" );
     valid_Vector.add ( "DataTypeCommonName" );
     valid_Vector.add ( "SiteDataTypeID" );
+    valid_Vector.add ( "IntervalHint" );
     valid_Vector.add ( "ModelName" );
     valid_Vector.add ( "ModelRunName" );
     valid_Vector.add ( "HydrologicIndicator" );
@@ -796,6 +838,7 @@ public String toString ( PropList parameters )
     String SiteCommonName = parameters.getValue( "SiteCommonName" );
     String DataTypeCommonName = parameters.getValue( "DataTypeCommonName" );
     String SiteDataTypeID = parameters.getValue( "SiteDataTypeID" );
+    String IntervalHint = parameters.getValue( "IntervalHint" );
     String ModelName = parameters.getValue( "ModelName" );
     String ModelRunName = parameters.getValue( "ModelRunName" );
     String ModelRunDate = parameters.getValue( "ModelRunDate" );
@@ -860,6 +903,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "SiteDataTypeID=" + SiteDataTypeID );
+    }
+    if ( (IntervalHint != null) && (IntervalHint.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IntervalHint=\"" + IntervalHint + "\"" );
     }
     if ( (ModelName != null) && (ModelName.length() > 0) ) {
         if ( b.length() > 0 ) {

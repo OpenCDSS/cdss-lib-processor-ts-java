@@ -48,10 +48,16 @@ throws IOException, Exception
     String systemPassword = IOUtil.expandPropertyForEnvironment("SystemPassword",props.getValue("SystemPassword"));
     String keepAliveSql = props.getValue("KeepAliveSQL");
     String keepAliveFrequency = props.getValue("KeepAliveFrequency");
+    String tsidStyle = props.getValue("TSIDStyle");
+    boolean tsidStyleSDI = true;
+    if ( (tsidStyle != null) && tsidStyle.equalsIgnoreCase("CommonName") ) {
+        tsidStyleSDI = false;
+    }
     
     // Get the properties and create an instance
     ReclamationHDB_DMI dmi = new ReclamationHDB_DMI ( databaseEngine, databaseServer, databaseName, -1, systemLogin, systemPassword );
     dmi.setKeepAlive ( keepAliveSql, keepAliveFrequency ); // Needed for remote access to keep connection open
+    dmi.setTSIDStyleSDI ( tsidStyleSDI );
     dmi.open();
     ReclamationHDBDataStore ds = new ReclamationHDBDataStore( name, description, dmi );
     return ds;

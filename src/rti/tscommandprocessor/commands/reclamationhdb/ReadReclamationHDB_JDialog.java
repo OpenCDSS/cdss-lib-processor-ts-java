@@ -75,12 +75,12 @@ private JLabel __selectedModelRunID_JLabel = null;
 private SimpleJComboBox __ModelRunID_JComboBox = null;
 private SimpleJComboBox __EnsembleName_JComboBox = null;
 //private TSFormatSpecifiersJPanel __EnsembleTraceID_JTextField = null;
-private SimpleJComboBox __EnsembleModelName_JComboBox = null;
-private SimpleJComboBox __EnsembleModelRunDate_JComboBox = null;
-private JLabel __selectedEnsembleID_JLabel = null;
-private JLabel __selectedEnsembleModelID_JLabel = null;
-private JLabel __selectedEnsembleModelRunID_JLabel = null;
-private SimpleJComboBox __EnsembleModelRunID_JComboBox = null;
+//private SimpleJComboBox __EnsembleModelName_JComboBox = null;
+//private SimpleJComboBox __EnsembleModelRunDate_JComboBox = null;
+//private JLabel __selectedEnsembleID_JLabel = null;
+//private JLabel __selectedEnsembleModelID_JLabel = null;
+//private JLabel __selectedEnsembleModelRunID_JLabel = null;
+//private SimpleJComboBox __EnsembleModelRunID_JComboBox = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
@@ -153,9 +153,9 @@ private void actionPerformedDataStoreSelected ( )
     populateModelNameChoices ( __dmi );
     // Ensemble model run time series can be determined once the interval and site_datatype_id are selected
     // Once the ensemble MRI list is determined, the ensemble model names start the cascade
-    populateEnsembleModelRunIDChoices ( __dmi );
+    //populateEnsembleModelRunIDChoices ( __dmi );
     populateEnsembleNameChoices ( __dmi );
-    populateEnsembleModelNameChoices ( __dmi );
+    //populateEnsembleModelNameChoices ( __dmi );
 }
 
 /**
@@ -186,12 +186,13 @@ private void actionPerformedEnsembleNameSelected ( )
     updateEnsembleIDTextFields ();
     // Now populate the model run choices corresponding to the ensemble name, which will cascade to
     // populating the other choices
-    populateEnsembleModelNameChoices ( __dmi );
+    //populateEnsembleModelNameChoices ( __dmi );
 }
 
 /**
 Refresh the query choices for the currently selected ReclamationHDB model name.
 */
+/*
 private void actionPerformedEnsembleModelNameSelected ( )
 {
     if ( __EnsembleModelName_JComboBox.getSelected() == null ) {
@@ -206,6 +207,7 @@ private void actionPerformedEnsembleModelNameSelected ( )
     // This is not a selectable item with ensembles - just key off of model run name
     //populateModelRunNameChoices ( __dmi );
 }
+*/
 
 /**
 Refresh the query choices for the currently selected ReclamationHDB hydrologic indicator name.
@@ -424,6 +426,7 @@ private void checkInput ()
     //if ( EnsembleTraceID.length() > 0 ) {
     //    props.set ( "EnsembleTraceID", EnsembleTraceID );
     //}
+    /*
     String EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     if ( (EnsembleModelName != null) && (EnsembleModelName.length() > 0) ) {
         props.set ( "EnsembleModelName", EnsembleModelName );
@@ -436,6 +439,7 @@ private void checkInput ()
     if ( (EnsembleModelRunID != null) && (EnsembleModelRunID.length() > 0) ) {
         props.set ( "EnsembleModelRunID", EnsembleModelRunID );
     }
+    */
 	String InputStart = __InputStart_JTextField.getText().trim();
 	if ( InputStart.length() > 0 ) {
 		props.set ( "InputStart", InputStart );
@@ -498,12 +502,14 @@ private void commitEdits ()
     __command.setCommandParameter ( "EnsembleName", EnsembleName );
     //String EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
     //__command.setCommandParameter ( "EnsembleTraceID", EnsembleTraceID );
+    /*
     String EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     __command.setCommandParameter ( "EnsembleModelName", EnsembleModelName );
     String EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
     __command.setCommandParameter ( "EnsembleModelRunDate", EnsembleModelRunDate );
     String EnsembleModelRunID = getSelectedEnsembleModelRunID();
     __command.setCommandParameter ( "EnsembleModelRunID", EnsembleModelRunID );
+    */
 	String InputStart = __InputStart_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputStart", InputStart );
 	String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -560,6 +566,7 @@ private ReclamationHDBDataStore getSelectedDataStore ()
 Return the selected ensemble model ID corresponding to the selected ensemble model name by querying the database.
 @return the selected model ID or -1 if the model ID cannot be determined.
 */
+/*
 private int getSelectedEnsembleModelID()
 {   String modelName = __EnsembleModelName_JComboBox.getSelected();
     ReclamationHDB_DMI rdmi = getReclamationHDB_DMI();
@@ -579,12 +586,14 @@ private int getSelectedEnsembleModelID()
     }
     return -1;
 }
+*/
 
 /**
 Return the selected ensemble model run ID, used to provide intelligent parameter choices.
 The displayed format is:  "MRI - Other information"
 @return the selected MRI, or "" if nothing selected
 */
+/*
 private String getSelectedEnsembleModelRunID()
 {   String mri = __EnsembleModelRunID_JComboBox.getSelected();
     if ( mri == null ) {
@@ -597,6 +606,7 @@ private String getSelectedEnsembleModelRunID()
         return mri.trim();
     }
 }
+*/
 
 /**
 Return the selected model ID corresponding to the selected model name by querying the database.
@@ -982,6 +992,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
         "Required - used to determine the ensemble model_run_id."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    /*
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble_id:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __selectedEnsembleID_JLabel = new JLabel ( "");
@@ -990,6 +1001,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
         "Information - useful when comparing to database contents."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        */
     /*
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel("Ensemble trace number:"),
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -1004,7 +1016,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
         "Optional - use %z for sequence (trace) ID or ${TS:property} (default=sequence ID)."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         */
-    
+    /*
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble model name:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __EnsembleModelName_JComboBox = new SimpleJComboBox (false);
@@ -1056,6 +1068,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
         "Optional - alternative to selecting above choices."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        */
 
     // General parameters...
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
@@ -1183,10 +1196,12 @@ public void itemStateChanged ( ItemEvent e )
         // User has selected an ensemble name.
         actionPerformedEnsembleNameSelected ();
     }
+    /*
     else if ( (source == __EnsembleModelName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
         // User has selected an ensemble model name.
         actionPerformedEnsembleModelNameSelected ();
     }
+    */
  
     refresh();
 }
@@ -1293,6 +1308,7 @@ private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
 Populate the ensemble model name list based on the selected datastore.
 The model names are the same as the non-ensemble list so reuse what was read from HDB.
 */
+/*
 private void populateEnsembleModelNameChoices ( ReclamationHDB_DMI rdmi )
 {   if ( (rdmi == null) || (__EnsembleModelName_JComboBox == null) ) {
         // Initialization
@@ -1313,10 +1329,12 @@ private void populateEnsembleModelNameChoices ( ReclamationHDB_DMI rdmi )
         __EnsembleModelName_JComboBox.select ( 0 );
     }
 }
+*/
 
 /**
 Populate the model run ID list based on the selected datastore.
 */
+/* TODO SAM 2013-09-28 Evaluate whether to enable for reading single traces in ensemble
 private void populateEnsembleModelRunIDChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateEnsembleModelRunIDhoices";
     if ( (rdmi == null) || (__EnsembleModelRunID_JComboBox == null) ) {
@@ -1365,6 +1383,7 @@ private void populateEnsembleModelRunIDChoices ( ReclamationHDB_DMI rdmi )
         __EnsembleModelRunID_JComboBox.select ( 0 );
     }
 }
+*/
 
 /**
 Populate the model name list based on the selected datastore.
@@ -1759,11 +1778,12 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
     sortStrings.add("");
     ReclamationHDB_DataType dt;
     ReclamationHDB_Site site;
-    String dtString, siteCommonName, siteName, sdiString;
+    String dtString, objectTypeName, siteCommonName, siteName, sdiString;
     try {
         // The following are not currently cached in the DMI so read here
         List<ReclamationHDB_SiteDataType> siteDataTypeList = rdmi.readHdbSiteDataTypeList();
         List<ReclamationHDB_Site> siteList = rdmi.readHdbSiteList();
+        ReclamationHDB_ObjectType objectType;
         for ( ReclamationHDB_SiteDataType siteDataType: siteDataTypeList ) {
             // Since user is selecting SDI directly, provide site name and datatype name as FYI
             dt = rdmi.lookupDataType(siteDataType.getDataTypeID());
@@ -1775,20 +1795,23 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
             }
             site = rdmi.lookupSite(siteList, siteDataType.getSiteID());
             if ( site == null ) {
+                objectTypeName = "object type unknown";
                 siteName = "site name unknown";
                 siteCommonName = "site common name unknown";
             }
             else {
+                objectTypeName = site.getObjectTypeName();
                 siteName = site.getSiteName().trim();
                 siteCommonName = site.getSiteCommonName().trim();
             }
-            sdiString = "" + siteDataType.getSiteDataTypeID() + " - " + siteCommonName + " - " + siteName + " - " + dtString;
+            sdiString = "" + siteDataType.getSiteDataTypeID() + " - " + objectTypeName + " - " + siteCommonName +
+                " - " + siteName + " - " + dtString;
             // Truncate what is shown to the user if too long (length determined from UI inspection)
             if ( sdiString.length() > 120 ) {
                 sdiString = sdiString.substring(0,120) + "...";
             }
             siteDataTypeIDStrings.add ( sdiString );
-            sortStrings.add ( siteCommonName + " - " + siteName + " - " + dtString );
+            sortStrings.add ( objectTypeName + " - " + siteCommonName + " - " + siteName + " - " + dtString );
         }
         // Sort the descriptive strings and then resort the main list to be in the same order
         int [] sortOrder = new int[sortStrings.size()];
@@ -2259,6 +2282,7 @@ private void refresh ()
                   "EnsembleName parameter \"" + EnsembleName + "\".  Select a different value or Cancel." );
             }
         }
+        /*
         // First populate the choices...
         populateEnsembleModelRunIDChoices(getReclamationHDB_DMI() );
         // Select based on the first token
@@ -2279,6 +2303,7 @@ private void refresh ()
                   "EnsembleModelRunID parameter \"" + EnsembleModelRunID + "\".  Select a different value or Cancel." );
             }
         }
+        */
 		if ( InputStart != null ) {
 			__InputStart_JTextField.setText ( InputStart );
 		}
@@ -2358,6 +2383,7 @@ private void refresh ()
         EnsembleName = "";
     }
     //EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
+    /*
     EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     if ( EnsembleModelName == null ) {
         EnsembleModelName = "";
@@ -2367,6 +2393,7 @@ private void refresh ()
         EnsembleModelRunDate = "";
     }
     EnsembleModelRunID = getSelectedEnsembleModelRunID();
+    */
     props.add ( "SiteCommonName=" + SiteCommonName );
     props.add ( "DataTypeCommonName=" + DataTypeCommonName );
     props.add ( "SiteDataTypeID=" + SiteDataTypeID );
@@ -2458,6 +2485,7 @@ Update the ensemble information text fields.
 private void updateEnsembleIDTextFields ()
 {   // Ensemble information...
     List<ReclamationHDB_Ensemble> ensembleList = null;
+    /*
     try {
         ensembleList = __dmi.findEnsemble(__ensembleList, __EnsembleName_JComboBox.getSelected() );
     }
@@ -2492,6 +2520,7 @@ private void updateEnsembleIDTextFields ()
     else {
         __selectedEnsembleModelID_JLabel.setText ( "" + modelList.size() + " matches" );
     }
+    */
 }
 
 /**

@@ -13,6 +13,7 @@ public class ReclamationHDB_Site extends DMIDataObject
 private int __siteID = DMIUtil.MISSING_INT;
 private String __siteName = "";
 private String __siteCommonName = "";
+private String __objectTypeName = "";
 private String __stateCode = "";
 private int __basinID = DMIUtil.MISSING_INT;
 private double __latitude = DMIUtil.MISSING_DOUBLE;
@@ -73,6 +74,11 @@ public double getLongitude ()
 public String getNwsCode ()
 {
     return __nwsCode;
+}
+
+public String getObjectTypeName ()
+{
+    return __objectTypeName;
 }
 
 public float getRiverMile ()
@@ -158,6 +164,11 @@ public void setLongitude ( double longitude )
 public void setNwsCode ( String nwsCode )
 {
     __nwsCode = nwsCode;
+}
+
+public void setObjectTypeName ( String objectTypeName )
+{
+    __objectTypeName = objectTypeName;
 }
 
 public void setRiverMile ( float riverMile )

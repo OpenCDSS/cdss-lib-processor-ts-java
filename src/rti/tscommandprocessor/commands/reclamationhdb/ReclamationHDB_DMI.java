@@ -77,6 +77,11 @@ private String __keepAliveSql = null;
 private String __keepAliveFrequency = null;
 
 /**
+Indicate whether newly created TSIDs (e.g., in the TSTool main GUI) should use common names or SDI and MDI.
+*/
+private boolean __tsidStyleSDI = true; // Default
+
+/**
 Loading applications from HDB_LOADING_APPLICATION.
 */
 private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new Vector<ReclamationHDB_LoadingApplication>();
@@ -85,6 +90,11 @@ private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new V
 Models from HDB_MODEL.
 */
 private List<ReclamationHDB_Model> __modelList = new Vector<ReclamationHDB_Model>();
+
+/**
+Object types from HDB_OBJECTTYPE.
+*/
+private List<ReclamationHDB_ObjectType> __objectTypeList = new ArrayList<ReclamationHDB_ObjectType>();
 
 /**
 Overwrite flags from HDB_OVERWRITE_FLAG.
@@ -676,6 +686,14 @@ public List<String> getTimeZoneList()
 }
 
 /**
+Return whether the TSID format should match SDI syntax or old common name syntax.
+*/
+public boolean getTSIDStyleSDI ( )
+{
+    return __tsidStyleSDI;
+}
+
+/**
 Get the write statement for writing time series.  A stored procedure statement is re-used.
 */
 private DMIWriteStatement getWriteTimeSeriesStatement ( DMIWriteStatement writeStatement )
@@ -773,6 +791,21 @@ public ReclamationHDB_Model lookupModel ( int modelID )
     for ( ReclamationHDB_Model m: __modelList ) {
         if ( (m != null) && (m.getModelID() == modelID) ) {
             return m;
+        }
+    }
+    return null;
+}
+
+/**
+Lookup the ReclamationHDB_ObjectType given the object type ID.
+@return the matching object type object, or null if not found
+@param dataTypeID the data type ID to match
+*/
+public ReclamationHDB_ObjectType lookupObjectType ( int objectTypeID )
+{
+    for ( ReclamationHDB_ObjectType o: __objectTypeList ) {
+        if ( (o != null) && (o.getObjectTypeID() == objectTypeID) ) {
+            return o;
         }
     }
     return null;
@@ -910,6 +943,14 @@ public void readGlobalData()
     catch ( SQLException e ) {
         Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading models (" + e + ").");
+    }
+    // Object types, used for location type in time series
+    try {
+        __objectTypeList = readHdbObjectTypeList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
+        Message.printWarning(3,routine,"Error reading object types (" + e + ").");
     }
     // Time zones...
     // As per email from Mark Bogner (2013-03-13):
@@ -1375,6 +1416,68 @@ throws SQLException
 }
 
 /**
+Read the database parameters from the HDB_OBJECTTYPE table.
+@return the list of object type data
+*/
+private List<ReclamationHDB_ObjectType> readHdbObjectTypeList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbObjectType";
+    List<ReclamationHDB_ObjectType> results = new ArrayList<ReclamationHDB_ObjectType>();
+    String sqlCommand = "select HDB_OBJECTTYPE.OBJECTTYPE_ID, " +
+        "HDB_OBJECTTYPE.OBJECTTYPE_NAME, HDB_OBJECTTYPE.OBJECTTYPE_TAG, " +
+        "HDB_OBJECTTYPE.OBJECTTYPE_PARENT_ORDER from HDB_OBJECTTYPE";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_ObjectType data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_ObjectType();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setObjectTypeID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setObjectTypeName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setObjectTypeTag(s);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setObjectTypeParentOrder(i);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting object type data from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
 Read the data from the HDB_OVERWRITE_FLAG table.
 @return the list of validation data
 */
@@ -1511,6 +1614,7 @@ throws SQLException
     String sqlCommand = "select HDB_SITE.SITE_ID," +
     " HDB_SITE.SITE_NAME," +
     " HDB_SITE.SITE_COMMON_NAME,\n" +
+    " HDB_SITE.OBJECTTYPE_ID,\n" +
     //" HDB_SITE.STATE_ID," + // Use the reference table string instead of numeric key
     //" HDB_STATE.STATE_CODE,\n" +
     //" HDB_SITE.BASIN_ID," + // Use the reference table string instead of numeric key
@@ -1530,6 +1634,7 @@ throws SQLException
     " HDB_SITE.DB_SITE_CODE from HDB_SITE";
     ResultSet rs = null;
     Statement stmt = null;
+    ReclamationHDB_ObjectType objectType;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
         rs = stmt.executeQuery(sqlCommand);
@@ -1557,6 +1662,13 @@ throws SQLException
             s = rs.getString(col++);
             if ( !rs.wasNull() ) {
                 data.setSiteCommonName(s);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                objectType = lookupObjectType(i);
+                if ( objectType != null ) {
+                    data.setObjectTypeName(objectType.getObjectTypeName());
+                }
             }
             // Latitude and longitude are varchars in the DB - convert to numbers if able
             s = rs.getString(col++);
@@ -2027,16 +2139,26 @@ throws SQLException
 
 /**
 Read a list of ReclamationHDB_SiteTimeSeriesMetadata objects given specific input to constrain the query.
+@param isReal if true then a real time series is being read; if false a model time series is being read
+@param siteCommonName if specified, use to determine the site_datatype_id (SDI)
+@param dataTypeCommonName if specified, use to determine the site_datatype_id (SDI)
+@param timeStep the interval being read, which indicates which data table to check for matches
+@param modelName if specified, use to determine model_run_id (MRI)
+@param modelRunName if specified, use to determine model_run_id (MRI)
+@param hydrologicIndicator if specified, use to determine model_run_id (MRI)
+@param modelRunDate if specified, use to determine model_run_id (MRI)
+@param sdi if specified, use this SDI directly
+@param mri if specified, use this MRI directly
 */
 public List<ReclamationHDB_SiteTimeSeriesMetadata> readSiteTimeSeriesMetadataList( boolean isReal,
     String siteCommonName, String dataTypeCommonName, String timeStep, String modelName, String modelRunName,
-    String hydrologicIndicator, String modelRunDate )
+    String hydrologicIndicator, String modelRunDate, int sdi, int mri )
 throws SQLException
 {   
     StringBuffer whereString = new StringBuffer();
     // Replace ? with . in names - ? is a place-holder because . interferes with TSID specification
-    siteCommonName = siteCommonName.replace('?', '.');
     if ( (siteCommonName != null) && !siteCommonName.equals("") ) {
+        siteCommonName = siteCommonName.replace('?', '.');
         whereString.append( "(upper(HDB_SITE.SITE_COMMON_NAME) = '" + siteCommonName.toUpperCase() + "')" );
     }
     if ( (dataTypeCommonName != null) && !dataTypeCommonName.equals("") ) {
@@ -2072,6 +2194,18 @@ throws SQLException
         }
         whereString.append( "(REF_MODEL_RUN.RUN_DATE = to_date('" + modelRunDate +
             "','YYYY-MM-DD HH24:MI:SS'))" );
+    }
+    if ( sdi >= 0 ) {
+        if ( whereString.length() > 0 ) {
+            whereString.append ( " and " );
+        }
+        whereString.append( "(HDB_SITE_DATATYPE.SITE_DATATYPE_ID = " + sdi + ")" );
+    }
+    if ( mri >= 0 ) {
+        if ( whereString.length() > 0 ) {
+            whereString.append ( " and " );
+        }
+        whereString.append( "(REF_MODEL_RUN.MODEL_RUN_ID = " + mri + ")" );
     }
     if ( whereString.length() > 0 ) {
         // The keyword was not added above so add here
@@ -2375,20 +2509,34 @@ throws Exception
     // TODO SAM 2013-09-25 Need to figure out how the unique values for the TSID can be guaranteed
     // The user can always assign an alias to the time series using ${ts:MODEL_RUN_ID}, etc
     // Replace . with ? in strings, but this does not seem to be a problem with the common names
-    StringBuilder tsidentString = new StringBuilder(tsType + TSIdent.LOC_TYPE_SEPARATOR +
-        tsMetadata.getSiteCommonName().replace(".", "?") + TSIdent.SEPARATOR +
-        "HDB" + TSIdent.SEPARATOR +
-        tsMetadata.getDataTypeCommonName().replace(".","?") + TSIdent.SEPARATOR +
-        interval );
-    String modelRunDate = "";
-    Date date = tsMetadata.getModelRunDate();
-    if ( date != null ) {
-        DateTime d = new DateTime(date);
-        d.setPrecision(DateTime.PRECISION_MINUTE);
-        modelRunDate = d.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm);
+    boolean tsidStyleSDI = getTSIDStyleSDI();
+    StringBuilder tsidentString;
+    if ( tsidStyleSDI ) {
+        // Newer style for TSID
+        tsidentString = new StringBuilder( tsMetadata.getObjectTypeName() + TSIdent.LOC_TYPE_SEPARATOR + siteDataTypeID );
+        if ( isReal ) {
+            tsidentString.append ( "-" + modelRunID );
+        }
+        tsidentString.append ( TSIdent.SEPARATOR + "HDB" + TSIdent.SEPARATOR +
+            tsMetadata.getDataTypeCommonName().replace("."," ").replace("-"," ") + TSIdent.SEPARATOR +
+            interval );
+    }
+    else {
+        tsidentString = new StringBuilder(tsType + TSIdent.LOC_TYPE_SEPARATOR +
+            tsMetadata.getSiteCommonName().replace(".", "?") + TSIdent.SEPARATOR +
+            "HDB" + TSIdent.SEPARATOR +
+            tsMetadata.getDataTypeCommonName().replace(".","?") + TSIdent.SEPARATOR +
+            interval );
     }
     if ( !isReal ) {
         // Add the model parts of the TSID
+        String modelRunDate = "";
+        Date date = tsMetadata.getModelRunDate();
+        if ( date != null ) {
+            DateTime d = new DateTime(date);
+            d.setPrecision(DateTime.PRECISION_MINUTE);
+            modelRunDate = d.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm);
+        }
         tsidentString.append ( TSIdent.SEPARATOR +
             tsMetadata.getModelName() + "-" +
             tsMetadata.getModelRunName() + "-" +
@@ -2424,61 +2572,79 @@ throws Exception
     
     // Read the time series metadata...
     
+    boolean isNewStyleTSID = true;
     boolean isReal = true;
     String tsType = "Real";
     if ( tsident.getLocationType().equalsIgnoreCase("Real") ) {
+        isNewStyleTSID = false;
         isReal = true;
         tsType = "Real";
     }
     else if ( tsident.getLocationType().equalsIgnoreCase("Model") ) {
+        isNewStyleTSID = false;
         isReal = false;
         tsType = "Model";
     }
-    else {
-        throw new InvalidParameterException ( "Time series identifier \"" + tsidentString +
-            "\" does not start with Real: or Model: - cannot determine how to read time series." );
-    }
-    String siteCommonName = tsident.getLocation().substring(tsident.getLocation().indexOf(":") + 1);
-    String dataTypeCommonName = tsident.getType();
-    String modelName = null;
-    String modelRunName = null;
-    String modelHydrologicIndicator = null;
-    String modelRunDate = null;
-    if ( !isReal ) {
-        String[] scenarioParts = tsident.getScenario().split("-");
-        if ( scenarioParts.length < 4 ) {
-            throw new InvalidParameterException ( "Time series identifier \"" + tsidentString +
-            "\" is for a model but scenario is not of form " +
-            "ModelName-ModelRunName-HydrologicIndicator-ModelRunDate (only have " +
-            scenarioParts.length + ")." );
-        }
-        // Try to do it anyhow - replace question marks from UI with periods to use internally
-        if ( scenarioParts.length >= 1 ) {
-            modelName = scenarioParts[0].replace('?','.'); // Reverse translation from UI 
-        }
-        if ( scenarioParts.length >= 2 ) {
-            modelRunName = scenarioParts[1].replace('?','.'); // Reverse translation from UI;
-        }
-        if ( scenarioParts.length >= 3 ) {
-            modelHydrologicIndicator = scenarioParts[2].replace('?','.'); // Reverse translation from UI;
-        }
-        // Run date is whatever is left and the run date includes dashes so need to take the end of the string
-        try {
-            modelRunDate = tsident.getScenario().substring(modelName.length() + modelRunName.length() +
-                modelHydrologicIndicator.length() + 3); // 3 is for separating periods
-        }
-        catch ( Exception e ) {
-            modelRunDate = null;
-        }
-    }
     String timeStep = tsident.getInterval();
-    // Scenario for models is ModelName-ModelRunName-ModelRunDate, which translate to a unique model run ID
-    List<ReclamationHDB_SiteTimeSeriesMetadata> tsMetadataList = readSiteTimeSeriesMetadataList( isReal,
-        siteCommonName, dataTypeCommonName, timeStep, modelName, modelRunName, modelHydrologicIndicator,
-        modelRunDate );
-    TimeInterval tsInterval = TimeInterval.parseInterval(timeStep);
-    int intervalBase = tsInterval.getBase();
-    int intervalMult = tsInterval.getMultiplier();
+    List<ReclamationHDB_SiteTimeSeriesMetadata> tsMetadataList = null;
+    if ( isNewStyleTSID ) {
+        // Read the metadata using the siteDataTypeID and modelRunID
+        String [] locParts = tsident.getLocation().split("-");
+        int sdi = -1, mri = -1;
+        if ( locParts.length == 1 ) {
+            // Have SDI only
+            isReal = true;
+        }
+        else if ( locParts.length == 2 ) {
+            // Have SDI-MRI
+            isReal = false;
+            mri = Integer.parseInt(locParts[1]);
+        }
+        sdi = Integer.parseInt(locParts[0]);
+        tsMetadataList = readSiteTimeSeriesMetadataList( isReal,
+            null, null, timeStep, null, null, null, null, // None of the common names, etc. used
+            sdi, mri );
+    }
+    else {
+        // Read time series metadata using common names as input - problem is these are not unique in current HDB design
+        String siteCommonName = tsident.getLocation().substring(tsident.getLocation().indexOf(":") + 1);
+        String dataTypeCommonName = tsident.getType();
+        String modelName = null;
+        String modelRunName = null;
+        String modelHydrologicIndicator = null;
+        String modelRunDate = null;
+        if ( !isReal ) {
+            String[] scenarioParts = tsident.getScenario().split("-");
+            if ( scenarioParts.length < 4 ) {
+                throw new InvalidParameterException ( "Time series identifier \"" + tsidentString +
+                "\" is for a model but scenario is not of form " +
+                "ModelName-ModelRunName-HydrologicIndicator-ModelRunDate (only have " +
+                scenarioParts.length + ")." );
+            }
+            // Try to do it anyhow - replace question marks from UI with periods to use internally
+            if ( scenarioParts.length >= 1 ) {
+                modelName = scenarioParts[0].replace('?','.'); // Reverse translation from UI 
+            }
+            if ( scenarioParts.length >= 2 ) {
+                modelRunName = scenarioParts[1].replace('?','.'); // Reverse translation from UI;
+            }
+            if ( scenarioParts.length >= 3 ) {
+                modelHydrologicIndicator = scenarioParts[2].replace('?','.'); // Reverse translation from UI;
+            }
+            // Run date is whatever is left and the run date includes dashes so need to take the end of the string
+            try {
+                modelRunDate = tsident.getScenario().substring(modelName.length() + modelRunName.length() +
+                    modelHydrologicIndicator.length() + 3); // 3 is for separating periods
+            }
+            catch ( Exception e ) {
+                modelRunDate = null;
+            }
+        }
+        // Scenario for models is ModelName-ModelRunName-ModelRunDate, which translate to a unique model run ID
+        tsMetadataList = readSiteTimeSeriesMetadataList( isReal,
+            siteCommonName, dataTypeCommonName, timeStep, modelName, modelRunName, modelHydrologicIndicator, modelRunDate,
+            -1, -1 ); // SDI and MRI are not used
+    }
     if ( tsMetadataList.size() != 1 ) {
         throw new InvalidParameterException ( "Time series identifier \"" + tsidentString +
             "\" matches " + tsMetadataList.size() + " time series - should match exactly one." );
@@ -2489,6 +2655,9 @@ throws Exception
     
     // Call the helper method that is shared between read methods
 
+    TimeInterval tsInterval = TimeInterval.parseInterval(timeStep);
+    int intervalBase = tsInterval.getBase();
+    int intervalMult = tsInterval.getMultiplier();
     return readTimeSeriesHelper ( tsidentString, tsident, intervalBase, intervalMult,
         siteDataTypeID, refModelRunID, tsMetadata, isReal, tsType, readStart, readEnd, readData );
 }
@@ -2795,6 +2964,14 @@ private void setTimeSeriesProperties ( TS ts, ReclamationHDB_SiteTimeSeriesMetad
     ts.setProperty("MODEL_RUN_NAME", tsm.getModelRunName());
     ts.setProperty("HYDROLOGIC_INDICATOR", tsm.getHydrologicIndicator());
     ts.setProperty("MODEL_RUN_DATE", tsm.getModelRunDate());
+}
+
+/**
+Indicate whether the TSID format should match SDI syntax or old common name syntax.
+ */
+public void setTSIDStyleSDI ( boolean tsidStyleSDI )
+{
+    __tsidStyleSDI = tsidStyleSDI;
 }
 
 /**

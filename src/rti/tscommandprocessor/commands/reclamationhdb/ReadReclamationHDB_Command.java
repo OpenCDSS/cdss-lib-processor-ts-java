@@ -11,6 +11,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
+import RTi.TS.TSEnsemble;
 
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
@@ -60,6 +61,11 @@ List of time series read during discovery.  These are TS objects but with mainly
 metadata (TSIdent) filled in.
 */
 private List<TS> __discovery_TS_Vector = null;
+
+/**
+TSEnsemble created in discovery mode (to provide the identifier for other commands).
+*/
+private TSEnsemble __tsensemble = null;
 
 /**
 Constructor.
@@ -205,6 +211,14 @@ throws InvalidCommandParameterException
 }
 
 /**
+Return the ensemble that is read by this class when run in discovery mode.
+*/
+private TSEnsemble getDiscoveryEnsemble()
+{
+    return __tsensemble;
+}
+
+/**
 Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
@@ -225,15 +239,26 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
-    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+	List<TS> discoveryTSList = getDiscoveryTSList ();
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
     // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
-    TS datats = discovery_TS_Vector.get(0);
+    TS datats = discoveryTSList.get(0);
     // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return discoveryTSList;
+    }
+    else if ( c == TSEnsemble.class ) {
+        TSEnsemble ensemble = getDiscoveryEnsemble();
+        if ( ensemble == null ) {
+            return null;
+        }
+        else {
+            List<TSEnsemble> v = new ArrayList<TSEnsemble>();
+            v.add ( ensemble );
+            return v;
+        }
     }
     else {
         return null;
@@ -256,8 +281,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -300,6 +324,7 @@ CommandWarningException, CommandException
     boolean readData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
+        setDiscoveryEnsemble ( null );
         readData = false;
     }
     
@@ -459,6 +484,7 @@ CommandWarningException, CommandException
 	List<TS> tslist = new ArrayList<TS>();	// Time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
+	TSEnsemble ensemble = null;
 	try {
 	    // Find the data store to use...
         DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
@@ -606,7 +632,30 @@ CommandWarningException, CommandException
             }
         }
 	    else if ( (EnsembleName != null) && !EnsembleName.equals("") ) {
-            // Reading an ensemble of model time series 
+            // Reading an ensemble of model time series
+	        ensemble = dmi.readEnsemble ( siteDataTypeID, EnsembleName, interval, InputStart_DateTime, InputEnd_DateTime, readData );
+            if ( ensemble != null ) {
+                tslist = ensemble.getTimeSeriesList (false);
+                int tscount = 0;
+                if ( tslist != null ) {
+                    tscount = tslist.size();
+                    message = "Read \"" + tscount + "\" ensemble time series from Reclamation HDB";
+                    Message.printStatus ( 2, routine, message );
+                }
+                if ( (Alias != null) && (Alias.length() > 0) ) {
+                    for ( int i = 0; i < tscount; i++ ) {
+                        TS ts = tslist.get(i);
+                        if ( ts == null ) {
+                            continue;
+                        }
+                        // Set the alias to the desired string.
+                        ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, Alias, status, commandPhase) );
+                    }
+                }
+            }
+            // Time series are post-processed below, but add ensemble here
+            TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
         }
         else if ( modelRunID >= 0 ) {
             // Reading a single model time series put before reading full ensemble
@@ -699,7 +748,7 @@ CommandWarningException, CommandException
 	            }
 	        }
 	        else {
-	            // Legacy functionality...
+	            // Legacy functionality - unique string values are not guaranteed in the database
     	        if ( (ModelName != null) && !ModelName.equals("") ) {
     	            // Single model time series
     	            tsidentString = "Model:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval + "." +
@@ -765,10 +814,12 @@ CommandWarningException, CommandException
                     throw new CommandException ( message );
                 }
             }
-
         }
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             setDiscoveryTSList ( tslist );
+            // Just want the identifier...
+            ensemble = new TSEnsemble ( EnsembleName, EnsembleName, null );
+            setDiscoveryEnsemble ( ensemble );
         }
         // Warn if nothing was retrieved (can be overridden to ignore).
         if ( (tslist == null) || (nts == 0) ) {
@@ -803,6 +854,14 @@ CommandWarningException, CommandException
 	}
     
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the ensemble that is processed by this class in discovery mode.
+*/
+private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
+{
+    __tsensemble = tsensemble;
 }
 
 /**

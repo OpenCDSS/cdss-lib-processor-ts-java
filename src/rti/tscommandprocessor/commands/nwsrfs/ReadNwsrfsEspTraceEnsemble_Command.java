@@ -369,7 +369,7 @@ throws Throwable
 }
 
 /**
-Return the table that is read by this class when run in discovery mode.
+Return the ensemble that is read by this class when run in discovery mode.
 */
 private TSEnsemble getDiscoveryEnsemble()
 {
@@ -507,17 +507,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number The number of the command being run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
-throws InvalidCommandParameterException,
-       CommandWarningException,
-       CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "ReadNwsrfsEspTraceEnsemble_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -558,7 +553,7 @@ throws InvalidCommandParameterException,
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                         TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( InputFile_full, read_data );
-        tslist = ensemble.getTimeSeriesVector ();
+        tslist = ensemble.getTimeSeriesList ();
 		int tscount = 0;
 		if ( tslist != null ) {
 			tscount = tslist.size();

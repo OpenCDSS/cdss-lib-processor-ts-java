@@ -2092,11 +2092,11 @@ private void readEnsembleList ( ReclamationHDB_DMI rdmi )
 throws Exception
 {
     try {
-        List<ReclamationHDB_Ensemble> modelList = rdmi.readRefEnsembleList();
+        List<ReclamationHDB_Ensemble> modelList = rdmi.readRefEnsembleList(null);
         setEnsembleList(modelList);
     }
     catch ( Exception e ) {
-        setEnsembleList(new Vector<ReclamationHDB_Ensemble>());
+        setEnsembleList(new ArrayList<ReclamationHDB_Ensemble>());
         throw e;
     }
 }

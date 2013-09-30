@@ -826,6 +826,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JGUIUtil.addComponent(sdi_JPanel, new JLabel ("Site data type ID:"), 
         0, ++ysdi, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SiteDataTypeID_JComboBox = new SimpleJComboBox (false);
+    __SiteDataTypeID_JComboBox.setMaximumRowCount(20);
     __SiteDataTypeID_JComboBox.addItemListener (this);
     JGUIUtil.addComponent(sdi_JPanel, __SiteDataTypeID_JComboBox,
         1, ysdi, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -977,8 +978,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
         "Use these parameters to read an ensemble of model time series from HDB.  " +
-        "If the run date is specified, the ensemble time series will be uniquely identified with the " +
-        "run date (to the minute)."), 
+        "The information that is shown indicates data that match the selection."), 
         0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble name:"), 
@@ -1839,11 +1839,11 @@ private void readEnsembleList ( ReclamationHDB_DMI rdmi )
 throws Exception
 {
     try {
-        List<ReclamationHDB_Ensemble> modelList = rdmi.readRefEnsembleList();
+        List<ReclamationHDB_Ensemble> modelList = rdmi.readRefEnsembleList(null);
         setEnsembleList(modelList);
     }
     catch ( Exception e ) {
-        setEnsembleList(new Vector<ReclamationHDB_Ensemble>());
+        setEnsembleList(new ArrayList<ReclamationHDB_Ensemble>());
         throw e;
     }
 }
@@ -2106,7 +2106,7 @@ private void refresh ()
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "SateDataTypeID parameter \"" + SiteDataTypeID + "\".  Select a different value or Cancel." );
+                  "SiteDataTypeID parameter \"" + SiteDataTypeID + "\".  Select a different value or Cancel." );
             }
         }
         // First populate the choices...

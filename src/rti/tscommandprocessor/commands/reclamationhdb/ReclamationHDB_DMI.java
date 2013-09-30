@@ -25,6 +25,7 @@ import RTi.DMI.DMIUtil;
 import RTi.DMI.DMIWriteStatement;
 import RTi.TS.TS;
 import RTi.TS.TSData;
+import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIterator;
 import RTi.TS.TSUtil;
@@ -1987,20 +1988,24 @@ throws SQLException
 
 /**
 Read the ensembles from the REF_ENSEMBLE table.
+@param ensembleName the name for the ensemble
 @return the list of ensembles
 */
-public List<ReclamationHDB_Ensemble> readRefEnsembleList ( )
+public List<ReclamationHDB_Ensemble> readRefEnsembleList ( String ensembleName )
 throws SQLException
 {   String routine = getClass().getName() + ".readRefEnsembleList";
-    List<ReclamationHDB_Ensemble> results = new Vector<ReclamationHDB_Ensemble>();
-    String sqlCommand = "select REF_ENSEMBLE.ENSEMBLE_ID, " +
+    List<ReclamationHDB_Ensemble> results = new ArrayList<ReclamationHDB_Ensemble>();
+    StringBuilder sqlCommand = new StringBuilder("select REF_ENSEMBLE.ENSEMBLE_ID, " +
         "REF_ENSEMBLE.ENSEMBLE_NAME, REF_ENSEMBLE.AGEN_ID, REF_ENSEMBLE.TRACE_DOMAIN, " +
-        "REF_ENSEMBLE.CMMNT from REF_ENSEMBLE";
+        "REF_ENSEMBLE.CMMNT from REF_ENSEMBLE");
+    if ( (ensembleName != null) && !ensembleName.equals("") ) {
+        sqlCommand.append ( " WHERE (UPPER(REF_ENSEMBLE.ENSEMBLE_NAME) = '" + ensembleName.toUpperCase() + "')");
+    }
     ResultSet rs = null;
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
-        rs = stmt.executeQuery(sqlCommand);
+        rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
         rs.setFetchSize(10000);
@@ -2463,6 +2468,67 @@ throws SQLException
 }
 
 /**
+Read an HDB ensemble given the ensemble name.
+@param sdi site data type ID corresponding to the ensemble
+@param ensembleName unique ensemble name
+@param interval time interval for ensemble
+@param readStart starting date/time for read
+@param readEnd ending date/time for read
+@param readData if true read the data; if false only read time series metadata
+*/
+public TSEnsemble readEnsemble ( int sdi, String ensembleName, TimeInterval interval,
+    DateTime readStart, DateTime readEnd, boolean readData )
+throws Exception
+{
+    TSEnsemble ensemble = null;
+    // First read the ensemble object(s) from the HDB database
+    List<ReclamationHDB_Ensemble> ensembleList = readRefEnsembleList(ensembleName);
+    if ( ensembleList.size() != 1 ) {
+        throw new RuntimeException ( "Expecting exactly one ensemble from HDB.  Got " + ensembleList.size() );
+    }
+    ReclamationHDB_Ensemble hensemble = ensembleList.get(0);
+    // Get the list of traces that match the ensemble
+    List<ReclamationHDB_EnsembleTrace> ensembleTraceList = readRefEnsembleTraceList(hensemble.getEnsembleID(),-1,-1);
+    // Loop through the traces and read the model time series
+    List<TS> tslist = new ArrayList<TS>();
+    int itrace = -1;
+    int modelIDSave = -1;
+    Date runDateSave = null;
+    for ( ReclamationHDB_EnsembleTrace trace: ensembleTraceList ) {
+        // Read the model run for the trace and confirm that the model run and run_date are the same for all traces
+        ++itrace;
+        List<Integer> mriList = new ArrayList<Integer>(1);
+        mriList.add ( new Integer(trace.getModelRunID()));
+        List<ReclamationHDB_ModelRun> modelRunList = readHdbModelRunList(-1, mriList, null, null, null);
+        if ( modelRunList.size() != 1 ) {
+            throw new RuntimeException ( "Read " + modelRunList.size() + " model runs for trace[" + itrace +
+                "] and model run ID " + trace.getModelRunID() + ".  Expecting 1." );
+        }
+        if ( itrace == 0 ) {
+            // First trace's model run
+            modelIDSave = modelRunList.get(0).getModelID();
+            runDateSave = modelRunList.get(0).getRunDate();
+        }
+        else {
+            // Subsequent traces model run
+            if ( modelRunList.get(0).getModelID() != modelIDSave ) {
+                throw new RuntimeException ( "Trace [" + itrace + "] MODEL_ID (" + modelRunList.get(0).getModelID() +
+                    ") is different from first trace MODEL_ID (" + modelIDSave + ")." );
+            }
+            if ( !("" + modelRunList.get(0).getRunDate()).equals("" + runDateSave) ) {
+                throw new RuntimeException ( "Trace [" + itrace + "] RUN_DATE (" + modelRunList.get(0).getRunDate() +
+                    ") is different from first trace RUN_DATE (" + runDateSave + ")." );
+            }
+        }
+        // If here, OK to read the trace time series
+        TS ts = readTimeSeries(sdi, mriList.get(0), true, interval, readStart, readEnd, readData);
+        tslist.add(ts);
+    }
+    // Create a new ensemble and return
+    return new TSEnsemble(ensembleName,ensembleName,tslist);
+}
+
+/**
 Read a time series using the SDI and MRI keys that match time series metadata.
 @param siteDataType SDI (must be >= 0)
 @param modelRunID MRI, which can be for single model time series or an ensemble trace
@@ -2491,9 +2557,6 @@ throws Exception
         if ( readingEnsemble ) {
             // Read the trace information for the MRI in order to get the trace identifier
             List<ReclamationHDB_EnsembleTrace> traceList = readRefEnsembleTraceList(-1, -1, modelRunID);
-            if ( traceList.size() == 1 ) {
-                
-            }
         }
     }
     int intervalBase = interval.getBase();
@@ -2514,7 +2577,7 @@ throws Exception
     if ( tsidStyleSDI ) {
         // Newer style for TSID
         tsidentString = new StringBuilder( tsMetadata.getObjectTypeName() + TSIdent.LOC_TYPE_SEPARATOR + siteDataTypeID );
-        if ( isReal ) {
+        if ( !isReal ) {
             tsidentString.append ( "-" + modelRunID );
         }
         tsidentString.append ( TSIdent.SEPARATOR + "HDB" + TSIdent.SEPARATOR +

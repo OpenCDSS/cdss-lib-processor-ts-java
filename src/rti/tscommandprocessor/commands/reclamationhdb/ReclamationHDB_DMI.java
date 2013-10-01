@@ -844,20 +844,6 @@ public void open ()
     String sourceUrl = "jdbc:oracle:thin:@" + databaseServer + ":1521:" + databaseName;
     String sourceUserName = systemLogin;
     String sourcePassword = systemPassword;
-    // Default values from the runlastDEV.pl script from Dave King
-    // FIXME SAM 2010-10-26 Need to figure out roles for deployment to users
-    /*
-    String ar = "app_role";
-    //String ar = "app_user";
-    //String pu = "passwd_user";
-    String pu = systemPassword;
-    String hl = databaseName; // HDB_LOCAL
-    __hdbConnection = new JavaConnections(sourceDBType, sourceUrl, sourceUserName, sourcePassword,
-        ar, pu, hl );
-        // Below is what the original code had...
-        //System.getProperty("ar"), System.getProperty("pu"),
-        //System.getProperty("hl"));
-         */
     __hdbConnection = new JavaConnections(sourceDBType, sourceUrl, sourceUserName, sourcePassword );
     // Set the connection in the base class so it can be used with utility code
     setConnection ( __hdbConnection.ourConn );
@@ -1380,7 +1366,7 @@ throws SQLException
 /**
 Read the list of model_run_id from a model data table given a site_datatype_id and data interval.
 */
-public List<Integer> readHdbModelRunListForModelTable ( int siteDataTypeID, String interval )
+public List<Integer> readHdbModelRunIDListForModelTable ( int siteDataTypeID, String interval )
 throws SQLException
 {   String routine = "ReclamationHDB_DMI.readHdbModelRunListForModelTable";
     List<Integer> results = new ArrayList<Integer>();
@@ -1988,19 +1974,35 @@ throws SQLException
 
 /**
 Read the ensembles from the REF_ENSEMBLE table.
-@param ensembleName the name for the ensemble
+@param ensembleName the name for the ensemble or null to ignore
+@param ensembleIDList list of ensemble identifiers to read, or null to ignore
 @return the list of ensembles
 */
-public List<ReclamationHDB_Ensemble> readRefEnsembleList ( String ensembleName )
+public List<ReclamationHDB_Ensemble> readRefEnsembleList ( String ensembleName, List<Integer> ensembleIDList )
 throws SQLException
 {   String routine = getClass().getName() + ".readRefEnsembleList";
     List<ReclamationHDB_Ensemble> results = new ArrayList<ReclamationHDB_Ensemble>();
     StringBuilder sqlCommand = new StringBuilder("select REF_ENSEMBLE.ENSEMBLE_ID, " +
         "REF_ENSEMBLE.ENSEMBLE_NAME, REF_ENSEMBLE.AGEN_ID, REF_ENSEMBLE.TRACE_DOMAIN, " +
         "REF_ENSEMBLE.CMMNT from REF_ENSEMBLE");
+    StringBuilder where = new StringBuilder();
     if ( (ensembleName != null) && !ensembleName.equals("") ) {
         sqlCommand.append ( " WHERE (UPPER(REF_ENSEMBLE.ENSEMBLE_NAME) = '" + ensembleName.toUpperCase() + "')");
     }
+    if ( (ensembleIDList != null) && (ensembleIDList.size() > 0) ) {
+        if ( where.length() > 0 ) {
+            where.append ( " AND ");
+        }
+        where.append ( " REF_ENSEMBLE.ENSEMBLE_ID IN (" );
+        for ( int i = 0; i < ensembleIDList.size(); i++ ) {
+            if ( i > 0 ) {
+                where.append(",");
+            }
+            where.append("" + ensembleIDList.get(i));
+        }
+        where.append ( ")" );
+    }
+    sqlCommand.append(where);
     ResultSet rs = null;
     Statement stmt = null;
     try {
@@ -2062,32 +2064,43 @@ Read the ensemble traces from the REF_ENSEMBLE_TRACE table.
 @param modelRunID model run ID for which to read data or -1 to read all
 @return the list of ensemble traces
 */
-public List<ReclamationHDB_EnsembleTrace> readRefEnsembleTraceList ( int ensembleID, int traceID, int modelRunID )
+public List<ReclamationHDB_EnsembleTrace> readRefEnsembleTraceList ( int ensembleID, int traceID, int modelRunID, List<Integer> modelRunIDList )
 throws SQLException
 {   String routine = getClass().getName() + ".readRefEnsembleTraceList";
     List<ReclamationHDB_EnsembleTrace> results = new ArrayList<ReclamationHDB_EnsembleTrace>();
     StringBuilder sqlCommand = new StringBuilder("select REF_ENSEMBLE_TRACE.ENSEMBLE_ID, " +
     "REF_ENSEMBLE_TRACE.TRACE_ID, REF_ENSEMBLE_TRACE.TRACE_NUMERIC, REF_ENSEMBLE_TRACE.TRACE_NAME, " +
     "REF_ENSEMBLE_TRACE.MODEL_RUN_ID from REF_ENSEMBLE_TRACE");
-    boolean where = false;
+    StringBuilder where = new StringBuilder();
     if ( ensembleID >= 0 ) {
-        where = true;
-        sqlCommand.append (" WHERE REF_ENSEMBLE_TRACE.ENSEMBLE_ID = " + ensembleID );
+        where.append (" WHERE REF_ENSEMBLE_TRACE.ENSEMBLE_ID = " + ensembleID );
     }
     if ( traceID >= 0 ) {
-        if ( where ) {
-            sqlCommand.append ( " AND ");
+        if ( where.length() > 0 ) {
+            where.append ( " AND ");
         }
-        sqlCommand.append (" WHERE REF_ENSEMBLE_TRACE.TRACE_ID = " + traceID );
-        where = true;
+        where.append (" WHERE REF_ENSEMBLE_TRACE.TRACE_ID = " + traceID );
     }
     if ( modelRunID >= 0 ) {
-        if ( where ) {
-            sqlCommand.append ( " AND ");
+        if ( where.length() > 0 ) {
+            where.append ( " AND ");
         }
-        sqlCommand.append (" WHERE REF_ENSEMBLE_TRACE.MODEL_RUN_ID = " + modelRunID );
-        where = true;
+        where.append (" WHERE REF_ENSEMBLE_TRACE.MODEL_RUN_ID = " + modelRunID );
     }
+    if ( (modelRunIDList != null) && (modelRunIDList.size() > 0) ) {
+        if ( where.length() > 0 ) {
+            where.append ( " AND ");
+        }
+        where.append ( " REF_ENSEMBLE_TRACE.MODEL_RUN_ID IN (" );
+        for ( int i = 0; i < modelRunIDList.size(); i++ ) {
+            if ( i > 0 ) {
+                where.append(",");
+            }
+            where.append("" + modelRunIDList.get(i));
+        }
+        where.append ( ")" );
+    }
+    sqlCommand.append(where);
     ResultSet rs = null;
     Statement stmt = null;
     try {
@@ -2480,15 +2493,14 @@ public TSEnsemble readEnsemble ( int sdi, String ensembleName, TimeInterval inte
     DateTime readStart, DateTime readEnd, boolean readData )
 throws Exception
 {
-    TSEnsemble ensemble = null;
     // First read the ensemble object(s) from the HDB database
-    List<ReclamationHDB_Ensemble> ensembleList = readRefEnsembleList(ensembleName);
+    List<ReclamationHDB_Ensemble> ensembleList = readRefEnsembleList(ensembleName,null);
     if ( ensembleList.size() != 1 ) {
         throw new RuntimeException ( "Expecting exactly one ensemble from HDB.  Got " + ensembleList.size() );
     }
     ReclamationHDB_Ensemble hensemble = ensembleList.get(0);
     // Get the list of traces that match the ensemble
-    List<ReclamationHDB_EnsembleTrace> ensembleTraceList = readRefEnsembleTraceList(hensemble.getEnsembleID(),-1,-1);
+    List<ReclamationHDB_EnsembleTrace> ensembleTraceList = readRefEnsembleTraceList(hensemble.getEnsembleID(),-1,-1,null);
     // Loop through the traces and read the model time series
     List<TS> tslist = new ArrayList<TS>();
     int itrace = -1;
@@ -2556,7 +2568,7 @@ throws Exception
         tsType = "Model";
         if ( readingEnsemble ) {
             // Read the trace information for the MRI in order to get the trace identifier
-            List<ReclamationHDB_EnsembleTrace> traceList = readRefEnsembleTraceList(-1, -1, modelRunID);
+            List<ReclamationHDB_EnsembleTrace> traceList = readRefEnsembleTraceList(-1, -1, modelRunID, null);
         }
     }
     int intervalBase = interval.getBase();
@@ -2582,9 +2594,10 @@ throws Exception
         }
         tsidentString.append ( TSIdent.SEPARATOR + "HDB" + TSIdent.SEPARATOR +
             tsMetadata.getDataTypeCommonName().replace("."," ").replace("-"," ") + TSIdent.SEPARATOR +
-            interval );
+            interval + TSIdent.SEPARATOR + tsMetadata.getSiteCommonName().replace(".",""));
     }
     else {
+        // Put the site common name in the scenario
         tsidentString = new StringBuilder(tsType + TSIdent.LOC_TYPE_SEPARATOR +
             tsMetadata.getSiteCommonName().replace(".", "?") + TSIdent.SEPARATOR +
             "HDB" + TSIdent.SEPARATOR +
@@ -2600,11 +2613,22 @@ throws Exception
             d.setPrecision(DateTime.PRECISION_MINUTE);
             modelRunDate = d.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm);
         }
-        tsidentString.append ( TSIdent.SEPARATOR +
-            tsMetadata.getModelName() + "-" +
-            tsMetadata.getModelRunName() + "-" +
-            tsMetadata.getHydrologicIndicator() + "-" +
-            modelRunDate );
+        if ( tsidStyleSDI ) {
+            // New style already added site common name above and strip out periods
+            tsidentString.append ( TSIdent.SEPARATOR +
+                tsMetadata.getModelName().replace("."," ") + "-" +
+                tsMetadata.getModelRunName().replace("."," ") + "-" +
+                tsMetadata.getHydrologicIndicator().replace("."," ") + "-" +
+                modelRunDate );
+        }
+        else {
+            // Old style
+            tsidentString.append ( TSIdent.SEPARATOR +
+                tsMetadata.getModelName() + "-" +
+                tsMetadata.getModelRunName() + "-" +
+                tsMetadata.getHydrologicIndicator() + "-" +
+                modelRunDate );
+        }
         if ( seqID.length() > 0 ) {
             tsidentString.append ( TSIdent.SEQUENCE_NUMBER_LEFT + seqID + TSIdent.SEQUENCE_NUMBER_RIGHT );
         }

@@ -391,7 +391,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "SiteCommonName" );
     valid_Vector.add ( "DataTypeCommonName" );
     valid_Vector.add ( "SiteDataTypeID" );
-    valid_Vector.add ( "IntervalHint" );
+    //valid_Vector.add ( "IntervalHint" );
     valid_Vector.add ( "ModelName" );
     valid_Vector.add ( "ModelRunName" );
     valid_Vector.add ( "HydrologicIndicator" );
@@ -838,7 +838,7 @@ public String toString ( PropList parameters )
     String SiteCommonName = parameters.getValue( "SiteCommonName" );
     String DataTypeCommonName = parameters.getValue( "DataTypeCommonName" );
     String SiteDataTypeID = parameters.getValue( "SiteDataTypeID" );
-    String IntervalHint = parameters.getValue( "IntervalHint" );
+    //String IntervalHint = parameters.getValue( "IntervalHint" );
     String ModelName = parameters.getValue( "ModelName" );
     String ModelRunName = parameters.getValue( "ModelRunName" );
     String ModelRunDate = parameters.getValue( "ModelRunDate" );
@@ -904,12 +904,14 @@ public String toString ( PropList parameters )
         }
         b.append ( "SiteDataTypeID=" + SiteDataTypeID );
     }
+    /*
     if ( (IntervalHint != null) && (IntervalHint.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "IntervalHint=\"" + IntervalHint + "\"" );
     }
+    */
     if ( (ModelName != null) && (ModelName.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

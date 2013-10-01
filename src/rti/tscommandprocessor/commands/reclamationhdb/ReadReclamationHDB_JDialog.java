@@ -96,7 +96,6 @@ private boolean __ignoreEvents = false; // Used to ignore cascading events when 
 private ReclamationHDBDataStore __dataStore = null; // selected ReclamationHDBDataStore
 private ReclamationHDB_DMI __dmi = null; // ReclamationHDB_DMI to do queries.
 
-private List<ReclamationHDB_Ensemble> __ensembleList = new ArrayList<ReclamationHDB_Ensemble>(); // Corresponds to displayed list (has ensemble_id)
 private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new ArrayList<ReclamationHDB_SiteDataType>(); // Corresponds to displayed list
 private List<ReclamationHDB_Model> __modelList = new ArrayList<ReclamationHDB_Model>(); // Corresponds to displayed list (has model_id)
 private List<ReclamationHDB_ModelRun> __modelRunList = new ArrayList<ReclamationHDB_ModelRun>(); // Corresponds to models matching model_id
@@ -237,6 +236,9 @@ private void actionPerformedIntervalSelected ( )
     // If the site data type is blank the MRI choices will not be filled
     populateModelRunIDChoices ( __dmi );
     populateModelNameChoices ( __dmi );
+    // Also populate ensemble list
+    // TODO SAM 2013-09-30 Evaluate how to avoid double work on query
+    populateEnsembleNameChoices(__dmi);
 }
 
 /**
@@ -315,6 +317,9 @@ private void actionPerformedSiteDataTypeIDSelected ( )
     // Now populate the model run ID choices corresponding to the site data type
     populateModelRunIDChoices ( __dmi );
     populateModelNameChoices ( __dmi );
+    // Also populate ensemble list
+    // TODO SAM 2013-09-30 Evaluate how to avoid double work on query
+    populateEnsembleNameChoices(__dmi);
 }
 
 // Start event handlers for DocumentListener...
@@ -816,7 +821,8 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     __sdi_JTabbedPane.addTab ( "Select site_datatype_id (SDI)", sdi_JPanel );
     
     JGUIUtil.addComponent(sdi_JPanel, new JLabel (
-        "The choices below include: \"site_datatype_id - site common name - site name - datatype name\", sorted by site name."), 
+        "The choices below indicate: \"site_datatype_id - object type name - site common name - site name - datatype name\", " +
+        "sorted by object type name and site common name."), 
         0, ++ysdi, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(sdi_JPanel, new JLabel (
         "The choices currently are not constrained by whether time series for the given interval are available " +
@@ -896,7 +902,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     __inner_JTabbedPane.addTab ( "Single model time series", model_JPanel );
     
     JGUIUtil.addComponent(model_JPanel, new JLabel (
-        "Use these parameters to read a single model time series from HDB.  The site_datatype_id and data interval are used " +
+        "Use these parameters to read a single model time series from HDB.  The site_datatype_id and data interval from above are used " +
         "to limit selections to available time series."), 
         0, ++yModel, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
@@ -958,10 +964,10 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
         "Information - useful when comparing to database contents."),
         3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(model_JPanel, new JLabel ("Model run ID (model_run_id):"), 
+    JGUIUtil.addComponent(model_JPanel, new JLabel ("Model run ID (MRI):"), 
         0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ModelRunID_JComboBox = new SimpleJComboBox (false);
-    __ModelRunID_JComboBox.setToolTipText("Optional - use instead of above:  model_run_id - " +
+    __ModelRunID_JComboBox.setToolTipText("Optional - use instead of above:  MRI - " +
         "model name - model run name - hydrologic indicator - run date");
     __ModelRunID_JComboBox.addItemListener (this);
     JGUIUtil.addComponent(model_JPanel, __ModelRunID_JComboBox,
@@ -977,8 +983,8 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     __inner_JTabbedPane.addTab ( "Ensemble of model time series", ensemble_JPanel );
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Use these parameters to read an ensemble of model time series from HDB.  " +
-        "The information that is shown indicates data that match the selection."), 
+        "Use these parameters to read an ensemble of model time series from HDB.  The site_datatype_id and data interval from above are used " +
+        "to limit selections to available ensembles."), 
         0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble name:"), 
@@ -989,7 +995,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JGUIUtil.addComponent(ensemble_JPanel, __EnsembleName_JComboBox,
         1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Required - used to determine the ensemble model_run_id."),
+        "Required - used to determine the ensemble ID -> ensemble traces -> ensemble model_run_id -> model time series."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     /*
@@ -1394,12 +1400,42 @@ private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
         // Initialization
         return;
     }
-    List<String> ensembleNameStrings = new Vector();
+    String selectedInterval = __Interval_JComboBox.getSelected();
+    if ( selectedInterval == null ) {
+        return;
+    }
+    String selectedSiteDataTypeID = getSelectedSiteDataTypeID();
+    if ( selectedSiteDataTypeID.equals("") ) {
+        return;
+    }
+    List<Integer> ensembleIDList = new ArrayList<Integer>();
+    List<String> ensembleNameStrings = new ArrayList<String>();
     ensembleNameStrings.add ( "" ); // Always add blank because user may not want ensemble time series
-    ensembleNameStrings.add ( "Test" ); // Add so something is in the list, FIXME SAM 2013-03-23 remove when code tested
     try {
-        readEnsembleList(rdmi);
-        for ( ReclamationHDB_Ensemble ensemble: __ensembleList ) {
+        // Get the list of distinct model_run_identifiers from the model table corresponding to the interval
+        List<Integer> modelRunIDs = rdmi.readHdbModelRunIDListForModelTable(
+            Integer.parseInt(selectedSiteDataTypeID),selectedInterval);
+        Message.printStatus(2, routine, "Have " + modelRunIDs.size() +
+             " distinct model run IDs for SDI=" + selectedSiteDataTypeID + " and interval=" + selectedInterval);
+        if ( modelRunIDs.size() > 0 ) {
+            // Read the ensemble traces that match the specified MRIs
+            List<ReclamationHDB_EnsembleTrace> traceList = rdmi.readRefEnsembleTraceList(-1, -1, -1, modelRunIDs );
+            // Get the unique list of ensemble identifiers from the list
+            for ( ReclamationHDB_EnsembleTrace trace: traceList ) {
+                boolean found = false;
+                for ( Integer i: ensembleIDList ) {
+                    if ( trace.getEnsembleID() == i ) {
+                        found = true;
+                        break;
+                    }
+                }
+                if ( !found ) {
+                    ensembleIDList.add(new Integer(trace.getEnsembleID()));
+                }
+            }
+        }
+        List<ReclamationHDB_Ensemble> ensembleList = rdmi.readRefEnsembleList(null,ensembleIDList);
+        for ( ReclamationHDB_Ensemble ensemble: ensembleList ) {
             ensembleNameStrings.add ( ensemble.getEnsembleName() );
         }
         Collections.sort(ensembleNameStrings,String.CASE_INSENSITIVE_ORDER);
@@ -1411,6 +1447,11 @@ private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
     }
     __EnsembleName_JComboBox.removeAll ();
     __EnsembleName_JComboBox.setData(ensembleNameStrings);
+    int max = ensembleNameStrings.size();
+    if ( max > 25 ) {
+        max = 25;
+    }
+    __EnsembleName_JComboBox.setMaximumRowCount(max);
     // Select first choice (may get reset from existing parameter values).
     __EnsembleName_JComboBox.select ( null );
     if ( __EnsembleName_JComboBox.getItemCount() > 0 ) {
@@ -1626,7 +1667,7 @@ private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
     String mriString;
     try {
         // Get the list of distinct model_run_identifiers from the model table corresponding to the interval
-        List<Integer> modelRunIDs = rdmi.readHdbModelRunListForModelTable(
+        List<Integer> modelRunIDs = rdmi.readHdbModelRunIDListForModelTable(
             Integer.parseInt(selectedSiteDataTypeID),selectedInterval);
         Message.printStatus(2, routine, "Have " + modelRunIDs.size() +
              " distinct model run IDs for SDI=" + selectedSiteDataTypeID + " and interval=" + selectedInterval);
@@ -1783,7 +1824,6 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
         // The following are not currently cached in the DMI so read here
         List<ReclamationHDB_SiteDataType> siteDataTypeList = rdmi.readHdbSiteDataTypeList();
         List<ReclamationHDB_Site> siteList = rdmi.readHdbSiteList();
-        ReclamationHDB_ObjectType objectType;
         for ( ReclamationHDB_SiteDataType siteDataType: siteDataTypeList ) {
             // Since user is selecting SDI directly, provide site name and datatype name as FYI
             dt = rdmi.lookupDataType(siteDataType.getDataTypeID());
@@ -1825,26 +1865,15 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
     }
     __SiteDataTypeID_JComboBox.removeAll ();
     __SiteDataTypeID_JComboBox.setData(siteDataTypeIDStrings);
+    int max = siteDataTypeIDStrings.size();
+    if ( max > 25 ) {
+        max = 25;
+    }
+    __SiteDataTypeID_JComboBox.setMaximumRowCount(max);
     // Select first choice (may get reset from existing parameter values).
     __SiteDataTypeID_JComboBox.select ( null );
     if ( __SiteDataTypeID_JComboBox.getItemCount() > 0 ) {
         __SiteDataTypeID_JComboBox.select ( 0 );
-    }
-}
-
-/**
-Read the ensemble list and set for use in the editor.
-*/
-private void readEnsembleList ( ReclamationHDB_DMI rdmi )
-throws Exception
-{
-    try {
-        List<ReclamationHDB_Ensemble> modelList = rdmi.readRefEnsembleList(null);
-        setEnsembleList(modelList);
-    }
-    catch ( Exception e ) {
-        setEnsembleList(new ArrayList<ReclamationHDB_Ensemble>());
-        throw e;
     }
 }
 
@@ -1859,7 +1888,7 @@ throws Exception
         setModelList(modelList);
     }
     catch ( Exception e ) {
-        setModelList(new Vector<ReclamationHDB_Model>());
+        setModelList(new ArrayList<ReclamationHDB_Model>());
         throw e;
     }
 }
@@ -2445,14 +2474,6 @@ Set the internal data based on the selected datastore.
 private void setDMIForSelectedDataStore()
 {   __dataStore = getSelectedDataStore();
     __dmi = (ReclamationHDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
-}
-
-/**
-Set the HDB ensemble list corresponding to the displayed list.
-*/
-private void setEnsembleList ( List<ReclamationHDB_Ensemble> ensembleList )
-{
-    __ensembleList = ensembleList;
 }
 
 /**

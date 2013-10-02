@@ -479,7 +479,7 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	// Now try to read...
+	// Now try to read based on the combination of parameters...
 
 	List<TS> tslist = new ArrayList<TS>();	// Time series results.
 					// Will be added to for one time series
@@ -501,13 +501,14 @@ CommandWarningException, CommandException
         ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
 
 	    if ( (DataType != null) && !DataType.equals("") ) {
+	        Message.printStatus(2,routine,"Reading time series using input filters.");
             // Input filter parameters have been specified so read 1+ time series...
     		// Get the input needed to process the file...
     		//String InputName = parameters.getValue ( "InputName" );
     		//if ( InputName == null ) {
     		//	InputName = "";
     		//}
-    		List WhereN_Vector = new Vector ( 6 );
+    		List<String> whereNList = new ArrayList<String> ( 6 );
     		String WhereN;
     		int nfg = 0;	// Used below.
     		for ( nfg = 0; nfg < 100; nfg++ ) {
@@ -515,7 +516,7 @@ CommandWarningException, CommandException
     			if ( WhereN == null ) {
     				break;	// No more where clauses
     			}
-    			WhereN_Vector.add ( WhereN );
+    			whereNList.add ( WhereN );
     		}
     	
     		// Initialize an input filter based on the data type...
@@ -527,7 +528,7 @@ CommandWarningException, CommandException
     
     		String filterDelim = ";";
     		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-    			WhereN = (String)WhereN_Vector.get(ifg);
+    			WhereN = whereNList.get(ifg);
                 if ( WhereN.length() == 0 ) {
                     continue;
                 }
@@ -589,10 +590,6 @@ CommandWarningException, CommandException
     				Message.printStatus ( 2, routine, "Reading time series for \"" + tsidentString + "\"..." );
     				try {
     				    ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
-    				    // Set the alias to the desired string - this is impacted by the Location parameter
-                        String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                            processor, ts, Alias, status, commandPhase);
-                        ts.setAlias ( alias );
     					// Add the time series to the temporary list.  It will be further processed below...
     					tslist.add ( ts );
     				}
@@ -608,15 +605,13 @@ CommandWarningException, CommandException
     			}
     		}
 	    }
-        else if ( ensembleModelRunID >= 0 ) {
+        else if ( (siteDataTypeID >= 0) && (ensembleModelRunID >= 0) ) {
             // Reading a single trace from an ensemble - put before reading full ensemble
+            Message.printStatus(2,routine,"Reading 1 time series ensemble trace using SDI=" + siteDataTypeID +
+                ", ensemble MRI=" + ensembleModelRunID + ", interval=" + interval );
             try {
                 TS ts = dmi.readTimeSeries ( siteDataTypeID, ensembleModelRunID, true, interval,
                     InputStart_DateTime, InputEnd_DateTime, readData );
-                // Set the alias to the desired string - this is impacted by the Location parameter
-                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                    processor, ts, Alias, status, commandPhase);
-                ts.setAlias ( alias );
                 // Add the time series to the temporary list.  It will be further processed below...
                 tslist.add ( ts );
             }
@@ -631,8 +626,10 @@ CommandWarningException, CommandException
                        message, "Report the problem to software support - also see the log file." ) );
             }
         }
-	    else if ( (EnsembleName != null) && !EnsembleName.equals("") ) {
+	    else if ( (siteDataTypeID >= 0) && (EnsembleName != null) && !EnsembleName.equals("") ) {
             // Reading an ensemble of model time series
+	        Message.printStatus(2,routine,"Reading time series ensemble for SDI=" + siteDataTypeID + ", ensemble name=\"" +
+	            EnsembleName + "\", interval=" + interval + ".");
 	        ensemble = dmi.readEnsemble ( siteDataTypeID, EnsembleName, interval, InputStart_DateTime, InputEnd_DateTime, readData );
             if ( ensemble != null ) {
                 tslist = ensemble.getTimeSeriesList (false);
@@ -642,30 +639,17 @@ CommandWarningException, CommandException
                     message = "Read \"" + tscount + "\" ensemble time series from Reclamation HDB";
                     Message.printStatus ( 2, routine, message );
                 }
-                if ( (Alias != null) && (Alias.length() > 0) ) {
-                    for ( int i = 0; i < tscount; i++ ) {
-                        TS ts = tslist.get(i);
-                        if ( ts == null ) {
-                            continue;
-                        }
-                        // Set the alias to the desired string.
-                        ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                            processor, ts, Alias, status, commandPhase) );
-                    }
-                }
             }
             // Time series are post-processed below, but add ensemble here
             TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
         }
-        else if ( modelRunID >= 0 ) {
-            // Reading a single model time series put before reading full ensemble
+        else if ( (siteDataTypeID >= 0) && (modelRunID >= 0) ) {
+            // Reading a single model time series
+            Message.printStatus(2,routine,"Reading 1 model time series for SDI=" + siteDataTypeID + ", MRI=" + modelRunID +
+                ", interval=" + interval );
             try {
                 TS ts = dmi.readTimeSeries ( siteDataTypeID, modelRunID, false, interval,
                     InputStart_DateTime, InputEnd_DateTime, readData );
-                // Set the alias to the desired string - this is impacted by the Location parameter
-                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                    processor, ts, Alias, status, commandPhase);
-                ts.setAlias ( alias );
                 // Add the time series to the temporary list.  It will be further processed below...
                 tslist.add ( ts );
             }
@@ -680,104 +664,128 @@ CommandWarningException, CommandException
                        message, "Report the problem to software support - also see the log file." ) );
             }
         }
-	    else {
-	        // Reading a single time series, either real or model
-	        String tsidentString = null;
-	        // Reading a single time series
-	        if ( siteDataTypeID >= 0 ) {
-	            // Need to use the SDI to get metadata because SiteCommonName is not unique
-	            // Model run ID was not specified (otherwise would have read above).  If the model name is specified,
-	            // use it to get the model run ID and then use with the SDI to read
-	            boolean okToRead = true;
-	            if ( (ModelName != null) && !ModelName.equals("") ) {
-	                // Get the model corresponding to the model name
-	                List<ReclamationHDB_Model> models = dmi.readHdbModelList(ModelName);
-	                int modelID = -1;
-                    if ( models.size() != 1 ) {
-                         message = "Reading model data for ModelName=\"" + ModelName + "\" have " + models.size() + " models.  Expecting exactly 1.  Cannot read time series.";
-                         Message.printWarning ( 3, routine, message );
-                         ++warning_count;
-                         status.addToLog ( commandPhase,
-                             new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Check input to verify that parameters match one model." ) );
-                         okToRead = false;
-                    }
-                    else {
-                        modelID = models.get(0).getModelID();
-                    }
-                    if ( okToRead ) {
-    	                // Get the model runs corresponding to command parameters
-                        List<ReclamationHDB_ModelRun> runs = dmi.readHdbModelRunList(modelID,null,ModelRunName,HydrologicIndicator,modelRunDate);
-                        if ( runs.size() != 1 ) {
-                            message = "Reading model run data for ModelID=\"" + modelID + "\" ModelRunName=\"" +
-                                ModelRunName + "\" HydrologicIndicator=\"" + HydrologicIndicator + "\" RunDate=\"" +
-                                ModelRunDate + "\" have " + runs.size() + " runs.  Expecting exactly 1.  Cannot read time series.";
-                             Message.printWarning ( 3, routine, message );
-                             ++warning_count;
-                             status.addToLog ( commandPhase,
-                                 new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Check input to verify that parameters match one model run." ) );
-                             okToRead = false;
-                        }
-                        else {
-                            modelRunID = runs.get(0).getModelRunID();
-                        }
-                    }
+        else if ( (siteDataTypeID >= 0) && (modelRunID < 0) && (ModelName == null) || (ModelName.equals(""))) {
+            // Reading a single real time series
+            Message.printStatus(2,routine,"Reading 1 real time series for SDI=" + siteDataTypeID + ", interval=" + interval );
+            try {
+                TS ts = dmi.readTimeSeries ( siteDataTypeID, modelRunID, false, interval,
+                    InputStart_DateTime, InputEnd_DateTime, readData );
+                // Add the time series to the temporary list.  It will be further processed below...
+                tslist.add ( ts );
+            }
+            catch ( Exception e ) {
+                message = "Unexpected error reading Reclamation HDB time series for SDI=" + siteDataTypeID + " (" + e + ").";
+                Message.printWarning ( 2, routine, message );
+                Message.printWarning ( 2, routine, e );
+                ++warning_count;
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                       message, "Report the problem to software support - also see the log file." ) );
+            }
+        }
+	    else if ( siteDataTypeID < 0 ) {
+	        // Did not specify a site datatype ID so using site common name is not unique..
+	        // Legacy functionality - unique string values are not guaranteed in the database
+            message = "Reading time series using old-style TSID that relies on site common name \"" + SiteCommonName +
+                "\" is unreliable due to non-unique names.";
+             Message.printWarning ( 2, routine, message );
+             ++warning_count;
+             status.addToLog ( commandPhase,
+                 new CommandLogRecord(CommandStatusType.FAILURE,
+                     message, "Specify the site datatype ID (SDI) to uniquely identify the time series." ) );
+            String tsidentString = null;
+            if ( (ModelName != null) && !ModelName.equals("") ) {
+                // Single model time series
+                tsidentString = "Model:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval + "." +
+                    ModelName + "-" + ModelRunName + "-" + HydrologicIndicator + "-" + ModelRunDate + "~" + DataStore;
+            }
+            else {
+                // Simple real time series
+                tsidentString = "Real:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval +
+                    "~" + DataStore;
+            }
+            try {
+                TS ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
+                // Add the time series to the temporary list.  It will be further processed below...
+                tslist.add ( ts );
+            }
+            catch ( Exception e ) {
+                message = "Unexpected error reading Reclamation HDB time series (" + e + ").";
+                Message.printWarning ( 2, routine, message );
+                Message.printWarning ( 2, routine, e );
+                ++warning_count;
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                       message, "Report the problem to software support - also see the log file." ) );
+            }
+	    }
+	    else if ( (siteDataTypeID >= 0) && (ModelName != null) && !ModelName.equals("") ) {
+	        // Reading a single time series, either real or model using names for 
+	        Message.printStatus(2,routine,"Reading 1 model time series using SDI=" + siteDataTypeID + ", model name=\"" +
+	            ModelName + "\".");
+            // Need to use the SDI to get metadata because SiteCommonName is not unique
+            // Model run ID was not specified (otherwise would have read above).  If the model name is specified,
+            // use it to get the model run ID and then use with the SDI to read
+            boolean okToRead = true;
+            // Get the model corresponding to the model name
+            List<ReclamationHDB_Model> models = dmi.readHdbModelList(ModelName);
+            int modelID = -1;
+            if ( models.size() != 1 ) {
+                 message = "Reading model data for ModelName=\"" + ModelName + "\" have " + models.size() + " models.  Expecting exactly 1.  Cannot read time series.";
+                 Message.printWarning ( 3, routine, message );
+                 ++warning_count;
+                 status.addToLog ( commandPhase,
+                     new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Check input to verify that parameters match one model." ) );
+                 okToRead = false;
+            }
+            else {
+                modelID = models.get(0).getModelID();
+            }
+            if ( okToRead ) {
+                // Get the model runs corresponding to command parameters
+                List<ReclamationHDB_ModelRun> runs = dmi.readHdbModelRunList(modelID,null,ModelRunName,HydrologicIndicator,modelRunDate);
+                if ( runs.size() != 1 ) {
+                    message = "Reading model run data for ModelID=\"" + modelID + "\" ModelRunName=\"" +
+                        ModelRunName + "\" HydrologicIndicator=\"" + HydrologicIndicator + "\" RunDate=\"" +
+                        ModelRunDate + "\" have " + runs.size() + " runs.  Expecting exactly 1.  Cannot read time series.";
+                     Message.printWarning ( 3, routine, message );
+                     ++warning_count;
+                     status.addToLog ( commandPhase,
+                         new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Check input to verify that parameters match one model run." ) );
+                     okToRead = false;
                 }
-	            if ( okToRead ) {
-    	            try {
-    	                TS ts = dmi.readTimeSeries ( siteDataTypeID, modelRunID, false, interval,
-    	                    InputStart_DateTime, InputEnd_DateTime, readData );
-    	                // Set the alias to the desired string - this is impacted by the Location parameter
-    	                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-    	                    processor, ts, Alias, status, commandPhase);
-    	                ts.setAlias ( alias );
-    	                // Add the time series to the temporary list.  It will be further processed below...
-    	                tslist.add ( ts );
-    	            }
-    	            catch ( Exception e ) {
-    	                message = "Unexpected error reading Reclamation HDB time series for SDI=" + siteDataTypeID + " MRI=" +
-    	                   modelRunID + " (" + e + ").";
-    	                Message.printWarning ( 2, routine, message );
-    	                Message.printWarning ( 2, routine, e );
-    	                ++warning_count;
-    	                status.addToLog ( commandPhase,
-    	                    new CommandLogRecord(CommandStatusType.FAILURE,
-    	                       message, "Report the problem to software support - also see the log file." ) );
-    	            }
+                else {
+                    modelRunID = runs.get(0).getModelRunID();
+                }
+            }
+            if ( okToRead ) {
+	            try {
+	                TS ts = dmi.readTimeSeries ( siteDataTypeID, modelRunID, false, interval,
+	                    InputStart_DateTime, InputEnd_DateTime, readData );
+	                // Add the time series to the temporary list.  It will be further processed below...
+	                tslist.add ( ts );
 	            }
-	        }
-	        else {
-	            // Legacy functionality - unique string values are not guaranteed in the database
-    	        if ( (ModelName != null) && !ModelName.equals("") ) {
-    	            // Single model time series
-    	            tsidentString = "Model:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval + "." +
-                        ModelName + "-" + ModelRunName + "-" + HydrologicIndicator + "-" + ModelRunDate + "~" + DataStore;
-    	        }
-    	        else {
-    	            // Simple real time series
-    	            tsidentString = "Real:" + SiteCommonName + ".HDB." + DataTypeCommonName + "." + Interval +
-    	                "~" + DataStore;
-    	        }
-    	        try {
-     	            TS ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
-                    // Set the alias to the desired string - this is impacted by the Location parameter
-                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                        processor, ts, Alias, status, commandPhase);
-                    ts.setAlias ( alias );
-                    // Add the time series to the temporary list.  It will be further processed below...
-                    tslist.add ( ts );
-                }
-                catch ( Exception e ) {
-                    message = "Unexpected error reading Reclamation HDB time series (" + e + ").";
-                    Message.printWarning ( 2, routine, message );
-                    Message.printWarning ( 2, routine, e );
-                    ++warning_count;
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report the problem to software support - also see the log file." ) );
-                }
-	        }
+	            catch ( Exception e ) {
+	                message = "Unexpected error reading Reclamation HDB time series for SDI=" + siteDataTypeID + " MRI=" +
+	                   modelRunID + " (" + e + ").";
+	                Message.printWarning ( 2, routine, message );
+	                Message.printWarning ( 2, routine, e );
+	                ++warning_count;
+	                status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                       message, "Report the problem to software support - also see the log file." ) );
+	            }
+            }
+	    }
+	    else {
+	        message = "Do not know how to read time series for combination of command parameters.";
+             Message.printWarning ( 2, routine, message );
+             ++warning_count;
+             status.addToLog ( commandPhase,
+                 new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support - also see the log file." ) );
 	    }
     
         int nts = 0;
@@ -785,6 +793,15 @@ CommandWarningException, CommandException
             nts = tslist.size();
         }
         Message.printStatus ( 2, routine, "Read " + nts + " Reclamation HDB time series." );
+        
+        if ( (Alias != null) && !Alias.equals("") && (tslist != null) ) {
+            for ( TS ts: tslist ) {
+                // Set the alias to the desired string - this is impacted by the Location parameter
+                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                    processor, ts, Alias, status, commandPhase);
+                ts.setAlias ( alias );
+            }
+        }
 
         if ( commandPhase == CommandPhaseType.RUN ) {
             if ( tslist != null ) {

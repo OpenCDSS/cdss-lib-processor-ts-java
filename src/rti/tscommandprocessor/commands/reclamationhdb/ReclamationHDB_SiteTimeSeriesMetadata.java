@@ -36,6 +36,7 @@ private int __siteDataTypeID = DMIUtil.MISSING_INT;
 
 // From HDB_MODEL
 private String __modelName = "";
+private int __modelID = DMIUtil.MISSING_INT;
 
 // From REF_MODEL_RUN
 private int __modelRunID = DMIUtil.MISSING_INT;
@@ -82,6 +83,11 @@ public String getDataTypeName ()
 public String getHydrologicIndicator ()
 {
     return __hydrologicIndicator;
+}
+
+public int getModelID ()
+{
+    return __modelID;
 }
 
 public String getModelName ()
@@ -208,6 +214,11 @@ public void setDataTypeName ( String dataTypeName )
 public void setHydrologicIndicator ( String hydrologicIndicator )
 {
     __hydrologicIndicator = hydrologicIndicator;
+}
+
+public void setModelID ( int modelID )
+{
+    __modelID = modelID;
 }
 
 public void setModelName ( String modelName )

@@ -139,15 +139,25 @@ public void setFilters ( ReclamationHDB_DMI dmi, int numFilterGroups )
         "HDB_SITE.USGS_ID", "",
         StringUtil.TYPE_STRING, null, null, true));
     
+    // Datatype Common Name is in the main TSTool query choice so don't put data type name here
+    
+    filters.add(new InputFilter("Model - ID",
+        "HDB_MODEL.MODEL_ID", "",
+        StringUtil.TYPE_STRING, null, null, true));
+    
     filters.add(new InputFilter("Model - Name",
         "HDB_MODEL.MODEL_NAME", "",
         StringUtil.TYPE_STRING, null, null, true));
     
-    filters.add(new InputFilter("Model - Run Name",
+    filters.add(new InputFilter("Model Run - ID",
+            "REF_MODEL_RUN.MODEL_RUN_ID", "",
+            StringUtil.TYPE_STRING, null, null, true));
+    
+    filters.add(new InputFilter("Model Run - Name",
         "REF_MODEL_RUN.MODEL_RUN_NAME", "",
         StringUtil.TYPE_STRING, null, null, true));
     
-    filters.add(new InputFilter("Model - Hydrologic Indicator",
+    filters.add(new InputFilter("Model Run - Hydrologic Indicator",
         "REF_MODEL_RUN.HYDROLOGIC_INDICATOR", "",
         StringUtil.TYPE_STRING, null, null, true));
     

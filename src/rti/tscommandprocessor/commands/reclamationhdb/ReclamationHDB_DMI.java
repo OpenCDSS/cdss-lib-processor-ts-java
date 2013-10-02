@@ -3,7 +3,6 @@ package rti.tscommandprocessor.commands.reclamationhdb;
 import java.security.InvalidParameterException;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -19,10 +18,7 @@ import javax.swing.SwingUtilities;
 import rti.tscommandprocessor.commands.reclamationhdb.java_lib.hdbLib.JavaConnections;
 
 import RTi.DMI.DMI;
-import RTi.DMI.DMISelectStatement;
-import RTi.DMI.DMIStoredProcedureData;
 import RTi.DMI.DMIUtil;
-import RTi.DMI.DMIWriteStatement;
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSEnsemble;
@@ -36,6 +32,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.StopWatch;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.TimeUtil;
 
 // TODO SAM 2010-10-25 Evaluate updating code to be more general (e.g., more completely use DMI base class)
 /**
@@ -49,11 +46,6 @@ public class ReclamationHDB_DMI extends DMI
 Connection to the database.
 */
 private JavaConnections __hdbConnection = null;
-
-/**
-The hashtable that caches stored procedures.
-*/
-private Hashtable __storedProcedureHashtable = new Hashtable();
 
 /**
 Database parameters from REF_DB_PARAMETER.
@@ -695,47 +687,6 @@ public boolean getTSIDStyleSDI ( )
 }
 
 /**
-Get the write statement for writing time series.  A stored procedure statement is re-used.
-*/
-private DMIWriteStatement getWriteTimeSeriesStatement ( DMIWriteStatement writeStatement )
-throws Exception
-{   String routine = getClass().getName() + ".getWriteTimeSeriesStatement";
-    // Look up the definition of the stored procedure (stored in a
-    // DMIStoredProcedureData object) in the hashtable.  This allows
-    // repeated calls to the same stored procedure to re-used stored
-    // procedure meta data without requerying the database.
-
-    String name = "WRITE_TO_HDB"; //"write_to_hdb";
-    DMIStoredProcedureData spData = (DMIStoredProcedureData)__storedProcedureHashtable.get(name);
-    boolean tryAnyway = true; // Try to use procedure even if following code can't see it defined
-    if (spData != null) {
-        // If a data object was found, set up the data in the statement below
-    }
-    else if ( DMIUtil.databaseHasStoredProcedure(this, name) || tryAnyway ) {
-        // If no data object was found, but the stored procedure is
-        // defined in the database then build the data object for the
-        // stored procedure and then store it in the hashtable.
-        spData = new DMIStoredProcedureData(this, name);
-        __storedProcedureHashtable.put(name, spData);
-    }
-    else {
-        // If no data object was found and the stored procedure is not
-        // defined in the database, can't execute.
-        Message.printWarning(3, routine,
-            "No stored procedure defined in database for procedure \"" + name + "\"" );      
-        return null;
-    }
-
-    //DMIUtil.dumpProcedureInfo(this, name);
-
-    // Set the data object in the statement.  Doing so will set up the
-    // statement as a stored procedure statement.
-
-    writeStatement.setStoredProcedureData(spData);
-    return writeStatement;
-}
-
-/**
 Lookup the ReclamationHDB_Agency given the internal agency ID.
 @return the matching agency object, or null if not found
 @param agencyList a list of ReclamationHDB_Agency to search
@@ -1250,52 +1201,49 @@ throws SQLException
         "REF_MODEL_RUN.HYDROLOGIC_INDICATOR, REF_MODEL_RUN.RUN_DATE from REF_MODEL_RUN" );
     StringBuilder where = new StringBuilder();
     if ( modelID >= 0 ) {
-        where.append ( " WHERE REF_MODEL_RUN.MODEL_ID = " + modelID );
+        where.append ( " (REF_MODEL_RUN.MODEL_ID = " + modelID + ")");
     }
     if ( (modelRunIDList != null) && (modelRunIDList.size() > 0) ) {
         if ( where.length() > 0 ) {
             where.append ( " AND " );
         }
-        else {
-            where.append ( " WHERE " );
-        }
-        where.append ( " REF_MODEL_RUN.MODEL_RUN_ID IN (" );
+        where.append ( " (REF_MODEL_RUN.MODEL_RUN_ID IN (" );
         for ( int i = 0; i < modelRunIDList.size(); i++ ) {
             if ( i > 0 ) {
                 where.append(",");
             }
             where.append("" + modelRunIDList.get(i));
         }
-        where.append ( ")" );
+        where.append ( "))" );
     }
     if ( (modelRunName != null) && !modelRunName.equals("") ) {
         if ( where.length() > 0 ) {
             where.append ( " AND " );
         }
-        else {
-            where.append ( " WHERE " );
-        }
-        where.append ( "upper(REF_MODEL_RUN.MODEL_RUN_NAME) = '" + modelRunName.toUpperCase() + "'" );
+        where.append ( "(upper(REF_MODEL_RUN.MODEL_RUN_NAME) = '" + modelRunName.toUpperCase() + "')" );
     }
     if ( hydrologicIndicator != null ) {
         if ( where.length() > 0 ) {
             where.append ( " AND " );
         }
-        else {
-            where.append ( " WHERE " );
-        }
         if ( hydrologicIndicator.equals("") ) {
             where.append ( "(REF_MODEL_RUN.HYDROLOGIC_INDICATOR = '' OR REF_MODEL_RUN.HYDROLOGIC_INDICATOR is null)" );
         }
         else {
-            where.append ( "upper(REF_MODEL_RUN.HYDROLOGIC_INDICATOR) = '" + hydrologicIndicator.toUpperCase() + "'" );
+            where.append ( "(upper(REF_MODEL_RUN.HYDROLOGIC_INDICATOR) = '" + hydrologicIndicator.toUpperCase() + "')" );
         }
     }
     String runDateFormatted = null;
     if ( runDate != null ) {
         runDateFormatted = runDate.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm);
+        // The run date is not used in the query but is checked below to handle formatting
+    }
+    if ( where.length() > 0 ) {
+        // The keyword was not added above so add here
+        where.insert(0, " WHERE ");
     }
     sqlCommand.append(where.toString());
+    Message.printStatus(2,routine,"Reading model run list with SQL:  " + sqlCommand );
     ResultSet rs = null;
     Statement stmt = null;
     try {
@@ -1880,7 +1828,7 @@ throws SQLException
     // Include newlines to simplify troubleshooting when pasting into other code.
     String sqlCommand = "select REF_DB_PARAMETER.PARAM_NAME, REF_DB_PARAMETER.PARAM_VALUE from " +
         "REF_DB_PARAMETER";
-    Message.printStatus(2, routine, "SQL is:\n" + sqlCommand );
+    Message.printStatus(2, routine, "SQL for reading REF_DB_PARAMETER is:\n" + sqlCommand );
 
     ResultSet rs = null;
     Statement stmt = null;
@@ -1987,22 +1935,27 @@ throws SQLException
         "REF_ENSEMBLE.CMMNT from REF_ENSEMBLE");
     StringBuilder where = new StringBuilder();
     if ( (ensembleName != null) && !ensembleName.equals("") ) {
-        sqlCommand.append ( " WHERE (UPPER(REF_ENSEMBLE.ENSEMBLE_NAME) = '" + ensembleName.toUpperCase() + "')");
+        where.append ( " (UPPER(REF_ENSEMBLE.ENSEMBLE_NAME) = '" + ensembleName.toUpperCase() + "')");
     }
     if ( (ensembleIDList != null) && (ensembleIDList.size() > 0) ) {
         if ( where.length() > 0 ) {
             where.append ( " AND ");
         }
-        where.append ( " REF_ENSEMBLE.ENSEMBLE_ID IN (" );
+        where.append ( " (REF_ENSEMBLE.ENSEMBLE_ID IN (" );
         for ( int i = 0; i < ensembleIDList.size(); i++ ) {
             if ( i > 0 ) {
                 where.append(",");
             }
             where.append("" + ensembleIDList.get(i));
         }
-        where.append ( ")" );
+        where.append ( "))" );
+    }
+    if ( where.length() > 0 ) {
+        // The keyword was not added above so add here
+        where.insert(0, " WHERE ");
     }
     sqlCommand.append(where);
+    Message.printStatus(2, routine, "SQL to query ensemble is:  \"" + sqlCommand + "\"" );
     ResultSet rs = null;
     Statement stmt = null;
     try {
@@ -2073,32 +2026,36 @@ throws SQLException
     "REF_ENSEMBLE_TRACE.MODEL_RUN_ID from REF_ENSEMBLE_TRACE");
     StringBuilder where = new StringBuilder();
     if ( ensembleID >= 0 ) {
-        where.append (" WHERE REF_ENSEMBLE_TRACE.ENSEMBLE_ID = " + ensembleID );
+        where.append (" (REF_ENSEMBLE_TRACE.ENSEMBLE_ID = " + ensembleID + ")");
     }
     if ( traceID >= 0 ) {
         if ( where.length() > 0 ) {
             where.append ( " AND ");
         }
-        where.append (" WHERE REF_ENSEMBLE_TRACE.TRACE_ID = " + traceID );
+        where.append (" (REF_ENSEMBLE_TRACE.TRACE_ID = " + traceID + ")" );
     }
     if ( modelRunID >= 0 ) {
         if ( where.length() > 0 ) {
             where.append ( " AND ");
         }
-        where.append (" WHERE REF_ENSEMBLE_TRACE.MODEL_RUN_ID = " + modelRunID );
+        where.append (" (REF_ENSEMBLE_TRACE.MODEL_RUN_ID = " + modelRunID + ")");
     }
     if ( (modelRunIDList != null) && (modelRunIDList.size() > 0) ) {
         if ( where.length() > 0 ) {
             where.append ( " AND ");
         }
-        where.append ( " REF_ENSEMBLE_TRACE.MODEL_RUN_ID IN (" );
+        where.append ( " (REF_ENSEMBLE_TRACE.MODEL_RUN_ID IN (" );
         for ( int i = 0; i < modelRunIDList.size(); i++ ) {
             if ( i > 0 ) {
                 where.append(",");
             }
             where.append("" + modelRunIDList.get(i));
         }
-        where.append ( ")" );
+        where.append ( "))" );
+    }
+    if ( where.length() > 0 ) {
+        // The keyword was not added above so add here
+        where.insert(0, " WHERE ");
     }
     sqlCommand.append(where);
     ResultSet rs = null;
@@ -2210,8 +2167,7 @@ throws SQLException
         if ( whereString.length() > 0 ) {
             whereString.append ( " and " );
         }
-        whereString.append( "(REF_MODEL_RUN.RUN_DATE = to_date('" + modelRunDate +
-            "','YYYY-MM-DD HH24:MI:SS'))" );
+        whereString.append( "(REF_MODEL_RUN.RUN_DATE = to_date('" + modelRunDate + "','YYYY-MM-DD HH24:MI:SS'))" );
     }
     if ( sdi >= 0 ) {
         if ( whereString.length() > 0 ) {
@@ -2326,13 +2282,13 @@ throws SQLException
         whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "REF_MODEL_RUN", true ) );
         whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "HDB_MODEL", true ) );
     }
-    StringBuffer whereString = new StringBuffer();
+    StringBuilder whereString = new StringBuilder();
     for ( String whereClause : whereClauses ) {
         if ( whereClause.length() > 0 ) {
             if ( whereString.length() == 0 ) {
                 whereString.append ( "where " );
             }
-            else if ( whereString.length() > 0 ) {
+            else {
                 whereString.append ( " and " );
             }
             whereString.append ( "(" + whereClause + ")" );
@@ -2420,7 +2376,7 @@ throws SQLException
     if ( !isReal ) {
         // Add some additional information for the model run time series
         selectColumnsModel =
-            ", HDB_MODEL.MODEL_NAME," +
+            ", HDB_MODEL.MODEL_NAME, HDB_MODEL.MODEL_ID," +
             " REF_MODEL_RUN.MODEL_RUN_ID," +
             " REF_MODEL_RUN.MODEL_RUN_NAME," +
             " REF_MODEL_RUN.HYDROLOGIC_INDICATOR," +
@@ -2451,7 +2407,7 @@ throws SQLException
         whereString +
         " group by " + selectColumns + selectColumnsModel +
         " order by HDB_SITE.SITE_COMMON_NAME, HDB_DATATYPE.DATATYPE_COMMON_NAME";
-    Message.printStatus(2, routine, "SQL is:\n" + sqlCommand );
+    Message.printStatus(2, routine, "SQL for reading time series metadata is:\n" + sqlCommand );
 
     ResultSet rs = null;
     Statement stmt = null;
@@ -2506,6 +2462,7 @@ throws Exception
     int itrace = -1;
     int modelIDSave = -1;
     Date runDateSave = null;
+    List<ReclamationHDB_EnsembleTrace> missingTraceList = new ArrayList<ReclamationHDB_EnsembleTrace>();
     for ( ReclamationHDB_EnsembleTrace trace: ensembleTraceList ) {
         // Read the model run for the trace and confirm that the model run and run_date are the same for all traces
         ++itrace;
@@ -2533,8 +2490,60 @@ throws Exception
             }
         }
         // If here, OK to read the trace time series
-        TS ts = readTimeSeries(sdi, mriList.get(0), true, interval, readStart, readEnd, readData);
-        tslist.add(ts);
+        try {
+            TS ts = readTimeSeries(sdi, mriList.get(0), true, interval, readStart, readEnd, readData);
+            // Set the sequence number for TSTool
+            ts.setSequenceID("" + trace.getTraceNumeric() );
+            // TODO SAM 2013-10-02 Can set to the trace name if appropriate in the future
+            tslist.add(ts);
+        }
+        catch ( Exception e ) {
+            // It is possible that an ensemble had no data for a trace when written.  In this case the metadata will not be
+            // read because there are no records in the tables.  Keep track of these years and try to add a missing trace at
+            // the end
+            missingTraceList.add(trace);
+        }
+    }
+    // If any traces were missing (likely due to completely missing data), find a non-missing trace, copy the time series,
+    // and set to missing
+    if ( missingTraceList.size() > 0 ) {
+        // Find a leap and nonleapyear existing trace
+        TS tsLeap = null;
+        TS tsNonLeap = null;
+        for ( TS ts: tslist ) {
+            if ( TimeUtil.isLeapYear(Integer.parseInt(ts.getSequenceID())) ) {
+                tsLeap = ts;
+                break;
+            }
+        }
+        for ( TS ts: tslist ) {
+            if ( !TimeUtil.isLeapYear(Integer.parseInt(ts.getSequenceID())) ) {
+                tsNonLeap = ts;
+                break;
+            }
+        }
+        TS ts = null;
+        for ( ReclamationHDB_EnsembleTrace trace: missingTraceList ) {
+            if ( TimeUtil.isLeapYear(trace.getTraceNumeric()) ) {
+                ts = tsLeap;
+            }
+            else {
+                ts = tsNonLeap;
+            }
+            if ( ts != null ) {
+                TS tsCopy = (TS)ts.clone();
+                // Existing time series will SDI-MRI, for the old MRI.  Replace with the new
+                String loc = ts.getLocation().substring(0,ts.getLocation().indexOf("-"));
+                tsCopy.getIdentifier().setLocation(loc + "-" + trace.getModelRunID());
+                tsCopy.setSequenceID("" + trace.getTraceNumeric());
+                if ( readData ) {
+                    tsCopy.addToGenesis("Trace is being set as copy of another trace, with data set to missing, because HDB does not store empty time series.");
+                    tsCopy.addToGenesis("Some internal properties for the time series may be inaccurate due to the copy.");
+                    TSUtil.setConstant(tsCopy,tsCopy.getMissing());
+                }
+                tslist.add(tsCopy);
+            }
+        }
     }
     // Create a new ensemble and return
     return new TSEnsemble(ensembleName,ensembleName,tslist);
@@ -3267,6 +3276,10 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
                 }
                 i = rs.getInt(col++);
                 if ( !rs.wasNull() ) {
+                    data.setModelID(i);
+                }
+                i = rs.getInt(col++);
+                if ( !rs.wasNull() ) {
                     data.setModelRunID(i);
                 }
                 s = rs.getString(col++);
@@ -3310,12 +3323,12 @@ Write a time series to the database.
 @param loadingApp the application name - must match HDB_LOADING_APPLICATION (e.g., "TSTool")
 @param siteCommonName site common name, to determine site_datatype_id
 @param dataTypeCommonName data type common name, to determine site_datatype_id
-@param sideDataTypeID if specified, will be used instead of that determined from above
+@param sideDataTypeID if not null, will be used instead of that determined from above
 @param modelName model name, to determine model_run_id
 @param modelRunName model run name, to determine model_run_id
 @param modelRunDate model run date, to determine model_run_id
 @param hydrologicIndicator, to determine model_run_id
-@param modelRunID, will be used instead of that determined from above
+@param modelRunID if not null, will be used instead of that determined from above
 @param agency agency abbreviation (can be null or blank to use default)
 @param validationFlag validation flag for value (can be null or blank to use default)
 @param overwriteFlag overwrite flag for value (can be null or blank to use default)
@@ -3383,13 +3396,30 @@ throws SQLException
         }
     }
     if ( modelRunID == null ) {
-        if ( modelRunName != null ) {
+        modelRunID = new Long(-1);
+        if ( (modelName != null) && !modelName.equals("") ) {
             // Try to get from the parts
-            throw new IllegalArgumentException(
-                "Determining model_run_id from other parameters currently is not supported." );
-        }
-        else {
-            modelRunID = new Long(0);
+            List<ReclamationHDB_Model> modelList = readHdbModelList(modelName);
+            if ( modelList.size() != 1 ) {
+                throw new IllegalArgumentException("Model name \"" + modelName + "\" matches " + modelList.size() +
+                    " records in HDB.  Expecting exactly 1.");
+            }
+            ReclamationHDB_Model model = modelList.get(0);
+            if ( (modelRunName != null) && !modelRunName.equals("") ) {
+                DateTime runDate = null;
+                if ( modelRunDate != null ) {
+                    runDate = DateTime.parse(modelRunDate);
+                }
+                List<ReclamationHDB_ModelRun> modelRunList = readHdbModelRunList(
+                    model.getModelID(), null, modelRunName, hydrologicIndicator, runDate) ;
+                if ( modelRunList.size() != 1 ) {
+                    throw new IllegalArgumentException("Model run name \"" + modelRunName + "\", hydrologic indicator=\"" +
+                        hydrologicIndicator + "\", run date=\"" + runDate + "\" matches " + modelRunList.size() +
+                        " records in HDB.  Expecting exactly 1.");
+                }
+                ReclamationHDB_ModelRun modelRun = modelRunList.get(0);
+                modelRunID = new Long(modelRun.getModelRunID());
+            }
         }
     }
     Integer computeID = null; // Use default
@@ -3433,28 +3463,7 @@ throws SQLException
     catch ( Exception e ) {
         throw new RuntimeException("Unable to initialize iterator for period " + outputStart + " to " + outputEnd );
     }
-    // If true use RiversideDMI, if false use basic callable statement as per some code from Dave King
-    // Callable statement should perform well because its structure is initialized up front
-    boolean writeUsingRiversideDMI = false;
-    DMIWriteStatement writeStatement = null;
-    CallableStatement cs = null;
-    if ( writeUsingRiversideDMI ) {
-        writeStatement = new DMIWriteStatement(this);
-        // Call the stored procedure that writes the data
-        try {
-            writeStatement = getWriteTimeSeriesStatement ( writeStatement );
-        }
-        catch ( Exception e ) {
-            throw new RuntimeException("Unable to get write statement (" + e + ")" );
-        }
-        if ( writeStatement == null ) {
-            throw new RuntimeException("Unable to create write statement for stored procedure." );
-        }
-    }
-    else {
-        //cs = getConnection().prepareCall("begin write_to_hdb (?,?,?,?,?,?,?,?); end;");
-        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?,?,?,?,?,?)}");
-    }
+    CallableStatement cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?,?,?,?,?,?)}");
     TSData tsdata;
     DateTime dt;
     int errorCount = 0;
@@ -3504,111 +3513,84 @@ throws SQLException
         try {
             iParam = 1; // JDBC code is 1-based (use argument 1 for return value if used)
             ++writeTryCount;
-            if ( writeUsingRiversideDMI ) {
-                writeStatement.setValue(siteDataTypeID,iParam++); // SAMPLE_SDI
-                // Format the date/time as a string consistent with the database engine
-                //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
-                //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
-                writeStatement.setValue(dt,iParam++); // SAMPLE_DATE_TIME
-                writeStatement.setValue(value,iParam++); // SAMPLE_VALUE
-                writeStatement.setValue(sampleInterval,iParam++); // SAMPLE_INTERVAL
-                writeStatement.setValue(loadingAppID,iParam++); // LOADING_APP_ID
-                writeStatement.setValue(computeID,iParam++); // COMPUTE_ID
-                writeStatement.setValue(modelRunID,iParam++); // MODEL_RUN_ID
-                writeStatement.setValue(validationFlag,iParam++); // VALIDATION_FLAG
-                writeStatement.setValue(dataFlags,iParam++); // DATA_FLAGS
-                writeStatement.setValue(timeZone,iParam++); // TIME_ZONE
-                writeStatement.setValue(overwriteFlag,iParam++); // OVERWRITE_FLAG
-                writeStatement.setValue(agenID,iParam++); // AGEN_ID
-                // Execute the statement
-                //Message.printStatus(2, routine, "Statement is: " + writeStatement.toString() );
-                //dmiWrite(writeStatement, 0);
+            cs.setInt(iParam++,siteDataTypeID.intValue()); // SAMPLE_SDI
+            // Format the date/time as a string consistent with the database engine
+            //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
+            //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
+            // The offset is negative in order to shift to the start of the interval
+            cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime()+timeOffset)); // SAMPLE_DATE_TIME
+            cs.setDouble(iParam++,value); // SAMPLE_VALUE
+            cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
+            cs.setInt(iParam++,loadingAppID); // LOADING_APP_ID
+            if ( computeID == null ) {
+                cs.setNull(iParam++,java.sql.Types.INTEGER);
             }
             else {
-                cs.setInt(iParam++,siteDataTypeID.intValue()); // SAMPLE_SDI
-                // Format the date/time as a string consistent with the database engine
-                //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
-                //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
-                // The offset is negative in order to shift to the start of the interval
-                cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime()+timeOffset)); // SAMPLE_DATE_TIME
-                cs.setDouble(iParam++,value); // SAMPLE_VALUE
-                cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
-                cs.setInt(iParam++,loadingAppID); // LOADING_APP_ID
-                if ( computeID == null ) {
-                    cs.setNull(iParam++,java.sql.Types.INTEGER);
-                }
-                else {
-                    cs.setInt(iParam++,computeID); // COMPUTE_ID
-                }
-                cs.setInt(iParam++,modelRunID.intValue()); // MODEL_RUN_ID - should always be non-null
-                if ( validationFlag == null ) { // VALIDATION_FLAG
-                    cs.setNull(iParam++,java.sql.Types.CHAR);
-                }
-                else {
-                    cs.setString(iParam++,validationFlag);
-                }
-                if ( dataFlags == null ) { // DATA_FLAGS
-                    cs.setNull(iParam++,java.sql.Types.VARCHAR);
-                }
-                else {
-                    cs.setString(iParam++,dataFlags);
-                }
-                if ( timeZone == null ) { // TIME_ZONE
-                    cs.setNull(iParam++,java.sql.Types.VARCHAR);
-                }
-                else {
-                    cs.setString(iParam++,timeZone);
-                }
-                if ( overwriteFlag == null ) { // OVERWRITE_FLAG
-                    cs.setNull(iParam++,java.sql.Types.VARCHAR);
-                }
-                else {
-                    cs.setString(iParam++,overwriteFlag);
-                }
-                if ( agenID == null ) {
-                    cs.setNull(iParam++,java.sql.Types.INTEGER);
-                }
-                else {
-                    cs.setInt(iParam++,agenID); // AGEN_ID
-                }
-                // The WRITE_TO_HDB procedure previously only had a SAMPLE_DATE_TIME parameter but as of
-                // 2013-04-16 email from Mark Bogner:
-                // "PER ECAO request:
-                // SAMPLE_END_DATE_TIME has been added as the last parameter of WRITE_TO_HDB in test."
-                // and..
-                // "For the most part, this date/time parameter will be left alone and null.
-                // This parameter was put in place to handle the N hour intervals."
-                //
-                // Consequently, for the most part pass the SAMPLE_END_DATE_TIME as null except in the case
-                // where have NHour data
-                if ( (outputIntervalBase == TimeInterval.HOUR) && (outputIntervalMult != 1) ) {
-                    cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime())); // SAMPLE_END_DATE_TIME
-                    if ( Message.isDebugOn ) {
-                        Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
-                            " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffset) +
-                            " HDB date/time ms end=" + dt.getDate().getTime() + " diff = " + timeOffset );
-                    }
-                }
-                else {
-                    // Pass a null as per previous functionality
-                    cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
-                    if ( Message.isDebugOn ) {
-                        Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
-                            " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffset) +
-                            " HDB date/time ms end=null");
-                    }
-                }
-
-                cs.addBatch();
+                cs.setInt(iParam++,computeID); // COMPUTE_ID
             }
+            cs.setInt(iParam++,modelRunID.intValue()); // MODEL_RUN_ID - should always be non-null
+            if ( validationFlag == null ) { // VALIDATION_FLAG
+                cs.setNull(iParam++,java.sql.Types.CHAR);
+            }
+            else {
+                cs.setString(iParam++,validationFlag);
+            }
+            if ( dataFlags == null ) { // DATA_FLAGS
+                cs.setNull(iParam++,java.sql.Types.VARCHAR);
+            }
+            else {
+                cs.setString(iParam++,dataFlags);
+            }
+            if ( timeZone == null ) { // TIME_ZONE
+                cs.setNull(iParam++,java.sql.Types.VARCHAR);
+            }
+            else {
+                cs.setString(iParam++,timeZone);
+            }
+            if ( overwriteFlag == null ) { // OVERWRITE_FLAG
+                cs.setNull(iParam++,java.sql.Types.VARCHAR);
+            }
+            else {
+                cs.setString(iParam++,overwriteFlag);
+            }
+            if ( agenID == null ) {
+                cs.setNull(iParam++,java.sql.Types.INTEGER);
+            }
+            else {
+                cs.setInt(iParam++,agenID); // AGEN_ID
+            }
+            // The WRITE_TO_HDB procedure previously only had a SAMPLE_DATE_TIME parameter but as of
+            // 2013-04-16 email from Mark Bogner:
+            // "PER ECAO request:
+            // SAMPLE_END_DATE_TIME has been added as the last parameter of WRITE_TO_HDB in test."
+            // and..
+            // "For the most part, this date/time parameter will be left alone and null.
+            // This parameter was put in place to handle the N hour intervals."
+            //
+            // Consequently, for the most part pass the SAMPLE_END_DATE_TIME as null except in the case
+            // where have NHour data
+            if ( (outputIntervalBase == TimeInterval.HOUR) && (outputIntervalMult != 1) ) {
+                cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime())); // SAMPLE_END_DATE_TIME
+                if ( Message.isDebugOn ) {
+                    Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
+                        " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffset) +
+                        " HDB date/time ms end=" + dt.getDate().getTime() + " diff = " + timeOffset );
+                }
+            }
+            else {
+                // Pass a null as per previous functionality
+                cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
+                if ( Message.isDebugOn ) {
+                    Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
+                        " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffset) +
+                        " HDB date/time ms end=null");
+                }
+            }
+
+            cs.addBatch();
         }
         catch ( Exception e ) {
-            if ( writeUsingRiversideDMI ) {
-                Message.printWarning ( 3, routine, "Error writing value at " + dt + " (" + e + " )" );
-            }
-            else {
-                Message.printWarning ( 3, routine, "Error constructing batch write call at " + dt + " (" + e + " )" );
-            }
+            Message.printWarning ( 3, routine, "Error constructing batch write call at " + dt + " (" + e + " )" );
             ++errorCount;
             if ( errorCount <= 10 ) {
                 // Log the exception, but only for the first 10 errors
@@ -3620,27 +3602,26 @@ throws SQLException
         //    break;
         //}
     }
-    if ( !writeUsingRiversideDMI ) {
-        try {
-            // TODO SAM 2012-03-28 Figure out how to use to compare values updated with expected number
-            //int [] updateCounts =
-                cs.executeBatch();
-            cs.close();
-        }
-        catch (BatchUpdateException e) {
-            // Will happen if any of the batch commands fail.
-            Message.printWarning(3,routine,e);
-            throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
-        }
-        catch (SQLException e) {
-            Message.printWarning(3,routine,e);
-            throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
-        }
+    try {
+        // TODO SAM 2012-03-28 Figure out how to use to compare values updated with expected number
+        //int [] updateCounts =
+            cs.executeBatch();
+        cs.close();
+    }
+    catch (BatchUpdateException e) {
+        // Will happen if any of the batch commands fail.
+        Message.printWarning(3,routine,e);
+        throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
+    }
+    catch (SQLException e) {
+        Message.printWarning(3,routine,e);
+        throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
     }
     if ( errorCount > 0 ) {
         throw new RuntimeException ( "Had " + errorCount + " errors out of total of " + writeTryCount + " attempts." );
     }
-    Message.printStatus(2,routine,"Wrote " + writeTryCount + " values to HDB.");
+    Message.printStatus(2,routine,"Wrote " + writeTryCount + " values to HDB for SDI=" + siteDataTypeID +
+        " MRI=" + modelRunID + ".");
 }
     
 }

@@ -695,7 +695,7 @@ CommandWarningException, CommandException
             // Update the progress
             for ( TS ts : tslist ) {
                 ++its;
-                message = "Writing HDB time series " + its + " of " + tslist.size();
+                message = "Writing ensemble time series " + its + " of " + tslist.size() + " to HDB";
                 notifyCommandProgressListeners ( (its - 1), tslist.size(), (float)-1.0, message );
                 // The following were set to null above if blank strings
                 if ( (EnsembleName != null) || (NewEnsembleName != null) || (ensembleModelRunID != null) ) {

@@ -75,6 +75,12 @@ Indicate whether newly created TSIDs (e.g., in the TSTool main GUI) should use c
 private boolean __tsidStyleSDI = true; // Default
 
 /**
+Indicate whether when reading NHour data the end date time can be used for the TSTool date/time.
+False corresponds to a datastore property ReadNHourEndDateTime=StartDateTimePlusIntervalMinus1Hour
+*/
+private boolean __readNHourEndDateTime = true; // Default, for when WRITE_TO_HDB end_date_time actually works for NHour
+
+/**
 Loading applications from HDB_LOADING_APPLICATION.
 */
 private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new Vector<ReclamationHDB_LoadingApplication>();
@@ -138,15 +144,30 @@ with time series.
 @param startDateTime the START_DATE_TIME value from an HDB time series table
 @param endDateTime the END_DATE_TIME value from an HDB time series table
 @param intervalBase the TimeInterval interval base for the data
+@param intervalMult the TimeInterval multipler for the data
 @param dateTime if null, create a DateTime and return; if not null, reuse the instance
 */
 private DateTime convertHDBDateTimesToInternal ( DateTime startDateTime, DateTime endDateTime,
-        int intervalBase, DateTime dateTime )
+        int intervalBase, int intervalMult, DateTime dateTime )
 {   if ( dateTime == null ) {
         // Create a new instance with precision that matches the interval...
         dateTime = new DateTime(intervalBase);
     }
-    if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
+    if ( (intervalBase == TimeInterval.HOUR) && (intervalMult != 1) ) {
+        // NHour data - only case where a shift from the HDB start_date_time to the TSTool recording time is needed
+        // Need to have the hour shifted by N hour because start date passed as SAMPLE_DATE_TIME is start of interval.
+        // Can't rely on end time to be correct because WRITE_TO_HDB does not seem to set the end date time.
+        if ( getReadNHourEndDateTime() ) {
+            // Just use the end time
+            dateTime.setDate(endDateTime);
+        }
+        else {
+            // Calculate the end time as the start time plus the interval
+            startDateTime.addHour(intervalMult);
+            dateTime.setDate(startDateTime);
+        }
+    }
+    else if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
         // The ending date/time has the hour of interest
         dateTime.setDate(endDateTime);
     }
@@ -523,6 +544,14 @@ Return the list of global overwrite flags.
 public List<ReclamationHDB_OverwriteFlag> getOverwriteFlagList()
 {
     return __overwriteFlagList;
+}
+
+/**
+Indicate whether the date/time for data when reading NHour should just be the *_HOUR.END_DATE_TIME.
+*/
+public boolean getReadNHourEndDateTime ()
+{
+    return __readNHourEndDateTime;
 }
 
 /**
@@ -2783,7 +2812,7 @@ throws Exception
     // Set the missing value to NaN (HDB missing records typically are not even written to the DB).
     ts.setMissing(Double.NaN);
     setTimeSeriesProperties ( ts, tsMetadata );
-    
+
     // Now read the data...
     if ( readData ) {
         // Get the table name to read based on the data interval and whether real/model...
@@ -2879,6 +2908,7 @@ throws Exception
             // in particular to help with irregular data
             DateTime startDateTime = new DateTime(ts.getDate1()); // Reused start for each record
             DateTime endDateTime = new DateTime(ts.getDate1()); // Reused end for each record
+            int hour1 = ts.getDate1().getHour();
             int col = 1;
             boolean transferDateTimesAsStrings = true; // Use to evaluate performance of date/time transfer
                                                        // It seems that strings are a bit faster
@@ -2939,14 +2969,27 @@ throws Exception
                     overwriteFlag = rs.getString(col++);
                     derivationFlags = rs.getString(col++);
                 }
-                // Set the data in the time series
-                dateTime = convertHDBDateTimesToInternal ( startDateTime, endDateTime,
-                    intervalBase, dateTime );
+                // Set the data in the time series - note that these dates may get modified during the set
+                dateTime = convertHDBDateTimesToInternal ( startDateTime, endDateTime, intervalBase, intervalMult, dateTime );
                 // TODO SAM 2010-10-31 Figure out how to handle flags
+                if ( (intervalBase == TimeInterval.HOUR) && (intervalMult > 1) ) {
+                    // It is possible, for example during testing, that an hourly time series is used for 1Hour and NHour
+                    // records.  Old records may fill intervening records.  Therefore, only try setting if the hour is
+                    // an even multiple of the interval, also considering that the time series may not be on even intervals
+                    // (e.g., could be 6hour data at hours 3, 9, 15, 21.  Negatives are OK as long as evenly divisible.
+                    // TODO SAM 2013-10-03 Fix this because requested output period may not align with database
+                    /*
+                    if ( ((dateTime.getHour() - hour1) % intervalMult) != 0 ) {
+                        Message.printStatus(2,routine, "Odd interval, skipping HDB startDateTime=\"" + startDateTime +
+                            "\" endDateTime=" + endDateTime + " internal dataTime=\"" + dateTime + "\" value=" + value);
+                        continue;
+                    }
+                    */
+                }
                 ts.setDataValue( dateTime, value );
                 if ( Message.isDebugOn ) {
-                    Message.printDebug(1,routine,"Read HDB startDateTime=\"" + startDateTime +
-                        "\" endDateTime=" + endDateTime + " ineternal dataTime=\"" + dateTime + "\" value=" + value);
+                    Message.printStatus(2,routine,"Read HDB startDateTime=\"" + startDateTime +
+                        "\" endDateTime=" + endDateTime + " internal dataTime=\"" + dateTime + "\" value=" + value);
                 }
             }
             sw.stop();
@@ -3007,6 +3050,14 @@ public void setKeepAlive ( String keepAliveSql, String keepAliveFrequency )
 {
     __keepAliveSql = keepAliveSql;
     __keepAliveFrequency = keepAliveFrequency;
+}
+
+/**
+Indicate whether the date/time for data when reading NHour should just be the *_HOUR.END_DATE_TIME.
+*/
+public void setReadNHourEndDateTime ( boolean readNHourEndDateTime )
+{
+    __readNHourEndDateTime = readNHourEndDateTime;
 }
 
 /**
@@ -3470,20 +3521,25 @@ throws SQLException
     int writeTryCount = 0;
     double value;
     int iParam;
-    int timeOffset = 0;
+    int timeOffsetTsToHdbStart = 0;
     int outputIntervalBase = outputInterval.getBase();
     int outputIntervalMult = outputInterval.getMultiplier();
     if ( outputIntervalBase == TimeInterval.HOUR ) {
-        // Hourly data
+        // Hourly data - only case where a shift from the TSTool recording time to the HDB start_date_time
         // Need to have the hour shifted by one hour because start date passed as SAMPLE_DATE_TIME
         // is start of interval.  The offset is in milliseconds
-        timeOffset = -1000*3600*outputIntervalMult;
+        timeOffsetTsToHdbStart = -1000*3600*outputIntervalMult;
     }
     else if ( (outputIntervalBase != TimeInterval.IRREGULAR) && outputIntervalMult != 1 ) {
         // Not able to handle multipliers for non-hourly
         throw new IllegalArgumentException( "Data interval must be 1 for intervals other than hour." );
     }
     // Repeatedly call the stored procedure that writes the data
+    if ( modelRunID < 0 ) {
+        // Stored procedure wants value of zero if no MRI
+        modelRunID = new Long(0);
+    }
+    Timestamp startTimeStamp, endTimeStamp;
     while ( (tsdata = tsi.next()) != null ) {
         // Set the information in the write statement
         dt = tsdata.getDate();
@@ -3518,7 +3574,8 @@ throws SQLException
             //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
             //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
             // The offset is negative in order to shift to the start of the interval
-            cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime()+timeOffset)); // SAMPLE_DATE_TIME
+            startTimeStamp = new Timestamp(dt.getDate().getTime()+timeOffsetTsToHdbStart);
+            cs.setTimestamp(iParam++,startTimeStamp); // SAMPLE_DATE_TIME
             cs.setDouble(iParam++,value); // SAMPLE_VALUE
             cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
             cs.setInt(iParam++,loadingAppID); // LOADING_APP_ID
@@ -3528,7 +3585,7 @@ throws SQLException
             else {
                 cs.setInt(iParam++,computeID); // COMPUTE_ID
             }
-            cs.setInt(iParam++,modelRunID.intValue()); // MODEL_RUN_ID - should always be non-null
+            cs.setInt(iParam++,modelRunID.intValue()); // MODEL_RUN_ID - should always be non-null, -1 if not model data
             if ( validationFlag == null ) { // VALIDATION_FLAG
                 cs.setNull(iParam++,java.sql.Types.CHAR);
             }
@@ -3570,19 +3627,23 @@ throws SQLException
             // Consequently, for the most part pass the SAMPLE_END_DATE_TIME as null except in the case
             // where have NHour data
             if ( (outputIntervalBase == TimeInterval.HOUR) && (outputIntervalMult != 1) ) {
-                cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime())); // SAMPLE_END_DATE_TIME
+                endTimeStamp = new Timestamp(dt.getDate().getTime());
+                cs.setTimestamp(iParam++,endTimeStamp); // SAMPLE_END_DATE_TIME
                 if ( Message.isDebugOn ) {
-                    Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
-                        " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffset) +
-                        " HDB date/time ms end=" + dt.getDate().getTime() + " diff = " + timeOffset );
+                    // TODO SAM 2013-10-02 The end date/time always seems to be written as 1 hour offset, regardless of
+                    // the value that is passed in
+                    Message.printStatus(2, routine, "Writing time series date/time=" + dt + " value=" + value +
+                        " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffsetTsToHdbStart) +
+                        " " + startTimeStamp + " HDB date/time ms end=" + dt.getDate().getTime() + " " +
+                        endTimeStamp + " offset from end = " + timeOffsetTsToHdbStart );
                 }
             }
             else {
-                // Pass a null as per previous functionality
+                // Pass a null for SAMEPLE_END_DATE_TIME as per previous functionality
                 cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
                 if ( Message.isDebugOn ) {
                     Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
-                        " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffset) +
+                        " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffsetTsToHdbStart) +
                         " HDB date/time ms end=null");
                 }
             }

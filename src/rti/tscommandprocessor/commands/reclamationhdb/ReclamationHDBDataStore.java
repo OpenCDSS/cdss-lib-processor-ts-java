@@ -53,11 +53,17 @@ throws IOException, Exception
     if ( (tsidStyle != null) && tsidStyle.equalsIgnoreCase("CommonName") ) {
         tsidStyleSDI = false;
     }
+    String readNHour = props.getValue("ReadNHourEndDateTime");
+    boolean readNHourEndDateTime = true;
+    if ( (readNHour != null) && readNHour.equalsIgnoreCase("StartDateTimePlusInterval") ) {
+        readNHourEndDateTime = false;
+    }
     
     // Get the properties and create an instance
     ReclamationHDB_DMI dmi = new ReclamationHDB_DMI ( databaseEngine, databaseServer, databaseName, -1, systemLogin, systemPassword );
     dmi.setKeepAlive ( keepAliveSql, keepAliveFrequency ); // Needed for remote access to keep connection open
     dmi.setTSIDStyleSDI ( tsidStyleSDI );
+    dmi.setReadNHourEndDateTime( readNHourEndDateTime );
     dmi.open();
     ReclamationHDBDataStore ds = new ReclamationHDBDataStore( name, description, dmi );
     return ds;

@@ -30,6 +30,16 @@ public DataStore create ( PropList props )
     String databaseName = IOUtil.expandPropertyForEnvironment("DatabaseName",props.getValue ( "DatabaseName" ));
     String systemLogin = IOUtil.expandPropertyForEnvironment("SystemLogin",props.getValue ( "SystemLogin" ));
     String systemPassword = IOUtil.expandPropertyForEnvironment("SystemPassword",props.getValue ( "SystemPassword" ));
+    String tsidStyle = props.getValue("TSIDStyle");
+    boolean tsidStyleSDI = true;
+    if ( (tsidStyle != null) && tsidStyle.equalsIgnoreCase("CommonName") ) {
+        tsidStyleSDI = false;
+    }
+    String readNHour = props.getValue("ReadNHourEndDateTime");
+    boolean readNHourEndDateTime = true;
+    if ( (readNHour != null) && readNHour.equalsIgnoreCase("StartDateTimePlusInterval") ) {
+        readNHourEndDateTime = false;
+    }
     try {
         ReclamationHDB_DMI dmi = new ReclamationHDB_DMI (
             databaseEngine, // OK if null, will use SQL Server
@@ -39,6 +49,8 @@ public DataStore create ( PropList props )
             systemLogin,
             systemPassword );
         // Open the database connection
+        dmi.setTSIDStyleSDI ( tsidStyleSDI );
+        dmi.setReadNHourEndDateTime( readNHourEndDateTime );
         dmi.open();
         return new ReclamationHDBDataStore ( name, description, dmi );
     }

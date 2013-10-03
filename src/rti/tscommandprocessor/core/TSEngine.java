@@ -5065,15 +5065,16 @@ throws Exception
 		limits.setDate2 ( __OutputEnd_DateTime );
 		v.add ( limits );
 		try {
-            limits = TSUtil.getPeriodFromLimits( v, TSUtil.MAX_POR);
-            // If in discovery mode in TSTool, don't want to do the following because it throws
-            // an exception.  The output period may be set in the processor from a previous run and
-            // when new commands are loaded, the "readData" check is necessary.
-			if ( readData &&
-			    (limits.getDate1().lessThan(ts.getDate1()) ||
-			    limits.getDate2().greaterThan(ts.getDate2())) ) {
-				ts.changePeriodOfRecord ( limits.getDate1(), limits.getDate2() );
-			}
+		    if ( readData ) {
+                limits = TSUtil.getPeriodFromLimits( v, TSUtil.MAX_POR);
+                // If in discovery mode in TSTool, don't want to do the following because it throws
+                // an exception.  The output period may be set in the processor from a previous run and
+                // when new commands are loaded, the "readData" check is necessary.
+    			if ( (limits.getDate1().lessThan(ts.getDate1()) ||
+    			    limits.getDate2().greaterThan(ts.getDate2())) ) {
+    				ts.changePeriodOfRecord ( limits.getDate1(), limits.getDate2() );
+    			}
+		    }
 		}
 		catch ( Exception e ) {
 			String message = "Unable to extend period for \"" + ts.getIdentifierString() + "\" to output period.";

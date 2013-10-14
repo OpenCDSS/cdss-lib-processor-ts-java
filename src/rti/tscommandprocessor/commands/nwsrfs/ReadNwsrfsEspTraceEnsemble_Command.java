@@ -5,11 +5,19 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
+import RTi.TS.DayTS;
 import RTi.TS.TS;
+import RTi.TS.TSData;
 import RTi.TS.TSEnsemble;
+import RTi.TS.TSIdent;
+import RTi.TS.TSIterator;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
@@ -29,22 +37,21 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 //import RTi.Util.Time.DateTime;
 
 import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 
 /**
-<p>
 This class initializes, checks, and runs the TS Alias and non-TS Alias 
-ReadNwsrfsEspTraceEnsemble() commands.  Only the non-alias version is enabled.
-</p>
+ReadNwsrfsEspTraceEnsemble() commands.
 */
 public class ReadNwsrfsEspTraceEnsemble_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
-protected static final String
-	_FALSE = "False",
-	_TRUE = "True";
+protected final String _FALSE = "False";
+protected final String _TRUE = "True";
 
 /**
 Private data members shared between the checkCommandParameters() and the 
@@ -84,8 +91,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -105,8 +111,8 @@ throws InvalidCommandParameterException
 	String NewUnits  = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd   = parameters.getValue("InputEnd");
-	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
     */
+    String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
 	String Alias = parameters.getValue("Alias");
     
 	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {
@@ -181,33 +187,18 @@ throws InvalidCommandParameterException
 	if ( NewUnits != null ) {
 		// Will check at run time
 	}
+	*/
 
-	boolean read24HourAsDay = false;
+    if ( (Read24HourAsDay != null) && (Read24HourAsDay.length() != 0) &&
+        !Read24HourAsDay.equalsIgnoreCase(_FALSE) && !Read24HourAsDay.equalsIgnoreCase(_TRUE)) {
+        message = "The value for Read24HourAsDay (" + Read24HourAsDay + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify as " + _FALSE + " (default) or " + _TRUE + ")." ) );
+    }
 
-	// Read24HourAsDay
-	if ((Read24HourAsDay != null) && !Read24HourAsDay.equals("")) {
-		if (Read24HourAsDay.equalsIgnoreCase("true")) {
-			// valid entry
-			read24HourAsDay = true;
-		}
-		else if (Read24HourAsDay.equalsIgnoreCase("false") || Read24HourAsDay.trim().equals("")) {
-		    	// valid entry
-		    	read24HourAsDay = false;
-		}
-		else {
-			// invalid value -- will default to false, but report a warning.
-            message = "The value to specify whether to convert "
-                + "24 Hour data to Daily should be blank, or "
-                + "one of \"True\" or \"False\", not \""
-                + Read24HourAsDay + "\"";
-			warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify True, False, or blank." ) );
-
-		}
-	}
-
+    /*
 	// InputStart
 	if ((InputStart != null) && !InputStart.equals("")) {
 		try {
@@ -322,7 +313,7 @@ throws InvalidCommandParameterException
         */
     
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "EnsembleID" );
@@ -330,19 +321,90 @@ throws InvalidCommandParameterException
     //valid_Vector.add ( "InputStart" );
     //valid_Vector.add ( "InputEnd" );
     //valid_Vector.add ( "NewUnits" );
-    //valid_Vector.add ( "Read24HourAsDay" );
+    valid_Vector.add ( "Read24HourAsDay" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, warning_level ),
-			warning );
+			MessageUtil.formatMessageTag( command_tag, warning_level ), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+}
+
+/**
+Convert a list of 24Hour time series to day interval.
+*/
+public List<TS> convertTo24Hour(List<TS> hour24Tslist, boolean readData )
+throws Exception
+{
+    ArrayList<TS> tslist = new ArrayList<TS>();
+    for ( TS ts: hour24Tslist ) {
+        if ( ts == null ) {
+            tslist.add ( ts );
+            continue;
+        }
+        // Create a day interval time series that otherwise is the same as the hour interval time series
+        DayTS dayts = new DayTS();
+        tslist.add ( dayts );
+        // Copy the header exactly, including the property list which is not copied by copyHeader
+        dayts.copyHeader ( ts);
+        HashMap<String,Object> props = ts.getProperties();
+        Iterator it = props.entrySet().iterator();
+        while ( it.hasNext() ) {
+            Map.Entry pairs = (Map.Entry)it.next();
+            dayts.setProperty((String)pairs.getKey(), pairs.getValue());
+        }
+        // Reset header information for daily time series - the following get clobbered in copy so reset
+        dayts.setDataInterval(TimeInterval.DAY, 1);
+        TSIdent tsident = (TSIdent)ts.getIdentifier().clone();
+        tsident.setInterval("Day");
+        dayts.setIdentifier(tsident);
+        // The original date/times will have day=N, hour=0 corresponding to interval-ending values so convert to day (N-1)
+        // by subtracting 1-hour and then truncating to day precision
+        // ...OR if hour != 0 then leave the day as is
+        DateTime d = new DateTime(ts.getDate1());
+        if ( d.getHour() == 0 ) {
+            d.addHour(-1);
+        }
+        d.setPrecision(DateTime.PRECISION_DAY);
+        dayts.setDate1(d);
+        d = new DateTime(ts.getDate2());
+        if ( d.getHour() == 0 ) {
+            d.addHour(-1);
+        }
+        d.setPrecision(DateTime.PRECISION_DAY);
+        dayts.setDate2(d);
+        d = new DateTime(ts.getDate1Original());
+        if ( d.getHour() == 0 ) {
+            d.addHour(-1);
+        }
+        d.setPrecision(DateTime.PRECISION_DAY);
+        dayts.setDate1Original(d);
+        d = new DateTime(ts.getDate2Original());
+        if ( d.getHour() == 0 ) {
+            d.addHour(-1);
+        }
+        d.setPrecision(DateTime.PRECISION_DAY);
+        dayts.setDate2Original(d);
+        ts.addToGenesis("Converted from 24Hour to Day interval.");
+        if ( readData ) {
+            // Transfer the data
+            // Start the iteration at the same point and continue through the time series - should come out aligned
+            dayts.allocateDataSpace();
+            TSIterator tsi = ts.iterator();
+            TSData tsdata;
+            DateTime date = new DateTime(dayts.getDate1());
+            while ( (tsdata = tsi.next()) != null ) {
+                // Set missing values also to ensure that flags, etc. are set
+                dayts.setDataValue(date, tsdata.getDataValue(), tsdata.getDataFlag(), tsdata.getDuration());
+                date.addDay(1);
+            }
+        }
+    }
+    return tslist;
 }
 
 /**
@@ -537,23 +599,46 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// TODO SAM 2007-02-18 Need to enable InputStart and InputEnd handling.
 	//String InputStart = _parameters.getValue("InputStart");
 	//String InputEnd = _parameters.getValue("InputEnd");
-	//String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
-	
-	//props.set("Read24HourAsDay=" + Read24HourAsDay);
+	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
+	boolean read24HourAsDay = false;
+	if ( (Read24HourAsDay != null) && Read24HourAsDay.equalsIgnoreCase(_TRUE) ) {
+	    read24HourAsDay = true;
+	}
 
 	// Read the ensemble file.
-    List tslist = null;   // Keep the list of time series
+    List<TS> tslist = null;   // Keep the list of time series
     String InputFile_full = InputFile;
 	try {
-        boolean read_data = true;
+        boolean readData = true;
         if ( command_phase == CommandPhaseType.DISCOVERY ){
-            read_data = false;
+            readData = false;
         }
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                        TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
-        NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( InputFile_full, read_data );
-        tslist = ensemble.getTimeSeriesList ();
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
+        NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( InputFile_full, readData );
+        if ( read24HourAsDay ) {
+            // Convert the 24-hour data to daily time series.  Do it here because the NWSRFS_ESPTraceEnsemble class
+            // is internally set up to only deal with hourly time series and don't want to interfere with that.
+            for ( TS ts : ensemble.getTimeSeriesList() ) {
+                // Make sure that the input time series are 24Hour
+                if ( (ts != null) && (ts.getDataIntervalBase() != TimeInterval.HOUR) &&
+                    (ts.getDataIntervalMult() != 24) ) {
+                    message = "Ensemble does not contain 24Hour time series.  Cannot convert to day interval.";
+                    Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag(command_tag, ++warning_count ),routine, message );
+                    status.addToLog(command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE, message,"Verify use of Read24HourAsDay parameter."));
+                    throw new CommandException ( message );
+                }
+            }
+            Message.printStatus(2,routine,"Convert 24Hour data to Day interval...");
+            tslist = convertTo24Hour(ensemble.getTimeSeriesList(),readData);
+        }
+        else {
+            // Just use the hourly time series
+            tslist = ensemble.getTimeSeriesList ();
+        }
 		int tscount = 0;
 		if ( tslist != null ) {
 			tscount = tslist.size();
@@ -562,7 +647,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		if ( (Alias != null) && (Alias.length() > 0) ) {
     		for ( int i = 0; i < tscount; i++ ) {
-    		    TS ts = (TS)tslist.get(i);
+    		    TS ts = tslist.get(i);
     		    if ( ts == null ) {
     		        continue;
     		    }
@@ -682,8 +767,8 @@ public String toString ( PropList props )
 	String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
+	*/
 	String Read24HourAsDay = props.getValue("Read24HourAsDay");
-    */
 
 	StringBuffer b = new StringBuffer ();
 
@@ -728,6 +813,7 @@ public String toString ( PropList props )
 		}
 		b.append("InputEnd=\"" + InputEnd + "\"");
 	}
+	*/
 
 	if (Read24HourAsDay != null && Read24HourAsDay.length() > 0) {
 		if (b.length() > 0) {
@@ -735,7 +821,6 @@ public String toString ( PropList props )
 		}
 		b.append("Read24HourAsDay=" + Read24HourAsDay + "");
 	}
-    */
 
     String lead = "";
 	if ( _use_alias && (Alias != null) && (Alias.length() > 0) ) {

@@ -3514,6 +3514,8 @@ throws SQLException
     catch ( Exception e ) {
         throw new RuntimeException("Unable to initialize iterator for period " + outputStart + " to " + outputEnd );
     }
+    // Turn off auto-commit to improve performance
+    getConnection().setAutoCommit(false);
     CallableStatement cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?,?,?,?,?,?)}");
     TSData tsdata;
     DateTime dt;
@@ -3540,143 +3542,182 @@ throws SQLException
         modelRunID = new Long(0);
     }
     Timestamp startTimeStamp, endTimeStamp;
-    while ( (tsdata = tsi.next()) != null ) {
-        // Set the information in the write statement
-        dt = tsdata.getDate();
-        value = tsdata.getDataValue();
-        if ( ts.isDataMissing(value) ) {
-            // TODO SAM 2012-03-27 Evaluate whether should have option to write
-            continue;
-        }
-        // If an override interval is specified, make sure that the date/time passes the test for
-        // writing, as per the TSTool WriteReclamationHDB() documentation
-        // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
-        /*
-        if ( intervalOverride != null ) {
-            if ( dt.getHour()%intervalOverride.getMultiplier() != 0 ) {
-                // Hour is not evenly divisible by the multiplier so don't allow
-                Message.printWarning(3, routine, "Date/time \"" + dt +
-                    "\" hour is not evenly divisible by override interval.  Not writing.");
-                ++errorCount;
-                continue;
-            }
-            // Set the hour and minutes to zero since being written as hourly
-            dt.setMinute(0);
-            dt.setSecond(0);
-            dt.setHSecond(0);
-        }
-        */
-        try {
-            iParam = 1; // JDBC code is 1-based (use argument 1 for return value if used)
-            ++writeTryCount;
-            cs.setInt(iParam++,siteDataTypeID.intValue()); // SAMPLE_SDI
-            // Format the date/time as a string consistent with the database engine
-            //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
-            //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
-            // The offset is negative in order to shift to the start of the interval
-            startTimeStamp = new Timestamp(dt.getDate().getTime()+timeOffsetTsToHdbStart);
-            cs.setTimestamp(iParam++,startTimeStamp); // SAMPLE_DATE_TIME
-            cs.setDouble(iParam++,value); // SAMPLE_VALUE
-            cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
-            cs.setInt(iParam++,loadingAppID); // LOADING_APP_ID
-            if ( computeID == null ) {
-                cs.setNull(iParam++,java.sql.Types.INTEGER);
-            }
-            else {
-                cs.setInt(iParam++,computeID); // COMPUTE_ID
-            }
-            cs.setInt(iParam++,modelRunID.intValue()); // MODEL_RUN_ID - should always be non-null, -1 if not model data
-            if ( validationFlag == null ) { // VALIDATION_FLAG
-                cs.setNull(iParam++,java.sql.Types.CHAR);
-            }
-            else {
-                cs.setString(iParam++,validationFlag);
-            }
-            if ( dataFlags == null ) { // DATA_FLAGS
-                cs.setNull(iParam++,java.sql.Types.VARCHAR);
-            }
-            else {
-                cs.setString(iParam++,dataFlags);
-            }
-            if ( timeZone == null ) { // TIME_ZONE
-                cs.setNull(iParam++,java.sql.Types.VARCHAR);
-            }
-            else {
-                cs.setString(iParam++,timeZone);
-            }
-            if ( overwriteFlag == null ) { // OVERWRITE_FLAG
-                cs.setNull(iParam++,java.sql.Types.VARCHAR);
-            }
-            else {
-                cs.setString(iParam++,overwriteFlag);
-            }
-            if ( agenID == null ) {
-                cs.setNull(iParam++,java.sql.Types.INTEGER);
-            }
-            else {
-                cs.setInt(iParam++,agenID); // AGEN_ID
-            }
-            // The WRITE_TO_HDB procedure previously only had a SAMPLE_DATE_TIME parameter but as of
-            // 2013-04-16 email from Mark Bogner:
-            // "PER ECAO request:
-            // SAMPLE_END_DATE_TIME has been added as the last parameter of WRITE_TO_HDB in test."
-            // and..
-            // "For the most part, this date/time parameter will be left alone and null.
-            // This parameter was put in place to handle the N hour intervals."
-            //
-            // Consequently, for the most part pass the SAMPLE_END_DATE_TIME as null except in the case
-            // where have NHour data
-            if ( (outputIntervalBase == TimeInterval.HOUR) && (outputIntervalMult != 1) ) {
-                endTimeStamp = new Timestamp(dt.getDate().getTime());
-                cs.setTimestamp(iParam++,endTimeStamp); // SAMPLE_END_DATE_TIME
-                if ( Message.isDebugOn ) {
-                    // TODO SAM 2013-10-02 The end date/time always seems to be written as 1 hour offset, regardless of
-                    // the value that is passed in
-                    Message.printStatus(2, routine, "Writing time series date/time=" + dt + " value=" + value +
-                        " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffsetTsToHdbStart) +
-                        " " + startTimeStamp + " HDB date/time ms end=" + dt.getDate().getTime() + " " +
-                        endTimeStamp + " offset from end = " + timeOffsetTsToHdbStart );
-                }
-            }
-            else {
-                // Pass a null for SAMEPLE_END_DATE_TIME as per previous functionality
-                cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
-                if ( Message.isDebugOn ) {
-                    Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
-                        " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffsetTsToHdbStart) +
-                        " HDB date/time ms end=null");
-                }
-            }
-
-            cs.addBatch();
-        }
-        catch ( Exception e ) {
-            Message.printWarning ( 3, routine, "Error constructing batch write call at " + dt + " (" + e + " )" );
-            ++errorCount;
-            if ( errorCount <= 10 ) {
-                // Log the exception, but only for the first 10 errors
-                Message.printWarning(3,routine,e);
-            }
-        }
-        //if ( writeTryCount > 0 ) {
-        //    // TODO SAM 2012-03-28 Only write one value for testing
-        //    break;
-        //}
-    }
+    int batchCount = 0;
+    // Maximum batch, 256 as per: http://docs.oracle.com/cd/E11882_01/timesten.112/e21638/tuning.htm
+    int batchCountMax = 1000;
+    int batchCountTotal = 0;
     try {
-        // TODO SAM 2012-03-28 Figure out how to use to compare values updated with expected number
-        //int [] updateCounts =
-            cs.executeBatch();
-        cs.close();
+        while ( true ) {
+            tsdata = tsi.next();
+            if ( tsdata != null ) {
+                // Set the information in the write statement
+                dt = tsdata.getDate();
+                value = tsdata.getDataValue();
+                if ( ts.isDataMissing(value) ) {
+                    // TODO SAM 2012-03-27 Evaluate whether should have option to write
+                    continue;
+                }
+                // If an override interval is specified, make sure that the date/time passes the test for
+                // writing, as per the TSTool WriteReclamationHDB() documentation
+                // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+                /*
+                if ( intervalOverride != null ) {
+                    if ( dt.getHour()%intervalOverride.getMultiplier() != 0 ) {
+                        // Hour is not evenly divisible by the multiplier so don't allow
+                        Message.printWarning(3, routine, "Date/time \"" + dt +
+                            "\" hour is not evenly divisible by override interval.  Not writing.");
+                        ++errorCount;
+                        continue;
+                    }
+                    // Set the hour and minutes to zero since being written as hourly
+                    dt.setMinute(0);
+                    dt.setSecond(0);
+                    dt.setHSecond(0);
+                }
+                */
+                try {
+                    iParam = 1; // JDBC code is 1-based (use argument 1 for return value if used)
+                    ++writeTryCount;
+                    cs.setInt(iParam++,siteDataTypeID.intValue()); // SAMPLE_SDI
+                    // Format the date/time as a string consistent with the database engine
+                    //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
+                    //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
+                    // The offset is negative in order to shift to the start of the interval
+                    startTimeStamp = new Timestamp(dt.getDate().getTime()+timeOffsetTsToHdbStart);
+                    cs.setTimestamp(iParam++,startTimeStamp); // SAMPLE_DATE_TIME
+                    cs.setDouble(iParam++,value); // SAMPLE_VALUE
+                    cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
+                    cs.setInt(iParam++,loadingAppID); // LOADING_APP_ID
+                    if ( computeID == null ) {
+                        cs.setNull(iParam++,java.sql.Types.INTEGER);
+                    }
+                    else {
+                        cs.setInt(iParam++,computeID); // COMPUTE_ID
+                    }
+                    cs.setInt(iParam++,modelRunID.intValue()); // MODEL_RUN_ID - should always be non-null, -1 if not model data
+                    if ( validationFlag == null ) { // VALIDATION_FLAG
+                        cs.setNull(iParam++,java.sql.Types.CHAR);
+                    }
+                    else {
+                        cs.setString(iParam++,validationFlag);
+                    }
+                    if ( dataFlags == null ) { // DATA_FLAGS
+                        cs.setNull(iParam++,java.sql.Types.VARCHAR);
+                    }
+                    else {
+                        cs.setString(iParam++,dataFlags);
+                    }
+                    if ( timeZone == null ) { // TIME_ZONE
+                        cs.setNull(iParam++,java.sql.Types.VARCHAR);
+                    }
+                    else {
+                        cs.setString(iParam++,timeZone);
+                    }
+                    if ( overwriteFlag == null ) { // OVERWRITE_FLAG
+                        cs.setNull(iParam++,java.sql.Types.VARCHAR);
+                    }
+                    else {
+                        cs.setString(iParam++,overwriteFlag);
+                    }
+                    if ( agenID == null ) {
+                        cs.setNull(iParam++,java.sql.Types.INTEGER);
+                    }
+                    else {
+                        cs.setInt(iParam++,agenID); // AGEN_ID
+                    }
+                    // The WRITE_TO_HDB procedure previously only had a SAMPLE_DATE_TIME parameter but as of
+                    // 2013-04-16 email from Mark Bogner:
+                    // "PER ECAO request:
+                    // SAMPLE_END_DATE_TIME has been added as the last parameter of WRITE_TO_HDB in test."
+                    // and..
+                    // "For the most part, this date/time parameter will be left alone and null.
+                    // This parameter was put in place to handle the N hour intervals."
+                    //
+                    // Consequently, for the most part pass the SAMPLE_END_DATE_TIME as null except in the case
+                    // where have NHour data
+                    if ( (outputIntervalBase == TimeInterval.HOUR) && (outputIntervalMult != 1) ) {
+                        endTimeStamp = new Timestamp(dt.getDate().getTime());
+                        cs.setTimestamp(iParam++,endTimeStamp); // SAMPLE_END_DATE_TIME
+                        if ( Message.isDebugOn ) {
+                            // TODO SAM 2013-10-02 The end date/time always seems to be written as 1 hour offset, regardless of
+                            // the value that is passed in
+                            Message.printStatus(2, routine, "Writing time series date/time=" + dt + " value=" + value +
+                                " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffsetTsToHdbStart) +
+                                " " + startTimeStamp + " HDB date/time ms end=" + dt.getDate().getTime() + " " +
+                                endTimeStamp + " offset from end = " + timeOffsetTsToHdbStart );
+                        }
+                    }
+                    else {
+                        // Pass a null for SAMEPLE_END_DATE_TIME as per previous functionality
+                        cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
+                        if ( Message.isDebugOn ) {
+                            Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
+                                " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffsetTsToHdbStart) +
+                                " HDB date/time ms end=null");
+                        }
+                    }
+                    ++batchCount;
+                    cs.addBatch();
+                }
+                catch ( Exception e ) {
+                    Message.printWarning ( 3, routine, "Error constructing batch write call at " + dt + " (" + e + " )" );
+                    ++errorCount;
+                    if ( errorCount <= 10 ) {
+                        // Log the exception, but only for the first 10 errors
+                        Message.printWarning(3,routine,e);
+                    }
+                }
+            }
+            //if ( writeTryCount > 0 ) {
+            //    // TODO SAM 2012-03-28 Only write one value for testing
+            //    break;
+            //}
+            if ( ((tsdata == null) && (batchCount > 0)) || (batchCount == batchCountMax) ) {
+                // Process the insert, either a group of maximum batch count or the last batch
+                try {
+                    // TODO SAM 2012-03-28 Figure out how to use to compare values updated with expected number
+                    batchCountTotal += batchCount;
+                    Message.printStatus(2, routine, "Writing time series records, this batch count = " + batchCount +
+                        ", batch count total = " + batchCountTotal );
+                    int [] updateCounts = cs.executeBatch();
+                    if ( updateCounts != null ) {
+                        for ( int iu = 0; iu < updateCounts.length; iu++ ) {
+                            if ( updateCounts[iu] == Statement.EXECUTE_FAILED ) {
+                                Message.printWarning(3,routine,"Error executing batch callable statement." );
+                                ++errorCount;
+                            }
+                        }
+                    }
+                    // Now clear the batch commands for the next group of inserts
+                    cs.getConnection().commit();
+                    cs.clearBatch();
+                    batchCount = 0;
+                }
+                catch (Exception e) {
+                    // Will happen if any of the batch commands fail.
+                    Message.printWarning(3,routine,"Error executing write callable statement (" + e + ")." );
+                    Message.printWarning(3,routine,e);
+                    ++errorCount;
+                }
+            }
+            if ( tsdata == null ) {
+                // Done with time series
+                break;
+            }
+        }
     }
-    catch (BatchUpdateException e) {
-        // Will happen if any of the batch commands fail.
-        Message.printWarning(3,routine,e);
-        throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
+    catch ( Exception e ) {
+        if ( cs != null ) {
+            try {
+                cs.close();
+            }
+            catch ( SQLException e2 ) {
+                // Should not happen
+            }
+        }
     }
-    catch (SQLException e) {
-        Message.printWarning(3,routine,e);
-        throw new RuntimeException ( "Error executing write callable statement (" + e + ").", e );
+    finally {
+        getConnection().setAutoCommit(true);
     }
     if ( errorCount > 0 ) {
         throw new RuntimeException ( "Had " + errorCount + " errors out of total of " + writeTryCount + " attempts." );

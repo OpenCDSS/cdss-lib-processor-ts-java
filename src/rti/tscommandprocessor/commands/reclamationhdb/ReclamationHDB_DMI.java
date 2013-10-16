@@ -2789,7 +2789,20 @@ throws Exception
 
 /**
 Helper method to create and read the time series, once the HDB metadata has been determined.
+See the called methods to see how all of the information is determined.
 @return the time series that was read
+@param tsidentString the time series identifier string, used to create each new time series
+@param tsident the time series identifier object
+@param intervalBase the time series interval base
+@param intervalMult the time series interval multiplier
+@param siteDatatypeID the SDI for the time series
+@param modelRunID the MRI for the time series, for model time series
+@param tsMetadata time series metadata object, used to assign time series header information
+@param isReal whether or not the time series is being read from a real table (false=model table)
+@param tsType "real" or "model" used for messaging
+@param readStart the date/time to start reading, in TSTool conventions
+@param readEnd the date/time to end reading, in TSTool conventions
+@param readData whether to read data (true) or just the header (false)
 */
 private TS readTimeSeriesHelper ( String tsidentString, TSIdent tsident, int intervalBase, int intervalMult,
     int siteDataTypeID, int modelRunID, ReclamationHDB_SiteTimeSeriesMetadata tsMetadata,
@@ -2886,6 +2899,10 @@ throws Exception
         int record = 0;
         ResultSet rs = null;
         Statement stmt = null;
+        boolean timeAlignmentChecked = false; // Used with NHour data to make sure requested period times align with available data
+        DateTime date1 = ts.getDate1();
+        int badAlignmentCount = 0;
+        boolean badAlignment = false; // Whether there are issues with HDB date/time and time series
         try {
             stmt = __hdbConnection.ourConn.createStatement();
             StopWatch sw = new StopWatch();
@@ -2973,6 +2990,7 @@ throws Exception
                 dateTime = convertHDBDateTimesToInternal ( startDateTime, endDateTime, intervalBase, intervalMult, dateTime );
                 // TODO SAM 2010-10-31 Figure out how to handle flags
                 if ( (intervalBase == TimeInterval.HOUR) && (intervalMult > 1) ) {
+                    // TODO SAM 2013-10-14 Need to fix this issue but really need WRITE_TO_HDB to work when setting the end date
                     // It is possible, for example during testing, that an hourly time series is used for 1Hour and NHour
                     // records.  Old records may fill intervening records.  Therefore, only try setting if the hour is
                     // an even multiple of the interval, also considering that the time series may not be on even intervals
@@ -2986,15 +3004,58 @@ throws Exception
                     }
                     */
                 }
-                ts.setDataValue( dateTime, value );
+                // Make sure that the start and end hour are evenly divisible by the hour in the database
+                badAlignment = false;
+                if ( (intervalBase == TimeInterval.HOUR) && (intervalMult > 1) ) {
+                    if ( !timeAlignmentChecked ) {
+                        boolean datesAdjusted = false;
+                        if ( ((dateTime.getHour() - date1.getHour() ) % intervalMult) != 0 ) {
+                            // The requested start is offset from the actual data so adjust the time series period to that
+                            // of the data.  For example this may be due to:
+                            // 1) User does not specify input period for appropriate time zone
+                            // 2) Data are being read through "current", which will typically will not match data interval exactly
+                            // Set the hour to the smallest in the day that aligns with the data records
+                            date1.setHour(dateTime.getHour()%intervalMult);
+                            ts.setDate1(date1);
+                            datesAdjusted = true;
+                        }
+                        DateTime date2 = ts.getDate2();
+                        if ( ((dateTime.getHour() - date2.getHour() ) % intervalMult) != 0 ) {
+                            // Set the hour to the largest in the day that aligns with the data records
+                            date2.setHour(24 - intervalMult + dateTime.getHour()%intervalMult);
+                            ts.setDate2(date2);
+                            datesAdjusted = true;
+                        }
+                        timeAlignmentChecked = true;
+                        if ( datesAdjusted ) {
+                            // Reallocate the data space
+                            ts.allocateDataSpace();
+                        }
+                    }
+                    else {
+                        // Time alignment was previously checked but to be absolutely sure, check each data record
+                        // for alignment.
+                        if ( (dateTime.getHour() - date1.getHour() ) % intervalMult != 0 ) {
+                            ++badAlignmentCount;
+                            badAlignment = true;
+                        }
+                    }
+                }
                 if ( Message.isDebugOn ) {
                     Message.printStatus(2,routine,"Read HDB startDateTime=\"" + startDateTime +
                         "\" endDateTime=" + endDateTime + " internal dataTime=\"" + dateTime + "\" value=" + value);
+                }
+                if ( !badAlignment ) {
+                    ts.setDataValue( dateTime, value );
                 }
             }
             sw.stop();
             Message.printStatus(2,routine,"Transfer of \"" + tsidentString + "\" data took " + sw.getSeconds() +
                 " seconds for " + record + " records.");
+            if ( badAlignmentCount > 0 ) {
+                Message.printWarning(3, routine, "There were " + badAlignmentCount +
+                    " data values with date/times that did not align as expected with data interval and first data.");
+            }
         }
         catch (SQLException e) {
             Message.printWarning(3, routine, "Error reading " + tsType + " time series data from HDB for TSID \"" +
@@ -3509,6 +3570,25 @@ throws SQLException
     }
     TSIterator tsi = null;
     try {
+        // Make sure that for NHour data the output start and end align with the time series period
+        if ( (outputInterval.getBase() == TimeInterval.HOUR) && (outputInterval.getMultiplier() > 1) ) {
+            DateTime date1 = ts.getDate1();
+            if ( ((outputStart.getHour() - date1.getHour() ) % outputInterval.getMultiplier()) != 0 ) {
+                // The requested start is offset from the actual data so adjust the time series period to that
+                // of the data.  For example this may be due to:
+                // 1) User does not specify output period for appropriate time zone
+                // 2) Data are being output through "current", which will typically will not match data interval exactly
+                // Set the hour to the smallest in the day that aligns with the data records
+                outputStart = new DateTime(outputStart);
+                outputStart.setHour(date1.getHour()%outputInterval.getMultiplier());
+            }
+            DateTime date2 = ts.getDate2();
+            if ( ((outputEnd.getHour() - date2.getHour() ) % outputInterval.getMultiplier()) != 0 ) {
+                // Set the hour to the largest in the day that aligns with the data records
+                outputEnd = new DateTime(outputEnd);
+                outputEnd.setHour(24 - outputInterval.getMultiplier() + date2.getHour()%outputInterval.getMultiplier());
+            }
+        }
         tsi = ts.iterator(outputStart,outputEnd);
     }
     catch ( Exception e ) {
@@ -3544,7 +3624,7 @@ throws SQLException
     Timestamp startTimeStamp, endTimeStamp;
     int batchCount = 0;
     // Maximum batch, 256 as per: http://docs.oracle.com/cd/E11882_01/timesten.112/e21638/tuning.htm
-    int batchCountMax = 1000;
+    int batchCountMax = 10000; // Putting a large number here works with new Oracle driver
     int batchCountTotal = 0;
     try {
         while ( true ) {

@@ -400,17 +400,21 @@ CommandWarningException, CommandException
     String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
     String [] tableStatisticResultsColumn = new String[0];
     if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
+        String [] tableStatisticColumnParts = TableStatisticColumn.split(",");
         if ( Statistic.equalsIgnoreCase("" + TSStatisticType.TREND_OLS) ) {
             // Output will consist of multiple statistics corresponding to parameter-assigned column + suffix
             tableStatisticResultsColumn = new String[3];
-            tableStatisticResultsColumn[0] = "" + TableStatisticColumn + "_Intercept";
-            tableStatisticResultsColumn[1] = "" + TableStatisticColumn + "_Slope";
-            tableStatisticResultsColumn[2] = "" + TableStatisticColumn + "_R2";
+            tableStatisticResultsColumn[0] = "" + tableStatisticColumnParts[0] + "_Intercept";
+            tableStatisticResultsColumn[1] = "" + tableStatisticColumnParts[0] + "_Slope";
+            tableStatisticResultsColumn[2] = "" + tableStatisticColumnParts[0] + "_R2";
         }
         else {
             // Output will consist of single statistic corresponding to parameter-assigned column
-            tableStatisticResultsColumn = new String[1];
-            tableStatisticResultsColumn[0] = TableStatisticColumn;
+            // Some statistics like "Last" also have the date
+            tableStatisticResultsColumn = new String[tableStatisticColumnParts.length];
+            for ( int i = 0; i < tableStatisticColumnParts.length; i++ ) {
+                tableStatisticResultsColumn[i] = tableStatisticColumnParts[i];
+            }
         }
     }
     int [] statisticColumnNum = new int[tableStatisticResultsColumn.length]; // Integer columns for performance

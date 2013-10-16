@@ -260,31 +260,12 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSList_JComboBox = null;
-    __TSID_JComboBox = null;
-	__Value1_JTextField = null;
-	__AnalysisStart_JTextField = null;
-	__AnalysisEnd_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
-@param title Dialog title.
 @param command The command to edit.
 @param tableIDChoices list of choices for table identifiers
 */
-private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command command,
-    List<String> tableIDChoices )
+private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command command, List<String> tableIDChoices )
 {	__command = command;
 
 	addWindowListener( this );

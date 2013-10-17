@@ -3,6 +3,7 @@ package rti.tscommandprocessor.commands.datastream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -85,6 +86,7 @@ throws InvalidCommandParameterException
     String Precision = parameters.getValue ( "Precision" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String NonMissingOutputCount = parameters.getValue ( "NonMissingOutputCount" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -259,6 +261,16 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output end date/time." ) );
 		}
 	}
+	
+    if ( (NonMissingOutputCount != null) && !NonMissingOutputCount.equals("") ) {
+        if ( !StringUtil.isInteger(Precision) ) {
+            message = "The non-missing output count \"" + NonMissingOutputCount + "\" is not an integer.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the non-missing output count as an integer." ) );
+        }
+    }
 
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector<String>();
@@ -277,6 +289,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "MissingValue" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
+	valid_Vector.add ( "NonMissingOutputCount" );
 
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -326,8 +339,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "WriteDataStream_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -381,6 +393,11 @@ CommandWarningException, CommandException
         precision = Integer.parseInt(Precision);
     }
     String MissingValue = parameters.getValue ( "MissingValue" );
+    String NonMissingOutputCount = parameters.getValue ( "NonMissingOutputCount" );
+    Integer nonMissingOutputCount = null;
+    if ( (NonMissingOutputCount != null) && (NonMissingOutputCount.length() > 0) ) {
+        nonMissingOutputCount = Integer.parseInt(NonMissingOutputCount);
+    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -573,8 +590,8 @@ CommandWarningException, CommandException
         // Now write the data records and expand the output line format dynamically for each time series and data value
         Message.printStatus(2, "", "Calling writeTimeSeries");
         writeTimeSeries ( tslist, OutputFile_full, append, OutputFileHeader, outputLineFormat, dateTimeFormatterType, DateTimeFormat,
-            OutputFileFooter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime, problems, processor,
-            status, CommandPhaseType.RUN );
+            OutputFileFooter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime, nonMissingOutputCount,
+            problems, processor, status, CommandPhaseType.RUN );
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));
     }
@@ -623,6 +640,7 @@ public String toString ( PropList parameters )
 	String MissingValue = parameters.getValue("MissingValue");
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String NonMissingOutputCount = parameters.getValue ( "NonMissingOutputCount" );
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -714,6 +732,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
+    if ( (NonMissingOutputCount != null) && (NonMissingOutputCount.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NonMissingOutputCount=" + NonMissingOutputCount );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
@@ -732,10 +756,12 @@ data point labeling
 @param missingValue requested missing value to output, or null to output time series missing value
 @param outputStart start for output values
 @param output End end for output values
+@param nonMissingOutputCount number of values to output.  If negative, count the values from the end.
 */
 private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean append,
     String outputFileHeader, String outputLineFormat, DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat,
     String outputFileFooter, Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
+    Integer nonMissingOutputCount,
     List<String> problems, CommandProcessor processor, CommandStatus status, CommandPhaseType commandPhase )
 {   String message;
     PrintWriter fout = null;
@@ -763,6 +789,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
             dateTimeFormat = null;
         }
         for ( TS ts : tslist ) {
+            List<String> outputLines = new ArrayList<String>(); // Used when nonMissingOutputCount is used
             // Missing value can be output as a string so check
             if ( (missingValue == null) || missingValue.equals("") ) {
                 // Use the time series value
@@ -782,7 +809,15 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
                 }
             }
             // Iterate through data in the time series and output each value according to the format.
-            TSIterator it = ts.iterator(outputStart, outputEnd);
+            TSIterator it;
+            try {
+                it = ts.iterator(outputStart, outputEnd);
+            }
+            catch ( Exception e ) {
+                // Most likely a missing time series
+                problems.add("Error setting up data iterator (no data?) - skipping time series (" + e + ").");
+                continue;
+            }
             TSData tsdata = null;
             //String units = ts.getDataUnits();
             double value;
@@ -795,6 +830,10 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
                 dataLineExpanded = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
                     processor, ts, outputLineFormat, cs, commandPhase ); // Comment status to avoid many messages
                 if ( ts.isDataMissing(value) ) {
+                    if ( nonMissingOutputCount != null ) {
+                        // Skip missing
+                        continue;
+                    }
                     valueString = missingValueString;
                 }
                 else {
@@ -815,7 +854,22 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
                 dataLineExpanded = dataLineExpanded.replace("${tsdata:datetime}", dateTimeString );
                 dataLineExpanded = dataLineExpanded.replace("${tsdata:flag}", "" + tsdata.getDataFlag());
                 //TSData.toString(outputLineFormat,valueFormat, tsdata.getDate(), value, 0.0, tsdata.getDataFlag().trim(),units);
-                fout.println(dataLineExpanded);
+                if ( nonMissingOutputCount != null ) {
+                    outputLines.add(dataLineExpanded);
+                }
+                else {
+                    fout.println(dataLineExpanded);
+                }
+            }
+            if ( (nonMissingOutputCount != null) && (outputLines.size() > 0) ) {
+                // Write the output as requested
+                int istart = 0;
+                if ( nonMissingOutputCount < 0 ) {
+                    istart = outputLines.size() + nonMissingOutputCount;
+                }
+                for ( int i = istart; i < outputLines.size(); i++ ) {
+                    fout.println(outputLines.get(i));
+                }
             }
         }
         if ( (outputFileFooter != null) && (outputFileFooter.length() > 0) ) {
@@ -823,7 +877,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
         }
     }
     catch ( Exception e ) {
-        message = "Unexpected error writing property to file \"" + outputFile + "\" (" + e + ").";
+        message = "Unexpected error writing time series to file \"" + outputFile + "\" (" + e + ").";
         problems.add(message);
         throw new RuntimeException ( message );
     }

@@ -76,6 +76,7 @@ private JTextArea __OutputFileFooter_JTextArea = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
+private JTextField __NonMissingOutputCount_JTextField = null;
 private SimpleJComboBox	__TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -288,6 +289,7 @@ private void checkInput ()
     String MissingValue = __MissingValue_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String NonMissingOutputCount = __NonMissingOutputCount_JTextField.getText().trim();
 
 	__error_wait = false;
 	
@@ -336,6 +338,9 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );
 	}
+    if ( NonMissingOutputCount.length() > 0 ) {
+        parameters.set ( "NonMissingOutputCount", NonMissingOutputCount );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -366,6 +371,7 @@ private void commitEdits ()
 	String Precision = __Precision_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String NonMissingOutputCount = __NonMissingOutputCount_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
@@ -381,6 +387,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
+	__command.setCommandParameter ( "NonMissingOutputCount", NonMissingOutputCount );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
 }
 
@@ -559,6 +566,17 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 		"Optional - override the global output end (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Non-missing output count:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NonMissingOutputCount_JTextField = new JTextField (10);
+    __NonMissingOutputCount_JTextField.setToolTipText ( "Useful to output last value.  Specify a negative number to output values at end.");
+    __NonMissingOutputCount_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __NonMissingOutputCount_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - number of non-missing values to output (default=write all data)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
@@ -655,6 +673,7 @@ private void refresh ()
 	String MissingValue = "";
 	String OutputStart = "";
 	String OutputEnd = "";
+	String NonMissingOutputCount = "";
 	String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -679,6 +698,7 @@ private void refresh ()
 	    MissingValue = parameters.getValue("MissingValue");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
+		NonMissingOutputCount = parameters.getValue ( "NonMissingOutputCount" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -783,6 +803,9 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
+		if ( NonMissingOutputCount != null ) {
+            __NonMissingOutputCount_JTextField.setText (NonMissingOutputCount);
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -800,6 +823,7 @@ private void refresh ()
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
+	NonMissingOutputCount = __NonMissingOutputCount_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
@@ -816,6 +840,7 @@ private void refresh ()
 	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
+	parameters.add ( "NonMissingOutputCount=" + NonMissingOutputCount );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __pathOutput_JButton != null ) {

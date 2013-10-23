@@ -29,6 +29,7 @@ import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
 
 // Delimited time series file commands
 import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
+import rti.tscommandprocessor.commands.delimited.WriteDelimitedFile_Command;
 
 // Ensemble commands
 import rti.tscommandprocessor.commands.ensemble.CopyEnsemble_Command;
@@ -97,6 +98,7 @@ import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 
 // Spreadsheet commands
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableFromExcel_Command;
+import rti.tscommandprocessor.commands.spreadsheet.WriteTableToExcel_Command;
 
 // StateCU commands.
 import rti.tscommandprocessor.commands.statecu.ReadStateCU_Command;
@@ -914,6 +916,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("WriteDateValue") ) {
 		return new WriteDateValue_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("WriteDelimitedFile") ) {
+        return new WriteDelimitedFile_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("WriteHecDss") ) {
         return new WriteHecDss_Command ();
     }
@@ -955,6 +960,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToDelimitedFile") ) {
         return new WriteTableToDelimitedFile_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTableToExcel") ) {
+        return new WriteTableToExcel_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToHTML") ) {
         return new WriteTableToHTML_Command ();

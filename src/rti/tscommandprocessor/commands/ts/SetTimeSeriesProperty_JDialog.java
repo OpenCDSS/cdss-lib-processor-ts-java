@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -13,11 +14,13 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
@@ -54,6 +57,7 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __Editable_JComboBox = null;
+private JTabbedPane __props_JTabbedPane = null;
 private TSFormatSpecifiersJPanel __Description_JTextField = null; // Allows expansion of % specifiers
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null; // Missing value for output
@@ -239,19 +243,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__TSList_JComboBox = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
@@ -272,11 +263,8 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
 		"Set time series properties (metadata)." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The identifier information cannot be changed because it is used to define workflow processing."),
+		"Time series identifier information cannot be changed because it is fundamental to locating time series during processing."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Several specific properties are built-in, and user-defined properties also can be set (see Property... below) ."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -293,41 +281,59 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Description:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    
+    __props_JTabbedPane = new JTabbedPane ();
+    __props_JTabbedPane.setBorder(
+        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+        "Specify time series properties" ));
+    JGUIUtil.addComponent(main_JPanel, __props_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for built-in properties
+    int yBuiltIn = -1;
+    JPanel builtIn_JPanel = new JPanel();
+    builtIn_JPanel.setLayout( new GridBagLayout() );
+    __props_JTabbedPane.addTab ( "Built-in properties", builtIn_JPanel );
+
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel ( "Built-in properties are core to the time series design." ), 
+        0, ++yBuiltIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel (
+        "Some built-in properties can be referenced later with % specifier notation (e.g., %D for description)." ), 
+        0, ++yBuiltIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel("Description:"),
+        0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Description_JTextField = new TSFormatSpecifiersJPanel(10);
     __Description_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __Description_JTextField.addKeyListener ( this );
     __Description_JTextField.getDocument().addDocumentListener(this);
     __Description_JTextField.setToolTipText("%L for location, %T for data type.");
-    JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(builtIn_JPanel, __Description_JTextField,
+        1, yBuiltIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(builtIn_JPanel,
         new JLabel ("Optional - use %L for location, etc."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yBuiltIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data units:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel ("Data units:"),
+        0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Units_JTextField = new JTextField (10);
     __Units_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(builtIn_JPanel, __Units_JTextField,
+        1, yBuiltIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel (
         "Optional - data units (does not change data values)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yBuiltIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel ( "Missing value:" ),
+        0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField ( "", 20 );
     __MissingValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - missing data value (does not change data values)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(builtIn_JPanel, __MissingValue_JTextField,
+        1, yBuiltIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel ( "Optional - missing data value (does not change data values)."),
+        3, yBuiltIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Are data editable?:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel ("Are data editable?:"),
+        0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     // Allow edits...
     __Editable_JComboBox = new SimpleJComboBox ( true );
     // No blank (default) or wildcard is allowed.
@@ -336,24 +342,35 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     __Editable_JComboBox.add ( __command._True );
     __Editable_JComboBox.addItemListener ( this );
     __Editable_JComboBox.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Editable_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - for interactive edits (default=" + __command._False + ")."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        JGUIUtil.addComponent(builtIn_JPanel, __Editable_JComboBox,
+        1, yBuiltIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JLabel (
+        "Optional - for interactive edit tools (default=" + __command._False + ")."),
+        3, yBuiltIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for user-defined (not built-in) properties
+    int yUser = -1;
+    JPanel user_JPanel = new JPanel();
+    user_JPanel.setLayout( new GridBagLayout() );
+    __props_JTabbedPane.addTab ( "User-defined properties", user_JPanel );
+
+    JGUIUtil.addComponent(user_JPanel, new JLabel ( "User-defined properties can be referenced later with ${ts:Property} notation." ), 
+        0, ++yUser, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, new JLabel (
+        "User-defined properties require that all three of the following parameters are specified." ), 
+        0, ++yUser, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, new JLabel ( "Property name:" ), 
+        0, ++yUser, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField ( 20 );
     __PropertyName_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required if user-defined property is set."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, __PropertyName_JTextField,
+        1, yUser, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, new JLabel(
+        "Required - name of property (case-specific)."), 
+        3, yUser, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property type:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(user_JPanel, new JLabel ( "Property type:" ), 
+        0, ++yUser, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
     __PropertyType_JComboBox.addItem ( "" );
     __PropertyType_JComboBox.addItem ( __command._DateTime );
@@ -362,20 +379,20 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     __PropertyType_JComboBox.addItem ( __command._String );
     __PropertyType_JComboBox.select ( __command._String );
     __PropertyType_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required if user-defined property is set - to ensure proper initialization."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, __PropertyType_JComboBox,
+        1, yUser, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, new JLabel(
+        "Required - to ensure proper property object initialization."), 
+        3, yUser, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property value:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(user_JPanel, new JLabel ( "Property value:" ), 
+        0, ++yUser, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyValue_JTextField = new JTextField ( 20 );
     __PropertyValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if user-defined property is set."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, __PropertyValue_JTextField,
+        1, yUser, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, new JLabel( "Required - property value as string, can use % and ${ts:property}."), 
+        3, yUser, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -553,6 +570,9 @@ private void refresh ()
         }
         if ( PropertyName != null ) {
             __PropertyName_JTextField.setText ( PropertyName );
+            if ( !PropertyName.equals("") ) {
+                __props_JTabbedPane.setSelectedIndex(1);
+            }
         }
         if ( PropertyType == null ) {
             // Select default...

@@ -122,7 +122,10 @@ throws InvalidCommandParameterException
         }
         else {
             // Check the value given the type.
-            if ( PropertyType.equalsIgnoreCase(_DateTime) && !TimeUtil.isDateTime(PropertyValue) ) {
+            if ( (PropertyValue.indexOf("%") >= 0) || (PropertyValue.indexOf("${") >= 0) ) {
+                // Let it pass because a property will be expanded at run-time
+            }
+            else if ( PropertyType.equalsIgnoreCase(_DateTime) && !TimeUtil.isDateTime(PropertyValue) ) {
                 message = "The property value \"" + PropertyValue + "\" is not a valid date/time.";
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -286,6 +289,10 @@ CommandWarningException, CommandException
             ts.setEditable ( Editable_boolean );
             if ( PropertyName != null ) {
                 Object Property_Object = null;
+                // Expand the property value to utilize %L, ${ts:property}
+                PropertyValue = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+                    processor, ts, PropertyValue, status, CommandPhaseType.RUN);
+                Message.printStatus(2,routine,"Expanded property value=\"" + PropertyValue + "\"");
                 if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
                     Property_Object = DateTime.parse(PropertyValue);
                     ts.addToGenesis ( "Set property \"" + PropertyName + "\" (type " + PropertyType + ") to \"" + PropertyValue + "\"");
@@ -306,7 +313,7 @@ CommandWarningException, CommandException
             }
         }
         catch ( Exception e ) {
-            message = "Unexpected error setting properties for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
+            message = "Unexpected error setting property for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );

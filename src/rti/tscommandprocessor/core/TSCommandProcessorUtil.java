@@ -367,16 +367,17 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
     String s2 = ts.formatLegend ( s );
     //Message.printStatus(2, routine, "After formatLegend(), string is \"" + s2 + "\"" );
     // Now replace ${ts:Property} and ${Property} strings with properties from the processor
-    int start = 0;
-    int pos2 = 0;
     // Put the most specific first so it is matched first
     String [] startStrings = { "${ts:", "${" };
     int [] startStringsLength = { 5, 2 };
     String [] endStrings = { "}", "}" };
     boolean isTsProp = false;
     Object propO;
-    // Loop through and expand the string, first by expanding the time series properties and then the processor properties
+    // Loop through and expand the string, first by expanding the time series properties, which have a more specific
+    // ${ts: starting pattern and then the processor properties starting with ${
     for ( int ipat = 0; ipat < startStrings.length; ipat++ ) {
+        int start = 0; // Start at the beginning of the string
+        int pos2 = 0;
         isTsProp = false;
         if ( ipat == 0 ) {
             // Time series property corresponding to startStrings[0] for loop below.
@@ -416,7 +417,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                         // Not a time series property so this is a processor property
                         // Get the property from the processor properties
                         PropList request_params = new PropList ( "" );
-                        request_params.setUsingObject ( "PropertyName", propname );
+                        request_params.set ( "PropertyName", propname );
                         CommandProcessorRequestResultsBean bean = null;
                         boolean processorError = false;
                         try {
@@ -460,7 +461,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                                     }
                                 }
                                 else {
-                                    // This handles conversion of integers to strings
+                                    // This handles conversion of integers and dates to strings
                                     propvalString = "" + o_PropertyValue;
                                 }
                             }
@@ -481,6 +482,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
             }
             else {
                 // No more ${} property strings so done processing properties.
+                // If checking time series properties will then check global properties in next loop
                 break;
             }
         }

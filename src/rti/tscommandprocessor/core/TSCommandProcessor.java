@@ -2423,7 +2423,8 @@ throws Exception
 }
 
 /**
-Process the GetProperty request.
+Process the GetProperty request.  User-specified properties are checked first and
+if not found the built-in properties are requested.
 */
 private CommandProcessorRequestResultsBean processRequest_GetProperty (
         String request, PropList request_params )
@@ -2432,13 +2433,17 @@ throws Exception
     // Get the necessary parameters...
     Object o = request_params.getContents ( "PropertyName" );
     if ( o == null ) {
-            String warning = "Request GetProperty() does not provide a PropertyName parameter.";
-            bean.setWarningText ( warning );
-            bean.setWarningRecommendationText ( "This is likely a software code error.");
-            throw new RequestParameterNotFoundException ( warning );
+        String warning = "Request GetProperty() does not provide a PropertyName parameter.";
+        bean.setWarningText ( warning );
+        bean.setWarningRecommendationText ( "This is likely a software code error.");
+        throw new RequestParameterNotFoundException ( warning );
     }
     String PropertyName = (String)o;
     Object PropertyValue = __property_Hashtable.get ( PropertyName );
+    if ( PropertyValue == null ) {
+        // Try the built-in properties
+        PropertyValue = getPropContents(PropertyName);
+    }
     // Return the property value in the bean.
     PropList results = bean.getResultsPropList();
     // This will be set in the bean because the PropList is a reference...

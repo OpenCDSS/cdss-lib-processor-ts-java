@@ -588,7 +588,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // This improves performance a bit
         outputLineFormat = TSCommandProcessorUtil.expandParameterValue(processor,this,outputLineFormat);
         // Now write the data records and expand the output line format dynamically for each time series and data value
-        Message.printStatus(2, "", "Calling writeTimeSeries");
         writeTimeSeries ( tslist, OutputFile_full, append, OutputFileHeader, outputLineFormat, dateTimeFormatterType, DateTimeFormat,
             OutputFileFooter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime, nonMissingOutputCount,
             problems, processor, status, CommandPhaseType.RUN );

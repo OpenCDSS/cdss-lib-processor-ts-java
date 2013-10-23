@@ -1024,7 +1024,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __NewModelRunDate_JTextField = new JTextField (20);
     __NewModelRunDate_JTextField.setEnabled(false); // TODO SAM 2013-09-30 determine how to define new
     __NewModelRunDate_JTextField.addKeyListener (this);
-    __NewModelRunDate_JTextField.setToolTipText("CURRENTLY NOT IMPLEMENTED.  Run date in form YYYY-MM-DD hh:mm or use ${Property} to use processor " +
+    __NewModelRunDate_JTextField.setToolTipText("Run date in form YYYY-MM-DD hh:mm or use ${Property} to use processor " +
         "property, ${ts:Property} to use time series property." );
     JGUIUtil.addComponent(model_JPanel, __NewModelRunDate_JTextField,
         1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

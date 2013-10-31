@@ -53,6 +53,7 @@ private JTextField __DataTypeColumn_JTextField = null;
 private JTextField __DataType_JTextField = null;
 private SimpleJComboBox __Interval_JComboBox = null;
 private JTextField __Scenario_JTextField = null;
+private JTextField __DataStoreColumn_JTextField = null;
 private JTextField __DataStore_JTextField = null;
 private JTextField __InputName_JTextField = null;
 private SimpleJComboBox	__IfNotFound_JComboBox = null;
@@ -139,6 +140,7 @@ private void checkInput ()
     String DataType = __DataType_JTextField.getText().trim();
     String Interval = __Interval_JComboBox.getSelected();
     String Scenario = __Scenario_JTextField.getText().trim();
+    String DataStoreColumn = __DataStoreColumn_JTextField.getText().trim();
     String DataStore = __DataStore_JTextField.getText().trim();
     String InputName = __InputName_JTextField.getText().trim();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
@@ -176,6 +178,9 @@ private void checkInput ()
     }
     if ( Scenario.length() > 0 ) {
         parameters.set ( "Scenario", Scenario );
+    }
+    if ( DataStoreColumn.length() > 0 ) {
+        parameters.set ( "DataStoreColumn", DataStoreColumn );
     }
     if ( DataStore.length() > 0 ) {
         parameters.set ( "DataStore", DataStore );
@@ -217,6 +222,7 @@ private void commitEdits ()
     String DataType = __DataType_JTextField.getText().trim();
     String Interval = __Interval_JComboBox.getSelected();
     String Scenario = __Scenario_JTextField.getText().trim();
+    String DataStoreColumn = __DataStoreColumn_JTextField.getText().trim();
     String DataStore = __DataStore_JTextField.getText().trim();
     String InputName = __InputName_JTextField.getText().trim();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
@@ -234,6 +240,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "DataType", DataType );
     __command.setCommandParameter ( "Interval", Interval );
     __command.setCommandParameter ( "Scenario", Scenario );
+    __command.setCommandParameter ( "DataStoreColumn", DataStoreColumn );
     __command.setCommandParameter ( "DataStore", DataStore );
     __command.setCommandParameter ( "InputName", InputName );
     __command.setCommandParameter ( "IfNotFound", IfNotFound );
@@ -378,14 +385,23 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore column:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__DataStore_JTextField = new JTextField ( "", 20 );
-	__DataStore_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __DataStore_JTextField,
+	__DataStoreColumn_JTextField = new JTextField ( "", 20 );
+	__DataStoreColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DataStoreColumn_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - needed to identify input database, file, etc."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "OR datastore:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStore_JTextField = new JTextField ( "", 20 );
+    __DataStore_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DataStore_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - needed to identify input database, file, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input name:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -511,6 +527,7 @@ private void refresh ()
     String DataType = "";
     String Interval = "";
     String Scenario = "";
+    String DataStoreColumn = "";
     String DataStore = "";
     String InputName = "";
     String Alias = "";
@@ -530,6 +547,7 @@ private void refresh ()
         DataType = props.getValue ( "DataType" );
         Interval = props.getValue ( "Interval" );
         Scenario = props.getValue ( "Scenario" );
+        DataStoreColumn = props.getValue ( "DataStoreColumn" );
         DataStore = props.getValue ( "DataStore" );
         InputName = props.getValue ( "InputName" );
         Alias = props.getValue ( "Alias" );
@@ -588,6 +606,9 @@ private void refresh ()
         if ( Scenario != null ) {
             __Scenario_JTextField.setText ( Scenario );
         }
+        if ( DataStoreColumn != null ) {
+            __DataStoreColumn_JTextField.setText ( DataStoreColumn );
+        }
         if ( DataStore != null ) {
             __DataStore_JTextField.setText ( DataStore );
         }
@@ -628,6 +649,7 @@ private void refresh ()
     DataType = __DataType_JTextField.getText().trim();
     Interval = __Interval_JComboBox.getSelected();
     Scenario = __Scenario_JTextField.getText().trim();
+    DataStoreColumn = __DataStoreColumn_JTextField.getText().trim();
     DataStore = __DataStore_JTextField.getText().trim();
     InputName = __InputName_JTextField.getText().trim();
     Alias = __Alias_JTextField.getText().trim();
@@ -644,6 +666,7 @@ private void refresh ()
     props.add ( "DataType=" + DataType );
     props.add ( "Interval=" + Interval );
     props.add ( "Scenario=" + Scenario );
+    props.add ( "DataStoreColumn=" + DataStoreColumn );
     props.add ( "DataStore=" + DataStore );
     props.add ( "InputName=" + InputName );
     props.add ( "Alias=" + Alias );

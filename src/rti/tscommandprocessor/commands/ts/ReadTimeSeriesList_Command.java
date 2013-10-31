@@ -82,6 +82,7 @@ throws InvalidCommandParameterException
 	String DataSource = parameters.getValue("DataSource");
 	String DataTypeColumn = parameters.getValue("DataTypeColumn");
     String DataType = parameters.getValue("DataType");
+    String DataStoreColumn = parameters.getValue("DataStoreColumn");
 	String DataStore = parameters.getValue("DataStore");
 	String Interval = parameters.getValue("Interval");
 	String IfNotFound = parameters.getValue("IfNotFound");
@@ -150,12 +151,20 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	if ( (DataStore == null) || DataStore.equals("")) {
-        message = "The datastore has not been specified.";
+	if ( ((DataStoreColumn == null) || DataStoreColumn.equals("")) && ((DataStore == null) || DataStore.equals("")) ) {
+        message = "The datastore (column) has not been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid datastore (e.g., HydroBase)." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid datastore column or datastore value (e.g., HydroBase)." ) );
+    }
+	
+    if ( (DataStoreColumn != null) && (DataStoreColumn.length() > 0) && (DataStore != null) && (DataStore.length() > 0)) {
+        message = "DataStoreColumn and DataStore cannot both be specified";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify only DataStoreColumn or DataStore, or neither if appropriate." ) );
     }
 	
 	if ( (IfNotFound != null) && !IfNotFound.equals("") &&
@@ -183,6 +192,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataType" );
     valid_Vector.add ( "Interval" );
     valid_Vector.add ( "Scenario" );
+    valid_Vector.add ( "DataStoreColumn" );
     valid_Vector.add ( "DataStore" );
     valid_Vector.add ( "InputName" );
     valid_Vector.add ( "Alias" );
@@ -274,11 +284,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number The number of the command being run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -325,6 +333,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( Scenario == null ) {
         Scenario = "";
     }
+    String DataStoreColumn = parameters.getValue ( "DataStoreColumn" );
     String DataStore = parameters.getValue ( "DataStore" );
     String InputName = parameters.getValue ( "InputName" );
     if ( InputName == null ) {
@@ -341,7 +350,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // Get the table to process.
 
     DataTable table = null;
-    int locationTypeColumnNum = -1, locationColumnNum = -1, dataSourceColumnNum = -1, dataTypeColumnNum = -1;
+    int locationTypeColumnNum = -1, locationColumnNum = -1, dataSourceColumnNum = -1, dataTypeColumnNum = -1, dataStoreColumnNum = -1;
     if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
@@ -416,6 +425,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             message, "Verify that a table exists with the column \"" + DataTypeColumn + "\"." ) );
                     }
                 }
+                if ( (DataStoreColumn != null) && (DataStoreColumn.length() > 0) ) {
+                    try {
+                        dataStoreColumnNum = table.getFieldIndex(DataStoreColumn);
+                    }
+                    catch ( Exception e ) {
+                        message = "Unable to find datastore column \"" + DataStoreColumn + "\" for TableID=\"" + TableID + "\".";
+                        Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that a table exists with the column \"" + DataStoreColumn + "\"." ) );
+                    }
+                }
             }
         }
     }
@@ -446,7 +467,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TableRecord rec = null;
             String locationID;
             TS ts = null;
-            String dataType, locationType;
+            String dataType, locationType, dataStore;
             String tsid1 = null; // The TSID corresponding to the first data source, used for default time series
             int tsize = table.getNumberOfRecords();
             for ( int i = 0; i < tsize; i++ ) {
@@ -469,6 +490,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
                 else {
                     dataType = DataType;
+                }
+                // Data store
+                if ( dataStoreColumnNum >= 0 ) {
+                    dataStore = rec.getFieldValueString ( dataStoreColumnNum );
+                }
+                else {
+                    dataStore = DataStore;
                 }
                 // Allow more than one data source to be specified, which is useful when there is mixed ownership of stations
                 int nDataSource = 1;
@@ -493,7 +521,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     if ( (locationType != null) && (locationType.length() > 0) ) {
                         tsidentString.append ( locationType + TSIdent.LOC_TYPE_SEPARATOR );
                     }
-                    tsidentString.append ( locationID + "." + dataSource + "." + dataType + "." + Interval + "~" + DataStore );
+                    tsidentString.append ( locationID + "." + dataSource + "." + dataType + "." + Interval + "~" + dataStore );
                     if ( InputName.length() > 0 ) {
                         tsidentString.append ( "~" + InputName );
                     }
@@ -691,6 +719,7 @@ public String toString ( PropList props )
     String DataType = props.getValue ( "DataType" );
     String Interval = props.getValue ( "Interval" );
     String Scenario = props.getValue ( "Scenario" );
+    String DataStoreColumn = props.getValue ( "DataStoreColumn" );
     String DataStore = props.getValue ( "DataStore" );
     String InputName = props.getValue ( "InputName" );
     String Alias = props.getValue ( "Alias" );
@@ -755,6 +784,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("Scenario=\"" + Scenario + "\"");
+    }
+    if ((DataStoreColumn != null) && (DataStoreColumn.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("DataStoreColumn=\"" + DataStoreColumn + "\"");
     }
     if ((DataStore != null) && (DataStore.length() > 0)) {
         if (b.length() > 0) {

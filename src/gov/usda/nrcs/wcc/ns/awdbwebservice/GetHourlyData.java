@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 
@@ -18,12 +19,12 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="stationTriplets" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="elementCd" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="stationTriplets" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/>
+ *         &lt;element name="elementCd" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="ordinal" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="heightDepth" type="{http://www.wcc.nrcs.usda.gov/ns/awdbWebService}heightDepth" minOccurs="0"/>
- *         &lt;element name="beginDate" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="endDate" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="beginDate" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="endDate" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="beginHour" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="endHour" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *       &lt;/sequence>
@@ -47,11 +48,15 @@ import javax.xml.bind.annotation.XmlType;
 })
 public class GetHourlyData {
 
+    @XmlElement(required = true)
     protected List<String> stationTriplets;
+    @XmlElement(required = true)
     protected String elementCd;
     protected int ordinal;
     protected HeightDepth heightDepth;
+    @XmlElement(required = true)
     protected String beginDate;
+    @XmlElement(required = true)
     protected String endDate;
     protected Integer beginHour;
     protected Integer endHour;

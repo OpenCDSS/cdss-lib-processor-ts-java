@@ -6,7 +6,12 @@ import gov.usda.nrcs.wcc.ns.awdbwebservice.Data;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.DataSource;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.Duration;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.Element;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.Forecast;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.ForecastPeriod;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.ForecastPoint;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.HeightDepth;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.HourlyData;
+import gov.usda.nrcs.wcc.ns.awdbwebservice.HourlyDataValue;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.InstantaneousData;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.InstantaneousDataFilter;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.InstantaneousDataValue;
@@ -20,7 +25,9 @@ import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -32,6 +39,8 @@ import RTi.TS.TSUtil;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
@@ -57,7 +66,12 @@ private List<NrcsAwdbNetworkCode> __networkCodeList = new Vector();
 /**
 The list of element codes, listed here:  http://www.wcc.nrcs.usda.gov/web_service/AWDB_Web_Service_Reference.htm
 */
-private List<Element> __elementList = new Vector();
+private List<Element> __elementList = new ArrayList<Element>();
+
+/**
+The list of forecast periods.
+*/
+private List<ForecastPeriod> __forecastPeriodList = new ArrayList<ForecastPeriod>();
     
 /**
 Constructor for web service.
@@ -85,8 +99,9 @@ throws URISyntaxException, IOException
     __networkCodeList.add ( new NrcsAwdbNetworkCode("SNOW","NRCS Snow Course Sites"));
     __networkCodeList.add ( new NrcsAwdbNetworkCode("SNTL","NWCC SNOTEL and SCAN stations"));
     __networkCodeList.add ( new NrcsAwdbNetworkCode("USGS","Any USGS station, but also other non-USGS streamflow stations"));
-    // Initialize the element codes from web service
+    // Initialize available data from web service
     readElements();
+    readForecastPeriods();
 }
 
 /**
@@ -153,7 +168,7 @@ the name.  Duplicates in the table are ignored.
 @param includeName whether to include the description (use " - " as separator).
 */
 public List<String> getElementStrings ( boolean includeName )
-{   List<String> elementList = new Vector();
+{   List<String> elementList = new ArrayList<String>();
     for ( Element el: __elementList ) {
         if ( includeName ) {
             elementList.add( "" + el.getElementCd() + " - " + el.getName() );
@@ -163,6 +178,18 @@ public List<String> getElementStrings ( boolean includeName )
         }
     }
     return elementList;
+}
+
+/**
+Return the list of forecast periods that are available.  Duplicates in the table are ignored.
+*/
+public List<String> getForecastPeriodStrings ()
+{   List<String> fpList = new ArrayList<String>();
+    for ( ForecastPeriod fp: __forecastPeriodList ) {
+        fpList.add( "" + fp.getForecastPeriod() );
+    }
+    Collections.sort(fpList,String.CASE_INSENSITIVE_ORDER);
+    return fpList;
 }
 
 /**
@@ -234,6 +261,12 @@ Parse an AWDB date/time string and return a DateTime instance.
 */
 private DateTime parseDateTime ( String s )
 {
+    if ( s.startsWith("2100-01-01") ) {
+        // Value of 2100-01-01 00:00:00 is returned for end date for some web service methods
+        // Since this value does not make sense for historical data, replace with the current date
+        DateTime d = new DateTime(DateTime.DATE_CURRENT); // Any issues with time zone here?
+        s = d.toString(DateTime.FORMAT_YYYY_MM_DD) + s.substring(10);
+    }
     return DateTime.parse(s);
 }
 
@@ -269,9 +302,172 @@ Read the available elements from the web service and cache for further use.
 */
 private void readElements ()
 {
-    // First read the stations that match the basic criteria
     AwdbWebService ws = getAwdbWebService ();
     __elementList = ws.getElements();
+}
+
+/**
+Read the available forecast periods from the web service and cache for further use.
+*/
+private void readForecastPeriods ()
+{
+    AwdbWebService ws = getAwdbWebService ();
+    __forecastPeriodList = ws.getForecastPeriods();
+    for ( ForecastPeriod fp : __forecastPeriodList ) {
+        Message.printStatus(2,"","Forecast period = \"" + fp.getForecastPeriod() + "\"");
+    }
+}
+
+/**
+Read a forecast table.
+@param stationIdList the list of station identifiers to match (can be null or empty)
+@param stateList the list of state abbreviations to match (can be null or empty)
+@param netorkList the list of networks to match (can be null or empty)
+@param hucList the list of HUC basin identifiers to match (can be null or empty)
+@param elementList the list of elements to match (can be null or empty)
+@param forecastPeriod the forecast period to match (can be null or empty)
+@param forecastTableID the name of the forecast table to create
+*/
+public DataTable readForecastTable ( List<String> stationIdList, List<String> stateList,
+    List<NrcsAwdbNetworkCode>networkList, List<String> hucList, List<Element> elementList, String forecastPeriod,
+    String forecastTableID )
+{   String routine = "NrcsAwdbDataStore.readForecastTable";
+    DataTable table = null;
+    AwdbWebService ws = getAwdbWebService ();
+    // First translate method parameters into types consistent with web service
+    List<String> stationIds = stationIdList;
+    List<String> stateCds = stateList;
+    List<String> networkCds = new ArrayList<String>();
+    for ( NrcsAwdbNetworkCode n: networkList ) {
+        networkCds.add(n.getCode());
+    }
+    List<String> hucs = hucList;
+    // TODO SAM 2013-11-04 Enable forecast point names and forecasters
+    List<String> forecastPointNames = new ArrayList<String>();
+    List<String> forecasters = new ArrayList<String>();
+    boolean logicalAnd = true;
+    // Create an output table with some standard columns containing the forecast information
+    // Multiple forecasts can be retrieved and will need to be split out later with table manipulation commands
+    List<TableField> columnList = new ArrayList<TableField>();
+    table = new DataTable( columnList );
+    int stationTripletCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "StationTriplet", -1, -1), null);
+    int stateCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "State", -1, -1), null);
+    int stationIDCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "StationID", -1, -1), null);
+    int networkCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Network", -1, -1), null);
+    int elementCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "Element", -1, -1), null);
+    int forecastPeriodCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "ForecastPeriod", -1, -1), null);
+    int publicationDateCol = table.addField(new TableField(TableField.DATA_TYPE_DATETIME, "PublicationDate", -1, -1), null);
+    int calculationDateCol = table.addField(new TableField(TableField.DATA_TYPE_DATETIME, "CalculationDate", -1, -1), null);
+    int exceedanceProbabilityCol = table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, "ExceedanceProbability", -1, 2), null);
+    int valueCol = table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, "Value", -1, 2), null);
+    int unitCdCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "UnitCd", -1, -1), null);
+    int periodAverageCol = table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, "PeriodAverage", -1, 2), null);
+    table.setTableID ( forecastTableID );
+    // First get the forecast points that correspond to the location information
+    List<ForecastPoint> forecastPoints = ws.getForecastPoints(stationIds, stateCds, networkCds,
+        forecastPointNames, hucs, forecasters, logicalAnd );
+    String [] tripletParts;
+    int row = -1;
+    for ( Element element: elementList ) {
+        // Loop through the element codes of interest.  The API only takes one value.
+        for ( ForecastPoint fp : forecastPoints ) {
+            // Loop through the forecast points that matched the initial query
+            Message.printStatus(2, routine, "Calling getForecasts for triplet=\"" + fp.getStationTriplet() +
+                "\" elementCd=\"" + element.getElementCd() + "\" forecastPeriod=" + forecastPeriod );
+            List<Forecast> forecasts = ws.getForecasts(fp.getStationTriplet(), element.getElementCd(), forecastPeriod);
+            tripletParts = fp.getStationTriplet().split(":"); // StationID:State:Network
+            for ( Forecast f : forecasts ) {
+                if ( Message.isDebugOn ) {
+                    Message.printDebug(1, routine, "Forecast calculationDate=" + f.getCalculationDate() +
+                        ", elementCd=" + f.getElementCd() + ", forecastPeriod=" + f.getForecastPeriod() +
+                        ", publicationDate=" + f.getPublicationDate() + ", stationTriplet=" + f.getStationTriplet() +
+                        ", unitCd=" + f.getUnitCd() + ", periodAverage=" + f.getPeriodAverage());
+                }
+                List<Integer> eprob = f.getExceedenceProbabilities();
+                List<BigDecimal> eval = f.getExceedenceValues();
+                for ( int i = 0; i < eprob.size(); i++ ) {
+                    if ( Message.isDebugOn ) {
+                        Message.printDebug(1,routine,"Probability=" + eprob.get(i) + " value=" + eval.get(i) );
+                    }
+                    // Set the values in the table.
+                    ++row;
+                    try {
+                        table.setFieldValue(row, stationTripletCol, fp.getStationTriplet(), true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting station triplet for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, stateCol, tripletParts[1], true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting state for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, stationIDCol, tripletParts[0], true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting station ID for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, networkCol, tripletParts[2], true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting network for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, elementCol, element.getElementCd(), true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting element for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, forecastPeriodCol, forecastPeriod, true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting forecast period for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, publicationDateCol, f.getPublicationDate(), true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting publication date for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, calculationDateCol, f.getCalculationDate(), true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting calculation date for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, valueCol, eval.get(i), true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting value for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, unitCdCol, f.getUnitCd(), true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting units for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, exceedanceProbabilityCol, eprob.get(i), true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting exceedance probability for row " + row );
+                    }
+                    try {
+                        table.setFieldValue(row, periodAverageCol, f.getPeriodAverage(), true);
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error setting period average for row " + row );
+                    }
+                }
+            } 
+        }
+    }
+    return table;
 }
 
 /**
@@ -318,22 +514,21 @@ throws MalformedURLException, IOException, Exception
 
 /**
 Read a list of time series from the web service, using query parameters that are supported for the web service.
-@param boundingBox bounding box as WestLong, SouthLat, EastLong, NorthLat (negatives for western hemisphere
-longitudes).
+@param boundingBox bounding box as WestLong, SouthLat, EastLong, NorthLat (negatives for western hemisphere longitudes).
 @param elementListReq list of requested element codes to match stations -
 if null then the element list is queried for each station as processed
 */
 public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> stateList,
-    List<NrcsAwdbNetworkCode>networkList, List<String> hucList, double [] boundingBox,
-    List<String> countyList, List<Element> elementListReq, Double elevationMin, Double elevationMax,
+    List<NrcsAwdbNetworkCode>networkList, List<String> hucList, double [] boundingBox, List<String> countyList,
+    List<Element> elementListReq, Double elevationMin, Double elevationMax,
     TimeInterval interval, DateTime readStartReq, DateTime readEndReq, boolean readData )
 {   String routine = getClass().getName() + ".readTimeSeriesList";
-    List<TS> tsList = new Vector();
-    // First read the stations that match the basic criteria
+    List<TS> tsList = new ArrayList<TS>();
+    // First translate method parameters into types consistent with web service
     AwdbWebService ws = getAwdbWebService ();
     List<String> stationIds = stationIdList;
     List<String> stateCds = stateList;
-    List<String> networkCds = new Vector();
+    List<String> networkCds = new ArrayList<String>();
     for ( NrcsAwdbNetworkCode n: networkList ) {
         networkCds.add(n.getCode());
     }
@@ -383,16 +578,16 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
     // Now get the list of station metadata for the stations
     List<StationMetaData> stationMetaData = ws.getStationMetadataMultiple(stationTriplets);
     List<ReservoirMetadata> reservoirMetaDataList = null;
-    // Estimate whether triplets have reservoirs
+    // Check whether triplets have reservoirs, which will be the case if the network is BOR (NRCS email)
     boolean doReservoirs = false;
     for ( String st: stationTriplets ) {
-        if ( st.indexOf(":RES") > 0 ) {
+        if ( st.toUpperCase().endsWith(":BOR") ) {
             doReservoirs = true;
             break;
         }
     }
     if ( doReservoirs ) {
-        // Try getting reservoir metadata.
+        // Try getting reservoir metadata, which is in addition to station metadata and will be set below
         reservoirMetaDataList = ws.getReservoirMetadataMultiple(stationTriplets);
     }
     TS ts;
@@ -404,16 +599,21 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
     String elementCode;
     int ordinal = 1;
     HeightDepth heightDepth = null;
+    Boolean alwaysReturnDailyFeb29 = false; // Want correct calendar to be used
     boolean getFlags = true;
+    // Duration is only used with the getData() web service method (hour interval uses getHourlyData())
     Duration duration = lookupDurationFromInterval ( interval );
     String beginDateString = null; // Null means no requested period so read all
     String endDateString = null;
     // Date to read data and also to allocate time series.
     // May be reset below if no requested period.
+    DateTime readStart = null, readEnd = null; // Will be set below to non-null to set time series period
     if ( readStartReq != null ) {
+        readStart = new DateTime(readStartReq);
         beginDateString = formatDateTime(readStartReq,interval);
     }
     if ( readEndReq != null ) {
+        readEnd = new DateTime(readEndReq);
         endDateString = formatDateTime(readEndReq,interval);
     }
     int iMeta = -1;
@@ -438,18 +638,22 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
         String text;
         BigDecimal bd;
         int intervalBase, intervalMult;
-        // Get the elements that are valid for the station, specifying null for dates
+        // Get the elements that are valid for the station, specifying null for dates to ensure information
         List<StationElement> stationElementList = ws.getStationElements(stationTriplet, null, null);
         Message.printStatus(2,routine,"Read " + stationElementList.size() +
             " StationElements from NRCS AWDB getStationElements(" + stationTriplet + ") request." );
         // Now cut back the list to elements and intervals that were originally requested
         // See below for special handling of instantaneous/irregular data
-        List<StationElement> dailyElementList = new Vector(); // Used to deal with instantaneous
+        // The following is used to deal with instantaneous and hourly data because station elements do not
+        // contain hourly for getHourlyData() or instantaneous for getInstantaneousData().  It is assumed that if a daily
+        // time series is available that instantaneous and hourly may also be available.
+        List<StationElement> dailyElementList = new ArrayList<StationElement>();
         for ( int iEl = 0; iEl < stationElementList.size(); iEl++ ) {
-            boolean elementFound = false;
+            boolean elementFound = true;
             boolean intervalFound = false;
             StationElement sel = stationElementList.get(iEl);
-            if ( elementListReq != null ) {
+            if ( (elementListReq != null) && (elementListReq.size() > 0) ) {
+                elementFound = false; // Only add to list if element matched
                 // Check for requested elements...
                 for ( Element el : elementListReq ) {
                     if ( sel.getElementCd().equalsIgnoreCase(el.getElementCd())) {
@@ -489,13 +693,13 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
         if ( interval.getBase() == TimeInterval.IRREGULAR ) {
             // Request was for instantaneous/irregular data but the getStationElements method appears
             // to not indicate when instantaneous data are available so always add an entry.  If the
-            // element was matched (but no instantaneous), add an instantaneous object
+            // element was matched for daily interval, add an instantaneous object to continue processing
             boolean found = false;
             for ( StationElement selDaily: dailyElementList ) {
-                // See if an instantaneous object was added
+                // See if an instantaneous object was added - this would mean getData() can be called with duration Instantaneous?
                 for ( StationElement sel: stationElementList ) {
                     if ( (sel.getDuration() == Duration.INSTANTANEOUS) && selDaily.getElementCd().equals(selDaily.getElementCd()) ) {
-                        // Instantaneous StationElement was found above so no need to do more
+                        // Instantaneous StationElement was found above so no need to continue processing below
                         found = true;
                         break;
                     }
@@ -517,9 +721,30 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                 }
             }
         }
+        else if ( interval.getBase() == TimeInterval.HOUR ) {
+            // Request was for hour data but the getStationElements method appears
+            // to not indicate when hour data are available because no Duration.HOUR so always add an entry if day data were available.
+            // If the element was matched for daily data, add an hourly object to continue processing below
+            for ( StationElement selDaily: dailyElementList ) {
+                // Hourly StationElement was not found above because no Duration.HOUR so add it
+                StationElement elAdd = new StationElement();
+                elAdd.setElementCd(selDaily.getElementCd());
+                elAdd.setDuration(null);
+                elAdd.setBeginDate(selDaily.getBeginDate());
+                elAdd.setEndDate(selDaily.getEndDate());
+                elAdd.setStoredUnitCd(selDaily.getStoredUnitCd());
+                elAdd.setOriginalUnitCd(selDaily.getOriginalUnitCd());
+                if ( Message.isDebugOn ) {
+                    Message.printDebug(2,routine,"Adding elementCode=" +
+                        elAdd.getElementCd() + " duration=" + elAdd.getDuration() + " for hourly data.");
+                }
+                stationElementList.add(elAdd);
+            }
+        }
         // Process the remaining StationElement items...
-        Message.printStatus(2,routine,"After filtering, have " + stationElementList.size() +
-            " StationElements from NRCS AWDB getStationElements(" + stationTriplet + ") request remaining." );
+        Message.printStatus(2,routine,"After filtering to match duration (interval) and element code, have " +
+            stationElementList.size() + " StationElements from NRCS AWDB getStationElements(" + stationTriplet +
+            ") request remaining." );
         for ( StationElement sel: stationElementList ) {
             // Process each element code that applies to the station
             elementCode = sel.getElementCd();
@@ -580,6 +805,8 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     ts.setProperty("fipsCountryCd", (text == null) ? "" : text );
                     text = meta.getHuc();
                     ts.setProperty("huc", (text == null) ? "" : text );
+                    text = meta.getHud();
+                    ts.setProperty("hud", (text == null) ? "" : text );
                     bd = meta.getLongitude();
                     ts.setProperty("longitude", (bd == null) ? null : bd.doubleValue() );
                     bd = meta.getLatitude();
@@ -625,6 +852,13 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                 }
                 if ( readEndReq == null ) {
                     endDateString = sel.getEndDate();
+                    if ( endDateString.startsWith("2100-01-01") ) {
+                        // Value of 2100-01-01 00:00:00 is returned for end date for some web service methods
+                        // Since this value does not make sense for historical data, replace with the current date
+                        DateTime d = new DateTime(DateTime.DATE_CURRENT); // Any issues with time zone here?
+                        endDateString = d.toString(DateTime.FORMAT_YYYY_MM_DD) +
+                            (endDateString.length() > 10 ? endDateString.substring(10) : "") ;
+                    }
                 }
                 Message.printStatus(2, routine, "Getting data values for triplet ("+ iMeta + " of " +
                     stationMetaData.size() + ")=\"" + stationTriplet +
@@ -645,11 +879,11 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet );
                             // If a period is not requested, set to the available StationElement data period
                             if ( readStartReq == null ) {
-                                DateTime readStart = DateTime.parse(beginDateString);
+                                readStart = DateTime.parse(beginDateString);
                                 ts.setDate1(readStart);
                             }
                             if ( readEndReq == null ) {
-                                DateTime readEnd = new DateTime(ts.getDate1());
+                                readEnd = new DateTime(ts.getDate1());
                                 readEnd = TimeUtil.addIntervals(readEnd,intervalBase,intervalMult,(nValues - 1));
                                 ts.setDate2(readEnd);
                             }
@@ -694,38 +928,126 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                         Message.printWarning(3, routine, e);
                     }
                 }
+                else if ( interval.getBase() == TimeInterval.HOUR ) {
+                    try {
+                        // Get the hourly data values for the list of station triplets.
+                        // Since only one triplet is processed here, the data array will have one element.
+                        // Make sure the being and end date strings are YYYY-MM-DD and that the hour is extracted from
+                        // the strings.
+                        int beginHour = 0, endHour = 23;
+                        if ( readStart != null ) {
+                            beginHour = readStart.getHour();
+                        }
+                        if ( readEnd != null ) {
+                            endHour = readEnd.getHour();
+                        }
+                        Message.printStatus(2, routine, "Calling getHourlyData with stationTriplet=\"" + stationTriplet +
+                            "\" elementCode=\"" + elementCode + "\" ordinal=" + ordinal + " heightDepth=" + heightDepth +
+                            " beginDateString=" + beginDateString + " endDateString=" + endDateString + " beginHour=" +
+                            beginHour + " endHour=" + endHour );
+                        List<HourlyData> dataList = ws.getHourlyData(stationTriplets, elementCode, ordinal, heightDepth,
+                            beginDateString, endDateString, beginHour, endHour );
+                        Message.printStatus(2, routine, "dataList.size=" + dataList.size() );
+                        if ( dataList.size() == 1 ) {
+                            // Have data values for the requested station triplet and element code
+                            HourlyData data = dataList.get(0);
+                            List<HourlyDataValue> values = data.getValues();
+                            int nValues = values.size();
+                            // If a period is requested, the time series period will have been set above.
+                            // If a period is not requested, set to the available StationElement data period
+                            if ( readStartReq == null ) {
+                                readStart = DateTime.parse(data.getBeginDate());
+                                ts.setDate1(readStart);
+                            }
+                            if ( readEndReq == null ) {
+                                readEnd = DateTime.parse(data.getEndDate());
+                                ts.setDate2(readEnd);
+                            }
+                            ts.allocateDataSpace();
+                            Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet +
+                                " starting on " + data.getBeginDate() + " ending on " + data.getEndDate() + " expecting " +
+                                ts.getDataSize() );
+                            // Loop through the data values and set the values and the flag
+                            // Use the dates returned in the data list to set the period because time series
+                            // requested period may differ (although should be the same)
+                            DateTime dt = null;
+                            BigDecimal value;
+                            String flag;
+                            HourlyDataValue hourlyValue;
+                            String dateTime; // format YYYY-MM-dd
+                            double missing = ts.getMissing();
+                            for ( int i = 0; i < nValues; i++ ) {
+                                hourlyValue = values.get(i);
+                                if ( hourlyValue == null ) {
+                                    continue;
+                                }
+                                else {
+                                    value = hourlyValue.getValue();
+                                    flag = hourlyValue.getFlag();
+                                    dateTime = hourlyValue.getDateTime();
+                                    dt = DateTime.parse(dateTime);
+                                    if ( value == null ) {
+                                        // Value is missing but flag may be non-null
+                                        if ( flag != null ) {
+                                            ts.setDataValue(dt, missing,flag,0);
+                                        }
+                                    }
+                                    else {
+                                        // Value is not missing
+                                        if ( flag == null ) {
+                                            ts.setDataValue(dt, value.doubleValue());
+                                        }
+                                        else {
+                                            ts.setDataValue(dt, value.doubleValue(),flag,0);
+                                        }
+                                    }
+                                    Message.printStatus(2, routine, "Date " + dateTime + " value=" + value + " flag=" + flag);
+                                }
+                            }
+                        }
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(3, routine, "Error getting hourly data values (" + e + ").");
+                        Message.printWarning(3, routine, e);
+                    }
+                }
                 else {
                     try {
                         // Get the data values for the list of station triplets.
                         // Since only one triplet is processed here, the data array will have one element.
+                        Message.printStatus(2, routine, "Calling getData with stationTriplet=\"" + stationTriplet +
+                            "\" elementCode=\"" + elementCode + "\" ordinal=" + ordinal + " heightDepth=" + heightDepth +
+                            " duration=" + sel.getDuration() + " getFlags=" + getFlags + " beginDateString=" +
+                            beginDateString + " endDateString=" + endDateString + " alwaysReturnDailyFeb29=" +
+                            alwaysReturnDailyFeb29 );
                         List<Data> dataList = ws.getData(Arrays.asList(stationTriplet), elementCode, ordinal, heightDepth,
-                            sel.getDuration(), getFlags, beginDateString, endDateString);
+                            sel.getDuration(), getFlags, beginDateString, endDateString, alwaysReturnDailyFeb29);
                         if ( dataList.size() == 1 ) {
                             // Have data values for the requested station triplet and element code
                             Data data = dataList.get(0);
                             List<BigDecimal> values = data.getValues();
                             List<String> flags = data.getFlags();
                             int nValues = values.size();
-                            Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet +
-                                " starting on " + data.getBeginDate() + " ending on " + data.getEndDate() );
+                            // If a period is requested, the time series period will have been set above.
                             // If a period is not requested, set to the available StationElement data period
                             if ( readStartReq == null ) {
-                                DateTime readStart = DateTime.parse(beginDateString);
+                                readStart = DateTime.parse(data.getBeginDate());
                                 ts.setDate1(readStart);
                             }
                             if ( readEndReq == null ) {
-                                DateTime readEnd = new DateTime(ts.getDate1());
-                                readEnd = TimeUtil.addIntervals(readEnd,intervalBase,intervalMult,(nValues - 1));
+                                readEnd = DateTime.parse(data.getEndDate());
                                 ts.setDate2(readEnd);
                             }
                             ts.allocateDataSpace();
+                            Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet +
+                                " starting on " + data.getBeginDate() + " ending on " + data.getEndDate() + " expecting " +
+                                ts.getDataSize() );
                             // Loop through the data values and set the values and the flag
-                            // Use the dates returned in the data list
+                            // Use the dates returned in the data list because time series requested period may differ
                             DateTime dt = DateTime.parse(data.getBeginDate());
                             dt.setPrecision(ts.getDate1().getPrecision());
                             BigDecimal value;
                             String flag;
-                            boolean fixNrcsFeb29Bug = true; // Needed to fix NRCS web service bug
                             for ( int i = 0; i < nValues; i++, dt.addInterval(intervalBase,intervalMult) ) {
                                 value = values.get(i);
                                 flag = flags.get(i);
@@ -734,15 +1056,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                     if ( (flag != null) && !flag.equals("") ) {
                                         ts.setDataValue(dt,ts.getMissing(),flag,0);
                                     }
-                                    if ( fixNrcsFeb29Bug && (intervalBase == TimeInterval.DAY) && !dt.isLeapYear() &&
-                                        (dt.getMonth() == 3) && (dt.getDay() == 1) ) {
-                                        // Web service array thinks position is Feb 29 even though it should be Mar 1
-                                        // Skip the value and turn back the date so it will increment properly when
-                                        // moving forward
-                                        dt.addInterval(intervalBase,-intervalMult);
-                                        Message.printStatus(2, routine, "Date " + dt +
-                                            " value=null - treating as Feb 29 placeholder" );
-                                    }
+                                    Message.printStatus(2, routine, "Date " + dt + " value=" + value);
                                 }
                                 else {
                                     // Value is not missing but flag may be null
@@ -752,7 +1066,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                     else {
                                         ts.setDataValue(dt, value.doubleValue(),flag,0);
                                     }
-                                    //Message.printStatus(2, routine, "Date " + dt + " value=" + value.doubleValue());
+                                    Message.printStatus(2, routine, "Date " + dt + " value=" + value);
                                 }
                             }
                         }

@@ -1,6 +1,5 @@
 package rti.tscommandprocessor.commands.nrcs.awdb;
 
-import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -18,13 +17,13 @@ import java.net.URI;
 import java.util.List;
 import java.util.Vector;
 
-import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
@@ -57,12 +56,18 @@ private SimpleJButton __dataStoreOnline_JButton = null;
 private ReadNrcsAwdb_Command __command = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private SimpleJComboBox __Interval_JComboBox = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextField __Stations_JTextField;
 private JTextField __States_JTextField;
 private ChoiceFormatterJPanel __Networks_JTextField;
 private JTextField __HUCs_JTextField;
 private JTextField __BoundingBox_JTextField;
 private ChoiceFormatterJPanel __Counties_JTextField;
+private SimpleJComboBox __ReadForecast_JComboBox = null;
+private SimpleJComboBox __ForecastPeriod_JComboBox = null;
+private JTextField __ForecastTableID_JTextField = null;
+private JTextField __ForecastPublicationDateStart_JTextField;
+private JTextField __ForecastPublicationDateEnd_JTextField;
 private ChoiceFormatterJPanel __Elements_JTextField;
 private JTextField __ElevationMax_JTextField;
 private JTextField __ElevationMin_JTextField;
@@ -226,6 +231,26 @@ private void checkInput ()
     if ( Counties.length() > 0 ) {
         props.set ( "Counties", Counties );
     }
+    String ReadForecast = __ReadForecast_JComboBox.getSelected();
+    if ( ReadForecast.length() > 0 ) {
+        props.set ( "ReadForecast", ReadForecast );
+    }
+    String ForecastTableID = __ForecastTableID_JTextField.getText().trim();
+    if ( ForecastTableID.length() > 0 ) {
+        props.set ( "ForecastTableID", ForecastTableID );
+    }
+    String ForecastPeriod = __ForecastPeriod_JComboBox.getSelected();
+    if ( ForecastPeriod.length() > 0 ) {
+        props.set ( "ForecastPeriod", ForecastPeriod );
+    }
+    String ForecastPublicationDateStart = __ForecastPublicationDateStart_JTextField.getText().trim();
+    if ( ForecastPublicationDateStart.length() > 0 ) {
+        props.set ( "ForecastPublicationDateStart", ForecastPublicationDateStart );
+    }
+    String ForecastPublicationDateEnd = __ForecastPublicationDateEnd_JTextField.getText().trim();
+    if ( ForecastPublicationDateEnd.length() > 0 ) {
+        props.set ( "ForecastPublicationDateEnd", ForecastPublicationDateEnd );
+    }
     String Elements = __Elements_JTextField.getText().trim();
     if ( Elements.length() > 0 ) {
         props.set ( "Elements", Elements );
@@ -273,6 +298,11 @@ private void commitEdits ()
     String HUCs = __HUCs_JTextField.getText().trim();
     String BoundingBox = __BoundingBox_JTextField.getText().trim();
     String Counties = __Counties_JTextField.getText().trim();
+    String ReadForecast = __ReadForecast_JComboBox.getSelected();
+    String ForecastTableID = __ForecastTableID_JTextField.getText().trim();
+    String ForecastPeriod = __ForecastPeriod_JComboBox.getSelected();
+    String ForecastPublicationDateStart = __ForecastPublicationDateStart_JTextField.getText().trim();
+    String ForecastPublicationDateEnd = __ForecastPublicationDateEnd_JTextField.getText().trim();
     String Elements = __Elements_JTextField.getText().trim();
     String ElevationMax = __ElevationMax_JTextField.getText().trim();
     String ElevationMin = __ElevationMin_JTextField.getText().trim();
@@ -287,27 +317,17 @@ private void commitEdits ()
 	__command.setCommandParameter ( "HUCs", HUCs );
 	__command.setCommandParameter ( "BoundingBox", BoundingBox );
 	__command.setCommandParameter ( "Counties", Counties );
+	__command.setCommandParameter ( "ReadForecast", ReadForecast );
+	__command.setCommandParameter ( "ForecastTableID", ForecastTableID );
+	__command.setCommandParameter ( "ForecastPeriod", ForecastPeriod );
+    __command.setCommandParameter ( "ForecastPublicationDateStart", ForecastPublicationDateStart );
+    __command.setCommandParameter ( "ForecastPublicationDateEnd", ForecastPublicationDateEnd );
 	__command.setCommandParameter ( "Elements", Elements );
 	__command.setCommandParameter ( "ElevationMax", ElevationMax );
 	__command.setCommandParameter ( "ElevationMin", ElevationMin );
     __command.setCommandParameter ( "InputStart", InputStart );
     __command.setCommandParameter ( "InputEnd", InputEnd );
     __command.setCommandParameter ( "Alias", Alias );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__InputStart_JTextField = null;
-	__InputEnd_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -363,18 +383,19 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     	"network triplet is unique in NRCS AWDB system." ), 
     	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If not specified, the input period defaults to the input period from SetInputPeriod()."),
+		"If not specified, the input period defaults to the input period from SetInputPeriod() (or read all data)."),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+   	// Put the buttons in vertical slots that are less width than content below, to conserve space
     __dataStoreDocumentation_JButton = new SimpleJButton ("NRCS AWDB Documentation",this);
     JGUIUtil.addComponent(main_JPanel, __dataStoreDocumentation_JButton, 
-        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __dataStoreDocumentation_JButton.setEnabled(false);
     __dataStoreDocumentation_JButton.setToolTipText("Show the NRCS AWDB web service documentation in a browser - " +
         "useful for explaining query parameters.");
     __dataStoreOnline_JButton = new SimpleJButton ("NRCS AWDB Online",this);
     JGUIUtil.addComponent(main_JPanel, __dataStoreOnline_JButton, 
-        1, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        2, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __dataStoreOnline_JButton.setEnabled(false);
     __dataStoreOnline_JButton.setToolTipText("Show the NRCS AWDB web service web page in a browser - " +
         "useful for testing queries.");
@@ -403,10 +424,12 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Interval:"),
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
+    __Interval_JComboBox.add("Hour");
     __Interval_JComboBox.add("Day");
     __Interval_JComboBox.add("Month");
     __Interval_JComboBox.add("Year");
     __Interval_JComboBox.add("Irregular");
+    __Interval_JComboBox.setToolTipText("Irregular = instantaneous, and will be discontinued in the future.  Use Hour instead.");
     // Select a default...
     __Interval_JComboBox.select ( 0 );
     __Interval_JComboBox.addItemListener ( this );
@@ -415,15 +438,22 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval for time series."),
         3, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Panel for location
+    __main_JTabbedPane = new JTabbedPane ();
+    //__main_JTabbedPane.setBorder(
+    //    BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+    //    "Specify SQL" ));
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for location filter parameters
     int yLoc = -1;
     JPanel loc_JPanel = new JPanel();
     loc_JPanel.setLayout( new GridBagLayout() );
-    loc_JPanel.setBorder( BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),
-        "Location constraints (specify one or more)" ));
-    JGUIUtil.addComponent( main_JPanel, loc_JPanel,
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __main_JTabbedPane.addTab ( "Location Constraints", loc_JPanel );
+    
+    JGUIUtil.addComponent(loc_JPanel, new JLabel (
+        "Specify one or more location constraints to filter the query.  Unconstrained queries can be VERY SLOW."),
+        0, ++yLoc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Station ID(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -443,10 +473,12 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ state abbreviations separated by commas."),
         3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(loc_JPanel, new JLabel ("Networks(s):"), 
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("Network(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Networks_JTextField = new ChoiceFormatterJPanel ( getSelectedDataStore().getNetworkStrings(true),
+    List<String> networkStrings = getSelectedDataStore().getNetworkStrings(true);
+    __Networks_JTextField = new ChoiceFormatterJPanel ( networkStrings,
         "-", "Select a network code to insert in the text field at right.", "-- Select Network --", ",", 20, true );
+    __Networks_JTextField.getSimpleJComboBox().setMaximumRowCount(networkStrings.size());
     __Networks_JTextField.addKeyListener (this);
     __Networks_JTextField.addDocumentListener (this);
     JGUIUtil.addComponent(loc_JPanel, __Networks_JTextField,
@@ -457,10 +489,11 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("HUC(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HUCs_JTextField = new JTextField (20);
+    __HUCs_JTextField.setToolTipText("Specify 8-12 digits, with * at end if matching a HUC pattern.");
     __HUCs_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __HUCs_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ (8-digit) HUCs separated by commas."),
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ (12-digit) HUCs separated by commas."),
         3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Bounding box:"), 
@@ -488,6 +521,101 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ counties separated by commas."),
         3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for reservoir parameters
+    int yRes = -1;
+    JPanel res_JPanel = new JPanel();
+    res_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Reservoirs", res_JPanel );
+    
+    JGUIUtil.addComponent(res_JPanel, new JLabel (
+        "Reservoirs are associated with the \"BOR\" network in the location constraints."),
+        0, ++yRes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(res_JPanel, new JLabel (
+        "Specify appropriate reservoir data element codes such as REST for reservoir stage and RESC for reservoir volume."),
+        0, ++yRes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(res_JPanel, new JLabel (
+        "Reservoir daily data can be converted to end of month values using the NewEndOfMonthTSFromDayTS() command."),
+        0, ++yRes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(res_JPanel, new JLabel (
+        "Time series identifiers with \"BOR\" network also will result in reservoir metadata being set as time series properties."),
+        0, ++yRes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for forecast points
+    int yFc = -1;
+    JPanel fc_JPanel = new JPanel();
+    fc_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Forecasts", fc_JPanel );
+    
+    JGUIUtil.addComponent(fc_JPanel, new JLabel (
+        "Specify ReadForecast=True to read forecasts.  The location constraints will filter the stations."),
+        0, ++yFc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(fc_JPanel, new JLabel (
+        "The following element types have forecasts:  SRVO"),
+        0, ++yFc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(fc_JPanel, new JLabel (
+        "Forecasts are a list of values and corresponding exceedance probabilities for the forecast period.  " +
+        "Consequently, output is a table rather than a time series."),
+        0, ++yFc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(fc_JPanel, new JLabel( "Read forecast?:"),
+        0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ReadForecast_JComboBox = new SimpleJComboBox ( false );
+    __ReadForecast_JComboBox.add("");
+    __ReadForecast_JComboBox.add(__command._False);
+    __ReadForecast_JComboBox.add(__command._True);
+    // Select a default...
+    __ReadForecast_JComboBox.select ( 0 );
+    __ReadForecast_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(fc_JPanel, __ReadForecast_JComboBox,
+        1, yFc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(fc_JPanel, new JLabel (
+        "Optional - read forecast time series? (default=" + __command._False + "."),
+        3, yFc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(fc_JPanel, new JLabel ("Forecast table ID:"), 
+        0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ForecastTableID_JTextField = new JTextField (20);
+    __ForecastTableID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(fc_JPanel, __ForecastTableID_JTextField,
+        1, yFc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(fc_JPanel, new JLabel ("Optional - ID for output forecast table (default=\"NRCS_Forecasts\")."),
+        3, yFc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(fc_JPanel, new JLabel( "Forecast period:"),
+        0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ForecastPeriod_JComboBox = new SimpleJComboBox ( false );
+    List<String> periodList = getSelectedDataStore().getForecastPeriodStrings();
+    periodList.add(0,"");
+    __ForecastPeriod_JComboBox.setData(periodList);
+    // Select a default...
+    __ForecastPeriod_JComboBox.select ( 0 );
+    __ForecastPeriod_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(fc_JPanel, __ForecastPeriod_JComboBox,
+        1, yFc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(fc_JPanel, new JLabel (
+        "Required if forecast read - forecast period."),
+        3, yFc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(fc_JPanel, new JLabel ("Forecast publication date start:"), 
+        0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ForecastPublicationDateStart_JTextField = new JTextField (20);
+    __ForecastPublicationDateStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(fc_JPanel, __ForecastPublicationDateStart_JTextField,
+        1, yFc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(fc_JPanel, new JLabel ("Optional - YYYY-MM-DD (default=all published forecasts)."),
+        3, yFc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(fc_JPanel, new JLabel ( "Forecast publication date end:"), 
+        0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ForecastPublicationDateEnd_JTextField = new JTextField (20);
+    __ForecastPublicationDateEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(fc_JPanel, __ForecastPublicationDateEnd_JTextField,
+        1, yFc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(fc_JPanel, new JLabel ( "Optional - YYYY-MM-DD (default=all published forecasts)."),
+        3, yFc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Generic parameters
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Element(s):"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -633,6 +761,11 @@ private void refresh ()
     String HUCs = "";
     String BoundingBox = "";
     String Counties = "";
+    String ReadForecast = "";
+    String ForecastTableID = "";
+    String ForecastPeriod = "";
+    String ForecastPublicationDateStart = "";
+    String ForecastPublicationDateEnd = "";
     String Elements = "";
     String ElevationMin = "";
     String ElevationMax = "";
@@ -652,6 +785,11 @@ private void refresh ()
 		HUCs = props.getValue ( "HUCs" );
 		BoundingBox = props.getValue ( "BoundingBox" );
 		Counties = props.getValue ( "Counties" );
+		ReadForecast = props.getValue ( "ReadForecast" );
+        ForecastTableID = props.getValue ( "ForecastTableID" );
+        ForecastPeriod = props.getValue ( "ForecastPeriod" );
+	    ForecastPublicationDateStart = props.getValue ( "ForecastPublicationDateStart" );
+	    ForecastPublicationDateEnd = props.getValue ( "ForecastPublicationDateEnd" );
 		Elements = props.getValue ( "Elements" );
 		ElevationMin = props.getValue ( "ElevationMin" );
 		ElevationMax = props.getValue ( "ElevationMax" );
@@ -708,6 +846,47 @@ private void refresh ()
         if ( Counties != null ) {
             __Counties_JTextField.setText ( Counties );
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__ReadForecast_JComboBox, ReadForecast, JGUIUtil.NONE, null, null ) ) {
+            __ReadForecast_JComboBox.select ( ReadForecast );
+        }
+        else {
+            if ( (ReadForecast == null) || ReadForecast.equals("") ) {
+                // New command...select the default...
+                if ( __ReadForecast_JComboBox.getItemCount() > 0 ) {
+                    __ReadForecast_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "ReadForecast parameter \"" + ReadForecast + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
+        if ( ForecastTableID != null ) {
+            __ForecastTableID_JTextField.setText ( ForecastTableID );
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__ForecastPeriod_JComboBox, ForecastPeriod, JGUIUtil.NONE, null, null ) ) {
+            __ForecastPeriod_JComboBox.select ( ForecastPeriod );
+        }
+        else {
+            if ( (ForecastPeriod == null) || ForecastPeriod.equals("") ) {
+                // New command...select the default...
+                if ( __ForecastPeriod_JComboBox.getItemCount() > 0 ) {
+                    __ForecastPeriod_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "ForecastPeriod parameter \"" + ForecastPeriod + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
+        if ( ForecastPublicationDateStart != null ) {
+            __ForecastPublicationDateStart_JTextField.setText ( ForecastPublicationDateStart );
+        }
+        if ( ForecastPublicationDateEnd != null ) {
+            __ForecastPublicationDateEnd_JTextField.setText ( ForecastPublicationDateEnd );
+        }
         if ( Elements != null ) {
             __Elements_JTextField.setText ( Elements );
         }
@@ -739,11 +918,16 @@ private void refresh ()
     HUCs = __HUCs_JTextField.getText().trim();
     BoundingBox = __BoundingBox_JTextField.getText().trim();
     Counties = __Counties_JTextField.getText().trim();
+    ReadForecast = __ReadForecast_JComboBox.getSelected();
+    ForecastTableID = __ForecastTableID_JTextField.getText().trim();
+    ForecastPeriod = __ForecastPeriod_JComboBox.getSelected();
+    ForecastPublicationDateStart = __ForecastPublicationDateStart_JTextField.getText().trim();
+    ForecastPublicationDateEnd = __ForecastPublicationDateEnd_JTextField.getText().trim();
     Elements = __Elements_JTextField.getText().trim();
     ElevationMin = __ElevationMin_JTextField.getText().trim();
     ElevationMax = __ElevationMax_JTextField.getText().trim();
-    InputEnd = __InputEnd_JTextField.getText().trim();
     InputStart = __InputStart_JTextField.getText().trim();
+    InputEnd = __InputEnd_JTextField.getText().trim();
     props.add ( "DataStore=" + DataStore );
     props.add ( "Interval=" + Interval );
     props.add ( "Stations=" + Stations );
@@ -752,6 +936,11 @@ private void refresh ()
     props.add ( "HUCs=" + HUCs );
     props.add ( "BoundingBox=" + BoundingBox );
     props.add ( "Counties=" + Counties );
+    props.add ( "ReadForecast=" + ReadForecast );
+    props.add ( "ForecastTableID=" + ForecastTableID );
+    props.add ( "ForecastPeriod=" + ForecastPeriod );
+    props.add ( "ForecastPublicationDateStart=" + ForecastPublicationDateStart );
+    props.add ( "ForecastPublicationDateEnd=" + ForecastPublicationDateEnd );
     props.add ( "Elements=" + Elements );
     props.add ( "ElevationMin=" + ElevationMin );
     props.add ( "ElevationMax=" + ElevationMax );

@@ -24,12 +24,14 @@ import javax.xml.namespace.QName;
 @XmlRegistry
 public class ObjectFactory {
 
+    private final static QName _RunDiagnostics_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "runDiagnostics");
     private final static QName _GetForecastValueResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getForecastValueResponse");
     private final static QName _GetForecastEquationsMultiple_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getForecastEquationsMultiple");
     private final static QName _GetForecastPointsResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getForecastPointsResponse");
     private final static QName _GetInstantaneousDataResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getInstantaneousDataResponse");
     private final static QName _GetForecastEquationsMultipleResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getForecastEquationsMultipleResponse");
     private final static QName _GetForecastResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getForecastResponse");
+    private final static QName _AreYouThere_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "areYouThere");
     private final static QName _GetStationMetadata_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getStationMetadata");
     private final static QName _GetForecastPeriodCentralTendencyResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getForecastPeriodCentralTendencyResponse");
     private final static QName _GetAllForecastsForStation_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getAllForecastsForStation");
@@ -49,6 +51,7 @@ public class ObjectFactory {
     private final static QName _GetUnitNameResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getUnitNameResponse");
     private final static QName _GetForecastPeriodAveragesResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getForecastPeriodAveragesResponse");
     private final static QName _GetForecastPeriodsResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getForecastPeriodsResponse");
+    private final static QName _AreYouThereResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "areYouThereResponse");
     private final static QName _GetDataResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getDataResponse");
     private final static QName _GetHourlyData_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getHourlyData");
     private final static QName _GetAveragesData_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getAveragesData");
@@ -73,6 +76,7 @@ public class ObjectFactory {
     private final static QName _GetUnitsResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getUnitsResponse");
     private final static QName _GetStationMetadataMultipleResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getStationMetadataMultipleResponse");
     private final static QName _GetForecast_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getForecast");
+    private final static QName _RunDiagnosticsResponse_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "runDiagnosticsResponse");
     private final static QName _GetReservoirMetadata_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getReservoirMetadata");
     private final static QName _GetReservoirMetadataMultiple_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getReservoirMetadataMultiple");
     private final static QName _GetUnitName_QNAME = new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "getUnitName");
@@ -99,19 +103,35 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ForecastEquation }
+     * Create an instance of {@link Forecast }
      * 
      */
-    public ForecastEquation createForecastEquation() {
-        return new ForecastEquation();
+    public Forecast createForecast() {
+        return new Forecast();
     }
 
     /**
-     * Create an instance of {@link StationDataAssuredFlags }
+     * Create an instance of {@link GetForecastPeriodAverages }
      * 
      */
-    public StationDataAssuredFlags createStationDataAssuredFlags() {
-        return new StationDataAssuredFlags();
+    public GetForecastPeriodAverages createGetForecastPeriodAverages() {
+        return new GetForecastPeriodAverages();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastsResponse }
+     * 
+     */
+    public GetForecastsResponse createGetForecastsResponse() {
+        return new GetForecastsResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastValue }
+     * 
+     */
+    public GetForecastValue createGetForecastValue() {
+        return new GetForecastValue();
     }
 
     /**
@@ -123,43 +143,115 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link HourlyData }
+     * Create an instance of {@link AreYouThereResponse }
      * 
      */
-    public HourlyData createHourlyData() {
-        return new HourlyData();
+    public AreYouThereResponse createAreYouThereResponse() {
+        return new AreYouThereResponse();
     }
 
     /**
-     * Create an instance of {@link AveragesData }
+     * Create an instance of {@link ForecastPoint }
      * 
      */
-    public AveragesData createAveragesData() {
-        return new AveragesData();
+    public ForecastPoint createForecastPoint() {
+        return new ForecastPoint();
     }
 
     /**
-     * Create an instance of {@link PredictorGroup }
+     * Create an instance of {@link StationMetaData }
      * 
      */
-    public PredictorGroup createPredictorGroup() {
-        return new PredictorGroup();
+    public StationMetaData createStationMetaData() {
+        return new StationMetaData();
     }
 
     /**
-     * Create an instance of {@link GetAllForecastsForStation }
+     * Create an instance of {@link GetHourlyDataResponse }
      * 
      */
-    public GetAllForecastsForStation createGetAllForecastsForStation() {
-        return new GetAllForecastsForStation();
+    public GetHourlyDataResponse createGetHourlyDataResponse() {
+        return new GetHourlyDataResponse();
     }
 
     /**
-     * Create an instance of {@link Element }
+     * Create an instance of {@link GetPeakData }
      * 
      */
-    public Element createElement() {
-        return new Element();
+    public GetPeakData createGetPeakData() {
+        return new GetPeakData();
+    }
+
+    /**
+     * Create an instance of {@link GetElements }
+     * 
+     */
+    public GetElements createGetElements() {
+        return new GetElements();
+    }
+
+    /**
+     * Create an instance of {@link GetUnits }
+     * 
+     */
+    public GetUnits createGetUnits() {
+        return new GetUnits();
+    }
+
+    /**
+     * Create an instance of {@link GetHeightDepths }
+     * 
+     */
+    public GetHeightDepths createGetHeightDepths() {
+        return new GetHeightDepths();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastEquationsResponse }
+     * 
+     */
+    public GetForecastEquationsResponse createGetForecastEquationsResponse() {
+        return new GetForecastEquationsResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastPeriodCentralTendencyResponse }
+     * 
+     */
+    public GetForecastPeriodCentralTendencyResponse createGetForecastPeriodCentralTendencyResponse() {
+        return new GetForecastPeriodCentralTendencyResponse();
+    }
+
+    /**
+     * Create an instance of {@link Diagnostics }
+     * 
+     */
+    public Diagnostics createDiagnostics() {
+        return new Diagnostics();
+    }
+
+    /**
+     * Create an instance of {@link AveragesPeakData }
+     * 
+     */
+    public AveragesPeakData createAveragesPeakData() {
+        return new AveragesPeakData();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastPointsResponse }
+     * 
+     */
+    public GetForecastPointsResponse createGetForecastPointsResponse() {
+        return new GetForecastPointsResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetStationElementsResponse }
+     * 
+     */
+    public GetStationElementsResponse createGetStationElementsResponse() {
+        return new GetStationElementsResponse();
     }
 
     /**
@@ -171,27 +263,155 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetAveragesPeak }
+     * Create an instance of {@link GetStationMetadataMultiple }
      * 
      */
-    public GetAveragesPeak createGetAveragesPeak() {
-        return new GetAveragesPeak();
+    public GetStationMetadataMultiple createGetStationMetadataMultiple() {
+        return new GetStationMetadataMultiple();
     }
 
     /**
-     * Create an instance of {@link PeakData }
+     * Create an instance of {@link ForecastPeriodCentralTendency }
      * 
      */
-    public PeakData createPeakData() {
-        return new PeakData();
+    public ForecastPeriodCentralTendency createForecastPeriodCentralTendency() {
+        return new ForecastPeriodCentralTendency();
     }
 
     /**
-     * Create an instance of {@link GetCentralTendencyPeakDataResponse }
+     * Create an instance of {@link GetStationMetadata }
      * 
      */
-    public GetCentralTendencyPeakDataResponse createGetCentralTendencyPeakDataResponse() {
-        return new GetCentralTendencyPeakDataResponse();
+    public GetStationMetadata createGetStationMetadata() {
+        return new GetStationMetadata();
+    }
+
+    /**
+     * Create an instance of {@link DiagnosticStackTraceElement }
+     * 
+     */
+    public DiagnosticStackTraceElement createDiagnosticStackTraceElement() {
+        return new DiagnosticStackTraceElement();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastsByPubDate }
+     * 
+     */
+    public GetForecastsByPubDate createGetForecastsByPubDate() {
+        return new GetForecastsByPubDate();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastPeriodCentralTendency }
+     * 
+     */
+    public GetForecastPeriodCentralTendency createGetForecastPeriodCentralTendency() {
+        return new GetForecastPeriodCentralTendency();
+    }
+
+    /**
+     * Create an instance of {@link HourlyData }
+     * 
+     */
+    public HourlyData createHourlyData() {
+        return new HourlyData();
+    }
+
+    /**
+     * Create an instance of {@link InstantaneousDataValue }
+     * 
+     */
+    public InstantaneousDataValue createInstantaneousDataValue() {
+        return new InstantaneousDataValue();
+    }
+
+    /**
+     * Create an instance of {@link StationElement }
+     * 
+     */
+    public StationElement createStationElement() {
+        return new StationElement();
+    }
+
+    /**
+     * Create an instance of {@link Element }
+     * 
+     */
+    public Element createElement() {
+        return new Element();
+    }
+
+    /**
+     * Create an instance of {@link StationDataAssuredFlags }
+     * 
+     */
+    public StationDataAssuredFlags createStationDataAssuredFlags() {
+        return new StationDataAssuredFlags();
+    }
+
+    /**
+     * Create an instance of {@link DiagnosticTestResult }
+     * 
+     */
+    public DiagnosticTestResult createDiagnosticTestResult() {
+        return new DiagnosticTestResult();
+    }
+
+    /**
+     * Create an instance of {@link GetInstantaneousData }
+     * 
+     */
+    public GetInstantaneousData createGetInstantaneousData() {
+        return new GetInstantaneousData();
+    }
+
+    /**
+     * Create an instance of {@link GetReservoirMetadataMultipleResponse }
+     * 
+     */
+    public GetReservoirMetadataMultipleResponse createGetReservoirMetadataMultipleResponse() {
+        return new GetReservoirMetadataMultipleResponse();
+    }
+
+    /**
+     * Create an instance of {@link Configuration }
+     * 
+     */
+    public Configuration createConfiguration() {
+        return new Configuration();
+    }
+
+    /**
+     * Create an instance of {@link GetAllForecastsForStation }
+     * 
+     */
+    public GetAllForecastsForStation createGetAllForecastsForStation() {
+        return new GetAllForecastsForStation();
+    }
+
+    /**
+     * Create an instance of {@link GetReservoirMetadataResponse }
+     * 
+     */
+    public GetReservoirMetadataResponse createGetReservoirMetadataResponse() {
+        return new GetReservoirMetadataResponse();
+    }
+
+    /**
+     * Create an instance of {@link InstantaneousData }
+     * 
+     */
+    public InstantaneousData createInstantaneousData() {
+        return new InstantaneousData();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastPeriodsResponse }
+     * 
+     */
+    public GetForecastPeriodsResponse createGetForecastPeriodsResponse() {
+        return new GetForecastPeriodsResponse();
     }
 
     /**
@@ -200,6 +420,54 @@ public class ObjectFactory {
      */
     public GetReservoirMetadataMultiple createGetReservoirMetadataMultiple() {
         return new GetReservoirMetadataMultiple();
+    }
+
+    /**
+     * Create an instance of {@link GetAllForecastsForStationResponse }
+     * 
+     */
+    public GetAllForecastsForStationResponse createGetAllForecastsForStationResponse() {
+        return new GetAllForecastsForStationResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastResponse }
+     * 
+     */
+    public GetForecastResponse createGetForecastResponse() {
+        return new GetForecastResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastPoints }
+     * 
+     */
+    public GetForecastPoints createGetForecastPoints() {
+        return new GetForecastPoints();
+    }
+
+    /**
+     * Create an instance of {@link Data }
+     * 
+     */
+    public Data createData() {
+        return new Data();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastValueResponse }
+     * 
+     */
+    public GetForecastValueResponse createGetForecastValueResponse() {
+        return new GetForecastValueResponse();
+    }
+
+    /**
+     * Create an instance of {@link ForecastEquation }
+     * 
+     */
+    public ForecastEquation createForecastEquation() {
+        return new ForecastEquation();
     }
 
     /**
@@ -219,27 +487,43 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetForecastPeriodsResponse }
+     * Create an instance of {@link HeightDepth }
      * 
      */
-    public GetForecastPeriodsResponse createGetForecastPeriodsResponse() {
-        return new GetForecastPeriodsResponse();
+    public HeightDepth createHeightDepth() {
+        return new HeightDepth();
     }
 
     /**
-     * Create an instance of {@link GetStationsResponse }
+     * Create an instance of {@link GetCentralTendencyPeakData }
      * 
      */
-    public GetStationsResponse createGetStationsResponse() {
-        return new GetStationsResponse();
+    public GetCentralTendencyPeakData createGetCentralTendencyPeakData() {
+        return new GetCentralTendencyPeakData();
     }
 
     /**
-     * Create an instance of {@link GetAllForecastsForStationResponse }
+     * Create an instance of {@link GetCentralTendencyDataResponse }
      * 
      */
-    public GetAllForecastsForStationResponse createGetAllForecastsForStationResponse() {
-        return new GetAllForecastsForStationResponse();
+    public GetCentralTendencyDataResponse createGetCentralTendencyDataResponse() {
+        return new GetCentralTendencyDataResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetAveragesPeak }
+     * 
+     */
+    public GetAveragesPeak createGetAveragesPeak() {
+        return new GetAveragesPeak();
+    }
+
+    /**
+     * Create an instance of {@link GetForecast }
+     * 
+     */
+    public GetForecast createGetForecast() {
+        return new GetForecast();
     }
 
     /**
@@ -251,19 +535,267 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetForecastEquationsResponse }
+     * Create an instance of {@link PeakData }
      * 
      */
-    public GetForecastEquationsResponse createGetForecastEquationsResponse() {
-        return new GetForecastEquationsResponse();
+    public PeakData createPeakData() {
+        return new PeakData();
     }
 
     /**
-     * Create an instance of {@link GetCentralTendencyPeakData }
+     * Create an instance of {@link GetElementResponse }
      * 
      */
-    public GetCentralTendencyPeakData createGetCentralTendencyPeakData() {
-        return new GetCentralTendencyPeakData();
+    public GetElementResponse createGetElementResponse() {
+        return new GetElementResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastPeriodAveragesResponse }
+     * 
+     */
+    public GetForecastPeriodAveragesResponse createGetForecastPeriodAveragesResponse() {
+        return new GetForecastPeriodAveragesResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetUnitName }
+     * 
+     */
+    public GetUnitName createGetUnitName() {
+        return new GetUnitName();
+    }
+
+    /**
+     * Create an instance of {@link Predictor }
+     * 
+     */
+    public Predictor createPredictor() {
+        return new Predictor();
+    }
+
+    /**
+     * Create an instance of {@link GetInstantaneousDataResponse }
+     * 
+     */
+    public GetInstantaneousDataResponse createGetInstantaneousDataResponse() {
+        return new GetInstantaneousDataResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastPointResponse }
+     * 
+     */
+    public GetForecastPointResponse createGetForecastPointResponse() {
+        return new GetForecastPointResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetElementsResponse }
+     * 
+     */
+    public GetElementsResponse createGetElementsResponse() {
+        return new GetElementsResponse();
+    }
+
+    /**
+     * Create an instance of {@link AreYouThere }
+     * 
+     */
+    public AreYouThere createAreYouThere() {
+        return new AreYouThere();
+    }
+
+    /**
+     * Create an instance of {@link GetForecasts }
+     * 
+     */
+    public GetForecasts createGetForecasts() {
+        return new GetForecasts();
+    }
+
+    /**
+     * Create an instance of {@link GetHourlyData }
+     * 
+     */
+    public GetHourlyData createGetHourlyData() {
+        return new GetHourlyData();
+    }
+
+    /**
+     * Create an instance of {@link GetAveragesData }
+     * 
+     */
+    public GetAveragesData createGetAveragesData() {
+        return new GetAveragesData();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastEquations }
+     * 
+     */
+    public GetForecastEquations createGetForecastEquations() {
+        return new GetForecastEquations();
+    }
+
+    /**
+     * Create an instance of {@link GetElement }
+     * 
+     */
+    public GetElement createGetElement() {
+        return new GetElement();
+    }
+
+    /**
+     * Create an instance of {@link GetUnitsResponse }
+     * 
+     */
+    public GetUnitsResponse createGetUnitsResponse() {
+        return new GetUnitsResponse();
+    }
+
+    /**
+     * Create an instance of {@link CentralTendencyPeakData }
+     * 
+     */
+    public CentralTendencyPeakData createCentralTendencyPeakData() {
+        return new CentralTendencyPeakData();
+    }
+
+    /**
+     * Create an instance of {@link ReservoirMetadata }
+     * 
+     */
+    public ReservoirMetadata createReservoirMetadata() {
+        return new ReservoirMetadata();
+    }
+
+    /**
+     * Create an instance of {@link RunDiagnosticsResponse }
+     * 
+     */
+    public RunDiagnosticsResponse createRunDiagnosticsResponse() {
+        return new RunDiagnosticsResponse();
+    }
+
+    /**
+     * Create an instance of {@link DiagnosticException }
+     * 
+     */
+    public DiagnosticException createDiagnosticException() {
+        return new DiagnosticException();
+    }
+
+    /**
+     * Create an instance of {@link ForecastEquationTerm }
+     * 
+     */
+    public ForecastEquationTerm createForecastEquationTerm() {
+        return new ForecastEquationTerm();
+    }
+
+    /**
+     * Create an instance of {@link GetStationElements }
+     * 
+     */
+    public GetStationElements createGetStationElements() {
+        return new GetStationElements();
+    }
+
+    /**
+     * Create an instance of {@link GetStationDataAssuredFlagsResponse }
+     * 
+     */
+    public GetStationDataAssuredFlagsResponse createGetStationDataAssuredFlagsResponse() {
+        return new GetStationDataAssuredFlagsResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetForecastPeriods }
+     * 
+     */
+    public GetForecastPeriods createGetForecastPeriods() {
+        return new GetForecastPeriods();
+    }
+
+    /**
+     * Create an instance of {@link AveragesData }
+     * 
+     */
+    public AveragesData createAveragesData() {
+        return new AveragesData();
+    }
+
+    /**
+     * Create an instance of {@link GetReservoirMetadata }
+     * 
+     */
+    public GetReservoirMetadata createGetReservoirMetadata() {
+        return new GetReservoirMetadata();
+    }
+
+    /**
+     * Create an instance of {@link GetUnitNameResponse }
+     * 
+     */
+    public GetUnitNameResponse createGetUnitNameResponse() {
+        return new GetUnitNameResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetStationsResponse }
+     * 
+     */
+    public GetStationsResponse createGetStationsResponse() {
+        return new GetStationsResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetPeakDataResponse }
+     * 
+     */
+    public GetPeakDataResponse createGetPeakDataResponse() {
+        return new GetPeakDataResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetHeightDepthsResponse }
+     * 
+     */
+    public GetHeightDepthsResponse createGetHeightDepthsResponse() {
+        return new GetHeightDepthsResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetStations }
+     * 
+     */
+    public GetStations createGetStations() {
+        return new GetStations();
+    }
+
+    /**
+     * Create an instance of {@link GetCentralTendencyData }
+     * 
+     */
+    public GetCentralTendencyData createGetCentralTendencyData() {
+        return new GetCentralTendencyData();
+    }
+
+    /**
+     * Create an instance of {@link MonthAndDay }
+     * 
+     */
+    public MonthAndDay createMonthAndDay() {
+        return new MonthAndDay();
+    }
+
+    /**
+     * Create an instance of {@link GetAveragesDataResponse }
+     * 
+     */
+    public GetAveragesDataResponse createGetAveragesDataResponse() {
+        return new GetAveragesDataResponse();
     }
 
     /**
@@ -283,147 +815,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetForecastPeriodCentralTendencyResponse }
+     * Create an instance of {@link GetData }
      * 
      */
-    public GetForecastPeriodCentralTendencyResponse createGetForecastPeriodCentralTendencyResponse() {
-        return new GetForecastPeriodCentralTendencyResponse();
+    public GetData createGetData() {
+        return new GetData();
     }
 
     /**
-     * Create an instance of {@link GetInstantaneousDataResponse }
+     * Create an instance of {@link GetCentralTendencyPeakDataResponse }
      * 
      */
-    public GetInstantaneousDataResponse createGetInstantaneousDataResponse() {
-        return new GetInstantaneousDataResponse();
-    }
-
-    /**
-     * Create an instance of {@link ForecastPoint }
-     * 
-     */
-    public ForecastPoint createForecastPoint() {
-        return new ForecastPoint();
-    }
-
-    /**
-     * Create an instance of {@link Predictor }
-     * 
-     */
-    public Predictor createPredictor() {
-        return new Predictor();
-    }
-
-    /**
-     * Create an instance of {@link Forecast }
-     * 
-     */
-    public Forecast createForecast() {
-        return new Forecast();
-    }
-
-    /**
-     * Create an instance of {@link ForecastPeriodCentralTendency }
-     * 
-     */
-    public ForecastPeriodCentralTendency createForecastPeriodCentralTendency() {
-        return new ForecastPeriodCentralTendency();
-    }
-
-    /**
-     * Create an instance of {@link Configuration }
-     * 
-     */
-    public Configuration createConfiguration() {
-        return new Configuration();
-    }
-
-    /**
-     * Create an instance of {@link GetStations }
-     * 
-     */
-    public GetStations createGetStations() {
-        return new GetStations();
-    }
-
-    /**
-     * Create an instance of {@link GetElementsResponse }
-     * 
-     */
-    public GetElementsResponse createGetElementsResponse() {
-        return new GetElementsResponse();
-    }
-
-    /**
-     * Create an instance of {@link Unit }
-     * 
-     */
-    public Unit createUnit() {
-        return new Unit();
-    }
-
-    /**
-     * Create an instance of {@link GetCentralTendencyData }
-     * 
-     */
-    public GetCentralTendencyData createGetCentralTendencyData() {
-        return new GetCentralTendencyData();
-    }
-
-    /**
-     * Create an instance of {@link GetHourlyDataResponse }
-     * 
-     */
-    public GetHourlyDataResponse createGetHourlyDataResponse() {
-        return new GetHourlyDataResponse();
-    }
-
-    /**
-     * Create an instance of {@link HeightDepth }
-     * 
-     */
-    public HeightDepth createHeightDepth() {
-        return new HeightDepth();
-    }
-
-    /**
-     * Create an instance of {@link GetReservoirMetadataMultipleResponse }
-     * 
-     */
-    public GetReservoirMetadataMultipleResponse createGetReservoirMetadataMultipleResponse() {
-        return new GetReservoirMetadataMultipleResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastsByPubDateResponse }
-     * 
-     */
-    public GetForecastsByPubDateResponse createGetForecastsByPubDateResponse() {
-        return new GetForecastsByPubDateResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetElements }
-     * 
-     */
-    public GetElements createGetElements() {
-        return new GetElements();
-    }
-
-    /**
-     * Create an instance of {@link GetHourlyData }
-     * 
-     */
-    public GetHourlyData createGetHourlyData() {
-        return new GetHourlyData();
-    }
-
-    /**
-     * Create an instance of {@link GetUnitNameResponse }
-     * 
-     */
-    public GetUnitNameResponse createGetUnitNameResponse() {
-        return new GetUnitNameResponse();
+    public GetCentralTendencyPeakDataResponse createGetCentralTendencyPeakDataResponse() {
+        return new GetCentralTendencyPeakDataResponse();
     }
 
     /**
@@ -435,91 +839,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetData }
+     * Create an instance of {@link GetAveragesPeakResponse }
      * 
      */
-    public GetData createGetData() {
-        return new GetData();
-    }
-
-    /**
-     * Create an instance of {@link GetReservoirMetadataResponse }
-     * 
-     */
-    public GetReservoirMetadataResponse createGetReservoirMetadataResponse() {
-        return new GetReservoirMetadataResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetElementResponse }
-     * 
-     */
-    public GetElementResponse createGetElementResponse() {
-        return new GetElementResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetStationElements }
-     * 
-     */
-    public GetStationElements createGetStationElements() {
-        return new GetStationElements();
-    }
-
-    /**
-     * Create an instance of {@link GetHeightDepthsResponse }
-     * 
-     */
-    public GetHeightDepthsResponse createGetHeightDepthsResponse() {
-        return new GetHeightDepthsResponse();
-    }
-
-    /**
-     * Create an instance of {@link ReservoirMetadata }
-     * 
-     */
-    public ReservoirMetadata createReservoirMetadata() {
-        return new ReservoirMetadata();
-    }
-
-    /**
-     * Create an instance of {@link GetStationMetadataMultiple }
-     * 
-     */
-    public GetStationMetadataMultiple createGetStationMetadataMultiple() {
-        return new GetStationMetadataMultiple();
-    }
-
-    /**
-     * Create an instance of {@link GetPeakData }
-     * 
-     */
-    public GetPeakData createGetPeakData() {
-        return new GetPeakData();
-    }
-
-    /**
-     * Create an instance of {@link GetAveragesDataResponse }
-     * 
-     */
-    public GetAveragesDataResponse createGetAveragesDataResponse() {
-        return new GetAveragesDataResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastPointResponse }
-     * 
-     */
-    public GetForecastPointResponse createGetForecastPointResponse() {
-        return new GetForecastPointResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastValueResponse }
-     * 
-     */
-    public GetForecastValueResponse createGetForecastValueResponse() {
-        return new GetForecastValueResponse();
+    public GetAveragesPeakResponse createGetAveragesPeakResponse() {
+        return new GetAveragesPeakResponse();
     }
 
     /**
@@ -531,99 +855,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetUnitsResponse }
+     * Create an instance of {@link GetStationDataAssuredFlags }
      * 
      */
-    public GetUnitsResponse createGetUnitsResponse() {
-        return new GetUnitsResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastsResponse }
-     * 
-     */
-    public GetForecastsResponse createGetForecastsResponse() {
-        return new GetForecastsResponse();
-    }
-
-    /**
-     * Create an instance of {@link CentralTendencyPeakData }
-     * 
-     */
-    public CentralTendencyPeakData createCentralTendencyPeakData() {
-        return new CentralTendencyPeakData();
-    }
-
-    /**
-     * Create an instance of {@link GetHeightDepths }
-     * 
-     */
-    public GetHeightDepths createGetHeightDepths() {
-        return new GetHeightDepths();
-    }
-
-    /**
-     * Create an instance of {@link ForecastPeriod }
-     * 
-     */
-    public ForecastPeriod createForecastPeriod() {
-        return new ForecastPeriod();
-    }
-
-    /**
-     * Create an instance of {@link InstantaneousData }
-     * 
-     */
-    public InstantaneousData createInstantaneousData() {
-        return new InstantaneousData();
-    }
-
-    /**
-     * Create an instance of {@link GetStationMetadata }
-     * 
-     */
-    public GetStationMetadata createGetStationMetadata() {
-        return new GetStationMetadata();
-    }
-
-    /**
-     * Create an instance of {@link GetPeakDataResponse }
-     * 
-     */
-    public GetPeakDataResponse createGetPeakDataResponse() {
-        return new GetPeakDataResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastEquations }
-     * 
-     */
-    public GetForecastEquations createGetForecastEquations() {
-        return new GetForecastEquations();
-    }
-
-    /**
-     * Create an instance of {@link StationElement }
-     * 
-     */
-    public StationElement createStationElement() {
-        return new StationElement();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastConfigurations }
-     * 
-     */
-    public GetForecastConfigurations createGetForecastConfigurations() {
-        return new GetForecastConfigurations();
-    }
-
-    /**
-     * Create an instance of {@link GetAveragesPeakResponse }
-     * 
-     */
-    public GetAveragesPeakResponse createGetAveragesPeakResponse() {
-        return new GetAveragesPeakResponse();
+    public GetStationDataAssuredFlags createGetStationDataAssuredFlags() {
+        return new GetStationDataAssuredFlags();
     }
 
     /**
@@ -635,171 +871,27 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetForecastPeriodAveragesResponse }
+     * Create an instance of {@link RunDiagnostics }
      * 
      */
-    public GetForecastPeriodAveragesResponse createGetForecastPeriodAveragesResponse() {
-        return new GetForecastPeriodAveragesResponse();
+    public RunDiagnostics createRunDiagnostics() {
+        return new RunDiagnostics();
     }
 
     /**
-     * Create an instance of {@link GetStationDataAssuredFlags }
+     * Create an instance of {@link ForecastPeriod }
      * 
      */
-    public GetStationDataAssuredFlags createGetStationDataAssuredFlags() {
-        return new GetStationDataAssuredFlags();
+    public ForecastPeriod createForecastPeriod() {
+        return new ForecastPeriod();
     }
 
     /**
-     * Create an instance of {@link GetStationElementsResponse }
+     * Create an instance of {@link PredictorGroup }
      * 
      */
-    public GetStationElementsResponse createGetStationElementsResponse() {
-        return new GetStationElementsResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastValue }
-     * 
-     */
-    public GetForecastValue createGetForecastValue() {
-        return new GetForecastValue();
-    }
-
-    /**
-     * Create an instance of {@link StationMetaData }
-     * 
-     */
-    public StationMetaData createStationMetaData() {
-        return new StationMetaData();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastPoints }
-     * 
-     */
-    public GetForecastPoints createGetForecastPoints() {
-        return new GetForecastPoints();
-    }
-
-    /**
-     * Create an instance of {@link GetInstantaneousData }
-     * 
-     */
-    public GetInstantaneousData createGetInstantaneousData() {
-        return new GetInstantaneousData();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastPeriods }
-     * 
-     */
-    public GetForecastPeriods createGetForecastPeriods() {
-        return new GetForecastPeriods();
-    }
-
-    /**
-     * Create an instance of {@link GetElement }
-     * 
-     */
-    public GetElement createGetElement() {
-        return new GetElement();
-    }
-
-    /**
-     * Create an instance of {@link GetUnitName }
-     * 
-     */
-    public GetUnitName createGetUnitName() {
-        return new GetUnitName();
-    }
-
-    /**
-     * Create an instance of {@link GetUnits }
-     * 
-     */
-    public GetUnits createGetUnits() {
-        return new GetUnits();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastResponse }
-     * 
-     */
-    public GetForecastResponse createGetForecastResponse() {
-        return new GetForecastResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastPeriodCentralTendency }
-     * 
-     */
-    public GetForecastPeriodCentralTendency createGetForecastPeriodCentralTendency() {
-        return new GetForecastPeriodCentralTendency();
-    }
-
-    /**
-     * Create an instance of {@link Data }
-     * 
-     */
-    public Data createData() {
-        return new Data();
-    }
-
-    /**
-     * Create an instance of {@link GetCentralTendencyDataResponse }
-     * 
-     */
-    public GetCentralTendencyDataResponse createGetCentralTendencyDataResponse() {
-        return new GetCentralTendencyDataResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastPeriodAverages }
-     * 
-     */
-    public GetForecastPeriodAverages createGetForecastPeriodAverages() {
-        return new GetForecastPeriodAverages();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastsByPubDate }
-     * 
-     */
-    public GetForecastsByPubDate createGetForecastsByPubDate() {
-        return new GetForecastsByPubDate();
-    }
-
-    /**
-     * Create an instance of {@link GetForecasts }
-     * 
-     */
-    public GetForecasts createGetForecasts() {
-        return new GetForecasts();
-    }
-
-    /**
-     * Create an instance of {@link AveragesPeakData }
-     * 
-     */
-    public AveragesPeakData createAveragesPeakData() {
-        return new AveragesPeakData();
-    }
-
-    /**
-     * Create an instance of {@link InstantaneousDataValue }
-     * 
-     */
-    public InstantaneousDataValue createInstantaneousDataValue() {
-        return new InstantaneousDataValue();
-    }
-
-    /**
-     * Create an instance of {@link GetForecast }
-     * 
-     */
-    public GetForecast createGetForecast() {
-        return new GetForecast();
+    public PredictorGroup createPredictorGroup() {
+        return new PredictorGroup();
     }
 
     /**
@@ -811,51 +903,36 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetReservoirMetadata }
+     * Create an instance of {@link GetForecastConfigurations }
      * 
      */
-    public GetReservoirMetadata createGetReservoirMetadata() {
-        return new GetReservoirMetadata();
+    public GetForecastConfigurations createGetForecastConfigurations() {
+        return new GetForecastConfigurations();
     }
 
     /**
-     * Create an instance of {@link MonthAndDay }
+     * Create an instance of {@link GetForecastsByPubDateResponse }
      * 
      */
-    public MonthAndDay createMonthAndDay() {
-        return new MonthAndDay();
+    public GetForecastsByPubDateResponse createGetForecastsByPubDateResponse() {
+        return new GetForecastsByPubDateResponse();
     }
 
     /**
-     * Create an instance of {@link GetAveragesData }
+     * Create an instance of {@link Unit }
      * 
      */
-    public GetAveragesData createGetAveragesData() {
-        return new GetAveragesData();
+    public Unit createUnit() {
+        return new Unit();
     }
 
     /**
-     * Create an instance of {@link GetStationDataAssuredFlagsResponse }
+     * Create an instance of {@link JAXBElement }{@code <}{@link RunDiagnostics }{@code >}}
      * 
      */
-    public GetStationDataAssuredFlagsResponse createGetStationDataAssuredFlagsResponse() {
-        return new GetStationDataAssuredFlagsResponse();
-    }
-
-    /**
-     * Create an instance of {@link ForecastEquationTerm }
-     * 
-     */
-    public ForecastEquationTerm createForecastEquationTerm() {
-        return new ForecastEquationTerm();
-    }
-
-    /**
-     * Create an instance of {@link GetForecastPointsResponse }
-     * 
-     */
-    public GetForecastPointsResponse createGetForecastPointsResponse() {
-        return new GetForecastPointsResponse();
+    @XmlElementDecl(namespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", name = "runDiagnostics")
+    public JAXBElement<RunDiagnostics> createRunDiagnostics(RunDiagnostics value) {
+        return new JAXBElement<RunDiagnostics>(_RunDiagnostics_QNAME, RunDiagnostics.class, null, value);
     }
 
     /**
@@ -910,6 +987,15 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", name = "getForecastResponse")
     public JAXBElement<GetForecastResponse> createGetForecastResponse(GetForecastResponse value) {
         return new JAXBElement<GetForecastResponse>(_GetForecastResponse_QNAME, GetForecastResponse.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link AreYouThere }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", name = "areYouThere")
+    public JAXBElement<AreYouThere> createAreYouThere(AreYouThere value) {
+        return new JAXBElement<AreYouThere>(_AreYouThere_QNAME, AreYouThere.class, null, value);
     }
 
     /**
@@ -1081,6 +1167,15 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", name = "getForecastPeriodsResponse")
     public JAXBElement<GetForecastPeriodsResponse> createGetForecastPeriodsResponse(GetForecastPeriodsResponse value) {
         return new JAXBElement<GetForecastPeriodsResponse>(_GetForecastPeriodsResponse_QNAME, GetForecastPeriodsResponse.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link AreYouThereResponse }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", name = "areYouThereResponse")
+    public JAXBElement<AreYouThereResponse> createAreYouThereResponse(AreYouThereResponse value) {
+        return new JAXBElement<AreYouThereResponse>(_AreYouThereResponse_QNAME, AreYouThereResponse.class, null, value);
     }
 
     /**
@@ -1297,6 +1392,15 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", name = "getForecast")
     public JAXBElement<GetForecast> createGetForecast(GetForecast value) {
         return new JAXBElement<GetForecast>(_GetForecast_QNAME, GetForecast.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link RunDiagnosticsResponse }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", name = "runDiagnosticsResponse")
+    public JAXBElement<RunDiagnosticsResponse> createRunDiagnosticsResponse(RunDiagnosticsResponse value) {
+        return new JAXBElement<RunDiagnosticsResponse>(_RunDiagnosticsResponse_QNAME, RunDiagnosticsResponse.class, null, value);
     }
 
     /**

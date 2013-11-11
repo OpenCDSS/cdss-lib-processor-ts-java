@@ -202,17 +202,14 @@ public interface AwdbWebService {
 
     /**
      * 
-     * @param unitCd
      * @return
-     *     returns java.lang.String
+     *     returns gov.usda.nrcs.wcc.ns.awdbwebservice.Diagnostics
      */
     @WebMethod
     @WebResult(targetNamespace = "")
-    @RequestWrapper(localName = "getUnitName", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", className = "gov.usda.nrcs.wcc.ns.awdbwebservice.GetUnitName")
-    @ResponseWrapper(localName = "getUnitNameResponse", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", className = "gov.usda.nrcs.wcc.ns.awdbwebservice.GetUnitNameResponse")
-    public String getUnitName(
-        @WebParam(name = "unitCd", targetNamespace = "")
-        String unitCd);
+    @RequestWrapper(localName = "runDiagnostics", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", className = "gov.usda.nrcs.wcc.ns.awdbwebservice.RunDiagnostics")
+    @ResponseWrapper(localName = "runDiagnosticsResponse", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", className = "gov.usda.nrcs.wcc.ns.awdbwebservice.RunDiagnosticsResponse")
+    public Diagnostics runDiagnostics();
 
     /**
      * 
@@ -227,6 +224,20 @@ public interface AwdbWebService {
     public List<ForecastEquation> getForecastEquations(
         @WebParam(name = "stationTriplet", targetNamespace = "")
         String stationTriplet);
+
+    /**
+     * 
+     * @param unitCd
+     * @return
+     *     returns java.lang.String
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "getUnitName", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", className = "gov.usda.nrcs.wcc.ns.awdbwebservice.GetUnitName")
+    @ResponseWrapper(localName = "getUnitNameResponse", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", className = "gov.usda.nrcs.wcc.ns.awdbwebservice.GetUnitNameResponse")
+    public String getUnitName(
+        @WebParam(name = "unitCd", targetNamespace = "")
+        String unitCd);
 
     /**
      * 
@@ -570,6 +581,7 @@ public interface AwdbWebService {
      * @param endDate
      * @param beginDate
      * @param elementCd
+     * @param alwaysReturnDailyFeb29
      * @return
      *     returns java.util.List<gov.usda.nrcs.wcc.ns.awdbwebservice.Data>
      */
@@ -593,7 +605,9 @@ public interface AwdbWebService {
         @WebParam(name = "beginDate", targetNamespace = "")
         String beginDate,
         @WebParam(name = "endDate", targetNamespace = "")
-        String endDate);
+        String endDate,
+        @WebParam(name = "alwaysReturnDailyFeb29", targetNamespace = "")
+        Boolean alwaysReturnDailyFeb29);
 
     /**
      * 
@@ -703,6 +717,17 @@ public interface AwdbWebService {
     public StationMetaData getStationMetadata(
         @WebParam(name = "stationTriplet", targetNamespace = "")
         String stationTriplet);
+
+    /**
+     * 
+     * @return
+     *     returns boolean
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "areYouThere", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", className = "gov.usda.nrcs.wcc.ns.awdbwebservice.AreYouThere")
+    @ResponseWrapper(localName = "areYouThereResponse", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", className = "gov.usda.nrcs.wcc.ns.awdbwebservice.AreYouThereResponse")
+    public boolean areYouThere();
 
     /**
      * 

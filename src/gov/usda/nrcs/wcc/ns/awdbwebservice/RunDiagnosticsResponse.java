@@ -8,16 +8,16 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for getElement complex type.
+ * <p>Java class for runDiagnosticsResponse complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="getElement">
+ * &lt;complexType name="runDiagnosticsResponse">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="elementCd" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="return" type="{http://www.wcc.nrcs.usda.gov/ns/awdbWebService}diagnostics" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -27,36 +27,36 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "getElement", propOrder = {
-    "elementCd"
+@XmlType(name = "runDiagnosticsResponse", propOrder = {
+    "_return"
 })
-public class GetElement {
+public class RunDiagnosticsResponse {
 
-    @XmlElement(required = true)
-    protected String elementCd;
+    @XmlElement(name = "return")
+    protected Diagnostics _return;
 
     /**
-     * Gets the value of the elementCd property.
+     * Gets the value of the return property.
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Diagnostics }
      *     
      */
-    public String getElementCd() {
-        return elementCd;
+    public Diagnostics getReturn() {
+        return _return;
     }
 
     /**
-     * Sets the value of the elementCd property.
+     * Sets the value of the return property.
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Diagnostics }
      *     
      */
-    public void setElementCd(String value) {
-        this.elementCd = value;
+    public void setReturn(Diagnostics value) {
+        this._return = value;
     }
 
 }

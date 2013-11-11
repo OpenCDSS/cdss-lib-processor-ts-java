@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.nrcs.awdb;
 
 import gov.usda.nrcs.wcc.ns.awdbwebservice.Element;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -30,6 +31,7 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.InvalidTimeIntervalException;
 import RTi.Util.Time.TimeInterval;
@@ -42,10 +44,20 @@ implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+Possible values for ReadForecast.
 */
-private List<TS> __discovery_TS_Vector = null;
+protected final String _False = "False";
+protected final String _True = "True";
+
+/**
+The table that is created in discovery mode (for forecast data).
+*/
+private DataTable __discoveryTable = null;
+
+/**
+List of time series read during discovery.  These are TS objects but with mainly the metadata (TSIdent) filled in.
+*/
+private List<TS> __discoveryTSList = null;
 
 /**
 Bounding box coordinate WestLon, SouthLat, EastLon, NorthLat
@@ -75,12 +87,14 @@ throws InvalidCommandParameterException
     
     String DataStore = parameters.getValue ( "DataStore" );
     String Interval = parameters.getValue ( "Interval" );
-    //String Stations = parameters.getValue ( "Stations" );
+    String Stations = parameters.getValue ( "Stations" );
     String States = parameters.getValue ( "States" );
-    //String HUCs = parameters.getValue ( "HUCs" );
+    String Networks = parameters.getValue ( "Networks" );
+    String HUCs = parameters.getValue ( "HUCs" );
     String BoundingBox = parameters.getValue ( "BoundingBox" );
     String Counties = parameters.getValue ( "Counties" );
-    String Elements = parameters.getValue ( "Elements" );
+    String ReadForecast = parameters.getValue ( "ReadForecast" );
+    String ForecastPeriod = parameters.getValue ( "ForecastPeriod" );
     String ElevationMin = parameters.getValue ( "ElevationMin" );
     String ElevationMax = parameters.getValue ( "ElevationMax" );
     String InputStart = parameters.getValue ( "InputStart" );
@@ -176,13 +190,21 @@ throws InvalidCommandParameterException
                     message, "Specify a valid state abbreviation when specifying county." ) );
         }
     }
+
+    // Make sure some filter is specified.  Otherwise all the data in the NRCS database will be read, which
+    // will be extremely slow
     
-    if ( (Elements == null) || Elements.equals("") ) {
-        message = "The element must be specified.";
+    if ( ((Stations == null) || Stations.equals("")) &&
+        ((States == null) || States.equals("")) &&
+        ((Networks == null) || Networks.equals("")) &&
+        ((HUCs == null) || HUCs.equals("")) &&
+        ((BoundingBox == null) || BoundingBox.equals("")) &&
+        ((Counties == null) || Counties.equals("")) ) {
+        message = "At least one location constraint must be specified (otherwise query is very large and slow).";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a valid element code." ) );
+                message, "Specify at least one location constraint." ) );
     }
     
     if ( (ElevationMin != null) && !StringUtil.isDouble(ElevationMin) ) {
@@ -199,6 +221,17 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the elevation maximum as a number." ) );
+    }
+    
+    if ( (ReadForecast != null) && ReadForecast.equalsIgnoreCase(_True) ) {
+        // Must specify a ForecastPeriod
+        if ( (ForecastPeriod == null) || ForecastPeriod.equalsIgnoreCase("") ) {
+            message = "The forecast period must be specified when forecasts are being read.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the forecast period." ) );
+        }
     }
 
 	if ( (InputStart != null) && !InputStart.equals("") &&
@@ -229,22 +262,27 @@ throws InvalidCommandParameterException
 	}
 	
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "Stations" );
-    valid_Vector.add ( "Networks" );
-    valid_Vector.add ( "States" );
-    valid_Vector.add ( "HUCs" );
-    valid_Vector.add ( "BoundingBox" );
-    valid_Vector.add ( "Counties" );
-    valid_Vector.add ( "Elements" );
-    valid_Vector.add ( "ElevationMin" );
-    valid_Vector.add ( "ElevationMax" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "Alias" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "DataStore" );
+    validList.add ( "Interval" );
+    validList.add ( "Stations" );
+    validList.add ( "Networks" );
+    validList.add ( "States" );
+    validList.add ( "HUCs" );
+    validList.add ( "BoundingBox" );
+    validList.add ( "Counties" );
+    validList.add ( "ReadForecast" );
+    validList.add ( "ForecastTableID" );
+    validList.add ( "ForecastPeriod" );
+    validList.add ( "ForecastPublicationDateStart" );
+    validList.add ( "ForecastPublicationDateEnd" );
+    validList.add ( "Elements" );
+    validList.add ( "ElevationMin" );
+    validList.add ( "ElevationMax" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "Alias" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -267,11 +305,19 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Return the table that is read by this class when run in discovery mode.
+*/
+private DataTable getDiscoveryTable()
+{
+    return __discoveryTable;
+}
+
+/**
 Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discoveryTSList;
 }
 
 /**
@@ -279,15 +325,25 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
-    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+	List<TS> discoveryTSList = getDiscoveryTSList ();
+    DataTable table = getDiscoveryTable();
+    if ( c == table.getClass() ) {
+        // Asking for tables
+        List list = null;
+        if ( table != null ) {
+            list = new ArrayList<DataTable>();
+            list.add ( table );
+        }
+        return list;
+    }
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
     // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
-    TS datats = discovery_TS_Vector.get(0);
+    TS datats = discoveryTSList.get(0);
     // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return discoveryTSList;
     }
     else {
         return null;
@@ -342,6 +398,7 @@ CommandWarningException, CommandException
     
     boolean readData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTable(null);
         setDiscoveryTSList ( null );
         readData = false;
     }
@@ -412,7 +469,19 @@ CommandWarningException, CommandException
             }
         }
     }
-    
+    String ReadForecast = parameters.getValue("ReadForecast");
+    boolean readForecast = false;
+    if ( (ReadForecast != null) && ReadForecast.equalsIgnoreCase(_True) ) {
+        readForecast = true;
+    }
+    String ForecastTableID = parameters.getValue("ForecastTableID");
+    if ( (ForecastTableID == null) || ForecastTableID.equals("") ) {
+        ForecastTableID = "NRDS_Forecasts"; // Default
+    }
+    String ForecastPeriod = parameters.getValue("ForecastPeriod");
+    String ForecastPublicationDateStart = parameters.getValue("ForecastPublicationDateStart");
+    String ForecastPublicationDateEnd = parameters.getValue("ForecastPublicationDateEnd");
+   
     String Elements = parameters.getValue("Elements");
     List<Element> elementList = new Vector();
     Element el;
@@ -568,9 +637,7 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	List<TS> tslist = new Vector();	// List for time series results.
-					// Will be added to for one time series
-					// read or replaced if a list is read.
+	List<TS> tslist = new ArrayList<TS>();
 	try {
 		// Find the data store to use...
 		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
@@ -586,80 +653,110 @@ CommandWarningException, CommandException
 		}
 		NrcsAwdbDataStore nrcsAwdbDataStore = (NrcsAwdbDataStore)dataStore;
 
-       tslist = nrcsAwdbDataStore.readTimeSeriesList ( stationList, stateList, networkList,
-            hucList, __boundingBox, countyList,
-            elementList, elevationMin, elevationMax, interval,
-            InputStart_DateTime, InputEnd_DateTime, readData );
-		// Make sure that size is set...
-		int size = 0;
-		if ( tslist != null ) {
-			size = tslist.size();
+		if ( readForecast ) {
+		    // Reading the forecast table
+		    if ( commandPhase == CommandPhaseType.RUN ) {
+		        DataTable table = nrcsAwdbDataStore.readForecastTable( stationList, stateList,
+		                networkList, hucList, elementList, ForecastPeriod, ForecastTableID );
+	            // Set the table in the processor...
+		        PropList request_params = new PropList ( "" );
+	            request_params.setUsingObject ( "Table", table );
+	            try {
+	                processor.processRequest( "SetTable", request_params);
+	            }
+	            catch ( Exception e ) {
+	                message = "Error requesting SetTable(Table=...) from processor.";
+	                Message.printWarning(warning_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                       message, "Report problem to software support." ) );
+	            }
+		    }
+		    else {
+		        // Create an empty table for discovery mode
+	            DataTable table = new DataTable();
+	            table.setTableID ( ForecastTableID );
+	            setDiscoveryTable ( table );
+		    }
 		}
-	
-   		if ( (tslist == null) || (size == 0) ) {
-			Message.printStatus ( 2, routine,"No NRCS AWDB time series were found." );
-	        // Warn if nothing was retrieved (can be overridden to ignore).
-            message = "No time series were read from the NRCS AWDB daily value web service.";
-            Message.printWarning ( warning_level, 
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Data may not be in database." +
-                    	"  Previous messages may provide more information." ) );
-   		}
-   		else {
-			// Else, further process each time series...
-			for ( TS ts: tslist ) {
-			    // Set the alias to the desired string - this is impacted by the Location parameter
-                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                    processor, ts, Alias, status, commandPhase);
-                ts.setAlias ( alias );
-			}
-		}
+		else {
+		    // Reading time series
+            tslist = nrcsAwdbDataStore.readTimeSeriesList ( stationList, stateList, networkList,
+                hucList, __boundingBox, countyList, elementList, elevationMin, elevationMax, interval,
+                InputStart_DateTime, InputEnd_DateTime, readData );
+    		// Make sure that size is set...
+    		int size = 0;
+    		if ( tslist != null ) {
+    			size = tslist.size();
+    		}
+    	
+       		if ( (tslist == null) || (size == 0) ) {
+    			Message.printStatus ( 2, routine,"No NRCS AWDB time series were found." );
+    	        // Warn if nothing was retrieved (can be overridden to ignore).
+                message = "No time series were read from the NRCS AWDB daily value web service.";
+                Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Data may not be in database." +
+                        	"  Previous messages may provide more information." ) );
+       		}
+       		else {
+    			// Else, further process each time series...
+    			for ( TS ts: tslist ) {
+    			    // Set the alias to the desired string - this is impacted by the Location parameter
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, commandPhase);
+                    ts.setAlias ( alias );
+    			}
+    		}
+        
+            Message.printStatus ( 2, routine, "Read " + size + " NRCS AWDB time series." );
     
-        Message.printStatus ( 2, routine, "Read " + size + " NRCS AWDB time series." );
-
-        if ( commandPhase == CommandPhaseType.RUN ) {
-            if ( tslist != null ) {
-                // Further process the time series...
-                // This makes sure the period is at least as long as the output period...
-
-                int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
-                if ( wc > 0 ) {
-                    message = "Error post-processing NRCS AWDB time series after read.";
-                    Message.printWarning ( warning_level, 
-                        MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                    status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-                    // Don't throw an exception - probably due to missing data.
-                }
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                if ( tslist != null ) {
+                    // Further process the time series...
+                    // This makes sure the period is at least as long as the output period...
     
-                // Now add the list in the processor...
-                
-                int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
-                if ( wc2 > 0 ) {
-                    message = "Error adding NRCS AWDB time series after read.";
-                    Message.printWarning ( warning_level, 
-                        MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
+                    int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
+                    if ( wc > 0 ) {
+                        message = "Error post-processing NRCS AWDB time series after read.";
+                        Message.printWarning ( warning_level, 
+                            MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
-                    throw new CommandException ( message );
+                        // Don't throw an exception - probably due to missing data.
+                    }
+        
+                    // Now add the list in the processor...
+                    
+                    int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
+                    if ( wc2 > 0 ) {
+                        message = "Error adding NRCS AWDB time series after read.";
+                        Message.printWarning ( warning_level, 
+                            MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+                        throw new CommandException ( message );
+                    }
                 }
             }
-        }
-        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            setDiscoveryTSList ( tslist );
-        }
-        // Warn if nothing was retrieved (can be overridden to ignore).
-        if ( (tslist == null) || (size == 0) ) {
-            message = "No time series were read from the NRCS AWDB value web service.";
-            Message.printWarning ( warning_level, 
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Data may not be in database.  See previous messages." ) );
-        }
+            else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+                setDiscoveryTSList ( tslist );
+            }
+            // Warn if nothing was retrieved (can be overridden to ignore).
+            if ( (tslist == null) || (size == 0) ) {
+                message = "No time series were read from the NRCS AWDB value web service.";
+                Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Data may not be in database.  See previous messages." ) );
+            }
+		}
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -687,11 +784,19 @@ CommandWarningException, CommandException
 }
 
 /**
+Set the table that is read by this class in discovery mode.
+*/
+private void setDiscoveryTable ( DataTable table )
+{
+    __discoveryTable = table;
+}
+
+/**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discoveryTSList = discoveryTSList;
 }
 
 /**
@@ -757,6 +862,41 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "Counties=\"" + Counties + "\"" );
+    }
+    String ReadForecast = props.getValue("ReadForecast");
+    if ( (ReadForecast != null) && (ReadForecast.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ReadForecast=" + ReadForecast );
+    }
+    String ForecastTableID = props.getValue("ForecastTableID");
+    if ( (ForecastTableID != null) && (ForecastTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ForecastTableID=\"" + ForecastTableID + "\"" );
+    }
+    String ForecastPeriod = props.getValue("ForecastPeriod");
+    if ( (ForecastPeriod != null) && (ForecastPeriod.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ForecastPeriod=\"" + ForecastPeriod + "\"" );
+    }
+    String ForecastPublicationDateStart = props.getValue("ForecastPublicationDateStart");
+    if ( (ForecastPublicationDateStart != null) && (ForecastPublicationDateStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ForecastPublicationDateStart=\"" + ForecastPublicationDateStart + "\"" );
+    }
+    String ForecastPublicationDateEnd = props.getValue("ForecastPublicationDateEnd");
+    if ( (ForecastPublicationDateEnd != null) && (ForecastPublicationDateEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ForecastPublicationDateEnd=\"" + ForecastPublicationDateEnd + "\"" );
     }
     String Elements = props.getValue("Elements");
     if ( (Elements != null) && (Elements.length() > 0) ) {

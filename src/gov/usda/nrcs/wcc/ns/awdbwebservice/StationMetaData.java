@@ -26,6 +26,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="fipsCountyCd" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="fipsStateNumber" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="huc" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="hud" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="latitude" type="{http://www.w3.org/2001/XMLSchema}decimal" minOccurs="0"/>
  *         &lt;element name="longitude" type="{http://www.w3.org/2001/XMLSchema}decimal" minOccurs="0"/>
  *         &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
@@ -52,6 +53,7 @@ import javax.xml.bind.annotation.XmlType;
     "fipsCountyCd",
     "fipsStateNumber",
     "huc",
+    "hud",
     "latitude",
     "longitude",
     "name",
@@ -71,6 +73,7 @@ public class StationMetaData {
     protected String fipsCountyCd;
     protected String fipsStateNumber;
     protected String huc;
+    protected String hud;
     protected BigDecimal latitude;
     protected BigDecimal longitude;
     protected String name;
@@ -293,6 +296,30 @@ public class StationMetaData {
      */
     public void setHuc(String value) {
         this.huc = value;
+    }
+
+    /**
+     * Gets the value of the hud property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getHud() {
+        return hud;
+    }
+
+    /**
+     * Sets the value of the hud property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setHud(String value) {
+        this.hud = value;
     }
 
     /**

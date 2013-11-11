@@ -8,16 +8,16 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for getUnitName complex type.
+ * <p>Java class for areYouThereResponse complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="getUnitName">
+ * &lt;complexType name="areYouThereResponse">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="unitCd" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="return" type="{http://www.w3.org/2001/XMLSchema}boolean"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -27,36 +27,28 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "getUnitName", propOrder = {
-    "unitCd"
+@XmlType(name = "areYouThereResponse", propOrder = {
+    "_return"
 })
-public class GetUnitName {
+public class AreYouThereResponse {
 
-    @XmlElement(required = true)
-    protected String unitCd;
+    @XmlElement(name = "return")
+    protected boolean _return;
 
     /**
-     * Gets the value of the unitCd property.
+     * Gets the value of the return property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getUnitCd() {
-        return unitCd;
+    public boolean isReturn() {
+        return _return;
     }
 
     /**
-     * Sets the value of the unitCd property.
+     * Sets the value of the return property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setUnitCd(String value) {
-        this.unitCd = value;
+    public void setReturn(boolean value) {
+        this._return = value;
     }
 
 }

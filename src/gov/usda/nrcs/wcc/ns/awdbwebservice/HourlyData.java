@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlType;
  *       &lt;sequence>
  *         &lt;element name="beginDate" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="endDate" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="stationTriplet" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="values" type="{http://www.wcc.nrcs.usda.gov/ns/awdbWebService}hourlyDataValue" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -34,12 +35,14 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "hourlyData", propOrder = {
     "beginDate",
     "endDate",
+    "stationTriplet",
     "values"
 })
 public class HourlyData {
 
     protected String beginDate;
     protected String endDate;
+    protected String stationTriplet;
     @XmlElement(nillable = true)
     protected List<HourlyDataValue> values;
 
@@ -89,6 +92,30 @@ public class HourlyData {
      */
     public void setEndDate(String value) {
         this.endDate = value;
+    }
+
+    /**
+     * Gets the value of the stationTriplet property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getStationTriplet() {
+        return stationTriplet;
+    }
+
+    /**
+     * Sets the value of the stationTriplet property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setStationTriplet(String value) {
+        this.stationTriplet = value;
     }
 
     /**

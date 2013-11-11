@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 
@@ -18,14 +19,15 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="stationTriplets" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="elementCd" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="stationTriplets" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/>
+ *         &lt;element name="elementCd" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="ordinal" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="heightDepth" type="{http://www.wcc.nrcs.usda.gov/ns/awdbWebService}heightDepth" minOccurs="0"/>
- *         &lt;element name="duration" type="{http://www.wcc.nrcs.usda.gov/ns/awdbWebService}duration" minOccurs="0"/>
+ *         &lt;element name="duration" type="{http://www.wcc.nrcs.usda.gov/ns/awdbWebService}duration"/>
  *         &lt;element name="getFlags" type="{http://www.w3.org/2001/XMLSchema}boolean"/>
- *         &lt;element name="beginDate" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="endDate" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="beginDate" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="endDate" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="alwaysReturnDailyFeb29" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -43,18 +45,25 @@ import javax.xml.bind.annotation.XmlType;
     "duration",
     "getFlags",
     "beginDate",
-    "endDate"
+    "endDate",
+    "alwaysReturnDailyFeb29"
 })
 public class GetData {
 
+    @XmlElement(required = true)
     protected List<String> stationTriplets;
+    @XmlElement(required = true)
     protected String elementCd;
     protected int ordinal;
     protected HeightDepth heightDepth;
+    @XmlElement(required = true)
     protected Duration duration;
     protected boolean getFlags;
+    @XmlElement(required = true)
     protected String beginDate;
+    @XmlElement(required = true)
     protected String endDate;
+    protected Boolean alwaysReturnDailyFeb29;
 
     /**
      * Gets the value of the stationTriplets property.
@@ -235,6 +244,30 @@ public class GetData {
      */
     public void setEndDate(String value) {
         this.endDate = value;
+    }
+
+    /**
+     * Gets the value of the alwaysReturnDailyFeb29 property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Boolean }
+     *     
+     */
+    public Boolean isAlwaysReturnDailyFeb29() {
+        return alwaysReturnDailyFeb29;
+    }
+
+    /**
+     * Sets the value of the alwaysReturnDailyFeb29 property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Boolean }
+     *     
+     */
+    public void setAlwaysReturnDailyFeb29(Boolean value) {
+        this.alwaysReturnDailyFeb29 = value;
     }
 
 }

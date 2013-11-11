@@ -37,10 +37,10 @@ public class AwdbWebService_Service
         }
         AWDBWEBSERVICE_WSDL_LOCATION = url;
     }
-    
+         
     /**
     Construct a SOAP object to allow API interaction.
-    This version is called when constructing a data store.
+    This version is called when constructing a datastore.
     @param wsdlLocation the WSDL location for the AwdbWebService web service
     @throws MalformedURLException
     */
@@ -48,8 +48,8 @@ public class AwdbWebService_Service
     throws MalformedURLException
     {
         super(new URL(wsdlLocation), new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebService"));
-    }
-
+    }   
+    
     public AwdbWebService_Service(URL wsdlLocation, QName serviceName) {
         super(wsdlLocation, serviceName);
     }

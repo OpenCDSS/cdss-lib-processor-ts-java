@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
@@ -35,9 +36,9 @@ public class CopyTable_Command extends AbstractCommand implements Command, Comma
 {
     
 /**
-The table that is created.
+The table that is created in discovery mode.
 */
-private DataTable __table = null;
+private DataTable __discoveryTable = null;
 
 /**
 Constructor.
@@ -143,7 +144,7 @@ Return the table that is read by this class when run in discovery mode.
 */
 private DataTable getDiscoveryTable()
 {
-    return __table;
+    return __discoveryTable;
 }
 
 /**
@@ -151,9 +152,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new ArrayList<DataTable>();
         v.add ( table );
     }
     return v;
@@ -351,7 +352,7 @@ Set the table that is read by this class in discovery mode.
 */
 private void setDiscoveryTable ( DataTable table )
 {
-    __table = table;
+    __discoveryTable = table;
 }
 
 /**

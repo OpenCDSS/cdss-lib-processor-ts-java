@@ -34,6 +34,7 @@ import java.util.Vector;
 import riverside.datastore.AbstractWebServiceDataStore;
 
 import RTi.TS.TS;
+import RTi.TS.TSDataFlagMetadata;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
 import RTi.Util.IO.IOUtil;
@@ -257,7 +258,9 @@ private int lookupIntervalFromDuration ( Duration duration )
 }
 
 /**
-Parse an AWDB date/time string and return a DateTime instance.
+Parse an AWDB date/time string and return a DateTime instance.  If the date/time starts with 2100-01-01 (to indicate
+active station), replace with the current date
+@param s date/time string in format YYYY-MM-DD hh:mm
 */
 private DateTime parseDateTime ( String s )
 {
@@ -757,8 +760,9 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                 ts.setMissing(Double.NaN);
                 ts.setDescription(meta.getName());
                 ts.setDate1Original(parseDateTime(sel.getBeginDate())); // Sensor install date
-                ts.setDate2Original(parseDateTime(sel.getEndDate())); // Sensor end, or 2100-01-01 00:00 if active
-                // The following will be reset if reading data but are OK for discovery mode...
+                // Sensor end, or 2100-01-01 00:00 if active (switched to current because don't want 2100)
+                ts.setDate2Original(parseDateTime(sel.getEndDate()));
+                // The following will be reset below if reading data but are OK for discovery mode...
                 if ( readStartReq != null ) {
                     ts.setDate1(readStartReq);
                 }
@@ -775,6 +779,10 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                 }
                 ts.setDataUnits(sel.getStoredUnitCd());
                 ts.setDataUnitsOriginal(sel.getOriginalUnitCd());
+                // Set the flag descriptions
+                ts.addDataFlagMetadata(new TSDataFlagMetadata("V", "Valid"));
+                ts.addDataFlagMetadata(new TSDataFlagMetadata("S", "Suspect"));
+                ts.addDataFlagMetadata(new TSDataFlagMetadata("E", "Edited"));
                 // Also set properties by passing through XML elements
                 boolean setPropertiesFromMetadata = true;
                 if ( setPropertiesFromMetadata ) {
@@ -847,6 +855,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
             }
             if ( readData ) {
                 // Reset the date to read based on the full period available from the StationElement
+                double missing = ts.getMissing();
                 if ( readStartReq == null ) {
                     beginDateString = sel.getBeginDate();
                 }
@@ -888,6 +897,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                 ts.setDate2(readEnd);
                             }
                             // Loop through the data values and set the values and the flag
+                            // The date/time is provided with each value so there should be no issues parsing
                             DateTime dt;
                             String dtString;
                             BigDecimal value;
@@ -932,7 +942,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     try {
                         // Get the hourly data values for the list of station triplets.
                         // Since only one triplet is processed here, the data array will have one element.
-                        // Make sure the being and end date strings are YYYY-MM-DD and that the hour is extracted from
+                        // Make sure the begin and end date strings are YYYY-MM-DD and that the hour is extracted from
                         // the strings.
                         int beginHour = 0, endHour = 23;
                         if ( readStart != null ) {
@@ -947,7 +957,6 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             beginHour + " endHour=" + endHour );
                         List<HourlyData> dataList = ws.getHourlyData(stationTriplets, elementCode, ordinal, heightDepth,
                             beginDateString, endDateString, beginHour, endHour );
-                        Message.printStatus(2, routine, "dataList.size=" + dataList.size() );
                         if ( dataList.size() == 1 ) {
                             // Have data values for the requested station triplet and element code
                             HourlyData data = dataList.get(0);
@@ -975,7 +984,6 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             String flag;
                             HourlyDataValue hourlyValue;
                             String dateTime; // format YYYY-MM-dd
-                            double missing = ts.getMissing();
                             for ( int i = 0; i < nValues; i++ ) {
                                 hourlyValue = values.get(i);
                                 if ( hourlyValue == null ) {
@@ -985,6 +993,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                     value = hourlyValue.getValue();
                                     flag = hourlyValue.getFlag();
                                     dateTime = hourlyValue.getDateTime();
+                                    // Use the specified date/time to set data rather than rely on aligning with requested period
                                     dt = DateTime.parse(dateTime);
                                     if ( value == null ) {
                                         // Value is missing but flag may be non-null
@@ -1001,7 +1010,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                             ts.setDataValue(dt, value.doubleValue(),flag,0);
                                         }
                                     }
-                                    Message.printStatus(2, routine, "Date " + dateTime + " value=" + value + " flag=" + flag);
+                                    //Message.printStatus(2, routine, "Date " + dateTime + " value=" + value + " flag=" + flag);
                                 }
                             }
                         }
@@ -1020,6 +1029,8 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             " duration=" + sel.getDuration() + " getFlags=" + getFlags + " beginDateString=" +
                             beginDateString + " endDateString=" + endDateString + " alwaysReturnDailyFeb29=" +
                             alwaysReturnDailyFeb29 );
+                        // FIXME SAM 2013-11-10 There is a disconnect where requesting the longer period from the station
+                        // data returns that period, but values are relative to shorter non-missing data period in time series
                         List<Data> dataList = ws.getData(Arrays.asList(stationTriplet), elementCode, ordinal, heightDepth,
                             sel.getDuration(), getFlags, beginDateString, endDateString, alwaysReturnDailyFeb29);
                         if ( dataList.size() == 1 ) {
@@ -1028,8 +1039,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             List<BigDecimal> values = data.getValues();
                             List<String> flags = data.getFlags();
                             int nValues = values.size();
-                            // If a period is requested, the time series period will have been set above.
-                            // If a period is not requested, set to the available StationElement data period
+                            // If the period was not requested, reset to what was returned here
                             if ( readStartReq == null ) {
                                 readStart = DateTime.parse(data.getBeginDate());
                                 ts.setDate1(readStart);
@@ -1041,10 +1051,13 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             ts.allocateDataSpace();
                             Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet +
                                 " starting on " + data.getBeginDate() + " ending on " + data.getEndDate() + " expecting " +
-                                ts.getDataSize() );
+                                ts.getDataSize() + " based on data begin/end" );
                             // Loop through the data values and set the values and the flag
                             // Use the dates returned in the data list because time series requested period may differ
-                            DateTime dt = DateTime.parse(data.getBeginDate());
+                            // FIXME SAM 2013-11-10 Despite the fact that begin date is returned, have to use the date
+                            // that was requested in the query - this seems like a bug and has been reported
+                            //DateTime dt = DateTime.parse(data.getBeginDate());
+                            DateTime dt = DateTime.parse(beginDateString);
                             dt.setPrecision(ts.getDate1().getPrecision());
                             BigDecimal value;
                             String flag;
@@ -1054,9 +1067,9 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                 if ( value == null ) {
                                     // Might still have a flag
                                     if ( (flag != null) && !flag.equals("") ) {
-                                        ts.setDataValue(dt,ts.getMissing(),flag,0);
+                                        ts.setDataValue(dt,missing,flag,0);
                                     }
-                                    Message.printStatus(2, routine, "Date " + dt + " value=" + value);
+                                    //Message.printStatus(2, routine, "Date " + dt + " value=" + value);
                                 }
                                 else {
                                     // Value is not missing but flag may be null
@@ -1066,7 +1079,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                     else {
                                         ts.setDataValue(dt, value.doubleValue(),flag,0);
                                     }
-                                    Message.printStatus(2, routine, "Date " + dt + " value=" + value);
+                                    //Message.printStatus(2, routine, "Date " + dt + " value=" + value);
                                 }
                             }
                         }

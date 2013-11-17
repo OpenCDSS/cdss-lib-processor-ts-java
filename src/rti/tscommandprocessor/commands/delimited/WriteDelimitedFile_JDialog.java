@@ -221,6 +221,9 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
+    String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String ValueColumns = __ValueColumns_JTextField.getText().trim();
 	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
@@ -231,9 +234,6 @@ private void checkInput ()
 	String Precision = __Precision_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	String TSList = __TSList_JComboBox.getSelected();
-    String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String MissingValue = __MissingValue_JTextField.getText().trim();
 
 	__error_wait = false;
@@ -566,6 +566,9 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = "WriteDelimitedFile_JDialog.refresh";
+    String TSList = "";
+    String TSID = "";
+    String EnsembleID = "";
 	String OutputFile = "";
 	String DateTimeColumn = "";
     String dateTimeFormatterType = "";
@@ -577,15 +580,15 @@ private void refresh ()
 	String MissingValue = "";
 	String OutputStart = "";
 	String OutputEnd = "";
-	String TSList = "";
-    String TSID = "";
-    String EnsembleID = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
+        TSList = parameters.getValue ( "TSList" );
+        TSID = parameters.getValue ( "TSID" );
+        EnsembleID = parameters.getValue ( "EnsembleID" );
 		OutputFile = parameters.getValue ( "OutputFile" );
 		DateTimeColumn = parameters.getValue("DateTimeColumn");
         dateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
@@ -597,54 +600,6 @@ private void refresh ()
 	    MissingValue = parameters.getValue("MissingValue");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
-		TSList = parameters.getValue ( "TSList" );
-        TSID = parameters.getValue ( "TSID" );
-        EnsembleID = parameters.getValue ( "EnsembleID" );
-		if ( OutputFile != null ) {
-			__OutputFile_JTextField.setText (OutputFile);
-		}
-        if (DateTimeColumn != null) {
-             __DateTimeColumn_JTextField.setText(DateTimeColumn);
-        }
-        if ( (dateTimeFormatterType == null) || dateTimeFormatterType.equals("") ) {
-            // Select default...
-            __DateTimeFormat_JPanel.selectFormatterType(null);
-        }
-        else {
-            try {
-                __DateTimeFormat_JPanel.selectFormatterType(DateTimeFormatterType.valueOfIgnoreCase(dateTimeFormatterType));
-            }
-            catch ( Exception e ) {
-                Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nDateTimeFormatterType value \"" + dateTimeFormatterType +
-                "\".  Select a different value or Cancel.");
-                __error_wait = true;
-            }
-        }
-        if ( DateTimeFormat != null ) {
-            __DateTimeFormat_JPanel.setText ( DateTimeFormat );
-        }
-        if (ValueColumns != null) {
-             __ValueColumns_JTextField.setText(ValueColumns);
-        }
-        if (HeadingSurround != null) {
-            __HeadingSurround_JTextField.setText(HeadingSurround);
-        }
-	    if (Delimiter != null) {
-	         __Delimiter_JTextField.setText(Delimiter);
-	    }
-	    if ( Precision != null ) {
-	        __Precision_JTextField.setText ( Precision );
-	    }
-        if ( MissingValue != null ) {
-            __MissingValue_JTextField.setText ( MissingValue );
-        }
-		if ( OutputStart != null ) {
-			__OutputStart_JTextField.setText (OutputStart);
-		}
-		if ( OutputEnd != null ) {
-			__OutputEnd_JTextField.setText (OutputEnd);
-		}
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -690,8 +645,56 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+		if ( OutputFile != null ) {
+			__OutputFile_JTextField.setText (OutputFile);
+		}
+        if (DateTimeColumn != null) {
+             __DateTimeColumn_JTextField.setText(DateTimeColumn);
+        }
+        if ( (dateTimeFormatterType == null) || dateTimeFormatterType.equals("") ) {
+            // Select default...
+            __DateTimeFormat_JPanel.selectFormatterType(null);
+        }
+        else {
+            try {
+                __DateTimeFormat_JPanel.selectFormatterType(DateTimeFormatterType.valueOfIgnoreCase(dateTimeFormatterType));
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nDateTimeFormatterType value \"" + dateTimeFormatterType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( DateTimeFormat != null ) {
+            __DateTimeFormat_JPanel.setText ( DateTimeFormat );
+        }
+        if (ValueColumns != null) {
+             __ValueColumns_JTextField.setText(ValueColumns);
+        }
+        if (HeadingSurround != null) {
+            __HeadingSurround_JTextField.setText(HeadingSurround);
+        }
+	    if (Delimiter != null) {
+	         __Delimiter_JTextField.setText(Delimiter);
+	    }
+	    if ( Precision != null ) {
+	        __Precision_JTextField.setText ( Precision );
+	    }
+        if ( MissingValue != null ) {
+            __MissingValue_JTextField.setText ( MissingValue );
+        }
+		if ( OutputStart != null ) {
+			__OutputStart_JTextField.setText (OutputStart);
+		}
+		if ( OutputEnd != null ) {
+			__OutputEnd_JTextField.setText (OutputEnd);
+		}
 	}
 	// Regardless, reset the command from the fields...
+    TSList = __TSList_JComboBox.getSelected();
+    TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     dateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
@@ -703,9 +706,6 @@ private void refresh ()
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
-	TSList = __TSList_JComboBox.getSelected();
-    TSID = __TSID_JComboBox.getSelected();
-    EnsembleID = __EnsembleID_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );

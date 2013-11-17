@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.statemod;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -12,12 +13,14 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
@@ -40,7 +43,6 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -64,6 +66,7 @@ private JTextField __InputFile_JTextField = null;
 private JTextField __InputStart_JTextField = null;
 private JTextField __InputEnd_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null; // Alias for time series.
+private JTabbedPane __file_JTabbedPane = null;
 private JLabel __Interval_JLabel = null;
 private SimpleJComboBox __Interval_JComboBox = null; // Interval for water rights output.
 private JLabel __SpatialAggregation_JLabel = null;
@@ -335,15 +338,11 @@ private void initialize ( JFrame parent, ReadStateMod_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read all the time series from a StateMod time series or water right file, using " +
-		"information in the file to assign the identifier."),
+		"Read all the time series from a StateMod text input or output file (use ReadStateModB() to read binary output file)."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The data source and data type will be blank in the resulting time series identifier (TSID)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Specify the interval and parcel year only for well rights, as appropriate."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -383,19 +382,62 @@ private void initialize ( JFrame parent, ReadStateMod_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
-    __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __Alias_JTextField.getTextField().setToolTipText(
+         "Use %L for location, %T for data type, ${ts:property} for time series property.");
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener(this);
-    __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, ${ts:property}, etc. (default=no alias)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    __file_JTabbedPane = new JTabbedPane ();
+    __file_JTabbedPane.setBorder(
+        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+        "Specify parameters specific to file type" ));
+    JGUIUtil.addComponent(main_JPanel, __file_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for STM files
+    int yStm = -1;
+    JPanel stm_JPanel = new JPanel();
+    stm_JPanel.setLayout( new GridBagLayout() );
+    __file_JTabbedPane.addTab ( "Standard Time Series", stm_JPanel );
+
+    JGUIUtil.addComponent(stm_JPanel, new JLabel (
+        "Standard time series files are used for daily, monthly, and average monthly time series."),
+        0, ++yStm, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(stm_JPanel, new JLabel (
+        "This format includes most of the StateMod input time series files (*.ddh, *.rih, *.ddm, etc.) and *.stm files."),
+        0, ++yStm, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     
+    // Panel for water right files
+    int yRight = -1;
+    JPanel right_JPanel = new JPanel();
+    right_JPanel.setLayout( new GridBagLayout() );
+    __file_JTabbedPane.addTab ( "Water Right Input File", right_JPanel );
+
+    JGUIUtil.addComponent(right_JPanel, new JLabel (
+        "Water right files can be read to create a cumulative step-function of decrees for a location."),
+        0, ++yRight, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(right_JPanel, new JLabel (
+        "The following parameters are enabled if the StateMod file has a file extension for water right files (*.wer, *.ddr, etc.)."),
+        0, ++yRight, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(right_JPanel, new JLabel (
+        "Specify the desired interval for the output water right time series."),
+        0, ++yRight, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(right_JPanel, new JLabel (
+        "Water rights can be aggregated by location, for example well rights associated with parcel."),
+        0, ++yRight, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(right_JPanel, new JLabel (
+        "Well right/parcel relationships can change every year.  " +
+        "Specify a single year to extract rights for that year."),
+        0, ++yRight, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     __Interval_JLabel = new JLabel ("Interval:");
-    JGUIUtil.addComponent(main_JPanel, __Interval_JLabel,
-      	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List Interval_Vector = new Vector();
+    JGUIUtil.addComponent(right_JPanel, __Interval_JLabel,
+      	0, ++yRight, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    List<String> Interval_Vector = new Vector<String>();
    	Interval_Vector.add ( "" );
    	Interval_Vector.add ( __command._Day );
    	Interval_Vector.add ( __command._Month );
@@ -406,15 +448,15 @@ private void initialize ( JFrame parent, ReadStateMod_Command command )
    	__Interval_JComboBox.setData ( Interval_Vector );
    	__Interval_JComboBox.select ( 0 );
    	__Interval_JComboBox.addActionListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
-    	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(right_JPanel, __Interval_JComboBox,
+    	1, yRight, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(right_JPanel, new JLabel (
     	"Optional for rights - interval for resulting time series (default=" + __command._Year + ")."),
-    	3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    	3, yRight, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     __SpatialAggregation_JLabel = new JLabel ("Spatial aggregation:");
-    JGUIUtil.addComponent(main_JPanel, __SpatialAggregation_JLabel,
-       0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(right_JPanel, __SpatialAggregation_JLabel,
+       0, ++yRight, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     List SpatialAggregation_Vector = new Vector();
    	SpatialAggregation_Vector.add ( "" );
    	SpatialAggregation_Vector.add ( __command._Location );
@@ -424,22 +466,39 @@ private void initialize ( JFrame parent, ReadStateMod_Command command )
    	__SpatialAggregation_JComboBox.setData ( SpatialAggregation_Vector );
    	__SpatialAggregation_JComboBox.select ( 0 );
    	__SpatialAggregation_JComboBox.addActionListener (this);
-    JGUIUtil.addComponent(main_JPanel, __SpatialAggregation_JComboBox,
-    	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(right_JPanel, __SpatialAggregation_JComboBox,
+    	1, yRight, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(right_JPanel, new JLabel (
     	"Optional for rights - spatial aggregation (default=" + __command._Location + ")."),
-    	3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    	3, yRight, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     __ParcelYear_JLabel = new JLabel ( "Parcel year:");
-    JGUIUtil.addComponent(main_JPanel, __ParcelYear_JLabel, 
-   		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(right_JPanel, __ParcelYear_JLabel, 
+   		0, ++yRight, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
    	__ParcelYear_JTextField = new JTextField (20);
    	__ParcelYear_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ParcelYear_JTextField,
-        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(right_JPanel, __ParcelYear_JTextField,
+        1, yRight, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(right_JPanel, new JLabel (
 	    "Optional for well rights - read a single irrigated lands year (default=read all)."),
-	    3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	    3, yRight, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for StateMod output files
+    int yOut = -1;
+    JPanel out_JPanel = new JPanel();
+    out_JPanel.setLayout( new GridBagLayout() );
+    __file_JTabbedPane.addTab ( "Output (.x*) File", out_JPanel );
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "StateMod output files have standard file extensions, which are used to determine how to read the file."),
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "Currently only the .xop file is handled.  " +
+        "Use the ReadStateModB() command to read from the binary output files."),
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "Periods in the location ID will be replaced with underscores so as to not corrupt the TSID."),
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);  
    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -545,11 +604,12 @@ private void refresh ()
         if (Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
-		if ( Interval == null ) {
+		if ( (Interval == null) || Interval.equals("") ) {
 			// Select the first item
 			__Interval_JComboBox.select ( 0 );
 		}
 		else {
+		    __file_JTabbedPane.setSelectedIndex(1);
 		    if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
 				__Interval_JComboBox.select ( Interval );
 			}
@@ -560,11 +620,12 @@ private void refresh ()
 				__error_wait = true;
 			}
 		}
-		if ( SpatialAggregation == null ) {
+		if ( (SpatialAggregation == null) || SpatialAggregation.equals("") ) {
 			// Select the first item
 			__SpatialAggregation_JComboBox.select ( 0 );
 		}
 		else {
+		    __file_JTabbedPane.setSelectedIndex(1);
 		    if ( JGUIUtil.isSimpleJComboBoxItem(
 				__SpatialAggregation_JComboBox, SpatialAggregation, JGUIUtil.NONE, null, null ) ) {
 				__SpatialAggregation_JComboBox.select ( SpatialAggregation );
@@ -578,6 +639,9 @@ private void refresh ()
 		}
 		if ( ParcelYear != null ) {
 			__ParcelYear_JTextField.setText ( ParcelYear );
+			if ( !ParcelYear.equals("") ) {
+			    __file_JTabbedPane.setSelectedIndex(1);
+			}
 		}
 		// Ensure that components are properly enabled/disabled...
 		checkGUIState();

@@ -54,10 +54,10 @@ import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
 
 /**
-This class initializes, checks, and runs the WriteTableToExcel() command, using Apache POI.
+This class initializes, checks, and runs the WriteTimeSeriesToExcel() command, using Apache POI.
 A useful link is:  http://poi.apache.org/spreadsheet/quick-guide.html
 */
-public class WriteTableToExcel_Command extends AbstractCommand implements Command
+public class WriteTimeSeriesToExcel_Command extends AbstractCommand implements Command
 // TODO SAM 2013-11-03 Decide if new Excel file is allowed to be created
 //, CommandDiscoverable, ObjectListProvider
 {
@@ -89,9 +89,9 @@ private int __firstDataRow = 0;
 /**
 Constructor.
 */
-public WriteTableToExcel_Command ()
+public WriteTimeSeriesToExcel_Command ()
 {	super();
-	setCommandName ( "WriteTableToExcel" );
+	setCommandName ( "WriteTimeSeriesToExcel" );
 }
 
 // TODO SAM 2013-08-12 This can be optimized to not have to check column name and do upper-case conversions
@@ -302,7 +302,7 @@ Create table columns from the first row of the area.
 private String [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
     AreaReference area, String excelColumnNames, String comment, String [] excelIntegerColumns,
     String [] excelDateTimeColumns, int precisionForFloats, boolean WriteAllAsText, List<String> problems )
-{   String routine = "WriteTableToExcel_Command.createTableColumns";
+{   String routine = "WriteTimeSeriesToExcel_Command.createTableColumns";
     Row dataRow; // First row of data
     Row headerRow = null; // Row containing column headings
     Cell cell;
@@ -516,9 +516,7 @@ Edit the command.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-    List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
-        (TSCommandProcessor)getCommandProcessor(), this);
-	return (new WriteTableToExcel_JDialog ( parent, this, tableIDChoices )).ok();
+	return (new WriteTimeSeriesToExcel_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -532,7 +530,7 @@ Get the array of cell ranges based on one of the input address methods.
 */
 private AreaReference getAreaReference ( Workbook wb, Sheet sheet,
     String excelAddress, String excelNamedRange, String excelTableName )
-{   String routine = "WriteTableToExcel_Command.getAreaReference";
+{   String routine = "WriteTimeSeriesToExcel_Command.getAreaReference";
     if ( (excelTableName != null) && (excelTableName.length() > 0) ) {
         // Table name takes precedence as range name
         excelNamedRange = excelTableName;
@@ -665,12 +663,12 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 @param problems list of problems encountered during read, for formatted logging in calling code
 @return a DataTable with the Excel contents
 */
-private DataTable writeTableToExcelFile ( String workbookFile, String sheetName,
+private DataTable WriteTimeSeriesToExcelFile ( String workbookFile, String sheetName,
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
     Hashtable columnExcludeFiltersMap, String comment, String [] excelIntegerColumns, String [] excelDateTimeColumns,
     int numberPrecision, boolean WriteAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
-{   String routine = "WriteTableToExcel_Command.writeTableToExcelFile", message;
+{   String routine = "WriteTimeSeriesToExcel_Command.WriteTimeSeriesToExcelFile", message;
     DataTable table = new DataTable();
     if ( (comment != null) && (comment.trim().length() == 0) ) {
         // Set to null to simplify logic below
@@ -1054,7 +1052,7 @@ Run the command.
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "WriteTableToExcelFile_Command.runCommand",message = "";
+{	String routine = "WriteTimeSeriesToExcelFile_Command.runCommand",message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -1159,7 +1157,7 @@ CommandWarningException, CommandException
 	try {
 	    if ( command_phase == CommandPhaseType.RUN ) {
 	        // TODO SAM 2013-0=11-03 Need to enable this
-            //table = writeTableToExcelFile ( InputFile_full, Worksheet,
+            //table = WriteTimeSeriesToExcelFile ( InputFile_full, Worksheet,
             //    ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, columnExcludeFiltersMap,
             //    //comment, excelIntegerColumns, excelDateTimeColumns,
             //    numberPrecision, writeAllAsText, problems );

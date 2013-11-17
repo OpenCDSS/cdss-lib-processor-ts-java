@@ -99,6 +99,7 @@ import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 // Spreadsheet commands
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableFromExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTableToExcel_Command;
+import rti.tscommandprocessor.commands.spreadsheet.WriteTimeSeriesToExcel_Command;
 
 // StateCU commands.
 import rti.tscommandprocessor.commands.statecu.ReadStateCU_Command;
@@ -975,6 +976,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToDataStream") ) {
         return new WriteTimeSeriesToDataStream_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToExcel") ) {
+        return new WriteTimeSeriesToExcel_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToJson") ) {
         return new WriteTimeSeriesToJson_Command ();

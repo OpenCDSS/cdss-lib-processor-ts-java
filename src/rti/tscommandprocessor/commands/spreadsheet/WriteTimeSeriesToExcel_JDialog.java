@@ -13,6 +13,8 @@ import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import java.awt.Color;
 import java.awt.FlowLayout;
@@ -44,9 +46,9 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Editor for the WriteTableToExcel command.
+Editor for the WriteTimeSeriesToExcel command.
 */
-public class WriteTableToExcel_JDialog extends JDialog
+public class WriteTimeSeriesToExcel_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
@@ -58,7 +60,11 @@ private final String __RemoveWorkingDirectoryFromFile = "Remove Working Director
 private boolean __error_wait = false; // To track errors
 private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
-private SimpleJComboBox __TableID_JComboBox = null;
+private SimpleJComboBox __TSList_JComboBox = null;
+private JLabel __TSID_JLabel = null;
+private SimpleJComboBox __TSID_JComboBox = null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __Worksheet_JTextField = null;
 private JTabbedPane __excelSpace_JTabbedPane = null;
@@ -72,12 +78,15 @@ private JTextField __ExcelIntegerColumns_JTextField = null;
 private JTextField __ExcelDateTimeColumns_JTextField = null;
 private JTextField __NumberPrecision_JTextField = null;
 private SimpleJComboBox __WriteAllAsText_JComboBox = null;
+private JTextField __MissingValue_JTextField = null;// Missing value for output
+private JTextField __OutputStart_JTextField = null;
+private JTextField __OutputEnd_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private String __working_dir = null;	
-private WriteTableToExcel_Command __command = null;
+private WriteTimeSeriesToExcel_Command __command = null;
 private boolean __ok = false;
 private JFrame __parent = null;
 
@@ -87,9 +96,9 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public WriteTableToExcel_JDialog ( JFrame parent, WriteTableToExcel_Command command, List<String> tableIDChoices )
+public WriteTimeSeriesToExcel_JDialog ( JFrame parent, WriteTimeSeriesToExcel_Command command )
 {	super(parent, true);
-	initialize ( parent, command, tableIDChoices );
+	initialize ( parent, command );
 }
 
 /**
@@ -169,7 +178,9 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
-	String TableID = __TableID_JComboBox.getSelected();
+    String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Worksheet = __Worksheet_JTextField.getText().trim();
 	String ExcelAddress = __ExcelAddress_JTextField.getText().trim();
@@ -182,10 +193,19 @@ private void checkInput ()
 	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __WriteAllAsText_JComboBox.getSelected();
+	String MissingValue = __MissingValue_JTextField.getText().trim();
+    String OutputStart = __OutputStart_JTextField.getText().trim();
+    String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	__error_wait = false;
 
-    if ( TableID.length() > 0 ) {
-        props.set ( "TableID", TableID );
+    if ( TSList.length() > 0 ) {
+        props.set ( "TSList", TSList );
+    }
+    if ( TSID.length() > 0 ) {
+        props.set ( "TSID", TSID );
+    }
+    if ( EnsembleID.length() > 0 ) {
+        props.set ( "EnsembleID", EnsembleID );
     }
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
@@ -223,6 +243,15 @@ private void checkInput ()
     if ( ReadAllAsText.length() > 0 ) {
         props.set ( "ReadAllAsText", ReadAllAsText );
     }
+    if ( MissingValue.length() > 0 ) {
+        props.set ( "MissingValue", MissingValue );
+    }
+    if ( OutputStart.length() > 0 ) {
+        props.set ( "OutputStart", OutputStart );
+    }
+    if ( OutputEnd.length() > 0 ) {
+        props.set ( "OutputEnd", OutputEnd );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -239,7 +268,9 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String TableID = __TableID_JComboBox.getSelected();
+{	String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String Worksheet = __Worksheet_JTextField.getText().trim();
 	String ExcelAddress = __ExcelAddress_JTextField.getText().trim();
@@ -252,7 +283,12 @@ private void commitEdits ()
 	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __WriteAllAsText_JComboBox.getSelected();
-    __command.setCommandParameter ( "TableID", TableID );
+	String MissingValue = __MissingValue_JTextField.getText().trim();
+    String OutputStart = __OutputStart_JTextField.getText().trim();
+    String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	__command.setCommandParameter ( "TSList", TSList );
+    __command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Worksheet", Worksheet );
 	__command.setCommandParameter ( "ExcelAddress", ExcelAddress );
@@ -265,6 +301,9 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ExcelDateTimeColumns", ExcelDateTimeColumns );
 	__command.setCommandParameter ( "NumberPrecision", NumberPrecision );
 	__command.setCommandParameter ( "ReadAllAsText", ReadAllAsText );
+	__command.setCommandParameter ( "MissingValue", MissingValue );
+    __command.setCommandParameter ( "OutputStart", OutputStart );
+    __command.setCommandParameter ( "OutputEnd", OutputEnd );
 }
 
 /**
@@ -272,7 +311,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, WriteTableToExcel_Command command, List<String> tableIDChoices )
+private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command )
 {	__command = command;
     __parent = parent;
 	CommandProcessor processor = __command.getCommandProcessor();
@@ -297,7 +336,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
         "<html><b>This command is in the early stages of devevelopment - DO NOT USE FOR PRODUCTION WORK.<b></html>"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
-    	"This command writes a table to a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx).  " +
+    	"This command writes a list of time series to a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx).  " +
     	"Currently the Excel file must exist."),
     	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
@@ -317,19 +356,23 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    tableIDChoices.add(0,""); // Add blank to ignore table
-    __TableID_JComboBox.setData ( tableIDChoices );
-    __TableID_JComboBox.addItemListener ( this );
-    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to write."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output (workbook) file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (45);
@@ -483,6 +526,37 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - write all cells as text? (default=" + __command._False + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MissingValue_JTextField = new JTextField ( "", 10 );
+    __MissingValue_JTextField.setToolTipText("Specify Blank to output a blank.");
+    __MissingValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - value to write for missing data (default=initial missing value)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputStart_JTextField = new JTextField (20);
+    __OutputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - override the global output start (default=write all data)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputEnd_JTextField = new JTextField (20);
+    __OutputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - override the global output end (default=write all data)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -564,7 +638,9 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
-    String TableID = "";
+    String TSList = "";
+    String TSID = "";
+    String EnsembleID = "";
     String OutputFile = "";
     String Worksheet = "";
 	String ExcelAddress = "";
@@ -577,10 +653,15 @@ private void refresh ()
 	String ExcelDateTimeColumns = "";
 	String NumberPrecision = "";
 	String ReadAllAsText = "";
+    String MissingValue = "";
+    String OutputStart = "";
+    String OutputEnd = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
-        TableID = props.getValue ( "TableID" );
+	    TSList = props.getValue ( "TSList" );
+	    TSID = props.getValue ( "TSID" );
+	    EnsembleID = props.getValue ( "EnsembleID" );
 		OutputFile = props.getValue ( "OutputFile" );
 		Worksheet = props.getValue ( "Worksheet" );
 		ExcelAddress = props.getValue ( "ExcelAddress" );
@@ -593,17 +674,50 @@ private void refresh ()
 		ExcelDateTimeColumns = props.getValue ( "ExcelDateTimeColumns" );
 		NumberPrecision = props.getValue ( "NumberPrecision" );
 		ReadAllAsText = props.getValue ( "ReadAllAsText" );
-        if ( TableID == null ) {
+        MissingValue = props.getValue("MissingValue");
+        OutputStart = props.getValue ( "OutputStart" );
+        OutputEnd = props.getValue ( "OutputEnd" );
+        if ( TSList == null ) {
             // Select default...
-            __TableID_JComboBox.select ( 0 );
+            __TSList_JComboBox.select ( 0 );
         }
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __TableID_JComboBox,TableID, JGUIUtil.NONE, null, null ) ) {
-                __TableID_JComboBox.select ( TableID );
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TSList_JComboBox,TSList, JGUIUtil.NONE, null, null ) ) {
+                __TSList_JComboBox.select ( TSList );
             }
             else {
                 Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nTableID value \"" + TableID +
+                "Existing command references an invalid\nTSList value \"" + TSList +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+                __TSID_JComboBox.select ( TSID );
+        }
+        else {
+            // Automatically add to the list after the blank...
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+                // Select...
+                __TSID_JComboBox.select ( TSID );
+            }
+            else {
+                // Select the blank...
+                __TSID_JComboBox.select ( 0 );
+            }
+        }
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
@@ -668,9 +782,20 @@ private void refresh ()
                     ReadAllAsText + "\".  Select a different choice or Cancel." );
             }
         }
+        if ( MissingValue != null ) {
+            __MissingValue_JTextField.setText ( MissingValue );
+        }
+        if ( OutputStart != null ) {
+            __OutputStart_JTextField.setText (OutputStart);
+        }
+        if ( OutputEnd != null ) {
+            __OutputEnd_JTextField.setText (OutputEnd);
+        }
 	}
 	// Regardless, reset the command from the fields...
-	TableID = __TableID_JComboBox.getSelected();
+	TSList = __TSList_JComboBox.getSelected();
+    TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Worksheet = __Worksheet_JTextField.getText().trim();
 	ExcelAddress = __ExcelAddress_JTextField.getText().trim();
@@ -683,8 +808,13 @@ private void refresh ()
 	ExcelDateTimeColumns = __ExcelDateTimeColumns_JTextField.getText().trim();
 	NumberPrecision = __NumberPrecision_JTextField.getText().trim();
 	ReadAllAsText = __WriteAllAsText_JComboBox.getSelected();
+    MissingValue = __MissingValue_JTextField.getText().trim();
+    OutputStart = __OutputStart_JTextField.getText().trim();
+    OutputEnd = __OutputEnd_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
-    props.add ( "TableID=" + TableID );
+	props.add ( "TSList=" + TSList );
+    props.add ( "TSID=" + TSID );
+    props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "Worksheet=" + Worksheet );
 	props.add ( "ExcelAddress=" + ExcelAddress );
@@ -697,6 +827,9 @@ private void refresh ()
 	props.add ( "ExcelDateTimeColumns=" + ExcelDateTimeColumns );
 	props.add ( "NumberPrecision=" + NumberPrecision );
 	props.add ( "ReadAllAsText=" + ReadAllAsText );
+	props.add ( "MissingValue=" + MissingValue );
+	props.add ( "OutputStart=" + OutputStart );
+	props.add ( "OutputEnd=" + OutputEnd );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

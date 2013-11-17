@@ -61,18 +61,20 @@ private AwdbWebService __awdbWebService = null;
 
 /**
 The list of network codes, listed here:  http://www.wcc.nrcs.usda.gov/web_service/AWDB_Web_Service_Reference.htm
+If null will be loaded in first get call.
 */
-private List<NrcsAwdbNetworkCode> __networkCodeList = new Vector();
+private List<NrcsAwdbNetworkCode> __networkCodeList = null;
 
 /**
 The list of element codes, listed here:  http://www.wcc.nrcs.usda.gov/web_service/AWDB_Web_Service_Reference.htm
+If null will be loaded in first get call.
 */
-private List<Element> __elementList = new ArrayList<Element>();
+private List<Element> __elementList = null;
 
 /**
-The list of forecast periods.
+The list of forecast periods.  If null will be loaded in first get call.
 */
-private List<ForecastPeriod> __forecastPeriodList = new ArrayList<ForecastPeriod>();
+private List<ForecastPeriod> __forecastPeriodList = null;
     
 /**
 Constructor for web service.
@@ -90,19 +92,11 @@ throws URISyntaxException, IOException
     AwdbWebService_Service lookup = new AwdbWebService_Service(serviceRootURI.toString());
     setAwdbWebService ( lookup.getAwdbWebServiceImplPort() );
     
-    // Initialize static data
-    // Initialize the network codes - this may be available as a service at some point but for now inline
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("BOR","Any Bureau of Reclamation reservoir stations plus other non-BOR reservoir stations"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("CLMIND","Used to store climate indices (such as Southern Oscillation Index or Trans-Nino Index)"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("COOP","National Weather Service COOP stations"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("MPRC","Manual precipitation sites"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("MSNT","Manual SNOTEL non-telemetered, non-real time sites"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("SNOW","NRCS Snow Course Sites"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("SNTL","NWCC SNOTEL and SCAN stations"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("USGS","Any USGS station, but also other non-USGS streamflow stations"));
-    // Initialize available data from web service
-    readElements();
-    readForecastPeriods();
+    // Initialize cached data
+    // Commonly used data are loaded in lazy fashion when first "get" call occurs.
+    // - Element
+    // - ForecastPeriod
+    // - Network
 }
 
 /**
@@ -170,6 +164,10 @@ the name.  Duplicates in the table are ignored.
 */
 public List<String> getElementStrings ( boolean includeName )
 {   List<String> elementList = new ArrayList<String>();
+    if ( __elementList == null ) {
+        // Using lazy loading so read the first time requested
+        readElements();
+    }
     for ( Element el: __elementList ) {
         if ( includeName ) {
             elementList.add( "" + el.getElementCd() + " - " + el.getName() );
@@ -183,9 +181,14 @@ public List<String> getElementStrings ( boolean includeName )
 
 /**
 Return the list of forecast periods that are available.  Duplicates in the table are ignored.
+@return forecast period strings
 */
 public List<String> getForecastPeriodStrings ()
 {   List<String> fpList = new ArrayList<String>();
+    if ( __forecastPeriodList == null ) {
+        // Lazy loading so need to read it now
+        readForecastPeriods();
+    }
     for ( ForecastPeriod fp: __forecastPeriodList ) {
         fpList.add( "" + fp.getForecastPeriod() );
     }
@@ -199,7 +202,11 @@ the description.  Duplicates in the table are ignored.
 @param includeDesc whether to include the description (use " - " as separator).
 */
 public List<String> getNetworkStrings ( boolean includeDesc )
-{   List<String> networkList = new Vector();
+{   List<String> networkList = new ArrayList<String>();
+    if ( __networkCodeList == null ) {
+        // Use lazy loading so read on first request
+        readNetworks();
+    }
     for ( NrcsAwdbNetworkCode param: __networkCodeList ) {
         if ( includeDesc ) {
             networkList.add( "" + param.getCode() + " - " + param.getDescription() );
@@ -316,9 +323,9 @@ private void readForecastPeriods ()
 {
     AwdbWebService ws = getAwdbWebService ();
     __forecastPeriodList = ws.getForecastPeriods();
-    for ( ForecastPeriod fp : __forecastPeriodList ) {
-        Message.printStatus(2,"","Forecast period = \"" + fp.getForecastPeriod() + "\"");
-    }
+    //for ( ForecastPeriod fp : __forecastPeriodList ) {
+    //    Message.printStatus(2,"","Forecast period = \"" + fp.getForecastPeriod() + "\"");
+    //}
 }
 
 /**
@@ -471,6 +478,23 @@ public DataTable readForecastTable ( List<String> stationIdList, List<String> st
         }
     }
     return table;
+}
+
+/**
+Read the network list
+*/
+private void readNetworks ()
+{
+    __networkCodeList = new ArrayList<NrcsAwdbNetworkCode>();
+    // Initialize the network codes - this may be available as a service at some point but for now inline
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("BOR","Any Bureau of Reclamation reservoir stations plus other non-BOR reservoir stations"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("CLMIND","Used to store climate indices (such as Southern Oscillation Index or Trans-Nino Index)"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("COOP","National Weather Service COOP stations"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("MPRC","Manual precipitation sites"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("MSNT","Manual SNOTEL non-telemetered, non-real time sites"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("SNOW","NRCS Snow Course Sites"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("SNTL","NWCC SNOTEL and SCAN stations"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("USGS","Any USGS station, but also other non-USGS streamflow stations"));
 }
 
 /**

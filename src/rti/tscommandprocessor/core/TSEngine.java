@@ -1102,7 +1102,7 @@ throws Exception
 			}
 		}
 		catch ( Exception e ) {
-			message = "Error getting limits for time series (" + e + ").";
+			message = "Error getting limits for time series \"" + ts.getIdentifier().toStringAliasAndTSID() + " (" + e + ").";
 			Message.printWarning ( 2, routine, message );
 			//Message.printWarning ( 3, routine, e );
 			throw new Exception ( message );

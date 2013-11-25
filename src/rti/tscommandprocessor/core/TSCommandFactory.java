@@ -94,6 +94,7 @@ import rti.tscommandprocessor.commands.riverware.WriteRiverWare_Command;
 import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 
 // Spatial commands.
+import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 
 // Spreadsheet commands
@@ -967,6 +968,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToHTML") ) {
         return new WriteTableToHTML_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTableToKml") ) {
+        return new WriteTableToKml_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesProperty") ) {
         return new WriteTimeSeriesProperty_Command ();

@@ -70,6 +70,7 @@ private JTextField __PlacemarkDescriptionColumn_JTextField = null;
 private JTextField __LongitudeColumn_JTextField = null;
 private JTextField __LatitudeColumn_JTextField = null;
 private JTextField __ElevationColumn_JTextField = null;
+private JTextField __WKTGeometryColumn_JTextField = null;
 private JTextArea __StyleInsert_JTextArea = null;
 private JTextField __StyleFile_JTextField = null;
 private JTextField __StyleUrl_JTextField = null;
@@ -220,6 +221,7 @@ private void checkInput ()
     String LongitudeColumn = __LongitudeColumn_JTextField.getText().trim();
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText().trim();
+    String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
     String StyleInsert = __StyleInsert_JTextArea.getText().trim();
     String StyleFile = __StyleFile_JTextField.getText().trim();
     String StyleUrl = __StyleUrl_JTextField.getText().trim();
@@ -252,6 +254,9 @@ private void checkInput ()
     }
     if ( ElevationColumn.length() > 0 ) {
         parameters.set ( "ElevationColumn", ElevationColumn );
+    }
+    if ( WKTGeometryColumn.length() > 0 ) {
+        parameters.set ( "WKTGeometryColumn", WKTGeometryColumn );
     }
     if ( StyleInsert.length() > 0 ) {
         parameters.set ( "StyleInsert", StyleInsert );
@@ -287,6 +292,7 @@ private void commitEdits ()
     String LongitudeColumn = __LongitudeColumn_JTextField.getText().trim();
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText();
+    String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText();
     String StyleInsert = __StyleInsert_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
     String StyleFile = __StyleFile_JTextField.getText().trim();
     String StyleUrl = __StyleUrl_JTextField.getText().trim();
@@ -299,6 +305,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "LongitudeColumn", LongitudeColumn );
     __command.setCommandParameter ( "LatitudeColumn", LatitudeColumn );
     __command.setCommandParameter ( "ElevationColumn", ElevationColumn );
+    __command.setCommandParameter ( "WKTGeometryColumn", WKTGeometryColumn );
     __command.setCommandParameter ( "StyleInsert", StyleInsert );
     __command.setCommandParameter ( "StyleFile", StyleFile );
     __command.setCommandParameter ( "StyleUrl", StyleUrl );
@@ -367,11 +374,15 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
-    // Panel for SQL via SQL statement
+    // Panel for general parameters
     int yGen = -1;
     JPanel gen_JPanel = new JPanel();
     gen_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "General", gen_JPanel );
+    
+    JGUIUtil.addComponent(gen_JPanel, new JLabel (
+        "General parameters specify information for main KML elements."),
+        0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Name:" ),
         0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -414,40 +425,89 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - longer descrption for map popup."),
         3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Longitude column:" ),
-        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for point data in separate columns
+    int yPoint = -1;
+    JPanel point_JPanel = new JPanel();
+    point_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Point Data", point_JPanel );
+    
+    JGUIUtil.addComponent(point_JPanel, new JLabel (
+        "If the data are for a point layer, then spatial information can be specified from separate table columns (below)."),
+        0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel (
+        "Otherwise, specify shape data using parameters in the Geometry Data tab."),
+        0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Longitude (X) column:" ),
+        0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LongitudeColumn_JTextField = new JTextField ( "", 20 );
     __LongitudeColumn_JTextField.setToolTipText("Longitude is negative if in the Western Hemisphere");
     __LongitudeColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(gen_JPanel, __LongitudeColumn_JTextField,
-        1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Required - column containing longitude, decimal degrees."),
-        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(point_JPanel, __LongitudeColumn_JTextField,
+        1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Required - column containing longitude, decimal degrees."),
+        3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Latitude column:" ),
-        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Latitude (Y) column:" ),
+        0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LatitudeColumn_JTextField = new JTextField ( "", 20 );
     __LatitudeColumn_JTextField.setToolTipText("Latitude is negative if in the Southern Hemisphere");
     __LatitudeColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(gen_JPanel, __LatitudeColumn_JTextField,
-        1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Required - column containing latitude, decimal degrees."),
-        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(point_JPanel, __LatitudeColumn_JTextField,
+        1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Required - column containing latitude, decimal degrees."),
+        3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Elevation column:" ),
-        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Elevation (Z) column:" ),
+        0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ElevationColumn_JTextField = new JTextField ( "", 20 );
     __ElevationColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(gen_JPanel, __ElevationColumn_JTextField,
-        1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - column containing elevation."),
-        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(point_JPanel, __ElevationColumn_JTextField,
+        1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Optional - column containing elevation."),
+        3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for geometry data in WKT column
+    int yGeom = -1;
+    JPanel geom_JPanel = new JPanel();
+    geom_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Geometry Data", geom_JPanel );
+    
+    JGUIUtil.addComponent(geom_JPanel, new JLabel (
+        "Geometry (shape) data can be specified using Well Known Text (WKT) strings in a table column."),
+        0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(geom_JPanel, new JLabel (
+        "Currently only POINT geometry is recognized but support for other geometry types will be added in the future."),
+        0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(geom_JPanel, new JLabel (
+        "Coordinates in the WKT strings must be geographic (longitude and latitude decimal degrees)."),
+        0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(geom_JPanel, new JLabel ( "WKT geometry column:" ),
+        0, ++yGeom, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WKTGeometryColumn_JTextField = new JTextField ( "", 20 );
+    __WKTGeometryColumn_JTextField.setToolTipText("Longitude is negative if in the Western Hemisphere");
+    __WKTGeometryColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(geom_JPanel, __WKTGeometryColumn_JTextField,
+        1, yGeom, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(geom_JPanel, new JLabel ( "Reguired for geometry data - column containing WKT strings."),
+        3, yGeom, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Panel for style information
     int yStyle = -1;
     JPanel style_JPanel = new JPanel();
     style_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Marker Styles", style_JPanel );
+    
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Marker styles control how map layer features are symbolized (colors, etc.) and interact (mouse-over highlight, etc.)."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Marker style definitions can be defined by inserting XML text or specifying a file to insert."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "The URL to a style map is then specified for the layer (currently all features in the layer will have the same style)."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(style_JPanel, new JLabel ("Style insert:"), 
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -574,6 +634,7 @@ private void refresh ()
     String LongitudeColumn = "";
     String LatitudeColumn = "";
     String ElevationColumn = "";
+    String WKTGeometryColumn = "";
     String StyleInsert = "";
     String StyleFile = "";
     String StyleUrl = "";
@@ -592,6 +653,7 @@ private void refresh ()
         LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
         LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
         ElevationColumn = parameters.getValue ( "ElevationColumn" );
+        WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
         StyleInsert = parameters.getValue ( "StyleInsert" );
         StyleFile = parameters.getValue ( "StyleFile" );
         StyleUrl = parameters.getValue ( "StyleUrl" );
@@ -634,6 +696,9 @@ private void refresh ()
         if ( ElevationColumn != null ) {
             __ElevationColumn_JTextField.setText (ElevationColumn);
         }
+        if ( WKTGeometryColumn != null ) {
+            __WKTGeometryColumn_JTextField.setText (WKTGeometryColumn);
+        }
         if ( StyleInsert != null ) {
             __StyleInsert_JTextArea.setText (StyleInsert);
         }
@@ -654,6 +719,7 @@ private void refresh ()
     LongitudeColumn = __LongitudeColumn_JTextField.getText().trim();
     LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     ElevationColumn = __ElevationColumn_JTextField.getText().trim();
+    WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
     StyleInsert = __StyleInsert_JTextArea.getText().trim();
     StyleFile = __StyleFile_JTextField.getText().trim();
     StyleUrl = __StyleUrl_JTextField.getText().trim();
@@ -667,6 +733,7 @@ private void refresh ()
     parameters.add ( "LongitudeColumn=" + LongitudeColumn );
     parameters.add ( "LatitudeColumn=" + LatitudeColumn );
     parameters.add ( "ElevationColumn=" + ElevationColumn );
+    parameters.add ( "WKTGeometryColumn=" + WKTGeometryColumn );
     parameters.add ( "StyleInsert=" + StyleInsert );
     parameters.add ( "StyleFile=" + StyleFile );
     parameters.add ( "StyleUrl=" + StyleUrl );

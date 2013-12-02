@@ -13,6 +13,9 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.GIS.GeoView.WKTGeometryParser;
+import RTi.GR.GRPoint;
+import RTi.GR.GRShape;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -65,6 +68,7 @@ throws InvalidCommandParameterException
     String OutputFile = parameters.getValue ( "OutputFile" );
     String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
+    String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
     String StyleFile = parameters.getValue ( "StyleFile" );
     String warning = "";
     String routine = getCommandName() + ".checkCommandParameters";
@@ -128,18 +132,36 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (LongitudeColumn == null) || (LongitudeColumn.length() == 0) ) {
-        message = "The longitude column must be specified.";
+    if ( ((LongitudeColumn == null) || (LongitudeColumn.length() == 0)) &&
+        ((WKTGeometryColumn == null) || (WKTGeometryColumn.length() == 0)) ) {
+        message = "The longitude column OR WKT geometry column must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the longitude column." ) );
+            message, "Specify the longitude OR WKT geometry column." ) );
     }
     
-    if ( (LatitudeColumn == null) || (LatitudeColumn.length() == 0) ) {
-        message = "The latitude column must be specified.";
+    if ( ((LongitudeColumn != null) && (LongitudeColumn.length() != 0)) &&
+        ((WKTGeometryColumn != null) && (WKTGeometryColumn.length() != 0)) ) {
+        message = "The longitude column OR WKT geometry column must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the latitude column." ) );
+            message, "Specify the longitude OR WKT geometry column." ) );
+    }
+    
+    if ( ((LatitudeColumn == null) || (LatitudeColumn.length() == 0)) &&
+        ((WKTGeometryColumn == null) || (WKTGeometryColumn.length() == 0)) ) {
+        message = "The latitude column OR WKT geometry column must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the latitude column OR WKT geometry column." ) );
+    }
+    
+    if ( ((LatitudeColumn != null) && (LatitudeColumn.length() != 0)) &&
+        ((WKTGeometryColumn != null) && (WKTGeometryColumn.length() != 0)) ) {
+        message = "The latitude column OR WKT geometry column must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the latitude column OR WKT geometry column." ) );
     }
     
     String StyleFile_full = null;
@@ -193,6 +215,7 @@ throws InvalidCommandParameterException
     validList.add ( "LongitudeColumn" );
     validList.add ( "LatitudeColumn" );
     validList.add ( "ElevationColumn" );
+    validList.add ( "WKTGeometryColumn" );
     validList.add ( "StyleInsert" );
     validList.add ( "StyleFile" );
     validList.add ( "StyleUrl" );
@@ -279,6 +302,7 @@ CommandWarningException, CommandException
     String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
     String ElevationColumn = parameters.getValue ( "ElevationColumn" );
+    String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
     String StyleInsert = parameters.getValue ( "StyleInsert" );
     String StyleFile = parameters.getValue ( "StyleFile" );
     String StyleUrl = parameters.getValue ( "StyleUrl" );
@@ -352,7 +376,7 @@ CommandWarningException, CommandException
         }
         writeTableToKml ( table, OutputFile_full, Name, Description, StyleInsert, StyleFile_full, StyleUrl,
             PlacemarkNameColumn, PlacemarkDescriptionColumn,
-            LongitudeColumn, LatitudeColumn, ElevationColumn, errors );
+            LongitudeColumn, LatitudeColumn, ElevationColumn, WKTGeometryColumn, errors );
         for ( String error : errors ) {
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, error );
@@ -402,6 +426,7 @@ public String toString ( PropList parameters )
     String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
     String ElevationColumn = parameters.getValue ( "ElevationColumn" );
+    String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
     String StyleInsert = parameters.getValue ( "StyleInsert" );
     String StyleFile = parameters.getValue ( "StyleFile" );
     String StyleUrl = parameters.getValue ( "StyleUrl" );
@@ -460,6 +485,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "ElevationColumn=\"" + ElevationColumn + "\"" );
     }
+    if ( (WKTGeometryColumn != null) && (WKTGeometryColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WKTGeometryColumn=\"" + WKTGeometryColumn + "\"" );
+    }
     if ( (StyleInsert != null) && (StyleInsert.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -489,7 +520,7 @@ Write the table to a KML file.
 private void writeTableToKml ( DataTable table, String outputFile, String name, String description,
     String styleInsert, String styleFile, String styleUrl,
     String placemarkNameColumn, String placemarkDescriptionColumn,
-    String longitudeColumn, String latitudeColumn, String elevationColumn, List<String> errors )
+    String longitudeColumn, String latitudeColumn, String elevationColumn, String wktGeometryColumn, List<String> errors )
 {   PrintWriter fout = null;
     try {
         FileOutputStream fos = new FileOutputStream ( outputFile );
@@ -497,7 +528,7 @@ private void writeTableToKml ( DataTable table, String outputFile, String name, 
         // For now just support KML 2
         writeTableToKml01 ( fout, table, name, description,
             styleInsert, styleFile, styleUrl, placemarkNameColumn, placemarkDescriptionColumn,
-            longitudeColumn, latitudeColumn, elevationColumn, errors );
+            longitudeColumn, latitudeColumn, elevationColumn, wktGeometryColumn, errors );
     }
     catch ( FileNotFoundException e ) {
         errors.add ( "Output file \"" + outputFile + "\" could not be created (" + e + ")." );
@@ -520,7 +551,7 @@ Write the version 01 format KML.
 private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name, String description,
     String styleInsert, String styleFile, String styleUrl,
     String placemarkNameColumn, String placemarkDescriptionColumn, 
-    String longitudeColumn, String latitudeColumn, String elevationColumn, List<String> errors )
+    String longitudeColumn, String latitudeColumn, String elevationColumn, String wktGeometryColumn, List<String> errors )
 {   // Get the column numbers corresponding to the column names
     int errorCount = 0;
     if ( (name == null) || name.equals("") ) {
@@ -529,10 +560,22 @@ private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name,
     if ( description == null ) {
         description = "";
     }
+    boolean doPoint = false;
+    boolean doWkt = false;
     boolean doElevation = false;
     boolean doPlacemarkName = false;
     boolean doPlacemarkDescription = false;
     boolean doStyleUrl = false;
+    // WKT trumps point data
+    if ( (wktGeometryColumn != null) && !wktGeometryColumn.equals("") ) {
+        doWkt = true;
+    }
+    else {
+        if ( (latitudeColumn != null) && !latitudeColumn.equals("") &&
+            (longitudeColumn != null) && !longitudeColumn.equals("")) {
+            doPoint = true;
+        }
+    }
     if ( (elevationColumn != null) && !elevationColumn.equals("") ) {
         doElevation = true;
     }
@@ -572,26 +615,28 @@ private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name,
         errors.add ( "Error determining elevation column number \"" + elevationColumn + "\" (" + e + ").");
     }
     int longitudeColNum = -1;
-    try {
-        longitudeColNum = table.getFieldIndex(longitudeColumn);
-        if ( longitudeColNum < 0 ) {
-            errors.add ( "Longitude column \"" + longitudeColumn + "\" not found in table.");
-            ++errorCount;
-        }
-    }
-    catch ( Exception e ) {
-        errors.add ( "Error determining longitude column number \"" + longitudeColumn + "\" (" + e + ").");
-    }
     int latitudeColNum = -1;
-    try {
-        latitudeColNum = table.getFieldIndex(latitudeColumn);
-        if ( latitudeColNum < 0 ) {
-            errors.add ( "Latitude column \"" + latitudeColumn + "\" not found in table.");
-            ++errorCount;
+    if ( doPoint ) {
+        try {
+            longitudeColNum = table.getFieldIndex(longitudeColumn);
+            if ( longitudeColNum < 0 ) {
+                errors.add ( "Longitude column \"" + longitudeColumn + "\" not found in table.");
+                ++errorCount;
+            }
         }
-    }
-    catch ( Exception e ) {
-        errors.add ( "Error determining latitude column number \"" + latitudeColumn + "\" (" + e + ").");
+        catch ( Exception e ) {
+            errors.add ( "Error determining longitude column number \"" + longitudeColumn + "\" (" + e + ").");
+        }
+        try {
+            latitudeColNum = table.getFieldIndex(latitudeColumn);
+            if ( latitudeColNum < 0 ) {
+                errors.add ( "Latitude column \"" + latitudeColumn + "\" not found in table.");
+                ++errorCount;
+            }
+        }
+        catch ( Exception e ) {
+            errors.add ( "Error determining latitude column number \"" + latitudeColumn + "\" (" + e + ").");
+        }
     }
     int elevationColNum = -1;
     try {
@@ -605,6 +650,19 @@ private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name,
     }
     catch ( Exception e ) {
         errors.add ( "Error determining elevation column number \"" + elevationColumn + "\" (" + e + ").");
+    }
+    int wktGeometryColNum = -1;
+    if ( doWkt ) {
+        try {
+            wktGeometryColNum = table.getFieldIndex(wktGeometryColumn);
+            if ( wktGeometryColNum < 0 ) {
+                errors.add ( "WKT geometry column \"" + wktGeometryColumn + "\" not found in table.");
+                ++errorCount;
+            }
+        }
+        catch ( Exception e ) {
+            errors.add ( "Error determining WKT geometry column number \"" + wktGeometryColumn + "\" (" + e + ").");
+        }
     }
     if ( errorCount > 0 ) {
         // Don't have needed input
@@ -644,22 +702,44 @@ private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name,
     TableRecord rec;
     Object placemarkNameO = null, placemarkDescriptionO = null,
         latitudeO, longitudeO, elevationO = null; // Can be double, int, or string
+    WKTGeometryParser wktParser = null;
+    String wkt;
+    if ( doWkt ) {
+        wktParser = new WKTGeometryParser();
+    }
     for ( int iRow = 0; iRow < nRows; iRow++ ) {
         try {
             rec = table.getRecord(iRow);
+            longitudeO = null;
+            latitudeO = null;
             if ( doPlacemarkName ) {
                 placemarkNameO = rec.getFieldValue(placemarkNameColNum);
             }
             if ( doPlacemarkDescription ) {
                 placemarkDescriptionO = rec.getFieldValue(placemarkDescriptionColNum);
             }
-            longitudeO = rec.getFieldValue(longitudeColNum);
-            latitudeO = rec.getFieldValue(latitudeColNum);
-            if ( doElevation ) {
-                elevationO = rec.getFieldValue(elevationColNum);
+            if ( doWkt ) {
+                // Parse WKT string needs to extract coordinates
+                wkt = rec.getFieldValueString(wktGeometryColNum);
+                GRShape shape = wktParser.parseWKT(wkt);
+                if ( (shape != null) && (shape instanceof GRPoint) ) {
+                    GRPoint pt = (GRPoint)shape;
+                    longitudeO = new Double(pt.x);
+                    latitudeO = new Double(pt.y);
+                }
+            }
+            else if ( doPoint ) {
+                // Table columns can be any type because objects are treated as strings below
+                longitudeO = rec.getFieldValue(longitudeColNum);
+                latitudeO = rec.getFieldValue(latitudeColNum);
+                if ( doElevation ) {
+                    elevationO = rec.getFieldValue(elevationColNum);
+                }
             }
         }
         catch ( Exception e ) {
+            errors.add("Error adding geometry KML (" + e + ")." );
+            Message.printWarning(3, "", e);
             continue;
         }
         if ( longitudeO == null ) {

@@ -8,7 +8,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -60,7 +59,6 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String NewTableID = parameters.getValue ( "NewTableID" );
-    String DistinctColumns = parameters.getValue ( "DistinctColumns" );
 	String warning = "";
     String message;
     
@@ -91,30 +89,16 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new table identifier different from the original table identifier." ) );
     }
-    String [] distinctColumns = null;
-    if ( (DistinctColumns != null) && !DistinctColumns.equals("") ) {
-        distinctColumns = DistinctColumns.split(",");
-        for ( int i = 0; i < distinctColumns.length; i++ ) {
-            distinctColumns[i] = distinctColumns[i].trim();
-        }
-        if ( distinctColumns.length != 1 ) {
-            message = "Distinct columns currently can only have one column.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a single column name to check for distinct." ) );
-        }
-    }
  
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "NewTableID" );
-    valid_Vector.add ( "DistinctColumns" );
-    valid_Vector.add ( "IncludeColumns" );
-    valid_Vector.add ( "ColumnMap" );
-    valid_Vector.add ( "ColumnFilters" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List<String> validList = new ArrayList<String>(6);
+    validList.add ( "TableID" );
+    validList.add ( "NewTableID" );
+    validList.add ( "DistinctColumns" );
+    validList.add ( "IncludeColumns" );
+    validList.add ( "ColumnMap" );
+    validList.add ( "ColumnFilters" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,

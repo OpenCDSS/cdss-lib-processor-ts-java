@@ -253,6 +253,8 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Distinct column names:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DistinctColumns_JTextField = new JTextField (10);
+    __DistinctColumns_JTextField.setToolTipText("If specified, the output table will only include the distinct columns, " +
+        "UNLESS IncludeColumns is specified, in which case those columns will be retained in output.");
     __DistinctColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DistinctColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

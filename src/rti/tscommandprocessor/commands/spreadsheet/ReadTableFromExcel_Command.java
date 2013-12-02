@@ -641,6 +641,22 @@ public List getObjectList ( Class c )
     return v;
 }
 
+/**
+Look up an Excel type, for messages.
+*/
+private String lookupExcelCellType(int cellType)
+{
+    switch ( cellType ) {
+        case 0: return "NUMERIC";
+        case 1: return "STRING";
+        case 2: return "FORMULA";
+        case 3: return "BLANK";
+        case 4: return "BOOLEAN";
+        case 5: return "ERROR";
+        default: return "UNKNOWN";
+    }
+}
+
 // Use base class parseCommand()
 
 /**
@@ -780,7 +796,8 @@ throws FileNotFoundException, IOException
                 // The checks are exhaustive, so list in the order that is most likely (string, double,
                 // boolean, blank, error, formula).
                 cellType = cell.getCellType();
-                Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" + cellType );
+                Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" + cellType + " " +
+                    lookupExcelCellType(cellType));
                 cellIsFormula = false;
                 if ( cellType == Cell.CELL_TYPE_FORMULA ) {
                     // Have to evaluate the cell and get the value as the result

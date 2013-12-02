@@ -122,16 +122,25 @@ throws IOException, Exception
 }
 
 /**
-Format a date/time to the interval precision being queried.
+Format a date/time string for use with the web service calls.
 @return the formatted date/time or null if requested period is null.
+@param dt DateTime object to format
+@param interval interval of time series, which by default controls date/time formatting
+@param formatToSecond if true always format to the second
+@param endPos if 0 the date/time is at the start date/time and if necessary additional information will be added
+to match the start of the month; if 1, add to match the end of the month
 */
-private String formatDateTime ( DateTime dt, TimeInterval interval )
+private String formatDateTime ( DateTime dt, TimeInterval interval, boolean formatToSecond, int endPos )
 {
     if ( dt == null ) {
         return null;
     }
     int intervalBase = interval.getBase();
-    if ( intervalBase == TimeInterval.YEAR ) {
+    if ( formatToSecond ) {
+        // TODO SAM 2013-11-25 For now don't handle endPos but 
+        return dt.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
+    }
+    else if ( intervalBase == TimeInterval.YEAR ) {
         return dt.toString(DateTime.FORMAT_YYYY);
     }
     else if ( intervalBase == TimeInterval.MONTH ) {
@@ -139,6 +148,9 @@ private String formatDateTime ( DateTime dt, TimeInterval interval )
     }
     else if ( intervalBase == TimeInterval.DAY ) {
         return dt.toString(DateTime.FORMAT_YYYY_MM_DD);
+    }
+    else if ( intervalBase == TimeInterval.HOUR ) {
+        return dt.toString(DateTime.FORMAT_YYYY_MM_DD_HH);
     }
     else if ( intervalBase == TimeInterval.IRREGULAR ) {
         return dt.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm);
@@ -340,7 +352,7 @@ Read a forecast table.
 */
 public DataTable readForecastTable ( List<String> stationIdList, List<String> stateList,
     List<NrcsAwdbNetworkCode>networkList, List<String> hucList, List<Element> elementList, String forecastPeriod,
-    String forecastTableID )
+    String forecastPublicationDateStart, String forecastPublicationDateEnd, String forecastTableID )
 {   String routine = "NrcsAwdbDataStore.readForecastTable";
     DataTable table = null;
     AwdbWebService ws = getAwdbWebService ();
@@ -368,7 +380,7 @@ public DataTable readForecastTable ( List<String> stationIdList, List<String> st
     int forecastPeriodCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "ForecastPeriod", -1, -1), null);
     int publicationDateCol = table.addField(new TableField(TableField.DATA_TYPE_DATETIME, "PublicationDate", -1, -1), null);
     int calculationDateCol = table.addField(new TableField(TableField.DATA_TYPE_DATETIME, "CalculationDate", -1, -1), null);
-    int exceedanceProbabilityCol = table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, "ExceedanceProbability", -1, 2), null);
+    int exceedanceProbabilityCol = table.addField(new TableField(TableField.DATA_TYPE_INT, "ExceedanceProbability", -1, 2), null);
     int valueCol = table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, "Value", -1, 2), null);
     int unitCdCol = table.addField(new TableField(TableField.DATA_TYPE_STRING, "UnitCd", -1, -1), null);
     int periodAverageCol = table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, "PeriodAverage", -1, 2), null);
@@ -378,13 +390,35 @@ public DataTable readForecastTable ( List<String> stationIdList, List<String> st
         forecastPointNames, hucs, forecasters, logicalAnd );
     String [] tripletParts;
     int row = -1;
+    String beginPublicationDate = null, endPublicationDate = null;
+    if ( (forecastPublicationDateStart != null) && !forecastPublicationDateStart.equals("") ) {
+        beginPublicationDate = forecastPublicationDateStart;
+        if ( (forecastPublicationDateEnd == null) || forecastPublicationDateEnd.equals("") ) {
+            // Set end to the same as the begin since both are required
+            endPublicationDate = beginPublicationDate;
+        }
+    }
+    if ( (forecastPublicationDateEnd != null) && !forecastPublicationDateEnd.equals("") ) {
+        endPublicationDate = forecastPublicationDateEnd;
+        if ( (forecastPublicationDateStart == null) || forecastPublicationDateStart.equals("") ) {
+            // Set begin to the same as the end since both are required
+            beginPublicationDate = endPublicationDate;
+        }
+    }
     for ( Element element: elementList ) {
         // Loop through the element codes of interest.  The API only takes one value.
         for ( ForecastPoint fp : forecastPoints ) {
             // Loop through the forecast points that matched the initial query
             Message.printStatus(2, routine, "Calling getForecasts for triplet=\"" + fp.getStationTriplet() +
                 "\" elementCd=\"" + element.getElementCd() + "\" forecastPeriod=" + forecastPeriod );
-            List<Forecast> forecasts = ws.getForecasts(fp.getStationTriplet(), element.getElementCd(), forecastPeriod);
+            List<Forecast> forecasts;
+            if ( (beginPublicationDate == null) && (endPublicationDate == null)) {
+                forecasts = ws.getForecasts(fp.getStationTriplet(), element.getElementCd(), forecastPeriod);
+            }
+            else {
+                forecasts = ws.getForecastsByPubDate(fp.getStationTriplet(), element.getElementCd(), forecastPeriod,
+                    beginPublicationDate, endPublicationDate);
+            }
             tripletParts = fp.getStationTriplet().split(":"); // StationID:State:Network
             for ( Forecast f : forecasts ) {
                 if ( Message.isDebugOn ) {
@@ -450,7 +484,13 @@ public DataTable readForecastTable ( List<String> stationIdList, List<String> st
                         Message.printWarning(3, routine, "Error setting calculation date for row " + row );
                     }
                     try {
-                        table.setFieldValue(row, valueCol, eval.get(i), true);
+                        BigDecimal v = eval.get(i);
+                        if ( v == null ) {
+                            table.setFieldValue(row, valueCol, null, true);
+                        }
+                        else {
+                            table.setFieldValue(row, valueCol, v.doubleValue(), true);
+                        }
                     }
                     catch ( Exception e ) {
                         Message.printWarning(3, routine, "Error setting value for row " + row );
@@ -462,13 +502,21 @@ public DataTable readForecastTable ( List<String> stationIdList, List<String> st
                         Message.printWarning(3, routine, "Error setting units for row " + row );
                     }
                     try {
+                        // Probability is an integer
                         table.setFieldValue(row, exceedanceProbabilityCol, eprob.get(i), true);
                     }
                     catch ( Exception e ) {
                         Message.printWarning(3, routine, "Error setting exceedance probability for row " + row );
                     }
                     try {
-                        table.setFieldValue(row, periodAverageCol, f.getPeriodAverage(), true);
+                        // Average is a BigDecimal so convert to Double
+                        BigDecimal ave = f.getPeriodAverage();
+                        if ( ave == null ) {
+                            table.setFieldValue(row, periodAverageCol, ave, true);
+                        }
+                        else {
+                            table.setFieldValue(row, periodAverageCol, ave.doubleValue(), true);
+                        }
                     }
                     catch ( Exception e ) {
                         Message.printWarning(3, routine, "Error setting period average for row " + row );
@@ -637,11 +685,11 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
     DateTime readStart = null, readEnd = null; // Will be set below to non-null to set time series period
     if ( readStartReq != null ) {
         readStart = new DateTime(readStartReq);
-        beginDateString = formatDateTime(readStartReq,interval);
+        beginDateString = formatDateTime(readStartReq,interval,true,0);
     }
     if ( readEndReq != null ) {
         readEnd = new DateTime(readEndReq);
-        endDateString = formatDateTime(readEndReq,interval);
+        endDateString = formatDateTime(readEndReq,interval,true,1);
     }
     int iMeta = -1;
     // Loop through the stations and then the elements for each station
@@ -676,12 +724,14 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
         // time series is available that instantaneous and hourly may also be available.
         List<StationElement> dailyElementList = new ArrayList<StationElement>();
         for ( int iEl = 0; iEl < stationElementList.size(); iEl++ ) {
-            boolean elementFound = true;
-            boolean intervalFound = false;
+            boolean elementFound = true; // Default is all elements
+            boolean intervalFound = false; // Must match interval
             StationElement sel = stationElementList.get(iEl);
+            Message.printStatus(2, routine, "Checking station element=\"" + sel.getElementCd() + "\" duration=" +
+                sel.getDuration() + " interval=" + lookupIntervalFromDuration(sel.getDuration()));
             if ( (elementListReq != null) && (elementListReq.size() > 0) ) {
+                // Specific element codes were requested so check to see if the station element codes match...
                 elementFound = false; // Only add to list if element matched
-                // Check for requested elements...
                 for ( Element el : elementListReq ) {
                     if ( sel.getElementCd().equalsIgnoreCase(el.getElementCd())) {
                         // Matched the element

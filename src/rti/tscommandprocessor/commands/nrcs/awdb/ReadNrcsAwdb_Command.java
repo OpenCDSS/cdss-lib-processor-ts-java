@@ -476,7 +476,7 @@ CommandWarningException, CommandException
     }
     String ForecastTableID = parameters.getValue("ForecastTableID");
     if ( (ForecastTableID == null) || ForecastTableID.equals("") ) {
-        ForecastTableID = "NRDS_Forecasts"; // Default
+        ForecastTableID = "NRCS_Forecasts"; // Default
     }
     String ForecastPeriod = parameters.getValue("ForecastPeriod");
     String ForecastPublicationDateStart = parameters.getValue("ForecastPublicationDateStart");
@@ -657,7 +657,8 @@ CommandWarningException, CommandException
 		    // Reading the forecast table
 		    if ( commandPhase == CommandPhaseType.RUN ) {
 		        DataTable table = nrcsAwdbDataStore.readForecastTable( stationList, stateList,
-		                networkList, hucList, elementList, ForecastPeriod, ForecastTableID );
+		                networkList, hucList, elementList, ForecastPeriod, ForecastPublicationDateStart,
+		                ForecastPublicationDateEnd, ForecastTableID );
 	            // Set the table in the processor...
 		        PropList request_params = new PropList ( "" );
 	            request_params.setUsingObject ( "Table", table );

@@ -600,6 +600,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(fc_JPanel, new JLabel ("Forecast publication date start:"), 
         0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ForecastPublicationDateStart_JTextField = new JTextField (20);
+    __ForecastPublicationDateStart_JTextField.setToolTipText("Typically the first of the month YYYY-MM-DD");
     __ForecastPublicationDateStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(fc_JPanel, __ForecastPublicationDateStart_JTextField,
         1, yFc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -848,6 +849,9 @@ private void refresh ()
         }
         if ( JGUIUtil.isSimpleJComboBoxItem(__ReadForecast_JComboBox, ReadForecast, JGUIUtil.NONE, null, null ) ) {
             __ReadForecast_JComboBox.select ( ReadForecast );
+            if ( (ReadForecast != null) && ReadForecast.equalsIgnoreCase(__command._True) ) {
+                __main_JTabbedPane.setSelectedIndex(2);
+            }
         }
         else {
             if ( (ReadForecast == null) || ReadForecast.equals("") ) {

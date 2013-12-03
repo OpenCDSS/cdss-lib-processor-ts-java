@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +81,7 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
+    String InputText = parameters.getValue ( "InputText" );
     String OutputFile = parameters.getValue ( "OutputFile" );
     String OutputProperty = parameters.getValue ( "OutputProperty" );
     String UseTables = parameters.getValue ( "UseTables" );
@@ -95,14 +97,7 @@ throws InvalidCommandParameterException
 	// The existence of the file to remove is not checked during initialization
 	// because files may be created dynamically at runtime.
 	
-    if ( (InputFile == null) || (InputFile.length() == 0) ) {
-        message = "The input template command file must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify an existing input file." ) );
-    }
-    else {
+    if ( (InputFile != null) && (InputFile.length() != 0) ) {
         String working_dir = null;
         try { Object o = processor.getPropContents ( "WorkingDir" );
             if ( o != null ) {
@@ -138,8 +133,24 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that input file and working directory paths are compatible." ) );
         }
+        if ( (InputText != null) && (InputText.length() != 0) ) {
+            message = "The input template file and input text cannot both be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify an existing template file or provide template text." ) );
+        }
     }
-	
+
+    if ( ((InputFile == null) || (InputFile.length() == 0)) &&
+        ((InputText == null) || (InputText.length() == 0)) ) {
+        message = "The input template file or text must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify an input template file or text." ) );
+    }
+
     if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
         if ( (OutputProperty == null) || (OutputProperty.length() == 0) ) {
             message = "The output file and/or property must be specified.";
@@ -225,13 +236,14 @@ throws InvalidCommandParameterException
 	}
 	*/
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-	valid_Vector.add ( "InputFile" );
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "OutputProperty" );
-	valid_Vector.add ( "UseTables" );
-	valid_Vector.add ( "ListInResults" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(6);
+	validList.add ( "InputFile" );
+	validList.add ( "InputText" );
+	validList.add ( "OutputFile" );
+	validList.add ( "OutputProperty" );
+	validList.add ( "UseTables" );
+	validList.add ( "ListInResults" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -367,6 +379,7 @@ CommandWarningException, CommandException
 	status.clearLog(CommandPhaseType.RUN);
 	
 	String InputFile = parameters.getValue ( "InputFile" );
+	String InputText = parameters.getValue ( "InputText" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String OutputProperty = parameters.getValue ( "OutputProperty" );
 	String UseTables = parameters.getValue ( "UseTables" );
@@ -386,33 +399,36 @@ CommandWarningException, CommandException
 	}
 	*/
 
-	String InputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile ) );
-    File file = new File ( InputFile_full );
-	if ( !file.exists() ) {
-        message = "Template command file \"" + InputFile_full + "\" does not exist.";
-        /*
-        if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the file exists at the time the command is run."));
-        }
-        else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {*/
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-                message, "Verify that the file exists at the time the command is run."));
+	String InputFile_full = null;
+	if ( (InputFile != null) && !InputFile.equals("") ) {
+	    InputFile_full = IOUtil.verifyPathForOS(
+	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile ) );
+        File file = new File ( InputFile_full );
+    	if ( !file.exists() ) {
+            message = "Template command file \"" + InputFile_full + "\" does not exist.";
             /*
-        }
-        else {
-            Message.printStatus( 2, routine, message + "  Ignoring.");
-        }*/
+            if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the file exists at the time the command is run."));
+            }
+            else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {*/
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+                    message, "Verify that the file exists at the time the command is run."));
+                /*
+            }
+            else {
+                Message.printStatus( 2, routine, message + "  Ignoring.");
+            }*/
+    	}
 	}
     String OutputFile_full = null;
     if ( (OutputFile != null) && !OutputFile.equals("") ) {
         OutputFile_full = IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile ) );
-        file = new File ( OutputFile_full );
+        File file = new File ( OutputFile_full );
         if ( !file.getParentFile().exists() ) {
            message = "Output file parent folder \"" + file.getParentFile() + "\" does not exist.";
                Message.printWarning ( warning_level,
@@ -458,7 +474,13 @@ CommandWarningException, CommandException
             // results can be edited in Notepad on Windows).
             String nl = System.getProperty("line.separator");
             b.append("<@normalizeNewlines>" + nl );
-            List<String> templateLines = IOUtil.fileToStringList(InputFile_full);
+            List<String> templateLines = new ArrayList<String>();
+            if ( InputFile_full != null ) {
+                templateLines = IOUtil.fileToStringList(InputFile_full);
+            }
+            else if ( (InputText != null) && !InputText.equals("") ) {
+                templateLines.add(InputText);
+            }
             b.append(StringUtil.toString(templateLines,nl));
             b.append(nl + "</@normalizeNewlines>" );
             Template template = null;
@@ -625,6 +647,7 @@ public String toString ( PropList parameters )
 		return getCommandName() + "()";
 	}
 	String InputFile = parameters.getValue("InputFile");
+	String InputText = parameters.getValue("InputText");
 	String OutputFile = parameters.getValue("OutputFile");
 	String OutputProperty = parameters.getValue("OutputProperty");
 	String UseTables = parameters.getValue("UseTables");
@@ -634,6 +657,12 @@ public String toString ( PropList parameters )
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		b.append ( "InputFile=\"" + InputFile + "\"" );
 	}
+    if ( (InputText != null) && (InputText.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append(",");
+        }
+        b.append ( "InputText=\"" + InputText + "\"" );
+    }
     if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append(",");

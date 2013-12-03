@@ -20,6 +20,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -49,7 +50,9 @@ private SimpleJButton __browseOutput_JButton = null;
 private SimpleJButton __pathOutput_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextField __InputFile_JTextField = null;
+private JTextArea __InputText_JTextArea = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __OutputProperty_JTextField = null;
 private SimpleJComboBox __UseTables_JComboBox = null;
@@ -186,6 +189,7 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
+	String InputText = __InputText_JTextArea.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputProperty = __OutputProperty_JTextField.getText().trim();
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
@@ -195,6 +199,9 @@ private void checkInput ()
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
+    if ( InputText.length() > 0 ) {
+        props.set ( "InputText", InputText );
+    }
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
     }
@@ -226,30 +233,19 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
+    String InputText = __InputText_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String OutputProperty = __OutputProperty_JTextField.getText().trim();
     String UseTables = __UseTables_JComboBox.getSelected();
     String ListInResults = __ListInResults_JComboBox.getSelected();
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
+	__command.setCommandParameter ( "InputText", InputText );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "OutputProperty", OutputProperty );
 	__command.setCommandParameter ( "UseTables", UseTables );
 	__command.setCommandParameter ( "ListInResults", ListInResults );
 	//__command.setCommandParameter ( "IfNotFound", IfNotFound );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__InputFile_JTextField = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -275,7 +271,7 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command expands a template file into a fully-expanded file and/or processor property." ),
+		"This command expands a template (file or text) into a fully-expanded file and/or processor property." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Template functionality is implemented using the FreeMarker package (freemarker.org)." ),
@@ -295,62 +291,98 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 		"    " + __working_dir),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Template file:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for input
+    int yIn = -1;
+    JPanel in_JPanel = new JPanel();
+    in_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Template Input", in_JPanel );
+    
+    JGUIUtil.addComponent(in_JPanel, new JLabel (
+        "The template to be expanded can be specified with a file or text."),
+        0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(in_JPanel, new JLabel (
+        "Use a file when the template text conflicts with normal command syntax (quotes, etc.)."),
+        0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(in_JPanel, new JLabel ("Template file:" ), 
+		0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
-		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(in_JPanel, __InputFile_JTextField,
+		1, yIn, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browseInput_JButton = new SimpleJButton ( "Browse", this );
-    JGUIUtil.addComponent(main_JPanel, __browseInput_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    JGUIUtil.addComponent(in_JPanel, __browseInput_JButton,
+		6, yIn, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Expanded file:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputFile_JTextField = new JTextField ( 50 );
-    __OutputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
-        1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browseOutput_JButton = new SimpleJButton ( "Browse", this );
-    JGUIUtil.addComponent(main_JPanel, __browseOutput_JButton,
-        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
- 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expanded property:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputProperty_JTextField = new JTextField ( 20 );
-    __OutputProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutputProperty_JTextField,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ( "Optional - output string property (default=no output property)." ), 
-        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Use tables as input?:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(in_JPanel, new JLabel ("OR template text:"), 
+        0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputText_JTextArea = new JTextArea (9,50);
+    __InputText_JTextArea.setLineWrap ( true );
+    __InputText_JTextArea.setWrapStyleWord ( true );
+    __InputText_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(in_JPanel, new JScrollPane(__InputText_JTextArea),
+        1, yIn, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(in_JPanel, new JLabel ( "Use tables as input?:" ), 
+        0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __UseTables_JComboBox = new SimpleJComboBox ( false );
     __UseTables_JComboBox.add ( "" );
     __UseTables_JComboBox.add ( __command._False );
     __UseTables_JComboBox.add ( __command._True );
     __UseTables_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __UseTables_JComboBox,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(in_JPanel, __UseTables_JComboBox,
+        1, yIn, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(in_JPanel,
         new JLabel ( "Optional - use 1-column tables as input lists (default=" + __command._True + ")." ), 
-        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        2, yIn, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "List output in results?:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for output
+    int yOut = -1;
+    JPanel out_JPanel = new JPanel();
+    out_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Template Output", out_JPanel );
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "The expanded output can be saved to a file and/or set to a processor property (access later with ${Property})."),
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ("Expanded file:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputFile_JTextField = new JTextField ( 50 );
+    __OutputFile_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(out_JPanel, __OutputFile_JTextField,
+        1, yOut, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __browseOutput_JButton = new SimpleJButton ( "Browse", this );
+    JGUIUtil.addComponent(out_JPanel, __browseOutput_JButton,
+        6, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+ 
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Expanded property:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputProperty_JTextField = new JTextField ( 20 );
+    __OutputProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(out_JPanel, __OutputProperty_JTextField,
+        1, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel,
+        new JLabel ( "Optional - output string property (default=no output property)." ), 
+        2, yOut, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "List output in results?:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ListInResults_JComboBox = new SimpleJComboBox ( false );
     __ListInResults_JComboBox.add ( "" );
     __ListInResults_JComboBox.add ( __command._False );
     __ListInResults_JComboBox.add ( __command._True );
     __ListInResults_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ListInResults_JComboBox,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(out_JPanel, __ListInResults_JComboBox,
+        1, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel,
         new JLabel ( "Optional - list expanded file in results (default=" + __command._True + ")." ), 
-        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        2, yOut, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
@@ -445,6 +477,7 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
 	String InputFile = "";
+	String InputText = "";
 	String OutputFile = "";
 	String OutputProperty = "";
 	String UseTables = "";
@@ -455,6 +488,7 @@ private void refresh ()
 		__first_time = false;
         parameters = __command.getCommandParameters();
 		InputFile = parameters.getValue ( "InputFile" );
+		InputText = parameters.getValue ( "InputText" );
 		OutputFile = parameters.getValue ( "OutputFile" );
 		OutputProperty = parameters.getValue ( "OutputProperty" );
 		UseTables = parameters.getValue ( "UseTables" );
@@ -463,6 +497,9 @@ private void refresh ()
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
+        if ( InputText != null ) {
+            __InputText_JTextArea.setText ( InputText );
+        }
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText ( OutputFile );
         }
@@ -522,6 +559,7 @@ private void refresh ()
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
+	InputText = __InputText_JTextArea.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	OutputProperty = __OutputProperty_JTextField.getText().trim();
 	UseTables = __UseTables_JComboBox.getSelected();
@@ -529,6 +567,7 @@ private void refresh ()
 	//IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
+	props.add ( "InputText=" + InputText );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "OutputProperty=" + OutputProperty );
 	props.add ( "UseTables=" + UseTables );

@@ -759,7 +759,6 @@ throws FileNotFoundException, IOException
                 // Seems to happen at bottom of worksheets where there are extra junk rows
                 continue;
             }
-            ++iRowOut;
             Message.printStatus(2, routine, "Processing row [" + iRow + "] end at [" + rowEnd + "]" );
             if ( (iRow == rowStart) || (iRow == rowEnd) || (iRow%25 == 0) ) {
                 // Update the progress bar every 5%
@@ -770,6 +769,9 @@ throws FileNotFoundException, IOException
                 // No need to process the row.
                 continue;
             }
+            // Increment after check for comments.
+            // Other skipped rows are handled by removing the row and decrementing iRowOut
+            ++iRowOut;
             needToSkipRow = false;
             iColOut = -1;
             for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {

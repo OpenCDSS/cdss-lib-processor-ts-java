@@ -2,12 +2,12 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/NWSRFS_DMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/HydroBaseDMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/RiversideDB_DMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/SatmonSysDMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/StateMod"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/RTi_Common"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-nwsrfs-java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-hydrobase-java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-riversidedb-java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-satmonsys-java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-models-java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-common-java"/>
 	<classpathentry kind="lib" path="lib/Jython/jython.jar"/>
 	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.8.jar"/>
 	<classpathentry kind="lib" path="lib/heclib/heclib.jar"/>
@@ -25,7 +25,7 @@
 	<classpathentry kind="lib" path="lib/apache-poi/poi-ooxml-schemas-3.9-20121203.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/xmlbeans-2.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/stax-api-1.0.1.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/cdss.domain"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-cdss-java"/>
 	<classpathentry kind="lib" path="lib/apache-commons-net/commons-net-3.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

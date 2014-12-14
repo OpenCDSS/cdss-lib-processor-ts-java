@@ -36,7 +36,7 @@ import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.TimeInterval;
 
 /**
-This class initializes, checks, and runs the CreateFromList() command.
+This class initializes, checks, and runs the RreadTimeSeriesList() command.
 */
 public class ReadTimeSeriesList_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {

@@ -85,7 +85,7 @@ private JLabel __selectedModelID_JLabel = null;
 private JLabel __selectedModelRunID_JLabel = null;
 private SimpleJComboBox __ModelRunID_JComboBox = null;
 private SimpleJComboBox __EnsembleName_JComboBox = null;
-private JTextField __NewEnsembleName_JTextField = null;
+private TSFormatSpecifiersJPanel __NewEnsembleName_JTextField = null;
 private TSFormatSpecifiersJPanel __EnsembleTrace_JTextField = null;
 private SimpleJComboBox __EnsembleModelName_JComboBox = null;
 private SimpleJComboBox __EnsembleModelRunDate_JComboBox = null;
@@ -1053,6 +1053,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "The model name must exist but a new run date can be specified.  Trace numbers are determined at runtime."), 
         0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+        "Agency ID for the ensemble is taken from the \"General parameters\" tab Agency.  " +
         "All available choices from HDB are listed so as to allow new data to be written for the SDI and data interval."),
         0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
@@ -1078,18 +1079,18 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("OR new ensemble name:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NewEnsembleName_JTextField = new JTextField (20);
+    __NewEnsembleName_JTextField = new TSFormatSpecifiersJPanel(10);
+    __NewEnsembleName_JTextField.setToolTipText("%L for location, %T for data type, ${TS:property} to use property.");
     __NewEnsembleName_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ensemble_JPanel, __NewEnsembleName_JTextField,
         1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
-        "Optional - specify if new ensemble is being defined (default=specify existing)."),
+        "Optional - specify if new ensemble, and use %L, ${ts:Property} (default=specify existing)."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel("Ensemble trace number:"),
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __EnsembleTrace_JTextField = new TSFormatSpecifiersJPanel(10);
-    __EnsembleTrace_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __EnsembleTrace_JTextField.addKeyListener ( this );
     __EnsembleTrace_JTextField.getDocument().addDocumentListener(this);
     __EnsembleTrace_JTextField.setToolTipText("%L for location, %T for data type, ${TS:property} to use property.");

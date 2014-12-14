@@ -24,6 +24,7 @@ private String __objectTypeTag = "";
 // HDB_SITE data are in base class
 
 // From HDB_DATATYPE
+private int __dataTypeID = DMIUtil.MISSING_INT;
 private String __dataTypeName= "";
 private String __dataTypeCommonName= "";
 private String __physicalQuantityName= "";
@@ -43,6 +44,20 @@ private int __modelRunID = DMIUtil.MISSING_INT;
 private String __modelRunName = "";
 private String __hydrologicIndicator = "";
 private Date __modelRunDate = DMIUtil.MISSING_DATE;
+
+// From REF_ENSEMBLE
+private int __ensembleID = DMIUtil.MISSING_INT;
+private String __ensembleName = "";
+private int __ensembleAgenID = DMIUtil.MISSING_INT;
+private String __ensembleAgenAbbrev = ""; // Lookup in HDB_AGEN using AGEN_ID
+private String __ensembleAgenName = ""; // Lookup in HDB_AGEN using AGEN_ID
+private String __ensembleTraceDomain = "";
+private String __ensembleCmmnt = "";
+
+// From REF_ENSEMBLE_TRACE - ENSEMBLE_ID and MODEL_RUN_ID are included above
+private int __ensembleTraceID = DMIUtil.MISSING_INT;
+private int __ensembleTraceNumeric = DMIUtil.MISSING_INT;
+private String __ensembleTraceName = "";
 
 // From data tables (dates give user an indication of the period and are used to help allocate time series memory)
 private Date __startDateTimeMin = DMIUtil.MISSING_DATE;
@@ -75,9 +90,64 @@ public String getDataTypeCommonName ()
     return __dataTypeCommonName;
 }
 
+public int getDataTypeID ()
+{
+    return __dataTypeID;
+}
+
 public String getDataTypeName ()
 {
     return __dataTypeName;
+}
+
+public String getEnsembleAgenAbbrev ()
+{
+    return __ensembleAgenAbbrev;
+}
+
+public int getEnsembleAgenID ()
+{
+    return __ensembleAgenID;
+}
+
+public String getEnsembleAgenName ()
+{
+    return __ensembleAgenName;
+}
+
+public String getEnsembleCmmnt ()
+{
+    return __ensembleCmmnt;
+}
+
+public int getEnsembleID ()
+{
+    return __ensembleID;
+}
+
+public String getEnsembleName ()
+{
+    return __ensembleName;
+}
+
+public String getEnsembleTraceDomain ()
+{
+    return __ensembleTraceDomain;
+}
+
+public int getEnsembleTraceID ()
+{
+    return __ensembleTraceID;
+}
+
+public String getEnsembleTraceName ()
+{
+    return __ensembleTraceName;
+}
+
+public int getEnsembleTraceNumeric ()
+{
+    return __ensembleTraceNumeric;
 }
 
 public String getHydrologicIndicator ()
@@ -206,9 +276,64 @@ public void setDataTypeCommonName ( String dataTypeCommonName )
     __dataTypeCommonName = dataTypeCommonName;
 }
 
+public void setDataTypeID ( int dataTypeID )
+{
+    __dataTypeID = dataTypeID;
+}
+
 public void setDataTypeName ( String dataTypeName )
 {
     __dataTypeName = dataTypeName;
+}
+
+public void setEnsembleAgenAbbrev ( String ensembleAgenAbbrev )
+{
+    __ensembleAgenAbbrev = ensembleAgenAbbrev;
+}
+
+public void setEnsembleAgenID ( int ensembleAgenID )
+{
+    __ensembleAgenID = ensembleAgenID;
+}
+
+public void setEnsembleAgenName ( String ensembleAgenName )
+{
+    __ensembleAgenName = ensembleAgenName;
+}
+
+public void setEnsembleCmmnt ( String ensembleCmmnt )
+{
+    __ensembleCmmnt = ensembleCmmnt;
+}
+
+public void setEnsembleID ( int ensembleID )
+{
+    __ensembleID = ensembleID;
+}
+
+public void setEnsembleName ( String ensembleName )
+{
+    __ensembleName = ensembleName;
+}
+
+public void setEnsembleTraceDomain ( String ensembleTraceDomain )
+{
+    __ensembleTraceDomain = ensembleTraceDomain;
+}
+
+public void setEnsembleTraceID ( int ensembleTraceID )
+{
+    __ensembleTraceID = ensembleTraceID;
+}
+
+public void setEnsembleTraceName ( String ensembleTraceName )
+{
+    __ensembleTraceDomain = ensembleTraceName;
+}
+
+public void setEnsembleTraceNumeric ( int ensembleTraceNumeric )
+{
+    __ensembleTraceNumeric = ensembleTraceNumeric;
 }
 
 public void setHydrologicIndicator ( String hydrologicIndicator )

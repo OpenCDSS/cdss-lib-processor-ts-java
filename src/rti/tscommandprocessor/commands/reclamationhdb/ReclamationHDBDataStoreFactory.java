@@ -40,6 +40,26 @@ public DataStore create ( PropList props )
     if ( (readNHour != null) && readNHour.equalsIgnoreCase("StartDateTimePlusInterval") ) {
         readNHourEndDateTime = false;
     }
+    String ConnectTimeout = props.getValue("ConnectTimeout");
+    int connectTimeout = 0;
+    if ( (ConnectTimeout != null) && !ConnectTimeout.equals("") ) {
+        try {
+            connectTimeout = Integer.parseInt(ConnectTimeout);
+        }
+        catch ( Exception e ) {
+            connectTimeout = 0;
+        }
+    }
+    String ReadTimeout = props.getValue("ReadTimeout");
+    int readTimeout = 0;
+    if ( (ReadTimeout != null) && !ReadTimeout.equals("") ) {
+        try {
+            readTimeout = Integer.parseInt(ReadTimeout);
+        }
+        catch ( Exception e ) {
+            readTimeout = 0;
+        }
+    }
     try {
         ReclamationHDB_DMI dmi = new ReclamationHDB_DMI (
             databaseEngine, // OK if null, will use SQL Server
@@ -51,6 +71,8 @@ public DataStore create ( PropList props )
         // Open the database connection
         dmi.setTSIDStyleSDI ( tsidStyleSDI );
         dmi.setReadNHourEndDateTime( readNHourEndDateTime );
+        dmi.setLoginTimeout(connectTimeout);
+        dmi.setReadTimeout(readTimeout);
         dmi.open();
         return new ReclamationHDBDataStore ( name, description, dmi );
     }

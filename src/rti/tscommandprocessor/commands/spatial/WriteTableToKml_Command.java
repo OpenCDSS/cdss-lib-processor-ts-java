@@ -31,6 +31,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
+import RTi.Util.IO.HTMLUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -779,8 +780,8 @@ private void writeTableToKml02 ( PrintWriter fout, DataTable table, String name,
         }
         fout.write(i2 + "<Placemark>\n");
         // TODO SAM 2013-07-01 use formatting strings for name
-        fout.write(i3 + "<name>" + placemarkNameO + "</name>\n");
-        fout.write(i3 + "<description>" + placemarkDescriptionO + "</description>\n");
+        fout.write(i3 + "<name>" + HTMLUtil.text2html("" + placemarkNameO, false) + "</name>\n");
+        fout.write(i3 + "<description>" + HTMLUtil.text2html("" + placemarkDescriptionO, false) + "</description>\n");
         if ( doStyleUrl ) {
             fout.write(i3 + "<styleUrl>" + styleUrl + "</styleUrl>\n");
         }

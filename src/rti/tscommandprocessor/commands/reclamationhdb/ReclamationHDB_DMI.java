@@ -70,6 +70,11 @@ private String __keepAliveSql = null;
 private String __keepAliveFrequency = null;
 
 /**
+Timeout for database statements.
+*/
+private int __readTimeout = -1;
+
+/**
 Indicate whether newly created TSIDs (e.g., in the TSTool main GUI) should use common names or SDI and MDI.
 */
 private boolean __tsidStyleSDI = true; // Default
@@ -434,6 +439,15 @@ public String getDatabaseTimeZone ()
 }
 
 /**
+Return the HDB data type list (global data initialized when database connection is opened).
+@return the list of data types 
+*/
+public List<ReclamationHDB_DataType> getDataTypeList ()
+{
+    return __dataTypeList;
+}
+
+/**
 Return the list of loading applications.
 */
 private List<ReclamationHDB_LoadingApplication> getLoadingApplicationList ()
@@ -443,10 +457,9 @@ private List<ReclamationHDB_LoadingApplication> getLoadingApplicationList ()
 
 /**
 Get the "Object name - data type" strings to use in time series data type selections.
-@param includeObjectType if true, include the object type before the data type; if false, just return
-the data type
+@param includeObjectTypeName if true, include the object type name before the data type; if false, just return the data type.
 */
-public List<String> getObjectDataTypes ( boolean includeObjectType )
+public List<String> getObjectDataTypes ( boolean includeObjectTypeName )
 throws SQLException
 {   String routine = getClass().getName() + ".getObjectDataTypes";
     ResultSet rs = null;
@@ -461,6 +474,9 @@ throws SQLException
     
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -478,7 +494,7 @@ throws SQLException
             if ( rs.wasNull() ) {
                 dataType = "";
             }
-            if ( includeObjectType ) {
+            if ( includeObjectTypeName ) {
                 types.add ( objectType + " - " + dataType );
             }
             else {
@@ -675,7 +691,8 @@ private String getWhereClauseStringFromInputFilter ( DMI dmi, InputFilter_JPanel
     for ( String whereClause : whereClauses ) {
         // TODO SAM 2011-09-30 If the new code works then remove the following old code
         //if ( !whereClause.toUpperCase().startsWith(tableNameDot) ) {
-        if ( whereClause.toUpperCase().indexOf(tableNameDot) >= 0 ) {
+        //Message.printStatus(2, "", "Checking where clause \"" + whereClause + "\" against \"" + tableNameDot + "\"" );
+        if ( whereClause.toUpperCase().indexOf(tableNameDot) < 0 ) {
             // Not for the requested table so don't include the where clause
             continue;
         }
@@ -700,6 +717,14 @@ public List<ReclamationHDB_Validation> getHdbValidationList()
 }
 
 /**
+Return the list of object types.
+*/
+public List<ReclamationHDB_ObjectType> getObjectTypeList()
+{
+    return __objectTypeList;
+}
+
+/**
 Return the list of supported time zones.
 */
 public List<String> getTimeZoneList()
@@ -721,7 +746,7 @@ Lookup the ReclamationHDB_Agency given the internal agency ID.
 @param agencyList a list of ReclamationHDB_Agency to search
 @param agencyID the agency ID to match
 */
-private ReclamationHDB_Agency lookupAgency ( List<ReclamationHDB_Agency> agencyList, int agencyID )
+public ReclamationHDB_Agency lookupAgency ( List<ReclamationHDB_Agency> agencyList, int agencyID )
 {
     for ( ReclamationHDB_Agency a: agencyList ) {
         if ( (a != null) && (a.getAgenID() == agencyID) ) {
@@ -737,7 +762,7 @@ Lookup the ReclamationHDB_Agency given the internal agency ID.
 @param agencyList a list of ReclamationHDB_Agency to search
 @param agenAbbrev the agency abbreviation (case-insensitive)
 */
-private ReclamationHDB_Agency lookupAgency ( List<ReclamationHDB_Agency> agencyList, String agenAbbrev )
+public ReclamationHDB_Agency lookupAgency ( List<ReclamationHDB_Agency> agencyList, String agenAbbrev )
 {
     for ( ReclamationHDB_Agency a: agencyList ) {
         if ( (a != null) && (a.getAgenAbbrev() != null) && a.getAgenAbbrev().equalsIgnoreCase(agenAbbrev) ) {
@@ -960,6 +985,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1006,7 +1034,8 @@ throws SQLException
 }
 
 /**
-Read the database data types from the HDB_DATATYPE table.
+Read the database data types from the HDB_DATATYPE table.  Some column values will not be unique so output lists may need to be
+additionally processed.
 @return the list of data types
 */
 public List<ReclamationHDB_DataType> readHdbDataTypeList ( )
@@ -1021,6 +1050,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1099,6 +1131,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1165,6 +1200,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1277,6 +1315,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1354,6 +1395,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1394,6 +1438,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1455,6 +1502,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1514,6 +1564,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1601,6 +1654,9 @@ throws SQLException
     ReclamationHDB_ObjectType objectType;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1718,6 +1774,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1768,6 +1827,7 @@ PROCEDURE ENSEMBLE.GET_TSTOOL_ENSEMBLE_MRI
   P_MODEL_NAME                   VARCHAR2                IN
   P_RUN_DATE                     DATE                    IN     DEFAULT
   P_IS_RUNDATE_KEY               VARCHAR2                IN     DEFAULT
+  P_AGEN_ID                      NUMBER                  IN     DEFAULT
 
 This procedure was written exclusively for TsTool use with the following Business rules and specifications
 
@@ -1793,15 +1853,19 @@ This procedure was written exclusively for TsTool use with the following Busines
 @param traceNumber trace number (REF_ENSEMBLE_TRACE.TRACE_NUMERIC)
 @param ensembleModelName model name (will be used with the run date to match REF_ENSEMBLE_TRACE.MODEL_RUN_ID)
 @param ensembleModelRunDate (will be used with the model name to match REF_ENSEMBLE_TRACE.MODEL_RUN_ID)
+@param agenID agencyID number or -1 to use null
 @return the model run identifier to use for the ensemble trace, or null if not able to determine
 */
 public Long readModelRunIDForEnsembleTrace ( String ensembleName, int traceNumber,
-    String ensembleModelName, DateTime ensembleModelRunDate )
+    String ensembleModelName, DateTime ensembleModelRunDate, int agenID )
 {   String routine = getClass().getName() + ".readModelRunIDForEnsembleTrace";
     CallableStatement cs = null;
     try {
         // Argument list includes output
-        cs = getConnection().prepareCall("{call ENSEMBLE.GET_TSTOOL_ENSEMBLE_MRI (?,?,?,?,?,?)}");
+        cs = getConnection().prepareCall("{call ENSEMBLE.GET_TSTOOL_ENSEMBLE_MRI (?,?,?,?,?,?,?)}");
+        if ( __readTimeout >= 0 ) {
+            cs.setQueryTimeout(__readTimeout);
+        }
         int iParam = 1;
         // Have to register the output, in same order as procedure expects
         cs.registerOutParameter(iParam++,java.sql.Types.INTEGER); // 1 - OP_MODEL_RUN_ID
@@ -1816,6 +1880,14 @@ public Long readModelRunIDForEnsembleTrace ( String ensembleName, int traceNumbe
         else {
             cs.setTimestamp(iParam++,new Timestamp(ensembleModelRunDate.getDate().getTime())); // 5 - P_RUN_DATE
             cs.setString(iParam++,"Y"); // 6 - P_IS_RUNDATE_KEY
+        }
+        if ( agenID < 0 ) {
+            cs.setNull(iParam++,java.sql.Types.INTEGER);
+            Message.printStatus(2,routine,"Using null agency to get ensemble MRI." );
+        }
+        else {
+            cs.setInt(iParam++,agenID); // 7 - AGEN_ID
+            Message.printStatus(2,routine,"Using agency " + agenID + " to get ensemble MRI." );
         }
         cs.executeUpdate();
         int mri = cs.getInt(1);
@@ -1863,6 +1935,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1892,6 +1967,49 @@ throws SQLException
 }
 
 /**
+Read the distinct list of REF_ENSEMBLE.AGEN_ID, useful for UI choices.
+@return the distinct list of ensemble trace domains
+*/
+public List<Integer> readRefEnsembleAgenIDList ( )
+throws SQLException
+{   String routine = getClass().getSimpleName() + ".readRefEnsembleAgenIDList";
+    List<Integer> results = new ArrayList<Integer>();
+    String sqlCommand = "select distinct REF_ENSEMBLE.AGEN_ID from REF_ENSEMBLE order by REF_ENSEMBLE.AGEN_ID";
+
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        while (rs.next()) {
+            i = rs.getInt(1);
+            if ( !rs.wasNull() ) {
+                results.add(new Integer(i));
+            }
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting ensemble agen_id data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
 Read the ensemble key value pairs from the REF_ENSEMBLE_KEYVAL table.
 @return the list of ensemble key value pairs
 */
@@ -1908,6 +2026,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -1989,6 +2110,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -2027,6 +2151,51 @@ throws SQLException
     }
     catch (SQLException e) {
         Message.printWarning(3, routine, "Error getting ensemble data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the distinct list of REF_ENSEMBLE.TRACE_DOMAIN, useful for UI choices.
+@return the distinct list of ensemble trace domains
+*/
+public List<String> readRefEnsembleTraceDomainList ( )
+throws SQLException
+{   String routine = getClass().getSimpleName() + ".readRefEnsembleTraceDomainList";
+    List<String> results = new ArrayList<String>();
+    String sqlCommand = "select distinct REF_ENSEMBLE.TRACE_DOMAIN from REF_ENSEMBLE order by REF_ENSEMBLE.TRACE_DOMAIN";
+
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        String s;
+        int record = 0;
+        while (rs.next()) {
+            ++record;
+            s = rs.getString(1);
+            if ( !rs.wasNull() ) {
+                results.add(s);
+            }
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting ensemble trace domain data from HDB (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
     finally {
@@ -2091,6 +2260,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
@@ -2143,7 +2315,8 @@ throws SQLException
 
 /**
 Read a list of ReclamationHDB_SiteTimeSeriesMetadata objects given specific input to constrain the query.
-@param isReal if true then a real time series is being read; if false a model time series is being read
+@param isReal if true then a real time series is being read; if false a model time series is being read and an attempt to
+read matching ensemble trace data also will occur
 @param siteCommonName if specified, use to determine the site_datatype_id (SDI)
 @param dataTypeCommonName if specified, use to determine the site_datatype_id (SDI)
 @param timeStep the interval being read, which indicates which data table to check for matches
@@ -2214,8 +2387,39 @@ throws SQLException
         // The keyword was not added above so add here
         whereString.insert(0, "where ");
     }
+    // Don't know from TSID whether it is an ensemble trace so set to false
+    boolean isEnsembleTrace = false;
     List<ReclamationHDB_SiteTimeSeriesMetadata> results = readSiteTimeSeriesMetadataListHelper (
-        timeStep, whereString.toString(), isReal );
+        timeStep, whereString.toString(), isReal, isEnsembleTrace );
+    for ( ReclamationHDB_SiteTimeSeriesMetadata result: results ) {
+        // Try to read matching ensemble trace metadata
+        List<ReclamationHDB_EnsembleTrace> traceList = readRefEnsembleTraceList(-1, -1, result.getModelRunID(), null);
+        // Should only be one record
+        if ( traceList.size() == 1 ) {
+            // Assign ensemble trace information
+            ReclamationHDB_EnsembleTrace t = traceList.get(0);
+            result.setEnsembleTraceID ( t.getTraceID() );
+            result.setEnsembleTraceNumeric( t.getTraceNumeric() );
+            result.setEnsembleTraceName(t.getTraceName());
+            // Also read the ensemble data
+            List<Integer> ensembleIDList = new ArrayList<Integer>(1);
+            ensembleIDList.add(new Integer(t.getEnsembleID()));
+            List<ReclamationHDB_Ensemble> ensembleList = readRefEnsembleList(null, ensembleIDList);
+            if ( ensembleList.size() == 1 ) {
+                ReclamationHDB_Ensemble e = ensembleList.get(0);
+                result.setEnsembleID(e.getEnsembleID());
+                result.setEnsembleName(e.getEnsembleName());
+                result.setEnsembleAgenID(e.getAgenID());
+                ReclamationHDB_Agency a = lookupAgency(getAgencyList(),e.getAgenID());
+                if ( a != null ) {
+                    result.setEnsembleAgenAbbrev(a.getAgenAbbrev());
+                    result.setEnsembleAgenName(a.getAgenName());
+                }
+                result.setEnsembleTraceDomain(e.getTraceDomain());
+                result.setEnsembleCmmnt(e.getCmmnt());
+            }
+        }
+    }
     return results;
 }
 
@@ -2245,8 +2449,10 @@ throws SQLException
         // The keyword was not added above so add here
         whereString.insert(0, "where ");
     }
+    // Don't know if an ensemble trace so set that to false
+    boolean isEnsembleTrace = false;
     List<ReclamationHDB_SiteTimeSeriesMetadata> results = readSiteTimeSeriesMetadataListHelper (
-        timeStep, whereString.toString(), isReal );
+        timeStep, whereString.toString(), isReal, isEnsembleTrace );
     return results;
 }
 
@@ -2255,6 +2461,7 @@ Read a list of ReclamationHDB_SiteTimeSeriesMetadata objects given an input filt
 @param objectTypeDataType a string of the form "ObjectType - DataTypeCommonName" - the object type will
 be stripped off before using the data type.
 @param timeStep time series timestep ("Hour", "Day", "Month", or "Year")
+@param ifp input filter panel with "where" filters, from which specific query criteria are extracted
 */
 public List<ReclamationHDB_SiteTimeSeriesMetadata> readSiteTimeSeriesMetadataList ( String dataType, String timeStep,
     InputFilter_JPanel ifp)
@@ -2281,13 +2488,18 @@ throws SQLException
     // "Real or Model Data" input filter choice
     boolean returnReal = false;
     boolean returnModel = false;
-    List<String> realModelType = ifp.getInput("Real or Model Data", null, true, null);
+    boolean returnEnsembleTrace = false;
+    List<String> realModelType = ifp.getInput("Real, Model, Ensemble Data", null, true, null);
     for ( String userInput: realModelType ) {
         if ( userInput.toUpperCase().indexOf("REAL") >= 0 ) {
             returnReal = true;
         }
         if ( userInput.toUpperCase().indexOf("MODEL") >= 0 ) {
             returnModel = true;
+        }
+        if ( userInput.toUpperCase().indexOf("ENSEMBLETRACE") >= 0 ) {
+            returnModel = true;
+            returnEnsembleTrace = true;
         }
     }
     if ( !returnReal && !returnModel ) {
@@ -2296,10 +2508,11 @@ throws SQLException
         returnModel = true;
     }
     
-    // Process the where clauses.
+    // Process the where clauses by extracting input filter where clauses that reference specific tables.
     // Include where clauses for specific tables.  Do this rather than in bulk to make sure that
     // inappropriate filters are not applied (e.g., model filters when only real data are queried)
     List<String> whereClauses = new ArrayList<String>();
+    // First include general where clauses
     whereClauses.add ( dataTypeWhereString );
     whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "HDB_OBJECTTYPE", true ) );
     whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "HDB_SITE", true ) );
@@ -2307,9 +2520,15 @@ throws SQLException
     whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "HDB_DATATYPE", true ) );
     whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "HDB_UNIT", true ) );
     whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "HDB_STATE", true ) );
-    if ( !returnReal ) {
+    if ( returnModel ) {
+        // Model filters
         whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "REF_MODEL_RUN", true ) );
         whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "HDB_MODEL", true ) );
+        if ( returnEnsembleTrace ) {
+            // Ensemble filters
+            whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "REF_ENSEMBLE", true ) );
+            whereClauses.add ( getWhereClauseStringFromInputFilter ( this, ifp, "REF_ENSEMBLE_TRACE", true ) );
+        }
     }
     StringBuilder whereString = new StringBuilder();
     for ( String whereClause : whereClauses ) {
@@ -2326,7 +2545,8 @@ throws SQLException
     
     if ( returnReal ) {
         try {
-            results.addAll( readSiteTimeSeriesMetadataListHelper ( timeStep, whereString.toString(), true ) );
+            // Reading real data, no ensemble
+            results.addAll( readSiteTimeSeriesMetadataListHelper ( timeStep, whereString.toString(), true, false ) );
         }
         catch ( Exception e ) {
             Message.printWarning(3,routine,"Error querying Real time series list (" + e + ").");
@@ -2334,7 +2554,21 @@ throws SQLException
     }
     if ( returnModel ) {
         try {
-            results.addAll( readSiteTimeSeriesMetadataListHelper ( timeStep, whereString.toString(), false ) );
+            // Reading model data, ensemble if determined above
+            results.addAll( readSiteTimeSeriesMetadataListHelper ( timeStep, whereString.toString(), false, returnEnsembleTrace ) );
+            /*
+             * TODO SAM 2014-04-13 Don't think this is needed now given other changes
+            if ( returnEnsembleTrace ) {
+                // Remove all the items where the metadata trace ID is missing
+                ReclamationHDB_SiteTimeSeriesMetadata r;
+                for ( int i = results.size() - 1; i >= 0; i-- ) {
+                    r = results.get(i);
+                    if ( r.getEnsembleID() < 0 ) {
+                        results.remove(i);
+                    }
+                }
+            }
+            */
         }
         catch ( Exception e ) {
             Message.printWarning(3,routine,"Error querying Model time series list (" + e + ").");
@@ -2350,17 +2584,20 @@ This method may be called multiple times to return the full list of real and mod
 @param timeStep timestep to query ("Hour", etc.)
 @param whereString a "where" string for to apply to the query
 @param isReal if true, return the list of real time series; if false return the model time series
+@param ifEnsemble if true and isReal=false, add ensemble tables
 @return the list of site/time series metadata for real or model time series, matching the input
 */
 private List<ReclamationHDB_SiteTimeSeriesMetadata> readSiteTimeSeriesMetadataListHelper (
-    String timeStep, String whereString, boolean isReal )
+    String timeStep, String whereString, boolean isReal, boolean isEnsembleTrace )
 throws SQLException
 {   String routine = getClass().getName() + ".readSiteTimeSeriesMetadataListHelper";
     String tsTableName = getTimeSeriesTableFromInterval ( timeStep, isReal );
     List<ReclamationHDB_SiteTimeSeriesMetadata> results = new ArrayList<ReclamationHDB_SiteTimeSeriesMetadata>();
     String tsType = "Real";
+    boolean isModel = false;
     if ( !isReal ) {
         tsType = "Model";
+        isModel = true;
     }
     
     // Columns to select (and group by)
@@ -2391,6 +2628,7 @@ throws SQLException
     " HDB_SITE.USGS_ID," +
     " HDB_SITE.DB_SITE_CODE,\n" +
     // HDB_DATATYPE
+    " HDB_DATATYPE.DATATYPE_ID," + // long
     " HDB_DATATYPE.DATATYPE_NAME," + // long
     " HDB_DATATYPE.DATATYPE_COMMON_NAME," + // short
     " HDB_DATATYPE.PHYSICAL_QUANTITY_NAME,\n" + // short
@@ -2402,7 +2640,9 @@ throws SQLException
     
     String selectColumnsModel = "";
     String joinModel = "";
-    if ( !isReal ) {
+    String selectColumnsEnsembleTrace = "";
+    String joinEnsembleTrace = "";
+    if ( isModel ) {
         // Add some additional information for the model run time series
         selectColumnsModel =
             ", HDB_MODEL.MODEL_NAME, HDB_MODEL.MODEL_ID," +
@@ -2413,6 +2653,24 @@ throws SQLException
         joinModel =
             "   JOIN REF_MODEL_RUN on " + tsTableName + ".MODEL_RUN_ID = REF_MODEL_RUN.MODEL_RUN_ID\n" +
             "   JOIN HDB_MODEL on REF_MODEL_RUN.MODEL_ID = HDB_MODEL.MODEL_ID\n";
+        if ( isEnsembleTrace ) {
+            // Join REF_ENSEMBLE, and REF_ENSEMBLE_TRACE
+            selectColumnsEnsembleTrace =
+                ", REF_ENSEMBLE.ENSEMBLE_ID," +
+                " REF_ENSEMBLE.ENSEMBLE_NAME," +
+                " REF_ENSEMBLE.AGEN_ID," +
+                " REF_ENSEMBLE.TRACE_DOMAIN," +
+                " REF_ENSEMBLE.CMMNT,\n" +
+                // REF_ENSEMBLE_TRACE.ENSEMBLE_ID -> Foreign key to REF_ENSEMLE.ENSEMBLE_ID
+                " REF_ENSEMBLE_TRACE.TRACE_ID," +
+                " REF_ENSEMBLE_TRACE.TRACE_NUMERIC," +
+                " REF_ENSEMBLE_TRACE.TRACE_NAME"
+                // REF_ENSEMBLE_TRACE.MODEL_RUN_ID -> Foreign key to REF_MODEL_RUN.MODEL_RUN_ID
+                ;
+            joinEnsembleTrace =
+                "   JOIN REF_ENSEMBLE_TRACE on REF_ENSEMBLE_TRACE.MODEL_RUN_ID = REF_MODEL_RUN.MODEL_RUN_ID\n" +
+                "   JOIN REF_ENSEMBLE on REF_ENSEMBLE.ENSEMBLE_ID = REF_ENSEMBLE_TRACE.ENSEMBLE_ID\n";
+        }
     }
     
     // Unique combination of many terms (distinct may not be needed).
@@ -2421,6 +2679,7 @@ throws SQLException
         "distinct " +
         selectColumns +
         selectColumnsModel +
+        selectColumnsEnsembleTrace +
         ", min(" + tsTableName + ".START_DATE_TIME), " + // min() and max() require the group by
         "max(" + tsTableName + ".START_DATE_TIME)" +
         " from HDB_OBJECTTYPE \n" +
@@ -2432,9 +2691,10 @@ throws SQLException
         // TODO SAM 2010-10-29 What about case where time series is "defined" but no data exists?
         "   JOIN " + tsTableName + " on " + tsTableName + ".SITE_DATATYPE_ID = HDB_SITE_DATATYPE.SITE_DATATYPE_ID\n" +
         joinModel +
+        joinEnsembleTrace +
         "   LEFT JOIN HDB_STATE on HDB_SITE.STATE_ID = HDB_STATE.STATE_ID\n" +
         whereString +
-        " group by " + selectColumns + selectColumnsModel +
+        " group by " + selectColumns + selectColumnsModel + selectColumnsEnsembleTrace +
         " order by HDB_SITE.SITE_COMMON_NAME, HDB_DATATYPE.DATATYPE_COMMON_NAME";
     Message.printStatus(2, routine, "SQL for reading time series metadata is:\n" + sqlCommand );
 
@@ -2442,6 +2702,9 @@ throws SQLException
     Statement stmt = null;
     try {
         stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
         StopWatch sw = new StopWatch();
         sw.clearAndStart();
         rs = stmt.executeQuery(sqlCommand);
@@ -2450,7 +2713,7 @@ throws SQLException
         rs.setFetchSize(10000);
         sw.stop();
         Message.printStatus(2,routine,"Time to execute query was " + sw.getSeconds() + " seconds." );
-        results = toReclamationHDBSiteTimeSeriesMetadataList ( routine, tsType, timeStep, rs );
+        results = toReclamationHDBSiteTimeSeriesMetadataList ( routine, tsType, isEnsembleTrace, timeStep, rs );
 
     }
     catch (SQLException e) {
@@ -2579,11 +2842,11 @@ throws Exception
 }
 
 /**
-Read a time series using the SDI and MRI keys that match time series metadata.
+Read a time series using the SDI and MRI keys that match time series metadata, used when reading ensemble traces.
 @param siteDataType SDI (must be >= 0)
 @param modelRunID MRI, which can be for single model time series or an ensemble trace
 (-1 to not use, in which case a real time series will be read)
-@param readingEnsemble if true, then the read is for ensemble traces and the generated TSID will have sequence ID
+@param readingEnsemble if true, then the read is for an ensemble trace and the generated TSID will have sequence ID
 @param interval interval for time series, required to know what data table to read from and the time series interval
 (for example to specify NHour interval)
 @param readStart the starting date/time to read, or null to read all available
@@ -2673,7 +2936,7 @@ throws Exception
     }
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString.toString());
     return readTimeSeriesHelper ( tsidentString.toString(), tsident, intervalBase, intervalMult,
-        siteDataTypeID, modelRunID, tsMetadata, isReal, tsType, readStart, readEnd, readData );
+        siteDataTypeID, modelRunID, tsMetadata, isReal, readingEnsemble, tsType, readStart, readEnd, readData );
 }
 
 /**
@@ -2710,6 +2973,8 @@ throws Exception
         isReal = false;
         tsType = "Model";
     }
+    // A model time series could be a trace in an ensemble, don't know until read time series metadata
+    boolean isEnsembleTrace = false;
     String timeStep = tsident.getInterval();
     List<ReclamationHDB_SiteTimeSeriesMetadata> tsMetadataList = null;
     if ( isNewStyleTSID ) {
@@ -2783,8 +3048,12 @@ throws Exception
     TimeInterval tsInterval = TimeInterval.parseInterval(timeStep);
     int intervalBase = tsInterval.getBase();
     int intervalMult = tsInterval.getMultiplier();
+    // The above will read ensemble trace metadata if model time series is an ensemble
+    if ( !tsMetadata.getEnsembleTraceDomain().equals("") ) {
+        isEnsembleTrace = true;
+    }
     return readTimeSeriesHelper ( tsidentString, tsident, intervalBase, intervalMult,
-        siteDataTypeID, refModelRunID, tsMetadata, isReal, tsType, readStart, readEnd, readData );
+        siteDataTypeID, refModelRunID, tsMetadata, isReal, isEnsembleTrace, tsType, readStart, readEnd, readData );
 }
 
 /**
@@ -2799,6 +3068,7 @@ See the called methods to see how all of the information is determined.
 @param modelRunID the MRI for the time series, for model time series
 @param tsMetadata time series metadata object, used to assign time series header information
 @param isReal whether or not the time series is being read from a real table (false=model table)
+@param isEnsembleTrace whether or not the time series is being read from an ensemble trace
 @param tsType "real" or "model" used for messaging
 @param readStart the date/time to start reading, in TSTool conventions
 @param readEnd the date/time to end reading, in TSTool conventions
@@ -2806,10 +3076,11 @@ See the called methods to see how all of the information is determined.
 */
 private TS readTimeSeriesHelper ( String tsidentString, TSIdent tsident, int intervalBase, int intervalMult,
     int siteDataTypeID, int modelRunID, ReclamationHDB_SiteTimeSeriesMetadata tsMetadata,
-    boolean isReal, String tsType, DateTime readStart, DateTime readEnd, boolean readData )
+    boolean isReal, boolean isTrace, String tsType, DateTime readStart, DateTime readEnd, boolean readData )
 throws Exception
 {   String routine = "ReclamationHDB_DMI.readTimeSeriesHelper";
 
+    Message.printStatus(2,routine,"Reading time series isTrace=" + isTrace);
     // Create the time series...
     TS ts = TSUtil.newTimeSeries(tsidentString, true);
     ts.setIdentifier(tsident);   
@@ -2905,6 +3176,9 @@ throws Exception
         boolean badAlignment = false; // Whether there are issues with HDB date/time and time series
         try {
             stmt = __hdbConnection.ourConn.createStatement();
+            if ( __readTimeout >= 0 ) {
+                stmt.setQueryTimeout(__readTimeout);
+            }
             StopWatch sw = new StopWatch();
             sw.clearAndStart();
             rs = stmt.executeQuery(selectSQL.toString());
@@ -3074,8 +3348,7 @@ throws Exception
 Set a DateTime's contents given an HDB (Oracle) date/time string.
 This does not do a full parse constructor because a single DateTime instance is reused.
 @param dateTime the DateTime instance to set values in (should be at an appropriate precision)
-@param intervalBase the base data interval for the date/time being processed - will limit the transfer from
-the string
+@param intervalBase the base data interval for the date/time being processed - will limit the transfer from the string
 @param dateTimeString a string in the format YYYY-MM-DD hh:mm:ss.  The intervalBase is used to determine when
 to stop transferring values.
 */
@@ -3111,6 +3384,15 @@ public void setKeepAlive ( String keepAliveSql, String keepAliveFrequency )
 {
     __keepAliveSql = keepAliveSql;
     __keepAliveFrequency = keepAliveFrequency;
+}
+
+/**
+Set the database read timeout.
+@param readTimeout read timeout in seconds.
+*/
+public void setReadTimeout ( int readTimeout )
+{
+    __readTimeout = readTimeout;
 }
 
 /**
@@ -3152,8 +3434,10 @@ private void setTimeSeriesProperties ( TS ts, ReclamationHDB_SiteTimeSeriesMetad
     
     ts.setProperty("OBJECT_TYPE_NAME", tsm.getObjectTypeName());
     ts.setProperty("OBJECT_TYPE_ID", tsm.getObjectTypeID());
+    ts.setProperty("OBJECT_TYPE_TAG", tsm.getObjectTypeTag());
 
     // From HDB_DATATYPE
+    ts.setProperty("DATA_TYPE_ID", tsm.getDataTypeID());
     ts.setProperty("DATA_TYPE_NAME", tsm.getDataTypeName());
     ts.setProperty("DATA_TYPE_COMMON_NAME", tsm.getDataTypeCommonName());
     ts.setProperty("PHYSICAL_QUANTITY_NAME", tsm.getPhysicalQuantityName());
@@ -3168,10 +3452,42 @@ private void setTimeSeriesProperties ( TS ts, ReclamationHDB_SiteTimeSeriesMetad
     ts.setProperty("MODEL_NAME", tsm.getModelName());
 
     // From REF_MODEL_RUN
-    ts.setProperty("MODEL_RUN_ID", DMIUtil.isMissing(tsm.getModelRunID()) ? null : new Integer(tsm.getModelRunID()) );
-    ts.setProperty("MODEL_RUN_NAME", tsm.getModelRunName());
-    ts.setProperty("HYDROLOGIC_INDICATOR", tsm.getHydrologicIndicator());
-    ts.setProperty("MODEL_RUN_DATE", tsm.getModelRunDate());
+    if ( !DMIUtil.isMissing(tsm.getModelRunID()) ) {
+        ts.setProperty("MODEL_RUN_ID", tsm.getModelRunID() );
+        ts.setProperty("MODEL_RUN_NAME", tsm.getModelRunName());
+        ts.setProperty("HYDROLOGIC_INDICATOR", tsm.getHydrologicIndicator());
+        ts.setProperty("MODEL_RUN_DATE", tsm.getModelRunDate());
+        if ( tsm.getHydrologicIndicator().equals("") ) {
+            ts.setProperty("TableViewHeaderFormat", "%L, ${ts:SITE_COMMON_NAME}, ${ts:DATA_TYPE_COMMON_NAME}, %U");
+        }
+        else {
+            ts.setProperty("TableViewHeaderFormat", "%L, ${ts:SITE_COMMON_NAME}, ${ts:DATA_TYPE_COMMON_NAME}, ${ts:HYDROLOGIC_INDICATOR}, %U");
+        }
+    }
+    
+    if ( !DMIUtil.isMissing(tsm.getEnsembleTraceID()) ) {
+        // From REF_ENSEMBLE
+        ts.setProperty("ENSEMBLE_ID", tsm.getEnsembleID() );
+        ts.setProperty("ENSEMBLE_NAME", tsm.getEnsembleName() );
+        ts.setProperty("ENSEMBLE_AGEN_ID", tsm.getEnsembleAgenID());
+        ts.setProperty("ENSEMBLE_AGEN_ABBREV", tsm.getEnsembleAgenAbbrev());
+        ts.setProperty("ENSEMBLE_AGEN_NAME", tsm.getEnsembleAgenName());
+        ts.setProperty("ENSEMBLE_TRACE_DOMAIN", tsm.getEnsembleTraceDomain());
+        // From REF_ENSEMBLE_TRACE
+        ts.setProperty("ENSEMBLE_TRACE_ID", tsm.getEnsembleTraceID() );
+        ts.setProperty("ENSEMBLE_TRACE_NUMERIC", tsm.getEnsembleTraceNumeric() );
+        ts.setProperty("ENSEMBLE_TRACE_NAME", tsm.getEnsembleTraceName() );
+        // Table heading is not clear so add Hydrologic Indicator
+        // TODO SAM 2014-04-13 Evaluate whether this needs to be user-defined
+        if ( tsm.getHydrologicIndicator().equals("") ) {
+            ts.setProperty("TableViewHeaderFormat", "%L, ${ts:SITE_COMMON_NAME}, ${ts:DATA_TYPE_COMMON_NAME}, %U");
+            ts.setProperty("tsp:LegendFormat", "%L, ${ts:SITE_COMMON_NAME}, ${ts:DATA_TYPE_COMMON_NAME}, %U");
+        }
+        else {
+            ts.setProperty("TableViewHeaderFormat", "%L, ${ts:SITE_COMMON_NAME}, ${ts:DATA_TYPE_COMMON_NAME}, ${ts:HYDROLOGIC_INDICATOR}, %U");
+            ts.setProperty("tsp:LegendFormat", "%L, ${ts:SITE_COMMON_NAME}, ${ts:DATA_TYPE_COMMON_NAME}, ${ts:HYDROLOGIC_INDICATOR}, %U");
+        }
+    }
 }
 
 /**
@@ -3229,10 +3545,12 @@ private void startKeepAliveThread()
 /**
 Convert result set to site metadata objects.  This method is called after querying time series based on
 input filters or by specific criteria, as per TSID.
+@param routine routine name for troubleshooting
+@param tsType "REAL" or "MODEL".
 @param rs result set from query.
 */
 private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeriesMetadataList (
-    String routine, String tsType, String interval, ResultSet rs )
+    String routine, String tsType, boolean isEnsembleTrace, String interval, ResultSet rs )
 {
     List <ReclamationHDB_SiteTimeSeriesMetadata> results = new Vector();
     ReclamationHDB_SiteTimeSeriesMetadata data = null;
@@ -3242,9 +3560,13 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
     Date date;
     int col = 1;
     int record = 0;
-    boolean isReal = true;
-    if ( !tsType.equalsIgnoreCase("Real") ) {
-        isReal = false;
+    boolean isReal = false;
+    boolean isModel = false;
+    if ( tsType.equalsIgnoreCase("REAL") ) {
+        isReal = true;
+    }
+    if ( !isReal ) {
+        isModel = true;
     }
     List<ReclamationHDB_Agency> agencyList = getAgencyList();
     ReclamationHDB_Agency agency;
@@ -3345,6 +3667,10 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
                 data.setDbSiteCode(s);
             }
             // HDB_DATATYPE
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setDataTypeID(i);
+            }
             s = rs.getString(col++);
             if ( !rs.wasNull() ) {
                 data.setDataTypeName(s);
@@ -3380,7 +3706,7 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
             if ( !rs.wasNull() ) {
                 data.setSiteDataTypeID(i);
             }
-            if ( !isReal ) {
+            if ( isModel ) {
                 // Also get the model name and model run name, ID, and date...
                 s = rs.getString(col++);
                 if ( !rs.wasNull() ) {
@@ -3405,6 +3731,49 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
                 date = rs.getTimestamp(col++);
                 if ( !rs.wasNull() ) {
                     data.setModelRunDate(date);
+                }
+                if ( isEnsembleTrace ) {
+                    // REF_ENSEMBLE
+                    i = rs.getInt(col++);
+                    if ( !rs.wasNull() ) {
+                        data.setEnsembleID(i);
+                    }
+                    s = rs.getString(col++);
+                    if ( !rs.wasNull() ) {
+                        data.setEnsembleName(s);
+                    }
+                    i = rs.getInt(col++);
+                    if ( !rs.wasNull() ) {
+                        data.setEnsembleAgenID(i);
+                        // Also look up the agency as a string
+                        ReclamationHDB_Agency a = lookupAgency(getAgencyList(), i);
+                        Message.printStatus(2,routine,"Ensemble agency " + i + " is " + a );
+                        if ( a != null ) {
+                            data.setEnsembleAgenAbbrev(a.getAgenAbbrev());
+                            data.setEnsembleAgenName(a.getAgenName());
+                        }
+                    }
+                    s = rs.getString(col++);
+                    if ( !rs.wasNull() ) {
+                        data.setEnsembleTraceDomain(s);
+                    }
+                    s = rs.getString(col++);
+                    if ( !rs.wasNull() ) {
+                        data.setEnsembleCmmnt(s);
+                    }
+                    // REF_ENSEMBLE_TRACE
+                    i = rs.getInt(col++);
+                    if ( !rs.wasNull() ) {
+                        data.setEnsembleTraceID(i);
+                    }
+                    i = rs.getInt(col++);
+                    if ( !rs.wasNull() ) {
+                        data.setEnsembleTraceNumeric(i);
+                    }
+                    s = rs.getString(col++);
+                    if ( !rs.wasNull() ) {
+                        data.setEnsembleTraceName(s);
+                    }
                 }
             }
             // The min and max for the period

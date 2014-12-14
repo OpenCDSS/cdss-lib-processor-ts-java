@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
@@ -340,9 +341,15 @@ CommandWarningException, CommandException
     	// Join the tables...
     
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	        table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters, joinMethodType );
+	        List<String> problems = new ArrayList<String>();
+	        table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters, joinMethodType, problems );
 	        // Table is already in the processor so no need to resubmit
 	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names
+	        for ( String p : problems ) {
+	            Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+	            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
+	                p, "Check input." ) );
+	        }
         }
 	}
 	catch ( Exception e ) {

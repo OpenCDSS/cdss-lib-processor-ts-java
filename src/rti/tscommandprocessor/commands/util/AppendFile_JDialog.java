@@ -49,6 +49,7 @@ private SimpleJButton __ok_JButton = null;
 private JTextField __InputFile_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __IncludeText_JTextField = null;
+private JTextField __ExcludeText_JTextField = null;
 private SimpleJComboBox __IfNotFound_JComboBox =null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
@@ -185,6 +186,7 @@ private void checkInput ()
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IncludeText = __IncludeText_JTextField.getText().trim();
+	String ExcludeText = __ExcludeText_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
@@ -195,6 +197,9 @@ private void checkInput ()
     }
     if ( IncludeText.length() > 0 ) {
         props.set ( "IncludeText", IncludeText );
+    }
+    if ( ExcludeText.length() > 0 ) {
+        props.set ( "ExcludeText", ExcludeText );
     }
 	if ( IfNotFound.length() > 0 ) {
 		props.set ( "IfNotFound", IfNotFound );
@@ -216,10 +221,12 @@ private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String IncludeText = __IncludeText_JTextField.getText().trim();
+    String ExcludeText = __ExcludeText_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "IncludeText", IncludeText );
+	__command.setCommandParameter ( "ExcludeText", ExcludeText );
 	__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
 
@@ -252,8 +259,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
         "The input file can be a single file, all files in a folder (*), or all files matching an extension (*.csv)." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Use the IncludeText parameter to append only lines that match a pattern using " +
-        "the Java regular expressions." ),
+        "Use the IncludeText and ExcludeText parameters to filter the lines that are appended, using Java regular expressions." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -288,10 +294,20 @@ private void initialize ( JFrame parent, AppendFile_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeText_JTextField = new JTextField ( 20 );
     __IncludeText_JTextField.addKeyListener ( this );
-   JGUIUtil.addComponent(main_JPanel, __IncludeText_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __IncludeText_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - include lines matching regular expression (default=include all)"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Exclude text:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeText_JTextField = new JTextField ( 20 );
+    __ExcludeText_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ExcludeText_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - exclude lines matching regular expression (default=include all)"), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
@@ -379,6 +395,7 @@ private void refresh ()
 	String InputFile = "";
 	String OutputFile = "";
 	String IncludeText = "";
+	String ExcludeText = "";
 	String IfNotFound = "";
     PropList parameters = null;
 	if ( __first_time ) {
@@ -387,6 +404,7 @@ private void refresh ()
 		InputFile = parameters.getValue ( "InputFile" );
 		OutputFile = parameters.getValue ( "OutputFile" );
 		IncludeText = parameters.getValue ( "IncludeText" );
+		ExcludeText = parameters.getValue ( "ExcludeText" );
 		IfNotFound = parameters.getValue ( "IfNotFound" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
@@ -396,6 +414,9 @@ private void refresh ()
         }
         if ( IncludeText != null ) {
             __IncludeText_JTextField.setText ( IncludeText );
+        }
+        if ( ExcludeText != null ) {
+            __ExcludeText_JTextField.setText ( ExcludeText );
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound,JGUIUtil.NONE, null, null ) ) {
 			__IfNotFound_JComboBox.select ( IfNotFound );
@@ -418,11 +439,13 @@ private void refresh ()
 	InputFile = __InputFile_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IncludeText = __IncludeText_JTextField.getText().trim();
+	ExcludeText = __ExcludeText_JTextField.getText().trim();
 	IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "IncludeText=" + IncludeText );
+	props.add ( "ExcludeText=" + ExcludeText );
 	props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
@@ -450,8 +473,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok )
 {	__ok = ok;

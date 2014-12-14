@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
@@ -103,12 +104,13 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "InputFile" );
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "IncludeText" );
-	valid_Vector.add ( "IfNotFound" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList(5);
+	validList.add ( "InputFile" );
+	validList.add ( "OutputFile" );
+	validList.add ( "IncludeText" );
+	validList.add ( "ExcludeText" );
+	validList.add ( "IfNotFound" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -179,6 +181,11 @@ CommandWarningException, CommandException
 	if ( (IncludeText != null) && !IncludeText.equals("") ) {
 	    doIncludeText = true;
 	}
+    String ExcludeText = parameters.getValue ( "ExcludeText" );
+    boolean doExcludeText = false;
+    if ( (ExcludeText != null) && !ExcludeText.equals("") ) {
+        doExcludeText = true;
+    }
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
 	    IfNotFound = _Warn; // Default
@@ -245,8 +252,7 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 	
-	// Process the files.  Each input file is opened to scan the file.  The output file is opened once in
-	// append mode.
+	// Process the files.  Each input file is opened to scan the file.  The output file is opened once in append mode.
 
 	String OutputFile_full = IOUtil.verifyPathForOS(
 	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile ) );
@@ -287,6 +293,15 @@ CommandWarningException, CommandException
 	                    includeLine = false;
 	                }
 	            }
+                if ( doExcludeText ) {
+                    if ( line.matches(ExcludeText) ) {
+                        // Skip
+                        includeLine = false;
+                    }
+                    else {
+                        includeLine = true;
+                    }
+                }
 	            if ( includeLine ) {
 	                fout.write(line + nl);
 	            }
@@ -348,6 +363,7 @@ public String toString ( PropList parameters )
 	String InputFile = parameters.getValue("InputFile");
 	String OutputFile = parameters.getValue("OutputFile");
 	String IncludeText = parameters.getValue("IncludeText");
+	String ExcludeText = parameters.getValue("ExcludeText");
 	String IfNotFound = parameters.getValue("IfNotFound");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
@@ -364,6 +380,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "IncludeText=\"" + IncludeText + "\"" );
+    }
+    if ( (ExcludeText != null) && (ExcludeText.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcludeText=\"" + ExcludeText + "\"" );
     }
 	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
 		if ( b.length() > 0 ) {

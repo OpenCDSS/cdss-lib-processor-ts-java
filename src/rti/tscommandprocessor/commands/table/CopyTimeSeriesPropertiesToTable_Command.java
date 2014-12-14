@@ -409,7 +409,7 @@ CommandWarningException, CommandException
                 
                 // Get the properties to process
                 if ( propertyNames == null ) {
-                    // Get all the properties by forming a list of property names from the hasthtable
+                    // Get all the properties by forming a list of property names from the hashtable
                     HashMap<String, Object> propertyHash = ts.getProperties();
                     ArrayList<String> keyList = new ArrayList<String>(propertyHash.keySet());
                     // Don't sort because original order has meaning
@@ -431,6 +431,7 @@ CommandWarningException, CommandException
                 }
                 
                 // Make sure that the output table includes the columns to receive property values, including the TSID column
+                // TSID is always a string
                 try {
                     TableTSIDColumnNumber = table.getFieldIndex(TableTSIDColumn);
                 }
@@ -440,6 +441,7 @@ CommandWarningException, CommandException
                     Message.printStatus(2, routine, "Did not match TableTSIDColumn \"" + TableTSIDColumn +
                         "\" as column table so added to table." );
                 }
+                // Other output column types depend on the time series properties
                 for ( int i = 0; i < tableOutputColumnNames.length; i++ ) {
                     try {
                         table.getFieldIndex(tableOutputColumnNames[i]);
@@ -454,47 +456,43 @@ CommandWarningException, CommandException
                         //continue;
                         //
                         // Create the column in the table - do this before any attempt to match the record based on TSID below
-                        // For now don't set any width or precision on the column
-                        Object propertyValue = null;
-                        // Find the matching property in the time series to determine the property type
-                        for ( int iProp = 0; iProp < propertyNames.length; iProp++ ) {
-                            if ( propertyNames[iProp].equalsIgnoreCase(tableOutputColumnNames[i])) {
-                                propertyValue = ts.getProperty(propertyNames[iProp] );
-                                if ( propertyValue instanceof String ) {
-                                    table.addField(new TableField(TableField.DATA_TYPE_STRING, propertyNames[iProp], -1, -1), null);
-                                }
-                                else if ( propertyValue instanceof Integer ) {
-                                    table.addField(new TableField(TableField.DATA_TYPE_INT, propertyNames[iProp], -1, -1), null);
-                                }
-                                else if ( propertyValue instanceof Double ) {
-                                    table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, propertyNames[iProp],15, 6), null);
-                                }
-                                else if ( propertyValue instanceof Date ) {
-                                    table.addField(new TableField(TableField.DATA_TYPE_DATE, propertyNames[iProp], -1, -1), null);
-                                }
-                                else if ( propertyValue instanceof DateTime ) {
-                                    table.addField(new TableField(TableField.DATA_TYPE_DATETIME, propertyNames[iProp], -1, -1), null);
-                                }
-                                else if ( propertyValue == null ) {
-                                    // If null just let the property be set by a later record where a non-null value is found.
-                                    // TODO SAM 2012-09-30 Is it possible to check the type even if null?
-                                    continue;
-                                }
-                                else {
-                                    message = "Property type for \"" + tableOutputColumnNames[i] +
-                                        "\" (" + propertyValue + ") is not handled - cannot add column to table.";
-                                    Message.printWarning ( warning_level,
-                                    MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                                    status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Contact software support." ) );
-                                    // Skip the time series...
-                                    continue;
-                                }
-                                Message.printStatus(2, routine, "Did not match property name \"" + tableOutputColumnNames[i] +
-                                    "\" as column table so added to table." );
-                                break;
-                            }
+                        // For now don't set any width or precision on the column.
+                        // First find the matching property in the time series to determine the property type.
+                        // The order of propertyNames is the same as tableOutputColumnNames.
+                        Object propertyValue = ts.getProperty(propertyNames[i] );
+                        if ( propertyValue == null ) {
+                            // If null just let the property be set by a later record where a non-null value is found.
+                            // TODO SAM 2012-09-30 Is it possible to check the type even if null?
+                            continue;
                         }
+                        else if ( propertyValue instanceof String ) {
+                            table.addField(new TableField(TableField.DATA_TYPE_STRING, tableOutputColumnNames[i], -1, -1), null);
+                        }
+                        else if ( propertyValue instanceof Integer ) {
+                            table.addField(new TableField(TableField.DATA_TYPE_INT, tableOutputColumnNames[i], -1, -1), null);
+                        }
+                        else if ( propertyValue instanceof Double ) {
+                            table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, tableOutputColumnNames[i],15, 6), null);
+                        }
+                        else if ( propertyValue instanceof Date ) {
+                            table.addField(new TableField(TableField.DATA_TYPE_DATE, tableOutputColumnNames[i], -1, -1), null);
+                        }
+                        else if ( propertyValue instanceof DateTime ) {
+                            table.addField(new TableField(TableField.DATA_TYPE_DATETIME, tableOutputColumnNames[i], -1, -1), null);
+                        }
+                        else {
+                            message = "Time series property type for \"" + tableOutputColumnNames[i] +
+                                "\" (" + propertyValue + ") is not handled - cannot add column to table.";
+                            Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Contact software support." ) );
+                            // Skip the time series...
+                            continue;
+                        }
+                        Message.printStatus(2, routine, "Did not match property name \"" + tableOutputColumnNames[i] +
+                            "\" as column table so added to table." );
+                        break;
                     }
                 }
                 
@@ -557,8 +555,7 @@ CommandWarningException, CommandException
                     rec = table.getRecord(recNum);
                 }
                 else {
-                    Message.printStatus(2, routine, "Matched table \"" + TableID +
-                        "\" row for TSID \"" + tsid + "\" - duplicate TSID?");
+                    Message.printStatus(2, routine, "Matched table \"" + TableID + "\" row for TSID \"" + tsid );
                 }
                 
                 // Loop through the property names...
@@ -567,11 +564,12 @@ CommandWarningException, CommandException
                 //    String propertyName = propertyNames[icolumn];
                 //    Object propertyValue = ts.getProperty(propertyName);
                 for ( int icolumn = 0; icolumn < tableOutputColumnNames.length; icolumn++ ) {
-                    String propertyName = tableOutputColumnNames[icolumn];
+                    String propertyName = propertyNames[icolumn];
                     Object propertyValue = ts.getProperty(propertyName);
                     // If the property value is null, just skip setting it - default value for columns is null
                     // TODO SAM 2011-04-27 Should this be a warning?
                     if ( propertyValue == null ) {
+                        Message.printStatus(2,routine,"Property \"" + propertyName + "\" is null");
                         continue;
                     }
                     // Get the matching table column
@@ -596,13 +594,17 @@ CommandWarningException, CommandException
                                 Message.printDebug(1, routine, "Setting " + tableOutputColumnNames[icolumn] + "=\"" +
                                     propertyValue + "\"" );
                             }
+                            Message.printStatus(2, routine, "Setting " + tableOutputColumnNames[icolumn] + "=\"" +
+                                    propertyValue + "\"" );
                             // TODO SAM 2011-04-27 Evaluate why the column width is necessary in the data table
                             // Reset the column width if necessary
                             if ( propertyValue instanceof String ) {
                                 // If the incoming string is longer than the column width, reset the column width
                                 int width = table.getFieldWidth(tableOutputColumns[icolumn]);
-                                table.setFieldWidth(tableOutputColumns[icolumn],
-                                    Math.max(width,((String)propertyValue).length()));
+                                if ( width > 0 ) {
+                                    table.setFieldWidth(tableOutputColumns[icolumn],
+                                        Math.max(width,((String)propertyValue).length()));
+                                }
                             }
                         }
                         catch ( Exception e ) {

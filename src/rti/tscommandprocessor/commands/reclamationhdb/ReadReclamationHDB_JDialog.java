@@ -36,6 +36,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 
 import RTi.DMI.DatabaseDataStore;
 import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -81,6 +82,7 @@ private SimpleJComboBox __EnsembleName_JComboBox = null;
 //private JLabel __selectedEnsembleModelID_JLabel = null;
 //private JLabel __selectedEnsembleModelRunID_JLabel = null;
 //private SimpleJComboBox __EnsembleModelRunID_JComboBox = null;
+private JTextArea __Properties_JTextArea = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
@@ -90,6 +92,7 @@ private InputFilter_JPanel __inputFilter_JPanel =null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
+private JFrame __parent = null;
 
 private boolean __ignoreEvents = false; // Used to ignore cascading events when initializing the components
 
@@ -128,6 +131,22 @@ public void actionPerformed( ActionEvent e )
         checkInput();
         if ( !__error_wait ) {
             response ( true );
+        }
+    }
+    else if ( e.getActionCommand().equalsIgnoreCase("EditProperties") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String Properties = __Properties_JTextArea.getText().trim();
+        String [] notes = {
+            "Time series properties will be assigned after reading.",
+            "Use % specifiers to assign properties from internal time series data.",
+            "Use ${ts:Property} to assign to a time series property from HDB metadata.",
+            "Set the TableViewHeaderFormat property to format columns in time series tables."
+        };
+        String properties = (new DictionaryJDialog ( __parent, true, Properties, "Edit Properties Parameter",
+            notes, "Property", "Property Value",10)).response();
+        if ( properties != null ) {
+            __Properties_JTextArea.setText ( properties );
+            refresh();
         }
     }
 }
@@ -445,6 +464,10 @@ private void checkInput ()
         props.set ( "EnsembleModelRunID", EnsembleModelRunID );
     }
     */
+    String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
+    if ( Properties.length() > 0 ) {
+        props.set ( "Properties", Properties );
+    }
 	String InputStart = __InputStart_JTextField.getText().trim();
 	if ( InputStart.length() > 0 ) {
 		props.set ( "InputStart", InputStart );
@@ -515,6 +538,8 @@ private void commitEdits ()
     String EnsembleModelRunID = getSelectedEnsembleModelRunID();
     __command.setCommandParameter ( "EnsembleModelRunID", EnsembleModelRunID );
     */
+    String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
+    __command.setCommandParameter ( "Properties", Properties );
 	String InputStart = __InputStart_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputStart", InputStart );
 	String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -694,6 +719,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
 {	String routine = "ReadReclamationHDB_JDialog.initialize";
+    __parent = parent;
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 
@@ -753,7 +779,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     __main_JTabbedPane = new JTabbedPane ();
     __main_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify how to match HDB time series or ensemble" ));
+        "Specify how to match HDB time series or ensemble, and set time series properties" ));
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
@@ -793,7 +819,9 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
 		JGUIUtil.addComponent(filter_JPanel, __inputFilter_JPanel,
 			0, ++yFilter, 2, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 			GridBagConstraints.WEST );
-   		__inputFilter_JPanel.addEventListeners ( this );
+		if ( ((ReclamationHDB_TimeSeries_InputFilter_JPanel)__inputFilter_JPanel).getDataStore() != null ) {
+		    __inputFilter_JPanel.addEventListeners ( this );
+		}
    	    JGUIUtil.addComponent(filter_JPanel, new JLabel ( "Optional - query filters."),
    	        3, yFilter, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
@@ -1076,6 +1104,33 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         */
 
+    // Panel to specify time series properties to set upon reading
+    int yOutput = -1;
+    JPanel output_JPanel = new JPanel();
+    output_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Set time series properties", output_JPanel );
+    
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+        "The Properties parameter below sets time series properties so that they can be used later in processing or output."), 
+        0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+        "Expansion of properties defined with specifiers or other properties occurs when this command is executed."), 
+        0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(output_JPanel, new JLabel ("Properties:"),
+        0, ++yOutput, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Properties_JTextArea = new JTextArea (3,35);
+    __Properties_JTextArea.setLineWrap ( true );
+    __Properties_JTextArea.setWrapStyleWord ( true );
+    __Properties_JTextArea.setToolTipText("PropertyName1:PropertyValue1,PropertyName2:PropertyValue2");
+    __Properties_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(output_JPanel, new JScrollPane(__Properties_JTextArea),
+        1, yOutput, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ("Optional - string properties to assign to time series."),
+        3, yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(output_JPanel, new SimpleJButton ("Edit","EditProperties",this),
+        3, ++yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     // General parameters...
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -1254,21 +1309,25 @@ public boolean ok ()
 
 /**
 Set the data type choices in response to a new datastore being selected.
-The data types are used with the filters because DataTypeCommonName is used with the specific
-data queries.
+The data types are used with the filters because DataTypeCommonName is used with the specific data queries.
 */
 private void populateDataTypeChoices ()
 {   String routine = getClass().getName() + ".populateDataTypeChoices";
     ReclamationHDBDataStore hdbDataStore = getSelectedDataStore();
-    ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)hdbDataStore.getDMI();
-    List<String> dataTypes = new Vector<String>();
-    try {
-        dataTypes = dmi.getObjectDataTypes ( true );
+    List<String> dataTypes = new ArrayList<String>();
+    if ( hdbDataStore == null ) {
+        // Case when HDB not available, such as off-line development
     }
-    catch ( Exception e ) {
-        // Hopefully should not happen
-        Message.printWarning(2, routine, "Unable to get object types and associated data types for datastore \"" +
-            __DataStore_JComboBox.getSelected() + "\" - no database connection?");
+    else {
+        ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)hdbDataStore.getDMI();
+        try {
+            dataTypes = dmi.getObjectDataTypes ( true );
+        }
+        catch ( Exception e ) {
+            // Hopefully should not happen
+            Message.printWarning(2, routine, "Unable to get object types and associated data types for datastore \"" +
+                __DataStore_JComboBox.getSelected() + "\" - no database connection?");
+        }
     }
     // Add a blank option if the filters are not being used
     dataTypes.add(0,"");
@@ -1962,6 +2021,7 @@ private void refresh ()
     String EnsembleModelName = "";
     String EnsembleModelRunDate = "";
     String EnsembleModelRunID = "";
+    String Properties = "";
 	String InputStart = "";
 	String InputEnd = "";
 	String Alias = "";
@@ -1986,6 +2046,7 @@ private void refresh ()
         EnsembleModelName = props.getValue ( "EnsembleModelName" );
         EnsembleModelRunDate = props.getValue ( "EnsembleModelRunDate" );
         EnsembleModelRunID = props.getValue ( "EnsembleModelRunID" );
+        Properties = props.getValue ( "Properties" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
 		Alias = props.getValue ( "Alias" );
@@ -2101,18 +2162,20 @@ private void refresh ()
             }
         }
         InputFilter_JPanel filter_panel = __inputFilter_JPanel;
-        int nfg = filter_panel.getNumFilterGroups();
-        String where;
-        for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-            where = props.getValue ( "Where" + (ifg + 1) );
-            if ( (where != null) && (where.length() > 0) ) {
-                // Set the filter...
-                try {
-                    filter_panel.setInputFilter (ifg, where, filter_delim );
-                }
-                catch ( Exception e ) {
-                    Message.printWarning ( 1, routine, "Error setting where information using \"" + where + "\"" );
-                    Message.printWarning ( 3, routine, e );
+        if ( filter_panel != null ) {
+            int nfg = filter_panel.getNumFilterGroups();
+            String where;
+            for ( int ifg = 0; ifg < nfg; ifg ++ ) {
+                where = props.getValue ( "Where" + (ifg + 1) );
+                if ( (where != null) && (where.length() > 0) ) {
+                    // Set the filter...
+                    try {
+                        filter_panel.setInputFilter (ifg, where, filter_delim );
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning ( 1, routine, "Error setting where information using \"" + where + "\"" );
+                        Message.printWarning ( 3, routine, e );
+                    }
                 }
             }
         }
@@ -2332,6 +2395,9 @@ private void refresh ()
             }
         }
         */
+        if ( Properties != null ) {
+            __Properties_JTextArea.setText ( Properties );
+        }
 		if ( InputStart != null ) {
 			__InputStart_JTextField.setText ( InputStart );
 		}
@@ -2355,7 +2421,13 @@ private void refresh ()
 	Alias = __Alias_JTextField.getText().trim();
 	// Regardless, reset the command from the fields...
 	props = new PropList ( __command.getCommandName() );
-	DataStore = __DataStore_JComboBox.getSelected().trim();
+	DataStore = __DataStore_JComboBox.getSelected();
+	if ( DataStore == null ) {
+	    DataStore = "";
+	}
+	else {
+	    DataStore = DataStore.trim();
+	}
 	DataType = __DataType_JComboBox.getSelected().trim();
 	Interval = __Interval_JComboBox.getSelected().trim();
     props.add ( "DataStore=" + DataStore );
@@ -2366,14 +2438,16 @@ private void refresh ()
 	int nfg = filter_panel.getNumFilterGroups();
 	String where;
 	String delim = ";";	// To separate input filter parts
-	for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-		where = filter_panel.toString(ifg,delim).trim();
-		// Make sure there is a field that is being checked in a where clause...
-		if ( (where.length() > 0) && !where.startsWith(delim) ) {
-		    // FIXME SAM 2010-11-01 The following discards '=' in the quoted string
-			//props.add ( "Where" + (ifg + 1) + "=" + where );
-			props.set ( "Where" + (ifg + 1), where );
-		}
+	if ( ((ReclamationHDB_TimeSeries_InputFilter_JPanel)filter_panel).getDataStore() != null ) {
+    	for ( int ifg = 0; ifg < nfg; ifg ++ ) {
+    		where = filter_panel.toString(ifg,delim).trim();
+    		// Make sure there is a field that is being checked in a where clause...
+    		if ( (where.length() > 0) && !where.startsWith(delim) ) {
+    		    // FIXME SAM 2010-11-01 The following discards '=' in the quoted string
+    			//props.add ( "Where" + (ifg + 1) + "=" + where );
+    			props.set ( "Where" + (ifg + 1), where );
+    		}
+    	}
 	}
     // FIXME SAM 2011-10-03 Should be able to remove check for null if events and list population are
     // implemented correctly
@@ -2435,6 +2509,8 @@ private void refresh ()
     props.add ( "EnsembleModelName=" + EnsembleModelName );
     props.add ( "EnsembleModelRunDate=" + EnsembleModelRunDate );
     props.add ( "EnsembleModelRunID=" + EnsembleModelRunID );
+    Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
+    props.add ( "Properties=" + Properties );
 	InputStart = __InputStart_JTextField.getText().trim();
 	props.add ( "InputStart=" + InputStart );
 	InputEnd = __InputEnd_JTextField.getText().trim();

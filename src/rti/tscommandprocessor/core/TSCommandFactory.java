@@ -31,6 +31,7 @@ import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
 // Delimited time series file commands
 import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 import rti.tscommandprocessor.commands.delimited.WriteDelimitedFile_Command;
+import rti.tscommandprocessor.commands.derby.NewDerbyDatabase_Command;
 
 // Ensemble commands
 import rti.tscommandprocessor.commands.ensemble.CopyEnsemble_Command;
@@ -137,6 +138,7 @@ import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
+import rti.tscommandprocessor.commands.table.ReadTableFromFixedFormatFile_Command;
 import rti.tscommandprocessor.commands.table.SetTableValues_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.SortTable_Command;
@@ -197,6 +199,7 @@ import rti.tscommandprocessor.commands.ts.LookupTimeSeriesFromTable_Command;
 import rti.tscommandprocessor.commands.ts.Multiply_Command;
 import rti.tscommandprocessor.commands.ts.NewDayTSFromMonthAndDayTS_Command;
 import rti.tscommandprocessor.commands.ts.NewEndOfMonthTSFromDayTS_Command;
+import rti.tscommandprocessor.commands.ts.NewStatisticMonthTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ReadTimeSeriesList_Command;
 import rti.tscommandprocessor.commands.ts.RunningStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
@@ -614,6 +617,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("NewDayTSFromMonthAndDayTS") ) {
         return new NewDayTSFromMonthAndDayTS_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("NewDerbyDatabase") ) {
+        return new NewDerbyDatabase_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("NewEndOfMonthTSFromDayTS") ) {
         return new NewEndOfMonthTSFromDayTS_Command ();
     }
@@ -628,6 +634,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("NewStatisticEnsemble") ) {
         return new NewStatisticEnsemble_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("NewStatisticMonthTimeSeries") ) {
+        return new NewStatisticMonthTimeSeries_Command ();
     }
     else if ( commandName.equalsIgnoreCase("NewStatisticTimeSeriesFromEnsemble") ) {
         return new NewStatisticTimeSeriesFromEnsemble_Command ();
@@ -736,20 +745,23 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("ReadStateMod") ) {
 		return new ReadStateMod_Command ();
 	}
-    else if ( commandName.equalsIgnoreCase("ReadTableFromDBF") ) {
-        return new ReadTableFromDBF_Command ();
+    else if ( commandName.equalsIgnoreCase("ReadTableCellsFromExcel") ) {
+        return new ReadTableCellsFromExcel_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadTableFromDataStore") ) {
         return new ReadTableFromDataStore_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("ReadTableFromDBF") ) {
+        return new ReadTableFromDBF_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("ReadTableFromDelimitedFile") ) {
         return new ReadTableFromDelimitedFile_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadTableCellsFromExcel") ) {
-        return new ReadTableCellsFromExcel_Command ();
-    }
     else if ( commandName.equalsIgnoreCase("ReadTableFromExcel") ) {
         return new ReadTableFromExcel_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadTableFromFixedFormatFile") ) {
+        return new ReadTableFromFixedFormatFile_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadTimeSeries") ) {
         return new ReadTimeSeries_Command ();

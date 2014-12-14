@@ -58,12 +58,34 @@ throws IOException, Exception
     if ( (readNHour != null) && readNHour.equalsIgnoreCase("StartDateTimePlusInterval") ) {
         readNHourEndDateTime = false;
     }
+    String ConnectTimeout = props.getValue("ConnectTimeout");
+    int connectTimeout = 0;
+    if ( (ConnectTimeout != null) && !ConnectTimeout.equals("") ) {
+        try {
+            connectTimeout = Integer.parseInt(ConnectTimeout);
+        }
+        catch ( Exception e ) {
+            connectTimeout = 0;
+        }
+    }
+    String ReadTimeout = props.getValue("ReadTimeout");
+    int readTimeout = 0;
+    if ( (ReadTimeout != null) && !ReadTimeout.equals("") ) {
+        try {
+            readTimeout = Integer.parseInt(ReadTimeout);
+        }
+        catch ( Exception e ) {
+            readTimeout = 0;
+        }
+    }
     
     // Get the properties and create an instance
     ReclamationHDB_DMI dmi = new ReclamationHDB_DMI ( databaseEngine, databaseServer, databaseName, -1, systemLogin, systemPassword );
     dmi.setKeepAlive ( keepAliveSql, keepAliveFrequency ); // Needed for remote access to keep connection open
     dmi.setTSIDStyleSDI ( tsidStyleSDI );
     dmi.setReadNHourEndDateTime( readNHourEndDateTime );
+    dmi.setLoginTimeout(connectTimeout);
+    dmi.setReadTimeout(readTimeout);
     dmi.open();
     ReclamationHDBDataStore ds = new ReclamationHDBDataStore( name, description, dmi );
     return ds;

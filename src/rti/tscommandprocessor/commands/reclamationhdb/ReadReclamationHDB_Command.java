@@ -1,8 +1,9 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -29,6 +30,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
@@ -176,30 +178,31 @@ throws InvalidCommandParameterException
 	}
 
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "DataType" );
+    List<String> validList = new ArrayList<String>(19+__numFilterGroups);
+    validList.add ( "DataStore" );
+    validList.add ( "Interval" );
+    validList.add ( "DataType" );
     for ( int i = 1; i <= __numFilterGroups; i++ ) { 
-        valid_Vector.add ( "Where" + i );
+        validList.add ( "Where" + i );
     }
-    valid_Vector.add ( "SiteCommonName" );
-    valid_Vector.add ( "DataTypeCommonName" );
-    valid_Vector.add ( "SiteDataTypeID" );
-    valid_Vector.add ( "ModelName" );
-    valid_Vector.add ( "ModelRunName" );
-    valid_Vector.add ( "HydrologicIndicator" );
-    valid_Vector.add ( "ModelRunDate" );
-    valid_Vector.add ( "ModelRunID" );
-    valid_Vector.add ( "EnsembleName" );
+    validList.add ( "SiteCommonName" );
+    validList.add ( "DataTypeCommonName" );
+    validList.add ( "SiteDataTypeID" );
+    validList.add ( "ModelName" );
+    validList.add ( "ModelRunName" );
+    validList.add ( "HydrologicIndicator" );
+    validList.add ( "ModelRunDate" );
+    validList.add ( "ModelRunID" );
+    validList.add ( "EnsembleName" );
     //valid_Vector.add ( "EnsembleTraceID" );
-    valid_Vector.add ( "EnsembleModelName" );
-    valid_Vector.add ( "EnsembleModelRunDate" );
-    valid_Vector.add ( "EnsembleModelRunID" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "Alias" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    validList.add ( "EnsembleModelName" );
+    validList.add ( "EnsembleModelRunDate" );
+    validList.add ( "EnsembleModelRunID" );
+    validList.add ( "Properties" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "Alias" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -364,7 +367,24 @@ CommandWarningException, CommandException
         ensembleModelRunID = Integer.parseInt(EnsembleModelRunID);
     }
     String Alias = parameters.getValue("Alias");
-    
+    String Properties = parameters.getValue ( "Properties" );
+    Hashtable properties = null;
+    if ( (Properties != null) && (Properties.length() > 0) && (Properties.indexOf(":") > 0) ) {
+        properties = new Hashtable();
+        // First break map pairs by comma
+        List<String> pairs = new ArrayList<String>();
+        if ( Properties.indexOf(",") > 0 ) {
+            pairs = StringUtil.breakStringList(Properties, ",", 0 );
+        }
+        else {
+            pairs.add(Properties);
+        }
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            properties.put(parts[0].trim(), parts[1].trim() );
+        }
+    }    
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {
@@ -805,6 +825,18 @@ CommandWarningException, CommandException
 
         if ( commandPhase == CommandPhaseType.RUN ) {
             if ( tslist != null ) {
+                for ( TS ts: tslist ) {
+                    if ( properties != null ) {
+                        // Assign properties
+                        Enumeration keys = properties.keys();
+                        String key = null;
+                        while ( keys.hasMoreElements() ) {
+                            key = (String)keys.nextElement();
+                            ts.setProperty( key, TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+                                processor, ts, (String)properties.get(key), status, CommandPhaseType.RUN) );
+                        }
+                    }
+                }
                 // Further process the time series...
                 // This makes sure the period is at least as long as the output period...
 
@@ -1021,6 +1053,13 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "EnsembleModelRunID=\"" + EnsembleModelRunID + "\"" );
+    }
+    String Properties = props.getValue("Properties");
+    if ( (Properties != null) && (Properties.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Properties=\"" + Properties + "\"" );
     }
 	String InputStart = props.getValue("InputStart");
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {

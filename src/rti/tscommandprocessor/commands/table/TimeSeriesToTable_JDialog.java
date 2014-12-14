@@ -525,7 +525,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
 	__IfTableNotFound_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __IfTableNotFound_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - action if table not found (default=" + __command._Warn + "."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - action if table not found (default=" + __command._Warn + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

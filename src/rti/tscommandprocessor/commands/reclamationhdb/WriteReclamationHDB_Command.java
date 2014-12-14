@@ -728,14 +728,15 @@ CommandWarningException, CommandException
                     // being generated
                     String ensembleName = EnsembleName;
                     if ( (NewEnsembleName != null) && !NewEnsembleName.equals("") ) {
-                        ensembleName = NewEnsembleName;
+                        ensembleName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, NewEnsembleName, status, CommandPhaseType.RUN);
                     }
                     // Run date can be one that was selected or a new date
                     DateTime modelRunDate = ensembleModelRunDate;
                     if ( (NewEnsembleModelRunDate != null) && !NewEnsembleModelRunDate.equals("") ) {
                         // First try to expand using properties
                         String date = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                                processor, ts, NewEnsembleModelRunDate, status, CommandPhaseType.RUN);
+                            processor, ts, NewEnsembleModelRunDate, status, CommandPhaseType.RUN);
                         try {
                             // Now parse into date/time to minute precision
                             // TODO SAM 2013-09-26 Can't pass precision in parse method for some reason
@@ -759,6 +760,13 @@ CommandWarningException, CommandException
                     }
                     else {
                         // Get from the procedure
+                        int agenID = -1;
+                        if ( (Agency != null) && !Agency.equals("") ) {
+                            ReclamationHDB_Agency a = dmi.lookupAgency(dmi.getAgencyList(), Agency);
+                            if ( a != null ) {
+                                agenID = a.getAgenID();
+                            }
+                        }
                         try {
                             Message.printStatus(2, routine, "Calling procedure GET_TSTOOL_ENSEMBLE_MRI using ensemble name=\"" +
                                 ensembleName + "\" trace number=" + traceNumber + " model name=\"" + EnsembleModelName +
@@ -767,7 +775,8 @@ CommandWarningException, CommandException
                                 ensembleName, // Must be specified
                                 traceNumber, // Determined at runtime and checked above
                                 EnsembleModelName, // Must be specified
-                                modelRunDate ); // Can be an existing run date, a new one, or nothing (not used)
+                                modelRunDate, // Can be an existing run date, a new one, or nothing (not used)
+                                agenID ); // -1 if Agency parameter is blank
                             Message.printStatus(2,routine,"Got model run ID=" + modelRunID );
                         }
                         catch ( Exception e ) {

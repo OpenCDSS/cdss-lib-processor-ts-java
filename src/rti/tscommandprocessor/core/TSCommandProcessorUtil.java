@@ -367,6 +367,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
     }
     // First expand using the % characters...
     String s2 = ts.formatLegend ( s );
+    // TODO SAM 2014-04-05 Remove the ${ts:Property} handling from this method since it is now in TS.formatLegend()
     //Message.printStatus(2, routine, "After formatLegend(), string is \"" + s2 + "\"" );
     // Now replace ${ts:Property} and ${Property} strings with properties from the processor
     // Put the most specific first so it is matched first

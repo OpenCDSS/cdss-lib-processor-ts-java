@@ -151,13 +151,13 @@ public double getElev()
 
 /**
 Get the preferred station ID for use in time series identifiers.  This includes the station ID type as a
-"domain:" prefix.  The preferred identifier may at some point be based on a numbered order of agencies.
+location type prefix.  The preferred identifier may at some point be based on a numbered order of agencies.
 Always return the ACIS identifier as the final option (in this case it may be indicative of ACIS adding station types
 and this code not knowing about it).
-@param prefixDomain if true, prefix the returned string (if not empty) with the station ID type (e.g., "ACIS:").
+@param prefixLocationType if true, prefix the returned string (if not empty) with the location type (e.g., "ACIS:").
 @return the preferred ID, or a blank string if no ID is determined.
 */
-public String getIDPreferred ( boolean prefixDomain )
+public String getIDPreferred ( boolean prefixLocationType )
 {   // TODO SAM 2011-01-08 This preferred order could be specified in a configuration file, but need to
     // be careful because don't want user experience to be too varied.
     // List order from Bill Noon (2011-01-13).
@@ -166,7 +166,7 @@ public String getIDPreferred ( boolean prefixDomain )
     for ( int i = 0; i < preferredIDOrder.length; i++ ) {
         String id = getIDSpecific(preferredIDOrder[i]);
         if ( !id.equals("") ) {
-            if ( prefixDomain ) {
+            if ( prefixLocationType ) {
                 return preferredIDOrder[i] + ":" + id;
             }
             else {

@@ -15,6 +15,7 @@ import java.awt.event.WindowListener;
 
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -38,6 +39,9 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTime_JPanel;
+import RTi.Util.Time.TimeInterval;
 
 /**
 Editor dialog for the SetFromTS() command.
@@ -51,6 +55,9 @@ private SimpleJButton __ok_JButton = null;
 private SetFromTS_Command __command = null;
 private JTextField __SetStart_JTextField;
 private JTextField __SetEnd_JTextField;
+private JCheckBox __SetWindow_JCheckBox = null;
+private DateTime_JPanel __SetWindowStart_JPanel = null;
+private DateTime_JPanel __SetWindowEnd_JPanel = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -97,6 +104,10 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+    else {
+        checkGUIState();
+        refresh ();
+    }
 }
 
 /**
@@ -142,6 +153,15 @@ private void checkGUIState ()
     else {
         __IndependentEnsembleID_JComboBox.setEnabled(false);
         __IndependentEnsembleID_JLabel.setEnabled ( false );
+    }
+    if ( __SetWindow_JCheckBox.isSelected() ) {
+        // Checked so enable the date panels
+        __SetWindowStart_JPanel.setEnabled ( true );
+        __SetWindowEnd_JPanel.setEnabled ( true );
+    }
+    else {
+        __SetWindowStart_JPanel.setEnabled ( false );
+        __SetWindowEnd_JPanel.setEnabled ( false );
     }
 }
 
@@ -201,6 +221,16 @@ private void checkInput ()
     if ( RecalcLimits.length() > 0 ) {
         props.set( "RecalcLimits", RecalcLimits );
     }
+    if ( __SetWindow_JCheckBox.isSelected() ){
+        String SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
+        String SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
+        if ( SetWindowStart.length() > 0 ) {
+            props.set ( "SetWindowStart", SetWindowStart );
+        }
+        if ( SetWindowEnd.length() > 0 ) {
+            props.set ( "SetWindowEnd", SetWindowEnd );
+        }
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -240,23 +270,13 @@ private void commitEdits ()
     __command.setCommandParameter ( "HandleMissingHow", HandleMissingHow );
     __command.setCommandParameter ( "SetDataFlags", SetDataFlags );
     __command.setCommandParameter ( "RecalcLimits", RecalcLimits );
+    if ( __SetWindow_JCheckBox.isSelected() ){
+        String SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
+        String SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
+        __command.setCommandParameter ( "SetWindowStart", SetWindowStart );
+        __command.setCommandParameter ( "SetWindowEnd", SetWindowEnd );
+    }
 }
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{   __TSID_JComboBox = null;
-    __cancel_JButton = null;
-    __command_JTextArea = null;
-    __command = null;
-    __ok_JButton = null;
-    __HandleMissingHow_JComboBox = null;
-    __RecalcLimits_JComboBox = null;
-    super.finalize ();
-}
-
 
 /**
 Instantiates the GUI components.
@@ -355,6 +375,29 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - set end (default is full period)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    __SetWindow_JCheckBox = new JCheckBox ( "Set window:", false );
+    __SetWindow_JCheckBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SetWindow_JCheckBox, 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JPanel setWindow_JPanel = new JPanel();
+    setWindow_JPanel.setLayout(new GridBagLayout());
+    __SetWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.HOUR, null );
+    __SetWindowStart_JPanel.addActionListener(this);
+    __SetWindowStart_JPanel.addKeyListener ( this );
+    JGUIUtil.addComponent(setWindow_JPanel, __SetWindowStart_JPanel,
+        1, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval
+    __SetWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.HOUR, null );
+    __SetWindowEnd_JPanel.addActionListener(this);
+    __SetWindowEnd_JPanel.addKeyListener ( this );
+    JGUIUtil.addComponent(setWindow_JPanel, __SetWindowEnd_JPanel,
+        4, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, setWindow_JPanel,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - window within output year to set data (default=full year)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transfer data how:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -497,6 +540,8 @@ private void refresh ()
     String TransferHow = "";
     String SetStart = "";
     String SetEnd = "";
+    String SetWindowStart = "";
+    String SetWindowEnd = "";
     String HandleMissingHow = "";
     String SetDataFlags = "";
     String RecalcLimits = "";
@@ -512,6 +557,8 @@ private void refresh ()
         IndependentEnsembleID = props.getValue ( "IndependentEnsembleID" );
         SetStart = props.getValue ( "SetStart" );
         SetEnd = props.getValue ( "SetEnd" );
+        SetWindowStart = props.getValue ( "SetWindowStart" );
+        SetWindowEnd = props.getValue ( "SetWindowEnd" );
         TransferHow = props.getValue ( "TransferHow" );
         HandleMissingHow = props.getValue ( "HandleMissingHow" );
         SetDataFlags = props.getValue ( "SetDataFlags" );
@@ -612,6 +659,37 @@ private void refresh ()
         if ( SetEnd != null ) {
 			__SetEnd_JTextField.setText ( SetEnd );
 		}
+        if ( (SetWindowStart != null) && (SetWindowStart.length() > 0) ) {
+            try {
+                // Add year because it is not part of the parameter value...
+                DateTime SetWindowStart_DateTime = DateTime.parse ( "0000-" + SetWindowStart );
+                Message.printStatus(2, routine, "Setting window start to " + SetWindowStart_DateTime );
+                __SetWindowStart_JPanel.setDateTime ( SetWindowStart_DateTime );
+            }
+            catch ( Exception e ) {
+                Message.printWarning( 1, routine, "SetWindowStart (" + SetWindowStart +
+                        ") is not a valid date/time." );
+            }
+        }
+        if ( (SetWindowEnd != null) && (SetWindowEnd.length() > 0) ) {
+            try {
+                // Add year because it is not part of the parameter value...
+                DateTime SetWindowEnd_DateTime = DateTime.parse ( "0000-" + SetWindowEnd );
+                Message.printStatus(2, routine, "Setting window end to " + SetWindowEnd_DateTime );
+                __SetWindowEnd_JPanel.setDateTime ( SetWindowEnd_DateTime );
+            }
+            catch ( Exception e ) {
+                Message.printWarning( 1, routine, "SetWindowEnd (" + SetWindowEnd +
+                        ") is not a valid date/time." );
+            }
+        }
+        if ( (SetWindowStart != null) && (SetWindowStart.length() != 0) &&
+                (SetWindowEnd != null) && (SetWindowEnd.length() != 0)) {
+            __SetWindow_JCheckBox.setSelected ( true );
+        }
+        else {
+            __SetWindow_JCheckBox.setSelected ( false );
+        }
         if ( TransferHow == null ) {
             // Select default...
             __TransferHow_JComboBox.select ( 0 );
@@ -703,6 +781,12 @@ private void refresh ()
     props.add ( "HandleMissingHow=" + HandleMissingHow );
     props.add ( "SetDataFlags=" + SetDataFlags );
     props.add ( "RecalcLimits=" + RecalcLimits);
+    if ( __SetWindow_JCheckBox.isSelected() ) {
+        SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
+        SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
+        props.add ( "SetWindowStart=" + SetWindowStart );
+        props.add ( "SetWindowEnd=" + SetWindowEnd );
+    }
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

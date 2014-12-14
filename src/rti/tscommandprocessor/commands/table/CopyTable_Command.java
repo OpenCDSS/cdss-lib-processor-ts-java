@@ -91,13 +91,14 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(6);
+	List<String> validList = new ArrayList<String>(7);
     validList.add ( "TableID" );
     validList.add ( "NewTableID" );
     validList.add ( "DistinctColumns" );
     validList.add ( "IncludeColumns" );
     validList.add ( "ColumnMap" );
     validList.add ( "ColumnFilters" );
+    validList.add ( "RowCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -183,6 +184,7 @@ throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = getClass().getName() + ".runCommandInternal",message = "";
 	int warning_level = 2;
+	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
@@ -237,6 +239,7 @@ CommandWarningException, CommandException
             columnFilters.put(parts[0].trim(), parts[1].trim() );
         }
     }
+    String RowCountProperty = parameters.getValue ( "RowCountProperty" );
     
     // Get the table to process.
 
@@ -283,9 +286,10 @@ CommandWarningException, CommandException
 
 	try {
     	// Create the table...
-    
+
+	    DataTable newTable = null;
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	        DataTable newTable = table.createCopy ( table, NewTableID, includeColumns,
+	        newTable = table.createCopy ( table, NewTableID, includeColumns,
 	            distinctColumns, columnMap, columnFilters );
             
             // Set the table in the processor...
@@ -307,14 +311,36 @@ CommandWarningException, CommandException
         }
         else if ( command_phase == CommandPhaseType.DISCOVERY ) {
             // Create an empty table and set the ID
-            table = new DataTable();
-            table.setTableID ( NewTableID );
-            setDiscoveryTable ( table );
+            newTable = new DataTable();
+            newTable.setTableID ( NewTableID );
+            setDiscoveryTable ( newTable );
+        }
+	    // Set the property indicating the number of rows in the table
+        if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
+            int rowCount = 0;
+            if ( newTable != null ) {
+                rowCount = newTable.getNumberOfRecords();
+            }
+            PropList request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", RowCountProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
         }
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Unexpected error creating new table (" + e + ").";
+		message = "Unexpected error copying table (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
         status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
@@ -352,6 +378,7 @@ public String toString ( PropList props )
 	String IncludeColumns = props.getValue( "IncludeColumns" );
 	String ColumnMap = props.getValue( "ColumnMap" );
 	String ColumnFilters = props.getValue( "ColumnFilters" );
+	String RowCountProperty = props.getValue( "RowCountProperty" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -388,6 +415,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ColumnFilters=\"" + ColumnFilters + "\"" );
+    }
+    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

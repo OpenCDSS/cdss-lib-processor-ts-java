@@ -620,7 +620,7 @@ throws IOException, MalformedURLException
 /**
 Read a time series.  Only one element type is read.
 @param tsidentString the time series identifier string as per TSTool conventions.  The location should be
-Type:ID (e.g., COOP:1234).  The data type should be the variable name (might implement abbreviation later but
+LocationType:ID (e.g., COOP:1234).  The data type should be the variable name (might implement abbreviation later but
 trying to stay away from opaque variable major).
 @param readStart the starting date/time to read, or null to read all data.
 @param readEnd the ending date/time to read, or null to read all data.
@@ -821,11 +821,12 @@ throws MalformedURLException, Exception
                 ts.setProperty("elev", new Double(meta.getElev()) );
                 double [] ll = meta.getLl();
                 if ( (ll != null) && (ll.length == 2) ) {
-                    ts.setProperty("latitude", new Double(ll[0]) );
-                    ts.setProperty("longitude", new Double(ll[1]) );
+                    ts.setProperty("longitude", new Double(ll[0]) );
+                    ts.setProperty("latitude", new Double(ll[1]) );
                 }
                 String [] sids = meta.getSids();
                 if ( sids != null ) {
+                    // Set each identifier for the different station types
                     for ( int i = 0; i < sids.length; i++ ) {
                         // Each string is "ID type"
                         String [] parts = sids[i].split(" ");
@@ -838,6 +839,8 @@ throws MalformedURLException, Exception
                         }
                     }
                 }
+                // Also set the preferred identifier with location type so it can be used to read the time series
+                ts.setProperty("IDWithLocType", meta.getIDPreferred(true));
                 // Valid dates will only have two dates since one element was requested
                 String [][] validDates = meta.getValid_daterange();
                 if ( validDates.length > 0 ) {

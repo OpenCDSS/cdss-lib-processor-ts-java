@@ -5,8 +5,8 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
@@ -110,8 +110,8 @@ throws InvalidCommandParameterException
                 message, "Specify the constant value as a number." ) );
 	}
     if ( MonthValues.length() > 0 ) {
-    	List<String> v = StringUtil.breakStringList ( MonthValues,",", 0 );
-        if ( (v == null) || (v.size() != 12) ) {
+    	String [] v = MonthValues.split(",");
+        if ( (v == null) || (v.length != 12) ) {
             message = "12 monthly values must be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -119,15 +119,14 @@ throws InvalidCommandParameterException
                     message, "Specify 12 monthly values separated by commas." ) );
         }
         else {
-            String val;
             for ( int i = 0; i < 12; i++ ) {
-                val = v.get(i).trim();
-                if ( !StringUtil.isDouble(val) ) {
-                    message = "Monthly value \"" + val + "\" is not a number.";
+                String val = v[i].trim();
+                if ( !val.equals("*") && !StringUtil.isDouble(val) && !val.equals("") ) {
+                    message = "Monthly value \"" + val + "\" is not a number, *, or blank.";
                     warning += "\n" + message;
                     status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                             message, "Specify 12 monthly values separated by commas." ) );
+                             message, "Specify 12 monthly values (number, *, or blank) separated by commas." ) );
                 }
             }
         }
@@ -179,16 +178,16 @@ throws InvalidCommandParameterException
     */
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "ConstantValue" );
-    valid_Vector.add ( "MonthValues" );
-    valid_Vector.add ( "SetStart" );
-    valid_Vector.add ( "SetEnd" );
+	List<String> validList = new ArrayList<String>(7);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "ConstantValue" );
+    validList.add ( "MonthValues" );
+    validList.add ( "SetStart" );
+    validList.add ( "SetEnd" );
     //valid_Vector.add ( "FillFlag" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -418,16 +417,6 @@ CommandWarningException, CommandException
 	}
     
     String MonthValues = parameters.getValue("MonthValues");
-    double [] MonthValues_double = null;
-    if ( (MonthValues != null) && (MonthValues.length() > 0) ) {
-        MonthValues_double = new double[12];
-        List<String> v = StringUtil.breakStringList ( MonthValues,",", 0 );
-        String val;
-        for ( int i = 0; i < 12; i++ ) {
-            val = v.get(i).trim();
-            MonthValues_double[i] = Double.parseDouble ( val );
-        }
-    }
 
 	// Set period...
 
@@ -594,15 +583,36 @@ CommandWarningException, CommandException
 		
 		// Do the setting...
 		try {
-            if ( MonthValues_double == null ) {
+		    // Monthly values may use missing value so figure out values here
+		    Double [] monthValues = null;
+		    if ( (MonthValues != null) && (MonthValues.length() > 0) ) {
+		        monthValues = new Double[12];
+		        String [] v = MonthValues.split(",");
+		        String val;
+		        for ( int i = 0; i < 12; i++ ) {
+		            val = v[i].trim();
+		            if ( val.equals("*") ) {
+		                monthValues[i] = null;
+		            }
+		            else if ( val.equals("") || val.equalsIgnoreCase("NaN") ) {
+		                // Set the monthly value to missing
+		                monthValues[i] = ts.getMissing();
+		            }
+		            else {
+		                // Have a number to set
+		                monthValues[i] = Double.parseDouble ( val );
+		            }
+		        }
+		    }
+            if ( monthValues == null ) {
                 Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" with constant " + ConstantValue +
                     " for period " + SetStart_DateTime + " to " + SetEnd_DateTime );
                 TSUtil.setConstant ( ts, SetStart_DateTime, SetEnd_DateTime, ConstantValue_double );
             }
             else {
                 Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" with monthly constants " +
-                    MonthValues_double + " for period " + SetStart_DateTime + " to " + SetEnd_DateTime );
-                TSUtil.setConstantByMonth ( ts, SetStart_DateTime, SetEnd_DateTime, MonthValues_double );
+                    monthValues + " for period " + SetStart_DateTime + " to " + SetEnd_DateTime );
+                TSUtil.setConstantByMonth ( ts, SetStart_DateTime, SetEnd_DateTime, monthValues );
             }
 		}
 		catch ( Exception e ) {

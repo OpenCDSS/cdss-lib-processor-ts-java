@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -34,6 +35,13 @@ This class initializes, checks, and runs the SelectTimeSeries() command.
 */
 public class SelectTimeSeries_Command extends AbstractCommand implements Command
 {
+
+/**
+Values for IfNotFound parameter.
+*/
+protected final String _Ignore = "Ignore";
+protected final String _Fail = "Fail";
+protected final String _Warn = "Warn";
     
 /**
 Values for DeselectAllFirst.
@@ -69,6 +77,7 @@ throws InvalidCommandParameterException
     //String TSID = parameters.getValue ( "TSID" );
     String TSPosition = parameters.getValue ( "TSPosition" );
 	String DeselectAllFirst = parameters.getValue ( "DeselectAllFirst" );
+	String IfNotFound = parameters.getValue("IfNotFound");
     String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyCriterion = parameters.getValue ( "PropertyCriterion" );
     String PropertyValue = parameters.getValue ( "PropertyValue" );
@@ -139,6 +148,16 @@ throws InvalidCommandParameterException
                         message, "Specify as " + _False + " or " + _True + "." ) );
 	}
 	
+    if ( (IfNotFound != null) && !IfNotFound.equals("") && !IfNotFound.equalsIgnoreCase(_Ignore) &&
+        !IfNotFound.equalsIgnoreCase(_Fail) && !IfNotFound.equalsIgnoreCase(_Warn) ) {
+        message = "Invalid IfNotFound flag \"" + IfNotFound + "\".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the IfNotFound as " + _Ignore + ", " +
+                _Warn + ", or " + _Fail + " (default)." ) );                    
+    }
+	
     if ( (PropertyName != null) && !PropertyName.equals("") ) {
         // Check for allowed characters...
         if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
@@ -203,21 +222,22 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "TSPosition" );
-    valid_Vector.add ( "DeselectAllFirst" );
-    valid_Vector.add ( "PropertyName" );
-    valid_Vector.add ( "PropertyCriterion" );
-    valid_Vector.add ( "PropertyValue" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(10);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "TSPosition" );
+    validList.add ( "DeselectAllFirst" );
+    validList.add ( "IfNotFound" );
+    validList.add ( "SelectCountProperty" );
+    validList.add ( "PropertyName" );
+    validList.add ( "PropertyCriterion" );
+    validList.add ( "PropertyValue" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -227,8 +247,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -239,11 +258,8 @@ public boolean editCommand ( JFrame parent )
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
@@ -273,11 +289,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -286,7 +300,7 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;  // Level for non-use messages for log file.
+	int log_level = 3; // Level for non-user messages for log file.
 
 	// Make sure there are time series available to operate on...
     
@@ -308,6 +322,11 @@ CommandWarningException, CommandException
 	if ( (DeselectAllFirst != null) && DeselectAllFirst.equalsIgnoreCase("true") ) {
 	    DeselectAllFirst_boolean = true;
 	}
+    String IfNotFound = parameters.getValue("IfNotFound");
+    if ( (IfNotFound == null) || IfNotFound.equals("")) {
+        IfNotFound = _Fail; // default
+    }
+	String SelectCountProperty = parameters.getValue ( "SelectCountProperty" );
     String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyCriterion = parameters.getValue ( "PropertyCriterion" );
     // TODO SAM 2010-09-21 Need to enable numeric property checks
@@ -379,22 +398,28 @@ CommandWarningException, CommandException
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message,
-                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE, message,
+                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
         tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-			Message.printWarning ( log_level,
-					MessageUtil.formatMessageTag(
-							command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message,
-                            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+			if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+	             Message.printWarning ( log_level,
+                     MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                 status.addToLog ( CommandPhaseType.RUN,
+                     new CommandLogRecord(CommandStatusType.WARNING, message,
+                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+			}
+			else if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+    			Message.printWarning ( log_level,
+    				MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE, message,
+                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+			}
 		}
 	}
 	
@@ -402,13 +427,22 @@ CommandWarningException, CommandException
 	if ( nts == 0 ) {
 		message = "Unable to find time series to select using TSList=\"" + TSList + "\" TSID=\"" + TSID +
             "\", EnsembleID=\"" + EnsembleID + "\".";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message,
-                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+		if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+		    Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag(
+	            command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.WARNING, message,
+	                    "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+		}
+		else if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+    		Message.printWarning ( warning_level,
+    		MessageUtil.formatMessageTag(
+    		command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                    "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+		}
 	}
 
 	if ( warning_count > 0 ) {
@@ -420,10 +454,11 @@ CommandWarningException, CommandException
 		throw new CommandException ( message );
 	}
 
-	// Now process the time series...
+	// Now process the time series returned for the initial selection (nts could be zero if ignoring no match)...
 
 	TS ts = null;
 	Object o_ts = null;
+    int selectCount = 0;
 	for ( int its = 0; its < nts; its++ ) {
 		// The the time series to process, from the list that was returned above.
 		o_ts = tslist.get(its);
@@ -443,7 +478,7 @@ CommandWarningException, CommandException
 		
 		try {
 		    boolean selected = false;
-		    // Further filter based on the property
+		    // Further filter based on the property (property selection is additive to above selection)
 		    if ( (PropertyName != null) && !PropertyName.equals("") ) {
 		        // Have a property to check
 		        Object property = ts.getProperty(PropertyName);
@@ -460,7 +495,7 @@ CommandWarningException, CommandException
 		        }
 		    }
 		    else {
-		        // Previous criteria were used to filter to matching time series
+		        // TSList criteria were used to filter to matching time series
 		        Message.printStatus ( 2, routine, "Selecting \"" + ts.getIdentifier() +
 		            "\" based on TSList parameter." );
 		        selected = true;
@@ -479,6 +514,51 @@ CommandWarningException, CommandException
                     message, "See the log file for details - report the problem to software support." ) );
 		}
 	}
+	
+    // Set the SelectCountProperty
+    if ( (SelectCountProperty != null) && !SelectCountProperty.equals("") ) {
+        Object o = null;
+        try {
+            o = processor.getPropContents("TSResultsList");
+        }
+        catch ( Exception e ) {
+            message = "Error requesting Property=\"TSResultsList\" from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+        }
+        if ( o != null ) {
+            List<TS> allTS = (List<TS>)o;
+            for ( TS ats: allTS ) {
+                if ( (ats != null) && ats.isSelected() ) {
+                    ++selectCount;
+                }
+            }
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", SelectCountProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(selectCount) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+                // TODO SAM 2013-12-07 Evaluate whether this should be done in discovery mode
+                // Set the 
+                //if ( command_phase == CommandPhaseType.DISCOVERY ) {
+                //    setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+                //}
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + SelectCountProperty + "\") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -503,6 +583,8 @@ public String toString ( PropList props )
     String EnsembleID = props.getValue( "EnsembleID" );
 	String TSPosition = props.getValue("TSPosition");
 	String DeselectAllFirst = props.getValue("DeselectAllFirst");
+	String IfNotFound = props.getValue ( "IfNotFound" );
+	String SelectCountProperty = props.getValue("SelectCountProperty");
     String PropertyName = props.getValue( "PropertyName" );
     String PropertyCriterion = props.getValue( "PropertyCriterion" );
     String PropertyValue = props.getValue( "PropertyValue" );
@@ -537,6 +619,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "DeselectAllFirst=" + DeselectAllFirst );
 	}
+    if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("IfNotFound=" + IfNotFound );
+    }
+    if ( (SelectCountProperty != null) && (SelectCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SelectCountProperty=\"" + SelectCountProperty + "\"");
+    }
     if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

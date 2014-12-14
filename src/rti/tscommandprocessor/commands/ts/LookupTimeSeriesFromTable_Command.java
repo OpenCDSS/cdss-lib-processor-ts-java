@@ -43,18 +43,12 @@ import RTi.Util.Time.DateTimeRange;
 import RTi.Util.Time.TimeInterval;
 
 /**
-This class initializes, checks, and runs the Copy() command.
+This class initializes, checks, and runs the LookupTimeSeriesFromTable() command.
 */
 public class LookupTimeSeriesFromTable_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider
 {
     
-/**
-Values for Copy* parameters.
-*/
-protected final String _False = "False";
-protected final String _True = "True";
-
 /**
 Values for OutOfRangeNotification parameter.
 */
@@ -115,7 +109,7 @@ throws InvalidCommandParameterException
                 "Provide a time series alias when defining the command."));
 	}
 	if ( (TSID == null) || TSID.equals("") ) {
-        message = "The time series identifier for the time series to copy must be specified.";
+        message = "The time series identifier for the input time series must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(
@@ -370,154 +364,6 @@ public List getObjectList ( Class c )
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
-@param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "copy_Command.parseCommand", message;
-	
-    if ( !command.trim().toUpperCase().startsWith("TS") ) {
-        // New style syntax using simple parameter=value notation
-        super.parseCommand(command);
-    }
-    else {
-    	// Get the part of the command after the TS Alias =...
-    	int pos = command.indexOf ( "=" );
-    	if ( pos < 0 ) {
-    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Copy(...)";
-    		Message.printWarning ( warning_level, routine, message);
-    		throw new InvalidCommandSyntaxException ( message );
-    	}
-    	String token0 = command.substring ( 0, pos ).trim();
-    	String token1 = command.substring ( pos + 1 ).trim();
-    	if ( (token0 == null) || (token1 == null) ) {
-    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Copy(...)";
-    		Message.printWarning ( warning_level, routine, message);
-    		throw new InvalidCommandSyntaxException ( message );
-    	}
-        // Alias is everything after "TS " (can include space in alias name)
-        String Alias = token0.trim().substring(3).trim();
-        String TSID = null;
-    	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
-    		// No parameters have = in them...
-    		// TODO SAM 2005-08-25 This whole block of code needs to be
-    		// removed as soon as commands have been migrated to the new syntax.
-    		//
-    		// Old syntax without named parameters.
-    
-    		List<String> v = StringUtil.breakStringList ( token1,"(),",	StringUtil.DELIM_SKIP_BLANKS );
-    		if ( v == null ) {
-    			message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = copy(TSID)";
-    			Message.printWarning ( warning_level, routine, message);
-    			throw new InvalidCommandSyntaxException ( message );
-    		}
-            // TSID is the only parameter
-            TSID = v.get(1);
-    	}
-    	else {
-            // Current syntax...
-            super.parseCommand( token1 );
-    	}
-        
-        // Set parameters and new defaults...
-    
-        PropList parameters = getCommandParameters();
-        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-        if ( Alias.length() > 0 ) {
-            parameters.set ( "Alias", Alias );
-        }
-        // Reset using above information
-        if ( (TSID != null) && (TSID.length() > 0) ) {
-            parameters.set ( "TSID", TSID );
-        }
-        // Get from the parameters...
-        TSID = parameters.getValue( "TSID");
-        String NewTSID = parameters.getValue( "NewTSID");
-        if ( (NewTSID == null) || (NewTSID.length() == 0) ) {
-            // NewTSID is not specified.  The requirement that this be specified was added to
-            // avoid confusion between copies and the original.  However, this has caused a lot
-            // of migration issues.  Therefore, if TSID is specified and NewTSID is not, copy it to NewTSID and use
-            // "copy" for the scenario.  This can't be done with aliases because the interval is unknown.
-            if ( (TSID != null) && (TSID.length() > 0) ) {
-                // Try to evaluate whether it is an alias..
-                if ( StringUtil.patternCount(TSID, ".") >= 3 ) {
-                    // Probably not an alias so try to process
-                    try {
-                        TSIdent ident = TSIdent.parseIdentifier ( TSID );
-                        ident.setScenario ( "copy" );
-                        // Set the new identifier
-                        parameters.set ( "NewTSID", ident.toString(false) );
-                    }
-                    catch ( Exception e ) {
-                        // Don't set the NewTSID and force the user to set it when command validation occurs.
-                        message = "Unable to parse the TSID to use for NewTSID.";
-                        Message.printWarning( 3, routine, e);
-                        Message.printWarning ( warning_level, routine, message);
-                        throw new InvalidCommandSyntaxException ( message );
-                    }
-                } 
-            }
-            else {
-                message = "NewTSID cannot be defaulted when the TSID to copy is an alias.";
-                Message.printWarning ( warning_level, routine, message);
-                throw new InvalidCommandSyntaxException ( message );
-            }
-        }
-        else {
-            // Have NewTSID parameter but the interval may be invalid.  Copy from TSID if that is the case.
-            try {
-                TSIdent newident = TSIdent.parseIdentifier ( NewTSID );
-                try {
-                    TimeInterval.parseInterval(newident.getInterval());
-                }
-                catch ( Exception e ) {
-                    // Bad interval in NewTSID so try to use the one from TSID.  First have to parse out TSID
-                    try {
-                        TSIdent ident = TSIdent.parseIdentifier ( TSID );
-                        // Make sure the interval is valid from the original (won't be able to get if Alias).
-                        try {
-                            TimeInterval.parseInterval(ident.getInterval());
-                            newident.setInterval(ident.getInterval());
-                            // Set the new identifier
-                            parameters.set ( "NewTSID", newident.toString(false) );
-                        }
-                        catch ( Exception e3 ) {
-                            message = "Invalid TSID interval \"" + ident.getInterval() +
-                            "\" to fill in default NewTSID interval.";
-                            Message.printWarning( 3, routine, e3);
-                            Message.printWarning ( warning_level, routine, message);
-                            throw new InvalidCommandSyntaxException ( message );
-                        }
-                    }
-                    catch ( Exception e2 ) {
-                        // Not able to parse the TSID so user will need to fix manually.
-                        message = "Unable to parse TSID to fill in the default NewTSID interval.";
-                        Message.printWarning( 3, routine, e2);
-                        Message.printWarning ( warning_level, routine, message);
-                        throw new InvalidCommandSyntaxException ( message );
-                    }
-                }
-            }
-            catch ( Exception e ) {
-                // Don't set the NewTSID and force the user to set it when command validation occurs.
-                message = "Unable to parse NewTSID to check its interval.";
-                Message.printWarning( 3, routine, e);
-                Message.printWarning ( warning_level, routine, message);
-                throw new InvalidCommandSyntaxException ( message );
-            }
-        }
-        parameters.setHowSet ( Prop.SET_UNKNOWN );
-    }
-}
-
-/**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
@@ -554,7 +400,7 @@ command could produce some results).
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "Copy_Command.runCommandInternal", message;
+{	String routine = "LookupTimeSeriesFromTable_Command.runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -806,12 +652,12 @@ CommandWarningException, CommandException
             tsnew.allocateDataSpace();
             // Lookup time series values...
             TSUtil_LookupTimeSeriesFromTable tsu = new TSUtil_LookupTimeSeriesFromTable (
-                ts, tsnew, lookupTable, tableValue1Column,
+                ts, tsnew, lookupTable, tableValue1Column, false,
                 tableValue2Column, effectiveDateColumn, lookupMethodType,
                 outOfRangeLookupMethodType, OutOfRangeNotification,
                 transformation, leZeroLogValue,
-                AnalysisStart_DateTime, AnalysisEnd_DateTime );
-            tsu.lookupTimeSeriesFromTable();
+                AnalysisStart_DateTime, AnalysisEnd_DateTime, null );
+            tsu.lookupTimeSeriesValuesFromTable();
             List<String> problems = tsu.getProblemsWarning();
             for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
                 message = problems.get(iprob);

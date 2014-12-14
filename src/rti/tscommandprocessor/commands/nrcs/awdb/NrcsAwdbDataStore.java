@@ -137,7 +137,16 @@ private String formatDateTime ( DateTime dt, TimeInterval interval, boolean form
     }
     int intervalBase = interval.getBase();
     if ( formatToSecond ) {
-        // TODO SAM 2013-11-25 For now don't handle endPos but 
+        if ( endPos == 1 ) {
+            // Make sure day is set to number of days in month
+            dt = (DateTime)dt.clone();
+            if ( intervalBase == TimeInterval.YEAR ) {
+                dt.setMonth(12);
+            }
+            if ( (intervalBase == TimeInterval.YEAR) || (intervalBase == TimeInterval.MONTH) ) {
+                dt.setDay(TimeUtil.numDaysInMonth(dt));
+            }
+        }
         return dt.toString(DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
     }
     else if ( intervalBase == TimeInterval.YEAR ) {
@@ -388,6 +397,22 @@ public DataTable readForecastTable ( List<String> stationIdList, List<String> st
     // First get the forecast points that correspond to the location information
     List<ForecastPoint> forecastPoints = ws.getForecastPoints(stationIds, stateCds, networkCds,
         forecastPointNames, hucs, forecasters, logicalAnd );
+    if ( (stationIds != null) && (stationIds.size() != forecastPoints.size()) ) {
+        // Did not get data for all the forecast points
+        // Generate warnings for each forecast point that did not have anything returned
+        for ( String stationID : stationIds ) {
+            boolean found = false;
+            for ( ForecastPoint fp : forecastPoints ) {
+                if ( stationID.equalsIgnoreCase(fp.getStationTriplet().split(":")[0])) {
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found ) {
+                Message.printWarning(3, routine, "Did not find forecast point for station \"" + stationID + "\"" );
+            }
+        } 
+    }
     String [] tripletParts;
     int row = -1;
     String beginPublicationDate = null, endPublicationDate = null;
@@ -665,6 +690,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
         // Try getting reservoir metadata, which is in addition to station metadata and will be set below
         reservoirMetaDataList = ws.getReservoirMetadataMultiple(stationTriplets);
     }
+    StringBuilder errorText = new StringBuilder();
     TS ts;
     String tsid;
     String stationTriplet;
@@ -925,6 +951,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
             }
             catch ( Exception e ) {
                 Message.printWarning(3,routine,e);
+                errorText.append ( "\n" + e );
                 continue;
             }
             if ( readData ) {
@@ -983,8 +1010,9 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                 }
                                 catch ( Exception e ) {
                                     // Should not happen
-                                    Message.printWarning(3, routine, "Error parsing date/time \"" + dtString +
-                                        "\" - skipping data value." );
+                                    String message = "Error parsing date/time \"" + dtString + "\" - skipping data value.";
+                                    Message.printWarning(3, routine, message );
+                                    errorText.append ( "\n" + message );
                                     continue;
                                 }
                                 value = values.get(i).getValue();
@@ -1008,8 +1036,10 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                         }
                     }
                     catch ( Exception e ) {
-                        Message.printWarning(3, routine, "Error getting instantaneous data values (" + e + ").");
+                        String message = "Error getting instantaneous data values (" + e + ").";
+                        Message.printWarning(3, routine, message );
                         Message.printWarning(3, routine, e);
+                        errorText.append ( message );
                     }
                 }
                 else if ( interval.getBase() == TimeInterval.HOUR ) {
@@ -1090,8 +1120,10 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                         }
                     }
                     catch ( Exception e ) {
-                        Message.printWarning(3, routine, "Error getting hourly data values (" + e + ").");
+                        String message = "Error getting hourly data values (" + e + ").";
+                        Message.printWarning(3, routine, message );
                         Message.printWarning(3, routine, e);
+                        errorText.append ( message );
                     }
                 }
                 else {
@@ -1113,14 +1145,83 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             List<BigDecimal> values = data.getValues();
                             List<String> flags = data.getFlags();
                             int nValues = values.size();
-                            // If the period was not requested, reset to what was returned here
-                            if ( readStartReq == null ) {
-                                readStart = DateTime.parse(data.getBeginDate());
-                                ts.setDate1(readStart);
+                            boolean nrcsBug = true; // Issue that getData() begin and end dates don't seem to agree with the data
+                            if ( nrcsBug ) {
+                                // Dates returned from web service are wrong. Use what was specified for the read
+                                DateTime dt1 = DateTime.parse(beginDateString);
+                                ts.setDate1(dt1);
+                                DateTime dt2 = DateTime.parse(endDateString);
+                                ts.setDate2(dt2);
                             }
-                            if ( readEndReq == null ) {
-                                readEnd = DateTime.parse(data.getEndDate());
-                                ts.setDate2(readEnd);
+                            else {
+                                // If the period was not requested, reset to what was returned here
+                                if ( readStartReq == null ) {
+                                    readStart = DateTime.parse(data.getBeginDate());
+                                    ts.setDate1(readStart);
+                                }
+                                if ( readEndReq == null ) {
+                                    readEnd = DateTime.parse(data.getEndDate());
+                                    ts.setDate2(readEnd);
+                                }
+                            }
+                            if ( nrcsBug ) {
+                                // FIXME SAM 2013-12-18 Need this check because of web service bug
+                                if ( !beginDateString.equals(data.getBeginDate())) {
+                                    String message = "Requested begin date " + beginDateString +
+                                    " does not match getData() returned begin date string " + data.getBeginDate() +
+                                    " - retrying query using start date of " + data.getBeginDate() + ".";
+                                    Message.printWarning(3,routine,message);
+                                    // FIXME SAM 2013-11-10 There is a disconnect where requesting the longer period from the station
+                                    // data returns that period, but values are relative to shorter non-missing data period in time series
+                                    beginDateString = data.getBeginDate();
+                                    dataList = ws.getData(Arrays.asList(stationTriplet), elementCode, ordinal, heightDepth,
+                                        sel.getDuration(), getFlags, beginDateString, endDateString, alwaysReturnDailyFeb29);
+                                    if ( dataList.size() == 1 ) {
+                                        // Have data values for the requested station triplet and element code
+                                        data = dataList.get(0);
+                                        values = data.getValues();
+                                        flags = data.getFlags();
+                                        nValues = values.size();
+                                        if ( nrcsBug ) {
+                                            // Dates returned from web service are wrong. Use what was specified for the read
+                                            DateTime dt1 = DateTime.parse(beginDateString);
+                                            ts.setDate1(dt1);
+                                            DateTime dt2 = DateTime.parse(endDateString);
+                                            ts.setDate2(dt2);
+                                        }
+                                        else {
+                                            // If the period was not requested, reset to what was returned here
+                                            if ( readStartReq == null ) {
+                                                readStart = DateTime.parse(data.getBeginDate());
+                                                ts.setDate1(readStart);
+                                            }
+                                            if ( readEndReq == null ) {
+                                                readEnd = DateTime.parse(data.getEndDate());
+                                                ts.setDate2(readEnd);
+                                            }
+                                        }
+                                    }
+                                }
+                                // Check it again...
+                                if ( !beginDateString.equals(data.getBeginDate())) {
+                                    String message = "Requested begin date " + beginDateString +
+                                    " does not match getData() returned begin date string " + data.getBeginDate() +
+                                    " - AWDB getData() web service cannot be worked around.";
+                                    Message.printWarning(3,routine,message);
+                                    errorText.append("\n"+ message);
+                                    throw new RuntimeException(message);
+                                }
+                                /* TODO SAM 2014-02-01 this is limiting the software.  If the begin date is OK then
+                                   hopefully things are OK
+                                if ( !endDateString.equals(data.getEndDate())) {
+                                    String message = "Requested end date " + endDateString +
+                                    " does not match getData() returned end date string " + data.getEndDate() +
+                                    " - AWDB getData() web service cannot be worked around.";
+                                    Message.printWarning(3,routine,message);
+                                    errorText.append("\n"+ message);
+                                    throw new RuntimeException(message);
+                                }
+                                */
                             }
                             ts.allocateDataSpace();
                             Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet +
@@ -1159,13 +1260,18 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                         }
                     }
                     catch ( Exception e ) {
-                        Message.printWarning(3, routine, "Error getting data values (" + e + ").");
+                        String message = "Error getting data values (" + e + ").";
+                        Message.printWarning(3, routine, message);
                         Message.printWarning(3, routine, e);
+                        errorText.append("\n"+ message);
                     }
                 }
             }
             tsList.add(ts);
         }
+    }
+    if ( errorText.length() > 0 ) {
+        throw new RuntimeException ( errorText.toString() );
     }
     return tsList;
 }

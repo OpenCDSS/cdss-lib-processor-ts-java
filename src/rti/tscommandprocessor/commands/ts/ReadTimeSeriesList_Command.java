@@ -6,6 +6,9 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TimeSeriesNotFoundException;
 
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -27,6 +30,7 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.TimeInterval;
@@ -181,24 +185,25 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "LocationTypeColumn" );
-    valid_Vector.add ( "LocationType" );
-    valid_Vector.add ( "LocationColumn" );
-    valid_Vector.add ( "DataSourceColumn" );
-    valid_Vector.add ( "DataSource" );
-    valid_Vector.add ( "DataTypeColumn" );
-    valid_Vector.add ( "DataType" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "Scenario" );
-    valid_Vector.add ( "DataStoreColumn" );
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "InputName" );
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "IfNotFound" );
-    valid_Vector.add ( "DefaultUnits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(17);
+    validList.add ( "TableID" );
+    validList.add ( "LocationTypeColumn" );
+    validList.add ( "LocationType" );
+    validList.add ( "LocationColumn" );
+    validList.add ( "DataSourceColumn" );
+    validList.add ( "DataSource" );
+    validList.add ( "DataTypeColumn" );
+    validList.add ( "DataType" );
+    validList.add ( "Interval" );
+    validList.add ( "Scenario" );
+    validList.add ( "DataStoreColumn" );
+    validList.add ( "DataStore" );
+    validList.add ( "InputName" );
+    validList.add ( "Alias" );
+    validList.add ( "Properties" );
+    validList.add ( "IfNotFound" );
+    validList.add ( "DefaultUnits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -341,6 +346,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         InputName = "";
     }
     String Alias = parameters.getValue ( "Alias" );
+    String Properties = parameters.getValue ( "Properties" );
+    Hashtable properties = null;
+    if ( (Properties != null) && (Properties.length() > 0) && (Properties.indexOf(":") > 0) ) {
+        properties = new Hashtable();
+        // First break map pairs by comma
+        List<String> pairs = new ArrayList<String>();
+        if ( Properties.indexOf(",") > 0 ) {
+            pairs = StringUtil.breakStringList(Properties, ",", 0 );
+        }
+        else {
+            pairs.add(Properties);
+        }
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            properties.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
     String IfNotFound = parameters.getValue("IfNotFound");
     if ( (IfNotFound == null) || IfNotFound.equals("")) {
         IfNotFound = _Warn; // default
@@ -624,6 +647,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                     processor, ts, Alias, status, commandPhase);
                                 ts.setAlias ( alias );
                             }
+                            if ( properties != null ) {
+                                // Assign properties
+                                Enumeration keys = properties.keys();
+                                String key = null;
+                                while ( keys.hasMoreElements() ) {
+                                    key = (String)keys.nextElement();
+                                    ts.setProperty( key, TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+                                        processor, ts, (String)properties.get(key), status, CommandPhaseType.RUN) );
+                                }
+                            }
                             tslist.add ( ts );
                             break;
                         }
@@ -723,6 +756,7 @@ public String toString ( PropList props )
     String DataStore = props.getValue ( "DataStore" );
     String InputName = props.getValue ( "InputName" );
     String Alias = props.getValue ( "Alias" );
+    String Properties = props.getValue ( "Properties" );
     String IfNotFound = props.getValue ( "IfNotFound" );
     String DefaultUnits = props.getValue ( "DefaultUnits" );
 
@@ -808,6 +842,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("Alias=\"" + Alias + "\"");
+    }
+    if ((Properties != null) && (Properties.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Properties=\"" + Properties + "\"");
     }
     if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
         if (b.length() > 0) {

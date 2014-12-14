@@ -19,8 +19,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import java.io.File;
 import java.util.List;
@@ -30,6 +33,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -44,7 +48,7 @@ import RTi.Util.Message.Message;
 Command editor dialog for the WriteTimeSeriesToKml() command.
 */
 public class WriteTimeSeriesToKml_JDialog extends JDialog
-implements ActionListener, KeyListener, ItemListener, WindowListener
+implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
 
 private final String __AddWorkingDirectory = "Add Working Directory";
@@ -57,10 +61,22 @@ private SimpleJButton __path_JButton = null;
 private WriteTimeSeriesToKml_Command __command = null;
 private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextField __OutputFile_JTextField = null;
+private JTextField __Name_JTextField = null;
+private JTextArea __Description_JTextArea = null;
 private JTextField __LongitudeProperty_JTextField = null;
 private JTextField __LatitudeProperty_JTextField = null;
 private JTextField __ElevationProperty_JTextField = null;
+private JTextField __WKTGeometryProperty_JTextField = null;
+private JTextArea __GeometryInsert_JTextArea = null;
+private SimpleJButton __styleFileBrowse_JButton = null;
+private SimpleJButton __styleFilePath_JButton = null;
+private TSFormatSpecifiersJPanel __PlacemarkName_JTextField = null;
+private TSFormatSpecifiersJPanel __PlacemarkDescription_JTextField = null;
+private JTextArea __StyleInsert_JTextArea = null;
+private JTextField __StyleFile_JTextField = null;
+private JTextField __StyleUrl_JTextField = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
@@ -70,9 +86,12 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __MissingValue_JTextField = null;// Missing value for output
-private boolean __error_wait = false;   // Is there an error to be cleared up?
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
-private boolean __ok = false;       // Has user pressed OK to close the dialog.
+private boolean __ok = false; // Has user pressed OK to close the dialog.
+
+private final String __ToAbsolute = "To Absolute";
+private final String __ToRelative = "To Relative";
 
 /**
 Dialog constructor.
@@ -146,7 +165,83 @@ public void actionPerformed( ActionEvent event )
         }
         refresh ();
     }
+    else if ( o == __styleFileBrowse_JButton ) {
+        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+        JFileChooser fc = null;
+        if ( last_directory_selected != null ) {
+            fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+        }
+        else {
+            fc = JFileChooserFactory.createJFileChooser( __working_dir );
+        }
+        fc.setDialogTitle("Select Style File to Insert");
+        SimpleFileFilter sff = new SimpleFileFilter("xml", "XML File");
+        fc.addChoosableFileFilter(sff);
+        
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String directory = fc.getSelectedFile().getParent();
+            String filename = fc.getSelectedFile().getName(); 
+            String path = fc.getSelectedFile().getPath(); 
+    
+            if (filename == null || filename.equals("")) {
+                return;
+            }
+    
+            if (path != null) {
+                __StyleFile_JTextField.setText(path );
+                JGUIUtil.setLastFileDialogDirectory(directory );
+                refresh();
+            }
+        }
+    }
+    else if ( o == __styleFilePath_JButton ) {
+        if ( __styleFilePath_JButton.getText().equals(__ToAbsolute) ) {
+            __StyleFile_JTextField.setText (
+            IOUtil.toAbsolutePath(__working_dir, __StyleFile_JTextField.getText() ) );
+        }
+        else if ( __styleFilePath_JButton.getText().equals(__ToRelative) ) {
+            try {
+                __StyleFile_JTextField.setText (
+                IOUtil.toRelativePath ( __working_dir, __StyleFile_JTextField.getText() ) );
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, "WriteTableToKml_JDialog", "Error converting file to relative path." );
+            }
+        }
+        refresh ();
+    }
 }
+
+//Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+// ...End event handlers for DocumentListener
 
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
@@ -182,9 +277,18 @@ private void checkInput ()
 {   // Put together a list of parameters to check...
     PropList parameters = new PropList ( "" );
     String OutputFile = __OutputFile_JTextField.getText().trim();
+    String Name = __Name_JTextField.getText().trim();
+    String Description = __Description_JTextArea.getText().trim();
     String LongitudeProperty = __LongitudeProperty_JTextField.getText().trim();
     String LatitudeProperty = __LatitudeProperty_JTextField.getText().trim();
     String ElevationProperty = __ElevationProperty_JTextField.getText().trim();
+    String WKTGeometryProperty = __WKTGeometryProperty_JTextField.getText().trim();
+    String GeometryInsert = __GeometryInsert_JTextArea.getText().trim();
+    String PlacemarkName = __PlacemarkName_JTextField.getText().trim();
+    String PlacemarkDescription = __PlacemarkDescription_JTextField.getText().trim();
+    String StyleInsert = __StyleInsert_JTextArea.getText().trim();
+    String StyleFile = __StyleFile_JTextField.getText().trim();
+    String StyleUrl = __StyleUrl_JTextField.getText().trim();
     String Precision = __Precision_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
@@ -207,6 +311,12 @@ private void checkInput ()
     if ( OutputFile.length() > 0 ) {
         parameters.set ( "OutputFile", OutputFile );
     }
+    if ( Name.length() > 0 ) {
+        parameters.set ( "Name", Name );
+    }
+    if ( Description.length() > 0 ) {
+        parameters.set ( "Description", Description );
+    }
     if ( LongitudeProperty.length() > 0 ) {
         parameters.set ( "LongitudeProperty", LongitudeProperty );
     }
@@ -215,6 +325,27 @@ private void checkInput ()
     }
     if ( ElevationProperty.length() > 0 ) {
         parameters.set ( "ElevationProperty", ElevationProperty );
+    }
+    if ( WKTGeometryProperty.length() > 0 ) {
+        parameters.set ( "WKTGeometryProperty", WKTGeometryProperty );
+    }
+    if ( GeometryInsert.length() > 0 ) {
+        parameters.set ( "GeometryInsert", GeometryInsert );
+    }
+    if ( PlacemarkName.length() > 0 ) {
+        parameters.set ( "PlacemarkName", PlacemarkName );
+    }
+    if ( PlacemarkDescription.length() > 0 ) {
+        parameters.set ( "PlacemarkDescription", PlacemarkDescription );
+    }
+    if ( StyleInsert.length() > 0 ) {
+        parameters.set ( "StyleInsert", StyleInsert );
+    }
+    if ( StyleFile.length() > 0 ) {
+        parameters.set ( "StyleFile", StyleFile );
+    }
+    if ( StyleUrl.length() > 0 ) {
+        parameters.set ( "StyleUrl", StyleUrl );
     }
     if (Precision.length() > 0) {
         parameters.set("Precision", Precision);
@@ -248,9 +379,18 @@ private void commitEdits ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();  
     String OutputFile = __OutputFile_JTextField.getText().trim();
+    String Name = __Name_JTextField.getText().trim();
+    String Description = __Description_JTextArea.getText().trim();
     String LongitudeProperty = __LongitudeProperty_JTextField.getText().trim();
     String LatitudeProperty = __LatitudeProperty_JTextField.getText().trim();
     String ElevationProperty = __ElevationProperty_JTextField.getText().trim();
+    String WKTGeometryProperty = __WKTGeometryProperty_JTextField.getText().trim();
+    String GeometryInsert = __GeometryInsert_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
+    String PlacemarkName = __PlacemarkName_JTextField.getText().trim();
+    String PlacemarkDescription = __PlacemarkDescription_JTextField.getText().trim();
+    String StyleInsert = __StyleInsert_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
+    String StyleFile = __StyleFile_JTextField.getText().trim();
+    String StyleUrl = __StyleUrl_JTextField.getText().trim();
     String Precision = __Precision_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
@@ -259,32 +399,22 @@ private void commitEdits ()
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "OutputFile", OutputFile );
+    __command.setCommandParameter ( "Name", Name );
+    __command.setCommandParameter ( "Description", Description );
     __command.setCommandParameter ( "LongitudeProperty", LongitudeProperty );
     __command.setCommandParameter ( "LatitudeProperty", LatitudeProperty );
     __command.setCommandParameter ( "ElevationProperty", ElevationProperty );
+    __command.setCommandParameter ( "WKTGeometryProperty", WKTGeometryProperty );
+    __command.setCommandParameter ( "GeometryInsert", GeometryInsert );
+    __command.setCommandParameter ( "PlacemarkName", PlacemarkName );
+    __command.setCommandParameter ( "PlacemarkDescription", PlacemarkDescription );
+    __command.setCommandParameter ( "StyleInsert", StyleInsert );
+    __command.setCommandParameter ( "StyleFile", StyleFile );
+    __command.setCommandParameter ( "StyleUrl", StyleUrl );
     __command.setCommandParameter ( "Precision", Precision );
     __command.setCommandParameter ( "OutputStart", OutputStart );
     __command.setCommandParameter ( "OutputEnd", OutputEnd );
     __command.setCommandParameter ( "MissingValue", MissingValue );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{   __cancel_JButton = null;
-    __command_JTextArea = null;
-    __OutputFile_JTextField = null;
-    __OutputStart_JTextField = null;
-    __OutputEnd_JTextField = null;
-    __TSList_JComboBox = null;
-    __command = null;
-    __ok_JButton = null;
-    __path_JButton = null;
-    __browse_JButton = null;
-    __working_dir = null;
-    super.finalize ();
 }
 
 /**
@@ -306,9 +436,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     getContentPane().add ( "North", main_JPanel );
     int y = -1;
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>THIS COMMAND IS UNDER DEVELOPMENT</b></html>." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Write time series to a KML format file, which can be used for map integration." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -354,71 +481,261 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Longitude property:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    //__main_JTabbedPane.setBorder(
+    //    BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+    //    "Specify SQL" ));
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for general parameters
+    int yGen = -1;
+    JPanel gen_JPanel = new JPanel();
+    gen_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "General", gen_JPanel );
+    
+    JGUIUtil.addComponent(gen_JPanel, new JLabel (
+        "General parameters specify information for main KML elements."),
+        0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Name:" ),
+        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Name_JTextField = new JTextField ( "", 30 );
+    __Name_JTextField.setToolTipText("Name for layer");
+    __Name_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(gen_JPanel, __Name_JTextField,
+        1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - layer name (default=none)."),
+        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(gen_JPanel, new JLabel ("Description:"), 
+        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Description_JTextArea = new JTextArea (3,35);
+    __Description_JTextArea.setLineWrap ( true );
+    __Description_JTextArea.setWrapStyleWord ( true );
+    __Description_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(gen_JPanel, new JScrollPane(__Description_JTextArea),
+        1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - layer description (default=none)."),
+        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for point data in separate columns
+    int yPoint = -1;
+    JPanel point_JPanel = new JPanel();
+    point_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Point Data", point_JPanel );
+    
+    JGUIUtil.addComponent(point_JPanel, new JLabel (
+        "If the time series are associated with a point layer, then spatial information can be specified from time series properties."),
+        0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    //JGUIUtil.addComponent(point_JPanel, new JLabel (
+    //    "Otherwise, specify shape data using parameters in the Geometry Data tab."),
+    //    0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Longitude property:" ),
+        0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LongitudeProperty_JTextField = new JTextField ( "", 20 );
     __LongitudeProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __LongitudeProperty_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - time series property containing longitude."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(point_JPanel, __LongitudeProperty_JTextField,
+        1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Required - time series property containing longitude."),
+        3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Latitude property:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Latitude property:" ),
+        0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LatitudeProperty_JTextField = new JTextField ( "", 20 );
     __LatitudeProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __LatitudeProperty_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - time series property containing latitude."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(point_JPanel, __LatitudeProperty_JTextField,
+        1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Required - time series property containing latitude."),
+        3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Elevation property:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Elevation property:" ),
+        0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ElevationProperty_JTextField = new JTextField ( "", 20 );
     __ElevationProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ElevationProperty_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - time series property containing elevation."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(point_JPanel, __ElevationProperty_JTextField,
+        1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Optional - time series property containing elevation (default=0)."),
+        3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for geometry data in WKT column
+    int yGeom = -1;
+    JPanel geom_JPanel = new JPanel();
+    geom_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Geometry Data", geom_JPanel );
+    
+    JGUIUtil.addComponent(geom_JPanel, new JLabel (
+        "Geometry (shape) data can be specified using Well Known Text (WKT) strings in a time series property."),
+        0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(geom_JPanel, new JLabel (
+        "Currently only POINT and POLYGON geometry are recognized but support for other geometry types will be added in the future."),
+        0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(geom_JPanel, new JLabel (
+        "Coordinates in the WKT strings must be geographic (longitude and latitude decimal degrees)."),
+        0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(geom_JPanel, new JLabel ( "WKT geometry property:" ),
+        0, ++yGeom, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WKTGeometryProperty_JTextField = new JTextField ( "", 20 );
+    __WKTGeometryProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(geom_JPanel, __WKTGeometryProperty_JTextField,
+        1, yGeom, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(geom_JPanel, new JLabel ( "Optional - time series property WKT geometry."),
+        3, yGeom, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for KML inserts
+    int yKml = -1;
+    JPanel kml_JPanel = new JPanel();
+    kml_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "KML Inserts", kml_JPanel );
+    
+    JGUIUtil.addComponent(kml_JPanel, new JLabel (
+        "KML files allow for many properties to be specified to configure the data."),
+        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(kml_JPanel, new JLabel (
+        "The GeometryInsert command parameter value will be inserted within the <Point>, <Polygon>, etc. data element."),
+        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(kml_JPanel, new JLabel (
+        "Refer to the KML reference for information (https://developers.google.com/kml/documentation/kmlreference)."),
+        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(kml_JPanel, new JLabel ("Geometry insert:"), 
+        0, ++yKml, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __GeometryInsert_JTextArea = new JTextArea (6,35);
+    __GeometryInsert_JTextArea.setLineWrap ( true );
+    __GeometryInsert_JTextArea.setWrapStyleWord ( true );
+    __GeometryInsert_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(kml_JPanel, new JScrollPane(__GeometryInsert_JTextArea),
+        1, yKml, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for style information
+    int yStyle = -1;
+    JPanel style_JPanel = new JPanel();
+    style_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Marker Styles", style_JPanel );
+    
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Marker styles control how map layer features are symbolized (colors, etc.) and interact (mouse-over highlight, etc.)."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Marker style definitions can be defined by inserting XML text or specifying a file to insert."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "The URL to a style map is then specified for the layer (currently all features in the layer will have the same style)."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "In the future features will be enabled to lookup the market style from time series values or statistic)."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(style_JPanel, new JLabel("Placemark name:"),
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PlacemarkName_JTextField = new TSFormatSpecifiersJPanel(30);
+    __PlacemarkName_JTextField.setToolTipText(
+        "Use %L for location, %T for data type, %I for interval, ${ts:property} for time series property.");
+    __PlacemarkName_JTextField.addKeyListener ( this );
+    __PlacemarkName_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(style_JPanel, __PlacemarkName_JTextField,
+        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel,
+        new JLabel ("Optional - use %L for location, ${ts:property}, etc."),
+        3, yStyle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(style_JPanel, new JLabel("Placemark description:"),
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PlacemarkDescription_JTextField = new TSFormatSpecifiersJPanel(30);
+    __PlacemarkDescription_JTextField.setToolTipText(
+        "Use %L for location, %T for data type, %I for interval, ${ts:property} for time series property.");
+    __PlacemarkDescription_JTextField.addKeyListener ( this );
+    __PlacemarkDescription_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(style_JPanel, __PlacemarkDescription_JTextField,
+        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel,
+        new JLabel ("Optional - use %L for location, ${ts:property}, etc."),
+        3, yStyle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(style_JPanel, new JLabel ("Style insert:"), 
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StyleInsert_JTextArea = new JTextArea (6,35);
+    __StyleInsert_JTextArea.setLineWrap ( true );
+    __StyleInsert_JTextArea.setWrapStyleWord ( true );
+    __StyleInsert_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(style_JPanel, new JScrollPane(__StyleInsert_JTextArea),
+        1, yStyle, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    yStyle += 6;
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Style file to insert:" ), 
+        0, yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StyleFile_JTextField = new JTextField ( 35 );
+    __StyleFile_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(style_JPanel, __StyleFile_JTextField,
+        1, yStyle, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __styleFileBrowse_JButton = new SimpleJButton ( "Browse", this );
+    JGUIUtil.addComponent(style_JPanel, __styleFileBrowse_JButton,
+        6, yStyle, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    __styleFilePath_JButton = new SimpleJButton ( __ToRelative, this );
+    JGUIUtil.addComponent(style_JPanel, __styleFilePath_JButton,
+        7, yStyle, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    __styleFilePath_JButton.setToolTipText("Change style file path to/from absolute/relative path.");
+
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "StyleUrl:" ),
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StyleUrl_JTextField = new JTextField ( "", 20 );
+    __StyleUrl_JTextField.setToolTipText("Use #exampleStyleMap to match a style map id");
+    __StyleUrl_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(style_JPanel, __StyleUrl_JTextField,
+        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Optional - style URL for marker (default=pushpin, etc.)."),
+        3, yStyle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for time series data in separate columns
+    int yData = -1;
+    JPanel data_JPanel = new JPanel();
+    data_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Series Data", data_JPanel );
+    
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "Currently time series data are not output. In the future the KML timestamp feature may be implemented.."),
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output precision:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Output precision:" ),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Precision_JTextField = new JTextField ( "", 20 );
     __Precision_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - digits after decimal (default=4)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(data_JPanel, __Precision_JTextField,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Optional - digits after decimal (default=4)."),
+        3, yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Missing value:" ),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField ( "", 20 );
     __MissingValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(data_JPanel, __MissingValue_JTextField,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - value to write for missing data (default=initial missing value)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ("Output start:"), 
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField (20);
     __OutputStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(data_JPanel, __OutputStart_JTextField,
+        1, yData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - override the global output start (default=write all data)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Output end:"), 
+        0, ++yData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputEnd_JTextField = new JTextField (20);
     __OutputEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(data_JPanel, __OutputEnd_JTextField,
+        1, yData, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Optional - override the global output end (default=write all data)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -503,9 +820,18 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {   String routine = "WriteTimeSeriesToKml_JDialog.refresh";
     String OutputFile = "";
+    String Name = "";
+    String Description = "";
     String LongitudeProperty = "";
     String LatitudeProperty = "";
     String ElevationProperty = "";
+    String WKTGeometryProperty = "";
+    String GeometryInsert = "";
+    String PlacemarkName = "";
+    String PlacemarkDescription = "";
+    String StyleInsert = "";
+    String StyleFile = "";
+    String StyleUrl = "";
     String Precision = "";
     String MissingValue = "";
     String OutputStart = "";
@@ -520,9 +846,18 @@ private void refresh ()
         // Get the parameters from the command...
         parameters = __command.getCommandParameters();
         OutputFile = parameters.getValue ( "OutputFile" );
+        Name = parameters.getValue ( "Name" );
+        Description = parameters.getValue ( "Description" );
         LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
         LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
         ElevationProperty = parameters.getValue ( "ElevationProperty" );
+        WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
+        GeometryInsert = parameters.getValue ( "GeometryInsert" );
+        PlacemarkName = parameters.getValue ( "PlacemarkName" );
+        PlacemarkDescription = parameters.getValue ( "PlacemarkDescription" );
+        StyleInsert = parameters.getValue ( "StyleInsert" );
+        StyleFile = parameters.getValue ( "StyleFile" );
+        StyleUrl = parameters.getValue ( "StyleUrl" );
         Precision = parameters.getValue("Precision");
         MissingValue = parameters.getValue("MissingValue");
         OutputStart = parameters.getValue ( "OutputStart" );
@@ -533,6 +868,12 @@ private void refresh ()
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText (OutputFile);
         }
+        if ( Name != null ) {
+            __Name_JTextField.setText (Name);
+        }
+        if ( Description != null ) {
+            __Description_JTextArea.setText (Description);
+        }
         if ( LongitudeProperty != null ) {
             __LongitudeProperty_JTextField.setText (LongitudeProperty);
         }
@@ -541,6 +882,27 @@ private void refresh ()
         }
         if ( ElevationProperty != null ) {
             __ElevationProperty_JTextField.setText (ElevationProperty);
+        }
+        if ( WKTGeometryProperty != null ) {
+            __WKTGeometryProperty_JTextField.setText (WKTGeometryProperty);
+        }
+        if ( GeometryInsert != null ) {
+            __GeometryInsert_JTextArea.setText (GeometryInsert);
+        }
+        if ( PlacemarkName != null ) {
+            __PlacemarkName_JTextField.setText (PlacemarkName);
+        }
+        if ( PlacemarkDescription != null ) {
+            __PlacemarkDescription_JTextField.setText (PlacemarkDescription);
+        }
+        if ( StyleInsert != null ) {
+            __StyleInsert_JTextArea.setText (StyleInsert);
+        }
+        if ( StyleFile != null ) {
+            __StyleFile_JTextField.setText (StyleFile);
+        }
+        if ( StyleUrl != null ) {
+            __StyleUrl_JTextField.setText (StyleUrl);
         }
         if ( Precision != null ) {
             __Precision_JTextField.setText ( Precision );
@@ -602,9 +964,18 @@ private void refresh ()
     }
     // Regardless, reset the command from the fields...
     OutputFile = __OutputFile_JTextField.getText().trim();
+    Name = __Name_JTextField.getText().trim();
+    Description = __Description_JTextArea.getText().trim();
     LongitudeProperty = __LongitudeProperty_JTextField.getText().trim();
     LatitudeProperty = __LatitudeProperty_JTextField.getText().trim();
     ElevationProperty = __ElevationProperty_JTextField.getText().trim();
+    WKTGeometryProperty = __WKTGeometryProperty_JTextField.getText().trim();
+    GeometryInsert = __GeometryInsert_JTextArea.getText().trim();
+    PlacemarkName = __PlacemarkName_JTextField.getText().trim();
+    PlacemarkDescription = __PlacemarkDescription_JTextField.getText().trim();
+    StyleInsert = __StyleInsert_JTextArea.getText().trim();
+    StyleFile = __StyleFile_JTextField.getText().trim();
+    StyleUrl = __StyleUrl_JTextField.getText().trim();
     Precision = __Precision_JTextField.getText().trim();
     MissingValue = __MissingValue_JTextField.getText().trim();
     OutputStart = __OutputStart_JTextField.getText().trim();
@@ -617,9 +988,18 @@ private void refresh ()
     parameters.add ( "TSID=" + TSID );
     parameters.add ( "EnsembleID=" + EnsembleID );
     parameters.add ( "OutputFile=" + OutputFile );
+    parameters.add ( "Name=" + Name );
+    parameters.add ( "Description=" + Description );
     parameters.add ( "LongitudeProperty=" + LongitudeProperty );
     parameters.add ( "LatitudeProperty=" + LatitudeProperty );
     parameters.add ( "ElevationProperty=" + ElevationProperty );
+    parameters.add ( "WKTGeometryProperty=" + WKTGeometryProperty );
+    parameters.add ( "GeometryInsert=" + GeometryInsert );
+    parameters.add ( "PlacemarkName=" + PlacemarkName );
+    parameters.add ( "PlacemarkDescription=" + PlacemarkDescription );
+    parameters.add ( "StyleInsert=" + StyleInsert );
+    parameters.add ( "StyleFile=" + StyleFile );
+    parameters.add ( "StyleUrl=" + StyleUrl );
     parameters.add ( "Precision=" + Precision );
     parameters.add ( "MissingValue=" + MissingValue );
     parameters.add ( "OutputStart=" + OutputStart );
@@ -644,8 +1024,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {   __ok = ok;  // Save to be returned by ok()

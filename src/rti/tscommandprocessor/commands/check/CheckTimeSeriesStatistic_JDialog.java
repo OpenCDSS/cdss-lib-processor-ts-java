@@ -21,6 +21,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -30,6 +31,7 @@ import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -49,6 +51,7 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __Statistic_JComboBox = null;
 private JTextField __StatisticValue1_JTextField = null;
 private JTextField __StatisticValue2_JTextField = null;
@@ -280,24 +283,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSList_JComboBox = null;
-    __TSID_JComboBox = null;
-	__CheckValue1_JTextField = null;
-	__AnalysisStart_JTextField = null;
-	__AnalysisEnd_JTextField = null;
-	__ProblemType_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param title Dialog title.
@@ -316,9 +301,12 @@ private void initialize ( JFrame parent, CheckTimeSeriesStatistic_Command comman
 	int y = 0;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Check time series statistic for critical values (see also the CheckTimeSeries() command, " +
+		"Check time series statistic for against criteria (see also the CheckTimeSeries() command, " +
 		"which checks data values)." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The sample is taken from the entire time series." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "A warning will be generated if the statistic matches the specified condition(s)." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -355,168 +343,197 @@ private void initialize ( JFrame parent, CheckTimeSeriesStatistic_Command comman
     JGUIUtil.addComponent(main_JPanel, tslist_JPanel,
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
     
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for statistic
+    int yStat = -1;
     JPanel statistic_JPanel = new JPanel();
-    statistic_JPanel.setBorder(BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),"Statistic"));
     statistic_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Statistic", statistic_JPanel );
+    
+    JGUIUtil.addComponent(statistic_JPanel, new JLabel (
+        "The following parameters define how to compute the statistic."),
+        0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statistic_JPanel, new JLabel (
+        "Currently minimum sample size and number of missing allowed cannot be specified."),
+        0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(statistic_JPanel, new JLabel ( "Statistic to calculate:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yStat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Statistic_JComboBox = new SimpleJComboBox ( 12, false ); // Do not allow edit
     __Statistic_JComboBox.setData ( TSUtil_CalculateTimeSeriesStatistic.getStatisticChoicesAsStrings() );
     __Statistic_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(statistic_JPanel, __Statistic_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statistic_JPanel, new JLabel(
         "Required - may require other parameters."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(statistic_JPanel, new JLabel ( "Statistic value1:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yStat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StatisticValue1_JTextField = new JTextField ( 10 );
     __StatisticValue1_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statistic_JPanel, __StatisticValue1_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statistic_JPanel, new JLabel(
         "Optional - may be needed as input to calculate statistic."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(statistic_JPanel, new JLabel ( "Statistic value2:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yStat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StatisticValue2_JTextField = new JTextField ( 10 );
     __StatisticValue2_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statistic_JPanel, __StatisticValue2_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statistic_JPanel, new JLabel(
         "Optional - may be needed as input to calculate statistic."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(statistic_JPanel, new JLabel ( "Statistic value3:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yStat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StatisticValue3_JTextField = new JTextField ( 10 );
     __StatisticValue3_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statistic_JPanel, __StatisticValue3_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statistic_JPanel, new JLabel(
         "Optional - may be needed as input to calculate statistic."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(statistic_JPanel, new JLabel ( "Analysis start:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yStat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
     __AnalysisStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statistic_JPanel, __AnalysisStart_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statistic_JPanel, new JLabel(
         "Optional - analysis start date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(statistic_JPanel, new JLabel ( "Analysis end:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yStat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
     __AnalysisEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statistic_JPanel, __AnalysisEnd_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yStat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statistic_JPanel, new JLabel(
         "Optional - analysis end date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yStat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(statistic_JPanel, new JLabel ( "Table ID for output:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for table output
+    int yOut = -1;
+    JPanel out_JPanel = new JPanel();
+    out_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output", out_JPanel );
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "The statistic that is calculated can be saved in a table containing columns for the TSID and statistic value."),
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "Currently secondary values such as date/time for " + TSStatisticType.MAX + " are not output."),
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table ID for output:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(statistic_JPanel, __TableID_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statistic_JPanel, new JLabel(
-        "Optional - if statistic should be saved in table."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, __TableID_JComboBox,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
+        "Optional - table to save the statistic."), 
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(statistic_JPanel, new JLabel ( "Table TSID column:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table TSID column:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableTSIDColumn_JTextField = new JTextField ( 10 );
     __TableTSIDColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(statistic_JPanel, __TableTSIDColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statistic_JPanel, new JLabel( "Required if using table - column name for TSID."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, __TableTSIDColumn_JTextField,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel( "Required if using table - column name for TSID."), 
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(statistic_JPanel, new JLabel("Format of TSID:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel("Format of TSID:"),
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
     __TableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __TableTSIDFormat_JTextField.addKeyListener ( this );
     __TableTSIDFormat_JTextField.setToolTipText("%L for location, %T for data type.");
-    JGUIUtil.addComponent(statistic_JPanel, __TableTSIDFormat_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statistic_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(out_JPanel, __TableTSIDFormat_JTextField,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
+        3, yOut, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(statistic_JPanel, new JLabel ( "Table statistic column:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table statistic column:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableStatisticColumn_JTextField = new JTextField ( 10 );
     __TableStatisticColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(statistic_JPanel, __TableStatisticColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statistic_JPanel, new JLabel(
+    JGUIUtil.addComponent(out_JPanel, __TableStatisticColumn_JTextField,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
         "Required if using table - column name for statistic."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, statistic_JPanel,
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
-    
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for check and actions
+    int yCheck = -1;
     JPanel check_JPanel = new JPanel();
-    check_JPanel.setBorder(BorderFactory.createTitledBorder (
-        BorderFactory.createLineBorder(Color.black),"Check and actions"));
     check_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Check Criteria and Actions", check_JPanel );
     
+    JGUIUtil.addComponent(check_JPanel, new JLabel (
+        "The following parameters are used to check the statistic value against a criteria."),
+        0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel (
+        "If the statistic value matches the criteria, then an action can be taken and a property can be set."),
+        0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check criteria:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CheckCriteria_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
     List<String> checkCriteriaChoices = __command.getCheckCriteriaChoicesAsStrings();
     __CheckCriteria_JComboBox.setData ( checkCriteriaChoices );
     __CheckCriteria_JComboBox.addItemListener ( this );
     __CheckCriteria_JComboBox.setMaximumRowCount(checkCriteriaChoices.size());
     JGUIUtil.addComponent(check_JPanel, __CheckCriteria_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel("Required - may require other parameters."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check value1:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__CheckValue1_JTextField = new JTextField ( 10 );
 	__CheckValue1_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __CheckValue1_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
 		"Optional - minimum (or only) statistic value to check."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check value2:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CheckValue2_JTextField = new JTextField ( 10 );
     __CheckValue2_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __CheckValue2_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
         "Optional - maximum value in range, or other statistic value to check."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Problem type:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ProblemType_JTextField = new JTextField ( 10 );
 	__ProblemType_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __ProblemType_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
 		"Optional - problem type to use in output (default=Statistic-CheckCriteria)."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(check_JPanel,new JLabel("If criteria met?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IfCriteriaMet_JComboBox = new SimpleJComboBox ( false );
     __IfCriteriaMet_JComboBox.addItem ( "" );
     __IfCriteriaMet_JComboBox.addItem ( __command._Ignore );
@@ -525,30 +542,30 @@ private void initialize ( JFrame parent, CheckTimeSeriesStatistic_Command comman
     __IfCriteriaMet_JComboBox.select ( "" );
     __IfCriteriaMet_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(check_JPanel, __IfCriteriaMet_JComboBox,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yCheck, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel (
         "Optional - should warning/failure be generated (default=" + __command._Warn + ")."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Property name:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField ( 20 );
     __PropertyName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __PropertyName_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
         "Optional - name of property to set when criteria are met."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Property value:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyValue_JTextField = new JTextField ( 20 );
     __PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(check_JPanel, __PropertyValue_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel(
         "Optional - value of property to set when criteria are met."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     /*
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Action:" ), 
@@ -567,9 +584,6 @@ private void initialize ( JFrame parent, CheckTimeSeriesStatistic_Command comman
     JGUIUtil.addComponent(check_JPanel, new JLabel("Optional - action for matched values (default=no action)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         */
-    
-    JGUIUtil.addComponent(main_JPanel, check_JPanel,
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -890,7 +904,8 @@ private void refresh ()
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "TableStatisticColumn=" + TableStatisticColumn );
-    props.add ( "CheckCriteria=" + CheckCriteria );
+    // Have to set in such a way that = at start of CheckCriteria does not foul up the method
+    props.set ( "CheckCriteria", CheckCriteria );
     props.add ( "CheckValue1=" + CheckValue1 );
     props.add ( "CheckValue2=" + CheckValue2 );
     props.add ( "IfCriteriaMet=" + IfCriteriaMet );

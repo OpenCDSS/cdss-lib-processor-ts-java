@@ -3,6 +3,7 @@ package rti.tscommandprocessor.commands.wateroneflow.waterml;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 // Instances are explicitly declared with full path to avoid conflict with similar Apache classes
 import org.w3c.dom.Document;
@@ -109,8 +117,22 @@ throws IOException
         version = WaterMLVersion.STANDARD_1_1;
     }
     else {
+        TransformerFactory tf = TransformerFactory.newInstance();
+        String text = "See WaterML output file";
+        try {
+            Transformer transformer = tf.newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            StringWriter writer = new StringWriter();
+            transformer.transform(new DOMSource(dom), new StreamResult(writer));
+            text = writer.getBuffer().toString().replaceAll("\n|\r", "");
+        }
+        catch ( TransformerConfigurationException e ) {
+        }
+        catch ( TransformerException e ) {
+        }
+        text = text.length() <= 2000 ? text : text.substring(0,2000) + "...";
         throw new IOException("Unable to determine WaterML version based on xmlns \"" + xmlns +
-            "\" WaterML version not supported.");
+            "\" WaterML version not supported.  Returned content may describe error:  " + text);
     }
     Message.printStatus(2,"", "WaterML version is " + version);
     return version;

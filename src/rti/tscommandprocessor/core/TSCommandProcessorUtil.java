@@ -336,8 +336,10 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         // Now reset the search position to finish evaluating whether to expand the string.
         parameterValue = b.toString();
         searchPos = foundPos + propvalString.length(); // Expanded so no need to consider delim*
-        Message.printStatus( 2, routine, "Expanded parameter value is \"" + parameterValue +
-            "\" searchpos is now " + searchPos + " in string \"" + parameterValue + "\"" );
+        if ( Message.isDebugOn ) {
+            Message.printDebug( 1, routine, "Expanded parameter value is \"" + parameterValue +
+                "\" searchpos is now " + searchPos + " in string \"" + parameterValue + "\"" );
+        }
     }
     return parameterValue;
 }

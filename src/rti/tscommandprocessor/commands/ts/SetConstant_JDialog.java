@@ -180,23 +180,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__ConstantValue_JTextField = null;
-	__MonthValues_JTextField = null;
-	__SetStart_JTextField = null;
-	__SetEnd_JTextField = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param title Dialog title.
@@ -258,7 +241,8 @@ private void initialize ( JFrame parent, SetConstant_Command command )
 	__MonthValues_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __MonthValues_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - monthly values, separated by commas."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - monthly values, * to keep original, blank or NaN to set missing, separated by commas."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Set start:"), 

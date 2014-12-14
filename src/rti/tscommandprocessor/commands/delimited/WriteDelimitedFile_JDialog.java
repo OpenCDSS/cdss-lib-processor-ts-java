@@ -403,7 +403,7 @@ private void initialize ( JFrame parent, WriteDelimitedFile_Command command )
     // is supported by the panel
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time format:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true );
+    __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
     __DateTimeFormat_JPanel.addKeyListener ( this );
     __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
     __DateTimeFormat_JPanel.getDocument().addDocumentListener ( this );

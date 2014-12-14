@@ -327,7 +327,7 @@ public List getObjectList ( Class c )
 {
 	List<TS> discoveryTSList = getDiscoveryTSList ();
     DataTable table = getDiscoveryTable();
-    if ( c == table.getClass() ) {
+    if ( (table != null) && (c == table.getClass()) ) {
         // Asking for tables
         List list = null;
         if ( table != null ) {
@@ -405,8 +405,10 @@ CommandWarningException, CommandException
     
     String dataStoreName = parameters.getValue("DataStore");
     String Stations = parameters.getValue("Stations");
-    List<String> stationList = new Vector();
+    List<String> stationList = new ArrayList();
     if ( (Stations != null) && !Stations.equals("") ) {
+        // Station list is allowed to use a processor property
+        Stations = TSCommandProcessorUtil.expandParameterValue(processor,this,Stations);
         if ( Stations.indexOf(",") < 0 ) {
             stationList.add(Stations.trim());
         }
@@ -418,8 +420,10 @@ CommandWarningException, CommandException
         }
     }
     String States = parameters.getValue("States");
-    List<String> stateList = new Vector();
+    List<String> stateList = new ArrayList();
     if ( (States != null) && !States.equals("") ) {
+        // State list is allowed to use a processor property
+        States = TSCommandProcessorUtil.expandParameterValue(processor,this,States);
         if ( States.indexOf(",") < 0 ) {
             stateList.add(States.trim());
         }
@@ -431,8 +435,10 @@ CommandWarningException, CommandException
         }
     }
     String Networks = parameters.getValue("Networks");
-    List<NrcsAwdbNetworkCode> networkList = new Vector();
+    List<NrcsAwdbNetworkCode> networkList = new ArrayList();
     if ( (Networks != null) && !Networks.equals("") ) {
+        // Network list is allowed to use a processor property
+        Networks = TSCommandProcessorUtil.expandParameterValue(processor,this,Networks);
         if ( Networks.indexOf(",") < 0 ) {
             networkList.add(new NrcsAwdbNetworkCode(Networks, ""));
         }
@@ -446,6 +452,8 @@ CommandWarningException, CommandException
     String HUCs = parameters.getValue("HUCs");
     List<String> hucList = new Vector();
     if ( (HUCs != null) && !HUCs.equals("") ) {
+        // HUC list is allowed to use a processor property
+        HUCs = TSCommandProcessorUtil.expandParameterValue(processor,this,HUCs);
         if ( HUCs.indexOf(",") < 0 ) {
             hucList.add(HUCs.trim());
         }
@@ -459,6 +467,8 @@ CommandWarningException, CommandException
     String Counties = parameters.getValue("Counties");
     List<String> countyList = new Vector();
     if ( (Counties != null) && !Counties.equals("") ) {
+        // County list is allowed to use a processor property
+        Counties = TSCommandProcessorUtil.expandParameterValue(processor,this,Counties);
         if ( Counties.indexOf(",") < 0 ) {
             countyList.add(Counties.trim());
         }
@@ -696,7 +706,7 @@ CommandWarningException, CommandException
        		if ( (tslist == null) || (size == 0) ) {
     			Message.printStatus ( 2, routine,"No NRCS AWDB time series were found." );
     	        // Warn if nothing was retrieved (can be overridden to ignore).
-                message = "No time series were read from the NRCS AWDB daily value web service.";
+                message = "No time series were read from the NRCS AWDB web service.";
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                 status.addToLog ( commandPhase,

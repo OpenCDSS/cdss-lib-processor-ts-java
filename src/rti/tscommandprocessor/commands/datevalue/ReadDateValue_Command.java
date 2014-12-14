@@ -561,13 +561,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         if ( !IOUtil.fileExists(InputFile_full) ) {
-            message = "Input file does not exist:  \"" + InputFile_full + "\".";
-            Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that filename is correct and that the file exists." ) );
+            if ( command_phase == CommandPhaseType.DISCOVERY ) {
+                message = "Input file does not exist:  \"" + InputFile_full + "\".";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Verify that filename is correct and that the file exists - " +
+                        	"may be OK if file is created during processing." ) );
+            }
+            else if ( command_phase == CommandPhaseType.RUN ) {
+                message = "Input file does not exist:  \"" + InputFile_full + "\".";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that filename is correct and that the file exists." ) );
+            }
         }
         else {
             // Read everything in the file (one time series or traces).

@@ -108,18 +108,24 @@ throws InvalidCommandParameterException
                 message, "Specify the data store table, SQL statement, SQL file, or procedure." ) );
     }
     if ( specCount > 1 ) {
-        message = "Onely one of the data store table, SQL statement, SQL file, or procedure can be specified.";
+        message = "Only one of the data store table, SQL statement, SQL file, or procedure can be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store table, SQL statement, or SQL file." ) );
     }
-    if ( (Sql != null) && !Sql.equals("") && !StringUtil.startsWithIgnoreCase(Sql, "select") ) {
-        message = "The SQL statement must start with SELECT.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Update the SQL string to start with SELECT." ) );
+    // Remove comments.  In general /* */ are the main comments supported because they are used with SQL Server
+    // and Oracle and generally easy to deal with.
+    String sqlNoComments = null;
+    if ( (Sql != null) && !Sql.equals("") ) {
+        sqlNoComments = DMIUtil.removeCommentsFromSql ( Sql ).trim();
+        if ( !StringUtil.startsWithIgnoreCase(sqlNoComments, "select") ) {
+            message = "The SQL statement must start with SELECT.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Update the SQL string to start with SELECT." ) );
+        }
     }
     if ( (Top != null) && (Top.length() != 0) && !StringUtil.isInteger(Top)) {
         message = "The Top value (" + Top +") is not an integer.";
@@ -438,6 +444,10 @@ CommandWarningException, CommandException
             else if ( (Sql != null) && !Sql.equals("") ) {
                 // Query using the SQL string.  Expand first using ${Property} notation
                 queryString = TSCommandProcessorUtil.expandParameterValue(processor, this, Sql);
+                // Remove comments if Microsoft Access.  Otherwise leave because troubleshooting might be easier
+                if ( dmi.getDatabaseEngineType() == DMI.DBENGINE_ACCESS ) {
+                    queryString = DMIUtil.removeCommentsFromSql(queryString);
+                }
                 rs = dmi.dmiSelect(queryString);
                 Message.printStatus(2, routine, "Executed query \"" + queryString + "\".");
             }
@@ -459,6 +469,10 @@ CommandWarningException, CommandException
                 }
                 queryString = TSCommandProcessorUtil.expandParameterValue(processor, this,
                     StringUtil.toString(IOUtil.fileToStringList(SqlFile_full), " "));
+                // Remove comments if Microsoft Access.  Otherwise leave because troubleshooting might be easier
+                if ( dmi.getDatabaseEngineType() == DMI.DBENGINE_ACCESS ) {
+                    queryString = DMIUtil.removeCommentsFromSql(queryString);
+                }
                 rs = dmi.dmiSelect(queryString);
                 Message.printStatus(2, routine, "Executed query \"" + queryString + "\".");
             }

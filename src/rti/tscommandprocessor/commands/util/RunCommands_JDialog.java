@@ -28,6 +28,7 @@ import java.io.File;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
+import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
@@ -85,6 +86,8 @@ public void actionPerformed( ActionEvent event )
             fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle( "Select command file to run");
+	    SimpleFileFilter sff = new SimpleFileFilter("TSTool", "TSTool Command File");
+	    fc.addChoosableFileFilter(sff);
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();

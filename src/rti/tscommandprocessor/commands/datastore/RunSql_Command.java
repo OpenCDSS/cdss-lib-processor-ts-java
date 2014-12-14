@@ -14,6 +14,7 @@ import java.util.Vector;
 import RTi.DMI.DMI;
 import RTi.DMI.DMISelectStatement;
 import RTi.DMI.DMIStoredProcedureData;
+import RTi.DMI.DMIUtil;
 import RTi.DMI.DatabaseDataStore;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -97,13 +98,6 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store table, SQL statement, or SQL file." ) );
-    }
-    if ( (Sql != null) && !Sql.equals("") && !StringUtil.startsWithIgnoreCase(Sql, "select") ) {
-        message = "The SQL statement must start with SELECT.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Update the SQL string to start with SELECT." ) );
     }
     String SqlFile_full = null;
     if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
@@ -235,6 +229,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( (Sql != null) && !Sql.equals("") ) {
             // Query using the SQL string.  Expand first using ${Property} notation
             sqlString = TSCommandProcessorUtil.expandParameterValue(processor, this, Sql);
+            // Remove comments if Microsoft Access.  Otherwise leave because troubleshooting might be easier
+            if ( dmi.getDatabaseEngineType() == DMI.DBENGINE_ACCESS ) {
+                sqlString = DMIUtil.removeCommentsFromSql(sqlString);
+            }
             nEffected = dmi.dmiExecute(sqlString);
             Message.printStatus(2, routine, "Executed SQL \"" + sqlString + "\".  Rows effected=" + nEffected);
         }
@@ -256,6 +254,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             sqlString = TSCommandProcessorUtil.expandParameterValue(processor, this,
                 StringUtil.toString(IOUtil.fileToStringList(SqlFile_full), " "));
+            // Remove comments if Microsoft Access.  Otherwise leave because troubleshooting might be easier
+            if ( dmi.getDatabaseEngineType() == DMI.DBENGINE_ACCESS ) {
+                sqlString = DMIUtil.removeCommentsFromSql(sqlString);
+            }
             nEffected = dmi.dmiExecute(sqlString);
             Message.printStatus(2, routine, "Executed SQL \"" + sqlString + "\".  Rows effected=" + nEffected);
         }

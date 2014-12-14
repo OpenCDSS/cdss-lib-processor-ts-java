@@ -15,6 +15,8 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.GIS.GeoView.WKTGeometryParser;
 import RTi.GR.GRPoint;
+import RTi.GR.GRPointZM;
+import RTi.GR.GRPolygon;
 import RTi.GR.GRShape;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
@@ -205,7 +207,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>();
+    List<String> validList = new ArrayList<String>(14);
     validList.add ( "TableID" );
     validList.add ( "OutputFile" );
     validList.add ( "Name" );
@@ -216,6 +218,7 @@ throws InvalidCommandParameterException
     validList.add ( "LatitudeColumn" );
     validList.add ( "ElevationColumn" );
     validList.add ( "WKTGeometryColumn" );
+    validList.add ( "GeometryInsert" );
     validList.add ( "StyleInsert" );
     validList.add ( "StyleFile" );
     validList.add ( "StyleUrl" );
@@ -303,6 +306,7 @@ CommandWarningException, CommandException
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
     String ElevationColumn = parameters.getValue ( "ElevationColumn" );
     String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
+    String GeometryInsert = parameters.getValue ( "GeometryInsert" );
     String StyleInsert = parameters.getValue ( "StyleInsert" );
     String StyleFile = parameters.getValue ( "StyleFile" );
     String StyleUrl = parameters.getValue ( "StyleUrl" );
@@ -374,7 +378,9 @@ CommandWarningException, CommandException
                 throw new CommandException ( message );
             }
         }
-        writeTableToKml ( table, OutputFile_full, Name, Description, StyleInsert, StyleFile_full, StyleUrl,
+        writeTableToKml ( table, OutputFile_full, Name, Description,
+            GeometryInsert,
+            StyleInsert, StyleFile_full, StyleUrl,
             PlacemarkNameColumn, PlacemarkDescriptionColumn,
             LongitudeColumn, LatitudeColumn, ElevationColumn, WKTGeometryColumn, errors );
         for ( String error : errors ) {
@@ -427,6 +433,7 @@ public String toString ( PropList parameters )
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
     String ElevationColumn = parameters.getValue ( "ElevationColumn" );
     String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
+    String GeometryInsert = parameters.getValue ( "GeometryInsert" );
     String StyleInsert = parameters.getValue ( "StyleInsert" );
     String StyleFile = parameters.getValue ( "StyleFile" );
     String StyleUrl = parameters.getValue ( "StyleUrl" );
@@ -491,6 +498,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "WKTGeometryColumn=\"" + WKTGeometryColumn + "\"" );
     }
+    if ( (GeometryInsert != null) && (GeometryInsert.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "GeometryInsert=\"" + GeometryInsert + "\"" );
+    }
     if ( (StyleInsert != null) && (StyleInsert.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -518,6 +531,7 @@ public String toString ( PropList parameters )
 Write the table to a KML file.
 */
 private void writeTableToKml ( DataTable table, String outputFile, String name, String description,
+    String geometryInsert,
     String styleInsert, String styleFile, String styleUrl,
     String placemarkNameColumn, String placemarkDescriptionColumn,
     String longitudeColumn, String latitudeColumn, String elevationColumn, String wktGeometryColumn, List<String> errors )
@@ -526,7 +540,8 @@ private void writeTableToKml ( DataTable table, String outputFile, String name, 
         FileOutputStream fos = new FileOutputStream ( outputFile );
         fout = new PrintWriter ( fos );
         // For now just support KML 2
-        writeTableToKml01 ( fout, table, name, description,
+        writeTableToKml02 ( fout, table, name, description,
+            geometryInsert,
             styleInsert, styleFile, styleUrl, placemarkNameColumn, placemarkDescriptionColumn,
             longitudeColumn, latitudeColumn, elevationColumn, wktGeometryColumn, errors );
     }
@@ -543,12 +558,13 @@ private void writeTableToKml ( DataTable table, String outputFile, String name, 
 }
 
 /**
-Write the version 01 format KML.
+Write the version 02 format KML.
 @param fout open PrintWriter to write to
 @param table data table to write
 @param errors list of error strings to be propagated to calling code
 */
-private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name, String description,
+private void writeTableToKml02 ( PrintWriter fout, DataTable table, String name, String description,
+    String geometryInsert,
     String styleInsert, String styleFile, String styleUrl,
     String placemarkNameColumn, String placemarkDescriptionColumn, 
     String longitudeColumn, String latitudeColumn, String elevationColumn, String wktGeometryColumn, List<String> errors )
@@ -571,13 +587,14 @@ private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name,
         doWkt = true;
     }
     else {
+        // Rely on point data
         if ( (latitudeColumn != null) && !latitudeColumn.equals("") &&
             (longitudeColumn != null) && !longitudeColumn.equals("")) {
             doPoint = true;
         }
-    }
-    if ( (elevationColumn != null) && !elevationColumn.equals("") ) {
-        doElevation = true;
+        if ( (elevationColumn != null) && !elevationColumn.equals("") ) {
+            doElevation = true;
+        }
     }
     if ( (placemarkNameColumn != null) && !placemarkNameColumn.equals("") ) {
         doPlacemarkName = true;
@@ -673,7 +690,12 @@ private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name,
     String i2 = "  ";
     String i3 = "   ";
     String i4 = "    ";
-    // TODO SAM 2013-11-18 Need to add document name and description to parameters
+    String i5 = "     ";
+    String i6 = "      ";
+    String i7 = "       ";
+    if ( name.startsWith("<") ) {
+        name = "<![CDATA[\n" + name + "]]>";
+    }
     if ( description.startsWith("<") ) {
         description = "<![CDATA[\n" + description + "]]>";
     }
@@ -703,7 +725,7 @@ private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name,
     Object placemarkNameO = null, placemarkDescriptionO = null,
         latitudeO, longitudeO, elevationO = null; // Can be double, int, or string
     WKTGeometryParser wktParser = null;
-    String wkt;
+    String wkt = null;
     if ( doWkt ) {
         wktParser = new WKTGeometryParser();
     }
@@ -718,34 +740,28 @@ private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name,
             if ( doPlacemarkDescription ) {
                 placemarkDescriptionO = rec.getFieldValue(placemarkDescriptionColNum);
             }
-            if ( doWkt ) {
-                // Parse WKT string needs to extract coordinates
-                wkt = rec.getFieldValueString(wktGeometryColNum);
-                GRShape shape = wktParser.parseWKT(wkt);
-                if ( (shape != null) && (shape instanceof GRPoint) ) {
-                    GRPoint pt = (GRPoint)shape;
-                    longitudeO = new Double(pt.x);
-                    latitudeO = new Double(pt.y);
-                }
-            }
-            else if ( doPoint ) {
+            if ( doPoint ) {
                 // Table columns can be any type because objects are treated as strings below
                 longitudeO = rec.getFieldValue(longitudeColNum);
+                if ( longitudeO == null ) {
+                    continue;
+                }
                 latitudeO = rec.getFieldValue(latitudeColNum);
+                if ( latitudeO == null ) {
+                    continue;
+                }
                 if ( doElevation ) {
                     elevationO = rec.getFieldValue(elevationColNum);
                 }
+            }
+            if ( doWkt ) {
+                // Extract and output KML below
+                wkt = rec.getFieldValueString(wktGeometryColNum);  
             }
         }
         catch ( Exception e ) {
             errors.add("Error adding geometry KML (" + e + ")." );
             Message.printWarning(3, "", e);
-            continue;
-        }
-        if ( longitudeO == null ) {
-            continue;
-        }
-        if ( latitudeO == null ) {
             continue;
         }
         if ( placemarkNameO == null ) {
@@ -768,9 +784,90 @@ private void writeTableToKml01 ( PrintWriter fout, DataTable table, String name,
         if ( doStyleUrl ) {
             fout.write(i3 + "<styleUrl>" + styleUrl + "</styleUrl>\n");
         }
-        fout.write(i3 + "<Point>\n");
-        fout.write(i4 + "<coordinates>" + longitudeO + "," + latitudeO + "," + elevationO + "</coordinates>\n");
-        fout.write(i3 + "</Point>\n");
+        if ( doPoint ) {
+            fout.write(i3 + "<Point>\n");
+            if ( (geometryInsert != null) && !geometryInsert.equals("") ) {
+                fout.write(i4 + geometryInsert);
+            }
+            fout.write(i4 + "<coordinates>" + longitudeO + "," + latitudeO + "," + elevationO + "</coordinates>\n");
+            fout.write(i3 + "</Point>\n");
+        }
+        else if ( doWkt ) {
+            // Parse WKT string needs to extract coordinates
+            //Message.printStatus(2, "", "Parsing \"" + wkt + "\"." );
+            GRShape shape = wktParser.parseWKT(wkt);
+            if ( shape == null ) {
+                Message.printStatus(2, "", "Shape from \"" + wkt + "\" is null." );
+            }
+            if ( shape != null ) {
+                if ( shape instanceof GRPoint ) {
+                    //Message.printStatus(2, "", "Shape is POINT." );
+                    GRPoint pt = (GRPoint)shape;
+                    longitudeO = new Double(pt.x);
+                    latitudeO = new Double(pt.y);
+                    if ( shape instanceof GRPointZM ) {
+                        elevationO = new Double(((GRPointZM)pt).z);
+                    }
+                    fout.write(i3 + "<Point>\n");
+                    if ( (geometryInsert != null) && !geometryInsert.equals("") ) {
+                        fout.write(i4 + geometryInsert);
+                    }
+                    fout.write(i4 + "<coordinates>" + longitudeO + "," + latitudeO + "," + elevationO + "</coordinates>\n");
+                    fout.write(i3 + "</Point>\n");
+                }
+                else if ( shape instanceof GRPolygon ) {
+                    //Message.printStatus(2, "", "Shape is POLYGON." );
+                    GRPolygon p = (GRPolygon)shape;
+                    fout.write(i3 + "<Polygon>\n");
+                    if ( (geometryInsert != null) && !geometryInsert.equals("") ) {
+                        fout.write(i4 + geometryInsert);
+                    }
+                    fout.write(i4 + "<outerBoundaryIs>\n");
+                    fout.write(i5 + "<LinearRing>\n");
+                    fout.write(i6 + "<coordinates>\n");
+                    Object latitudeO0 = null, longitudeO0 = null, elevationO0 = null;
+                    for ( int i = 0; i < p.npts; i++ ) {
+                        longitudeO = new Double(p.pts[i].x);
+                        latitudeO = new Double(p.pts[i].y);
+                        elevationO = null;
+                        //if ( shape instanceof GRPolygonZM ) {
+                        //    elevationO = new Double(((GRPointZM)p.pts[i]).z);
+                        //}
+                        if ( i == 0 ) {
+                            // Save first point and output at end if needed to close ring
+                            longitudeO0 = longitudeO;
+                            latitudeO0 = latitudeO;
+                            elevationO0 = elevationO;
+                        }
+                        if ( elevationO == null ) {
+                            fout.write(i7 + longitudeO + "," + latitudeO + "\n");
+                        }
+                        else {
+                            fout.write(i7 + longitudeO + "," + latitudeO + "," + elevationO + "\n");
+                        }
+                    }
+                    // Write the first point again if it was not written at the end
+                    if ( elevationO == null ) {
+                        if ( !longitudeO.equals(longitudeO0) || !latitudeO.equals(latitudeO0) ) {
+                            fout.write(i7 + longitudeO0 + "," + latitudeO0 + "\n");
+                        }
+                    }
+                    else {
+                        if ( !longitudeO.equals(longitudeO0) || !latitudeO.equals(latitudeO0)
+                            || !elevationO.equals(elevationO0) ) {
+                            fout.write(i7 + longitudeO0 + "," + latitudeO0 + "," + elevationO0 + "\n");
+                        }
+                    }
+                    fout.write(i6 + "</coordinates>\n");
+                    fout.write(i5 + "</LinearRing>\n");
+                    fout.write(i4 + "</outerBoundaryIs>\n");
+                    fout.write(i3 + "</Polygon>\n");
+                }
+                else {
+                    Message.printStatus(2,"","Unknown shape for \"" + wkt + "\"");
+                }
+            }
+        }
         fout.write(i2 + "</Placemark>\n");
     }
     fout.write( i1 + "</Document>\n" );   

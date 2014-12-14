@@ -22,6 +22,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -39,6 +40,7 @@ private boolean __first_time = true; // Indicate first time display
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __SortColumns_JTextField = null;
+private SimpleJComboBox __SortOrder_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SortTable_Command __command = null;
@@ -84,6 +86,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String SortColumns = __SortColumns_JTextField.getText().trim();
+	String SortOrder = __SortOrder_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -92,6 +95,9 @@ private void checkInput ()
 	if ( SortColumns.length() > 0 ) {
 		props.set ( "SortColumns", SortColumns );
 	}
+    if ( SortOrder.length() > 0 ) {
+        props.set ( "SortOrder", SortOrder );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -110,8 +116,10 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
     String SortColumns = __SortColumns_JTextField.getText().trim();
+    String SortOrder = __SortOrder_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "SortColumns", SortColumns );
+	__command.setCommandParameter ( "SortOrder", SortOrder );
 }
 
 /**
@@ -167,6 +175,22 @@ private void initialize ( JFrame parent, SortTable_Command command, List<String>
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - name of column to sort."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Sort order:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SortOrder_JComboBox = new SimpleJComboBox ( 12, false );
+    ArrayList<String> sortChoices = new ArrayList<String>(2); 
+    sortChoices.add("");
+    sortChoices.add(__command._Ascending);
+    sortChoices.add(__command._Descending);
+    __SortOrder_JComboBox.setData ( sortChoices );
+    __SortOrder_JComboBox.addItemListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __SortOrder_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - sort order for column values (default=" +
+        __command._Ascending + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -245,11 +269,13 @@ private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
     String TableID = "";
     String SortColumns = "";
+    String SortOrder = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         SortColumns = props.getValue ( "SortColumns" );
+        SortOrder = props.getValue ( "SortOrder" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -268,13 +294,30 @@ private void refresh ()
 		if ( SortColumns != null ) {
 			__SortColumns_JTextField.setText ( SortColumns );
 		}
+        if ( SortOrder == null ) {
+            // Select default...
+            __SortOrder_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __SortOrder_JComboBox,SortOrder, JGUIUtil.NONE, null, null ) ) {
+                __SortOrder_JComboBox.select ( SortOrder );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nSortOrder value \"" + SortOrder +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
 	SortColumns = __SortColumns_JTextField.getText().trim();
+	SortOrder = __SortOrder_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "SortColumns=" + SortColumns );
+	props.add ( "SortOrder=" + SortOrder );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

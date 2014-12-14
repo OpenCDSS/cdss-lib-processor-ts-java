@@ -215,7 +215,7 @@ CommandWarningException, CommandException
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-                message, "Verify that the file exists at the time the command is run."));
+                message, "Verify that the input file(s) exist(s) at the time the command is run."));
         }
 	}
 	for ( File file : fileList ) {

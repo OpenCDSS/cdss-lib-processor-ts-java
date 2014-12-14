@@ -216,15 +216,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 Run the command.
 @param command_number Number of command in sequence.
 @param command_phase The command phase that is being run (RUN or DISCOVERY).
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType command_phase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "FormatDateTimeProperty_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;

@@ -410,7 +410,10 @@ private void initialize ( JFrame parent, ReadStateMod_Command command )
     JGUIUtil.addComponent(stm_JPanel, new JLabel (
         "This format includes most of the StateMod input time series files (*.ddh, *.rih, *.ddm, etc.) and *.stm files."),
         0, ++yStm, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     
+    JGUIUtil.addComponent(stm_JPanel, new JLabel (
+        "Use the ReadStateModB() command to read time series from the binary output files."),
+        0, ++yStm, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     // Panel for water right files
     int yRight = -1;
     JPanel right_JPanel = new JPanel();

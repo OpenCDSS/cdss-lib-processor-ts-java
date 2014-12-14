@@ -811,7 +811,6 @@ public String toString ( PropList parameters )
     String StatisticValue3 = parameters.getValue( "StatisticValue3" );
     String AnalysisStart = parameters.getValue( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
-    String IfNotFound = parameters.getValue ( "IfNotFound" );
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
@@ -879,12 +878,6 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-    }
-    if ( IfNotFound != null && IfNotFound.length() > 0 ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "IfNotFound=" + IfNotFound );
     }
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {

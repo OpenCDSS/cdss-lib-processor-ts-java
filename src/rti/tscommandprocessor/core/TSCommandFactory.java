@@ -20,6 +20,7 @@ import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
 
 // DateValue commands
+import rti.tscommandprocessor.commands.datastore.CreateDataStoreDataDictionary_Command;
 import rti.tscommandprocessor.commands.datastore.DeleteDataStoreTableRows_Command;
 import rti.tscommandprocessor.commands.datastore.ReadTimeSeriesFromDataStore_Command;
 import rti.tscommandprocessor.commands.datastore.RunSql_Command;
@@ -54,6 +55,7 @@ import rti.tscommandprocessor.commands.hydrobase.ReadHydroBase_Command;
 import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
 
 // Logging commands.
+import rti.tscommandprocessor.commands.logging.Message_Command;
 import rti.tscommandprocessor.commands.logging.SetDebugLevel_Command;
 import rti.tscommandprocessor.commands.logging.SetWarningLevel_Command;
 import rti.tscommandprocessor.commands.logging.StartLog_Command;
@@ -98,7 +100,10 @@ import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 
 // Spreadsheet commands
+import rti.tscommandprocessor.commands.spreadsheet.NewExcelWorkbook_Command;
+import rti.tscommandprocessor.commands.spreadsheet.ReadTableCellsFromExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableFromExcel_Command;
+import rti.tscommandprocessor.commands.spreadsheet.WriteTableCellsToExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTableToExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTimeSeriesToExcel_Command;
 
@@ -122,8 +127,10 @@ import rti.tscommandprocessor.commands.table.CompareTables_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
 import rti.tscommandprocessor.commands.table.CreateTimeSeriesEventTable_Command;
+import rti.tscommandprocessor.commands.table.FormatTableDateTime_Command;
 import rti.tscommandprocessor.commands.table.FormatTableString_Command;
 import rti.tscommandprocessor.commands.table.FreeTable_Command;
+import rti.tscommandprocessor.commands.table.InsertTableRow_Command;
 import rti.tscommandprocessor.commands.table.JoinTables_Command;
 import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
 import rti.tscommandprocessor.commands.table.NewTable_Command;
@@ -212,6 +219,7 @@ import rti.tscommandprocessor.commands.ts.SetFromTS_Command;
 import rti.tscommandprocessor.commands.ts.SetIncludeMissingTS_Command;
 import rti.tscommandprocessor.commands.ts.SetIgnoreLEZero_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
+import rti.tscommandprocessor.commands.ts.SetTimeSeriesValuesFromLookupTable_Command;
 import rti.tscommandprocessor.commands.ts.SetToMax_Command;
 import rti.tscommandprocessor.commands.ts.SetToMin_Command;
 import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
@@ -234,10 +242,14 @@ import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.CompareFiles_Command;
+import rti.tscommandprocessor.commands.util.CopyFile_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
+import rti.tscommandprocessor.commands.util.EndIf_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
 import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.FormatDateTimeProperty_Command;
+import rti.tscommandprocessor.commands.util.If_Command;
+import rti.tscommandprocessor.commands.util.ListFiles_Command;
 import rti.tscommandprocessor.commands.util.MergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.PrintTextFile_Command;
 import rti.tscommandprocessor.commands.util.ProfileCommands_Command;
@@ -419,6 +431,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("CopyEnsemble") ) {
         return new CopyEnsemble_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("CopyFile") ) {
+        return new CopyFile_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("CopyTable") ) {
         return new CopyTable_Command ();
     }
@@ -427,6 +442,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("CopyTimeSeriesPropertiesToTable") ) {
         return new CopyTimeSeriesPropertiesToTable_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("CreateDataStoreDataDictionary") ) {
+        return new CreateDataStoreDataDictionary_Command ();
     }
     else if ( commandName.equalsIgnoreCase("CreateEnsembleFromOneTimeSeries") ||
         commandName.equalsIgnoreCase("CreateEnsemble")) {
@@ -466,7 +484,10 @@ throws UnknownCommandException
     }
 	
 	// "E" commands...
-	
+
+    else if ( commandName.equalsIgnoreCase("EndIf") ) {
+        return new EndIf_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"Exit") ||
 	    StringUtil.startsWithIgnoreCase(commandString,"Exit")) {
 		return new Exit_Command ();
@@ -522,6 +543,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("FormatDateTimeProperty") ) {
         return new FormatDateTimeProperty_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("FormatTableDateTime") ) {
+        return new FormatTableDateTime_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("FormatTableString") ) {
         return new FormatTableString_Command ();
     }
@@ -541,7 +565,13 @@ throws UnknownCommandException
     */
     
     // "I" commands...
-    
+
+    else if ( commandName.equalsIgnoreCase("If") ) {
+        return new If_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("InsertTableRow") ) {
+        return new InsertTableRow_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("InsertTimeSeriesIntoEnsemble") ) {
         return new InsertTimeSeriesIntoEnsemble_Command ();
     }
@@ -557,6 +587,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("LagK") ) {
 		return new LagK_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("ListFiles") ) {
+        return new ListFiles_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("LookupTimeSeriesFromTable") ) {
         return new LookupTimeSeriesFromTable_Command ();
     }
@@ -569,6 +602,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("MergeListFileColumns") ) {
 		return new MergeListFileColumns_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("Message") ) {
+        return new Message_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("Multiply") ) {
         return new Multiply_Command ();
     }
@@ -583,6 +619,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("NewEnsemble") ) {
         return new NewEnsemble_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("NewExcelWorkbook") ) {
+        return new NewExcelWorkbook_Command ();
     }
     else if ( commandName.equalsIgnoreCase("NewPatternTimeSeries") ) {
         return new NewPatternTimeSeries_Command ();
@@ -705,6 +744,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadTableFromDelimitedFile") ) {
         return new ReadTableFromDelimitedFile_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadTableCellsFromExcel") ) {
+        return new ReadTableCellsFromExcel_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadTableFromExcel") ) {
         return new ReadTableFromExcel_Command ();
@@ -845,6 +887,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("SetTimeSeriesProperty") ) {
 		return new SetTimeSeriesProperty_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("SetTimeSeriesValuesFromLookupTable") ) {
+        return new SetTimeSeriesValuesFromLookupTable_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("SetMax") || commandName.equalsIgnoreCase("SetToMax") ) {
         // Legacy is "SetMax" so translate on the fly.
         return new SetToMax_Command ();
@@ -965,6 +1010,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToExcel") ) {
         return new WriteTableToExcel_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTableCellsToExcel") ) {
+        return new WriteTableCellsToExcel_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToHTML") ) {
         return new WriteTableToHTML_Command ();

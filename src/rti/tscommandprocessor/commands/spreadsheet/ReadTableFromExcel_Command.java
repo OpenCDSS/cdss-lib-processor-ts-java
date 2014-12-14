@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -146,6 +147,7 @@ throws InvalidCommandParameterException
     String ExcelColumnNames = parameters.getValue ( "ExcelColumnNames" );
     String NumberPrecision = parameters.getValue ( "NumberPrecision" );
 	String ReadAllAsText = parameters.getValue ( "ReadAllAsText" );
+    String KeepOpen = parameters.getValue ( "KeepOpen" );
 	String warning = "";
     String message;
     
@@ -251,25 +253,34 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "ReadAllAsText must " + _False + " (default) or " + _True ) );
     }
+    if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) && 
+        !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.equalsIgnoreCase("") ) {
+        message = "KeepOpen is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "KeepOpen must be specified as " + _False + " (default) or " + _True ) );
+    }
 
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "Worksheet" );
-    valid_Vector.add ( "ExcelAddress" );
-    valid_Vector.add ( "ExcelNamedRange" );
-    valid_Vector.add ( "ExcelTableName" );
-    valid_Vector.add ( "ExcelColumnNames" );
-    valid_Vector.add ( "ColumnExcludeFilters" );
-    valid_Vector.add ( "Comment" );
-    valid_Vector.add ( "ExcelIntegerColumns" );
-    valid_Vector.add ( "ExcelDateTimeColumns" );
-    valid_Vector.add ( "NumberPrecision" );
-    valid_Vector.add ( "ReadAllAsText" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List<String> validList = new ArrayList<String>();
+    validList.add ( "TableID" );
+    validList.add ( "InputFile" );
+    validList.add ( "Worksheet" );
+    validList.add ( "ExcelAddress" );
+    validList.add ( "ExcelNamedRange" );
+    validList.add ( "ExcelTableName" );
+    validList.add ( "ExcelColumnNames" );
+    validList.add ( "ColumnExcludeFilters" );
+    validList.add ( "Comment" );
+    validList.add ( "ExcelIntegerColumns" );
+    validList.add ( "ExcelDateTimeColumns" );
+    validList.add ( "NumberPrecision" );
+    validList.add ( "ReadAllAsText" );
+    validList.add ( "KeepOpen" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -676,7 +687,7 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 @param problems list of problems encountered during read, for formatted logging in calling code
 @return a DataTable with the Excel contents
 */
-private DataTable readTableFromExcelFile ( String workbookFile, String sheetName,
+private DataTable readTableFromExcelFile ( String workbookFile, String sheetName, boolean keepOpen,
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
     Hashtable columnExcludeFiltersMap, String comment, String [] excelIntegerColumns, String [] excelDateTimeColumns,
     int numberPrecision, boolean readAllAsText, List<String> problems )
@@ -691,19 +702,23 @@ throws FileNotFoundException, IOException
     Workbook wb = null;
     InputStream inp = null;
     try {
-        try {
-            inp = new FileInputStream(workbookFile);
-        }
-        catch ( IOException e ) {
-            problems.add ( "Error opening workbook file \"" + workbookFile + "\" (" + e + ")." );
-            return null;
-        }
-        try {
-            wb = WorkbookFactory.create(inp);
-        }
-        catch ( InvalidFormatException e ) {
-            problems.add ( "Error creating workbook object from \"" + workbookFile + "\" (" + e + ")." );
-            return null;
+        // See if an open workbook by the same name exists
+        wb = ExcelUtil.getOpenWorkbook(workbookFile);
+        if ( wb == null ) {
+            try {
+                inp = new FileInputStream(workbookFile);
+            }
+            catch ( IOException e ) {
+                problems.add ( "Error opening workbook file \"" + workbookFile + "\" (" + e + ")." );
+                return null;
+            }
+            try {
+                wb = WorkbookFactory.create(inp);
+            }
+            catch ( InvalidFormatException e ) {
+                problems.add ( "Error creating workbook object from \"" + workbookFile + "\" (" + e + ")." );
+                return null;
+            }
         }
         Sheet sheet = null;
         // TODO SAM 2013-02-22 In the future sheet may be determined from named address (e.g., named ranges
@@ -759,8 +774,14 @@ throws FileNotFoundException, IOException
                 // Seems to happen at bottom of worksheets where there are extra junk rows
                 continue;
             }
-            Message.printStatus(2, routine, "Processing row [" + iRow + "] end at [" + rowEnd + "]" );
-            if ( (iRow == rowStart) || (iRow == rowEnd) || (iRow%25 == 0) ) {
+            if ( Message.isDebugOn ) {
+                Message.printDebug(1, routine, "Processing row [" + iRow + "] end at [" + rowEnd + "]" );
+            }
+            int updateDelta = nRowsToRead/20;
+            if ( updateDelta == 0 ) {
+                updateDelta = 2;
+            }
+            if ( (iRow == rowStart) || (iRow == rowEnd) || (iRow%updateDelta == 0) ) {
                 // Update the progress bar every 5%
                 message = "Reading row " + (iRow - rowStart + 1) + " of " + nRowsToRead;
                 notifyCommandProgressListeners ( (iRow - rowStart), nRowsToRead, (float)-1.0, message );
@@ -778,7 +799,9 @@ throws FileNotFoundException, IOException
                 ++iColOut;
                 cell = row.getCell(iCol);
                 if ( cell == null ) {
-                    Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\"" );
+                    if ( Message.isDebugOn ) {
+                        Message.printDebug(1, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\"" );
+                    }
                     if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
                         table.setFieldValue(iRowOut, iColOut, "", true);
                     }
@@ -798,8 +821,10 @@ throws FileNotFoundException, IOException
                 // The checks are exhaustive, so list in the order that is most likely (string, double,
                 // boolean, blank, error, formula).
                 cellType = cell.getCellType();
-                Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" + cellType + " " +
-                    lookupExcelCellType(cellType));
+                if ( Message.isDebugOn ) {
+                    Message.printDebug(1, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" +
+                        cellType + " " + lookupExcelCellType(cellType));
+                }
                 cellIsFormula = false;
                 if ( cellType == Cell.CELL_TYPE_FORMULA ) {
                     // Have to evaluate the cell and get the value as the result
@@ -809,8 +834,10 @@ throws FileNotFoundException, IOException
                         formulaCellValue = formulaEval.evaluate(cell);
                         // Reset cellType for following code
                         cellType = formulaCellValue.getCellType();
-                        Message.printStatus(2, routine, "Detected formula, new cellType=" + cellType +
-                            ", cell value=\"" + formulaCellValue + "\"" );
+                        if ( Message.isDebugOn ) {
+                            Message.printDebug(1, routine, "Detected formula, new cellType=" + cellType +
+                                ", cell value=\"" + formulaCellValue + "\"" );
+                        }
                     }
                     catch ( Exception e ) {
                         // Handle as an error in processing below.
@@ -972,7 +999,7 @@ throws FileNotFoundException, IOException
                 }
                 else if ( cellType == Cell.CELL_TYPE_BLANK ) {
                     // Null works for all object types.  If truly a blank string in text cell, use "" as text
-                    if ( cellMatchesFilter(columnNames[iCol],"",columnExcludeFiltersMap) ) {
+                    if ( cellMatchesFilter(columnNames[iColOut],"",columnExcludeFiltersMap) ) {
                         // Add the row but will remove at the end after all columns are processed
                         needToSkipRow = true;
                     }
@@ -1009,7 +1036,17 @@ throws FileNotFoundException, IOException
         Message.printWarning(3,routine,e);
     }
     finally {
-        inp.close();
+        // If keeping open skip because it will be written by a later command.
+        if ( keepOpen ) {
+            // Save the open workbook for other commands to use
+            ExcelUtil.setOpenWorkbook(workbookFile,wb);
+        }
+        else {
+            if ( inp != null ) {
+                inp.close();
+            }
+            ExcelUtil.removeOpenWorkbook(workbookFile);
+        }
     }
     return table;
 }
@@ -1146,14 +1183,19 @@ CommandWarningException, CommandException
 	if ( (ReadAllAsText != null) && ReadAllAsText.equalsIgnoreCase("True") ) {
 	    readAllAsText = true;
 	}
+    String KeepOpen = parameters.getValue ( "KeepOpen" );
+    boolean keepOpen = false; // default
+    if ( (KeepOpen != null) && KeepOpen.equalsIgnoreCase(_True) ) {
+        keepOpen = true;
+    }
 
 	String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
 	if ( !IOUtil.fileExists(InputFile_full) ) {
 		message += "\nThe Excel workbook file \"" + InputFile_full + "\" does not exist.";
 		++warning_count;
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Verify that the delimited table file exists." ) );
+        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
+            message, "Verify that the Excel workbook file exists." ) );
 	}
 
 	if ( warning_count > 0 ) {
@@ -1170,7 +1212,7 @@ CommandWarningException, CommandException
 	List<String> problems = new Vector<String>();
 	try {
 	    if ( command_phase == CommandPhaseType.RUN ) {
-            table = readTableFromExcelFile ( InputFile_full, Worksheet,
+            table = readTableFromExcelFile ( InputFile_full, Worksheet, keepOpen,
                 ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, columnExcludeFiltersMap, comment,
                 excelIntegerColumns, excelDateTimeColumns, numberPrecision, readAllAsText, problems );
             for ( String problem: problems ) {
@@ -1195,7 +1237,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Unexpected error read table from delimited file \"" + InputFile_full + "\" (" + e + ").";
+		message = "Unexpected error reading table from Excel workbook file \"" + InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
         status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Verify that the file exists and is readable." ) );
@@ -1270,6 +1312,7 @@ public String toString ( PropList props )
 	String ExcelDateTimeColumns = props.getValue("ExcelDateTimeColumns");
 	String NumberPrecision = props.getValue("NumberPrecision");
 	String ReadAllAsText = props.getValue("ReadAllAsText");
+	String KeepOpen = props.getValue("KeepOpen");
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -1348,6 +1391,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ReadAllAsText=" + ReadAllAsText );
+    }
+    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "KeepOpen=" + KeepOpen );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

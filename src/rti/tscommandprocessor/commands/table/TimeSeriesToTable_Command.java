@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -84,8 +85,7 @@ throws InvalidCommandParameterException
     String IncludeMissingValues = parameters.getValue ( "IncludeMissingValues" );
     String ValueColumn = parameters.getValue ( "ValueColumn" );
     String OutputPrecision = parameters.getValue ( "OutputPrecision" );
-    String FlagColumn = parameters.getValue ( "FlagColumn" );
-    String DataRow = parameters.getValue ( "DataRow" );
+    //String FlagColumn = parameters.getValue ( "FlagColumn" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
     String OutputWindowStart = parameters.getValue ( "OutputWindowStart" );
@@ -177,20 +177,6 @@ throws InvalidCommandParameterException
                     message, "Specify output precision as an integer (0+)." ) );
         }
     }
-    if ( (DataRow == null) || (DataRow.length() == 0) ) {
-        message = "The DataRow is required but has not been specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify DataRow as table row number (1+)." ) );
-    }
-    else if ( !StringUtil.isInteger(DataRow) ) {
-        message = "The DataRow (" + DataRow + ") is not a valid integer.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify DataRow as table row number (1+)." ) );
-    }
 	if ( (OutputStart != null) && !OutputStart.equals("") && !OutputStart.equalsIgnoreCase("OutputStart")){
 		try {
             DateTime.parse(OutputStart);
@@ -250,37 +236,29 @@ throws InvalidCommandParameterException
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify as blank, " + _Create + ", or " + _Warn + " (default)." ) );
-	}
-	// Put this in for now since don't know how to modify an existing table
-	if ( (IfTableNotFound == null) || !IfTableNotFound.equalsIgnoreCase(_Create) ) {
-        message = "The IfTableNotFound currently must be " + _Create;
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify as " + _Create + "." ) );   
+                message, "Specify as blank, " + _Create + " (default), or " + _Warn ) );
 	}
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "DateTimeColumn" );
-    valid_Vector.add ( "TableTSIDColumn" );
-    valid_Vector.add ( "TableTSIDFormat" );
-    valid_Vector.add ( "IncludeMissingValues" );
-    valid_Vector.add ( "ValueColumn" );
-    valid_Vector.add ( "OutputPrecision" );
-    valid_Vector.add ( "FlagColumn" );
-    valid_Vector.add ( "DataRow" );
-    valid_Vector.add ( "OutputStart" );
-    valid_Vector.add ( "OutputEnd" );
-    valid_Vector.add ( "OutputWindowStart" );
-    valid_Vector.add ( "OutputWindowEnd" );
-    valid_Vector.add ( "IfTableNotFound" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(17);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "TableID" );
+    validList.add ( "DateTimeColumn" );
+    validList.add ( "TableTSIDColumn" );
+    validList.add ( "TableTSIDFormat" );
+    validList.add ( "IncludeMissingValues" );
+    validList.add ( "ValueColumn" );
+    validList.add ( "OutputPrecision" );
+    validList.add ( "FlagColumn" );
+    validList.add ( "OutputStart" );
+    validList.add ( "OutputEnd" );
+    validList.add ( "OutputWindowStart" );
+    validList.add ( "OutputWindowEnd" );
+    validList.add ( "IfTableNotFound" );
+    validList.add ( "DataRow" ); // Allow this but don't include in toString() - phase out since default of 1 was always used
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -301,11 +279,10 @@ Create a blank table to contain the time series.
 @param valueColumns the names of data value columns
 @param outputPrecision precision for data values transferred to table
 @param flagColumns the names of data flag columns
-@param dataRow the first row for data (0+, command parameter is 1+ for users).
 @return A new table with columns set up to receive the time series.
 */
 private DataTable createTable ( List<TS> tslist, String tableID, String dateTimeColumn,
-    String tableTSIDColumn, List<String> valueColumns, int outputPrecision, List<String> flagColumns, int dataRow )
+    String tableTSIDColumn, List<String> valueColumns, int outputPrecision, List<String> flagColumns )
 {   // Create the table
     List<TableField> tableFields = new Vector<TableField>(3);
     // TODO SAM 2013-05-12 evaluate whether to use DATA_TYPE_DATETIME
@@ -460,8 +437,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number number of command to run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
@@ -505,7 +481,6 @@ CommandWarningException, CommandException
     if ( (IncludeMissingValues != null) && IncludeMissingValues.equalsIgnoreCase(_False) ) {
         IncludeMissingValues_boolean = false;
     }
-    int DataRow_int = -1; // Determined below.  Row 0+ for first data value.
     String TableID = parameters.getValue("TableID");
     String IfTableNotFound = parameters.getValue("IfTableNotFound");
     if ( (IfTableNotFound == null) || IfTableNotFound.equals("") ) {
@@ -571,12 +546,16 @@ CommandWarningException, CommandException
     	request_params.set ( "TSID", TSID );
         request_params.set ( "EnsembleID", EnsembleID );
     	CommandProcessorRequestResultsBean bean = null;
+    	Object o_TSList = null;
+    	PropList bean_PropList = null;
     	try {
             bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+            bean_PropList = bean.getResultsPropList();
+            o_TSList = bean_PropList.getContents ( "TSToProcessList" );
     	}
     	catch ( Exception e ) {
             message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-            "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+            "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor (" + e + ").";
     		Message.printWarning(warning_level,
     				MessageUtil.formatMessageTag( command_tag, ++warning_count),
     				routine, message );
@@ -584,8 +563,6 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
     	}
-    	PropList bean_PropList = bean.getResultsPropList();
-    	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
     	if ( o_TSList == null ) {
             message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -610,7 +587,10 @@ CommandWarningException, CommandException
                         "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
     		}
     	}
-    	Object o_Indices = bean_PropList.getContents ( "Indices" );
+    	Object o_Indices = null;
+    	if ( bean_PropList != null ) {
+    	    o_Indices = bean_PropList.getContents ( "Indices" );
+    	}
     	int [] tspos = null;
     	if ( o_Indices == null ) {
     		message = "Unable to find indices for time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
@@ -791,78 +771,138 @@ CommandWarningException, CommandException
             outputPrecision = Integer.parseInt(OutputPrecision);
         }
         String FlagColumn = parameters.getValue("FlagColumn");
-        String DataRow = parameters.getValue("DataRow");
-        DataRow_int = Integer.parseInt(DataRow) - 1; // Zero offset
-        if ( createTable ) {
-            List<String> valueColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, ValueColumn);
-            List<String> flagColumnNames = new Vector<String>(); 
-            if ( (FlagColumn != null) && !FlagColumn.equals("") ) {
-                flagColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, FlagColumn);
+        // Determine the column names for values and flags
+        List<String> valueColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, ValueColumn);
+        List<String> flagColumnNames = new Vector<String>(); 
+        if ( (FlagColumn != null) && !FlagColumn.equals("") ) {
+            flagColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, FlagColumn);
+        }
+        // Make sure that the column names are unique
+        List<String> columnNamesCheck = new ArrayList<String>();
+        StringUtil.addListToStringList(columnNamesCheck, valueColumnNames);
+        StringUtil.addListToStringList(columnNamesCheck, flagColumnNames);
+        for ( int i = 0; i < columnNamesCheck.size(); i++ ) {
+            String columnName = columnNamesCheck.get(i);
+            for ( int j = 0; j < columnNamesCheck.size(); j++ ) {
+                String columnName2 = columnNamesCheck.get(j);
+                if ( columnName != columnName2 ) {
+                    if ( columnName.equalsIgnoreCase(columnName2) ) {
+                        message = "Time series data (or flag) column " + (i + 1) + " name \"" + columnName + "\" is duplicated in column " + (j + 1) + ".";
+                        Message.printWarning(warning_level,
+                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                            routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                               message, "Specify table column names uniquely to avoid ambiguity." ) );
+                    }
+                }
             }
+        }
+        if ( createTable ) {
             // No existing table was found and a new table should be created with columns for data values and flags
             table = createTable(tslist, TableID, DateTimeColumn, TableTSIDColumn,
-                valueColumnNames, outputPrecision, flagColumnNames, DataRow_int );
-            // Get the column numbers from the table that was created, to ensure proper order
+                valueColumnNames, outputPrecision, flagColumnNames );
+            table.setTableID(TableID);
+        }
+        else {
+            // Existing table is being used but need to make sure that the output columns exist
+            for ( int i = 0; i < valueColumnNames.size(); i++ ) {
+                String valueColumnName = valueColumnNames.get(i);
+                try {
+                    table.getFieldIndex(valueColumnName);
+                }
+                catch ( Exception e ) {
+                    // OK, indicates that column is not in table
+                    table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, valueColumnName, -1, outputPrecision), null);
+                    // Flag is either not used or is paired with time series
+                    if ( flagColumnNames.size() == valueColumnNames.size() ) {
+                        String flagColumnName = flagColumnNames.get(i);
+                        try {
+                            table.getFieldIndex(flagColumnName);
+                        }
+                        catch ( Exception e2 ) {
+                            // OK, indicates that flag column is not in table
+                            table.addField(new TableField(TableField.DATA_TYPE_STRING, flagColumnName, -1, -1), null);
+                        }
+                    }
+                }
+            }
+        }
+        // Get the column numbers from the table, to ensure proper order
+        try {
+            DateTimeColumn_int = table.getFieldIndex(DateTimeColumn);
+        }
+        catch ( Exception e ) {
+            // Should not happen
+            DateTimeColumn_int = -1;
+        }
+        if ( (TableTSIDColumn != null) && !TableTSIDColumn.equals("") ) {
             try {
-                DateTimeColumn_int = table.getFieldIndex(DateTimeColumn);
+                TableTSIDColumn_int = table.getFieldIndex(TableTSIDColumn);
             }
             catch ( Exception e ) {
                 // Should not happen
-                DateTimeColumn_int = -1;
+                TableTSIDColumn_int = -1;
             }
-            if ( (TableTSIDColumn != null) && !TableTSIDColumn.equals("") ) {
-                try {
-                    TableTSIDColumn_int = table.getFieldIndex(TableTSIDColumn);
-                }
-                catch ( Exception e ) {
-                    // Should not happen
-                    TableTSIDColumn_int = -1;
-                }
+        }
+        // Since creating the table, the data columns are 1+ (0 is date/time), alternating data and
+        // flag columns if flags are written and not blank
+        ValueColumn_int = new int[valueColumnNames.size()];
+        String valueColumnName;
+        for ( int i = 0; i < valueColumnNames.size(); i++ ) {
+            valueColumnName = valueColumnNames.get(i);
+            try {
+                ValueColumn_int[i] = table.getFieldIndex(valueColumnName);
             }
-            // Since creating the table, the data columns are 1+ (0 is date/time), alternating data and
-            // flag columns if flags are written and not blank
-            // TODO SAM 2012-08-24 This will break if an existing table is allowed to be written
-            ValueColumn_int = new int[valueColumnNames.size()];
-            String valueColumnName;
-            for ( int i = 0; i < valueColumnNames.size(); i++ ) {
-                valueColumnName = valueColumnNames.get(i);
-                try {
-                    ValueColumn_int[i] = table.getFieldIndex(valueColumnName);
-                }
-                catch ( Exception e ) {
-                    // Should not happen
-                    ValueColumn_int[i] = -1;
-                }
+            catch ( Exception e ) {
+                // Should not happen
+                ValueColumn_int[i] = -1;
             }
-            // Number of flag columns must be zero or the same as number of value columns
-            FlagColumn_int = new int[valueColumnNames.size()];
-            // Initialize...
-            for ( int i = 0; i < valueColumnNames.size(); i++ ) {
+        }
+        // Number of flag columns must be zero or the same as number of value columns
+        FlagColumn_int = new int[flagColumnNames.size()];
+        // Initialize...
+        for ( int i = 0; i < flagColumnNames.size(); i++ ) {
+            FlagColumn_int[i] = -1;
+        }
+        String flagColumnName;
+        for ( int i = 0; i < flagColumnNames.size(); i++ ) {
+            flagColumnName = flagColumnNames.get(i);
+            try {
+                FlagColumn_int[i] = table.getFieldIndex(flagColumnName);
+            }
+            catch ( Exception e ) {
+                // Should not happen but flag column may be blank indicating not wanting to write
                 FlagColumn_int[i] = -1;
             }
-            String flagColumnName;
-            for ( int i = 0; i < flagColumnNames.size(); i++ ) {
-                flagColumnName = flagColumnNames.get(i);
-                try {
-                    FlagColumn_int[i] = table.getFieldIndex(flagColumnName);
+        }
+        // Make sure that the data table does not have duplicate column names since this will break the TSID matching
+        String[] columnNames = table.getFieldNames();
+        for ( int i = 0; i < columnNames.length; i++ ) {
+            for ( int j = 0; j < columnNames.length; j++ ) {
+                if ( i == j ) {
+                    continue;
                 }
-                catch ( Exception e ) {
-                    // Should not happen but flag column may be blank indicating not wanting to write
-                    FlagColumn_int[i] = -1;
+                else if ( columnNames[i].equalsIgnoreCase(columnNames[j]) ) {
+                    message = "Table column " + (i + 1) + " name \"" + columnNames[i] + "\" is duplicated column " + (j + 1) + ".";
+                    Message.printWarning(warning_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Specify table column names uniquely to avoid ambiguity." ) );
                 }
             }
-            table.setTableID(TableID);
-            setDiscoveryTable(table);
         }
-        
-        if ( warning_count > 0 ) {
-            // Input error...
-            message = "Insufficient data to run command.";
-            status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
-            Message.printWarning(3, routine, message );
-            throw new CommandException ( message );
-        }
+    } // Run phase
+    
+    if ( warning_count > 0 ) {
+        // Input error...
+        message = "Insufficient data to run command.";
+        status.addToLog ( commandPhase,
+        new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
+        Message.printWarning(3, routine, message );
+        throw new CommandException ( message );
     }
 
 	// Now process the time series...
@@ -875,8 +915,7 @@ CommandWarningException, CommandException
     		    TableID + "\"." );
     		TSUtil_TimeSeriesToTable tsu = new TSUtil_TimeSeriesToTable(table, tslist, DateTimeColumn_int,
     		    TableTSIDColumn_int, TableTSIDFormat, IncludeMissingValues_boolean,
-    		    ValueColumn_int, FlagColumn_int, DataRow_int,
-    		    OutputStart_DateTime, OutputEnd_DateTime, outputWindow, true );
+    		    ValueColumn_int, FlagColumn_int, OutputStart_DateTime, OutputEnd_DateTime, outputWindow, true );
     		tsu.timeSeriesToTable();
     		List<String> problems = tsu.getProblems();
             for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
@@ -954,7 +993,6 @@ public String toString ( PropList props )
     String ValueColumn = props.getValue( "ValueColumn" );
     String OutputPrecision = props.getValue( "OutputPrecision" );
     String FlagColumn = props.getValue( "FlagColumn" );
-    String DataRow = props.getValue( "DataRow" );
 	String OutputStart = props.getValue("OutputStart");
 	String OutputEnd = props.getValue("OutputEnd");
     String OutputWindowStart = props.getValue( "OutputWindowStart" );
@@ -1023,12 +1061,6 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "FlagColumn=\"" + FlagColumn + "\"");
-    }
-    if ( (DataRow != null) && (DataRow.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataRow=" + DataRow );
     }
 	if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
 		if ( b.length() > 0 ) {

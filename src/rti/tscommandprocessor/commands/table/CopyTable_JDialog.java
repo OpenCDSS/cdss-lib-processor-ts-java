@@ -44,6 +44,7 @@ private JTextField __IncludeColumns_JTextField = null;
 private JTextField __DistinctColumns_JTextField = null;
 private JTextArea __ColumnMap_JTextArea = null;
 private JTextArea __ColumnFilters_JTextArea = null;
+private JTextField __RowCountProperty_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private CopyTable_Command __command = null;
@@ -123,6 +124,7 @@ private void checkInput ()
 	String DistinctColumns = __DistinctColumns_JTextField.getText().trim();
 	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -142,6 +144,9 @@ private void checkInput ()
     }
     if ( ColumnFilters.length() > 0 ) {
         props.set ( "ColumnFilters", ColumnFilters );
+    }
+    if ( RowCountProperty.length() > 0 ) {
+        props.set ( "RowCountProperty", RowCountProperty );
     }
 	try {
 	    // This will warn the user...
@@ -165,25 +170,14 @@ private void commitEdits ()
     String DistinctColumns = __DistinctColumns_JTextField.getText().trim();
     String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
     String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
+    String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "NewTableID", NewTableID );
 	__command.setCommandParameter ( "IncludeColumns", IncludeColumns );
 	__command.setCommandParameter ( "DistinctColumns", DistinctColumns );
 	__command.setCommandParameter ( "ColumnMap", ColumnMap );
 	__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__IncludeColumns_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
+	__command.setCommandParameter ( "RowCountProperty", RowCountProperty );
 }
 
 /**
@@ -288,6 +282,16 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnFilters",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Row count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RowCountProperty_JTextField = new JTextField ( "", 20 );
+    __RowCountProperty_JTextField.setToolTipText("The property can be referenced in other commands using ${Property}.");
+    __RowCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RowCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as output table row count." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -370,6 +374,7 @@ private void refresh ()
     String DistinctColumns = "";
     String ColumnMap = "";
     String ColumnFilters = "";
+    String RowCountProperty = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -379,6 +384,7 @@ private void refresh ()
         IncludeColumns = props.getValue ( "IncludeColumns" );
         ColumnMap = props.getValue ( "ColumnMap" );
         ColumnFilters = props.getValue ( "ColumnFilters" );
+        RowCountProperty = props.getValue ( "RowCountProperty" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -409,6 +415,9 @@ private void refresh ()
         if ( ColumnFilters != null ) {
             __ColumnFilters_JTextArea.setText ( ColumnFilters );
         }
+        if ( RowCountProperty != null ) {
+            __RowCountProperty_JTextField.setText ( RowCountProperty );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
@@ -417,6 +426,7 @@ private void refresh ()
 	DistinctColumns = __DistinctColumns_JTextField.getText().trim();
 	ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
 	ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
+	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "NewTableID=" + NewTableID );
@@ -424,6 +434,7 @@ private void refresh ()
 	props.add ( "IncludeColumns=" + IncludeColumns );
 	props.add ( "ColumnMap=" + ColumnMap );
 	props.add ( "ColumnFilters=" + ColumnFilters );
+	props.add ( "RowCountProperty=" + RowCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

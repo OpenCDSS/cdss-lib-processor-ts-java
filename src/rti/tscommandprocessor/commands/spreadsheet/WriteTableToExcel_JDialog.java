@@ -59,6 +59,7 @@ private boolean __error_wait = false; // To track errors
 private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
+private JTextField __IncludeColumns_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __Worksheet_JTextField = null;
 private JTabbedPane __excelSpace_JTabbedPane = null;
@@ -72,6 +73,8 @@ private JTextField __ExcelIntegerColumns_JTextField = null;
 private JTextField __ExcelDateTimeColumns_JTextField = null;
 private JTextField __NumberPrecision_JTextField = null;
 private SimpleJComboBox __WriteAllAsText_JComboBox = null;
+private JTextArea __ColumnNamedRanges_JTextArea = null;
+private SimpleJComboBox __KeepOpen_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
@@ -160,6 +163,21 @@ public void actionPerformed(ActionEvent event)
             refresh();
         }
     }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnNamedRanges") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnNamedRanges = __ColumnNamedRanges_JTextArea.getText().trim();
+        String [] notes = {
+            "A column's data cell range (ignoring the column heading) can be set to a named range:",
+            "Column Name - column name in the table",
+            "Named Range - the name of the range"
+        };
+        String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnNamedRanges, "Edit ColumnNamedRanges Parameter",
+            notes, "Column Name", "Named Range",10)).response();
+        if ( columnFilters != null ) {
+            __ColumnNamedRanges_JTextArea.setText ( columnFilters );
+            refresh();
+        }
+    }
 }
 
 /**
@@ -170,6 +188,7 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
+	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Worksheet = __Worksheet_JTextField.getText().trim();
 	String ExcelAddress = __ExcelAddress_JTextField.getText().trim();
@@ -181,11 +200,16 @@ private void checkInput ()
 	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
 	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
-	String ReadAllAsText  = __WriteAllAsText_JComboBox.getSelected();
+	String WriteAllAsText = __WriteAllAsText_JComboBox.getSelected();
+	String ColumnNamedRanges = __ColumnNamedRanges_JTextArea.getText().trim().replace("\n"," ");
+	String KeepOpen = __KeepOpen_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
+    }
+    if ( IncludeColumns.length() > 0 ) {
+        props.set ( "IncludeColumns", IncludeColumns );
     }
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
@@ -220,8 +244,14 @@ private void checkInput ()
     if ( NumberPrecision.length() > 0 ) {
         props.set ( "NumberPrecision", NumberPrecision );
     }
-    if ( ReadAllAsText.length() > 0 ) {
-        props.set ( "ReadAllAsText", ReadAllAsText );
+    if ( WriteAllAsText.length() > 0 ) {
+        props.set ( "WriteAllAsText", WriteAllAsText );
+    }
+    if ( ColumnNamedRanges.length() > 0 ) {
+        props.set ( "ColumnNamedRanges", ColumnNamedRanges );
+    }
+    if ( KeepOpen.length() > 0 ) {
+        props.set ( "KeepOpen", KeepOpen );
     }
 	try {
 	    // This will warn the user...
@@ -240,6 +270,7 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
+    String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String Worksheet = __Worksheet_JTextField.getText().trim();
 	String ExcelAddress = __ExcelAddress_JTextField.getText().trim();
@@ -247,12 +278,15 @@ private void commitEdits ()
 	String ExcelTableName = __ExcelTableName_JTextField.getText().trim();
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
 	String ColumnExcludeFilters  = __ColumnExcludeFilters_JTextArea.getText().trim();
-	String Comment = __Comment_JTextField.getText().trim();
-	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
-	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
+	//String Comment = __Comment_JTextField.getText().trim();
+	//String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
+	//String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
-	String ReadAllAsText  = __WriteAllAsText_JComboBox.getSelected();
+	String WriteAllAsText  = __WriteAllAsText_JComboBox.getSelected();
+	String ColumnNamedRanges = __ColumnNamedRanges_JTextArea.getText().trim().replace("\n"," ");
+	String KeepOpen  = __KeepOpen_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
+    __command.setCommandParameter ( "IncludeColumns", IncludeColumns );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Worksheet", Worksheet );
 	__command.setCommandParameter ( "ExcelAddress", ExcelAddress );
@@ -260,11 +294,13 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ExcelTableName", ExcelTableName );
 	__command.setCommandParameter ( "ExcelColumnNames", ExcelColumnNames );
 	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
-	__command.setCommandParameter ( "Comment", Comment );
-	__command.setCommandParameter ( "ExcelIntegerColumns", ExcelIntegerColumns );
-	__command.setCommandParameter ( "ExcelDateTimeColumns", ExcelDateTimeColumns );
+	//__command.setCommandParameter ( "Comment", Comment );
+	//__command.setCommandParameter ( "ExcelIntegerColumns", ExcelIntegerColumns );
+	//__command.setCommandParameter ( "ExcelDateTimeColumns", ExcelDateTimeColumns );
 	__command.setCommandParameter ( "NumberPrecision", NumberPrecision );
-	__command.setCommandParameter ( "ReadAllAsText", ReadAllAsText );
+	__command.setCommandParameter ( "WriteAllAsText", WriteAllAsText );
+	__command.setCommandParameter ( "ColumnNamedRanges", ColumnNamedRanges );
+	__command.setCommandParameter ( "KeepOpen", KeepOpen );
 }
 
 /**
@@ -294,7 +330,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
 	int yy = -1;
 
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "<html><b>This command is in the early stages of devevelopment - DO NOT USE FOR PRODUCTION WORK.<b></html>"),
+        "<html><b>This command is under development.<b></html>"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
     	"This command writes a table to a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx).  " +
@@ -320,15 +356,25 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
+    __TableID_JComboBox.addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to write."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column names to write:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeColumns_JTextField = new JTextField (10);
+    __IncludeColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to write (default=write all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output (workbook) file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -353,7 +399,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     __excelSpace_JTabbedPane = new JTabbedPane ();
     __excelSpace_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify the address for a contigous block of cells the in Excel worksheet" ));
+        "Specify the address for a contigous block of cells the in Excel worksheet (upper left is start)" ));
     JGUIUtil.addComponent(main_JPanel, __excelSpace_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JPanel address_JPanel = new JPanel();
@@ -402,15 +448,16 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcelColumnNames_JComboBox = new SimpleJComboBox ( false );
     __ExcelColumnNames_JComboBox.add("");
-    __ExcelColumnNames_JComboBox.add(__command._ColumnN);
+    //__ExcelColumnNames_JComboBox.add(__command._ColumnN);
     __ExcelColumnNames_JComboBox.add(__command._FirstRowInRange);
+    __ExcelColumnNames_JComboBox.add(__command._None);
     __ExcelColumnNames_JComboBox.add(__command._RowBeforeRange);
     __ExcelColumnNames_JComboBox.select ( 0 );
     __ExcelColumnNames_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ExcelColumnNames_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - how to define column names (default=" +
-        __command._ColumnN + ")."),
+        __command._None + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to exclude rows:"),
@@ -482,6 +529,33 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     JGUIUtil.addComponent(main_JPanel, __WriteAllAsText_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - write all cells as text? (default=" + __command._False + ")."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column named ranges:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnNamedRanges_JTextArea = new JTextArea (3,35);
+    __ColumnNamedRanges_JTextArea.setLineWrap ( true );
+    __ColumnNamedRanges_JTextArea.setWrapStyleWord ( true );
+    __ColumnNamedRanges_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnNamedRanges_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnNamedRanges_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - indicate columns to set as named ranges (default=none)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnNamedRanges",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Keep file open?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __KeepOpen_JComboBox = new SimpleJComboBox ( false );
+    __KeepOpen_JComboBox.add("");
+    __KeepOpen_JComboBox.add(__command._False);
+    __KeepOpen_JComboBox.add(__command._True);
+    __KeepOpen_JComboBox.select ( 0 );
+    __KeepOpen_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __KeepOpen_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - keep Excel file open? (default=" + __command._False + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -565,6 +639,7 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = getClass().getName() + ".refresh";
     String TableID = "";
+    String IncludeColumns = "";
     String OutputFile = "";
     String Worksheet = "";
 	String ExcelAddress = "";
@@ -576,11 +651,14 @@ private void refresh ()
 	String ExcelIntegerColumns = "";
 	String ExcelDateTimeColumns = "";
 	String NumberPrecision = "";
-	String ReadAllAsText = "";
+	String WriteAllAsText = "";
+	String ColumnNamedRanges = "";
+	String KeepOpen = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
+        IncludeColumns = props.getValue ( "IncludeColumns" );
 		OutputFile = props.getValue ( "OutputFile" );
 		Worksheet = props.getValue ( "Worksheet" );
 		ExcelAddress = props.getValue ( "ExcelAddress" );
@@ -592,7 +670,9 @@ private void refresh ()
 		ExcelIntegerColumns = props.getValue ( "ExcelIntegerColumns" );
 		ExcelDateTimeColumns = props.getValue ( "ExcelDateTimeColumns" );
 		NumberPrecision = props.getValue ( "NumberPrecision" );
-		ReadAllAsText = props.getValue ( "ReadAllAsText" );
+		WriteAllAsText = props.getValue ( "WriteAllAsText" );
+		ColumnNamedRanges = props.getValue ( "ColumnNamedRanges" );
+		KeepOpen = props.getValue ( "KeepOpen" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -607,6 +687,9 @@ private void refresh ()
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
+        }
+        if ( IncludeColumns != null ) {
+            __IncludeColumns_JTextField.setText ( IncludeColumns );
         }
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText ( OutputFile );
@@ -655,22 +738,39 @@ private void refresh ()
         if ( NumberPrecision != null ) {
             __NumberPrecision_JTextField.setText ( NumberPrecision );
         }
-        if ( ReadAllAsText == null || ReadAllAsText.equals("") ) {
+        if ( WriteAllAsText == null || WriteAllAsText.equals("") ) {
             // Select a default...
             __WriteAllAsText_JComboBox.select ( 0 );
         } 
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __WriteAllAsText_JComboBox, ReadAllAsText, JGUIUtil.NONE, null, null ) ) {
-                __WriteAllAsText_JComboBox.select ( ReadAllAsText );
+            if ( JGUIUtil.isSimpleJComboBoxItem( __WriteAllAsText_JComboBox, WriteAllAsText, JGUIUtil.NONE, null, null ) ) {
+                __WriteAllAsText_JComboBox.select ( WriteAllAsText );
             }
             else {
-                Message.printWarning ( 1, routine, "Existing command references an invalid\nReadAllAsText \"" +
-                    ReadAllAsText + "\".  Select a different choice or Cancel." );
+                Message.printWarning ( 1, routine, "Existing command references an invalid\nWriteAllAsText \"" +
+                    WriteAllAsText + "\".  Select a different choice or Cancel." );
+            }
+        }
+        if ( ColumnNamedRanges != null ) {
+            __ColumnNamedRanges_JTextArea.setText ( ColumnNamedRanges );
+        }
+        if ( KeepOpen == null || KeepOpen.equals("") ) {
+            // Select a default...
+            __KeepOpen_JComboBox.select ( 0 );
+        } 
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __KeepOpen_JComboBox, KeepOpen, JGUIUtil.NONE, null, null ) ) {
+                __KeepOpen_JComboBox.select ( KeepOpen );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\nKeepOpen \"" +
+                    KeepOpen + "\".  Select a different choice or Cancel." );
             }
         }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
+	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Worksheet = __Worksheet_JTextField.getText().trim();
 	ExcelAddress = __ExcelAddress_JTextField.getText().trim();
@@ -682,9 +782,12 @@ private void refresh ()
 	ExcelIntegerColumns = __ExcelIntegerColumns_JTextField.getText().trim();
 	ExcelDateTimeColumns = __ExcelDateTimeColumns_JTextField.getText().trim();
 	NumberPrecision = __NumberPrecision_JTextField.getText().trim();
-	ReadAllAsText = __WriteAllAsText_JComboBox.getSelected();
+	WriteAllAsText = __WriteAllAsText_JComboBox.getSelected();
+	ColumnNamedRanges = __ColumnNamedRanges_JTextArea.getText().trim().replace("\n"," ");
+	KeepOpen = __KeepOpen_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
+    props.add ( "IncludeColumns=" + IncludeColumns );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "Worksheet=" + Worksheet );
 	props.add ( "ExcelAddress=" + ExcelAddress );
@@ -696,7 +799,9 @@ private void refresh ()
 	props.add ( "ExcelIntegerColumns=" + ExcelIntegerColumns );
 	props.add ( "ExcelDateTimeColumns=" + ExcelDateTimeColumns );
 	props.add ( "NumberPrecision=" + NumberPrecision );
-	props.add ( "ReadAllAsText=" + ReadAllAsText );
+	props.add ( "WriteAllAsText=" + WriteAllAsText );
+	props.add ( "ColumnNamedRanges=" + ColumnNamedRanges );
+	props.add ( "KeepOpen=" + KeepOpen );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

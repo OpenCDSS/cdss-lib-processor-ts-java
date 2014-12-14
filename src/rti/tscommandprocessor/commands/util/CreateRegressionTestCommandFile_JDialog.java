@@ -113,7 +113,7 @@ public void actionPerformed( ActionEvent event )
 	
 			if (path != null) {
 				__SearchFolder_JTextField.setText(path );
-				JGUIUtil.setLastFileDialogDirectory(directory);
+				JGUIUtil.setLastFileDialogDirectory(path);
 				refresh();
 			}
 		}

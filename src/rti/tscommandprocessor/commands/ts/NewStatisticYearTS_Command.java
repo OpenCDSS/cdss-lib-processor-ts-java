@@ -468,8 +468,7 @@ CommandWarningException, CommandException
 
 /**
 Run the command.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
@@ -672,8 +671,7 @@ CommandWarningException, CommandException
         }
     }
 
-	// Get the time series to process.  The time series list is searched
-	// backwards until the first match...
+	// Get the time series to process.  The time series list is searched backwards until the first match...
     TS ts = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Get the discovery time series list from all time series above this command

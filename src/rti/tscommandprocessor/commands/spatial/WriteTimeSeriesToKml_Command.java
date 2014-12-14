@@ -4,14 +4,21 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import RTi.GIS.GeoView.WKTGeometryParser;
+import RTi.GR.GRPoint;
+import RTi.GR.GRPointZM;
+import RTi.GR.GRPolygon;
+import RTi.GR.GRShape;
 import RTi.TS.TS;
 
 import RTi.Util.IO.AbstractCommand;
@@ -65,6 +72,8 @@ throws InvalidCommandParameterException
 {   String OutputFile = parameters.getValue ( "OutputFile" );
     String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
     String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
+    String WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
+    String StyleFile = parameters.getValue ( "StyleFile" );
     String MissingValue = parameters.getValue("MissingValue" );
     String Precision = parameters.getValue ( "Precision" );
     String OutputStart = parameters.getValue ( "OutputStart" );
@@ -123,18 +132,76 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (LongitudeProperty == null) || (LongitudeProperty.length() == 0) ) {
-        message = "The longitude property must be specified.";
+    if ( ((LongitudeProperty == null) || (LongitudeProperty.length() == 0)) &&
+        ((WKTGeometryProperty == null) || (WKTGeometryProperty.length() == 0)) ) {
+        message = "The longitude property OR WKT geometry property must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the longitude property." ) );
+            message, "Specify the longitude OR WKT geometry property." ) );
     }
     
-    if ( (LatitudeProperty == null) || (LatitudeProperty.length() == 0) ) {
-        message = "The latitude property must be specified.";
+    if ( ((LongitudeProperty != null) && (LongitudeProperty.length() != 0)) &&
+        ((WKTGeometryProperty != null) && (WKTGeometryProperty.length() != 0)) ) {
+        message = "The longitude column OR WKT geometry column must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the latitude property." ) );
+            message, "Specify the longitude OR WKT geometry property." ) );
+    }
+    
+    if ( ((LatitudeProperty == null) || (LatitudeProperty.length() == 0)) &&
+        ((WKTGeometryProperty == null) || (WKTGeometryProperty.length() == 0)) ) {
+        message = "The latitude property OR WKT geometry property must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the latitude column OR WKT geometry property." ) );
+    }
+    
+    if ( ((LatitudeProperty != null) && (LatitudeProperty.length() != 0)) &&
+        ((WKTGeometryProperty != null) && (WKTGeometryProperty.length() != 0)) ) {
+        message = "The latitude property OR WKT geometry property must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the latitude column OR WKT geometry property." ) );
+    }
+    
+    String StyleFile_full = null;
+    if ( (StyleFile != null) && (StyleFile.length() != 0) ) {
+        String working_dir = null;
+        try {
+            Object o = processor.getPropContents ( "WorkingDir" );
+                // Working directory is available so use it...
+                if ( o != null ) {
+                    working_dir = (String)o;
+                }
+            }
+            catch ( Exception e ) {
+                message = "Error requesting WorkingDir from processor.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an existing style file." ) );
+            }
+    
+        try {
+            StyleFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor,this,StyleFile)));
+            File f = new File ( StyleFile_full );
+            if ( !f.exists() ) {
+                message = "The style file does not exist:  \"" + StyleFile_full + "\".";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the style file exists - may be OK if created at run time." ) );
+            }
+        }
+        catch ( Exception e ) {
+            message = "The style file:\n" + "    \"" + StyleFile +
+            "\"\ncannot be adjusted using the working directory:\n" + "    \"" + working_dir + "\".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                     message, "Verify that style file and working directory paths are compatible." ) );
+        }
     }
     
     if ( (Precision != null) && !Precision.equals("") ) {
@@ -187,19 +254,28 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "OutputFile" );
-    valid_Vector.add ( "LongitudeProperty" );
-    valid_Vector.add ( "LatitudeProperty" );
-    valid_Vector.add ( "ElevationProperty" );
-    valid_Vector.add ( "Precision" );
-    valid_Vector.add ( "MissingValue" );
-    valid_Vector.add ( "OutputStart" );
-    valid_Vector.add ( "OutputEnd" );
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(20);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "OutputFile" );
+    validList.add ( "Name" );
+    validList.add ( "Description" );
+    validList.add ( "LongitudeProperty" );
+    validList.add ( "LatitudeProperty" );
+    validList.add ( "ElevationProperty" );
+    validList.add ( "WKTGeometryProperty" );
+    validList.add ( "GeometryInsert" );
+    validList.add ( "PlacemarkName" );
+    validList.add ( "PlacemarkDescription" );
+    validList.add ( "StyleInsert" );
+    validList.add ( "StyleFile" );
+    validList.add ( "StyleUrl" );
+    validList.add ( "Precision" );
+    validList.add ( "MissingValue" );
+    validList.add ( "OutputStart" );
+    validList.add ( "OutputEnd" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
@@ -277,9 +353,18 @@ CommandWarningException, CommandException
     String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String Name = parameters.getValue ( "Name" );
+    String Description = parameters.getValue ( "Description" );
     String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
     String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
     String ElevationProperty = parameters.getValue ( "ElevationProperty" );
+    String WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
+    String GeometryInsert = parameters.getValue ( "GeometryInsert" );
+    String PlacemarkName = parameters.getValue ( "PlacemarkName" );
+    String PlacemarkDescription = parameters.getValue ( "PlacemarkDescription" );
+    String StyleInsert = parameters.getValue ( "StyleInsert" );
+    String StyleFile = parameters.getValue ( "StyleFile" );
+    String StyleUrl = parameters.getValue ( "StyleUrl" );
 
     // Get the time series to process...
     PropList request_params = new PropList ( "" );
@@ -435,9 +520,29 @@ CommandWarningException, CommandException
                 TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
         Message.printStatus ( 2, routine, "Writing KML file \"" + OutputFile_full + "\"" );
         List<String> errors = new Vector<String>();
-        String version = "2";
-        writeTimeSeriesList ( tslist, OutputFile_full, version, precision, MissingValue,
-            OutputStart_DateTime, OutputEnd_DateTime, LongitudeProperty, LatitudeProperty, ElevationProperty, errors );
+        String kmlVersion = "2";
+        String StyleFile_full = null;
+        if ( (StyleFile != null) && !StyleFile.equals("") ) {
+            StyleFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,StyleFile)));
+            if ( !IOUtil.fileReadable(StyleFile_full) || !IOUtil.fileExists(StyleFile_full)) {
+                message = "Style file \"" + StyleFile_full + "\" is not found or accessible.";
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord( CommandStatusType.FAILURE, message,
+                        "Verify that the file exists and is readable."));
+                throw new CommandException ( message );
+            }
+        }
+        writeTimeSeriesList ( tslist, OutputFile_full, kmlVersion,
+            (TSCommandProcessor)processor, status,
+            Name, Description,
+            LongitudeProperty, LatitudeProperty, ElevationProperty, WKTGeometryProperty,
+            GeometryInsert,
+            PlacemarkName, PlacemarkDescription, StyleInsert, StyleFile_full, StyleUrl,
+            precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime, errors );
         for ( String error : errors ) {
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, error );
@@ -478,17 +583,26 @@ public String toString ( PropList parameters )
 {   if ( parameters == null ) {
         return getCommandName() + "()";
     }
+    String TSList = parameters.getValue ( "TSList" );
+    String TSID = parameters.getValue( "TSID" );
+    String EnsembleID = parameters.getValue( "EnsembleID" );
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String Name = parameters.getValue ( "Name" );
+    String Description = parameters.getValue ( "Description" );
     String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
     String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
     String ElevationProperty = parameters.getValue ( "ElevationProperty" );
+    String WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
+    String GeometryInsert = parameters.getValue ( "GeometryInsert" );
+    String PlacemarkName = parameters.getValue ( "PlacemarkName" );
+    String PlacemarkDescription = parameters.getValue ( "PlacemarkDescription" );
+    String StyleInsert = parameters.getValue ( "StyleInsert" );
+    String StyleFile = parameters.getValue ( "StyleFile" );
+    String StyleUrl = parameters.getValue ( "StyleUrl" );
     String Precision = parameters.getValue("Precision");
     String MissingValue = parameters.getValue("MissingValue");
     String OutputStart = parameters.getValue ( "OutputStart" );
     String OutputEnd = parameters.getValue ( "OutputEnd" );
-    String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
     StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -514,6 +628,18 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputFile=\"" + OutputFile + "\"" );
     }
+    if ( (Name != null) && (Name.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Name=\"" + Name + "\"" );
+    }
+    if ( (Description != null) && (Description.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Description=\"" + Description + "\"" );
+    }
     if ( (LongitudeProperty != null) && (LongitudeProperty.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -531,6 +657,48 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "ElevationProperty=\"" + ElevationProperty + "\"" );
+    }
+    if ( (WKTGeometryProperty != null) && (WKTGeometryProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WKTGeometryProperty=\"" + WKTGeometryProperty + "\"" );
+    }
+    if ( (GeometryInsert != null) && (GeometryInsert.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "GeometryInsert=\"" + GeometryInsert + "\"" );
+    }
+    if ( (PlacemarkName != null) && (PlacemarkName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PlacemarkName=\"" + PlacemarkName + "\"" );
+    }
+    if ( (PlacemarkDescription != null) && (PlacemarkDescription.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PlacemarkDescription=\"" + PlacemarkDescription + "\"" );
+    }
+    if ( (StyleInsert != null) && (StyleInsert.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "StyleInsert=\"" + StyleInsert + "\"" );
+    }
+    if ( (StyleFile != null) && (StyleFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "StyleFile=\"" + StyleFile + "\"" );
+    }
+    if ( (StyleUrl != null) && (StyleUrl.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "StyleUrl=\"" + StyleUrl + "\"" );
     }
     if ( (Precision != null) && (Precision.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -564,16 +732,26 @@ public String toString ( PropList parameters )
 /**
 Write the time series list to a KML file.
 */
-private void writeTimeSeriesList ( List<TS> tslist, String outputFile, String version, Integer precision, String missingValue,
-    DateTime outputStart, DateTime outputEnd, String longitudeProperty,
-    String latitudeProperty, String elevationProperty, List<String> errors )
+private void writeTimeSeriesList ( List<TS> tslist, String outputFile, String kmlVersion,
+    TSCommandProcessor processor, CommandStatus status,
+    String name, String description,
+    String longitudeProperty, String latitudeProperty, String elevationProperty, String wktGeometryProperty,
+    String geometryInsert,
+    String placemarkName, String placemarkDescription, String styleInsert, String styleFile, String styleUrl,
+    Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
+    List<String> errors )
 {   PrintWriter fout = null;
     try {
         FileOutputStream fos = new FileOutputStream ( outputFile );
         fout = new PrintWriter ( fos );
         // For now just support KML 2
-        writeTimeSeriesList2 ( fout, tslist, precision, missingValue, outputStart, outputEnd, longitudeProperty,
-            latitudeProperty, elevationProperty, errors );
+        writeTimeSeriesList02 ( fout, tslist,
+            processor, status,
+            name, description,
+            longitudeProperty, latitudeProperty, elevationProperty, wktGeometryProperty,
+            geometryInsert,
+            placemarkName, placemarkDescription, styleInsert, styleFile, styleUrl,
+            precision, missingValue, outputStart, outputEnd, errors );
     }
     catch ( FileNotFoundException e ) {
         errors.add ( "Output file \"" + outputFile + "\" could not be created (" + e + ")." );
@@ -588,7 +766,7 @@ private void writeTimeSeriesList ( List<TS> tslist, String outputFile, String ve
 }
 
 /**
-Write the version 01 format KML.
+Write the version 02 format KML.
 @param fout open PrintWriter to write to
 @param tslist list of time series to write
 @param outputStart output start or null to write full period
@@ -596,53 +774,208 @@ Write the version 01 format KML.
 @param overlap if true, write the data in overlapping fashion (date/time shared between time series)
 @param errors list of error strings to be propagated to calling code
 */
-private void writeTimeSeriesList2 ( PrintWriter fout, List<TS> tslist, Integer precision, String missingValue,
-    DateTime outputStart, DateTime outputEnd, String longitudeProp, String latitudeProp, String elevationProp,
+private void writeTimeSeriesList02 ( PrintWriter fout, List<TS> tslist,
+    TSCommandProcessor processor, CommandStatus status,
+    String name, String description,
+    String longitudeProperty, String latitudeProperty, String elevationProp, String wktGeometryProperty,
+    String geometryInsert,
+    String placemarkName, String placemarkDescription, String styleInsert, String styleFile, String styleUrl,
+    Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
     List<String> errors )
 {   // Write the header
     String i1 = " ";
     String i2 = "  ";
     String i3 = "   ";
     String i4 = "    ";
+    String i5 = "     ";
+    String i6 = "      ";
+    String i7 = "       ";
+    String i8 = "        ";
+    boolean doPlacemarkName = false, doPlacemarkDescription = false, doStyleUrl = false, doPoint = false, doWkt = false;;
+    if ( (placemarkName != null) && !placemarkName.equals("") ) {
+        doPlacemarkName = true;
+    }
+    if ( (placemarkDescription != null) && !placemarkDescription.equals("") ) {
+        doPlacemarkDescription = true;
+    }
+    // WKT trumps point data
+    if ( (wktGeometryProperty != null) && !wktGeometryProperty.equals("") ) {
+        doWkt = true;
+    }
+    else {
+        if ( (latitudeProperty != null) && !latitudeProperty.equals("") &&
+            (longitudeProperty != null) && !longitudeProperty.equals("")) {
+            doPoint = true;
+        }
+    }
+    if ( (styleUrl != null) && !styleUrl.equals("") ) {
+        doStyleUrl = true;
+    }
+    if ( name == null ) {
+        name = "";
+    }
+    if ( name.startsWith("<") ) {
+        name = "<![CDATA[\n" + name + "]]>";
+    }
+    if ( description == null ) {
+        description = "";
+    }
+    if ( description.startsWith("<") ) {
+        description = "<![CDATA[\n" + description + "]]>";
+    }
     fout.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
         "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n" +
-        i1 + "<Document>\n" );
-    // Write the styles based on the data types.
-    // Get the unique list of data types
-    int nDataTypes = 1;
-    for ( int i = 0; i < nDataTypes; i++ ) {
-        fout.write(i2 + "<Style id=\"dataTypeStyle\">\n");
-        //fout.write(i3 + "<IconStyle>\n");
-        //fout.write(i4 + "<Icon><href>xxx.png</href></Icon>\n");
-        //fout.write(i3 + "</IconStyle>\n");
-        fout.write(i2 + "</Style>\n");
+        i1 + "<Document>\n" +
+        i2 + "<name>" + name + "</name>\n" +
+        i2 + "<description>" + description + "</description>\n");
+    // TODO evaluate whether to default styles based on data type
+    // Write the styles based on supplied information
+    if ( (styleInsert != null) && !styleInsert.equals("") ) {
+        fout.write(i2 + styleInsert + "\n");
+    }
+    else if ( (styleFile != null) && !styleFile.equals("") ) {
+        // Insert styles from the contents of the SQL file
+        try {
+            List<String> list = IOUtil.fileToStringList(styleFile);
+            for ( String line : list ) {
+                fout.write(i2 + line + "\n" );
+            }
+        }
+        catch ( Exception e ) {
+            errors.add("Error adding style file to KML (" + e + ")." ); 
+        }
     }
     Object longitude, latitude, elevation; // Can be double, int, or string
+    String placemarkNameOut, placemarkDescriptionOut;
+    WKTGeometryParser wktParser = null;
+    String wkt;
+    Object wktO;
+    GRShape shape;
+    if ( doWkt ) {
+        wktParser = new WKTGeometryParser();
+    }
     for ( TS ts : tslist ) {
         longitude = null;
         latitude = null;
         elevation = null;
-        if ( longitudeProp != null ) {
-            longitude = ts.getProperty(longitudeProp);
+        shape = null;
+        if ( doPoint ) {
+            longitude = ts.getProperty(longitudeProperty);
+            latitude = ts.getProperty(latitudeProperty);
+            if ( (longitude == null) || (latitude == null) ) {
+                continue;
+            }
+            if ( elevationProp != null ) {
+                elevation = ts.getProperty(elevationProp);
+            }
         }
-        if ( latitudeProp != null ) {
-            latitude = ts.getProperty(latitudeProp);
+        placemarkNameOut = ts.getLocation(); // Default
+        placemarkDescriptionOut = ts.getDescription(); // Default
+        if ( doPlacemarkName ) {
+            placemarkNameOut = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+                processor, ts, placemarkName, status, CommandPhaseType.RUN);
         }
-        if ( elevationProp != null ) {
-            elevation = ts.getProperty(elevationProp);
-        }
-        if ( elevation == null ) {
-            elevation = "0";
-        }
-        if ( (longitude == null) || (latitude == null) ) {
-            continue;
+        if ( doPlacemarkDescription ) {
+            placemarkDescriptionOut = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+                processor, ts, placemarkDescription, status, CommandPhaseType.RUN);
         }
         fout.write(i2 + "<Placemark>\n");
         // TODO SAM 2013-07-01 use formatting strings for name
-        fout.write(i3 + "<name>" + ts.getDescription() + "</name>\n");
-        fout.write(i3 + "<Point>\n");
-        fout.write(i4 + "<coordinates>" + longitude + "," + latitude + "," + elevation + "</coordinates>\n");
-        fout.write(i3 + "</Point>\n");
+        fout.write(i3 + "<name>" + placemarkNameOut + "</name>\n");
+        if ( placemarkDescriptionOut.startsWith("<") ) {
+            placemarkDescriptionOut = "<![CDATA[\n" + placemarkDescriptionOut + "]]>";
+        }
+        fout.write(i3 + "<description>" + placemarkDescriptionOut + "</description>\n");
+        if ( doStyleUrl ) {
+            fout.write(i3 + "<styleUrl>" + styleUrl + "</styleUrl>\n");
+        }
+        if ( doPoint ) {
+            fout.write(i3 + "<Point>\n");
+            if ( (geometryInsert != null) && !geometryInsert.equals("") ) {
+                fout.write(i4 +geometryInsert + "\n");
+            }
+            if ( elevation == null ) {
+                fout.write(i4 + "<coordinates>" + longitude + "," + latitude + "</coordinates>\n");
+            }
+            else {
+                fout.write(i4 + "<coordinates>" + longitude + "," + latitude + "," + elevation + "</coordinates>\n");
+            }
+            fout.write(i3 + "</Point>\n");
+        }
+        else if ( doWkt ) {
+            wktO = ts.getProperty(wktGeometryProperty);;
+            shape = wktParser.parseWKT((String)wktO);
+            if ( shape != null ) {
+                if ( shape instanceof GRPoint ) {
+                    GRPoint pt = (GRPoint)shape;
+                    longitude = new Double(pt.x);
+                    latitude = new Double(pt.y);
+                    if ( shape instanceof GRPointZM ) {
+                        elevation = new Double(((GRPointZM)pt).z);
+                    }
+                    fout.write(i3 + "<Point>\n");
+                    if ( (geometryInsert != null) && !geometryInsert.equals("") ) {
+                        fout.write(i4 +geometryInsert + "\n");
+                    }
+                    if ( elevation == null ) {
+                        fout.write(i4 + "<coordinates>" + longitude + "," + latitude + "</coordinates>\n");
+                    }
+                    else {
+                        fout.write(i4 + "<coordinates>" + longitude + "," + latitude + "," + elevation + "</coordinates>\n");
+                    }
+                    fout.write(i3 + "</Point>\n");
+                }
+                else if ( shape instanceof GRPolygon ) {
+                    GRPolygon p = (GRPolygon)shape;
+                    fout.write(i3 + "<Polygon>\n");
+                    if ( (geometryInsert != null) && !geometryInsert.equals("") ) {
+                        fout.write(i4 +geometryInsert + "\n");
+                    }
+                    fout.write(i4 + "<outerBoundaryIs>\n" );
+                    fout.write(i5 + "<LinearRing>\n");
+                    fout.write(i6 + "<coordinates>\n");
+                    Double longitudeD = null, latitudeD = null, elevationD = null;
+                    Double longitudeD0 = null, latitudeD0 = null, elevationD0 = null;
+                    for ( int i = 0; i < p.npts; i++ ) {
+                        longitudeD = new Double(p.pts[i].x);
+                        latitudeD = new Double(p.pts[i].y);
+                        // TODO SAM 2014-02-23 Need to enable ZM
+                        //if ( shape instanceof GRPolygonZM ) {
+                        //    elevationD = new Double(((GRPointZM)p.pts[i]).z);
+                        //}
+                        if ( i == 0 ) {
+                            // Save first point and output at end if needed to close ring
+                            longitudeD0 = longitudeD;
+                            latitudeD0 = latitudeD;
+                            elevationD0 = elevationD;
+                        }
+                        if ( elevationD == null ) {
+                            fout.write(i7 + longitudeD + "," + latitudeD + "\n");
+                        }
+                        else {
+                            fout.write(i7 + longitudeD + "," + latitudeD + "," + elevationD + "\n");
+                        }
+                    }
+                    // Write the first point again if it was not written at the end
+                    if ( elevationD == null ) {
+                        if ( !longitudeD.equals(longitudeD0) || !latitudeD.equals(latitudeD0) ) {
+                            fout.write(i7 + longitudeD0 + "," + latitudeD0 + "\n");
+                        }
+                    }
+                    else {
+                        if ( !longitudeD.equals(longitudeD0) || !latitudeD.equals(latitudeD0)
+                            || !elevationD.equals(elevationD0) ) {
+                            fout.write(i7 + longitudeD0 + "," + latitudeD0 + "," + elevationD0 + "\n");
+                        }
+                    }
+                      
+                    fout.write(i6 + "</coordinates>\n");
+                    fout.write(i5 + "</LinearRing>\n");
+                    fout.write(i4 + "</outerBoundaryIs>\n" );
+                    fout.write(i3 + "</Polygon>\n");
+                }
+            }
+        }
         fout.write(i2 + "</Placemark>\n");
     }
     fout.write( i1 + "</Document>\n" );   

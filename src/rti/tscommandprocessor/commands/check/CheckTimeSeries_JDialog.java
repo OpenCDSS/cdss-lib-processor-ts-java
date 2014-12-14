@@ -615,7 +615,8 @@ private void refresh ()
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
-    props.add ( "CheckCriteria=" + CheckCriteria );
+    // Use set method so equal sign in criteria does not cause a problem
+    props.set ( "CheckCriteria", CheckCriteria );
     props.add ( "Value1=" + Value1 );
     props.add ( "Value2=" + Value2 );
 	props.add ( "AnalysisStart=" + AnalysisStart );

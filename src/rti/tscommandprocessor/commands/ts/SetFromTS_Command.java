@@ -5,8 +5,8 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSLimits;
@@ -51,6 +51,12 @@ protected final String _SetMissing = "SetMissing";
 protected final String _SetOnlyMissingValues = "SetOnlyMissingValues";
 
 /**
+Set window year, since users do not supply this information.
+This allows for leap year in case the analysis window start or end is on Feb 29.
+*/
+private final int __SET_WINDOW_YEAR = 2000;
+
+/**
 Constructor.
 */
 public SetFromTS_Command ()
@@ -72,6 +78,8 @@ throws InvalidCommandParameterException
 	String TSID = parameters.getValue ( "TSID" );
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
+    String SetWindowStart = parameters.getValue ( "SetWindowStart" );
+    String SetWindowEnd = parameters.getValue ( "SetWindowEnd" );
 	String TransferHow = parameters.getValue ( "TransferHow" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
 	String SetDataFlags = parameters.getValue ( "SetDataFlags" );
@@ -143,6 +151,35 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
+    if ( (SetWindowStart != null) && !SetWindowStart.equals("") ) {
+        String analysisWindowStart = "" + __SET_WINDOW_YEAR + "-" + SetWindowStart;
+        try {
+            DateTime.parse( analysisWindowStart );
+        }
+        catch ( Exception e ) {
+            message = "The set window start \"" + SetWindowStart + "\" (prepended with " +
+            __SET_WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
+    }
+    
+    if ( (SetWindowEnd != null) && !SetWindowEnd.equals("") ) {
+        String analysisWindowEnd = "" + __SET_WINDOW_YEAR + "-" + SetWindowEnd;
+        try {
+            DateTime.parse( analysisWindowEnd );
+        }
+        catch ( Exception e ) {
+            message = "The set window end \"" + SetWindowEnd + "\" (prepended with " +
+            __SET_WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
+    }
     if ( (TransferHow != null) && !TransferHow.equals("") &&
             !TransferHow.equalsIgnoreCase(TSUtil.TRANSFER_SEQUENTIALLY) &&
             !TransferHow.equalsIgnoreCase(TSUtil.TRANSFER_BYDATETIME) ) {
@@ -185,20 +222,22 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "IndependentTSList" );
-    valid_Vector.add ( "IndependentTSID" );
-    valid_Vector.add ( "IndependentEnsembleID" );
-    valid_Vector.add ( "SetStart" );
-    valid_Vector.add ( "SetEnd" );
-    valid_Vector.add ( "TransferHow" );
-    valid_Vector.add ( "HandleMissingHow" );
-    valid_Vector.add ( "SetDataFlags" );
-    valid_Vector.add ( "RecalcLimits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(14);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "IndependentTSList" );
+    validList.add ( "IndependentTSID" );
+    validList.add ( "IndependentEnsembleID" );
+    validList.add ( "SetStart" );
+    validList.add ( "SetEnd" );
+    validList.add ( "SetWindowStart" );
+    validList.add ( "SetWindowEnd" );
+    validList.add ( "TransferHow" );
+    validList.add ( "HandleMissingHow" );
+    validList.add ( "SetDataFlags" );
+    validList.add ( "RecalcLimits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -437,8 +476,7 @@ private int recalculateLimits( TS ts, CommandProcessor TSCmdProc,
 /**
 Run the command.
 @param command_number number of command to run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
@@ -466,6 +504,8 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String RecalcLimits = parameters.getValue ( "RecalcLimits" );
+    String SetWindowStart = parameters.getValue ( "SetWindowStart" );
+    String SetWindowEnd = parameters.getValue ( "SetWindowEnd" );
     String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
     if ( (HandleMissingHow == null) || HandleMissingHow.equals("") ) {
         HandleMissingHow = _SetMissing; // Default
@@ -779,6 +819,35 @@ CommandWarningException, CommandException
                         message, "Specify a valid date/time or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
+	
+    DateTime SetWindowStart_DateTime = null;
+    if ( (SetWindowStart != null) && (SetWindowStart.length() > 0) ) {
+        try {
+            // The following works with ISO formats...
+            SetWindowStart_DateTime = DateTime.parse ( "" + __SET_WINDOW_YEAR + "-" + SetWindowStart );
+        }
+        catch ( Exception e ) {
+            message = "SetWindowStart \"" + SetWindowStart + "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+            Message.printWarning ( warningLevel,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
+    DateTime SetWindowEnd_DateTime = null;
+    if ( (SetWindowEnd != null) && (SetWindowEnd.length() > 0) ) {
+        try {
+            // The following works with ISO formats...
+            SetWindowEnd_DateTime = DateTime.parse ( "" + __SET_WINDOW_YEAR + "-" + SetWindowEnd );
+        }
+        catch ( Exception e ) {
+            message = "SetWindowEnd \"" + SetWindowEnd + "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+            Message.printWarning ( warningLevel,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
 
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series)...
@@ -842,8 +911,7 @@ CommandWarningException, CommandException
         if ( independent_ts == ts ) {
             // Skip time series.
             message = "Independent \"" + independent_ts.getIdentifierString() +
-            "\" and dependent time series \"" + ts.getIdentifierString() +
-            "\" are the same - skipping.";
+            "\" and dependent time series \"" + ts.getIdentifierString() + "\" are the same - skipping.";
             Message.printWarning(warningLevel,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
@@ -856,7 +924,8 @@ CommandWarningException, CommandException
 		Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" from \"" +
                 independent_ts.getIdentifier() + "\"." );
 		try {
-            TSUtil.setFromTS ( ts, independent_ts, SetStart_DateTime, SetEnd_DateTime, setprops, SetDataFlags_boolean );
+            TSUtil.setFromTS ( ts, independent_ts, SetStart_DateTime, SetEnd_DateTime,
+                SetWindowStart_DateTime, SetWindowEnd_DateTime, setprops, SetDataFlags_boolean );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error setting time series \"" + ts.getIdentifier() + "\" from \"" +
@@ -912,6 +981,8 @@ public String toString ( PropList props )
     String IndependentEnsembleID = props.getValue( "IndependentEnsembleID" );
 	String SetStart = props.getValue("SetStart");
 	String SetEnd = props.getValue("SetEnd");
+    String SetWindowStart = props.getValue("SetWindowStart");
+    String SetWindowEnd = props.getValue("SetWindowEnd");
     String TransferHow = props.getValue( "TransferHow" );
     String HandleMissingHow = props.getValue( "HandleMissingHow" );
 	//String FillFlag = props.getValue("FillFlag");
@@ -966,6 +1037,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "SetEnd=\"" + SetEnd + "\"" );
 	}
+    if ( (SetWindowStart != null) && (SetWindowStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SetWindowStart=\"" + SetWindowStart + "\"" );
+    }
+    if ( (SetWindowEnd != null) && (SetWindowEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SetWindowEnd=\"" + SetWindowEnd + "\"" );
+    }
     if ( (TransferHow != null) && (TransferHow.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

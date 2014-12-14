@@ -150,6 +150,7 @@ throws InvalidCommandParameterException
     String ExcelColumnNames = parameters.getValue ( "ExcelColumnNames" );
     String NumberPrecision = parameters.getValue ( "NumberPrecision" );
 	String WriteAllAsText = parameters.getValue ( "WriteAllAsText" );
+	String KeepOpen = parameters.getValue ( "KeepOpen" );
 	String warning = "";
     String message;
     
@@ -253,13 +254,22 @@ throws InvalidCommandParameterException
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "WriteAllAsText must " + _False + " (default) or " + _True ) );
+                message, "WriteAllAsText must be " + _False + " (default) or " + _True ) );
+    }
+	
+    if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) && 
+        !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.equalsIgnoreCase("") ) {
+        message = "KeepOpen is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "KeepOpen must be " + _False + " (default) or " + _True ) );
     }
 
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>();
+	List<String> validList = new ArrayList<String>(11);
     validList.add ( "TableID" );
     validList.add ( "OutputFile" );
     validList.add ( "Worksheet" );
@@ -273,6 +283,7 @@ throws InvalidCommandParameterException
     //validList.add ( "ExcelDateTimeColumns" );
     validList.add ( "NumberPrecision" );
     validList.add ( "WriteAllAsText" );
+    validList.add ( "KeepOpen" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {

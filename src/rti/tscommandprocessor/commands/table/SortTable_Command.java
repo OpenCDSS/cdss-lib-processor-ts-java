@@ -5,8 +5,8 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -29,7 +29,13 @@ This class initializes, checks, and runs the SortTable() command.
 */
 public class SortTable_Command extends AbstractCommand implements Command
 {
-    
+
+/**
+Values for SortOrder parameter.
+*/
+protected final String _Ascending = "Ascending";
+protected final String _Descending = "Descending";
+
 /**
 Constructor.
 */
@@ -50,6 +56,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String SortColumns = parameters.getValue ( "SortColumns" );
+    String SortOrder = parameters.getValue ( "SortOrder" );
 	String warning = "";
     String message;
     
@@ -80,12 +87,22 @@ throws InvalidCommandParameterException
                     message, "Specify a single column name to sort." ) );
         }
     }
+    
+    if ( (SortOrder != null) && (SortOrder.length() != 0) && !SortOrder.equalsIgnoreCase(_Ascending) &&
+        !SortOrder.equalsIgnoreCase(_Descending)) {
+        message = "The sort order (" + SortOrder + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the sort order as " + _Ascending + " (default) or " + _Descending + ".") );
+    }
  
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "SortColumns" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List<String> validList = new ArrayList<String>(3);
+    validList.add ( "TableID" );
+    validList.add ( "SortColumns" );
+    validList.add ( "SortOrder" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -136,6 +153,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     String TableID = parameters.getValue ( "TableID" );
     String SortColumns = parameters.getValue ( "SortColumns" );
+    String SortOrder = parameters.getValue ( "SortOrder" );
+    int sortOrder = 1; // default
+    if ( (SortOrder != null) && SortOrder.equalsIgnoreCase(_Descending) ) {
+        sortOrder = -1;
+    }
     
     // Get the table to process.
 
@@ -180,7 +202,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	try {
     	// Sort the table...
-        table.sortTable ( SortColumns );
+        table.sortTable ( SortColumns, sortOrder );
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -210,6 +232,7 @@ public String toString ( PropList props )
 	}
     String TableID = props.getValue( "TableID" );
 	String SortColumns = props.getValue( "SortColumns" );
+	String SortOrder = props.getValue( "SortOrder" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -223,6 +246,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "SortColumns=\"" + SortColumns + "\"" );
 	}
+    if ( (SortOrder != null) && (SortOrder.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SortOrder=" + SortOrder );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

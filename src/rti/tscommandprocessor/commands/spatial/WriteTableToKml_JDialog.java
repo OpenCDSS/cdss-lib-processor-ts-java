@@ -71,6 +71,7 @@ private JTextField __LongitudeColumn_JTextField = null;
 private JTextField __LatitudeColumn_JTextField = null;
 private JTextField __ElevationColumn_JTextField = null;
 private JTextField __WKTGeometryColumn_JTextField = null;
+private JTextArea __GeometryInsert_JTextArea = null;
 private JTextArea __StyleInsert_JTextArea = null;
 private JTextField __StyleFile_JTextField = null;
 private JTextField __StyleUrl_JTextField = null;
@@ -222,6 +223,7 @@ private void checkInput ()
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText().trim();
     String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
+    String GeometryInsert = __GeometryInsert_JTextArea.getText().trim();
     String StyleInsert = __StyleInsert_JTextArea.getText().trim();
     String StyleFile = __StyleFile_JTextField.getText().trim();
     String StyleUrl = __StyleUrl_JTextField.getText().trim();
@@ -258,6 +260,9 @@ private void checkInput ()
     if ( WKTGeometryColumn.length() > 0 ) {
         parameters.set ( "WKTGeometryColumn", WKTGeometryColumn );
     }
+    if ( GeometryInsert.length() > 0 ) {
+        parameters.set ( "GeometryInsert", GeometryInsert );
+    }
     if ( StyleInsert.length() > 0 ) {
         parameters.set ( "StyleInsert", StyleInsert );
     }
@@ -293,6 +298,7 @@ private void commitEdits ()
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText();
     String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText();
+    String GeometryInsert = __GeometryInsert_JTextArea.getText().trim();
     String StyleInsert = __StyleInsert_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
     String StyleFile = __StyleFile_JTextField.getText().trim();
     String StyleUrl = __StyleUrl_JTextField.getText().trim();
@@ -306,6 +312,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "LatitudeColumn", LatitudeColumn );
     __command.setCommandParameter ( "ElevationColumn", ElevationColumn );
     __command.setCommandParameter ( "WKTGeometryColumn", WKTGeometryColumn );
+    __command.setCommandParameter ( "GeometryInsert", GeometryInsert );
     __command.setCommandParameter ( "StyleInsert", StyleInsert );
     __command.setCommandParameter ( "StyleFile", StyleFile );
     __command.setCommandParameter ( "StyleUrl", StyleUrl );
@@ -477,7 +484,7 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
         "Geometry (shape) data can be specified using Well Known Text (WKT) strings in a table column."),
         0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(geom_JPanel, new JLabel (
-        "Currently only POINT geometry is recognized but support for other geometry types will be added in the future."),
+        "Currently only POINT and POLYGON geometry are recognized but support for other geometry types will be added in the future."),
         0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(geom_JPanel, new JLabel (
         "Coordinates in the WKT strings must be geographic (longitude and latitude decimal degrees)."),
@@ -493,6 +500,31 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     JGUIUtil.addComponent(geom_JPanel, new JLabel ( "Reguired for geometry data - column containing WKT strings."),
         3, yGeom, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    // Panel for KML inserts
+    int yKml = -1;
+    JPanel kml_JPanel = new JPanel();
+    kml_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "KML Inserts", kml_JPanel );
+    
+    JGUIUtil.addComponent(kml_JPanel, new JLabel (
+        "KML files allow for many properties to be specified to configure the data."),
+        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(kml_JPanel, new JLabel (
+        "The GeometryInsert command parameter value will be inserted within the <Point>, <Polygon>, etc. data element."),
+        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(kml_JPanel, new JLabel (
+        "Refer to the KML reference for information (https://developers.google.com/kml/documentation/kmlreference)."),
+        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(kml_JPanel, new JLabel ("Geometry insert:"), 
+        0, ++yKml, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __GeometryInsert_JTextArea = new JTextArea (6,35);
+    __GeometryInsert_JTextArea.setLineWrap ( true );
+    __GeometryInsert_JTextArea.setWrapStyleWord ( true );
+    __GeometryInsert_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(kml_JPanel, new JScrollPane(__GeometryInsert_JTextArea),
+        1, yKml, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
     // Panel for style information
     int yStyle = -1;
     JPanel style_JPanel = new JPanel();
@@ -507,6 +539,9 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(style_JPanel, new JLabel (
         "The URL to a style map is then specified for the layer (currently all features in the layer will have the same style)."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Features will be added in the future to determine the style from a table value column."),
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(style_JPanel, new JLabel ("Style insert:"), 
@@ -635,6 +670,7 @@ private void refresh ()
     String LatitudeColumn = "";
     String ElevationColumn = "";
     String WKTGeometryColumn = "";
+    String GeometryInsert = "";
     String StyleInsert = "";
     String StyleFile = "";
     String StyleUrl = "";
@@ -654,6 +690,7 @@ private void refresh ()
         LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
         ElevationColumn = parameters.getValue ( "ElevationColumn" );
         WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
+        GeometryInsert = parameters.getValue ( "GeometryInsert" );
         StyleInsert = parameters.getValue ( "StyleInsert" );
         StyleFile = parameters.getValue ( "StyleFile" );
         StyleUrl = parameters.getValue ( "StyleUrl" );
@@ -699,6 +736,9 @@ private void refresh ()
         if ( WKTGeometryColumn != null ) {
             __WKTGeometryColumn_JTextField.setText (WKTGeometryColumn);
         }
+        if ( GeometryInsert != null ) {
+            __GeometryInsert_JTextArea.setText (GeometryInsert);
+        }
         if ( StyleInsert != null ) {
             __StyleInsert_JTextArea.setText (StyleInsert);
         }
@@ -720,6 +760,7 @@ private void refresh ()
     LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     ElevationColumn = __ElevationColumn_JTextField.getText().trim();
     WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
+    GeometryInsert = __GeometryInsert_JTextArea.getText().trim();
     StyleInsert = __StyleInsert_JTextArea.getText().trim();
     StyleFile = __StyleFile_JTextField.getText().trim();
     StyleUrl = __StyleUrl_JTextField.getText().trim();
@@ -734,6 +775,7 @@ private void refresh ()
     parameters.add ( "LatitudeColumn=" + LatitudeColumn );
     parameters.add ( "ElevationColumn=" + ElevationColumn );
     parameters.add ( "WKTGeometryColumn=" + WKTGeometryColumn );
+    parameters.add ( "GeometryInsert=" + GeometryInsert );
     parameters.add ( "StyleInsert=" + StyleInsert );
     parameters.add ( "StyleFile=" + StyleFile );
     parameters.add ( "StyleUrl=" + StyleUrl );

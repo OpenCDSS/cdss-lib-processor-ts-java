@@ -275,21 +275,7 @@ private void initialize ( JFrame parent, RunSql_Command command )
         "This command runs an SQL statement on the specified database datastore."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The SQL statement can be specified in one of three ways:"),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "    1) Specify the SQL statement string as a command parameter (may be an issue if special characters conflict with TSTool conventions)."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "    2) Read the SQL statement from a file (useful for complex SQL statement and when shared with other tools)."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    if ( __working_dir != null ) {
-        JGUIUtil.addComponent(paragraph, new JLabel (
-        "        The working directory is: " + __working_dir ), 
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    }
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "    3) Run a stored procedure (under development - only procedures with no input parameters can be run)."),
+        "The SQL statement can be specified in one of three ways - use the tabs below to do so."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "An SQL statement specified with ${property} notation will be updated to use processor property values before executing the SQL statement."),
@@ -339,6 +325,16 @@ private void initialize ( JFrame parent, RunSql_Command command )
     sql_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "SQL string", sql_JPanel );
     
+    JGUIUtil.addComponent(sql_JPanel, new JLabel (
+        "Specify the SQL statement string as a command parameter below."),
+        0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(sql_JPanel, new JLabel (
+        "If special characters conflict with TSTool conventions, then save the SQL in a file and specify the file as input."),
+        0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(sql_JPanel, new JLabel (
+        "Because the SQL statement is in a parameter, newlines are not allowed."),
+        0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(sql_JPanel, new JLabel ("SQL String:"), 
         0, ++ySql, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Sql_JTextArea = new JTextArea (9,50);
@@ -353,7 +349,18 @@ private void initialize ( JFrame parent, RunSql_Command command )
     JPanel file_JPanel = new JPanel();
     file_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "SQL file", file_JPanel );
-    
+
+    JGUIUtil.addComponent(file_JPanel, new JLabel (
+        "Read the SQL statement from a file."),
+        0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(file_JPanel, new JLabel (
+        "This is useful for a complex SQL statement and when the SQL will be shared with other tools)."),
+        0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    if ( __working_dir != null ) {
+        JGUIUtil.addComponent(file_JPanel, new JLabel (
+        "The working directory is: " + __working_dir ), 
+        0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    }
     JGUIUtil.addComponent(file_JPanel, new JLabel ( "SQL file to read:" ), 
         0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SqlFile_JTextField = new JTextField ( 50 );
@@ -370,8 +377,10 @@ private void initialize ( JFrame parent, RunSql_Command command )
     proc_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "Procedure", proc_JPanel );
 
+    JGUIUtil.addComponent(proc_JPanel, new JLabel ("Run a stored procedure."),
+        0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(proc_JPanel, new JLabel (
-        "Currently, only procedures that do not require parameters can be run."),
+        "Under development - currently only procedures that do not require parameters can be run."),
         0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(proc_JPanel, new JLabel ( "Datastore procedure:"),
         0, ++yProc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

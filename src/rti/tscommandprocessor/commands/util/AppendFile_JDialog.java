@@ -224,20 +224,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__InputFile_JTextField = null;
-	__IfNotFound_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -263,7 +249,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
 		"Append the contents of one or more files to another file." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The input file can be a single file, all files in a folder (*), or all files matching an extensio (*.csv)." ),
+        "The input file can be a single file, all files in a folder (*), or all files matching an extension (*.csv)." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use the IncludeText parameter to append only lines that match a pattern using " +
@@ -452,7 +438,7 @@ private void refresh ()
 	}
     if ( __pathOutput_JButton != null ) {
         __pathOutput_JButton.setEnabled ( true );
-        File f = new File ( InputFile );
+        File f = new File ( OutputFile );
         if ( f.isAbsolute() ) {
             __pathOutput_JButton.setText (__RemoveWorkingDirectoryFileOutput);
         }

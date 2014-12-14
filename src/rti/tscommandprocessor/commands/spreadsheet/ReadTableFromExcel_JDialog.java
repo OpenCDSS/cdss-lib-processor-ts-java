@@ -71,6 +71,7 @@ private JTextField __ExcelIntegerColumns_JTextField = null;
 private JTextField __ExcelDateTimeColumns_JTextField = null;
 private JTextField __NumberPrecision_JTextField = null;
 private SimpleJComboBox __ReadAllAsText_JComboBox = null;
+private SimpleJComboBox __KeepOpen_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
@@ -180,6 +181,7 @@ private void checkInput ()
 	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
+	String KeepOpen = __KeepOpen_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -221,6 +223,9 @@ private void checkInput ()
     if ( ReadAllAsText.length() > 0 ) {
         props.set ( "ReadAllAsText", ReadAllAsText );
     }
+    if ( KeepOpen.length() > 0 ) {
+        props.set ( "KeepOpen", KeepOpen );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -250,6 +255,7 @@ private void commitEdits ()
 	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
+    String KeepOpen  = __KeepOpen_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "Worksheet", Worksheet );
@@ -263,23 +269,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ExcelDateTimeColumns", ExcelDateTimeColumns );
 	__command.setCommandParameter ( "NumberPrecision", NumberPrecision );
 	__command.setCommandParameter ( "ReadAllAsText", ReadAllAsText );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__InputFile_JTextField = null;
-	__ExcelAddress_JTextField = null;
-	__browse_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__working_dir = null;
-	super.finalize ();
+	__command.setCommandParameter ( "KeepOpen", KeepOpen );
 }
 
 /**
@@ -487,6 +477,20 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - read all cells as text? (default=" + __command._False + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Keep file open?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __KeepOpen_JComboBox = new SimpleJComboBox ( false );
+    __KeepOpen_JComboBox.setPrototypeDisplayValue(__command._False + "MMMM"); // to fix some issues with layout of dynamic components
+    __KeepOpen_JComboBox.add("");
+    __KeepOpen_JComboBox.add(__command._False);
+    __KeepOpen_JComboBox.add(__command._True);
+    __KeepOpen_JComboBox.select ( 0 );
+    __KeepOpen_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __KeepOpen_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - keep Excel file open? (default=" + __command._False + ")."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -581,6 +585,7 @@ private void refresh ()
 	String ExcelDateTimeColumns = "";
 	String NumberPrecision = "";
 	String ReadAllAsText = "";
+    String KeepOpen = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -597,6 +602,7 @@ private void refresh ()
 		ExcelDateTimeColumns = props.getValue ( "ExcelDateTimeColumns" );
 		NumberPrecision = props.getValue ( "NumberPrecision" );
 		ReadAllAsText = props.getValue ( "ReadAllAsText" );
+		KeepOpen = props.getValue ( "KeepOpen" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
         }
@@ -660,6 +666,19 @@ private void refresh ()
                     ReadAllAsText + "\".  Select a different choice or Cancel." );
             }
         }
+        if ( KeepOpen == null || KeepOpen.equals("") ) {
+            // Select a default...
+            __KeepOpen_JComboBox.select ( 0 );
+        } 
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __KeepOpen_JComboBox, KeepOpen, JGUIUtil.NONE, null, null ) ) {
+                __KeepOpen_JComboBox.select ( KeepOpen );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\nKeepOpen \"" +
+                    KeepOpen + "\".  Select a different choice or Cancel." );
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
     TableID = __TableID_JTextField.getText().trim();
@@ -675,6 +694,7 @@ private void refresh ()
 	ExcelDateTimeColumns = __ExcelDateTimeColumns_JTextField.getText().trim();
 	NumberPrecision = __NumberPrecision_JTextField.getText().trim();
 	ReadAllAsText = __ReadAllAsText_JComboBox.getSelected();
+	KeepOpen = __KeepOpen_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
@@ -689,6 +709,7 @@ private void refresh ()
 	props.add ( "ExcelDateTimeColumns=" + ExcelDateTimeColumns );
 	props.add ( "NumberPrecision=" + NumberPrecision );
 	props.add ( "ReadAllAsText=" + ReadAllAsText );
+	props.add ( "KeepOpen=" + KeepOpen );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

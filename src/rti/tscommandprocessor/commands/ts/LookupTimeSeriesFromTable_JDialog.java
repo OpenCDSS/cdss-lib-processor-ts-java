@@ -95,7 +95,7 @@ Responds to ActionEvents.
 */
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
-	String routine = "Copy_JDialog.actionPerformed";
+	String routine = "LookupTimeSeriesFromTable_JDialog.actionPerformed";
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -300,21 +300,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__TSID_JComboBox = null;
-	__NewTSID_JTextArea = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__ok_JButton = null;
-	__parent_JFrame = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
@@ -336,10 +321,6 @@ private void initialize ( JFrame parent, LookupTimeSeriesFromTable_Command comma
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create a new time series by using an input time series and lookup table." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify new time series identifier (TSID) information for the copy to avoid errors " +
-		"with the copy being mistaken for the original." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>Currently the lookup table must only contain data for only one input time series and the effective" +
         " date is not checked.</b></html>." ),

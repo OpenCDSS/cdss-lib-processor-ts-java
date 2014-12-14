@@ -650,6 +650,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
@@ -670,7 +671,9 @@ import rti.tscommandprocessor.commands.usgs.nwis.instantaneous.UsgsNwisInstantan
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
+import rti.tscommandprocessor.commands.util.EndIf_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
+import rti.tscommandprocessor.commands.util.If_Command;
 import us.co.state.dwr.hbguest.datastore.ColoradoWaterHBGuestDataStore;
 import us.co.state.dwr.sms.ColoradoWaterSMSAPI;
 import us.co.state.dwr.sms.datastore.ColoradoWaterSMSDataStore;
@@ -1743,24 +1746,19 @@ throws Exception
 */
 
 /**
-Free memory for garbage collection.
-@exception Throwable if there is an error.
+Loop through the list of If_Command and evaluate the overall condition statement.  All conditions must
+be true for nested if statements to allow execution of commands in the block.
+@param ifCommandStack list of If_Command to check
+@return true if all the If_Command evaluate to true, false otherwise.
 */
-protected void finalize ()
-throws Throwable
-{	__AverageStart_DateTime = null;
-	__AverageEnd_DateTime = null;
-	__datetime_Hashtable = null;
-	__OutputStart_DateTime = null;
-	__OutputEnd_DateTime = null;
-	__InputStart_DateTime = null;
-	__InputEnd_DateTime = null;
-	__hbdmi_Vector = null;
-	__missing_ts = null;
-	__output_file = null;
-	__reference_date = null;
-	__tslist = null;
-	super.finalize();
+private boolean evaluateIfStack ( List<If_Command> ifCommandStack )
+{
+    for ( If_Command c : ifCommandStack ) {
+        if ( !c.getConditionEval() ) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
@@ -2447,6 +2445,22 @@ protected DataStore lookupDataStore ( String dataStoreName )
 }
 
 /**
+Find a matching If_Command given a name to look up.
+@param ifCommandStack list of If_Command that are active.
+@param name If_Command name to find.
+@return the matching If_Command or null if not matched.
+*/
+private If_Command lookupIfCommand ( List<If_Command> ifCommandStack, String name )
+{
+    for ( If_Command c : ifCommandStack ) {
+        if ( c.getName().equalsIgnoreCase(name) ) {
+            return c;
+        }
+    }
+    return null;
+}
+
+/**
 Process the events from the MessageJDialog class.  If the "Cancel" button has
 been pressed, then indicate that the time series processing should stop.
 @param command If "Cancel", then a request will be made to cancel processing.
@@ -2613,7 +2627,10 @@ throws Exception
 										// May not occur if "continue" in loop.
 	CommandProfile commandProfile = null; // Profile to track execution time, memory use
 	Command commandPrev = null; // previous command in loop
-	// Indicatd the state of the processor...
+	// Initialize the "if" command stack that is in effect
+	List<If_Command> ifCommandStack = new ArrayList<If_Command>();
+	boolean ifStackOkToRun = true; // Used in loop to indicate if command in If() blocks is OK to run
+	// Indicate the state of the processor...
 	__ts_processor.setIsRunning ( true );
 	// Stopwatch to time each command...
     StopWatch stopWatch = new StopWatch();
@@ -2754,11 +2771,38 @@ throws Exception
     				if ( command instanceof CommandStatusProvider ) {
     					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.RUN);
     				}
-    				// Run the command...
-    				if ( Message.isDebugOn ) {
-    					Message.printDebug ( 1, routine, "Running command through new code..." );
-    				}
-    				command.runCommand ( i_for_message );
+    				// Check to see whether in one or more If statements and if so evaluate their values to determine
+    				// whether to run
+    				if ( ifStackOkToRun ) {
+        				// Run the command...
+        				if ( Message.isDebugOn ) {
+        					Message.printDebug ( 1, routine, "Running command through new code..." );
+        				}
+        				command.runCommand ( i_for_message );
+                    }
+    	            if ( command instanceof If_Command ) {
+    	                // Add to the if command stack
+    	                If_Command ifCommand = (If_Command)command;
+    	                ifCommandStack.add(ifCommand);
+    	                // Re-evalute if stack
+    	                ifStackOkToRun = evaluateIfStack(ifCommandStack);
+    	            }
+    	            else if ( command instanceof EndIf_Command ) {
+    	                // Remove from the if command stack (generate a warning if the matching If() is not found in
+    	                // the stack
+    	                EndIf_Command endifCommand = (EndIf_Command)command;
+    	                If_Command ifCommand = lookupIfCommand(ifCommandStack,endifCommand.getName());
+    	                if ( ifCommand == null ) {
+    	                    commandStatus.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                                "Unable to find matching If() command for EndIf(Name=\"" + endifCommand.getName() + "\").",
+                                "Confirm that matching If() and EndIf() commands are specified.") );
+    	                }
+    	                else {
+    	                    ifCommandStack.remove(ifCommand);
+    	                }
+    	                // Re-evalute if stack
+                        ifStackOkToRun = evaluateIfStack(ifCommandStack);
+    	            }
     				if ( Message.isDebugOn ) {
     					Message.printDebug ( 1, routine, "...back from running command." );
     				}
@@ -2777,8 +2821,7 @@ throws Exception
     				else {
     				    // Command has not been updated to set warning/failure in status so show here
     					Message.printWarning ( popup_warning_level,
-    						MessageUtil.formatMessageTag(command_tag,
-    						++error_count), routine, message );
+    					    MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
     				}
     				// Log the exception.
     				if (Message.isDebugOn) {
@@ -2800,8 +2843,7 @@ throws Exception
     				else {
     				    // Command has not been updated to set warning/failure in status so show here
     					Message.printWarning ( popup_warning_level,
-    							MessageUtil.formatMessageTag(command_tag,
-    									++error_count), routine, message );
+    							MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
     				}
     				if (Message.isDebugOn) {
     					Message.printWarning(3, routine, e);
@@ -2815,14 +2857,13 @@ throws Exception
                                 greaterThan(CommandStatusType.UNKNOWN) ) {
     				        // No need to print a message to the screen because a visual marker will be shown, but log...
     				        Message.printWarning ( 2,
-    				                MessageUtil.formatMessageTag(command_tag,
-    				                        ++error_count), routine, message );
+    				                MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
                         }
     				}
-    				else {	// Command has not been updated to set warning/failure in status so show here
+    				else {
+    				    // Command has not been updated to set warning/failure in status so show here
     					Message.printWarning ( popup_warning_level,
-    							MessageUtil.formatMessageTag(command_tag,
-    									++error_count), routine, message );
+    							MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
     				}
     				if (Message.isDebugOn) {
     					Message.printDebug(3, routine, e);

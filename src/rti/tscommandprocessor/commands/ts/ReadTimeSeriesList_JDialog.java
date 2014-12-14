@@ -25,6 +25,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -56,12 +57,14 @@ private JTextField __Scenario_JTextField = null;
 private JTextField __DataStoreColumn_JTextField = null;
 private JTextField __DataStore_JTextField = null;
 private JTextField __InputName_JTextField = null;
+private JTextArea __Properties_JTextArea = null;
 private SimpleJComboBox	__IfNotFound_JComboBox = null;
 private JTextField __DefaultUnits_JTextField = null; // Default units when blank time series is created.
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;// Field for time series alias
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
+private JFrame __parent = null;
 
 /**
 Editor constructor.
@@ -90,6 +93,21 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditProperties") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String Properties = __Properties_JTextArea.getText().trim();
+        String [] notes = {
+            "Time series properties will be assigned after reading.",
+            "Use % specifiers to assign properties from internal time series data.",
+            "Use ${Property} to assign to a processor property."
+        };
+        String properties = (new DictionaryJDialog ( __parent, true, Properties, "Edit Properties Parameter",
+            notes, "Property", "Property Value",10)).response();
+        if ( properties != null ) {
+            __Properties_JTextArea.setText ( properties );
+            refresh();
+        }
+    }
 }
 
 //Start event handlers for DocumentListener...
@@ -146,6 +164,7 @@ private void checkInput ()
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
+    String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
     
     __error_wait = false;
 
@@ -197,6 +216,9 @@ private void checkInput ()
     if ( Alias.length() > 0 ) {
         parameters.set ( "Alias", Alias );
     }
+    if ( Properties.length() > 0 ) {
+        parameters.set ( "Properties", Properties );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -228,6 +250,7 @@ private void commitEdits ()
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
+    String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "DataTypeColumn", DataTypeColumn );
     __command.setCommandParameter ( "DataType", DataType );
@@ -246,6 +269,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "IfNotFound", IfNotFound );
     __command.setCommandParameter ( "DefaultUnits", DefaultUnits );
     __command.setCommandParameter ( "Alias", Alias );
+    __command.setCommandParameter ( "Properties", Properties );
 }
 
 /**
@@ -255,6 +279,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, List<String> tableIDChoices )
 {	__command = (ReadTimeSeriesList_Command)command;
+    __parent = parent;
 
 	addWindowListener( this );
 
@@ -422,6 +447,20 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Properties:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Properties_JTextArea = new JTextArea (3,35);
+    __Properties_JTextArea.setLineWrap ( true );
+    __Properties_JTextArea.setWrapStyleWord ( true );
+    __Properties_JTextArea.setToolTipText("PropertyName1:PropertyValue1,PropertyName2:PropertyValue2");
+    __Properties_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Properties_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - string properties to assign to time series."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditProperties",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -531,6 +570,7 @@ private void refresh ()
     String DataStore = "";
     String InputName = "";
     String Alias = "";
+    String Properties = "";
     String IfNotFound = "";
     String DefaultUnits = "";
     PropList props = __command.getCommandParameters();
@@ -551,6 +591,7 @@ private void refresh ()
         DataStore = props.getValue ( "DataStore" );
         InputName = props.getValue ( "InputName" );
         Alias = props.getValue ( "Alias" );
+        Properties = props.getValue ( "Properties" );
         IfNotFound = props.getValue ( "IfNotFound" );
         DefaultUnits = props.getValue ( "DefaultUnits" );
         if ( TableID == null ) {
@@ -618,6 +659,9 @@ private void refresh ()
         if ( Alias != null ) {
             __Alias_JTextField.setText ( Alias );
         }
+        if ( Properties != null ) {
+            __Properties_JTextArea.setText ( Properties );
+        }
         if ( __IfNotFound_JComboBox != null ) {
             if ( IfNotFound == null ) {
                 // Select default...
@@ -653,6 +697,7 @@ private void refresh ()
     DataStore = __DataStore_JTextField.getText().trim();
     InputName = __InputName_JTextField.getText().trim();
     Alias = __Alias_JTextField.getText().trim();
+    Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
     IfNotFound = __IfNotFound_JComboBox.getSelected();
     DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
@@ -670,6 +715,7 @@ private void refresh ()
     props.add ( "DataStore=" + DataStore );
     props.add ( "InputName=" + InputName );
     props.add ( "Alias=" + Alias );
+    props.add ( "Properties=" + Properties );
     props.add ( "IfNotFound=" + IfNotFound );
     props.add ( "DefaultUnits=" + DefaultUnits );
     __command_JTextArea.setText( __command.toString ( props ) );

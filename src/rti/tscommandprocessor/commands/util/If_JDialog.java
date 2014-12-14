@@ -6,16 +6,19 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -33,6 +36,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private If_Command __command = null;
 private JTextField __Name_JTextField = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __Condition_JTextArea = null;
 private JTextField __TSExists_JTextField = null;
 private JTextArea __command_JTextArea = null;
@@ -135,23 +139,8 @@ private void initialize ( JFrame parent, If_Command command )
         "the matching EndIf() command will be executed."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The TSExists parameter if specified checks whether a time series with the specified TSID or alias exists."),
+        "The evaluation can check an expression or whether a time series exists."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Currently the condition can only consist of the syntax:"),
-        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   Value1 operator Value2"),
-        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "where operator is <, <=, >, >=, ==, or !=, and values are integers."),
-        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Values can use ${Property} processor property syntax."),
-        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"In the future the ability to evaluate more complex conditions will be enabled."),
-		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -163,26 +152,62 @@ private void initialize ( JFrame parent, If_Command command )
         "Required - the name will be matched against an EndIf() command name."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Condition:" ), 
-        0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for expression
+    int yCond = -1;
+    JPanel cond_JPanel = new JPanel();
+    cond_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Condition", cond_JPanel );
+    
+    JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "Currently the condition can only consist of the syntax:"),
+        0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "   Value1 operator Value2"),
+        0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "where operator is <, <=, >, >=, ==, or !=, and values are integers."),
+        0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "Values can use ${Property} processor property syntax."),
+        0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "In the future the ability to evaluate more complex conditions will be enabled."),
+        0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Condition:" ), 
+        0, ++yCond, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Condition_JTextArea = new JTextArea (5,40);
     __Condition_JTextArea.setLineWrap ( true );
     __Condition_JTextArea.setWrapStyleWord ( true );
     __Condition_JTextArea.addKeyListener(this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Condition_JTextArea),
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - condition to evaluate."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JScrollPane(__Condition_JTextArea),
+        1, yCond, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel("Optional - condition to evaluate."), 
+        3, yCond, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If TSID exists:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel whether time series exists
+    int yTs = -1;
+    JPanel ts_JPanel = new JPanel();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Series Exists", ts_JPanel );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "The TSExists parameter, if specified, checks whether a time series with the specified TSID or alias exists."),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If TSID exists:" ), 
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSExists_JTextField = new JTextField ( 40 );
     __TSExists_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __TSExists_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(ts_JPanel, __TSExists_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
         "Optional - If() will be true if the specified TSID exists."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -272,7 +297,7 @@ private void refresh ()
     TSExists = __TSExists_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
-    props.add ( "Condition=" + Condition );
+    props.set ( "Condition", Condition ); // May contain = so handle differently
     props.add ( "TSExists=" + TSExists );
     __command_JTextArea.setText( __command.toString(props) );
 }

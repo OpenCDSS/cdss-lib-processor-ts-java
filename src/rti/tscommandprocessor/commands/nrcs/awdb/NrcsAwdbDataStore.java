@@ -357,14 +357,22 @@ Read a forecast table.
 @param hucList the list of HUC basin identifiers to match (can be null or empty)
 @param elementList the list of elements to match (can be null or empty)
 @param forecastPeriod the forecast period to match (can be null or empty)
+@param forecastPublicationDateStart publication date start, YYYY-MM-DD hh:mm:ss, or null to read all
+@param forecastPublicationDateEnd publication date end, YYYY-MM-DD hh:mm:ss, or null to read all
+@param forecastExceedanceProbabilities exceedance probabilities to return, or null to read all
 @param forecastTableID the name of the forecast table to create
 */
 public DataTable readForecastTable ( List<String> stationIdList, List<String> stateList,
     List<NrcsAwdbNetworkCode>networkList, List<String> hucList, List<Element> elementList, String forecastPeriod,
-    String forecastPublicationDateStart, String forecastPublicationDateEnd, String forecastTableID )
+    String forecastPublicationDateStart, String forecastPublicationDateEnd,
+    int [] forecastExceedanceProbabilities, String forecastTableID )
 {   String routine = "NrcsAwdbDataStore.readForecastTable";
     DataTable table = null;
     AwdbWebService ws = getAwdbWebService ();
+    if ( (forecastExceedanceProbabilities != null) && (forecastExceedanceProbabilities.length == 0) ) {
+        // Just set to null to simplify logic below
+        forecastExceedanceProbabilities = null;
+    }
     // First translate method parameters into types consistent with web service
     List<String> stationIds = stationIdList;
     List<String> stateCds = stateList;
@@ -454,9 +462,24 @@ public DataTable readForecastTable ( List<String> stationIdList, List<String> st
                 }
                 List<Integer> eprob = f.getExceedenceProbabilities();
                 List<BigDecimal> eval = f.getExceedenceValues();
+                boolean includeProb = false;
                 for ( int i = 0; i < eprob.size(); i++ ) {
                     if ( Message.isDebugOn ) {
                         Message.printDebug(1,routine,"Probability=" + eprob.get(i) + " value=" + eval.get(i) );
+                    }
+                    // Skip the probability if not requested
+                    includeProb = true;
+                    if ( forecastExceedanceProbabilities != null ) {
+                        includeProb = false;
+                        for ( int ip = 0; ip < forecastExceedanceProbabilities.length; ip++ ) {
+                            if ( eprob.get(i) == forecastExceedanceProbabilities[ip] ) {
+                                includeProb = true;
+                                break;
+                            }
+                        }
+                    }
+                    if ( !includeProb ) {
+                        continue;
                     }
                     // Set the values in the table.
                     ++row;
@@ -560,13 +583,18 @@ private void readNetworks ()
 {
     __networkCodeList = new ArrayList<NrcsAwdbNetworkCode>();
     // Initialize the network codes - this may be available as a service at some point but for now inline
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("ACIS","Applied Climate Information System (ACIS) stations"));
     __networkCodeList.add ( new NrcsAwdbNetworkCode("BOR","Any Bureau of Reclamation reservoir stations plus other non-BOR reservoir stations"));
     __networkCodeList.add ( new NrcsAwdbNetworkCode("CLMIND","Used to store climate indices (such as Southern Oscillation Index or Trans-Nino Index)"));
     __networkCodeList.add ( new NrcsAwdbNetworkCode("COOP","National Weather Service COOP stations"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("MPRC","Manual precipitation sites"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("MPRC","Manual Precipitation Network stations"));
     __networkCodeList.add ( new NrcsAwdbNetworkCode("MSNT","Manual SNOTEL non-telemetered, non-real time sites"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("SNOW","NRCS Snow Course Sites"));
-    __networkCodeList.add ( new NrcsAwdbNetworkCode("SNTL","NWCC SNOTEL and SCAN stations"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("NRCSXP","NRCS experimental and test sites"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("OTHER","Telemetered NRCS stations that do not meet criteria for SNOTEL, SNOLITE, SCAN, or experimental"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("SCAN","Soil Climate Analysis Network (SCAN) stations"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("SNOW","NRCS Snow Course and areal marker stations"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("SNTL","Snow Telemetry Network stations"));
+    __networkCodeList.add ( new NrcsAwdbNetworkCode("SNTLT","Snow Telemetry Network stations, limited sensors (SNOLITE)"));
     __networkCodeList.add ( new NrcsAwdbNetworkCode("USGS","Any USGS station, but also other non-USGS streamflow stations"));
 }
 

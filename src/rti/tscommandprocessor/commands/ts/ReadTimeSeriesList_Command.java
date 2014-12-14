@@ -9,7 +9,9 @@ import rti.tscommandprocessor.core.TimeSeriesNotFoundException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -30,6 +32,7 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
@@ -185,7 +188,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(17);
+	List<String> validList = new ArrayList<String>(19);
     validList.add ( "TableID" );
     validList.add ( "LocationTypeColumn" );
     validList.add ( "LocationType" );
@@ -200,9 +203,11 @@ throws InvalidCommandParameterException
     validList.add ( "DataStore" );
     validList.add ( "InputName" );
     validList.add ( "Alias" );
+    validList.add ( "ColumnProperties" );
     validList.add ( "Properties" );
     validList.add ( "IfNotFound" );
     validList.add ( "DefaultUnits" );
+    validList.add ( "TimeSeriesCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -297,7 +302,7 @@ private void runCommandInternal ( int command_number, CommandPhaseType commandPh
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getClass() + ".runCommand", message;
 	int warning_level = 2;
-    //int log_level = 3;
+	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	    
@@ -346,6 +351,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         InputName = "";
     }
     String Alias = parameters.getValue ( "Alias" );
+    String ColumnProperties = parameters.getValue ( "ColumnProperties" );
+    StringDictionary columnProperties = new StringDictionary(ColumnProperties,":",",");
     String Properties = parameters.getValue ( "Properties" );
     Hashtable properties = null;
     if ( (Properties != null) && (Properties.length() > 0) && (Properties.indexOf(":") > 0) ) {
@@ -369,6 +376,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         IfNotFound = _Warn; // default
     }
     String DefaultUnits = parameters.getValue("DefaultUnits");
+    String TimeSeriesCountProperty = parameters.getValue ( "TimeSeriesCountProperty" );
     
     // Get the table to process.
 
@@ -647,6 +655,40 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                     processor, ts, Alias, status, commandPhase);
                                 ts.setAlias ( alias );
                             }
+                            if ( columnProperties != null ) {
+                                // Set time series properties based on column values
+                                LinkedHashMap<String,String> map = columnProperties.getLinkedHashMap();
+                                for ( Map.Entry<String,String> entry: map.entrySet() ) {
+                                    String columnName = entry.getKey();
+                                    if ( columnName.equals("*") ) {
+                                        // Set all the table columns as properties, including null values
+                                        for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
+                                            ts.setProperty( table.getFieldName(icol), rec.getFieldValue(icol) );
+                                        }
+                                    }
+                                    else {
+                                        // Else only set the specified columns
+                                        String propertyName = entry.getValue();
+                                        int columnNum = -1;
+                                        try {
+                                            columnNum = table.getFieldIndex(columnName);
+                                        }
+                                        catch ( Exception e ) {
+                                        }
+                                        if ( propertyName.equals("*") ) {
+                                            // Get the property name from the table
+                                            propertyName = columnName;
+                                        }
+                                        if ( columnNum >= 0 ) {
+                                            // Set even if null
+                                            ts.setProperty( propertyName, rec.getFieldValue(columnNum) );
+                                        }
+                                        else {
+                                            ts.setProperty( propertyName, null );
+                                        }
+                                    }
+                                }
+                            }
                             if ( properties != null ) {
                                 // Assign properties
                                 Enumeration keys = properties.keys();
@@ -708,6 +750,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                     message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
             }
+            // Set the property indicating the number of rows in the table
+            if ( (TimeSeriesCountProperty != null) && !TimeSeriesCountProperty.equals("") ) {
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "PropertyName", TimeSeriesCountProperty );
+                request_params.setUsingObject ( "PropertyValue", new Integer(tslist.size()) );
+                try {
+                    processor.processRequest( "SetProperty", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetProperty(Property=\"" + TimeSeriesCountProperty + "\") from processor.";
+                    Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+                }
+            }
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -756,9 +816,11 @@ public String toString ( PropList props )
     String DataStore = props.getValue ( "DataStore" );
     String InputName = props.getValue ( "InputName" );
     String Alias = props.getValue ( "Alias" );
+    String ColumnProperties = props.getValue ( "ColumnProperties" );
     String Properties = props.getValue ( "Properties" );
     String IfNotFound = props.getValue ( "IfNotFound" );
     String DefaultUnits = props.getValue ( "DefaultUnits" );
+    String TimeSeriesCountProperty = props.getValue ( "TimeSeriesCountProperty" );
 
 	StringBuffer b = new StringBuffer ();
 
@@ -843,6 +905,12 @@ public String toString ( PropList props )
         }
         b.append("Alias=\"" + Alias + "\"");
     }
+    if ((ColumnProperties != null) && (ColumnProperties.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("ColumnProperties=\"" + ColumnProperties + "\"");
+    }
     if ((Properties != null) && (Properties.length() > 0)) {
         if (b.length() > 0) {
             b.append(",");
@@ -860,6 +928,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("DefaultUnits=\"" + DefaultUnits + "\"");
+    }
+    if ((TimeSeriesCountProperty != null) && (TimeSeriesCountProperty.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("TimeSeriesCountProperty=\"" + TimeSeriesCountProperty + "\"");
     }
 
 	return getCommandName() + "(" + b.toString() + ")";

@@ -262,7 +262,7 @@ throws InvalidCommandParameterException
 	}
 	
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>();
+    List<String> validList = new ArrayList<String>(20);
     validList.add ( "DataStore" );
     validList.add ( "Interval" );
     validList.add ( "Stations" );
@@ -276,6 +276,7 @@ throws InvalidCommandParameterException
     validList.add ( "ForecastPeriod" );
     validList.add ( "ForecastPublicationDateStart" );
     validList.add ( "ForecastPublicationDateEnd" );
+    validList.add ( "ForecastExceedanceProbabilities" );
     validList.add ( "Elements" );
     validList.add ( "ElevationMin" );
     validList.add ( "ElevationMax" );
@@ -489,8 +490,24 @@ CommandWarningException, CommandException
         ForecastTableID = "NRCS_Forecasts"; // Default
     }
     String ForecastPeriod = parameters.getValue("ForecastPeriod");
+    ForecastPeriod = TSCommandProcessorUtil.expandParameterValue(processor,this,ForecastPeriod);
     String ForecastPublicationDateStart = parameters.getValue("ForecastPublicationDateStart");
+    if ( ForecastPublicationDateStart != null ) {
+        ForecastPublicationDateStart = TSCommandProcessorUtil.expandParameterValue(processor,this,ForecastPublicationDateStart);
+    }
     String ForecastPublicationDateEnd = parameters.getValue("ForecastPublicationDateEnd");
+    if ( ForecastPublicationDateEnd != null ) {
+        ForecastPublicationDateEnd = TSCommandProcessorUtil.expandParameterValue(processor,this,ForecastPublicationDateEnd);
+    }
+    String ForecastExceedanceProbabilities = parameters.getValue("ForecastExceedanceProbabilities");
+    int [] forecastExceedanceProbabilities = null;
+    if ( (ForecastExceedanceProbabilities != null) && !ForecastExceedanceProbabilities.equals("") ) {
+        String [] parts = ForecastExceedanceProbabilities.split(",");
+        forecastExceedanceProbabilities = new int[parts.length];
+        for ( int i = 0; i < parts.length; i++ ) {
+            forecastExceedanceProbabilities[i] = Integer.parseInt(parts[i].trim());
+        }
+    }
    
     String Elements = parameters.getValue("Elements");
     List<Element> elementList = new Vector();
@@ -668,7 +685,7 @@ CommandWarningException, CommandException
 		    if ( commandPhase == CommandPhaseType.RUN ) {
 		        DataTable table = nrcsAwdbDataStore.readForecastTable( stationList, stateList,
 		                networkList, hucList, elementList, ForecastPeriod, ForecastPublicationDateStart,
-		                ForecastPublicationDateEnd, ForecastTableID );
+		                ForecastPublicationDateEnd, forecastExceedanceProbabilities, ForecastTableID );
 	            // Set the table in the processor...
 		        PropList request_params = new PropList ( "" );
 	            request_params.setUsingObject ( "Table", table );
@@ -908,6 +925,13 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ForecastPublicationDateEnd=\"" + ForecastPublicationDateEnd + "\"" );
+    }
+    String ForecastExceedanceProbabilities = props.getValue("ForecastExceedanceProbabilities");
+    if ( (ForecastExceedanceProbabilities != null) && (ForecastExceedanceProbabilities.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ForecastExceedanceProbabilities=\"" + ForecastExceedanceProbabilities + "\"" );
     }
     String Elements = props.getValue("Elements");
     if ( (Elements != null) && (Elements.length() > 0) ) {

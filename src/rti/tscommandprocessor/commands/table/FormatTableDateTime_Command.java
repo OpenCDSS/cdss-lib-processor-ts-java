@@ -139,6 +139,7 @@ throws InvalidCommandParameterException
     validList.add ( "OutputYearType" );
     validList.add ( "OutputColumn" );
     validList.add ( "OutputType" );
+    validList.add ( "InsertBeforeColumn" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -202,6 +203,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (OutputType == null) || OutputType.equals("") ) {
         OutputType = _String;
     }
+    String InsertBeforeColumn = parameters.getValue ( "InsertBeforeColumn" );
 
     // Get the table to process.
 
@@ -253,31 +255,45 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TableRecord rec;
         Object o = null;
         DateTime dt;
-        int inputColumnNum = -1;
-        try {
-            inputColumnNum = table.getFieldIndex(InputColumn);
-        }
-        catch ( Exception e ) {
-            problems.add ( "Input column \"" + InputColumn + "\" not found in table \"" + TableID + "\"" );
+        int insertBeforeColumnNum = -1;
+        if ( (InsertBeforeColumn != null) && !InsertBeforeColumn.equals("") ) {
+            try {
+                insertBeforeColumnNum = table.getFieldIndex(InsertBeforeColumn);
+            }
+            catch ( Exception e ) {
+                problems.add ( "InsertBeforeColumn \"" + InsertBeforeColumn + "\" not found in table \"" + TableID + "\"" );
+            }
         }
         int outputColumnNum = -1;
         try {
             outputColumnNum = table.getFieldIndex(OutputColumn);
         }
         catch ( Exception e ) {
-            // Add the column
+            // Output column was not matched so add the column (use insert position to indicate where to add)
             if ( OutputType.equalsIgnoreCase(_DateTime) ) {
-                outputColumnNum = table.addField(new TableField(TableField.DATA_TYPE_DATETIME, OutputColumn, -1, -1), null);
+                outputColumnNum = table.addField(insertBeforeColumnNum,
+                    new TableField(TableField.DATA_TYPE_DATETIME, OutputColumn, -1, -1), null);
             }
             else if ( OutputType.equalsIgnoreCase(_Double) ) {
-                outputColumnNum = table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, OutputColumn, -1, -1), null);
+                outputColumnNum = table.addField(insertBeforeColumnNum,
+                    new TableField(TableField.DATA_TYPE_DOUBLE, OutputColumn, -1, -1), null);
             }
             else if ( OutputType.equalsIgnoreCase(_Integer) ) {
-                outputColumnNum = table.addField(new TableField(TableField.DATA_TYPE_INT, OutputColumn, -1, -1), null);
+                outputColumnNum = table.addField(insertBeforeColumnNum,
+                    new TableField(TableField.DATA_TYPE_INT, OutputColumn, -1, -1), null);
             }
             else if ( OutputType.equalsIgnoreCase(_String) ) {
-                outputColumnNum = table.addField(new TableField(TableField.DATA_TYPE_STRING, OutputColumn, -1, -1), null);
+                outputColumnNum = table.addField(insertBeforeColumnNum,
+                    new TableField(TableField.DATA_TYPE_STRING, OutputColumn, -1, -1), null);
             }
+        }
+        // Get the input column after getting the output column because the above may insert a column
+        int inputColumnNum = -1;
+        try {
+            inputColumnNum = table.getFieldIndex(InputColumn);
+        }
+        catch ( Exception e ) {
+            problems.add ( "Input column \"" + InputColumn + "\" not found in table \"" + TableID + "\"" );
         }
         // Loop through the table records
         int n = table.getNumberOfRecords();
@@ -319,6 +335,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             catch ( Exception e2 ) {
                 problems.add("Error formatting date/time \"" + o + "\" (" + e2 + ").");
+                Message.printWarning(3, routine, e2);
             }
         }
     }
@@ -384,6 +401,7 @@ public String toString ( PropList parameters )
     String OutputYearType = parameters.getValue( "OutputYearType" );
     String OutputColumn = parameters.getValue( "OutputColumn" );
     String OutputType = parameters.getValue( "OutputType" );
+    String InsertBeforeColumn = parameters.getValue( "InsertBeforeColumn" );
         
     StringBuffer b = new StringBuffer ();
 
@@ -428,6 +446,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "OutputType=" + OutputType );
+    }
+    if ( (InsertBeforeColumn != null) && (InsertBeforeColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InsertBeforeColumn=\"" + InsertBeforeColumn + "\"" );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

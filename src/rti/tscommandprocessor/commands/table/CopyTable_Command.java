@@ -25,6 +25,7 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
@@ -91,13 +92,14 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(7);
+	List<String> validList = new ArrayList<String>(8);
     validList.add ( "TableID" );
     validList.add ( "NewTableID" );
     validList.add ( "DistinctColumns" );
     validList.add ( "IncludeColumns" );
     validList.add ( "ColumnMap" );
     validList.add ( "ColumnFilters" );
+    validList.add ( "ColumnExcludeFilters" );
     validList.add ( "RowCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
@@ -239,6 +241,8 @@ CommandWarningException, CommandException
             columnFilters.put(parts[0].trim(), parts[1].trim() );
         }
     }
+    String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );
+    StringDictionary columnExcludeFilters = new StringDictionary(ColumnExcludeFilters,":",",");
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
     
     // Get the table to process.
@@ -290,7 +294,7 @@ CommandWarningException, CommandException
 	    DataTable newTable = null;
 	    if ( command_phase == CommandPhaseType.RUN ) {
 	        newTable = table.createCopy ( table, NewTableID, includeColumns,
-	            distinctColumns, columnMap, columnFilters );
+	            distinctColumns, columnMap, columnFilters, columnExcludeFilters );
             
             // Set the table in the processor...
             
@@ -378,6 +382,7 @@ public String toString ( PropList props )
 	String IncludeColumns = props.getValue( "IncludeColumns" );
 	String ColumnMap = props.getValue( "ColumnMap" );
 	String ColumnFilters = props.getValue( "ColumnFilters" );
+	String ColumnExcludeFilters = props.getValue( "ColumnExcludeFilters" );
 	String RowCountProperty = props.getValue( "RowCountProperty" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
@@ -415,6 +420,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ColumnFilters=\"" + ColumnFilters + "\"" );
+    }
+    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnExcludeFilters=\"" + ColumnExcludeFilters + "\"" );
     }
     if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
         if ( b.length() > 0 ) {

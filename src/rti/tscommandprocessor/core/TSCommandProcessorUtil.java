@@ -14,7 +14,7 @@ import rti.tscommandprocessor.commands.ts.ReadTimeSeries_Command;
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
-import RTi.TS.TSUtil;
+import RTi.TS.TSUtil_SortTimeSeries;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandLogRecord;
@@ -1165,7 +1165,13 @@ protected static List<TS> getPatternTSListFromCommands ( List commands )
         }
     }
     // Sort the time series by identifier...
-    TSUtil.sort(v);
+    TSUtil_SortTimeSeries tsu = new TSUtil_SortTimeSeries(v, null, null, null, 1 );
+    try {
+        return tsu.sortTimeSeries();
+    }
+    catch ( Exception e ) {
+        // Return original order below
+    }
     return v;
 }
 

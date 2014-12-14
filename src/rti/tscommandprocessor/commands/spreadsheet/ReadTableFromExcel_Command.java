@@ -528,102 +528,6 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
-Get the array of cell ranges based on one of the input address methods.
-@param wb the Excel workbook object
-@param sheet the sheet in the workbook, read in entirety if no other address information is given
-@param excelAddress Excel address range (e.g., A1:D10 or $A1:$D10 or variant)
-@param excelNamedRange a named range
-@param excelTableName a table name, treated as named range
-@return null if no area reference can be determined
-*/
-private AreaReference getAreaReference ( Workbook wb, Sheet sheet,
-    String excelAddress, String excelNamedRange, String excelTableName )
-{   String routine = "ReadTableFromExcel_Command.getAreaReference";
-    if ( (excelTableName != null) && (excelTableName.length() > 0) ) {
-        // Table name takes precedence as range name
-        excelNamedRange = excelTableName;
-    }
-    // If sheet is specified but excelAddress, String excelNamedRange, String excelTableName are not,
-    // read the entire sheet
-    if ( ((excelAddress == null) || (excelAddress.length() == 0)) &&
-        ((excelNamedRange == null) || (excelNamedRange.length() == 0)) ) {
-        // Examine the sheet for blank columns/cells.  POI provides methods for the rows...
-        int firstRow = sheet.getFirstRowNum();
-        int lastRow = sheet.getLastRowNum();
-        Message.printStatus(2, routine, "Sheet firstRow=" + firstRow + ", lastRow=" + lastRow );
-        // ...but have to iterate through the rows as per:
-        //  http://stackoverflow.com/questions/2194284/how-to-get-the-last-column-index-reading-excel-file
-        Row row;
-        int firstCol = -1;
-        int lastCol = -1;
-        int cellNum; // Index of cell in row (not column number?)
-        int col;
-        for ( int iRow = firstRow; iRow <= lastRow; iRow++ ) {
-            row = sheet.getRow(iRow);
-            if ( row == null ) {
-                // TODO SAM 2013-06-28 Sometimes this happens with extra rows at the end of a worksheet?
-                continue;
-            }
-            cellNum = row.getFirstCellNum(); // Not sure what this returns if no columns.  Assume -1
-            if ( cellNum >= 0 ) {
-                col = row.getCell(cellNum).getColumnIndex();
-                if ( firstCol < 0 ) {
-                    firstCol = col;
-                }
-                else {
-                    firstCol = Math.min(firstCol, col);
-                }
-            }
-            cellNum = row.getLastCellNum() - 1; // NOTE -1, as per API docs
-            if ( cellNum >= 0 ) {
-                col = row.getCell(cellNum).getColumnIndex();
-                if ( lastCol < 0 ) {
-                    lastCol = col;
-                }
-                else {
-                    lastCol = Math.max(lastCol, col);
-                }
-            }
-            Message.printStatus(2, routine, "row " + iRow + ", firstCol=" + firstCol + ", lastCol=" + lastCol );
-        }
-        // Return null if the any of the row column limits were not determined
-        if ( (firstRow < 0) || (firstCol < 0) || (lastRow < 0) || (lastCol < 0) ) {
-            return null;
-        }
-        else {
-            return new AreaReference(new CellReference(firstRow,firstCol), new CellReference(lastRow,lastCol));
-        }
-    }
-    if ( (excelAddress != null) && (excelAddress.length() > 0) ) {
-        return new AreaReference(excelAddress);
-    }
-    else if ( (excelNamedRange != null) && (excelNamedRange.length() > 0) ) {
-        int namedCellIdx = wb.getNameIndex(excelNamedRange);
-        if ( namedCellIdx < 0 ) {
-            Message.printWarning(3, routine, "Unable to get Excel internal index for named range \"" +
-                excelNamedRange + "\"" );
-            return null;
-        }
-        Name aNamedCell = wb.getNameAt(namedCellIdx);
-
-        // Retrieve the cell at the named range and test its contents
-        // Will get back one AreaReference for C10, and
-        //  another for D12 to D14
-        AreaReference[] arefs = AreaReference.generateContiguous(aNamedCell.getRefersToFormula());
-        // Can only handle one area
-        if ( arefs.length != 1 ) {
-            return null;
-        }
-        else {
-            return arefs[0];
-        }
-    }
-    else {
-        return null;
-    }
-}
-
-/**
 Return the table that is read by this class when run in discovery mode.
 */
 private DataTable getDiscoveryTable()
@@ -650,22 +554,6 @@ public List getObjectList ( Class c )
         v.add ( table );
     }
     return v;
-}
-
-/**
-Look up an Excel type, for messages.
-*/
-private String lookupExcelCellType(int cellType)
-{
-    switch ( cellType ) {
-        case 0: return "NUMERIC";
-        case 1: return "STRING";
-        case 2: return "FORMULA";
-        case 3: return "BLANK";
-        case 4: return "BOOLEAN";
-        case 5: return "ERROR";
-        default: return "UNKNOWN";
-    }
 }
 
 // Use base class parseCommand()
@@ -698,7 +586,8 @@ throws FileNotFoundException, IOException
         // Set to null to simplify logic below
         comment = null;
     }
-    
+
+    ExcelToolkit tk = new ExcelToolkit();
     Workbook wb = null;
     InputStream inp = null;
     try {
@@ -739,7 +628,7 @@ throws FileNotFoundException, IOException
             }
         }
         // Get the contiguous block of data to process by evaluating user input
-        AreaReference area = getAreaReference ( wb, sheet, excelAddress, excelNamedRange, excelTableName );
+        AreaReference area = tk.getAreaReference ( wb, sheet, excelAddress, excelNamedRange, excelTableName );
         if ( area == null ) {
             problems.add ( "Unable to get worksheet area reference from address information." );
             return null;
@@ -802,14 +691,13 @@ throws FileNotFoundException, IOException
                     if ( Message.isDebugOn ) {
                         Message.printDebug(1, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\"" );
                     }
+                    String cellValue = null;
                     if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                        table.setFieldValue(iRowOut, iColOut, "", true);
+                        cellValue = "";
                     }
-                    else {
-                        table.setFieldValue(iRowOut, iColOut, null, true);
-                    }
-                    if ( (columnExcludeFiltersMap != null) &&
-                        cellMatchesFilter(columnNames[iCol], null, columnExcludeFiltersMap) ) {
+                    table.setFieldValue(iRowOut, iColOut, cellValue, true);
+                    if ( (tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING) && (columnExcludeFiltersMap != null) &&
+                        cellMatchesFilter(columnNames[iCol - colStart], cellValue, columnExcludeFiltersMap) ) {
                         // Row was added but will remove at the end after all columns are processed
                         needToSkipRow = true;
                     }
@@ -823,7 +711,7 @@ throws FileNotFoundException, IOException
                 cellType = cell.getCellType();
                 if ( Message.isDebugOn ) {
                     Message.printDebug(1, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" +
-                        cellType + " " + lookupExcelCellType(cellType));
+                        cellType + " " + tk.lookupExcelCellType(cellType));
                 }
                 cellIsFormula = false;
                 if ( cellType == Cell.CELL_TYPE_FORMULA ) {

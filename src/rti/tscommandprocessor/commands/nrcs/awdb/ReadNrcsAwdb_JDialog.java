@@ -68,6 +68,7 @@ private SimpleJComboBox __ForecastPeriod_JComboBox = null;
 private JTextField __ForecastTableID_JTextField = null;
 private JTextField __ForecastPublicationDateStart_JTextField;
 private JTextField __ForecastPublicationDateEnd_JTextField;
+private JTextField __ForecastExceedanceProbabilities_JTextField;
 private ChoiceFormatterJPanel __Elements_JTextField;
 private JTextField __ElevationMax_JTextField;
 private JTextField __ElevationMin_JTextField;
@@ -251,6 +252,10 @@ private void checkInput ()
     if ( ForecastPublicationDateEnd.length() > 0 ) {
         props.set ( "ForecastPublicationDateEnd", ForecastPublicationDateEnd );
     }
+    String ForecastExceedanceProbabilities = __ForecastExceedanceProbabilities_JTextField.getText().trim();
+    if ( ForecastExceedanceProbabilities.length() > 0 ) {
+        props.set ( "forecastExceedanceProbabilities", ForecastExceedanceProbabilities );
+    }
     String Elements = __Elements_JTextField.getText().trim();
     if ( Elements.length() > 0 ) {
         props.set ( "Elements", Elements );
@@ -303,6 +308,7 @@ private void commitEdits ()
     String ForecastPeriod = __ForecastPeriod_JComboBox.getSelected();
     String ForecastPublicationDateStart = __ForecastPublicationDateStart_JTextField.getText().trim();
     String ForecastPublicationDateEnd = __ForecastPublicationDateEnd_JTextField.getText().trim();
+    String ForecastExceedanceProbabilities = __ForecastExceedanceProbabilities_JTextField.getText().trim();
     String Elements = __Elements_JTextField.getText().trim();
     String ElevationMax = __ElevationMax_JTextField.getText().trim();
     String ElevationMin = __ElevationMin_JTextField.getText().trim();
@@ -322,6 +328,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ForecastPeriod", ForecastPeriod );
     __command.setCommandParameter ( "ForecastPublicationDateStart", ForecastPublicationDateStart );
     __command.setCommandParameter ( "ForecastPublicationDateEnd", ForecastPublicationDateEnd );
+    __command.setCommandParameter ( "ForecastExceedanceProbabilities", ForecastExceedanceProbabilities );
 	__command.setCommandParameter ( "Elements", Elements );
 	__command.setCommandParameter ( "ElevationMax", ElevationMax );
 	__command.setCommandParameter ( "ElevationMin", ElevationMin );
@@ -366,7 +373,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Read one or more time series from the Natural Resources Conservation Service (NRCS) " +
-    	"Air and Water Database (AWDB) web service."),
+    	"Air and Water Database (AWDB) web service OR read forecast data as a table."),
     	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>WARNING - This command can be slow.  Constrain the query to improve performance.</b></html>"),
@@ -541,7 +548,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
         "Time series identifiers with \"BOR\" network also will result in reservoir metadata being set as time series properties."),
         0, ++yRes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Panel for forecast points
+    // Panel for forecasts
     int yFc = -1;
     JPanel fc_JPanel = new JPanel();
     fc_JPanel.setLayout( new GridBagLayout() );
@@ -554,8 +561,8 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
         "The following element types have forecasts:  SRVO"),
         0, ++yFc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(fc_JPanel, new JLabel (
-        "Forecasts are a list of values and corresponding exceedance probabilities for the forecast period.  " +
-        "Consequently, output is a table rather than a time series."),
+        "<html>Forecasts are a list of values and corresponding exceedance probabilities for the forecast period.  " +
+        "Consequently, <b>output is a table rather than a time series</b>.</html>"),
         0, ++yFc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(fc_JPanel, new JLabel( "Read forecast?:"),
@@ -570,7 +577,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(fc_JPanel, __ReadForecast_JComboBox,
         1, yFc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(fc_JPanel, new JLabel (
-        "Optional - read forecast time series? (default=" + __command._False + "."),
+        "Optional - read forecast table? (default=" + __command._False + ")."),
         3, yFc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(fc_JPanel, new JLabel ("Forecast table ID:"), 
@@ -584,7 +591,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     
     JGUIUtil.addComponent(fc_JPanel, new JLabel( "Forecast period:"),
         0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ForecastPeriod_JComboBox = new SimpleJComboBox ( false );
+    __ForecastPeriod_JComboBox = new SimpleJComboBox ( true ); // Editable because property may be entered
     List<String> periodList = getSelectedDataStore().getForecastPeriodStrings();
     periodList.add(0,"");
     __ForecastPeriod_JComboBox.setData(periodList);
@@ -614,6 +621,16 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(fc_JPanel, __ForecastPublicationDateEnd_JTextField,
         1, yFc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(fc_JPanel, new JLabel ( "Optional - YYYY-MM-DD (default=all published forecasts)."),
+        3, yFc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(fc_JPanel, new JLabel ("Forecast exceedance probabilities:"), 
+        0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ForecastExceedanceProbabilities_JTextField = new JTextField (20);
+    __ForecastExceedanceProbabilities_JTextField.setToolTipText("Specify probabilities to read as comma-separated integers 10,30,50,70,90");
+    __ForecastExceedanceProbabilities_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(fc_JPanel, __ForecastExceedanceProbabilities_JTextField,
+        1, yFc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(fc_JPanel, new JLabel ("Optional - probabilities to return (default=all available)."),
         3, yFc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Generic parameters
@@ -767,6 +784,7 @@ private void refresh ()
     String ForecastPeriod = "";
     String ForecastPublicationDateStart = "";
     String ForecastPublicationDateEnd = "";
+    String ForecastExceedanceProbabilities = "";
     String Elements = "";
     String ElevationMin = "";
     String ElevationMax = "";
@@ -791,6 +809,7 @@ private void refresh ()
         ForecastPeriod = props.getValue ( "ForecastPeriod" );
 	    ForecastPublicationDateStart = props.getValue ( "ForecastPublicationDateStart" );
 	    ForecastPublicationDateEnd = props.getValue ( "ForecastPublicationDateEnd" );
+	    ForecastExceedanceProbabilities = props.getValue ( "ForecastExceedanceProbabilities" );
 		Elements = props.getValue ( "Elements" );
 		ElevationMin = props.getValue ( "ElevationMin" );
 		ElevationMax = props.getValue ( "ElevationMax" );
@@ -880,9 +899,16 @@ private void refresh ()
                 }
             }
             else {
-                // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "ForecastPeriod parameter \"" + ForecastPeriod + "\".  Select a\ndifferent value or Cancel." );
+                // Not found, add to list if has ${Property} notation
+                if ( ForecastPeriod.startsWith("${") ) {
+                    __ForecastPeriod_JComboBox.add(ForecastPeriod);
+                    __ForecastPeriod_JComboBox.select(ForecastPeriod);
+                }
+                else {
+                    // Bad user command...
+                    Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                      "ForecastPeriod parameter \"" + ForecastPeriod + "\".  Select a\ndifferent value or Cancel." );
+                }
             }
         }
         if ( ForecastPublicationDateStart != null ) {
@@ -890,6 +916,9 @@ private void refresh ()
         }
         if ( ForecastPublicationDateEnd != null ) {
             __ForecastPublicationDateEnd_JTextField.setText ( ForecastPublicationDateEnd );
+        }
+        if ( ForecastExceedanceProbabilities != null ) {
+            __ForecastExceedanceProbabilities_JTextField.setText ( ForecastExceedanceProbabilities );
         }
         if ( Elements != null ) {
             __Elements_JTextField.setText ( Elements );
@@ -927,6 +956,7 @@ private void refresh ()
     ForecastPeriod = __ForecastPeriod_JComboBox.getSelected();
     ForecastPublicationDateStart = __ForecastPublicationDateStart_JTextField.getText().trim();
     ForecastPublicationDateEnd = __ForecastPublicationDateEnd_JTextField.getText().trim();
+    ForecastExceedanceProbabilities = __ForecastExceedanceProbabilities_JTextField.getText().trim();
     Elements = __Elements_JTextField.getText().trim();
     ElevationMin = __ElevationMin_JTextField.getText().trim();
     ElevationMax = __ElevationMax_JTextField.getText().trim();
@@ -945,6 +975,7 @@ private void refresh ()
     props.add ( "ForecastPeriod=" + ForecastPeriod );
     props.add ( "ForecastPublicationDateStart=" + ForecastPublicationDateStart );
     props.add ( "ForecastPublicationDateEnd=" + ForecastPublicationDateEnd );
+    props.add ( "ForecastExceedanceProbabilities=" + ForecastExceedanceProbabilities );
     props.add ( "Elements=" + Elements );
     props.add ( "ElevationMin=" + ElevationMin );
     props.add ( "ElevationMax=" + ElevationMax );

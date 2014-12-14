@@ -492,7 +492,6 @@ CommandWarningException, CommandException
                         }
                         Message.printStatus(2, routine, "Did not match property name \"" + tableOutputColumnNames[i] +
                             "\" as column table so added to table." );
-                        break;
                     }
                 }
                 

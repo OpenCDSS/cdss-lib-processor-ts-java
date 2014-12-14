@@ -188,6 +188,24 @@ throws CommandWarningException, CommandException
                 pos1 = pos;
                 pos2 = pos + 2;
             }
+            else if ( Condition.indexOf("=") > 0 ) {
+                message = "Bad use of = in condition.";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Use == to check for equality." ) );
+            }
+            else {
+                message = "Unknown condition operator for \"" + Condition + "\"";
+                Message.printWarning(3,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Make sure condition operator is supported - refer to command editor and documentation." ) );
+            }
             value1 = TSCommandProcessorUtil.expandParameterValue(
                 this.getCommandProcessor(),this,Condition.substring(0,pos1).trim() );
             value2 = TSCommandProcessorUtil.expandParameterValue(

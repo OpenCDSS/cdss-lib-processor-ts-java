@@ -297,7 +297,9 @@ public AreaReference getAreaReference ( Workbook wb, Sheet sheet, String excelAd
         // Examine the sheet for blank columns/cells.  POI provides methods for the rows...
         int firstRow = sheet.getFirstRowNum();
         int lastRow = sheet.getLastRowNum();
-        Message.printStatus(2, routine, "Sheet firstRow=" + firstRow + ", lastRow=" + lastRow );
+        if ( Message.isDebugOn ) {
+            Message.printDebug(1, routine, "Sheet firstRow=" + firstRow + ", lastRow=" + lastRow );
+        }
         // ...but have to iterate through the rows as per:
         //  http://stackoverflow.com/questions/2194284/how-to-get-the-last-column-index-reading-excel-file
         Row row;
@@ -331,7 +333,9 @@ public AreaReference getAreaReference ( Workbook wb, Sheet sheet, String excelAd
                     lastCol = Math.max(lastCol, col);
                 }
             }
-            Message.printStatus(2, routine, "row " + iRow + ", firstCol=" + firstCol + ", lastCol=" + lastCol );
+            if ( Message.isDebugOn ) {
+                Message.printDebug(1, routine, "row " + iRow + ", firstCol=" + firstCol + ", lastCol=" + lastCol );
+            }
         }
         // Return null if the any of the row column limits were not determined
         if ( (firstRow < 0) || (firstCol < 0) || (lastRow < 0) || (lastCol < 0) ) {
@@ -397,12 +401,12 @@ Look up an Excel cell type, for messages.
 public String lookupExcelCellType(int cellType)
 {
     switch ( cellType ) {
-        case 0: return "NUMERIC";
-        case 1: return "STRING";
-        case 2: return "FORMULA";
-        case 3: return "BLANK";
-        case 4: return "BOOLEAN";
-        case 5: return "ERROR";
+        case Cell.CELL_TYPE_NUMERIC: return "NUMERIC"; // 0
+        case Cell.CELL_TYPE_STRING: return "STRING"; // 1
+        case Cell.CELL_TYPE_FORMULA: return "FORMULA"; // 2
+        case Cell.CELL_TYPE_BLANK: return "BLANK"; // 3
+        case Cell.CELL_TYPE_BOOLEAN: return "BOOLEAN"; // 4
+        case Cell.CELL_TYPE_ERROR: return "ERROR"; // 5
         default: return "UNKNOWN";
     }
 }
@@ -1360,6 +1364,25 @@ throws FileNotFoundException, IOException
             ExcelUtil.removeOpenWorkbook(workbookFile);
         }
     }
+}
+
+/**
+Is the row a comment?
+@param sheet sheet being read
+@param iRow row in sheet (0+)
+@param comment if not null, character at start of row that indicates comment (e.g., "#")
+*/
+public boolean rowIsComment ( Sheet sheet, int iRow, String comment )
+{   Row dataRow = sheet.getRow(iRow);
+    Cell cell = dataRow.getCell(0);
+    if ( (cell != null) && (cell.getCellType() == Cell.CELL_TYPE_STRING) ) {
+        String cellValue = cell.getStringCellValue();
+        if ( (cellValue != null) && (cellValue.length() > 0) &&
+            cellValue.substring(0,1).equals(comment) ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 }

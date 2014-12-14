@@ -44,6 +44,7 @@ private JTextField __IncludeColumns_JTextField = null;
 private JTextField __DistinctColumns_JTextField = null;
 private JTextArea __ColumnMap_JTextArea = null;
 private JTextArea __ColumnFilters_JTextArea = null;
+private JTextArea __ColumnExcludeFilters_JTextArea = null;
 private JTextField __RowCountProperty_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -97,15 +98,32 @@ public void actionPerformed(ActionEvent event)
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
         String [] notes = {
-            "Rows in the original table can be excluded from the copy by filtering on column values:",
+            "Rows in the original table can be included in the copy by filtering on column values.",
+            "All specified conditions must be true to include the row.",
             "Column Name - column name in the original table to filter",
-            "Column Value Filter Pattern - a literal value to match, or a pattern using * as a wildcard",
-            "(specify blank to filter out columns with no values)"
+            "Column Value Filter Pattern - a literal value to match (to include), or a pattern using * as a wildcard"
         };
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
             notes, "Column Name", "Column Value Filter Pattern",10)).response();
         if ( columnFilters != null ) {
             __ColumnFilters_JTextArea.setText ( columnFilters );
+            refresh();
+        }
+    }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnExcludeFilters") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
+        String [] notes = {
+            "Rows in the original table can be excluded from the copy by filtering on column values.",
+            "All specified conditions must be true to exclude the row.",
+            "Column Name - column name in the original table to filter",
+            "Column Value Filter Pattern - a literal value to match (to exclude), or a pattern using * as a wildcard",
+            "(specify blank to filter out columns with no values)"
+        };
+        String columnExcludeFilters = (new DictionaryJDialog ( __parent, true, ColumnExcludeFilters, "Edit ColumnExcludeFilters Parameter",
+            notes, "Column Name", "Column Value Filter Pattern",10)).response();
+        if ( columnExcludeFilters != null ) {
+            __ColumnExcludeFilters_JTextArea.setText ( columnExcludeFilters );
             refresh();
         }
     }
@@ -124,6 +142,7 @@ private void checkInput ()
 	String DistinctColumns = __DistinctColumns_JTextField.getText().trim();
 	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
+	String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
 	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	__error_wait = false;
 
@@ -144,6 +163,9 @@ private void checkInput ()
     }
     if ( ColumnFilters.length() > 0 ) {
         props.set ( "ColumnFilters", ColumnFilters );
+    }
+    if ( ColumnExcludeFilters.length() > 0 ) {
+        props.set ( "ColumnExcludeFilters", ColumnExcludeFilters );
     }
     if ( RowCountProperty.length() > 0 ) {
         props.set ( "RowCountProperty", RowCountProperty );
@@ -170,6 +192,7 @@ private void commitEdits ()
     String DistinctColumns = __DistinctColumns_JTextField.getText().trim();
     String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
     String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
+    String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
     String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "NewTableID", NewTableID );
@@ -177,6 +200,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "DistinctColumns", DistinctColumns );
 	__command.setCommandParameter ( "ColumnMap", ColumnMap );
 	__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
+	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
 	__command.setCommandParameter ( "RowCountProperty", RowCountProperty );
 }
 
@@ -269,7 +293,7 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnMap",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column include filters:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnFilters_JTextArea = new JTextArea (3,35);
     __ColumnFilters_JTextArea.setLineWrap ( true );
@@ -281,6 +305,20 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - filter rows to copy by matching column pattern (default=copy all rows)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnFilters",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column exclude filters:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
+    __ColumnExcludeFilters_JTextArea.setLineWrap ( true );
+    __ColumnExcludeFilters_JTextArea.setWrapStyleWord ( true );
+    __ColumnExcludeFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnExcludeFilters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - filter rows to exclude by matching column pattern (default=copy all rows)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Row count property:"),
@@ -374,6 +412,7 @@ private void refresh ()
     String DistinctColumns = "";
     String ColumnMap = "";
     String ColumnFilters = "";
+    String ColumnExcludeFilters = "";
     String RowCountProperty = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
@@ -384,6 +423,7 @@ private void refresh ()
         IncludeColumns = props.getValue ( "IncludeColumns" );
         ColumnMap = props.getValue ( "ColumnMap" );
         ColumnFilters = props.getValue ( "ColumnFilters" );
+        ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
         RowCountProperty = props.getValue ( "RowCountProperty" );
         if ( TableID == null ) {
             // Select default...
@@ -415,6 +455,9 @@ private void refresh ()
         if ( ColumnFilters != null ) {
             __ColumnFilters_JTextArea.setText ( ColumnFilters );
         }
+        if ( ColumnExcludeFilters != null ) {
+            __ColumnExcludeFilters_JTextArea.setText ( ColumnExcludeFilters );
+        }
         if ( RowCountProperty != null ) {
             __RowCountProperty_JTextField.setText ( RowCountProperty );
         }
@@ -426,6 +469,7 @@ private void refresh ()
 	DistinctColumns = __DistinctColumns_JTextField.getText().trim();
 	ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
 	ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
+	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim().replace("\n"," ");
 	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
@@ -434,6 +478,7 @@ private void refresh ()
 	props.add ( "IncludeColumns=" + IncludeColumns );
 	props.add ( "ColumnMap=" + ColumnMap );
 	props.add ( "ColumnFilters=" + ColumnFilters );
+	props.add ( "ColumnExcludeFilters=" + ColumnExcludeFilters );
 	props.add ( "RowCountProperty=" + RowCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
@@ -466,11 +511,11 @@ public void windowClosing(WindowEvent event) {
 }
 
 // The following methods are all necessary because this class implements WindowListener
-public void windowActivated(WindowEvent evt)	{}
-public void windowClosed(WindowEvent evt)	{}
-public void windowDeactivated(WindowEvent evt)	{}
-public void windowDeiconified(WindowEvent evt)	{}
-public void windowIconified(WindowEvent evt)	{}
-public void windowOpened(WindowEvent evt)	{}
+public void windowActivated(WindowEvent evt){}
+public void windowClosed(WindowEvent evt){}
+public void windowDeactivated(WindowEvent evt){}
+public void windowDeiconified(WindowEvent evt){}
+public void windowIconified(WindowEvent evt){}
+public void windowOpened(WindowEvent evt){}
 
 }

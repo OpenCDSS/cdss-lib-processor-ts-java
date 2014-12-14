@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -45,9 +46,11 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 //import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableColumnType;
@@ -73,6 +76,11 @@ Possible values for WriteAllAsText parameter.
 */
 protected final String _False = "False";
 protected final String _True = "True";
+
+/**
+Possible values for ColumnWidths, CellTypes, ColumnDecimalPlaces parameter.
+*/
+protected final String _Auto = "Auto";
 
 /**
 Output file that is created by this command.
@@ -140,8 +148,6 @@ throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String OutputFile = parameters.getValue ( "OutputFile" );
     String ExcelColumnNames = parameters.getValue ( "ExcelColumnNames" );
-    String NumberPrecision = parameters.getValue ( "NumberPrecision" );
-	String WriteAllAsText = parameters.getValue ( "WriteAllAsText" );
 	String KeepOpen = parameters.getValue ( "KeepOpen" );
 	String warning = "";
     String message;
@@ -222,36 +228,6 @@ throws InvalidCommandParameterException
                 ", " + _None + " (default), or " + _RowBeforeRange ) );
     }
     
-    if ( NumberPrecision != null && !NumberPrecision.equals("") ) {
-        int numberPrecision = 0;
-        boolean bad = false;
-        try {
-            numberPrecision = Integer.parseInt(NumberPrecision);
-            if ( numberPrecision < 0 ) {
-                bad = true;
-            }
-        }
-        catch ( NumberFormatException e ) {
-            bad = true;
-        }
-        if ( bad ) {
-            message = "The NumberPrecision value (" + NumberPrecision + ") is invalid.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify NumberPrecision as a positive integer." ) );
-        }
-    }
-	
-	if ( WriteAllAsText != null && !WriteAllAsText.equalsIgnoreCase(_True) && 
-        !WriteAllAsText.equalsIgnoreCase(_False) && !WriteAllAsText.equalsIgnoreCase("") ) {
-        message = "WriteAllAsText is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "WriteAllAsText must be specified as " + _False + " (default) or " + _True ) );
-    }
-	
     if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) && 
         !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.equalsIgnoreCase("") ) {
         message = "KeepOpen is invalid.";
@@ -274,13 +250,13 @@ throws InvalidCommandParameterException
     validList.add ( "ExcelTableName" );
     validList.add ( "ExcelColumnNames" );
     validList.add ( "ColumnExcludeFilters" );
-    //validList.add ( "Comment" );
-    //validList.add ( "ExcelIntegerColumns" );
-    //validList.add ( "ExcelDateTimeColumns" );
     validList.add ( "NumberPrecision" );
     validList.add ( "WriteAllAsText" );
     validList.add ( "ColumnNamedRanges" );
     validList.add ( "KeepOpen" );
+    validList.add ( "ColumnCellTypes" );
+    validList.add ( "ColumnWidths" );
+    validList.add ( "ColumnDecimalPlaces" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -420,25 +396,47 @@ private File getOutputFile ()
     return __OutputFile_File;
 }
 
-// Use base class parseCommand()
-
 /**
-Is the row a comment?
-@param sheet sheet being read
-@param iRow row in sheet (0+)
-@param comment if not null, character at start of row that indicates comment
+Parse the command string into a PropList of parameters.  Use this to translate old syntax to new.
+@param command_string A string command to parse.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
-private boolean rowIsComment ( Sheet sheet, int iRow, String comment )
-{   Row dataRow = sheet.getRow(iRow);
-    Cell cell = dataRow.getCell(0);
-    if ( (cell != null) && (cell.getCellType() == Cell.CELL_TYPE_STRING) ) {
-        String cellValue = cell.getStringCellValue();
-        if ( (cellValue != null) && (cellValue.length() > 0) &&
-            cellValue.substring(0,1).equals(comment) ) {
-            return true;
+public void parseCommand ( String command_string )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{
+    // First parse as usual
+    super.parseCommand(command_string);
+    PropList props = getCommandParameters();
+    // Translate NumberPrecision=N to ColumnDecimalPlaces=Default:N
+    String prop = props.getValue("NumberPrecision");
+    if ( prop != null ) {
+        String ColumnDecimalPlaces = props.getValue ( "ColumnDecimalPlaces" );
+        StringDictionary columnDecimalPlaces = new StringDictionary(ColumnDecimalPlaces,":",",");
+        LinkedHashMap<String,String> hm = columnDecimalPlaces.getLinkedHashMap();
+        String prop2 = hm.get("Default");
+        if ( prop2 == null ) {
+            // Set the property
+            hm.put("Default",prop2);
+            props.set("ColumnDecimalPlaces",columnDecimalPlaces.toString());
         }
+        props.unSet("NumberPrecision");
     }
-    return false;
+    // WriteAllAsText=True|False to ColumnCellType=Default:Text
+    prop = props.getValue("WriteAllAsText");
+    if ( prop != null ) {
+        String ColumnCellTypes = props.getValue ( "ColumnCellTypes" );
+        StringDictionary columnCellTypes = new StringDictionary(ColumnCellTypes,":",",");
+        LinkedHashMap<String,String> hm = columnCellTypes.getLinkedHashMap();
+        String prop2 = hm.get("Default");
+        if ( prop2 == null ) {
+            // Set the property
+            hm.put("Default","Text");
+            props.set("ColumnCellTypes",columnCellTypes.toString());
+        }
+        props.unSet("NumberPrecision");
+        props.unSet("WriteAllAsText");
+    }
 }
 
 /**
@@ -503,42 +501,6 @@ throws InvalidCommandParameterException, CommandWarningException
             columnExcludeFiltersMap.put(tableColumn, pattern );
         }
     }
-    /*
-	String Comment = parameters.getValue ( "Comment" );
-	String comment = null;
-	if ( (Comment != null) && Comment.length() > 0 ) {
-	    comment = Comment;
-	}
-	String ExcelIntegerColumns = parameters.getValue ( "ExcelIntegerColumns" );
-	String [] excelIntegerColumns = null;
-	if ( (ExcelIntegerColumns != null) && !ExcelIntegerColumns.equals("") ) {
-	    excelIntegerColumns = ExcelIntegerColumns.split(",");
-	    for ( int i = 0; i < excelIntegerColumns.length; i++ ) {
-	        excelIntegerColumns[i] = excelIntegerColumns[i].trim();
-	    }
-	}
-    String ExcelDateTimeColumns = parameters.getValue ( "ExcelDateTimeColumns" );
-    String [] excelDateTimeColumns = null;
-    if ( (ExcelDateTimeColumns != null) && !ExcelDateTimeColumns.equals("") ) {
-        excelDateTimeColumns = ExcelDateTimeColumns.split(",");
-        for ( int i = 0; i < excelDateTimeColumns.length; i++ ) {
-            excelDateTimeColumns[i] = excelDateTimeColumns[i].trim();
-        }
-    }
-    */
-	String NumberPrecision = parameters.getValue ( "NumberPrecision" );
-	int numberPrecision = 6; // default
-	try {
-	    numberPrecision = Integer.parseInt(NumberPrecision);
-	}
-	catch ( NumberFormatException e ) {
-	    numberPrecision = 6;
-	}
-	String WriteAllAsText = parameters.getValue ( "WriteAllAsText" );
-	boolean writeAllAsText = false; // default
-	if ( (WriteAllAsText != null) && WriteAllAsText.equalsIgnoreCase("True") ) {
-	    writeAllAsText = true;
-	}
     String ColumnNamedRanges = parameters.getValue ( "ColumnNamedRanges" );
     Hashtable columnNamedRanges = new Hashtable();
     if ( (ColumnNamedRanges != null) && (ColumnNamedRanges.length() > 0) && (ColumnNamedRanges.indexOf(":") > 0) ) {
@@ -555,6 +517,12 @@ throws InvalidCommandParameterException, CommandWarningException
     if ( (KeepOpen != null) && KeepOpen.equalsIgnoreCase("True") ) {
         keepOpen = true;
     }
+    String ColumnCellTypes = parameters.getValue ( "ColumnCellTypes" );
+    StringDictionary columnCellTypes = new StringDictionary(ColumnCellTypes,":",",");
+    String ColumnWidths = parameters.getValue ( "ColumnWidths" );
+    StringDictionary columnWidths = new StringDictionary(ColumnWidths,":",",");
+    String ColumnDecimalPlaces = parameters.getValue ( "ColumnDecimalPlaces" );
+    StringDictionary columnDecimalPlaces = new StringDictionary(ColumnDecimalPlaces,":",",");
 	
 	// Get the table to process
 	
@@ -662,8 +630,7 @@ throws InvalidCommandParameterException, CommandWarningException
 	    }
         writeTableToExcelFile ( table, includeColumnNumbers, OutputFile_full, Worksheet,
             ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, columnExcludeFiltersMap,
-            //comment, excelIntegerColumns, excelDateTimeColumns,
-            numberPrecision, writeAllAsText, columnNamedRanges, keepOpen, problems );
+            columnNamedRanges, keepOpen, columnCellTypes, columnWidths, columnDecimalPlaces, problems );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
             message = "Error writing to Excel: " + problem;
@@ -717,13 +684,11 @@ public String toString ( PropList props )
 	String ExcelTableName = props.getValue("ExcelTableName");
 	String ExcelColumnNames = props.getValue("ExcelColumnNames");
 	String ColumnExcludeFilters = props.getValue("ColumnExcludeFilters");
-	//String Comment = props.getValue("Comment");
-	//String ExcelIntegerColumns = props.getValue("ExcelIntegerColumns");
-	//String ExcelDateTimeColumns = props.getValue("ExcelDateTimeColumns");
-	String NumberPrecision = props.getValue("NumberPrecision");
-	String WriteAllAsText = props.getValue("WriteAllAsText");
 	String ColumnNamedRanges = props.getValue("ColumnNamedRanges");
 	String KeepOpen = props.getValue("KeepOpen");
+	String ColumnCellTypes = props.getValue("ColumnCellTypes");
+	String ColumnWidths = props.getValue("ColumnWidths");
+	String ColumnDecimalPlaces = props.getValue("ColumnDecimalPlaces");
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -779,38 +744,6 @@ public String toString ( PropList props )
         }
         b.append ( "ColumnExcludeFilters=\"" + ColumnExcludeFilters + "\"" );
     }
-    /*
-    if ( (Comment != null) && (Comment.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Comment=\"" + Comment + "\"" );
-    }
-    if ( (ExcelIntegerColumns != null) && (ExcelIntegerColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelIntegerColumns=\"" + ExcelIntegerColumns + "\"" );
-    }
-    if ( (ExcelDateTimeColumns != null) && (ExcelDateTimeColumns.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ExcelDateTimeColumns=\"" + ExcelDateTimeColumns + "\"" );
-    }
-    */
-    if ( (NumberPrecision != null) && (NumberPrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NumberPrecision=" + NumberPrecision );
-    }
-    if ( (WriteAllAsText != null) && (WriteAllAsText.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "WriteAllAsText=" + WriteAllAsText );
-    }
     if ( (ColumnNamedRanges != null) && (ColumnNamedRanges.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -822,6 +755,24 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "KeepOpen=" + KeepOpen );
+    }
+    if ( (ColumnCellTypes != null) && (ColumnCellTypes.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnCellTypes=\"" + ColumnCellTypes + "\"");
+    }
+    if ( (ColumnWidths != null) && (ColumnWidths.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnWidths=\"" + ColumnWidths + "\"");
+    }
+    if ( (ColumnDecimalPlaces != null) && (ColumnDecimalPlaces.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnDecimalPlaces=\"" + ColumnDecimalPlaces + "\"");
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }
@@ -839,18 +790,20 @@ columns
 @param excelTableName a table name
 @param excelColumnNames indicate how to determine column names from the Excel worksheet
 @param columnExcludeFiltersMap a map indicating patters for column values, to exclude rows
-@param comment character that if at start of first column indicates row is a comment
-@param excelIntegerColumns names of columns that should be treated as integers, or null if none
-@param numberPrecision digits after decimal for floating point numbers (can't yet determine from Excel)
-@param writeAllAsText if True, treat all data as text values
+@param columnNamedRanges column names and name range name to define
+@param keepOpen if True, the Excel workbook will be kept open and not written
+@param columnCellTypes column names and Excel cell types
+@param columnWidths column names and widths (Auto to auto-size, or integer points)
+@param columnDecimalPlaces column names and number of decimal places (used for floating point data)
 @param problems list of problems encountered during read, for formatted logging in calling code
 @return a DataTable with the Excel contents
 */
 private void writeTableToExcelFile ( DataTable table, int [] includeColumnNumbers, String workbookFile, String sheetName,
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
-    Hashtable columnExcludeFiltersMap,
-    // String comment, String [] excelIntegerColumns, String [] excelDateTimeColumns,
-    int numberPrecision, boolean writeAllAsText, Hashtable columnNamedRanges, boolean keepOpen, List<String> problems )
+    Hashtable<String,String> columnExcludeFiltersMap,
+    Hashtable<String,String> columnNamedRanges, boolean keepOpen,
+    StringDictionary columnCellTypes, StringDictionary columnWidths,
+    StringDictionary columnDecimalPlaces, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = "WriteTableToExcel_Command.writeTableToExcelFile", message;
     
@@ -908,288 +861,17 @@ throws FileNotFoundException, IOException
             return;
         }
         Message.printStatus(2,routine,"Excel address block to write: " + area );
-        // TODO SAM 2014-01-21 Fix to write the headers and determine column formats - for now always write headings below before data
-        // Create the table based on the first row of the area
-        /*
-        String [] columnNames = createTableColumns ( table, wb, sheet, area, excelColumnNames, comment,
-            excelIntegerColumns, excelDateTimeColumns, numberPrecision, WriteAllAsText, problems );
-        int [] tableColumnTypes = table.getFieldDataTypes();
-        // Read the data from the area and transfer to the table.
-        Row row;
-        Cell cell;
-        int rowStart = getFirstDataRow(); // Set in createTableColumns()
-        int rowEnd = area.getLastCell().getRow();
-        int colStart = area.getFirstCell().getCol();
-        int colEnd = area.getLastCell().getCol();
-        Message.printStatus(2, routine, "Cell range is [" + rowStart + "][" + colStart + "] to [" + rowEnd + "][" + colEnd + "]");
-        int cellType;
-        int iRowOut = -1, iColOut;
-        String cellValueString;
-        boolean cellValueBoolean;
-        double cellValueDouble;
-        Date cellValueDate;
-        CellValue formulaCellValue = null; // Cell value after formula evaluation
-        DateTime dt;
-        boolean cellIsFormula; // Used to know when the evaluate cell formula to get output object
-        boolean needToSkipRow = false; // Whether a row should be skipped
-        int nRowsToRead = rowEnd - rowStart + 1;
-        for ( int iRow = rowStart; iRow <= rowEnd; iRow++ ) {
-            row = sheet.getRow(iRow);
-            if ( row == null ) {
-                // Seems to happen at bottom of worksheets where there are extra junk rows
-                continue;
-            }
-            ++iRowOut;
-            Message.printStatus(2, routine, "Processing row [" + iRow + "] end at [" + rowEnd + "]" );
-            if ( (iRow == rowStart) || (iRow == rowEnd) || (iRow%25 == 0) ) {
-                // Update the progress bar every 5%
-                message = "Reading row " + (iRow - rowStart + 1) + " of " + nRowsToRead;
-                notifyCommandProgressListeners ( (iRow - rowStart), nRowsToRead, (float)-1.0, message );
-            }
-            if ( (comment != null) && rowIsComment(sheet, iRow, comment) ) {
-                // No need to process the row.
-                continue;
-            }
-            needToSkipRow = false;
-            iColOut = -1;
-            for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
-                ++iColOut;
-                cell = row.getCell(iCol);
-                if ( cell == null ) {
-                    Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\"" );
-                    if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                        table.setFieldValue(iRowOut, iColOut, "", true);
-                    }
-                    else {
-                        table.setFieldValue(iRowOut, iColOut, null, true);
-                    }
-                    if ( (columnExcludeFiltersMap != null) &&
-                        cellMatchesFilter(columnNames[iCol], null, columnExcludeFiltersMap) ) {
-                        // Row was added but will remove at the end after all columns are processed
-                        needToSkipRow = true;
-                    }
-                    continue;
-                }
-                // First get the data using the type indicated for the cell.  Then translate to
-                // the appropriate type in the data table.  Handling at cell level is needed because
-                // the Excel worksheet might have cell values that are mixed type in the column.
-                // The checks are exhaustive, so list in the order that is most likely (string, double,
-                // boolean, blank, error, formula).
-                cellType = cell.getCellType();
-                Message.printStatus(2, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" type=" + cellType );
-                cellIsFormula = false;
-                if ( cellType == Cell.CELL_TYPE_FORMULA ) {
-                    // Have to evaluate the cell and get the value as the result
-                    cellIsFormula = true;
-                    try {
-                        FormulaEvaluator formulaEval = wb.getCreationHelper().createFormulaEvaluator();
-                        formulaCellValue = formulaEval.evaluate(cell);
-                        // Reset cellType for following code
-                        cellType = formulaCellValue.getCellType();
-                        Message.printStatus(2, routine, "Detected formula, new cellType=" + cellType +
-                            ", cell value=\"" + formulaCellValue + "\"" );
-                    }
-                    catch ( Exception e ) {
-                        // Handle as an error in processing below.
-                        problems.add ( "Error evaluating formula for row [" + iRow + "][" + iCol + "] \"" +
-                            cell + "\" - setting to error cell type (" + e + ")");
-                        cellType = Cell.CELL_TYPE_ERROR;
-                    }
-                }
-                if ( cellType == Cell.CELL_TYPE_STRING ) {
-                    if ( cellIsFormula ) {
-                        cellValueString = formulaCellValue.getStringValue();
-                    }
-                    else {
-                        cellValueString = cell.getStringCellValue();
-                    }
-                    if ( (columnExcludeFiltersMap != null) &&
-                        cellMatchesFilter(columnNames[iCol], cellValueString,columnExcludeFiltersMap) ) {
-                            // Add the row but will remove at the end after all columns are processed
-                            needToSkipRow = true;
-                    }
-                    if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                        // Just set
-                        table.setFieldValue(iRowOut, iColOut, cellValueString, true);
-                    }
-                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
-                        // Parse to the double
-                        try {
-                            table.setFieldValue(iRowOut, iColOut, new Double(cellValueString), true);
-                        }
-                        catch ( NumberFormatException e ) {
-                            // Set to NaN
-                            table.setFieldValue(iRowOut, iColOut, Double.NaN, true);
-                        }
-                    }
-                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
-                        // Parse to the boolean
-                        if ( cellValueString.equalsIgnoreCase("True") || cellValueString.equals("1") ) {
-                            table.setFieldValue(iRowOut, iColOut, new Integer(1), true);
-                        }
-                        else {
-                            // Set to null
-                            table.setFieldValue(iRowOut, iColOut, null, true);
-                        }
-                    }
-                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
-                        // Try to parse to a date/time string
-                        try {
-                            dt = DateTime.parse(cellValueString);
-                            table.setFieldValue(iRowOut, iColOut, dt.getDate(), true);
-                        }
-                        catch ( Exception e ) {
-                            // Set to null
-                            table.setFieldValue(iRowOut, iColOut, null, true);
-                        }
-                    }
-                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATETIME ) {
-                        // Try to parse to a date/time string
-                        try {
-                            dt = DateTime.parse(cellValueString);
-                            table.setFieldValue(iRowOut, iColOut, dt, true);
-                        }
-                        catch ( Exception e ) {
-                            // Set to null
-                            table.setFieldValue(iRowOut, iColOut, null, true);
-                        }
-                    }
-                    else {
-                        // Other cell types don't translate
-                        table.setFieldValue(iRowOut, iColOut, null, true);
-                    }
-                }
-                else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
-                    if (DateUtil.isCellDateFormatted(cell)) {
-                        if ( cellIsFormula ) {
-                            // TODO SAM 2013-02-25 Does not seem to method to return date 
-                            cellValueDate = null;
-                        }
-                        else {
-                            cellValueDate = cell.getDateCellValue();
-                        }
-                        if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
-                            // date to date
-                            table.setFieldValue(iRowOut, iColOut, cellValueDate, true);
-                        }
-                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATETIME ) {
-                            // date to date/time
-                            table.setFieldValue(iRowOut, iColOut, new DateTime(cellValueDate), true);
-                        }
-                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                            // date to string
-                            try {
-                                dt = new DateTime ( cellValueDate );
-                                table.setFieldValue(iRowOut, iColOut, dt.toString(), true);
-                            }
-                            catch ( Exception e ) {
-                                table.setFieldValue(iRowOut, iColOut, null, true);
-                            }
-                        }
-                        else {
-                            table.setFieldValue(iRowOut, iColOut, null, true);
-                        }
-                    }
-                    else {
-                        // Floating point value
-                        if ( cellIsFormula ) {
-                            cellValueDouble = formulaCellValue.getNumberValue();
-                        }
-                        else {
-                            cellValueDouble = cell.getNumericCellValue();
-                        }
-                        if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
-                            // Double to double
-                            table.setFieldValue(iRowOut, iColOut, new Double(cellValueDouble), true);
-                        }
-                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                            // Double to string
-                            table.setFieldValue(iRowOut, iColOut, "" + cellValueDouble, true);
-                        }
-                        else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
-                            // Double to integer - use an offset to help make sure integer value is correct
-                            if ( cellValueDouble >= 0.0 ) {
-                                table.setFieldValue(iRowOut, iColOut, new Integer((int)(cellValueDouble + .0001)), true);
-                            }
-                            else {
-                                table.setFieldValue(iRowOut, iColOut, new Integer((int)(cellValueDouble - .0001)), true);
-                            }
-                        }
-                        else {
-                            table.setFieldValue(iRowOut, iColOut, null, true);
-                        }
-                    }
-                }
-                else if ( cellType == Cell.CELL_TYPE_BOOLEAN ) {
-                    if ( cellIsFormula ) {
-                        cellValueBoolean = formulaCellValue.getBooleanValue();
-                    }
-                    else {
-                        cellValueBoolean = cell.getBooleanCellValue();
-                    }
-                    if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
-                        table.setFieldValue(iRowOut, iColOut, cellValueBoolean, true);
-                    }
-                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                        // Just set
-                        table.setFieldValue(iRowOut, iColOut, "" + cellValueBoolean, true);
-                    }
-                    else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DOUBLE ) {
-                        if ( cellValueBoolean ) {
-                            table.setFieldValue(iRowOut, iColOut, new Double(1.0), true);
-                        }
-                        else {
-                            table.setFieldValue(iRowOut, iColOut, new Double(0.0), true);
-                        }
-                    }
-                    else {
-                        // Not able to convert
-                        table.setFieldValue(iRowOut, iColOut, null, true);
-                    }
-                }
-                else if ( cellType == Cell.CELL_TYPE_BLANK ) {
-                    // Null works for all object types.  If truly a blank string in text cell, use "" as text
-                    if ( cellMatchesFilter(columnNames[iCol],"",columnExcludeFiltersMap) ) {
-                        // Add the row but will remove at the end after all columns are processed
-                        needToSkipRow = true;
-                    }
-                    if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                        table.setFieldValue(iRowOut, iColOut, "", true);
-                    }
-                    else {
-                        table.setFieldValue(iRowOut, iColOut, null, true);
-                    }
-                }
-                else if ( cellType == Cell.CELL_TYPE_ERROR ) {
-                    if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                        table.setFieldValue(iRowOut, iColOut, "", true);
-                    }
-                    else {
-                        table.setFieldValue(iRowOut, iColOut, null, true);
-                    }
-                }
-                else {
-                    table.setFieldValue(iRowOut, iColOut, null, true);
-                }
-            }
-            if ( needToSkipRow ) {
-                // Because columns are added individually, need to remove rows that were added but should not have because
-                // an exclude filter was matched
-                table.deleteRecord(iRowOut);
-                --iRowOut; // Will be incremented for next row
-                continue;
-            }
-        }
-        */
         // Get the upper left row/column to write from the addresses
         int cols = includeColumnNumbers.length;
         int rows = table.getNumberOfRecords();
         // Upper left, including column headings if included
         int colOutStart = 0;
         int rowOutStart = 0;
+        int rowOutColumnNames = 0;
         if ( area != null ) {
             colOutStart = area.getFirstCell().getCol();
             rowOutStart = area.getFirstCell().getRow();
+            rowOutColumnNames = rowOutStart;
         }
         // Upper left, for first data row (assume no column headings and adjust accordingly below)
         int colOutDataStart = colOutStart;
@@ -1197,64 +879,110 @@ throws FileNotFoundException, IOException
         int colOutDataEnd = colOutDataStart + cols - 1; // 0-index
         int rowOutDataEnd = rowOutDataStart + rows - 1; // 0-index
         // Adjust the data locations based on whether column headings are in the block
+        boolean doWriteColumnNames = true;
         if ( excelColumnNames.equalsIgnoreCase(_FirstRowInRange) ) {
             ++rowOutDataStart;
             ++rowOutDataEnd;
         }
         else if ( excelColumnNames.equalsIgnoreCase(_RowBeforeRange) ) {
+            --rowOutColumnNames;
             // OK as is
         }
         else if ( excelColumnNames.equalsIgnoreCase(_None) ) {
             // OK as is
+            doWriteColumnNames = false;
         }
         else {
             problems.add ( "Unknown ExcelColumnNames value \"" + excelColumnNames +
                 "\" - assuming no column headings but may not be correct" );
         }
-        int rowOut = 0;
-        // Process table headings and set up columns styles as headings are processed.
+        // Process column metadata:
+        //  1) determine column Excel data type
+        //  2) write column names (if requested)
+        //  3) indicate whether to auto-size column or set column specifically
+        //  4) set up column styles/formatting for data values
         DataFormat [] cellFormats = new DataFormat[cols];
         CellStyle [] cellStyles = new CellStyle[cols];
         int tableFieldType;
         int precision;
-        // First try to get an existing row
-        Row wbRow = sheet.getRow(rowOut);
-        // If it does not exist, create it
-        if ( wbRow == null ) {
-            wbRow = sheet.createRow(rowOut);
-        }
         int colOut = colOutDataStart;
-        boolean doWriteColumnNames = true;
         if ( excelColumnNames.equalsIgnoreCase(_None) ) {
             doWriteColumnNames = false;
         }
-        for ( int col = 0; (col < cols) && (colOut <= colOutDataEnd); col++, colOut++) {
-            // First try to get an existing cell
-            Cell wbCell = wbRow.getCell(colOut);
+        int [] excelColumnTypes = new int[includeColumnNumbers.length];
+        // Get the default cell type for all columns if set
+        String defaultCellType = columnCellTypes.get("Default");
+        for ( int col = 0; col < includeColumnNumbers.length; col++, colOut++ ) {
+            // 1. Determine the Excel output cell types for each column
+            tableFieldType = table.getFieldDataType(includeColumnNumbers[col]);
+            // If the user has specified a column type (even the default), then use it
+            if ( defaultCellType != null ) {
+                // Only "Text" is allowed
+                if ( defaultCellType.equalsIgnoreCase("Text") ) {
+                    excelColumnTypes[col] = Cell.CELL_TYPE_STRING;
+                }
+            }
+            else {
+                // Else set the type to something reasonable for the table column data type
+                if ( (tableFieldType == TableField.DATA_TYPE_DOUBLE) ||
+                    (tableFieldType == TableField.DATA_TYPE_FLOAT) ||
+                    (tableFieldType == TableField.DATA_TYPE_INT) ||
+                    (tableFieldType == TableField.DATA_TYPE_LONG) ||
+                    (tableFieldType == TableField.DATA_TYPE_SHORT)) {
+                    excelColumnTypes[col] = Cell.CELL_TYPE_NUMERIC;
+                }
+                // TODO SAM 2015-05-03 Need to handle DATE and DATETIME
+                else {
+                    // Default is text
+                    excelColumnTypes[col] = Cell.CELL_TYPE_STRING;
+                }
+            }
+            // 2. Write the column names
+            // First try to get an existing cell for the heading
+            // First try to get an existing row
+            Row wbRowColumnNames = sheet.getRow(rowOutColumnNames);
+            // If it does not exist, create it
+            if ( wbRowColumnNames == null ) {
+                wbRowColumnNames = sheet.createRow(rowOutColumnNames);
+            }
+            Cell wbCell = wbRowColumnNames.getCell(colOut);
+            String tableColumnName = table.getFieldName(includeColumnNumbers[col]);
             if ( wbCell == null ) {
-                wbCell = wbRow.createCell(colOut);
+                wbCell = wbRowColumnNames.createCell(colOut);
             }
             try {
-                String columnName = table.getFieldName(includeColumnNumbers[col]);
                 if ( doWriteColumnNames ) {
-                    wbCell.setCellValue(columnName);
+                    wbCell.setCellValue(tableColumnName);
                 }
-                //Message.printStatus(2, routine, "Setting [" + rowOut + "][" + col + "] = " + columnName );
+                Message.printStatus(2, routine, "Setting [" + rowOutColumnNames + "][" + col + "] = " + tableColumnName );
             }
             catch ( Exception e ) {
                 // Log but let the output continue
-                Message.printWarning(3, routine, "Unexpected error writing table heading at Excel row [" + rowOut + "][" +
+                Message.printWarning(3, routine, "Unexpected error writing table heading at Excel row [" + rowOutColumnNames + "][" +
                     colOut + "] (" + e + ")." );
                 Message.printWarning(3, routine, e);
             }
-            // Create the styles for the data values
+            // 3. Set the column width
+            //    Actually, have to do this after the data have been set
+            // 4. Create the styles for the data values, including number of decimals (precision)
             cellFormats[col] = wb.createDataFormat();
             cellStyles[col] = wb.createCellStyle();
-            tableFieldType = table.getFieldDataType(includeColumnNumbers[col]);
             if ( (tableFieldType == TableField.DATA_TYPE_FLOAT) || (tableFieldType == TableField.DATA_TYPE_DOUBLE) ) {
                 precision = table.getFieldPrecision(includeColumnNumbers[col]);
-                if ( precision < 0 ) {
-                    precision = 6;
+                String numDec = columnDecimalPlaces.get(tableColumnName);
+                if ( numDec != null ) {
+                    try {
+                        precision = Integer.parseInt(numDec.trim());
+                    }
+                    catch ( Exception e ) {
+                        problems.add ( "Column \"" + tableColumnName + "\" number of decimals " + numDec + "\" is not an integer." );
+                    }
+                }
+                else {
+                    // Use the number of decimal places if specified
+                    if ( precision < 0 ) {
+                        precision = 6;
+                    }
                 }
                 String format = "0.";
                 for ( int i = 0; i < precision; i++ ) {
@@ -1279,7 +1007,7 @@ throws FileNotFoundException, IOException
                     key = (String)keys.nextElement(); // Column name
                     // Find the table column
                     int namedRangeCol = table.getFieldIndex(key);
-                    namedRange = (String)columnNamedRanges.get(key); // Named range
+                    namedRange = columnNamedRanges.get(key); // Named range
                     if ( namedRangeCol == includeColumnNumbers[col] ) {
                         found = true;
                         break;
@@ -1313,20 +1041,21 @@ throws FileNotFoundException, IOException
         Long fieldValueLong;
         String NaNValue = "";
         String cellString;
-        rowOut = rowOutDataStart;
+        int rowOut = rowOutDataStart;
+        Row wbRowData;
         for ( int row = 0; (row < rows) && (rowOut <= rowOutDataEnd); row++, rowOut++) {
             // First try to get an existing row
-            wbRow = sheet.getRow(rowOut);
+            wbRowData = sheet.getRow(rowOut);
             // If it does not exist, create it
-            if ( wbRow == null ) {
-                wbRow = sheet.createRow(rowOut);
+            if ( wbRowData == null ) {
+                wbRowData = sheet.createRow(rowOut);
             }
             colOut = colOutDataStart;
             for ( int col = 0; (col < cols) && (colOut <= colOutDataEnd); col++, colOut++) {
                 // First try to get an existing cell
-                Cell wbCell = wbRow.getCell(colOut);
+                Cell wbCell = wbRowData.getCell(colOut);
                 if ( wbCell == null ) {
-                    wbCell = wbRow.createCell(colOut);
+                    wbCell = wbRowData.createCell(colOut);
                 }
                 try {
                     tableFieldType = table.getFieldDataType(includeColumnNumbers[col]);
@@ -1343,7 +1072,7 @@ throws FileNotFoundException, IOException
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( writeAllAsText ) {
+                            if ( excelColumnTypes[includeColumnNumbers[col]] == Cell.CELL_TYPE_STRING ) {
                                 if ( precision > 0 ) {
                                     // Format according to the precision if floating point
                                     cellString = StringUtil.formatString(fieldValue,"%." + precision + "f");
@@ -1367,7 +1096,7 @@ throws FileNotFoundException, IOException
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( writeAllAsText ) {
+                            if ( excelColumnTypes[includeColumnNumbers[col]] == Cell.CELL_TYPE_STRING ) {
                                 if ( precision > 0 ) {
                                     // Format according to the precision if floating point
                                     cellString = StringUtil.formatString(fieldValue,"%." + precision + "f");
@@ -1391,7 +1120,7 @@ throws FileNotFoundException, IOException
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( writeAllAsText ) {
+                            if ( excelColumnTypes[includeColumnNumbers[col]] == Cell.CELL_TYPE_STRING ) {
                                 cellString = "" + fieldValue;
                                 wbCell.setCellValue(cellString);
                             }
@@ -1408,7 +1137,7 @@ throws FileNotFoundException, IOException
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( writeAllAsText ) {
+                            if ( excelColumnTypes[includeColumnNumbers[col]] == Cell.CELL_TYPE_STRING ) {
                                 cellString = "" + fieldValue;
                                 wbCell.setCellValue(cellString);
                             }
@@ -1435,6 +1164,35 @@ throws FileNotFoundException, IOException
                     Message.printWarning(3, routine, "Unexpected error writing table row [" + rowOut + "][" +
                         includeColumnNumbers[col] + "] (" + e + ")." );
                     Message.printWarning(3, routine, e);
+                }
+            }
+        }
+        // Now do post-data set operations
+        // Set the column width
+        colOut = colOutDataStart;
+        for ( int col = 0; col < includeColumnNumbers.length; col++, colOut++ ) {
+            String tableColumnName = table.getFieldName(includeColumnNumbers[col]);
+            String width = columnWidths.get(tableColumnName);
+            if ( width == null ) {
+                // Try default
+                width = columnWidths.get("Default");
+            }
+            if ( width != null ) {
+                // Set the column width
+                if ( width.equalsIgnoreCase("Auto") ) {
+                    sheet.autoSizeColumn(colOut);
+                    Message.printStatus(2,routine,"Setting column \"" + tableColumnName + "\" width to auto.");
+                }
+                else {
+                    // Set the column width to 1/256 of character width, max of 256*256 since 256 is max characters shown
+                    try {
+                        int w = Integer.parseInt(width.trim());
+                        sheet.setColumnWidth(colOut, w);
+                        Message.printStatus(2,routine,"Setting column \"" + tableColumnName + "\" width to " + w + ".");
+                    }
+                    catch ( NumberFormatException e ) {
+                        problems.add ( "Column \"" + tableColumnName + "\" width \"" + width + "\" is not an integer." );
+                    }
                 }
             }
         }

@@ -488,7 +488,7 @@ CommandWarningException, CommandException
 	                    InputTableEventLabelColumn,
 	                    InputTableEventDescriptionColumn
 	            };
-    	        newTable = table.createCopy ( table, NewTableID, /* includeColumns */ includeColumns2, null, null, columnFilters );
+    	        newTable = table.createCopy ( table, NewTableID, /* includeColumns */ includeColumns2, null, null, columnFilters, null );
                 // Make sure that the output table includes the TSID and other necessary columns.
     	        // Output table columns should have been created from above copy.
                 int outputTableTSIDColumnNumber = -1;

@@ -193,8 +193,14 @@ private void initialize ( JFrame parent, NewDerbyDatabase_Command command )
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
 
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "<html>This command is in the early stages of development.</html>"),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command creates a new Derby database.  Derby is an embedded database distributed with Java."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Derby is being evaluated as an option for in-memory temporary databases that can be created on the fly for queries."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Specify the path to the database or " + __command._InMemory + " to use an in-memory database."),

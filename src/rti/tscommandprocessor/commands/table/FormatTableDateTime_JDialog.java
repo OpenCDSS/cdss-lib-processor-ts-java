@@ -47,6 +47,7 @@ private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private SimpleJComboBox __OutputYearType_JComboBox = null;
 private SimpleJComboBox __OutputColumn_JComboBox = null;
 private SimpleJComboBox __OutputType_JComboBox = null;
+private JTextField __InsertBeforeColumn_JTextField = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -133,6 +134,7 @@ private void checkInput ()
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String OutputColumn = __OutputColumn_JComboBox.getSelected();
     String OutputType = __OutputType_JComboBox.getSelected();
+    String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
 
 	__error_wait = false;
 
@@ -157,6 +159,9 @@ private void checkInput ()
     if ( OutputType.length() > 0 ) {
         parameters.set ( "OutputType", OutputType );
     }
+    if ( InsertBeforeColumn.length() > 0 ) {
+        parameters.set ( "InsertBeforeColumn", InsertBeforeColumn );
+    }
 
 	try {
 	    // This will warn the user...
@@ -180,6 +185,7 @@ private void commitEdits ()
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String OutputColumn = __OutputColumn_JComboBox.getSelected();
     String OutputType = __OutputType_JComboBox.getSelected();
+    String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "InputColumn", InputColumn );
     __command.setCommandParameter ( "FormatterType", FormatterType );
@@ -187,6 +193,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "OutputYearType", OutputYearType );
     __command.setCommandParameter ( "OutputColumn", OutputColumn );
     __command.setCommandParameter ( "OutputType", OutputType );
+    __command.setCommandParameter ( "InsertBeforeColumn", InsertBeforeColumn );
 }
 
 /**
@@ -211,6 +218,24 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Format the contents of a date/time input columns to create values in the output column." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The output type can be set to:" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    DateTime - if the resulting formatted string can be parsed to a date/time (e.g., with less precision than original)" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    (note TSTool by default displays all DateTime objets using ISO YYYY-MM-DD, etc. notation in tables)" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    Double - if the resulting formatted string can be parsed to a floating point number (e.g., year only)" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    Integer - if the resulting formatted string can be parsed to an integer (e.g., year only)" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    String - if the resulting formatted string should be treated as a literal string" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -255,7 +280,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - date/time year type for ${YearTypeYear} (default=" + YearType.CALENDAR + ")."), 
+        "Optional - year type to interpret ${dt:YearForTypeYear} (default=" + YearType.CALENDAR + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
@@ -285,6 +310,15 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - specify output column type (default=" + __command._String + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Insert before column:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InsertBeforeColumn_JTextField = new JTextField ( 30 );
+    __InsertBeforeColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __InsertBeforeColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - column to insert before (default=at end)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -370,6 +404,7 @@ private void refresh ()
     String OutputYearType = "";
     String OutputColumn = "";
     String OutputType = "";
+    String InsertBeforeColumn = "";
 
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -382,6 +417,7 @@ private void refresh ()
         OutputYearType = props.getValue ( "OutputYearType" );
 		OutputColumn = props.getValue ( "OutputColumn" );
 		OutputType = props.getValue ( "OutputType" );
+		InsertBeforeColumn = props.getValue ( "InsertBeforeColumn" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -479,6 +515,9 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( InsertBeforeColumn != null ) {
+            __InsertBeforeColumn_JTextField.setText ( InsertBeforeColumn );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
@@ -488,6 +527,7 @@ private void refresh ()
 	OutputYearType = __OutputYearType_JComboBox.getSelected();
     OutputColumn = __OutputColumn_JComboBox.getSelected();
     OutputType = __OutputType_JComboBox.getSelected();
+    InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "InputColumn=" + InputColumn );
@@ -496,6 +536,7 @@ private void refresh ()
     props.add ( "OutputYearType=" + OutputYearType );
     props.add ( "OutputColumn=" + OutputColumn );
     props.add ( "OutputType=" + OutputType );
+    props.add ( "InsertBeforeColumn=" + InsertBeforeColumn );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

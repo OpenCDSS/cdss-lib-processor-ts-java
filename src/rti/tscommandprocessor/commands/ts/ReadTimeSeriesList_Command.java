@@ -4,7 +4,6 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-import rti.tscommandprocessor.core.TimeSeriesNotFoundException;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -12,7 +11,6 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
@@ -188,7 +186,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(19);
+	List<String> validList = new ArrayList<String>(20);
     validList.add ( "TableID" );
     validList.add ( "LocationTypeColumn" );
     validList.add ( "LocationType" );
@@ -208,6 +206,7 @@ throws InvalidCommandParameterException
     validList.add ( "IfNotFound" );
     validList.add ( "DefaultUnits" );
     validList.add ( "TimeSeriesCountProperty" );
+    validList.add ( "TimeSeriesIndex1Property" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -377,6 +376,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String DefaultUnits = parameters.getValue("DefaultUnits");
     String TimeSeriesCountProperty = parameters.getValue ( "TimeSeriesCountProperty" );
+    String TimeSeriesIndex1Property = parameters.getValue ( "TimeSeriesIndex1Property" );
     
     // Get the table to process.
 
@@ -481,7 +481,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     
 	// Process the rows in the table and read time series.
-    List<TS> tslist = new Vector<TS>();   // Keep the list of time series
+    List<TS> tslist = new ArrayList<TS>(); // Keep the list of time series
     String dataSource;
 	try {
         boolean readData = true;
@@ -499,9 +499,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             String locationID;
             TS ts = null;
             String dataType, locationType, dataStore;
-            String tsid1 = null; // The TSID corresponding to the first data source, used for default time series
             int tsize = table.getNumberOfRecords();
+            List<String> problems = new ArrayList<String>(); // Use for temporary list of problems - need because multiple data sources
+            List<String> suggestions = new ArrayList<String>();
             for ( int i = 0; i < tsize; i++ ) {
+                problems.clear();
+                suggestions.clear();
                 rec = table.getRecord ( i );
                 // Location type
                 if ( locationTypeColumnNum >= 0 ) {
@@ -534,7 +537,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 if ( dataSourceList.length > 0 ) {
                     nDataSource = dataSourceList.length;
                 }
-                boolean notFoundLogged = false;
+                boolean notFoundLogged = false; // Used to handle read exceptions vs. no time series found
                 for ( int iDataSource = 0; iDataSource < nDataSource; iDataSource++ ) {
                     tsidentString.setLength(0);
                     if ( dataSourceList.length == 0 ) {
@@ -557,170 +560,151 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         tsidentString.append ( "~" + InputName );
                     }
                     String tsid = tsidentString.toString();;
-                    if ( iDataSource == 0 ) {
-                        // Keep the first TSID if a default is needed
-                        tsid1 = tsid;
-                    }
-                    try {
-                        // Make a request to the processor to read a time series...
-                        notifyCommandProgressListeners ( i, tsize, (float)-1.0, "Reading time series " + tsid);
-                        PropList request_params = new PropList ( "" );
-                        request_params.set ( "TSID", tsidentString.toString() );
-                        request_params.setUsingObject ( "WarningLevel", new Integer(warning_level) );
-                        request_params.set ( "CommandTag", command_tag );
+                    // Make a request to the processor to read a time series...
+                    notifyCommandProgressListeners ( i, tsize, (float)-1.0, "Reading time series " + tsid);
+                    PropList request_params = new PropList ( "" );
+                    request_params.set ( "TSID", tsidentString.toString() );
+                    request_params.setUsingObject ( "WarningLevel", new Integer(warning_level) );
+                    request_params.set ( "CommandTag", command_tag );
+                    if ( iDataSource == (nDataSource - 1) ) {
+                        // Only default on the last data source
                         request_params.set ( "IfNotFound", IfNotFound );
-                        request_params.setUsingObject ( "ReadData", new Boolean(readData) );
-                        CommandProcessorRequestResultsBean bean = null;
-                        try {
-                            bean = processor.processRequest( "ReadTimeSeries", request_params);
-                            PropList bean_PropList = bean.getResultsPropList();
-                            Object o_TS = bean_PropList.getContents ( "TS" );
-                            if ( o_TS != null ) {
-                                ts = (TS)o_TS;
-                            }
+                    }
+                    request_params.setUsingObject ( "ReadData", new Boolean(readData) );
+                    CommandProcessorRequestResultsBean bean = null;
+                    try {
+                        bean = processor.processRequest( "ReadTimeSeries", request_params);
+                        PropList bean_PropList = bean.getResultsPropList();
+                        Object o_TS = bean_PropList.getContents ( "TS" );
+                        if ( o_TS != null ) {
+                            ts = (TS)o_TS;
                         }
-                        catch ( TimeSeriesNotFoundException e ) {
-                            message = "Time series could not be found using identifier \"" + tsid + "\" (" + e + ").";
-                            if ( IfNotFound.equalsIgnoreCase(_Warn) && (iDataSource == (nDataSource - 1)) ) {
-                                status.addToLog ( commandPhase,
-                                    new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Verify that the identifier information is correct." ) );
+                    }
+                    catch ( Exception e ) {
+                        if ( iDataSource == (nDataSource - 1) ) {
+                            // Last attempt in a list of data sources
+                            problems.add("Time series could not be found using identifier \"" + tsid + "\" (" + e + ")");
+                            suggestions.add("Verify that the identifier information is correct.");
+                        }
+                        else {
+                            // Going to try another data source, or defaulting time series.
+                            problems.add("Time series could not be found using identifier \"" + tsid + "\" (" + e + ") - will try next data source");
+                            suggestions.add("Verify that the identifier information is correct.");
+                        }
+                        ts = null;
+                        notFoundLogged = true;
+                    }
+                    if ( ts == null ) {
+                        if ( !notFoundLogged ) {
+                            // Only want to include a warning once so don't duplicate above exception
+                            if ( iDataSource == (nDataSource - 1) ) {
+                                problems.add("Time series could not be found using identifier \"" + tsid + "\".");
+                                suggestions.add("Verify that the identifier information is correct.");
                             }
                             else {
-                                // Non-fatal - ignoring, going to try another data source, or defaulting time series.
-                                if ( (iDataSource == (nDataSource - 1)) ) {
-                                    message += "  Non-fatal because IfNotFound=" + IfNotFound;
-                                    status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-                                        message, "Verify that the identifier information is correct." ) );
-                                }
-                                else {
-                                    // First data source(s) in list OK to skip over
-                                    message += "  Non-fatal because multipe data sources are being tried";
-                                    status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.INFO,
-                                        message, "Expect subsequent data source to match time series." ) );
-                                }
+                                // Non-fatal - ignoring or defaulting time series.
+                                problems.add("Time series could not be found using identifier \"" + tsid + "\" - will try next data source.");
+                                suggestions.add("Verify that the identifier information is correct.");
                             }
-                            ts = null;
-                            notFoundLogged = true;
                         }
-                        catch ( Exception e ) {
-                            message = "Error requesting ReadTimeSeries(TSID=\"" + tsid + "\") from processor + (" + e + ").";
-                            //Message.printWarning(3, routine, e );
-                            Message.printWarning(warning_level,
-                                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                            status.addToLog ( commandPhase,
-                                new CommandLogRecord(CommandStatusType.WARNING,
-                                    message, "Verify that the identifier information is correct.  Check the log file." +
-                                    		"  If still a problem, report the problem to software support." ) );
-                            ts = null;
+                    }
+                    else {
+                        // Found a time series so break out of data source loop.
+                        break;
+                    }
+                }
+                // Now have processed all data sources.  If no time series was found and a default is to be assigned, do it
+                if ( ts == null ) {
+                    if ( IfNotFound.equalsIgnoreCase(_Ignore) ) {
+                        // Just continue, but do add warnings to the log
+                        for ( int ip = 0; ip < problems.size(); ++ip ) {
+                            Message.printWarning ( warning_level,
+                                MessageUtil.formatMessageTag( command_tag, ++warning_count ),
+                                routine, problems.get(ip) );
                         }
-                        if ( ts == null ) {
-                            if ( !notFoundLogged ) {
-                                // Only want to include a warning once.
-                                // This is kind of ugly because currently there is not consistency between all
-                                // time series readers in error handling, which is difficult to handle in this
-                                // generic command.
-                                message = "Time series could not be found using identifier \"" + tsid + "\".";
-                                if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
-                                    status.addToLog ( commandPhase,
-                                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                            message, "Verify that the identifier information is correct." ) );
-                                }
-                                else {
-                                    // Non-fatal - ignoring or defaulting time series.
-                                    message += "  Non-fatal because IfNotFound=" + IfNotFound;
-                                    status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-                                        message, "Verify that the identifier information is correct." ) );
-                                }
-                            }
-                            // Always check for output period because required for default time series.
-                            if ( IfNotFound.equalsIgnoreCase(_Default) &&
-                                ((processor.getPropContents("OutputStart") == null) ||
-                                (processor.getPropContents("OutputEnd") == null)) ) {
-                                message = "Time series could not be found using identifier \"" + tsid1 + "\"." +
-                                		"  Requesting default time series but no output period is defined.";
-                                status.addToLog ( commandPhase,
-                                    new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Set the output period before calling this command." ) );
+                        continue;
+                    }
+                    else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+                        // Warn and continue
+                        for ( int ip = 0; ip < problems.size(); ++ip ) {
+                            Message.printWarning ( warning_level,
+                                MessageUtil.formatMessageTag( command_tag, ++warning_count ),
+                                routine, problems.get(ip) );
+                            status.addToLog(commandPhase,
+                                new CommandLogRecord( CommandStatusType.FAILURE, problems.get(ip),suggestions.get(ip)));
+                        }
+                        continue;
+                    }
+                    else if ( IfNotFound.equalsIgnoreCase(_Ignore) ) {
+                        // A common problem is that the output period was not set so the time series could not be defaulted
+                        message = "Attempt to use default timee series failed.";
+                        Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag( command_tag, ++warning_count ),
+                            routine, message );
+                        status.addToLog(commandPhase,
+                            new CommandLogRecord( CommandStatusType.FAILURE, message, "Make sure that OutputStart and OutputEnd are set."));
+                        continue;
+                    }
+                }
+                // If here have a time series to process further and return
+                if ( (DefaultUnits != null) && (ts.getDataUnits().length() == 0) ) {
+                    // Time series has no units so assign default.
+                    ts.setDataUnits ( DefaultUnits );
+                }
+                if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, commandPhase);
+                    ts.setAlias ( alias );
+                }
+                if ( columnProperties != null ) {
+                    // Set time series properties based on column values
+                    LinkedHashMap<String,String> map = columnProperties.getLinkedHashMap();
+                    for ( Map.Entry<String,String> entry: map.entrySet() ) {
+                        String columnName = entry.getKey();
+                        if ( columnName.equals("*") ) {
+                            // Set all the table columns as properties, including null values
+                            for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
+                                ts.setProperty( table.getFieldName(icol), rec.getFieldValue(icol) );
                             }
                         }
                         else {
-                            // Found a time series so break out of data source loop.
-                            if ( (DefaultUnits != null) && (ts.getDataUnits().length() == 0) ) {
-                                // Time series has no units so assign default.
-                                ts.setDataUnits ( DefaultUnits );
+                            // Else only set the specified columns
+                            String propertyName = entry.getValue();
+                            int columnNum = -1;
+                            try {
+                                columnNum = table.getFieldIndex(columnName);
                             }
-                            if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
-                                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                                    processor, ts, Alias, status, commandPhase);
-                                ts.setAlias ( alias );
+                            catch ( Exception e ) {
                             }
-                            if ( columnProperties != null ) {
-                                // Set time series properties based on column values
-                                LinkedHashMap<String,String> map = columnProperties.getLinkedHashMap();
-                                for ( Map.Entry<String,String> entry: map.entrySet() ) {
-                                    String columnName = entry.getKey();
-                                    if ( columnName.equals("*") ) {
-                                        // Set all the table columns as properties, including null values
-                                        for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
-                                            ts.setProperty( table.getFieldName(icol), rec.getFieldValue(icol) );
-                                        }
-                                    }
-                                    else {
-                                        // Else only set the specified columns
-                                        String propertyName = entry.getValue();
-                                        int columnNum = -1;
-                                        try {
-                                            columnNum = table.getFieldIndex(columnName);
-                                        }
-                                        catch ( Exception e ) {
-                                        }
-                                        if ( propertyName.equals("*") ) {
-                                            // Get the property name from the table
-                                            propertyName = columnName;
-                                        }
-                                        if ( columnNum >= 0 ) {
-                                            // Set even if null
-                                            ts.setProperty( propertyName, rec.getFieldValue(columnNum) );
-                                        }
-                                        else {
-                                            ts.setProperty( propertyName, null );
-                                        }
-                                    }
-                                }
+                            if ( propertyName.equals("*") ) {
+                                // Get the property name from the table
+                                propertyName = columnName;
                             }
-                            if ( properties != null ) {
-                                // Assign properties
-                                Enumeration keys = properties.keys();
-                                String key = null;
-                                while ( keys.hasMoreElements() ) {
-                                    key = (String)keys.nextElement();
-                                    ts.setProperty( key, TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-                                        processor, ts, (String)properties.get(key), status, CommandPhaseType.RUN) );
-                                }
+                            if ( columnNum >= 0 ) {
+                                // Set even if null
+                                ts.setProperty( propertyName, rec.getFieldValue(columnNum) );
                             }
-                            tslist.add ( ts );
-                            break;
+                            else {
+                                ts.setProperty( propertyName, null );
+                            }
                         }
                     }
-                    catch ( Exception e1 ) {
-                        message = "Unexpected error reading time series \"" + tsid + "\" (" + e1 + ")";
-                        Message.printWarning ( warning_level,
-                            MessageUtil.formatMessageTag(
-                                command_tag, ++warning_count ),
-                            routine, message );
-                        Message.printWarning ( 3, routine, e1 );
-                        status.addToLog(commandPhase,
-                                new CommandLogRecord( CommandStatusType.FAILURE, message,"Check the log file for details."));
-                        throw new CommandException ( message );
+                }
+                if ( properties != null ) {
+                    // Assign properties
+                    Enumeration keys = properties.keys();
+                    String key = null;
+                    while ( keys.hasMoreElements() ) {
+                        key = (String)keys.nextElement();
+                        ts.setProperty( key, TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+                            processor, ts, (String)properties.get(key), status, CommandPhaseType.RUN) );
                     }
-                    /* TODO SAM 2008-09-15 Evaluate how to re-implement
-                    // Cancel processing if the user has indicated to do so...
-                    if ( __ts_processor.getCancelProcessingRequested() ) {
-                        return;
-                    }
-                    */
-            	}
+                }
+                if ( TimeSeriesIndex1Property != null ) {
+                    // Set a property indicating the position in the list
+                    ts.setProperty(TimeSeriesIndex1Property, new Integer((i + 1)) );
+                }
+                tslist.add ( ts );
             }
         }
     }
@@ -821,6 +805,7 @@ public String toString ( PropList props )
     String IfNotFound = props.getValue ( "IfNotFound" );
     String DefaultUnits = props.getValue ( "DefaultUnits" );
     String TimeSeriesCountProperty = props.getValue ( "TimeSeriesCountProperty" );
+    String TimeSeriesIndex1Property = props.getValue ( "TimeSeriesIndex1Property" );
 
 	StringBuffer b = new StringBuffer ();
 
@@ -934,6 +919,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("TimeSeriesCountProperty=\"" + TimeSeriesCountProperty + "\"");
+    }
+    if ((TimeSeriesIndex1Property != null) && (TimeSeriesIndex1Property.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("TimeSeriesIndex1Property=\"" + TimeSeriesIndex1Property + "\"");
     }
 
 	return getCommandName() + "(" + b.toString() + ")";

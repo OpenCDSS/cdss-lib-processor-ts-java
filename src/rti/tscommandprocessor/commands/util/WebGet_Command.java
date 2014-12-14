@@ -236,10 +236,13 @@ CommandWarningException, CommandException
             int numCharsRead;
             int arraySize = 8192; // 8K optimal
             byte[] byteArray = new byte[arraySize];
+            int bytesRead = 0;
             while ((numCharsRead = isr.read(byteArray, 0, arraySize)) != -1) {
                 fos.write(byteArray, 0, numCharsRead);
+                bytesRead += numCharsRead;
             }
             // Save the output file name...
+            Message.printStatus(2,routine,"Number of bytes read=" + bytesRead );
             setOutputFile ( new File(LocalFile_full));
         }
         catch (MalformedURLException e) {
@@ -253,6 +256,15 @@ CommandWarningException, CommandException
         }
         catch (IOException e) {
             message = "Error opening URI \"" + URI + "\" (" + e + ")";
+            Message.printWarning ( warning_level, 
+                   MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+            Message.printWarning ( 3, routine, e );
+            status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "See the log file for details."));
+        }
+        catch (Exception e) {
+            message = "Unexpected error reading URI \"" + URI + "\" (" + e + ")";
             Message.printWarning ( warning_level, 
                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );

@@ -65,6 +65,7 @@ private SimpleJComboBox	__IfNotFound_JComboBox = null;
 private JTextField __DefaultUnits_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __TimeSeriesCountProperty_JTextField = null;
+private JTextField __TimeSeriesIndex1Property_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -186,6 +187,7 @@ private void checkInput ()
     String ColumnProperties = __ColumnProperties_JTextArea.getText().trim().replace("\n"," ");
     String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
     String TimeSeriesCountProperty = __TimeSeriesCountProperty_JTextField.getText().trim();
+    String TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
     
     __error_wait = false;
 
@@ -246,6 +248,9 @@ private void checkInput ()
     if ( TimeSeriesCountProperty.length() > 0 ) {
         parameters.set ( "TimeSeriesCountProperty", TimeSeriesCountProperty );
     }
+    if ( TimeSeriesIndex1Property.length() > 0 ) {
+        parameters.set ( "TimeSeriesIndex1Property", TimeSeriesIndex1Property );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -280,6 +285,7 @@ private void commitEdits ()
     String ColumnProperties = __ColumnProperties_JTextArea.getText().trim().replace("\n"," ");
     String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
     String TimeSeriesCountProperty = __TimeSeriesCountProperty_JTextField.getText().trim();
+    String TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "DataTypeColumn", DataTypeColumn );
     __command.setCommandParameter ( "DataType", DataType );
@@ -301,6 +307,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "ColumnProperties", ColumnProperties );
     __command.setCommandParameter ( "Properties", Properties );
     __command.setCommandParameter ( "TimeSeriesCountProperty", TimeSeriesCountProperty );
+    __command.setCommandParameter ( "TimeSeriesIndex1Property", TimeSeriesIndex1Property );
 }
 
 /**
@@ -309,7 +316,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, List<String> tableIDChoices )
-{	__command = (ReadTimeSeriesList_Command)command;
+{	__command = command;
     __parent = parent;
 
 	addWindowListener( this );
@@ -571,27 +578,44 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Panel for check property
-    int yCheck = -1;
-    JPanel check_JPanel = new JPanel();
-    check_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Count Property", check_JPanel );
+    int yCount = -1;
+    JPanel count_JPanel = new JPanel();
+    count_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Count Property", count_JPanel );
     
-    JGUIUtil.addComponent(check_JPanel, new JLabel (
+    JGUIUtil.addComponent(count_JPanel, new JLabel (
         "The count of output time series can be assigned to a property for data checks and output."),
-        0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(check_JPanel, new JLabel (
+        0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(count_JPanel, new JLabel (
         "The count will include time series that are read and defaulted."),
-        0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Time series count property:" ), 
-        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series count property:" ), 
+        0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeSeriesCountProperty_JTextField = new JTextField ( "", 20 );
     __TimeSeriesCountProperty_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(check_JPanel, __TimeSeriesCountProperty_JTextField,
-        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(check_JPanel, new JLabel (
-        "Optional - name of property to set to time series count."),
-        3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(count_JPanel, __TimeSeriesCountProperty_JTextField,
+        1, yCount, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(count_JPanel, new JLabel (
+        "Optional - name of property to set to time series total count."),
+        3, yCount, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(count_JPanel, new JLabel (
+        "The index 1+ of time series being read can be set to a property."),
+        0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(count_JPanel, new JLabel (
+        "This is useful for outputting time series sequentially, for example to a table column with the number."),
+        0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series index property:" ), 
+        0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeSeriesIndex1Property_JTextField = new JTextField ( "", 20 );
+    __TimeSeriesIndex1Property_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(count_JPanel, __TimeSeriesIndex1Property_JTextField,
+        1, yCount, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(count_JPanel, new JLabel (
+        "Optional - name of property to set for time series read index (1+)."),
+        3, yCount, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -682,6 +706,7 @@ private void refresh ()
     String IfNotFound = "";
     String DefaultUnits = "";
     String TimeSeriesCountProperty = "";
+    String TimeSeriesIndex1Property = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -705,6 +730,7 @@ private void refresh ()
         IfNotFound = props.getValue ( "IfNotFound" );
         DefaultUnits = props.getValue ( "DefaultUnits" );
         TimeSeriesCountProperty = props.getValue ( "TimeSeriesCountProperty" );
+        TimeSeriesIndex1Property = props.getValue ( "TimeSeriesIndex1Property" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -798,6 +824,9 @@ private void refresh ()
         if ( TimeSeriesCountProperty != null ) {
             __TimeSeriesCountProperty_JTextField.setText ( TimeSeriesCountProperty );
         }
+        if ( TimeSeriesIndex1Property != null ) {
+            __TimeSeriesIndex1Property_JTextField.setText ( TimeSeriesIndex1Property );
+        }
     }
     // Regardless, reset the command from the fields...
     TableID = __TableID_JComboBox.getSelected();
@@ -819,6 +848,7 @@ private void refresh ()
     IfNotFound = __IfNotFound_JComboBox.getSelected();
     DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     TimeSeriesCountProperty = __TimeSeriesCountProperty_JTextField.getText().trim();
+    TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "LocationTypeColumn=" + LocationTypeColumn );
@@ -839,6 +869,7 @@ private void refresh ()
     props.add ( "IfNotFound=" + IfNotFound );
     props.add ( "DefaultUnits=" + DefaultUnits );
     props.add ( "TimeSeriesCountProperty=" + TimeSeriesCountProperty );
+    props.add ( "TimeSeriesIndex1Property=" + TimeSeriesIndex1Property );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

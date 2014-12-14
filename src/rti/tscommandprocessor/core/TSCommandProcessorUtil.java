@@ -2051,38 +2051,37 @@ public static int indexOf ( CommandProcessor processor, Command command, int sta
 
 /**
 Evaluate whether a command appears to be a pure time series identifier (not a
-command that uses a time series identifier).  The string is checked to see if
-it has three "." and that any parentheses are after the first ".".
-Some of these checks are needed for TSIDs
-that have data types with () - this is the case with some input types (e.g.,
-HydroBase agricultural statistics that have "(Dry)".
+command that uses a time series identifier).  The string is checked to see if:
+<ol>
+<li>    it has at least three "."</li>
+<li>    parentheses are allowed in any part due to various data sources requirements</li>
+</ol>
+Multi-line / * * / comment strings should not be passed to this method because it will not
+know if the command is in a comment block.
 @param command Command to evaluate.
 @return true if the command appears to be a pure TSID, false if not.
 */
 protected static boolean isTSID ( String command )
-{	int left_paren_pos = command.indexOf('(');
-	int right_paren_pos = command.indexOf(')');
-	int period_pos = command.indexOf('.');
-
-	if ( command.startsWith( "TS " ) ) {
+{	String commandTrimmed = command.trim();
+    if ( commandTrimmed.startsWith( "TS " ) ) {
 	    // TS Alias command
 	    return false;
 	}
-    if ( command.trim().startsWith( "#" ) ) {
+    if ( commandTrimmed.startsWith( "#" ) || commandTrimmed.startsWith("/*") ||
+        commandTrimmed.endsWith("*/") ) {
         // Comment
         return false;
     }
-	if ((StringUtil.patternCount(command,".") >= 3) &&
-			(((left_paren_pos < 0) &&	// Definitely not a
-			(right_paren_pos < 0)) ||	// command.
-			((left_paren_pos > 0) &&	// A TSID with ()
-			(period_pos > 0) &&
-			(left_paren_pos > period_pos))) ) {
-		return true;
-	}
-	else {
+    // TODO SAM 2014-06-20 Will need to handle escaped periods at some point
+	if ( StringUtil.patternCount(command,".") < 3 ) {
+	    // Not enough periods
 	    return false;
 	}
+	if ( commandTrimmed.endsWith(")") ) {
+	    // This cuts out normal commands - TSIDs likely would not have ) at end in the scenario
+	    return false;
+	}
+	return true;
 }
 
 /**

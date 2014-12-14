@@ -44,8 +44,18 @@ throws IOException, Exception
     String databaseEngine = IOUtil.expandPropertyForEnvironment("DatabaseEngine",props.getValue("DatabaseEngine"));
     String databaseServer = IOUtil.expandPropertyForEnvironment("DatabaseServer",props.getValue("DatabaseServer"));
     String databaseName = IOUtil.expandPropertyForEnvironment("DatabaseName",props.getValue("DatabaseName"));
+    String databasePort = IOUtil.expandPropertyForEnvironment("DatabasePort",props.getValue("DatabasePort"));
     String systemLogin = IOUtil.expandPropertyForEnvironment("SystemLogin",props.getValue("SystemLogin"));
     String systemPassword = IOUtil.expandPropertyForEnvironment("SystemPassword",props.getValue("SystemPassword"));
+    int port = -1;
+    if ( (databasePort != null) && !databasePort.equals("") ) {
+        try {
+            port = Integer.parseInt(databasePort);
+        }
+        catch ( NumberFormatException e ) {
+            port = -1;
+        }
+    }
     String keepAliveSql = props.getValue("KeepAliveSQL");
     String keepAliveFrequency = props.getValue("KeepAliveFrequency");
     String tsidStyle = props.getValue("TSIDStyle");
@@ -80,7 +90,7 @@ throws IOException, Exception
     }
     
     // Get the properties and create an instance
-    ReclamationHDB_DMI dmi = new ReclamationHDB_DMI ( databaseEngine, databaseServer, databaseName, -1, systemLogin, systemPassword );
+    ReclamationHDB_DMI dmi = new ReclamationHDB_DMI ( databaseEngine, databaseServer, databaseName, port, systemLogin, systemPassword );
     dmi.setKeepAlive ( keepAliveSql, keepAliveFrequency ); // Needed for remote access to keep connection open
     dmi.setTSIDStyleSDI ( tsidStyleSDI );
     dmi.setReadNHourEndDateTime( readNHourEndDateTime );

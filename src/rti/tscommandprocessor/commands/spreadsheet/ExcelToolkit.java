@@ -381,12 +381,15 @@ Is the row a comment?
 @param comment if not null, character at start of row that indicates comment
 */
 public boolean isRowComment ( Sheet sheet, int iRow, String comment )
-{   Row dataRow = sheet.getRow(iRow);
+{   if ( (comment == null) || comment.length() == 0 ) {
+        return false;
+    }
+    Row dataRow = sheet.getRow(iRow);
     Cell cell = dataRow.getCell(0);
     if ( (cell != null) && (cell.getCellType() == Cell.CELL_TYPE_STRING) ) {
         String cellValue = cell.getStringCellValue();
-        if ( (cellValue != null) && (cellValue.length() > 0) &&
-            cellValue.substring(0,1).equals(comment) ) {
+        if ( (cellValue != null) && (cellValue.length() >= comment.length()) &&
+            cellValue.substring(0,comment.length()).equals(comment) ) {
             return true;
         }
     }

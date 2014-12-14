@@ -300,15 +300,16 @@ CommandWarningException, CommandException
     if ( command_phase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
+        String tableToJoinID = TSCommandProcessorUtil.expandParameterValue(processor,this,TableToJoinID);
         if ( (TableID != null) && !TableID.equals("") ) {
             // Get the table to be updated
             request_params = new PropList ( "" );
-            request_params.set ( "TableID", TableToJoinID );
+            request_params.set ( "TableID", tableToJoinID );
             try {
                 bean = processor.processRequest( "GetTable", request_params);
             }
             catch ( Exception e ) {
-                message = "Error requesting GetTable(TableID=\"" + TableToJoinID + "\") from processor.";
+                message = "Error requesting GetTable(TableID=\"" + tableToJoinID + "\") from processor.";
                 Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
                 status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -317,7 +318,7 @@ CommandWarningException, CommandException
             PropList bean_PropList = bean.getResultsPropList();
             Object o_Table = bean_PropList.getContents ( "Table" );
             if ( o_Table == null ) {
-                message = "Unable to find table to process using TableID=\"" + TableToJoinID + "\".";
+                message = "Unable to find table to process using TableID=\"" + tableToJoinID + "\".";
                 Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
                 status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -337,11 +338,10 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 
+    List<String> problems = new ArrayList<String>();
 	try {
     	// Join the tables...
-    
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	        List<String> problems = new ArrayList<String>();
 	        table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters, joinMethodType, problems );
 	        // Table is already in the processor so no need to resubmit
 	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names
@@ -358,6 +358,16 @@ CommandWarningException, CommandException
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
         status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
+        int i = -1;
+        for ( String p : problems ) {
+            ++i;
+            if ( i < 1000 ) {
+                // TODO SAM 2014-06-26 Cap warnings without hard-coding
+                Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
+                    p, "Check input." ) );
+            }
+        }
 		throw new CommandWarningException ( message );
 	}
 	

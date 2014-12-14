@@ -387,10 +387,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             String tsPropertyName = tsPropertyNamesMap.get(tableInputColumns[icolumn]);
                             if ( tsPropertyName == null ) {
                                 // Use the table column name for the property
-                                ts.setProperty(tableInputColumns[icolumn], tableObjectAsString );
+                                ts.setProperty(tableInputColumns[icolumn], tableObject );
                                 ts.addToGenesis( "Set table property from table \"" + TableID + "\", column \"" +
                                     tableInputColumns[icolumn] + "\", \"" +
-                                    tableInputColumns[icolumn] + "\" = " + tableObjectAsString );
+                                    tableInputColumns[icolumn] + "\" = " + tableObject );
                             }
                             else {
                                 // Else, use the specified property name for the time series property
@@ -401,9 +401,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                         tsPropertyName + "\", description = " + tableObjectAsString );
                                 }
                                 else {
-                                    ts.setProperty(tsPropertyName, tableObjectAsString );
+                                    ts.setProperty(tsPropertyName, tableObject );
                                     ts.addToGenesis( "Set table property from table \"" + TableID + "\", column \"" +
-                                        tsPropertyName + "\", \"" + tsPropertyName + "\" = " + tableObjectAsString );
+                                        tsPropertyName + "\", \"" + tsPropertyName + "\" = " + tableObject );
                                 }
                             }
                         }

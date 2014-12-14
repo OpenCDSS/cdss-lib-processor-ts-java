@@ -28,9 +28,19 @@ public DataStore create ( PropList props )
     String databaseEngine = IOUtil.expandPropertyForEnvironment("DatabaseEngine",props.getValue ( "DatabaseEngine" ));
     String databaseServer = IOUtil.expandPropertyForEnvironment("DatabaseServer",props.getValue ( "DatabaseServer" ));
     String databaseName = IOUtil.expandPropertyForEnvironment("DatabaseName",props.getValue ( "DatabaseName" ));
+    String databasePort = IOUtil.expandPropertyForEnvironment("DatabasePort",props.getValue("DatabasePort"));
     String systemLogin = IOUtil.expandPropertyForEnvironment("SystemLogin",props.getValue ( "SystemLogin" ));
     String systemPassword = IOUtil.expandPropertyForEnvironment("SystemPassword",props.getValue ( "SystemPassword" ));
     String tsidStyle = props.getValue("TSIDStyle");
+    int port = -1;
+    if ( (databasePort != null) && !databasePort.equals("") ) {
+        try {
+            port = Integer.parseInt(databasePort);
+        }
+        catch ( NumberFormatException e ) {
+            port = -1;
+        }
+    }
     boolean tsidStyleSDI = true;
     if ( (tsidStyle != null) && tsidStyle.equalsIgnoreCase("CommonName") ) {
         tsidStyleSDI = false;
@@ -65,7 +75,7 @@ public DataStore create ( PropList props )
             databaseEngine, // OK if null, will use SQL Server
             databaseServer, // Required
             databaseName, // Required
-            -1, // Don't use the port number - use the database name instead
+            port,
             systemLogin,
             systemPassword );
         // Open the database connection

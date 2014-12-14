@@ -84,6 +84,7 @@ private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private JTextArea __Properties_JTextArea = null;
+private JTextArea __CopyProperties_JTextArea = null;
 private JFrame __parent = null;
 private boolean __error_wait = false; // Is there an error to be cleared up
 private boolean __first_time = true;
@@ -139,13 +140,28 @@ public void actionPerformed( ActionEvent event )
         String Properties = __Properties_JTextArea.getText().trim();
         String [] notes = {
             "Time series properties will be assigned after creation.",
-            "Use % specifiers to assign properties from input time series data.",
-            "Use ${Property} to assign to a processor property."
+            "Use % specifiers and ${ts:Property} to assign properties from the input time series.",
+            "Use ${Property} to assign to a global processor property."
         };
         String properties = (new DictionaryJDialog ( __parent, true, Properties, "Edit Properties Parameter",
             notes, "Property", "Property Value",10)).response();
         if ( properties != null ) {
             __Properties_JTextArea.setText ( properties );
+            refresh();
+        }
+    }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditCopyProperties") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String CopyProperties = __CopyProperties_JTextArea.getText().trim();
+        String [] notes = {
+            "Time series properties will be copied from the original time series after creation.",
+            "Property - the name of the property in the input time series.",
+            "Output Property - the name of the property in the output time series (* to keep same name)."
+        };
+        String properties = (new DictionaryJDialog ( __parent, true, CopyProperties, "Edit CopyProperties Parameter",
+            notes, "Property", "Output Property",10)).response();
+        if ( properties != null ) {
+            __CopyProperties_JTextArea.setText ( properties );
             refresh();
         }
     }
@@ -260,6 +276,7 @@ private void checkInput ()
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
     String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
+    String CopyProperties = __CopyProperties_JTextArea.getText().trim().replace("\n"," ");
     __error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -322,6 +339,9 @@ private void checkInput ()
     if ( Properties.length() > 0 ) {
         parameters.set ( "Properties", Properties );
     }
+    if ( CopyProperties.length() > 0 ) {
+        parameters.set ( "CopyProperties", CopyProperties );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -357,6 +377,7 @@ private void commitEdits ()
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
     String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
+    String CopyProperties = __CopyProperties_JTextArea.getText().trim().replace("\n"," ");
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -377,6 +398,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "OutputStart", OutputStart );
     __command.setCommandParameter ( "OutputEnd", OutputEnd );
     __command.setCommandParameter ( "Properties", Properties );
+    __command.setCommandParameter ( "CopyProperties", CopyProperties );
 }
 
 /**
@@ -699,6 +721,20 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(output_JPanel, new SimpleJButton ("Edit","EditProperties",this),
         3, ++yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(output_JPanel, new JLabel ("CopyProperties:"),
+        0, ++yOutput, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CopyProperties_JTextArea = new JTextArea (3,35);
+    __CopyProperties_JTextArea.setLineWrap ( true );
+    __CopyProperties_JTextArea.setWrapStyleWord ( true );
+    __CopyProperties_JTextArea.setToolTipText("PropertyName1:OutputPropertyName1,PropertyName2:OutputPropertyName2");
+    __CopyProperties_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(output_JPanel, new JScrollPane(__CopyProperties_JTextArea),
+        1, yOutput, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ("Optional - properties to copy from input time series to output."),
+        3, yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(output_JPanel, new SimpleJButton ("Edit","EditCopyProperties",this),
+        3, ++yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 40 );
@@ -793,6 +829,7 @@ private void refresh ()
     String OutputStart = "";
     String OutputEnd = "";
     String Properties = "";
+    String CopyProperties = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -817,6 +854,7 @@ private void refresh ()
         OutputStart = props.getValue ( "OutputStart" );
         OutputEnd = props.getValue ( "OutputEnd" );
         Properties = props.getValue ( "Properties" );
+        CopyProperties = props.getValue ( "CopyProperties" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -969,6 +1007,9 @@ private void refresh ()
         if ( Properties != null ) {
             __Properties_JTextArea.setText ( Properties );
         }
+        if ( CopyProperties != null ) {
+            __CopyProperties_JTextArea.setText ( CopyProperties );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -991,6 +1032,7 @@ private void refresh ()
     OutputStart = __OutputStart_JTextField.getText().trim();
     OutputEnd = __OutputEnd_JTextField.getText().trim();
     Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
+    CopyProperties = __CopyProperties_JTextArea.getText().trim().replace("\n"," ");
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -1012,6 +1054,7 @@ private void refresh ()
     props.add ( "OutputStart=" + OutputStart );
     props.add ( "OutputEnd=" + OutputEnd );
     props.add ( "Properties=" + Properties );
+    props.add ( "CopyProperties=" + CopyProperties );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

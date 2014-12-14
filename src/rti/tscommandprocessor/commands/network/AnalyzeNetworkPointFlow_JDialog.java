@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -54,6 +55,7 @@ private JTextField __NodeSubtractDataTypes_JTextField = null;
 private JTextField __NodeOutflowTypes_JTextField = null;
 private JTextField __NodeOutflowDataTypes_JTextField = null;
 private JTextField __NodeFlowThroughTypes_JTextField = null;
+private JTextField __TSIDColumn_JTextField = null;
 private SimpleJComboBox __Interval_JComboBox = null;
 private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
@@ -117,6 +119,7 @@ private void checkInput ()
 	String NodeOutflowTypes = __NodeOutflowTypes_JTextField.getText().trim();
 	String NodeOutflowDataTypes = __NodeOutflowDataTypes_JTextField.getText().trim();
 	String NodeFlowThroughTypes = __NodeFlowThroughTypes_JTextField.getText().trim();
+	String TSIDColumn = __TSIDColumn_JTextField.getText().trim();
     String Interval = __Interval_JComboBox.getSelected();
     String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
     String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
@@ -167,6 +170,9 @@ private void checkInput ()
     if ( NodeFlowThroughTypes.length() > 0 ) {
         props.set ( "NodeFlowThroughTypes", NodeFlowThroughTypes );
     }
+    if ( TSIDColumn.length() > 0 ) {
+        props.set ( "TSIDColumn", TSIDColumn );
+    }
     if ( Interval.length() > 0 ) {
         props.set ( "Interval", Interval );
     }
@@ -215,6 +221,7 @@ private void commitEdits ()
     String NodeOutflowTypes = __NodeOutflowTypes_JTextField.getText().trim();
     String NodeOutflowDataTypes = __NodeOutflowDataTypes_JTextField.getText().trim();
     String NodeFlowThroughTypes = __NodeFlowThroughTypes_JTextField.getText().trim();
+    String TSIDColumn = __TSIDColumn_JTextField.getText().trim();
     String Interval = __Interval_JComboBox.getSelected();
     String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
     String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
@@ -235,25 +242,13 @@ private void commitEdits ()
     __command.setCommandParameter ( "NodeOutflowTypes", NodeOutflowTypes );
     __command.setCommandParameter ( "NodeOutflowDataTypes", NodeOutflowDataTypes );
     __command.setCommandParameter ( "NodeFlowThroughTypes", NodeFlowThroughTypes );
+    __command.setCommandParameter ( "TSIDColumn", TSIDColumn );
 	__command.setCommandParameter ( "Interval", Interval );
     __command.setCommandParameter ( "AnalysisStart", AnalysisStart );
     __command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
     __command.setCommandParameter ( "Units", Units );
     __command.setCommandParameter ( "GainMethod", GainMethod );
     __command.setCommandParameter ( "OutputTableID", OutputTableID );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__NodeAddTypes_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -305,7 +300,16 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     main_JTabbedPane.addTab ( "Map Table Columns to Network Nodes", table_JPanel );
     JGUIUtil.addComponent(table_JPanel, new JLabel (
-        "Specify table columns that provide data to define the network."),
+        "Specify table columns that provide data to define the network:"),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "   NodeID - is used for the time series location"),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "   NodeType - is used to define analysis behavior (see \"Define Node Type Behavior\" tab)"),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "   NodeDistance and NodeWeight - are used to distribute reach gain/loss back to nodes in the reach (see the \"Analysis\" tab)"),
         0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
@@ -374,130 +378,159 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - column name for downstream node IDs."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JPanel nodeType_JPanel = new JPanel ();
+    nodeType_JPanel.setLayout( new GridBagLayout() );
+    int yNodeType = -1;
+    main_JTabbedPane.addTab ( "Define Node Type Behavior", nodeType_JPanel );
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel (
+        "Specify node type behavior for the point flow analysis.  Each node type indicates how mass balance is calculated for the type."),
+        0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Time series for each node by default are matched as follows " +
+        "(however, specifying TSID/alias via the \"TSID/Alias\" tab is recommended):"),
+        0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("    Location ID - match Node ID column"),
+        0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("    Data source - currently not matched"),
+        0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("    Data type - match data types listed below, " +
+        "specific to node type (separate multiple values with commas)"),
+        0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("    Interval - match Interval parameter"),
+        0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("In the future additional node behaviors will be added, " +
+        "for example to handle reservoirs."),
+        0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that add:"), 
+        0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NodeAddTypes_JTextField = new JTextField (10);
+    __NodeAddTypes_JTextField.setToolTipText("Separate node types with commas.");
+    __NodeAddTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(nodeType_JPanel, __NodeAddTypes_JTextField,
+        1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types that add."),
+        3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that add flow:"), 
+        0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NodeAddDataTypes_JTextField = new JTextField (10);
+    __NodeAddDataTypes_JTextField.setToolTipText("Separate data types with commas.");
+    __NodeAddDataTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(nodeType_JPanel, __NodeAddDataTypes_JTextField,
+        1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node time series data types that add."),
+        3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL), 
+            0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that subtract flow:"), 
+        0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NodeSubtractTypes_JTextField = new JTextField (10);
+    __NodeSubtractTypes_JTextField.setToolTipText("Separate node types with commas.");
+    __NodeSubtractTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(nodeType_JPanel, __NodeSubtractTypes_JTextField,
+        1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types that subtract."),
+        3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Default node time series data types that subtract:"), 
+        0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NodeSubtractDataTypes_JTextField = new JTextField (10);
+    __NodeSubtractDataTypes_JTextField.setToolTipText("Separate data types with commas.");
+    __NodeSubtractDataTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(nodeType_JPanel, __NodeSubtractDataTypes_JTextField,
+        1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node time series data types that subtract."),
+        3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL), 
+            0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types that set outflow:"), 
+        0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NodeOutflowTypes_JTextField = new JTextField (10);
+    __NodeOutflowTypes_JTextField.setToolTipText("Separate node types with commas.");
+    __NodeOutflowTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(nodeType_JPanel, __NodeOutflowTypes_JTextField,
+        1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types that set outflow."),
+        3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Defalt node time series data types that set outflow:"), 
+        0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NodeOutflowDataTypes_JTextField = new JTextField (10);
+    __NodeOutflowDataTypes_JTextField.setToolTipText("Separate data types with commas.");
+    __NodeOutflowDataTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(nodeType_JPanel, __NodeOutflowDataTypes_JTextField,
+        1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node time series data types that set outflow."),
+        3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(nodeType_JPanel, new JSeparator(JSeparator.HORIZONTAL), 
+            0, ++yNodeType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Node types with no change:"), 
+        0, ++yNodeType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NodeFlowThroughTypes_JTextField = new JTextField (10);
+    __NodeFlowThroughTypes_JTextField.setToolTipText("Separate node types with commas.");
+    __NodeFlowThroughTypes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(nodeType_JPanel, __NodeFlowThroughTypes_JTextField,
+        1, yNodeType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(nodeType_JPanel, new JLabel ("Optional - node types where inflow=outflow."),
+        3, yNodeType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JPanel analysis_JPanel = new JPanel ();
     analysis_JPanel.setLayout( new GridBagLayout() );
     int yAnalysis = -1;
-    main_JTabbedPane.addTab ( "Define Node Type Behavior", analysis_JPanel );
+    main_JTabbedPane.addTab ( "Analysis", analysis_JPanel );
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
-        "Specify node type behavior for the point flow analysis.  Each node type indicates how mass balance is calculated for the type."),
+        "The following parameters control the analysis."),
         0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Time series for each node are matched as follows:"),
-        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("    Location ID - match Node ID column"),
-        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("    Data source - currently not matched"),
-        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("    Data type - match data types listed below, specific to node type"),
-        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("    Interval - match Interval parameter"),
-        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Node types that add:"), 
-        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NodeAddTypes_JTextField = new JTextField (10);
-    __NodeAddTypes_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(analysis_JPanel, __NodeAddTypes_JTextField,
-        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Optional - node types that add."),
-        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Node time series data types that add flow:"), 
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Data interval:"),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NodeAddDataTypes_JTextField = new JTextField (10);
-    __NodeAddDataTypes_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(analysis_JPanel, __NodeAddDataTypes_JTextField,
-        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Optional - node time series data types that add."),
-        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Node types that subtract flow:"), 
-        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NodeSubtractTypes_JTextField = new JTextField (10);
-    __NodeSubtractTypes_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(analysis_JPanel, __NodeSubtractTypes_JTextField,
-        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Optional - node types that subtract."),
-        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Node time series data types that subtract:"), 
-        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NodeSubtractDataTypes_JTextField = new JTextField (10);
-    __NodeSubtractDataTypes_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(analysis_JPanel, __NodeSubtractDataTypes_JTextField,
-        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Optional - node time series data types that subtract."),
-        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Node types that set outflow:"), 
-        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NodeOutflowTypes_JTextField = new JTextField (10);
-    __NodeOutflowTypes_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(analysis_JPanel, __NodeOutflowTypes_JTextField,
-        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Optional - node types that set outflow."),
-        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Node time series data types that set outflow:"), 
-        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NodeOutflowDataTypes_JTextField = new JTextField (10);
-    __NodeOutflowDataTypes_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(analysis_JPanel, __NodeOutflowDataTypes_JTextField,
-        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Optional - node time series data types that set outflow."),
-        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Node types with no change:"), 
-        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NodeFlowThroughTypes_JTextField = new JTextField (10);
-    __NodeFlowThroughTypes_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(analysis_JPanel, __NodeFlowThroughTypes_JTextField,
-        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Optional - node types where inflow=outflow."),
-        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data interval:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
     List<String> intervalChoices = TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR, false, -1);
     __Interval_JComboBox.setData(intervalChoices);
     __Interval_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data interval (time step) for time series."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, __Interval_JComboBox,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel("Required - data interval (time step) for time series."), 
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
     __AnalysisStart_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisStart_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis start date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
     __AnalysisEnd_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisEnd_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis end date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Data units:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Units_JTextField = new JTextField ( "", 10 );
-    JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, __Units_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __Units_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - units for output time series (default=no units)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Gain method:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Gain method:"),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __GainMethod_JComboBox = new SimpleJComboBox ( false );
     List<String> gainChoices = new Vector<String>();
     gainChoices.add ( "" );
@@ -507,19 +540,54 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     gainChoices.add ( "" + NetworkGainMethodType.WEIGHT );
     __GainMethod_JComboBox.setData(gainChoices);
     __GainMethod_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __GainMethod_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - how to compute gains (default=" + NetworkGainMethodType.NONE + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, __GainMethod_JComboBox,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel("Optional - how to compute gains (default=" + NetworkGainMethodType.NONE + ")."), 
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output table ID:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Output table ID:"),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputTableID_JTextField = new JTextField (10);
     __OutputTableID_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputTableID_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - identifier for output summary table."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(analysis_JPanel, __OutputTableID_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Optional - identifier for output summary table."),
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JPanel ts_JPanel = new JPanel ();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    int yTs = -1;
+    main_JTabbedPane.addTab ( "TSID/Alias", ts_JPanel );
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "Time series for each node are by default determined by constructing a time series identifier (TSID) using " +
+        "node identifier and data types associated with node types."),
+        0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "Time series that are available are then matched and used for the analysis."),
+        0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "However, to avoid confusion, it is recommended that the TSID or alias for each time series is " +
+        "specified in a column of the network."),
+        0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "Currently node type behavior is simple enough that only one input time series is needed at a node."),
+        0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "Use the following parameter to indicate the column containing the TSID or alias to override default time series."),
+        0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "Specify %I in the TSID or alias in the network column to substitute the data interval (e.g., substitue \"Day\") at runtime."),
+        0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "TSIDColumn:" ), 
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSIDColumn_JTextField = new JTextField ( "", 20 );
+    __TSIDColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __TSIDColumn_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
+        "Recommended - time series identifier column in network table (default=construct TSID from time series data type column)."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -610,6 +678,7 @@ private void refresh ()
     String NodeOutflowTypes = "";
     String NodeOutflowDataTypes = "";
     String NodeFlowThroughTypes = "";
+    String TSIDColumn = "";
     String Interval = "";
     String AnalysisStart = "";
     String AnalysisEnd = "";
@@ -633,6 +702,7 @@ private void refresh ()
         NodeOutflowTypes = props.getValue ( "NodeOutflowTypes" );
         NodeOutflowDataTypes = props.getValue ( "NodeOutflowDataTypes" );
         NodeFlowThroughTypes = props.getValue ( "NodeFlowThroughTypes" );
+        TSIDColumn = props.getValue ( "TSIDColumn" );
         Interval = props.getValue ( "Interval" );
         AnalysisStart = props.getValue ( "AnalysisStart" );
         AnalysisEnd = props.getValue ( "AnalysisEnd" );
@@ -693,6 +763,9 @@ private void refresh ()
         if ( NodeFlowThroughTypes != null ) {
             __NodeFlowThroughTypes_JTextField.setText ( NodeFlowThroughTypes );
         }
+        if ( TSIDColumn != null ) {
+            __TSIDColumn_JTextField.setText ( TSIDColumn );
+        }
         if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
             __Interval_JComboBox.select ( Interval );
         }
@@ -749,6 +822,7 @@ private void refresh ()
     NodeOutflowTypes = __NodeOutflowTypes_JTextField.getText().trim();
     NodeOutflowDataTypes = __NodeOutflowDataTypes_JTextField.getText().trim();
     NodeFlowThroughTypes = __NodeFlowThroughTypes_JTextField.getText().trim();
+    TSIDColumn = __TSIDColumn_JTextField.getText().trim();
 	Interval = __Interval_JComboBox.getSelected();
     AnalysisStart = __AnalysisStart_JTextField.getText().trim();
     AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
@@ -770,6 +844,7 @@ private void refresh ()
     props.add ( "NodeOutflowTypes=" + NodeOutflowTypes );
     props.add ( "NodeOutflowDataTypes=" + NodeOutflowDataTypes );
     props.add ( "NodeFlowThroughTypes=" + NodeFlowThroughTypes );
+    props.add ( "TSIDColumn=" + TSIDColumn );
 	props.add ( "Interval=" + Interval );
     props.add ( "AnalysisStart=" + AnalysisStart );
     props.add ( "AnalysisEnd=" + AnalysisEnd );

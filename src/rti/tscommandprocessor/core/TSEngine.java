@@ -671,8 +671,10 @@ import rti.tscommandprocessor.commands.usgs.nwis.instantaneous.UsgsNwisInstantan
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
+import rti.tscommandprocessor.commands.util.EndFor_Command;
 import rti.tscommandprocessor.commands.util.EndIf_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
+import rti.tscommandprocessor.commands.util.For_Command;
 import rti.tscommandprocessor.commands.util.If_Command;
 import us.co.state.dwr.hbguest.datastore.ColoradoWaterHBGuestDataStore;
 import us.co.state.dwr.sms.ColoradoWaterSMSAPI;
@@ -2445,6 +2447,48 @@ protected DataStore lookupDataStore ( String dataStoreName )
 }
 
 /**
+Lookup the command index for the EndFor() command with requested name
+@param commandList list of commands to check
+@param forName the name of the "for" name to find
+*/
+private int lookupEndForCommandIndex(List<Command> commandList, String forName )
+{
+    int i = -1;
+    EndFor_Command efc;
+    for ( Command c : commandList ) {
+        ++i;
+        if ( c instanceof EndFor_Command ) {
+            efc = (EndFor_Command)c;
+            if ( efc.getName().equalsIgnoreCase(forName) ) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+/**
+Lookup the command index for the For() command with requested name
+@param commandList list of commands to check
+@param forName the name of the "for" name to find
+*/
+private int lookupForCommandIndex(List<Command> commandList, String forName )
+{
+    int i = -1;
+    For_Command fc;
+    for ( Command c : commandList ) {
+        ++i;
+        if ( c instanceof For_Command ) {
+            fc = (For_Command)c;
+            if ( fc.getName().equalsIgnoreCase(forName) ) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+/**
 Find a matching If_Command given a name to look up.
 @param ifCommandStack list of If_Command that are active.
 @param name If_Command name to find.
@@ -2521,8 +2565,8 @@ protected void processCommands ( List<Command> commandList, PropList appPropList
 throws Exception
 {	String message, routine = "TSEngine.processCommands";
 	String message_tag = "ProcessCommands"; // Tag used with messages generated in this method.
-	int error_count = 0;	// For errors during time series retrieval
-	int update_count = 0;	// For warnings about command updates
+	int error_count = 0; // For errors during time series retrieval
+	int update_count = 0; // For warnings about command updates
 	int popup_warning_level = 2;  // For serious warning levels - currently go to log and not popup
 	if ( commandList == null ) {
 		// Process all commands if a subset has not been provided.
@@ -2635,10 +2679,26 @@ throws Exception
 	// Stopwatch to time each command...
     StopWatch stopWatch = new StopWatch();
     int runtimeTotal = 0;
+    boolean needToInterrupt = false; // Will set to true if need to break out of running (e.g., no for loop end)
+    // Loop through the commands and reset any For() commands to make sure they don't think they are complete
+    For_Command forCommand = null;
+    for ( i = 0; i < size; i++ ) {
+        command = commandList.get(i);
+        if ( command == null ) {
+            continue;
+        }
+        else if ( command instanceof For_Command ) {
+            forCommand = (For_Command)command;
+            forCommand.resetCommand();
+        }
+    }
+    // Run using the command list index because the index is modified below by For() commands
 	for ( i = 0; i < size; i++ ) {
 		// 1-offset comand count for messages
 		i_for_message = i + 1;
 		command_tag = "" + i_for_message;	// Command number as integer 1+, for message/log handler.
+		// Reset each command
+		needToInterrupt = false;
 		// If for some reason the previous command did not notify listeners of its completion (e.g., due to
 		// continue in loop, do it now)...
 		if ( !prev_command_complete_notified && (commandPrev != null) ) {
@@ -2760,6 +2820,7 @@ throws Exception
     				if ( command instanceof CommandStatusProvider ) {
     					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.DISCOVERY);
     				}
+    				// TODO SAM 2014-06-29 Need to determine how this will impact For()
     				command.initializeCommand ( commandString, __ts_processor, true );
     				// TODO SAM 2005-05-11 Is this the best place for this or should it be in RunCommand()?
     				// Check the command parameters...
@@ -2771,15 +2832,81 @@ throws Exception
     				if ( command instanceof CommandStatusProvider ) {
     					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.RUN);
     				}
-    				// Check to see whether in one or more If statements and if so evaluate their values to determine
+    				// Check to see whether in one or more If() commands and if so evaluate their values to determine
     				// whether to run
     				if ( ifStackOkToRun ) {
         				// Run the command...
         				if ( Message.isDebugOn ) {
         					Message.printDebug ( 1, routine, "Running command through new code..." );
         				}
-        				command.runCommand ( i_for_message );
+                        if ( command instanceof For_Command ) {
+                            // TODO SAM 2014-06-29 Need a way to check for for loops that cross each other or in/out of if commands
+                            // TODO SAM 2014-06-29 Need a For() loop stack and need to reinitialize all nested For() loops so tha they
+                            // will run through again
+                            // Initialize or increment the for loop
+                            forCommand = (For_Command)command;
+                            boolean okToRunFor;
+                            try {
+                                okToRunFor = forCommand.next();
+                                Message.printStatus(2,routine,"okToRunFor="+okToRunFor);
+                            }
+                            catch ( Exception e ) {
+                                // This is serious and can lead to infinite loop so generate an exception and jump to the end of the loop
+                                okToRunFor = false;
+                                if ( command instanceof CommandStatusProvider ) {
+                                    // Add to the command log as a failure...
+                                    commandStatus.addToLog(CommandPhaseType.RUN,
+                                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                             "Error going to next iteration (" + e + ")", "Check For() command iteration data.") );
+                                }
+                                // Same logic as ending the loop...
+                                int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
+                                // Modify the main command loop index and continue - the command after the end will be executed (or done)
+                                if ( endForIndex >= 0 ) {
+                                    i = endForIndex; // OK because we don't want to trigger EndFor() going back to the top
+                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be
+                                    // skipped 
+                                    continue;
+                                }
+                                else {
+                                    // Did not match the end of the For() so generate an error and exit
+                                    needToInterrupt = true;
+                                    throw new CommandException ( "Unable to match for loop name \"" + forCommand.getName() + "\" in ForEnd() commands");
+                                }
+                            }
+                            if ( okToRunFor ) {
+                                // Continue running commands that are after the For() command
+                                // So... run the For() command to set the iterator property and then skip to the next command
+                                command.runCommand ( i_for_message );
+                                continue;
+                            }
+                            else {
+                                // Done running the For() loop so jump to the matching EndFor() command
+                                int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
+                                // Modify the main command loop index and continue - the command after the end will be executed (or done)
+                                if ( endForIndex >= 0 ) {
+                                    i = endForIndex; // Loop will increment so end EndFor will be skipped, which is OK - otherwise infinite loop
+                                    continue;
+                                }
+                                else {
+                                    // Did not match the end of the For() so generate an error and exit
+                                    needToInterrupt = true;
+                                    throw new CommandException ( "Unable to match for loop name \"" + forCommand.getName() + "\" in ForEnd() commands");
+                                }
+                            }
+                        }
+                        else if ( command instanceof EndFor_Command ) {
+                            // Jump to matching For()
+                            EndFor_Command efc = (EndFor_Command)command;
+                            int forIndex = lookupForCommandIndex(commandList,efc.getName());
+                            i = forIndex - 1; // Decrement by one because the main loop will increment
+                            continue;
+                        }
+                        else {
+                            command.runCommand ( i_for_message );
+                        }
                     }
+    				// TODO SAM 2014-06-29 Why are these here and not before the if stack check?  Need to document logic
     	            if ( command instanceof If_Command ) {
     	                // Add to the if command stack
     	                If_Command ifCommand = (If_Command)command;
@@ -2827,7 +2954,12 @@ throws Exception
     				if (Message.isDebugOn) {
     					Message.printDebug(3, routine, e);
     				}
-    				continue;
+    				if ( needToInterrupt ) {
+    				    break;
+    				}
+    				else {
+    				    continue;
+    				}
     			}
     			catch ( InvalidCommandParameterException e ) {
     				message = "Unable to process command - invalid parameter (" + e + ").";
@@ -2848,7 +2980,12 @@ throws Exception
     				if (Message.isDebugOn) {
     					Message.printWarning(3, routine, e);
     				}
-    				continue;
+                    if ( needToInterrupt ) {
+                        break;
+                    }
+                    else {
+                        continue;
+                    }
     			}
     			catch ( CommandWarningException e ) {
     				message = "Warnings were generated processing command - output may be incomplete (" + e + ").";
@@ -2868,7 +3005,12 @@ throws Exception
     				if (Message.isDebugOn) {
     					Message.printDebug(3, routine, e);
     				}
-    				continue;
+                    if ( needToInterrupt ) {
+                        break;
+                    }
+                    else {
+                        continue;
+                    }
     			}
     			catch ( CommandException e ) {
     				message = "Error processing command - unable to complete command (" + e + ").";
@@ -2889,7 +3031,12 @@ throws Exception
     				if (Message.isDebugOn) {
     					Message.printDebug(3, routine, e);
     				}
-    				continue;
+                    if ( needToInterrupt ) {
+                        break;
+                    }
+                    else {
+                        continue;
+                    }
     			}
     			catch ( Exception e ) {
     				message = "Unexpected error processing command - unable to complete command (" + e + ").";
@@ -2909,7 +3056,12 @@ throws Exception
     									++error_count), routine, message );
     				}
     				Message.printWarning ( 3, routine, e );
-    				continue;
+                    if ( needToInterrupt ) {
+                        break;
+                    }
+                    else {
+                        continue;
+                    }
     			}
                 finally {
                     // Save the time spent running the command

@@ -160,7 +160,10 @@ throws CommandWarningException, CommandException
         try {
             TSUtil_SortTimeSeries tsu = new TSUtil_SortTimeSeries(tslist, TSIDFormat, Property, PropertyFormat, sortOrder );
             List<TS> tslistSorted = tsu.sortTimeSeries();
-            processor.setPropContents ( "TSResultsList", tslistSorted );
+            // TODO SAM 2014-07-14 Might be dangerous to do the following so replace the existing list
+            //processor.setPropContents ( "TSResultsList", tslistSorted );
+            tslist.clear();
+            tslist.addAll(tslistSorted);
         }
         catch ( Exception e ) {
             message = "Unexpected error sorting time series (" + e + ").";

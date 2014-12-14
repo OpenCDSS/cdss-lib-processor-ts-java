@@ -9,7 +9,9 @@ import rti.tscommandprocessor.core.TSListType;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import RTi.TS.RunningAverageType;
@@ -35,6 +37,7 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -368,6 +371,7 @@ throws InvalidCommandParameterException
     validList.add ( "OutputStart" );
     validList.add ( "OutputEnd" );
     validList.add ( "Properties" );
+    validList.add ( "CopyProperties" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -552,6 +556,11 @@ CommandWarningException, CommandException
             String [] parts = pair.split(":");
             properties.put(parts[0].trim(), parts[1].trim() );
         }
+    }
+    String CopyProperties = parameters.getValue ( "CopyProperties" );
+    StringDictionary copyProperties = null;
+    if ( (CopyProperties != null) && !CopyProperties.equals("") ) {
+        copyProperties = new StringDictionary(CopyProperties,":",",");
     }
     
     // Figure out the dates to use for the analysis.
@@ -956,6 +965,29 @@ CommandWarningException, CommandException
                             processor, ts, (String)properties.get(key), status, CommandPhaseType.RUN) );
                     }
                 }
+                if ( copyProperties != null ) {
+                    // Copy properties from input time series to output
+                    LinkedHashMap<String, String> map = copyProperties.getLinkedHashMap();
+                    String key, newProp;
+                    Object o;
+                    for ( Map.Entry<String,String> entry : map.entrySet() ) {
+                        try {
+                            key = entry.getKey();
+                            newProp = map.get(key);
+                            o = ts.getProperty(key);
+                            if ( newProp.equals("*") || newProp.equals("") ) {
+                                // Reset to the original
+                                newProp = key;
+                            }
+                            if ( o != null ) {
+                                newts.setProperty( newProp, o );
+                            }
+                        }
+                        catch ( Exception e ) {
+                            // This should not happen
+                        }
+                    }
+                }
                 TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, newts );
             }  
 		}
@@ -1024,6 +1056,7 @@ public String toString ( PropList props )
 	String OutputStart = props.getValue( "OutputStart" );
     String OutputEnd = props.getValue( "OutputEnd" );
     String Properties = props.getValue ( "Properties" );
+    String CopyProperties = props.getValue ( "CopyProperties" );
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -1144,6 +1177,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("Properties=\"" + Properties + "\"");
+    }
+    if ((CopyProperties != null) && (CopyProperties.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("CopyProperties=\"" + CopyProperties + "\"");
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

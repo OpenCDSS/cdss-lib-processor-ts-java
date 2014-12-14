@@ -418,9 +418,6 @@ CommandWarningException, CommandException
         }
     }
     int [] statisticColumnNum = new int[tableStatisticResultsColumn.length]; // Integer columns for performance
-    for ( int i = 0; i < tableStatisticResultsColumn.length; i++ ) {
-        statisticColumnNum[i] = -1;
-    }
 
     // Figure out the dates to use for the analysis.
     // Default of null means to analyze the full period.
@@ -675,20 +672,6 @@ CommandWarningException, CommandException
                                message, "Report problem to software support." ) );
                 }
             }
-            // Make sure that the output table includes the TSID columns.
-            // Cannot add columns for statistics yet because the statistic type is determined from the
-            // analysis object below.  This could result in the command NOT adding statistic columns, which
-            // could negatively impact later commands.
-            int tableTSIDColumnNumber = -1;
-            try {
-                tableTSIDColumnNumber = table.getFieldIndex(TableTSIDColumn);
-            }
-            catch ( Exception e2 ) {
-                tableTSIDColumnNumber =
-                    table.addField(new TableField(TableField.DATA_TYPE_STRING, TableTSIDColumn, -1, -1), null);
-                Message.printStatus(2, routine, "Did not match TableTSIDColumn \"" + TableTSIDColumn +
-                    "\" as column table so added to table." );
-            }
             // Process the time series and add statistics columns to the table if not found...
             TS ts = null;
             Object o_ts = null;
@@ -707,6 +690,51 @@ CommandWarningException, CommandException
                 ts = (TS)o_ts;
                 notifyCommandProgressListeners ( its, nts, (float)-1.0, "Calculating statistic for " +
                     ts.getIdentifier().toStringAliasAndTSID() );
+                
+                // Make sure that the output table includes the TSID column.
+                int tableTSIDColumnNumber = -1;
+                try {
+                    tableTSIDColumnNumber = table.getFieldIndex(TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, TableTSIDColumn, status, commandPhase));
+                }
+                catch ( Exception e2 ) {
+                    tableTSIDColumnNumber =
+                        table.addField(new TableField(TableField.DATA_TYPE_STRING, TableTSIDColumn, -1, -1), null);
+                    Message.printStatus(2, routine, "Did not match TableTSIDColumn \"" + TableTSIDColumn +
+                        "\" as column table so added to table." );
+                }
+                
+                // Expand the statistic output column based on runtime information
+                // Also reset the statistic columns each time because can vary based on time series property
+                // TODO SAM 2014-06-09 Optimize this to only reset when the statistic column is dynamically determined
+                for ( int i = 0; i < tableStatisticResultsColumn.length; i++ ) {
+                    statisticColumnNum[i] = -1;
+                }
+                if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
+                    String [] tableStatisticColumnParts = TableStatisticColumn.split(",");
+                    if ( Statistic.equalsIgnoreCase("" + TSStatisticType.TREND_OLS) ) {
+                        // Output will consist of multiple statistics corresponding to parameter-assigned column + suffix
+                        tableStatisticResultsColumn = new String[3];
+                        tableStatisticResultsColumn[0] = "" + tableStatisticColumnParts[0] + "_Intercept";
+                        tableStatisticResultsColumn[0] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, tableStatisticResultsColumn[0], status, commandPhase);
+                        tableStatisticResultsColumn[1] = "" + tableStatisticColumnParts[0] + "_Slope";
+                        tableStatisticResultsColumn[1] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, tableStatisticResultsColumn[1], status, commandPhase);
+                        tableStatisticResultsColumn[2] = "" + tableStatisticColumnParts[0] + "_R2";
+                        tableStatisticResultsColumn[2] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, tableStatisticResultsColumn[2], status, commandPhase);
+                    }
+                    else {
+                        // Output will consist of single statistic corresponding to parameter-assigned column
+                        // Some statistics like "Last" also have the date
+                        tableStatisticResultsColumn = new String[tableStatisticColumnParts.length];
+                        for ( int i = 0; i < tableStatisticColumnParts.length; i++ ) {
+                            tableStatisticResultsColumn[i] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                                processor, ts, tableStatisticColumnParts[i], status, commandPhase);
+                        }
+                    }
+                }
                 
                 try {
                     // Do the calculation...

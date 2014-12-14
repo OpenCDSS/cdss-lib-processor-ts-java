@@ -273,7 +273,7 @@ private void initialize ( JFrame parent, SetTimeSeriesPropertiesFromTable_Comman
 		"Set time series properties using matching input from a table." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "Currently all properties are set as strings." ), 
+       "The properties type on the table is retained in the time series property (e.g., float retained as float, string as string)." ), 
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "For example, set properties for a location associated with the time series." ), 

@@ -32,7 +32,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
-import RTi.TS.TSUtil_NewStatisticMonthTS;
+import RTi.TS.TSUtil_NewStatisticMonthTimeSeries;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -57,6 +57,7 @@ private SimpleJComboBox	__TSID_JComboBox = null;// Time series to evaluate
 private JTextArea __NewTSID_JTextArea = null; // New TSID.
 private SimpleJComboBox	__Statistic_JComboBox = null; // Statistic to analyze.
 private JTextField __TestValue_JTextField = null; // Test value for the statistic.
+private JTextField __MonthTestValues_JTextField = null; // Monthly test values for the statistic.
 private JTextField __AllowMissingCount_JTextField = null; // Missing data count allowed in analysis interval.
 private JTextField __MinimumSampleSize_JTextField = null;
 private JTextField __AnalysisStart_JTextField = null; // Fields for analysis period (time series period)
@@ -191,6 +192,7 @@ private void checkInput ()
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Statistic = __Statistic_JComboBox.getSelected();
 	String TestValue = __TestValue_JTextField.getText().trim();
+	String MonthTestValues = __MonthTestValues_JTextField.getText().trim();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -213,6 +215,9 @@ private void checkInput ()
 	if ( (TestValue != null) && (TestValue.length() > 0) ) {
 		props.set ( "TestValue", TestValue );
 	}
+    if ( (MonthTestValues != null) && (MonthTestValues.length() > 0) ) {
+        props.set ( "MonthTestValues", MonthTestValues );
+    }
 	if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
 		props.set ( "AllowMissingCount", AllowMissingCount );
 	}
@@ -258,6 +263,7 @@ private void commitEdits ()
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Statistic = __Statistic_JComboBox.getSelected();
 	String TestValue = __TestValue_JTextField.getText().trim();
+	String MonthTestValues = __MonthTestValues_JTextField.getText().trim();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -268,6 +274,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Statistic", Statistic );
 	__command.setCommandParameter ( "TestValue", TestValue );
+	__command.setCommandParameter ( "MonthTestValues", MonthTestValues );
 	__command.setCommandParameter ( "AllowMissingCount", AllowMissingCount);
 	__command.setCommandParameter ( "MinimumSampleSize", MinimumSampleSize);
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
@@ -361,7 +368,7 @@ private void initialize ( JFrame parent, NewStatisticMonthTimeSeries_Command com
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Statistic_JComboBox = new SimpleJComboBox(false);
 	// TODO SAM 2009-11-11 Ideally should figure out the input time series interval and limit the choices.
-	__Statistic_JComboBox.setData ( TSUtil_NewStatisticMonthTS.getStatisticChoicesForIntervalAsStrings (
+	__Statistic_JComboBox.setData ( TSUtil_NewStatisticMonthTimeSeries.getStatisticChoicesForIntervalAsStrings (
 	    TimeInterval.UNKNOWN, null ) );
 	__Statistic_JComboBox.select ( 0 );
 	__Statistic_JComboBox.addActionListener (this);
@@ -378,6 +385,15 @@ private void initialize ( JFrame parent, NewStatisticMonthTimeSeries_Command com
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - test value (required for comparison statistics)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Test values (by month):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MonthTestValues_JTextField = new JTextField (30);
+    __MonthTestValues_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __MonthTestValues_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - test values by month (Jan,Feb,...)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Allow missing count:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -536,6 +552,7 @@ private void refresh ()
 	String NewTSID = "";
 	String Statistic = "";
 	String TestValue = "";
+	String MonthTestValues = "";
 	String AllowMissingCount = "";
 	String MinimumSampleSize = "";
 	String AnalysisStart = "";
@@ -552,6 +569,7 @@ private void refresh ()
 		NewTSID = props.getValue ( "NewTSID" );
 		Statistic = props.getValue ( "Statistic" );
 		TestValue = props.getValue ( "TestValue" );
+		MonthTestValues = props.getValue ( "MonthTestValues" );
 		AllowMissingCount = props.getValue ( "AllowMissingCount" );
 		MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
@@ -597,6 +615,9 @@ private void refresh ()
 		if ( TestValue != null ) {
 			__TestValue_JTextField.setText ( TestValue );
 		}
+        if ( MonthTestValues != null ) {
+            __MonthTestValues_JTextField.setText ( MonthTestValues );
+        }
 		if ( AllowMissingCount != null ) {
 			__AllowMissingCount_JTextField.setText ( AllowMissingCount );
 		}
@@ -651,6 +672,7 @@ private void refresh ()
 	NewTSID = __NewTSID_JTextArea.getText().trim();
 	Statistic = __Statistic_JComboBox.getSelected();
 	TestValue = __TestValue_JTextField.getText();
+	MonthTestValues = __MonthTestValues_JTextField.getText();
 	AllowMissingCount = __AllowMissingCount_JTextField.getText();
 	MinimumSampleSize = __MinimumSampleSize_JTextField.getText();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -662,6 +684,7 @@ private void refresh ()
 	props.add ( "NewTSID=" + NewTSID );
 	props.add ( "Statistic=" + Statistic );
 	props.add ( "TestValue=" + TestValue );
+	props.add ( "MonthTestValues=" + MonthTestValues );
 	props.add ( "AllowMissingCount=" + AllowMissingCount );
 	props.add ( "MinimumSampleSize=" + MinimumSampleSize );
 	props.add ( "AnalysisStart=" + AnalysisStart );

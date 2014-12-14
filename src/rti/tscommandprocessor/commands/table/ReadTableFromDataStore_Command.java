@@ -483,7 +483,8 @@ CommandWarningException, CommandException
                 Message.printStatus(2, routine, "Executed query \"" + dmi.getLastQueryString() + "\".");
             }
             ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
-            table = factory.createDataTable(rs, TableID);
+            String tableID = TSCommandProcessorUtil.expandParameterValue(processor,this,TableID);
+            table = factory.createDataTable(rs, tableID);
             
             // Set the table in the processor...
             

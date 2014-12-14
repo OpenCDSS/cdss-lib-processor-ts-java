@@ -250,6 +250,7 @@ CommandWarningException, CommandException
     String [] tableOutputColumnNames = null;
     if ( (TableOutputColumns != null) && !TableOutputColumns.equals("") ) {
         tableOutputColumnNames = TableOutputColumns.split(",");
+        // These are expanded below based on dynamic time series properties
     }
 
     // Get the table to process.
@@ -443,11 +444,16 @@ CommandWarningException, CommandException
                 }
                 // Other output column types depend on the time series properties
                 for ( int i = 0; i < tableOutputColumnNames.length; i++ ) {
+                    String tableOutputColumnName = tableOutputColumnNames[i];
                     try {
-                        table.getFieldIndex(tableOutputColumnNames[i]);
+                        // Column names are allowed to use time series properties
+                        tableOutputColumnName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, tableOutputColumnName, status, commandPhase);
+                        table.getFieldIndex(tableOutputColumnName);
                     }
                     catch ( Exception e2 ) {
-                        //message = "Table \"" + TableID + "\" does not have column \"" + tableOutputColumnNames[i] + "\".";
+                        message = "Table \"" + TableID + "\" does not have column \"" + tableOutputColumnName + "\" - creating.";
+                        Message.printStatus(2,routine,message);
                         //Message.printWarning ( warning_level,
                         //MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
                         //status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -466,19 +472,28 @@ CommandWarningException, CommandException
                             continue;
                         }
                         else if ( propertyValue instanceof String ) {
-                            table.addField(new TableField(TableField.DATA_TYPE_STRING, tableOutputColumnNames[i], -1, -1), null);
+                            table.addField(new TableField(TableField.DATA_TYPE_STRING, tableOutputColumnName, -1, -1), null);
                         }
                         else if ( propertyValue instanceof Integer ) {
-                            table.addField(new TableField(TableField.DATA_TYPE_INT, tableOutputColumnNames[i], -1, -1), null);
+                            table.addField(new TableField(TableField.DATA_TYPE_INT, tableOutputColumnName, -1, -1), null);
+                        }
+                        else if ( propertyValue instanceof Long ) {
+                            table.addField(new TableField(TableField.DATA_TYPE_LONG, tableOutputColumnName, -1, -1), null);
+                        }
+                        else if ( propertyValue instanceof Short ) {
+                            table.addField(new TableField(TableField.DATA_TYPE_SHORT, tableOutputColumnName, -1, -1), null);
                         }
                         else if ( propertyValue instanceof Double ) {
-                            table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, tableOutputColumnNames[i],15, 6), null);
+                            table.addField(new TableField(TableField.DATA_TYPE_DOUBLE, tableOutputColumnName,15, 6), null);
+                        }
+                        else if ( propertyValue instanceof Float ) {
+                            table.addField(new TableField(TableField.DATA_TYPE_FLOAT, tableOutputColumnName,15, 6), null);
                         }
                         else if ( propertyValue instanceof Date ) {
-                            table.addField(new TableField(TableField.DATA_TYPE_DATE, tableOutputColumnNames[i], -1, -1), null);
+                            table.addField(new TableField(TableField.DATA_TYPE_DATE, tableOutputColumnName, -1, -1), null);
                         }
                         else if ( propertyValue instanceof DateTime ) {
-                            table.addField(new TableField(TableField.DATA_TYPE_DATETIME, tableOutputColumnNames[i], -1, -1), null);
+                            table.addField(new TableField(TableField.DATA_TYPE_DATETIME, tableOutputColumnName, -1, -1), null);
                         }
                         else {
                             message = "Time series property type for \"" + tableOutputColumnNames[i] +
@@ -498,11 +513,14 @@ CommandWarningException, CommandException
                 // Get the table column numbers corresponding to the column names...
                 
                 // Get the columns from the table to be used as output...
-                
+                // TODO SAM 2014-06-09 Why is this done here and not above?
                 int [] tableOutputColumns = new int[tableOutputColumnNames.length];
+                String [] tableOutputColumnNamesExpanded = new String[tableOutputColumnNames.length];
                 for ( int i = 0; i < tableOutputColumns.length; i++ ) {
+                    tableOutputColumnNamesExpanded[i] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, tableOutputColumnNames[i], status, commandPhase);
                     try {
-                        tableOutputColumns[i] = table.getFieldIndex(tableOutputColumnNames[i]);
+                        tableOutputColumns[i] = table.getFieldIndex(tableOutputColumnNamesExpanded[i]);
                     }
                     catch ( Exception e2 ) {
                         // This should not happen since columns created above, but possible that a value had all nulls
@@ -568,18 +586,18 @@ CommandWarningException, CommandException
                     // If the property value is null, just skip setting it - default value for columns is null
                     // TODO SAM 2011-04-27 Should this be a warning?
                     if ( propertyValue == null ) {
-                        Message.printStatus(2,routine,"Property \"" + propertyName + "\" is null");
+                        Message.printStatus(2,routine,"Time series property \"" + propertyName + "\" is null, not copying");
                         continue;
                     }
                     // Get the matching table column
                     try {
                         // Get the value from the table
                         // Make sure that the table has the specified column...
-                        int colNumber = table.getFieldIndex(tableOutputColumnNames[icolumn]);
+                        int colNumber = tableOutputColumns[icolumn];
                         if ( colNumber < 0 ) {
                             // TODO SAM 2012-09-30 Should not happen?
                             message = "Table \"" + TableID +
-                            "\" does not have column \"" + tableOutputColumnNames[icolumn] + "\".";
+                            "\" does not have column \"" + tableOutputColumnNamesExpanded[icolumn] + "\".";
                             Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
                                 routine, message );
                             status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
@@ -588,13 +606,13 @@ CommandWarningException, CommandException
                         }
                         // Set the value in the table...
                         try {
-                            rec.setFieldValue(tableOutputColumns[icolumn],propertyValue);
+                            rec.setFieldValue(colNumber,propertyValue);
                             if ( Message.isDebugOn ) {
-                                Message.printDebug(1, routine, "Setting " + tableOutputColumnNames[icolumn] + "=\"" +
+                                Message.printDebug(1, routine, "Setting table column " + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
                                     propertyValue + "\"" );
                             }
-                            Message.printStatus(2, routine, "Setting " + tableOutputColumnNames[icolumn] + "=\"" +
-                                    propertyValue + "\"" );
+                            Message.printStatus(2, routine, "Setting table column " + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
+                                 propertyValue + "\"" );
                             // TODO SAM 2011-04-27 Evaluate why the column width is necessary in the data table
                             // Reset the column width if necessary
                             if ( propertyValue instanceof String ) {
@@ -609,7 +627,7 @@ CommandWarningException, CommandException
                         catch ( Exception e ) {
                             // Blank cell values are allowed - just don't set the property
                             message = "Unable to set " + propertyName + "=" + propertyValue + " in table \"" + TableID +
-                                "\" column \"" + tableOutputColumnNames[icolumn] +
+                                "\" column \"" + tableOutputColumnNamesExpanded[icolumn] +
                                 "\" matching TSID \"" + tsid + " (" + ts.getIdentifier().toStringAliasAndTSID() + "\") (" + e + ").";
                             Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
                                 routine, message );

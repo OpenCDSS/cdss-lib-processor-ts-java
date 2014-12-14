@@ -131,6 +131,7 @@ import rti.tscommandprocessor.commands.table.CreateTimeSeriesEventTable_Command;
 import rti.tscommandprocessor.commands.table.FormatTableDateTime_Command;
 import rti.tscommandprocessor.commands.table.FormatTableString_Command;
 import rti.tscommandprocessor.commands.table.FreeTable_Command;
+import rti.tscommandprocessor.commands.table.InsertTableColumn_Command;
 import rti.tscommandprocessor.commands.table.InsertTableRow_Command;
 import rti.tscommandprocessor.commands.table.JoinTables_Command;
 import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
@@ -247,9 +248,11 @@ import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.CompareFiles_Command;
 import rti.tscommandprocessor.commands.util.CopyFile_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
+import rti.tscommandprocessor.commands.util.EndFor_Command;
 import rti.tscommandprocessor.commands.util.EndIf_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
 import rti.tscommandprocessor.commands.util.FTPGet_Command;
+import rti.tscommandprocessor.commands.util.For_Command;
 import rti.tscommandprocessor.commands.util.FormatDateTimeProperty_Command;
 import rti.tscommandprocessor.commands.util.If_Command;
 import rti.tscommandprocessor.commands.util.ListFiles_Command;
@@ -338,7 +341,9 @@ throws UnknownCommandException
 		}
 	}
 	else {
-	    // Get the command name, which is the text prior to the (
+	    // Get the potential command name, which is the text prior to the (
+	    // However, it could be that a TSID string contains () so if the command name
+	    // is not matched below and it fits the TSID pattern, treat as a TSID
 	    int pos = commandString.indexOf("(");
 	    if ( pos > 0 ) {
 	        commandName = commandString.substring(0,pos).trim();
@@ -351,6 +356,10 @@ throws UnknownCommandException
 	if ( Message.isDebugOn ) {
 	    Message.printDebug(1,routine,"commandName=\"" + commandName + "\"" );
 	}
+	
+	// The following checks for a match for specific command name and if so an appropriate
+	// command instance is created and returned.  If nothing is matched and the command string is a TSID,
+	// a TSID command instance will be returned.
 	
 	// Comment commands...
 	
@@ -488,6 +497,9 @@ throws UnknownCommandException
 	
 	// "E" commands...
 
+    else if ( commandName.equalsIgnoreCase("EndFor") ) {
+        return new EndFor_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("EndIf") ) {
         return new EndIf_Command ();
     }
@@ -543,6 +555,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("FillUsingDiversionComments") ) {
 		return new FillUsingDiversionComments_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("For") ) {
+        return new For_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("FormatDateTimeProperty") ) {
         return new FormatDateTimeProperty_Command ();
     }
@@ -571,6 +586,9 @@ throws UnknownCommandException
 
     else if ( commandName.equalsIgnoreCase("If") ) {
         return new If_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("InsertTableColumn") ) {
+        return new InsertTableColumn_Command ();
     }
     else if ( commandName.equalsIgnoreCase("InsertTableRow") ) {
         return new InsertTableRow_Command ();
@@ -1054,13 +1072,15 @@ throws UnknownCommandException
         return new WriteWaterML_Command ();
     }
     
-    // Check for time series identifier.
+    // Check for time series identifier
+    // This is the fall through if no command was matched above but the string
+    // matches a TSID pattern
     
-	else if ( TSCommandProcessorUtil.isTSID(commandString) ) {
+	if ( TSCommandProcessorUtil.isTSID(commandString) ) {
 	    return new TSID_Command ();
 	}
 
-	// Did not match a command...
+	// Did not match a command or TSID...
 
 	if ( createUnknownCommandIfNotRecognized ) {
 		// Create an unknown command...

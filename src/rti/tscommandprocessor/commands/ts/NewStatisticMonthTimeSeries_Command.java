@@ -12,7 +12,7 @@ import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSStatisticType;
-import RTi.TS.TSUtil_NewStatisticMonthTS;
+import RTi.TS.TSUtil_NewStatisticMonthTimeSeries;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -24,7 +24,6 @@ import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
-import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -40,7 +39,7 @@ import RTi.Util.Time.TimeInterval;
 This class initializes, checks, and runs the NewStatisticMonthTimeSeries() command.
 */
 public class NewStatisticMonthTimeSeries_Command extends AbstractCommand
-implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
+implements Command, CommandDiscoverable, ObjectListProvider
 {
     
 /**
@@ -77,6 +76,7 @@ throws InvalidCommandParameterException
 	String TSID = parameters.getValue ( "TSID" );
 	String Statistic = parameters.getValue ( "Statistic" );
 	String TestValue = parameters.getValue ( "TestValue" );
+	String MonthTestValues = parameters.getValue ( "MonthTestValues" );
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
 	String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
@@ -134,7 +134,7 @@ throws InvalidCommandParameterException
         if ( supported ) {
             supported = false;
             List<TSStatisticType> statistics =
-               TSUtil_NewStatisticMonthTS.getStatisticChoicesForInterval(TimeInterval.UNKNOWN, null);
+               TSUtil_NewStatisticMonthTimeSeries.getStatisticChoicesForInterval(TimeInterval.UNKNOWN, null);
             for ( int i = 0; i < statistics.size(); i++ ) {
                 if ( statisticType == statistics.get(i) ) {
                     supported = true;
@@ -148,27 +148,57 @@ throws InvalidCommandParameterException
             }
         }
 	}
-	if ( (TestValue != null) && !TestValue.equals("") ) {
-		// If a test value is specified, for now make sure it is a
-		// number.  It is possible that in the future it could be a
-		// special value (date, etc.) but for now focus on numbers.
-		if ( !StringUtil.isDouble(TestValue) ) {
-            message = "The test value (" + TestValue + ") is not a number.";
-			warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify the test value as a number." ) );
-		}
-	}
-	else {
-	    // Test value not specified...
-        if ( (statisticType != null) && TSUtil_NewStatisticMonthTS.isTestValueNeeded(statisticType)) {
-            message = "The test value is required for the " + statisticType + " statistic.";
+	// Either TestValue or MonthTestValues are required for some statistics
+	if ( TSUtil_NewStatisticMonthTimeSeries.isTestValueNeeded(statisticType) ) {
+    	if ( ((TestValue == null) || TestValue.equals("")) && ((MonthTestValues == null) || MonthTestValues.equals("")) ) {
+    	    message = "Single or monthly test values must be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the test value as a number." ) ); 
+                    message, "Specify single or monthly test value(s)." ) );
+    	}
+    	else if ( ((TestValue != null) && !TestValue.equals("")) && ((MonthTestValues != null) && !MonthTestValues.equals("")) ) {
+            message = "Single or monthly test values must be specified (but not both).";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify single or monthly test value(s)." ) );
         }
+    	else {
+        	if ( (TestValue != null) && !TestValue.equals("") ) {
+        		// If a test value is specified, for now make sure it is a
+        		// number.  It is possible that in the future it could be a
+        		// special value (date, etc.) but for now focus on numbers.
+        		if ( !StringUtil.isDouble(TestValue) ) {
+                    message = "The test value (" + TestValue + ") is not a number.";
+        			warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the test value as a number." ) );
+        		}
+        	}
+            if ( (MonthTestValues != null) && !MonthTestValues.equals("") ) {
+                String [] parts = MonthTestValues.split(",");
+                if ( parts.length == 12 ) {
+                    for ( int i = 0; i < parts.length; i++ ) {
+                        if ( !StringUtil.isDouble(parts[i].trim()) ) {
+                            message = "The test value (" + parts[i] + ") is not a number.";
+                            warning += "\n" + message;
+                            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Specify the test value as a number." ) );
+                        }
+                    }
+                }
+                else {
+                    message = "" + parts.length + " monthly test values (" + MonthTestValues + ") are provided - 12 expected.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the 12 monthly test values." ) );
+                }
+            }
+    	}
 	}
 	
 	if ( (AllowMissingCount != null) && !AllowMissingCount.equals("") ) {
@@ -287,12 +317,13 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(12);
+	List<String> validList = new ArrayList<String>(13);
     validList.add ( "Alias" );
     validList.add ( "TSID" );
     validList.add ( "NewTSID" );
     validList.add ( "Statistic" );
     validList.add ( "TestValue" );
+    validList.add ( "MonthTestValues" );
     validList.add ( "AllowMissingCount" );
     validList.add ( "MinimumSampleSize" );
     validList.add ( "AnalysisStart" );
@@ -407,10 +438,19 @@ CommandWarningException, CommandException
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	String Statistic = parameters.getValue ( "Statistic" );
 	TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
-	Double TestValue_Double = null; // Default
+	Double testValue = null; // Default
 	String TestValue = parameters.getValue ( "TestValue" );
-    if ( StringUtil.isDouble(TestValue) ) {
-        TestValue_Double = new Double(TestValue);
+    if ( (TestValue != null) && !TestValue.equals("") ) {
+        testValue = new Double(TestValue);
+    }
+    Double [] monthTestValues = null;
+    String MonthTestValues = parameters.getValue ( "MonthTestValues" );
+    if ( (MonthTestValues != null) && !MonthTestValues.equals("") ) {
+        String [] parts = MonthTestValues.split(",");
+        monthTestValues = new Double[parts.length];
+        for ( int i = 0; i < parts.length; i++ ) {
+            monthTestValues[i] = Double.parseDouble(parts[i].trim());
+        }
     }
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
 	Integer AllowMissingCount_Integer = new Integer(-1); // Default
@@ -648,9 +688,20 @@ CommandWarningException, CommandException
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         createData = false;
     }
+    else if ( commandPhase == CommandPhaseType.RUN ){
+        // Currently only support daily time series as input
+        if ( ts.getDataIntervalBase() != TimeInterval.DAY ) {
+            message = "Only daily interval for input time series is currently supported (time series is " +
+                ts.getIdentifier().getInterval() + ").";
+            status.addToLog (commandPhase,
+            new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
+            Message.printWarning(3, routine, message );
+            throw new CommandException ( message );
+        }
+    }
 	try {
 	    // Make sure that the statistic is allowed for the time series interval.
-	    if ( !TSUtil_NewStatisticMonthTS.isStatisticSupported(statisticType, ts.getDataIntervalBase(), null) ) {
+	    if ( !TSUtil_NewStatisticMonthTimeSeries.isStatisticSupported(statisticType, ts.getDataIntervalBase(), null) ) {
 	        message = "Statistic \"" + statisticType + "\" is not supported the interval for \"" +
             ts.getIdentifier() + "\".";
             Message.printWarning ( warning_level,
@@ -661,8 +712,8 @@ CommandWarningException, CommandException
                     message, "Refer to documentation to determine supported statistics." ) );
 	    }
 	    else {
-    	    TSUtil_NewStatisticMonthTS tsu = new TSUtil_NewStatisticMonthTS ( ts, NewTSID, statisticType,
-    	        TestValue_Double, AllowMissingCount_Integer, MinimumSampleSize_Integer,
+    	    TSUtil_NewStatisticMonthTimeSeries tsu = new TSUtil_NewStatisticMonthTimeSeries ( ts, NewTSID, statisticType,
+    	        testValue, monthTestValues, AllowMissingCount_Integer, MinimumSampleSize_Integer,
     	        AnalysisStart_DateTime, AnalysisEnd_DateTime,
                 AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SearchStart_DateTime );
     		TS stats_ts = tsu.newStatisticMonthTS ( createData );
@@ -720,30 +771,15 @@ Return the string representation of the command.
 @param props parameters for the command
 */
 public String toString ( PropList props )
-{
-    return toString ( props, 10 );
-}
-
-/**
-Return the string representation of the command.
-@param props parameters for the command
-@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
-*/
-public String toString ( PropList props, int majorVersion )
 {   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
+        return getCommandName() + "()";
     }
 	String Alias = props.getValue( "Alias" );
 	String TSID = props.getValue( "TSID" );
 	String NewTSID = props.getValue( "NewTSID" );
 	String Statistic = props.getValue( "Statistic" );
 	String TestValue = props.getValue( "TestValue" );
+	String MonthTestValues = props.getValue( "MonthTestValues" );
 	String AllowMissingCount = props.getValue( "AllowMissingCount" );
 	String MinimumSampleSize = props.getValue( "MinimumSampleSize" );
 	String AnalysisStart = props.getValue( "AnalysisStart" );
@@ -758,14 +794,11 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
+    if ( (Alias != null) && (Alias.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
         }
+        b.append ( "Alias=\"" + Alias + "\"" );
     }
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -785,6 +818,12 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "TestValue=" + TestValue );
 	}
+	if ( (MonthTestValues != null) && (MonthTestValues.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MonthTestValues=\"" + MonthTestValues + "\"");
+    }
 	if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -827,16 +866,7 @@ public String toString ( PropList props, int majorVersion )
         }
         b.append ( "SearchStart=\"" + SearchStart + "\"" );
     }
-    if ( majorVersion < 10 ) {
-        // Old syntax...
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+    return getCommandName() + "("+ b.toString()+")";
 }
 
 }

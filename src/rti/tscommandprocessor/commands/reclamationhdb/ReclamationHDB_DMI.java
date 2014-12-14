@@ -3,6 +3,7 @@ package rti.tscommandprocessor.commands.reclamationhdb;
 import java.security.InvalidParameterException;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -844,9 +845,13 @@ public void open ()
     String databaseName = getDatabaseName();
     String systemLogin = getSystemLogin();
     String systemPassword = getSystemPassword();
+    int port = getPort();
+    if ( port < 0 ) {
+        port = 1521;
+    }
     // Use the reclamation connection object
     String sourceDBType = "OracleHDB";
-    String sourceUrl = "jdbc:oracle:thin:@" + databaseServer + ":1521:" + databaseName;
+    String sourceUrl = "jdbc:oracle:thin:@" + databaseServer + ":" + port + ":" + databaseName;
     String sourceUserName = systemLogin;
     String sourcePassword = systemPassword;
     __hdbConnection = new JavaConnections(sourceDBType, sourceUrl, sourceUserName, sourcePassword );
@@ -960,10 +965,15 @@ public void readGlobalData()
     __timeZoneList.add ( "PST" );
     // Save a flag indicating whether ensembles are in the database
     try {
-        //DatabaseMetaData meta = getConnection().getMetaData();
-        //if ( DMIUtil.databaseHasTable(meta, "REF_ENSEMBLE") ) {
-        //    __dbHasEnsembles = true;
-        //}
+        __dbHasEnsembles = true;
+        /* Getting the metadata is a dog - don't do the following because it is really slow
+        __dbHasEnsembles = false;
+        DatabaseMetaData meta = getConnection().getMetaData();
+        if ( DMIUtil.databaseHasTable(meta, "REF_ENSEMBLE") &&
+            DMIUtil.databaseHasTable(meta, "REF_ENSEMBLE_TRACE") ) {
+            __dbHasEnsembles = true;
+        }
+        */
     }
     catch ( Exception e ) {
         // For now nothing to do but assume no ensembles
@@ -2217,8 +2227,12 @@ Read the ensemble traces from the REF_ENSEMBLE_TRACE table.
 */
 public List<ReclamationHDB_EnsembleTrace> readRefEnsembleTraceList ( int ensembleID, int traceID, int modelRunID, List<Integer> modelRunIDList )
 throws SQLException
-{   String routine = getClass().getName() + ".readRefEnsembleTraceList";
+{   String routine = getClass().getSimpleName() + ".readRefEnsembleTraceList";
     List<ReclamationHDB_EnsembleTrace> results = new ArrayList<ReclamationHDB_EnsembleTrace>();
+    if ( !getDatabaseHasEnsembles() ) {
+        // Database design does not include ensembles
+        return results;
+    }
     StringBuilder sqlCommand = new StringBuilder("select REF_ENSEMBLE_TRACE.ENSEMBLE_ID, " +
     "REF_ENSEMBLE_TRACE.TRACE_ID, REF_ENSEMBLE_TRACE.TRACE_NUMERIC, REF_ENSEMBLE_TRACE.TRACE_NAME, " +
     "REF_ENSEMBLE_TRACE.MODEL_RUN_ID from REF_ENSEMBLE_TRACE");

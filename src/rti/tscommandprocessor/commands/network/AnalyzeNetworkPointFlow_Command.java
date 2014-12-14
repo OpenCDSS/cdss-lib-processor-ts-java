@@ -9,6 +9,8 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -121,6 +123,7 @@ Analyze the network point flow.
 @param nodeOutflowDataTypes time series data types where time series should be set at the node
 @param nodeFlowThroughTypes node types where node inflow should continue as outflow
 @param network the node network that is was created from the network table
+@param nodeInputTSIDsMap map of of input time series corresponding to each node
 @param outputTSList list of time series created by the analysis, representing mass balance at each node
 @param interval the time series interval for all time series in the analysis
 @param gainMethod the gain method used when computing gains
@@ -134,7 +137,8 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
     String [] nodeSubtractTypes, String [] nodeSubtractDataTypes,
     String [] nodeOutflowTypes, String [] nodeOutflowDataTypes,
     String [] nodeFlowThroughTypes,
-    HydrologyNodeNetwork network, List<TS> outputTSList, TimeInterval interval, NetworkGainMethodType gainMethod,
+    HydrologyNodeNetwork network, HashMap<String, String[]> nodeInputTSIDsMap, List<TS> outputTSList,
+    TimeInterval interval, NetworkGainMethodType gainMethod,
     DateTime analysisStart, DateTime analysisEnd, List<String> problems )
 {   String routine = "AnalyzeNetworkPointFlow_Command.analyzeNetworkPointFlow";
     TS ts;
@@ -181,9 +185,9 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
         // Now process the time series based on the time series type
         if ( isNodeOfAnalysisType(nodeType, nodeOutflowTypes) ) {
             // Set the time series outflow to the matched input time series, for example for a stream gage
-            tslist = lookupAnalysisInputTimeSeries ( nodeID, nodeOutflowDataTypes, interval, problems );
+            tslist = lookupAnalysisInputTimeSeries ( nodeID, nodeOutflowDataTypes, interval, nodeInputTSIDsMap, problems );
             if ( tslist.size() != 1 ) {
-                problems.add("Expecting 1 set time series for node \"" + nodeID + "\" but have " +
+                problems.add("Expecting 1 time series for node \"" + nodeID + "\" but have " +
                     tslist.size() + " - unable to set outflow." );
             }
             else {
@@ -310,7 +314,7 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
                     if ( i == 0 ) {
                         // Want to make sure missing is reset
                         try {
-                            Message.printStatus(2,routine," Setting node \"" + nodeID + "\" inflow to first upstream node \"" +
+                            Message.printStatus(2,routine,"Setting node \"" + nodeID + "\" inflow to first upstream node \"" +
                                 upstreamNodeList.get(i).getCommonID() + "\" outflows.");
                             TSUtil.setFromTS(nodeInflowTS, upstreamOutflowTS);
                         }
@@ -344,9 +348,9 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
             // 2. Now perform specific actions to adjust the node's outflow
             if ( isNodeOfAnalysisType(nodeType, nodeAddTypes) ) {
                 // Add the input time series at the node
-                tslist = lookupAnalysisInputTimeSeries ( nodeID, nodeAddDataTypes, interval, problems );
+                tslist = lookupAnalysisInputTimeSeries ( nodeID, nodeAddDataTypes, interval, nodeInputTSIDsMap, problems );
                 if ( tslist.size() != 1 ) {
-                    problems.add("Expecting 1 set time series for node \"" + nodeID + "\" but have " +
+                    problems.add("Expecting 1 time series for node \"" + nodeID + "\" but have " +
                         tslist.size() + " - unable to add to outflow." );
                 }
                 else {
@@ -367,9 +371,9 @@ private void analyzeNetworkPointFlow ( DataTable table, int nodeIdColumnNum, int
             }
             else if ( isNodeOfAnalysisType(nodeType, nodeSubtractTypes) ) {
                 // Subtract the input time series at the node
-                tslist = lookupAnalysisInputTimeSeries ( nodeID, nodeSubtractDataTypes, interval, problems );
+                tslist = lookupAnalysisInputTimeSeries ( nodeID, nodeSubtractDataTypes, interval, nodeInputTSIDsMap, problems );
                 if ( tslist.size() != 1 ) {
-                    problems.add("Expecting 1 set time series for node \"" + nodeID + "\" but have " +
+                    problems.add("Expecting 1 time series for node \"" + nodeID + "\" but have " +
                         tslist.size() + " - unable to subtract from outflow." );
                 }
                 else {
@@ -464,9 +468,9 @@ private void analyzeNetworkPointFlow_CalculateReachGainLoss (
     int iNode = -1;
     for ( HydrologyNode node : reachUpstreamNodeList ) {
         ++iNode;
+        inflowTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeInflow", interval, outputTSList );
         nodeGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeUpstreamGain", interval, outputTSList );
         reachGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeUpstreamReachGain", interval, outputTSList );
-        inflowTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeInflow", interval, outputTSList );
         inflowWithGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeInflowWithGain", interval, outputTSList );
         outflowTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeOutflow", interval, outputTSList );
         outflowWithGainTS[iNode] = lookupNodeOutputTimeSeries ( node.getCommonID(), "NodeOutflowWithGain", interval, outputTSList );
@@ -484,7 +488,7 @@ private void analyzeNetworkPointFlow_CalculateReachGainLoss (
         // 1. Get the reach gain (+) or loss (-) - this will be at the most downstream node (time series position 0)
         totalGainValue = reachGainTS[0].getDataValue(dt);
         if ( reachGainTS[0].isDataMissing(totalGainValue)) {
-            message = " Reach gain above node " + reachGainTS[0].getLocation() + " is missing for " + dt +
+            message = "Reach gain above node " + reachGainTS[0].getLocation() + " is missing for " + dt +
                 ".  Cannot distribute gain/loss.";
             problems.add(message);
             Message.printWarning(3,routine,message);
@@ -981,28 +985,29 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "NodeIDColumn" );
-    valid_Vector.add ( "NodeNameColumn" );
-    valid_Vector.add ( "NodeTypeColumn" );
-    valid_Vector.add ( "NodeDistanceColumn" );
-    valid_Vector.add ( "NodeWeightColumn" );
-    valid_Vector.add ( "DownstreamNodeIDColumn" );
-    valid_Vector.add ( "NodeAddTypes" );
-    valid_Vector.add ( "NodeAddDataTypes" );
-    valid_Vector.add ( "NodeSubtractTypes" );
-    valid_Vector.add ( "NodeSubtractDataTypes" );
-    valid_Vector.add ( "NodeOutflowTypes" );
-    valid_Vector.add ( "NodeOutflowDataTypes" );
-    valid_Vector.add ( "NodeFlowThroughTypes" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "AnalysisStart" );
-    valid_Vector.add ( "AnalysisEnd" );
-    valid_Vector.add ( "Units" );
-    valid_Vector.add ( "GainMethod" );
-    valid_Vector.add ( "OutputTableID" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List<String> validList = new ArrayList<String>(21);
+    validList.add ( "TableID" );
+    validList.add ( "NodeIDColumn" );
+    validList.add ( "NodeNameColumn" );
+    validList.add ( "NodeTypeColumn" );
+    validList.add ( "NodeDistanceColumn" );
+    validList.add ( "NodeWeightColumn" );
+    validList.add ( "DownstreamNodeIDColumn" );
+    validList.add ( "NodeAddTypes" );
+    validList.add ( "NodeAddDataTypes" );
+    validList.add ( "NodeSubtractTypes" );
+    validList.add ( "NodeSubtractDataTypes" );
+    validList.add ( "NodeOutflowTypes" );
+    validList.add ( "NodeOutflowDataTypes" );
+    validList.add ( "NodeFlowThroughTypes" );
+    validList.add ( "TSIDColumn" );
+    validList.add ( "Interval" );
+    validList.add ( "AnalysisStart" );
+    validList.add ( "AnalysisEnd" );
+    validList.add ( "Units" );
+    validList.add ( "GainMethod" );
+    validList.add ( "OutputTableID" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -1011,6 +1016,45 @@ throws InvalidCommandParameterException
 	}
     
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+}
+
+/**
+Create the hash map that contains the NodeID and the array of input TSID for the node.
+*/
+HashMap<String, String[]> createInputTSIDMap ( DataTable table, int nodeidColumnNum, int [] tsidColumnsNum )
+{   HashMap<String, String[]> nodeInputTSIDsMap = new HashMap<String,String []>();
+    if ( tsidColumnsNum.length > 0 ) {
+        TableRecord rec;
+        ArrayList<String> nodeTsidColumns = new ArrayList<String>();
+        String nodeID;
+        for ( int i = 0; i < table.getNumberOfRecords(); i++ ) {
+            try {
+                nodeTsidColumns.clear();
+                rec = table.getRecord(i);
+                nodeID = rec.getFieldValueString(nodeidColumnNum);
+                for ( int j = 0; j < tsidColumnsNum.length; j++ ) {
+                    String tsid = rec.getFieldValueString(tsidColumnsNum[j]);
+                    if ( (tsid != null) && (tsid.trim().length() != 0) ) {
+                        // Have a TSID for the node
+                        nodeTsidColumns.add(tsid);
+                    }
+                }
+            }
+            catch ( Exception e ) {
+                continue;
+            }
+            if ( nodeTsidColumns.size() > 0 ) {
+                // TODO SAM 2014-07-13 why doesn't the following work?
+                //nodeInputTSIDsMap.put(nodeID, (String [])(nodeTsidColumns.toArray()));
+                String [] a = new String[nodeTsidColumns.size()];
+                for ( int j = 0; j < nodeTsidColumns.size(); j++ ) {
+                    a[j] = nodeTsidColumns.get(j);
+                }
+                nodeInputTSIDsMap.put(nodeID,a);
+            } 
+        }
+    }
+    return nodeInputTSIDsMap;
 }
 
 /**
@@ -1171,17 +1215,40 @@ Initialize mass balance output time series for each node in the network.
 @param problems a list of problem strings that will be made visible in command status messages
 @param return the list of time series created by the analysis, representing mass balance at each node
 */
-private List<TS> initializeNodeTimeSeries ( DataTable table, HydrologyNodeNetwork network,
+private List<TS> initializeNodeTimeSeries ( DataTable table, int nodeIdColumnNum, int nodeTypeColumnNum, HydrologyNodeNetwork network,
     TimeInterval interval, DateTime analysisStart, DateTime analysisEnd, String units, List<String> problems )
-{   List<TS> tslist = new Vector<TS>();
-    String [] dataTypes = { "NodeInflow", "NodeAdd",
-        "NodeSubtract", "NodeUpstreamGain", "NodeOutflow", "NodeUpstreamReachGain", "NodeInflowWithGain", "NodeOutflowWithGain", "NodeStorage" };
+{   List<TS> tslist = new ArrayList<TS>();
+    String [] dataTypes = {
+        "NodeInflow",
+        "NodeAdd",
+        "NodeSubtract",
+        "NodeUpstreamGain",
+        "NodeOutflow",
+        "NodeUpstreamReachGain",
+        "NodeInflowWithGain",
+        "NodeOutflowWithGain",
+        "NodeStorage" };
     TS ts;
+    String nodeID;
+    String nodeType;
     for (HydrologyNode node = HydrologyNodeNetwork.getUpstreamNode(network.getNodeHead(), HydrologyNodeNetwork.POSITION_ABSOLUTE);
         node.getDownstreamNode() != null;
         node = HydrologyNodeNetwork.getDownstreamNode(node, HydrologyNodeNetwork.POSITION_COMPUTATIONAL)) {
         if (node == null) {
             break;
+        }
+        // Get network information that was in the original table
+        nodeID = node.getCommonID();
+        List<TableRecord> records = findTableRecordsWithValue(table, nodeIdColumnNum, nodeID, false);
+        nodeType = null;
+        if ( (records != null) && (records.size() > 0) ) {
+            TableRecord rec = records.get(0);
+            try {
+                nodeType = rec.getFieldValueString(nodeTypeColumnNum);
+            }
+            catch ( Exception e ) {
+                // Ignore for now... don't set node type
+            }
         }
         // Create output time series for each node.
         for ( int i = 0; i < dataTypes.length; i++ ) {
@@ -1197,6 +1264,10 @@ private List<TS> initializeNodeTimeSeries ( DataTable table, HydrologyNodeNetwor
                 ts.setDataUnits(units);
                 ts.setDataUnitsOriginal(units);
                 ts.setMissing(Double.NaN);
+                // Set some properties based on the network
+                ts.setProperty("NodeType",nodeType);
+                // TODO SAM 2014-07-13 need to set below
+                //ts.setProperty("NodeDist",nodeDist);
                 ts.allocateDataSpace();
                 tslist.add(ts);
             }
@@ -1226,25 +1297,41 @@ private boolean isNodeOfAnalysisType ( String nodeType, String [] nodeAnalysisTy
 
 /**
 Return the list of input time series that are used by a node, using TSID=nodeID.*.tsDataTypes.interval, where the
-data types are used one by one in the TSID pattern.
+data types are used one by one in the TSID pattern.  If the node has specific time series available via a TSID
+in the network, use that.
 @param nodeID the location identifier
 @param tsDataTypes time series data types to match
 @param interval time series interval to match
+@param nodeInputTSIDsMap map of NodeID as key to array of input TSIDs for the node, used to look up
+specific time series
 @param problems a list of problem strings that will be made visible in command status messages
 @return list of matching time series
 */
 private List<TS> lookupAnalysisInputTimeSeries ( String nodeID, String [] tsDataTypes,
-    TimeInterval interval, List<String> problems )
-{   TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
-    List<TS> tslist = new Vector<TS>();
-    // Do a processor request for each pattern
-    String tsid;
+    TimeInterval interval, HashMap<String, String[]> nodeInputTSIDsMap, List<String> problems )
+{   String routine = getClass().getSimpleName() + ".lookupAnalysisInputTimeSeries";
+    TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
+    List<TS> tslist = new ArrayList<TS>();
+    // First try to match a requested TSID
+    // Currently only allow one input TSID per node so just see if the input TSID list is not empty
+    Object o = nodeInputTSIDsMap.get(nodeID);
+    String [] nodeInputTSIDs = null;
+    // Position of TSID specified for the node - in future pass as parameter when node
+    // has multiple input time series.  For now the first time series is all that is requested.
+    int nodeInputTSIDsPos = 0;
+    if ( o != null ) {
+        nodeInputTSIDs = (String [])o;
+    }
+    // If here need to try to locate the time series using the default
     String TSList = "" + TSListType.ALL_MATCHING_TSID;
-    for ( int i = 0; i < tsDataTypes.length; i++ ) {
-        tsid = nodeID + ".*." + tsDataTypes[i] + "." + interval;
-        // Get the time series to process.  Allow TSID to be a pattern or specific time series...
-
+    if ( (nodeInputTSIDs != null) && (nodeInputTSIDs.length > 0) ) {
         PropList request_params = new PropList ( "" );
+        String tsid = nodeInputTSIDs[nodeInputTSIDsPos];
+        // Replace %I with the analysis interval (e.g., "Day").
+        // Can't use processor or time series method because %I is not known for those so do a simple string replace
+        tsid = tsid.replace("%I", "" + interval);
+        Message.printStatus(2,routine,"Looking up input time series for node \"" + nodeID + "\" matching TSID \"" + tsid + "\"" );
+        // Try to get the time series from the list in memory
         request_params.set ( "TSList", TSList );
         request_params.set ( "TSID", tsid );
         request_params.set ( "EnsembleID", null );
@@ -1254,20 +1341,74 @@ private List<TS> lookupAnalysisInputTimeSeries ( String nodeID, String [] tsData
         }
         catch ( Exception e ) {
             problems.add ( "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-            "\", TSID=\"" + tsid + ") from processor." );
+            "\", TSID=\"" + tsid + ") from processor for requested TSID." );
         }
-        PropList bean_PropList = bean.getResultsPropList();
-        Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-        if ( o_TSList == null ) {
-            problems.add("Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
-            "\" TSID=\"" + tsid + "\").");
+        if ( bean == null ) {
+            problems.add("Unable to find requested time series \"" + tsid + "\" for node \"" + nodeID + "\"");
         }
         else {
-            tslist = (List)o_TSList;
-            if ( tslist.size() == 0 ) {
-                problems.add("No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+            if ( o_TSList == null ) {
+                problems.add("Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+                "\" TSID=\"" + tsid + "\") - did not find requested TSID.");
+            }
+            else {
+                tslist = (List)o_TSList;
+            }
+        }
+        if ( tslist.size() == 0 ) {
+            problems.add("No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+            "\" TSID=\"" + tsid + "\") - did not find requested TSID.");
+        }
+        else {
+            Message.printStatus(2,routine,"Found input time series for node \"" + nodeID + "\" matching TSID \"" + tsid + "\"" );
+        }
+    }
+    else {
+        // Specific TSID was not given so use the default pattern with node data to form the TSID
+        // Do a processor request for each pattern
+        String tsid = null;
+        List<String> problems2 = new ArrayList<String>();
+        for ( int i = 0; i < tsDataTypes.length; i++ ) {
+            // Don't specify data source here - should not be important if other parts were matched
+            tsid = nodeID + ".*." + tsDataTypes[i] + "." + interval;
+            // Get the time series to process.  Allow TSID to be a pattern or specific time series...
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "TSList", TSList );
+            request_params.set ( "TSID", tsid );
+            request_params.set ( "EnsembleID", null );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+            }
+            catch ( Exception e ) {
+                problems.add ( "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+                "\", TSID=\"" + tsid + ") from processor." );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+            if ( o_TSList == null ) {
+                problems.add("Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
                 "\" TSID=\"" + tsid + "\").");
             }
+            else {
+                tslist = (List)o_TSList;
+                if ( tslist.size() == 0 ) {
+                    problems2.add("No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+                    "\" TSID=\"" + tsid + "\").");
+                }
+                else {
+                    // Was able to read the time series
+                    break;
+                }
+            }
+        }
+        if ( tslist.size() == 0 ) {
+            problems.addAll(problems2);
+        }
+        else {
+            Message.printStatus(2,routine,"Found input time series for node \"" + nodeID + "\" using default TSID \"" + tsid + "\"" );
         }
     }
     return tslist;
@@ -1477,6 +1618,12 @@ CommandWarningException, CommandException
             }
         }
     }
+    String TSIDColumn = parameters.getValue ( "TSIDColumn" );
+    String [] tsidColumns = new String[0];
+    if ( (TSIDColumn != null) && !TSIDColumn.equals("") ) {
+        tsidColumns = new String[1];
+        tsidColumns[0] = TSIDColumn;
+    }
     String Interval = parameters.getValue ( "Interval" );
     TimeInterval interval = TimeInterval.parseInterval(Interval);
     String GainMethod = parameters.getValue ( "GainMethod" );
@@ -1652,16 +1799,24 @@ CommandWarningException, CommandException
                     nodeWeightColumnNum = table.getFieldIndex(NodeWeightColumn);
                 }
                 int downstreamNodeIdColumnNum = table.getFieldIndex(DownstreamNodeIDColumn);
+                // Get column numbers for TSID columns, in case used as input to the analysis
+                int [] tsidColumnsNum = new int[tsidColumns.length];
+                for ( int i = 0; i < tsidColumns.length; i++ ) {
+                    tsidColumnsNum[i] = table.getFieldIndex(tsidColumns[i]);
+                }
+                // Initialize the network from table information using column numbers for primary data
                 initializeNetworkFromTable ( table, nodeIdColumnNum, nodeNameColumnNum,
                     nodeTypeColumnNum, nodeDistanceColumnNum, downstreamNodeIdColumnNum, network, problems );
+                // Create hashmap that indicates TSIDs to use as input
+                HashMap<String, String[]> nodeInputTSIDsMap = createInputTSIDMap ( table, nodeIdColumnNum, tsidColumnsNum );
                 // Create output time series for each node
-                List<TS> outputTSList = initializeNodeTimeSeries ( table, network, interval,
+                List<TS> outputTSList = initializeNodeTimeSeries ( table, nodeIdColumnNum, nodeTypeColumnNum, network, interval,
                     analysisStart, analysisEnd, Units, problems );
                 // Do the point flow analysis
                 analyzeNetworkPointFlow ( table, nodeIdColumnNum, nodeTypeColumnNum, nodeDistanceColumnNum, nodeWeightColumnNum,
                     nodeAddTypes, nodeAddDataTypes, nodeSubtractTypes, nodeSubtractDataTypes,
                     nodeOutflowTypes, nodeOutflowDataTypes, nodeFlowThroughTypes,
-                    network, outputTSList, interval, gainMethod, analysisStart, analysisEnd, problems );
+                    network, nodeInputTSIDsMap, outputTSList, interval, gainMethod, analysisStart, analysisEnd, problems );
                 // Report problems
                 for ( String problem : problems ) {
                     if ( problem.charAt(0) != ' ' ) {
@@ -1766,6 +1921,7 @@ public String toString ( PropList props )
     String NodeOutflowTypes = props.getValue( "NodeOutflowTypes" );
     String NodeOutflowDataTypes = props.getValue( "NodeOutflowDataTypes" );
     String NodeFlowThroughTypes = props.getValue( "NodeFlowThroughTypes" );
+    String TSIDColumn = props.getValue( "TSIDColumn" );
 	String Interval = props.getValue( "Interval" );
     String AnalysisStart = props.getValue( "AnalysisStart" );
     String AnalysisEnd = props.getValue( "AnalysisEnd" );
@@ -1856,6 +2012,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "NodeFlowThroughTypes=\"" + NodeFlowThroughTypes + "\"" );
+    }
+    if ( (TSIDColumn != null) && (TSIDColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSIDColumn=\"" + TSIDColumn + "\"");
     }
     if ( (Interval != null) && (Interval.length() > 0) ) {
         if ( b.length() > 0 ) {

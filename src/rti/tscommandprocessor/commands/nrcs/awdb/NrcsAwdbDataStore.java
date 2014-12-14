@@ -650,7 +650,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
     List<NrcsAwdbNetworkCode>networkList, List<String> hucList, double [] boundingBox, List<String> countyList,
     List<Element> elementListReq, Double elevationMin, Double elevationMax,
     TimeInterval interval, DateTime readStartReq, DateTime readEndReq, boolean readData )
-{   String routine = getClass().getName() + ".readTimeSeriesList";
+{   String routine = getClass().getSimpleName() + ".readTimeSeriesList";
     List<TS> tsList = new ArrayList<TS>();
     // First translate method parameters into types consistent with web service
     AwdbWebService ws = getAwdbWebService ();
@@ -876,10 +876,12 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
         Message.printStatus(2,routine,"After filtering to match duration (interval) and element code, have " +
             stationElementList.size() + " StationElements from NRCS AWDB getStationElements(" + stationTriplet +
             ") request remaining." );
+        int tscount = 0;
         for ( StationElement sel: stationElementList ) {
             // Process each element code that applies to the station
             elementCode = sel.getElementCd();
             tsid = state + "-" + stationID + "." + networkCode + "." + elementCode + "." + interval;
+            ++tscount;
             try {
                 ts = TSUtil.newTimeSeries(tsid,true);
                 ts.setIdentifier(tsid);
@@ -998,8 +1000,8 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             (endDateString.length() > 10 ? endDateString.substring(10) : "") ;
                     }
                 }
-                Message.printStatus(2, routine, "Getting data values for triplet ("+ iMeta + " of " +
-                    stationMetaData.size() + ")=\"" + stationTriplet +
+                Message.printStatus(2, routine, "Getting data values for triplet ("+ tscount + " of " +
+                    stationElementList.size() + ")=\"" + stationTriplet +
                     "\" elementCode="+elementCode + " duration=" + duration + " beginDate=" + beginDateString +
                     " endDate=" + endDateString);
                 if ( duration == Duration.INSTANTANEOUS ) {
@@ -1194,7 +1196,11 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             }
                             if ( nrcsBug ) {
                                 // FIXME SAM 2013-12-18 Need this check because of web service bug
-                                if ( !beginDateString.equals(data.getBeginDate())) {
+                                if ( data.getBeginDate() == null ) {
+                                    Message.printStatus(2, routine, "Begin date returned from getData() is null - unable to read time series.");
+                                    continue;
+                                }
+                                else if ( !beginDateString.equals(data.getBeginDate())) {
                                     String message = "Requested begin date " + beginDateString +
                                     " does not match getData() returned begin date string " + data.getBeginDate() +
                                     " - retrying query using start date of " + data.getBeginDate() + ".";

@@ -6,8 +6,9 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Hashtable;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,13 @@ This class initializes, checks, and runs the TableToTimeSeries() command.
 public class TableToTimeSeries_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
-protected final String _False = "False";
-protected final String _True = "True";
+/**
+Choices for HandleDuplicatesHow parameter.
+*/
+protected final String _Add = "Add";
+protected final String _UseFirstNonmissing = "UseFirstNonmissing";
+protected final String _UseLast = "UseLast";
+protected final String _UseLastNonmissing = "UseLastNonmissing";
 
 /**
 String that indicates that column names should be taken from the table.
@@ -214,6 +220,7 @@ throws InvalidCommandParameterException
     String Scenario = parameters.getValue("Scenario" );
     String Units = parameters.getValue("Units" );
     String MissingValue = parameters.getValue("MissingValue" );
+    String HandleDuplicatesHow = parameters.getValue("HandleDuplicatesHow" );
     String Alias = parameters.getValue("Alias" );
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
@@ -822,6 +829,16 @@ throws InvalidCommandParameterException
         List<String>tokens = StringUtil.breakStringList(MissingValue, ",", 0);
         setMissingValue ( tokens );
     }
+    if ( (HandleDuplicatesHow != null) && !HandleDuplicatesHow.equals("") &&
+        !HandleDuplicatesHow.equalsIgnoreCase(_Add) && !HandleDuplicatesHow.equalsIgnoreCase(_UseFirstNonmissing) &&
+        !HandleDuplicatesHow.equalsIgnoreCase(_UseLast) && !HandleDuplicatesHow.equalsIgnoreCase(_UseLastNonmissing)) {
+        message = "The HandleDuplicatesHow value \"" + HandleDuplicatesHow + "\" is not valid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify HandleDuplicatesHow as " + _Add + ", " + _UseFirstNonmissing + ", " +
+                " or " + _UseLast + " (default), or " + _UseLastNonmissing + "." ) );
+    }
 
 	// InputStart
 	if ((InputStart != null) && !InputStart.equals("")) {
@@ -874,33 +891,34 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
+    List<String> validList = new ArrayList<String>(25);
+    validList.add ( "TableID" );
     //valid_Vector.add ( "SkipRows" );
-    valid_Vector.add ( "DateTimeColumn" );
-    valid_Vector.add ( "DateTimeFormat" );
-    valid_Vector.add ( "DateColumn" );
-    valid_Vector.add ( "TimeColumn" );
-    valid_Vector.add ( "LocationTypeColumn" );
-    valid_Vector.add ( "LocationColumn" );
-    valid_Vector.add ( "DataSourceColumn" );
-    valid_Vector.add ( "DataTypeColumn" );
-    valid_Vector.add ( "ScenarioColumn" );
-    valid_Vector.add ( "UnitsColumn" );
-    valid_Vector.add ( "LocationType" );
-    valid_Vector.add ( "LocationID" );
-    valid_Vector.add ( "ValueColumn" );
-    valid_Vector.add ( "FlagColumn" );
-    valid_Vector.add ( "DataSource" );
-    valid_Vector.add ( "DataType" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "Scenario" );
-    valid_Vector.add ( "Units" );
-    valid_Vector.add ( "MissingValue" );
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    validList.add ( "DateTimeColumn" );
+    validList.add ( "DateTimeFormat" );
+    validList.add ( "DateColumn" );
+    validList.add ( "TimeColumn" );
+    validList.add ( "LocationTypeColumn" );
+    validList.add ( "LocationColumn" );
+    validList.add ( "DataSourceColumn" );
+    validList.add ( "DataTypeColumn" );
+    validList.add ( "ScenarioColumn" );
+    validList.add ( "UnitsColumn" );
+    validList.add ( "LocationType" );
+    validList.add ( "LocationID" );
+    validList.add ( "ValueColumn" );
+    validList.add ( "FlagColumn" );
+    validList.add ( "DataSource" );
+    validList.add ( "DataType" );
+    validList.add ( "Interval" );
+    validList.add ( "Scenario" );
+    validList.add ( "Units" );
+    validList.add ( "MissingValue" );
+    validList.add ( "HandleDuplicatesHow" );
+    validList.add ( "Alias" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -1158,6 +1176,9 @@ private DateTime getDateTimeFromRecord ( TableRecord rec, int row, int dateTimeP
         else if ( dateTimeObject instanceof DateTime ) {
             return (DateTime)dateTimeObject;
         }
+        else if ( dateTimeObject instanceof Date ) {
+            return new DateTime((Date)dateTimeObject);
+        }
         else {
             dateTimeString = "" + dateTimeObject; // Could be integer year
         }
@@ -1176,6 +1197,9 @@ private DateTime getDateTimeFromRecord ( TableRecord rec, int row, int dateTimeP
         }
         else if ( dateObject instanceof DateTime ) {
             return (DateTime)dateObject;
+        }
+        else if ( dateObject instanceof Date ) {
+            return new DateTime((Date)dateObject);
         }
         else {
             dateString = "" + dateObject; // Could be integer year
@@ -1373,6 +1397,7 @@ Read a list of time series from a multiple column data table.
 @param scenarios list of scenarios to use for time series
 @param units data list of data units to use for time series
 @param missing list of missing values to use for time series
+@param handleDuplicatesHow indicate how to handle duplicate date/times
 @param inputStartReq requested start of data (null to return all).
 @param inputEndReq requested end of data (null to return all).
 @param readData True to read data, false to only read the header information.
@@ -1384,13 +1409,16 @@ private List<TS> readTimeSeriesListMultiple ( DataTable table,
     int[][] skipRows, String locationTypeColumn, String locationColumn, String dataSourceColumn,
     String dataTypeColumn, String scenarioColumn, String unitsColumn,
     List<String> locationTypes, List<String> locationIds, List<String> dataSources, List<String> dataTypes, TimeInterval interval,
-    List<String> scenarios, List<String> units, List<String> missing,
+    List<String> scenarios, List<String> units, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
     DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
 throws IOException
-{   String routine = getClass().getName() + ".readTimeSeriesList";
+{   String routine = getClass().getSimpleName() + ".readTimeSeriesListMultiple";
     // Allocate the list
     List<TS> tslist = new Vector<TS>();
+    if ( handleDuplicatesHow == null ) {
+        handleDuplicatesHow = HandleDuplicatesHowType.USE_LAST; // Default
+    }
     // Translate column names to integer values to speed up processing below - these have been expanded for runtime
     // Any operations on table will fail if in discovery mode
     int dateTimePos = -1;
@@ -1458,11 +1486,6 @@ throws IOException
     catch ( Exception e ) {
         // Use empty array
     }
-    int locationTypePos = -1;
-    int dataSourcePos = -1;
-    int dataTypePos = -1;
-    int scenarioPos = -1;
-    int unitsPos = -1;
     if ( errorMessages.size() > 0 ) {
         // Don't continue if there are errors
         return tslist;
@@ -1480,11 +1503,7 @@ throws IOException
     TableRecord rec;
     // Loop through the data records and get the period from the data.
     // If single column, also get the unique list of identifiers and other metadata
-    String locationIdFromTable, locationFromTablePrev = "";
-    Hashtable<String,String> tsidsFromTable = new Hashtable<String,String>();
     Object o;
-    int iLoc, nLoc;
-    boolean foundLoc = false;
     // Lists of data extracted from time series in the table, used to initialize the time series
     List<String> locationTypesFromTable = new Vector<String>();
     List<String> locationIdsFromTable = new Vector<String>();
@@ -1639,7 +1658,7 @@ throws IOException
     Double value = null;
     String flag = null;
     int flagColumnPos;
-    TS ts;
+    TS ts = null;
     // All time series will have the same period since each time series shows up in every row
     for ( int its = 0; its < tslist.size(); its++ ) {
         ts = tslist.get(its);
@@ -1654,10 +1673,14 @@ throws IOException
             }
             // Loop through the values, taken from 1+ columns in the row
             for ( int ival = 0; ival < valuePos.length; ival++ ) {
+                // Get the time series, which will be in the order of the values, since the same order
+                // was used to initialize the time series above
+                ts = tslist.get(ival);
                 // Get the value...
                 o = rec.getFieldValue(valuePos[ival]);
                 if ( o == null ) {
-                    continue;
+                    // Do not continue here because HandleDuplicatesHow may actually set to missing value
+                    value = ts.getMissing();
                 }
                 else if ( o instanceof Double ) {
                     value = (Double)o;
@@ -1683,15 +1706,68 @@ throws IOException
                         flag = "" + o;
                     }
                 }
-                // Get the time series, which will be in the order of the values, since the same order
-                // was used to initialize the time series above
-                ts = tslist.get(ival);
                 // Set the value and flag in the time series
                 if ( (flag != null) && !flag.equals("") ) {
-                    ts.setDataValue(dt, value, flag, -1);
+                    if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_LAST ) {
+                        // Set to the last value even if missing
+                        ts.setDataValue(dt, value, flag, -1);
+                    }
+                    else if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_LAST_NONMISSING ) {
+                        // Set to the last value only if not missing
+                        if ( !ts.isDataMissing(value) ) {
+                            ts.setDataValue(dt, value, flag, -1);
+                        }
+                    }
+                    else if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_FIRST_NONMISSING ) {
+                        // Only set if value in time series is missing (has not been set)
+                        if ( ts.isDataMissing(ts.getDataValue(dt)) && !ts.isDataMissing(value) ) {
+                            ts.setDataValue(dt, value, flag, -1);
+                        }
+                    }
+                    else if ( handleDuplicatesHow == HandleDuplicatesHowType.ADD ) {
+                        if ( !ts.isDataMissing(value) ) {
+                            // If the existing value is missing, just set
+                            double oldValue = ts.getDataValue(dt);
+                            if ( ts.isDataMissing(oldValue) ) {
+                                ts.setDataValue(dt, value, flag, -1);
+                            }
+                            else {
+                                // Add to the previous value
+                                ts.setDataValue(dt, (oldValue + value), flag, -1);
+                            }
+                        }
+                    }
                 }
                 else {
-                    ts.setDataValue(dt, value);
+                    if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_LAST ) {
+                        // Set to the last value even if missing
+                        ts.setDataValue(dt, value);
+                    }
+                    else if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_LAST_NONMISSING ) {
+                        // Set to the last value only if not missing
+                        if ( !ts.isDataMissing(value) ) {
+                            ts.setDataValue(dt, value);
+                        }
+                    }
+                    else if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_FIRST_NONMISSING ) {
+                        // Only set if value in time series is missing (has not been set)
+                        if ( ts.isDataMissing(ts.getDataValue(dt)) && !ts.isDataMissing(value) ) {
+                            ts.setDataValue(dt, value);
+                        }
+                    }
+                    else if ( handleDuplicatesHow == HandleDuplicatesHowType.ADD ) {
+                        if ( !ts.isDataMissing(value) ) {
+                            // If the existing value is missing, just set
+                            double oldValue = ts.getDataValue(dt);
+                            if ( ts.isDataMissing(oldValue) ) {
+                                ts.setDataValue(dt, value);
+                            }
+                            else {
+                                // Add to the previous value
+                                ts.setDataValue(dt, (oldValue + value));
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1726,6 +1802,7 @@ Read a list of time series from a single column data table.
 @param scenario scenario to use for time series
 @param units data units to use for time series
 @param missing list of missing values in table to set to missing in time series (uses NaN in time series)
+@param handleDuplicatesHow indicate how to handle duplicate date/times
 @param inputStartReq requested start of data (null to return all).
 @param inputEndReq requested end of data (null to return all).
 @param readData True to read data, false to only read the header information.
@@ -1737,13 +1814,16 @@ private List<TS> readTimeSeriesListSingle ( DataTable table,
     int[][] skipRows, String locationTypeColumn, String locationColumn, String dataSourceColumn,
     String dataTypeColumn, String scenarioColumn, String unitsColumn, String locationType,
     String dataSource, String dataType, TimeInterval interval,
-    String scenario, String units, List<String> missing,
+    String scenario, String units, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
     DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
 throws IOException
-{   String routine = getClass().getName() + ".readTimeSeriesList";
+{   String routine = getClass().getSimpleName() + ".readTimeSeriesListSingle";
     // Allocate the list
-    List<TS> tslist = new Vector<TS>();
+    List<TS> tslist = new ArrayList<TS>();
+    if ( handleDuplicatesHow == null ) {
+        handleDuplicatesHow = HandleDuplicatesHowType.USE_LAST; // Default
+    }
     // Translate column names to integer values to speed up processing below - these have been expanded for runtime
     // Any operations on table will fail if in discovery mode
     int dateTimePos = -1;
@@ -2027,7 +2107,8 @@ throws IOException
             // Get the value...
             o = rec.getFieldValue(valuePos);
             if ( o == null ) {
-                continue;
+                // Do not continue here because HandleDuplicatesHow may actually set to missing value
+                value = ts.getMissing();
             }
             else if ( o instanceof Double ) {
                 value = (Double)o;
@@ -2066,10 +2147,66 @@ throws IOException
             }
             // Set the value and flag in the time series
             if ( (flag != null) && !flag.equals("") ) {
-                ts.setDataValue(dt, value, flag, -1);
+                if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_LAST ) {
+                    // Set to the last value even if missing
+                    ts.setDataValue(dt, value, flag, -1);
+                }
+                else if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_LAST_NONMISSING ) {
+                    // Set to the last value only if not missing
+                    if ( !ts.isDataMissing(value) ) {
+                        ts.setDataValue(dt, value, flag, -1);
+                    }
+                }
+                else if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_FIRST_NONMISSING ) {
+                    // Only set if value in time series is missing (has not been set)
+                    if ( ts.isDataMissing(ts.getDataValue(dt)) && !ts.isDataMissing(value) ) {
+                        ts.setDataValue(dt, value, flag, -1);
+                    }
+                }
+                else if ( handleDuplicatesHow == HandleDuplicatesHowType.ADD ) {
+                    if ( !ts.isDataMissing(value) ) {
+                        // If the existing value is missing, just set
+                        double oldValue = ts.getDataValue(dt);
+                        if ( ts.isDataMissing(oldValue) ) {
+                            ts.setDataValue(dt, value, flag, -1);
+                        }
+                        else {
+                            // Add to the previous value
+                            ts.setDataValue(dt, (oldValue + value), flag, -1);
+                        }
+                    }
+                }
             }
             else {
-                ts.setDataValue(dt, value);
+                if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_LAST ) {
+                    // Set to the last value even if missing
+                    ts.setDataValue(dt, value);
+                }
+                else if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_LAST_NONMISSING ) {
+                    // Set to the last value only if not missing
+                    if ( !ts.isDataMissing(value) ) {
+                        ts.setDataValue(dt, value);
+                    }
+                }
+                else if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_FIRST_NONMISSING ) {
+                    // Only set if value in time series is missing (has not been set)
+                    if ( ts.isDataMissing(ts.getDataValue(dt)) && !ts.isDataMissing(value) ) {
+                        ts.setDataValue(dt, value);
+                    }
+                }
+                else if ( handleDuplicatesHow == HandleDuplicatesHowType.ADD ) {
+                    if ( !ts.isDataMissing(value) ) {
+                        // If the existing value is missing, just set
+                        double oldValue = ts.getDataValue(dt);
+                        if ( ts.isDataMissing(oldValue) ) {
+                            ts.setDataValue(dt, value);
+                        }
+                        else {
+                            // Add to the previous value
+                            ts.setDataValue(dt, (oldValue + value));
+                        }
+                    }
+                }
             }
         }
         catch ( Exception e ) {
@@ -2143,6 +2280,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String ValueColumn = parameters.getValue("ValueColumn");
 	String FlagColumn = parameters.getValue("FlagColumn");
 	String Alias = parameters.getValue("Alias");
+	String HandleDuplicatesHow = parameters.getValue("HandleDuplicatesHow");
+	HandleDuplicatesHowType handleDuplicatesHow = HandleDuplicatesHowType.valueOfIgnoreCase(HandleDuplicatesHow);
 	String InputStart = parameters.getValue("InputStart");
     String InputEnd = parameters.getValue("InputEnd");
     
@@ -2397,7 +2536,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 (getDataSource().size() == 1 ? getDataSource().get(0) : null),
                 (getDataType().size() == 1 ? getDataType().get(0) : null), getInterval(),
                 (getScenario().size() == 1 ? getScenario().get(0) : null),
-                (getUnits().size() == 1 ? getUnits().get(0) : null), getMissingValue(),
+                (getUnits().size() == 1 ? getUnits().get(0) : null), getMissingValue(), handleDuplicatesHow,
                 InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
         }
         else {
@@ -2406,7 +2545,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 getTimeColumnRuntime(), getValueColumnsRuntime(), getFlagColumnsRuntime(), getSkipRows(),
                 LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
                 getLocationType(), getLocationIDRuntime(), getDataSource(), getDataType(), getInterval(), getScenario(),
-                getUnits(), getMissingValue(),
+                getUnits(), getMissingValue(), handleDuplicatesHow,
                 InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
         }
         
@@ -2641,6 +2780,7 @@ public String toString ( PropList props )
     String Scenario = props.getValue("Scenario" );
     String Units = props.getValue("Units" );
     String MissingValue = props.getValue("MissingValue" );
+    String HandleDuplicatesHow = props.getValue("HandleDuplicatesHow" );
     String Alias = props.getValue("Alias" );
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
@@ -2771,6 +2911,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("MissingValue=" + MissingValue );
+    }
+    if ((HandleDuplicatesHow != null) && (HandleDuplicatesHow.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("HandleDuplicatesHow=" + HandleDuplicatesHow );
     }
     if ((Alias != null) && (Alias.length() > 0)) {
         if (b.length() > 0) {

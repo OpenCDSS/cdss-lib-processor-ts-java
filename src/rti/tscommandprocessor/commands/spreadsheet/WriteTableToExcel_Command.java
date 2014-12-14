@@ -24,7 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -985,8 +984,14 @@ throws FileNotFoundException, IOException
                     }
                 }
                 String format = "0.";
-                for ( int i = 0; i < precision; i++ ) {
-                    format += "0";
+                if ( precision == 0 ) {
+                    // No decimal
+                    format= "0";
+                }
+                else {
+                    for ( int i = 0; i < precision; i++ ) {
+                        format += "0";
+                    }
                 }
                 cellStyles[col].setDataFormat(cellFormats[col].getFormat(format));
             }
@@ -1072,7 +1077,7 @@ throws FileNotFoundException, IOException
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( excelColumnTypes[includeColumnNumbers[col]] == Cell.CELL_TYPE_STRING ) {
+                            if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
                                 if ( precision > 0 ) {
                                     // Format according to the precision if floating point
                                     cellString = StringUtil.formatString(fieldValue,"%." + precision + "f");
@@ -1096,9 +1101,9 @@ throws FileNotFoundException, IOException
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( excelColumnTypes[includeColumnNumbers[col]] == Cell.CELL_TYPE_STRING ) {
+                            if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
                                 if ( precision > 0 ) {
-                                    // Format according to the precision if floating point
+                                    // Format according to the precision if string
                                     cellString = StringUtil.formatString(fieldValue,"%." + precision + "f");
                                 }
                                 else {
@@ -1120,7 +1125,7 @@ throws FileNotFoundException, IOException
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( excelColumnTypes[includeColumnNumbers[col]] == Cell.CELL_TYPE_STRING ) {
+                            if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
                                 cellString = "" + fieldValue;
                                 wbCell.setCellValue(cellString);
                             }
@@ -1137,7 +1142,7 @@ throws FileNotFoundException, IOException
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( excelColumnTypes[includeColumnNumbers[col]] == Cell.CELL_TYPE_STRING ) {
+                            if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
                                 cellString = "" + fieldValue;
                                 wbCell.setCellValue(cellString);
                             }
@@ -1161,7 +1166,7 @@ throws FileNotFoundException, IOException
                 }
                 catch ( Exception e ) {
                     // Log but let the output continue
-                    Message.printWarning(3, routine, "Unexpected error writing table row [" + rowOut + "][" +
+                    Message.printWarning(3, routine, "Unexpected error writing table [" + row + "][" +
                         includeColumnNumbers[col] + "] (" + e + ")." );
                     Message.printWarning(3, routine, e);
                 }

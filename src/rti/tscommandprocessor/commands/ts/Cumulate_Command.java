@@ -319,7 +319,7 @@ CommandWarningException, CommandException
         if ( StringUtil.isDouble(ResetValue) ) {
             ResetValue_Double = new Double(ResetValue);
         }
-        else if ( ResetValue.equalsIgnoreCase("DataVaue") ) {
+        else if ( ResetValue.equalsIgnoreCase(_DataValue) ) {
             resetValueToDataValue = true;
         }
     }

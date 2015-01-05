@@ -487,6 +487,9 @@ private void initialize ( JFrame parent, AnalyzeNetworkPointFlow_Command command
     JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "The following parameters control the analysis."),
         0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "Interval - will be used to find time series for each node (TSIDColumn parameter with %I will substitue this interval)."),
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Data interval:"),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

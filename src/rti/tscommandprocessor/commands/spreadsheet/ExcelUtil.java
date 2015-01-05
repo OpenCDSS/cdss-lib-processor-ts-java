@@ -15,7 +15,7 @@ public class ExcelUtil
 {
 
 /**
-Static hastable of open Excel files, to allow Excel manipulations to span multiple commands.
+Static hashtable of open Excel files, to allow Excel manipulations to span multiple commands.
 */
 private static Hashtable<String,Workbook> openWorkbooks = new Hashtable<String,Workbook> ();
 

@@ -276,7 +276,7 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     __DistinctColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DistinctColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to filter distinct combinations (default=copy all)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to filter distinct combinations (default=no distinct columns)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column map:"),

@@ -484,7 +484,8 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     __OutputLineFormat_JTextArea = new JTextArea (3,35);
     __OutputLineFormat_JTextArea.setLineWrap ( true );
     __OutputLineFormat_JTextArea.setWrapStyleWord ( true );
-    __OutputLineFormat_JTextArea.setToolTipText("Format used for each output line.");
+    __OutputLineFormat_JTextArea.setToolTipText(
+    	"Format used for each output line, including % TS specifiers, ${property}, ${ts:property}, ${tsdata:datetime}, ${tsdata:value}, ${tsdata:flag}.");
     __OutputLineFormat_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__OutputLineFormat_JTextArea),
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -539,6 +540,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField ( "", 10 );
+    __MissingValue_JTextField.setToolTipText("Specify Blank to output a blank.");
     __MissingValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

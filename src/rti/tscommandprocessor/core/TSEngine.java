@@ -4563,18 +4563,8 @@ throws Exception
             Message.printWarning ( 2, routine, message );
             ts = null;
         }
-        else if ( System.getProperty("os.arch").contains("64") && !System.getProperty("os.arch").equals("IA64N") ) {
-            //note: os.arch actually gets the bits of the JVM, not the OS
-            //but that still works because the JVM, not the OS, is loading the DLLs
-            //so a 32 bit JVM on a 64 bit OS can still use the DLLs (tested)
-            
-            //IA64N, despite its name, is not actually 64 bit. Not that I think we'll run into it,
-            //but accounting for edge cases is good
-            //see http://h30499.www3.hp.com/t5/System-Administration/Java-SDK-What-are-IA64N-and-IA64W/td-p/4863858
-            
-            //possible edge case: a 64 bit machine that does not say "64" in its architecture
-            //however, everything I've seen online does (amd64, x86_64, ppc64...)
-            Message.printWarning ( 2, routine,
+        else if ( IOUtil.getOSArch() == 64 ) {
+        	Message.printWarning ( 2, routine,
                 "HEC-DSS input type is not supported on 64 bit systems - cannot read time series \"" + tsidentString + "\".");
             ts = null;
         }

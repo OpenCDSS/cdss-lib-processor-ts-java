@@ -27,9 +27,9 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.ProcessManager;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 public class CompareFiles_JDialog extends JDialog
@@ -37,6 +37,7 @@ implements ActionListener, KeyListener, WindowListener
 {
 private final String __AddWorkingDirectoryFile1 = "Add Working Directory (File 1)";
 private final String __AddWorkingDirectoryFile2 = "Add Working Directory (File 2)";
+private final String __VisualDiff = "Visual Diff";
 private final String __RemoveWorkingDirectoryFile1 = "Remove Working Directory (File 1)";
 private final String __RemoveWorkingDirectoryFile2 = "Remove Working Directory (File 2)";
 
@@ -44,8 +45,9 @@ private SimpleJButton __browse1_JButton = null;
 private SimpleJButton __browse2_JButton = null;
 private SimpleJButton __path1_JButton = null;
 private SimpleJButton __path2_JButton = null;
-private SimpleJButton __cancel_JButton = null; // Cancel Button
-private SimpleJButton __ok_JButton = null; // Ok Button
+private SimpleJButton __visualDiff_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private JTextField __InputFile1_JTextField = null; // First file
 private JTextField __InputFile2_JTextField = null; // Second file
 private JTextField __CommentLineChar_JTextField = null;
@@ -54,8 +56,9 @@ private SimpleJComboBox __IgnoreWhitespace_JComboBox = null;
 private JTextField __AllowedDiff_JTextField = null;
 private SimpleJComboBox __IfDifferent_JComboBox =null;
 private SimpleJComboBox __IfSame_JComboBox =null;
-private JTextArea __command_JTextArea = null; // Command as JTextField
-private String __working_dir = null; // Working directory.
+private JTextArea __command_JTextArea = null;
+private String __working_dir = null;
+private String __diffProgram = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private CompareFiles_Command __command = null; // Command to edit
@@ -65,10 +68,11 @@ private boolean __ok = false; // Indicates whether the user pressed OK to close 
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param diffProgram visual difference program
 */
-public CompareFiles_JDialog ( JFrame parent, CompareFiles_Command command )
+public CompareFiles_JDialog ( JFrame parent, CompareFiles_Command command, String diffProgram )
 {	super(parent, true);
-	initialize ( parent, command );
+	initialize ( parent, command, diffProgram );
 }
 
 /**
@@ -176,6 +180,25 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+	else if ( o == __visualDiff_JButton ) {
+		// Run the diff program on the input and output files
+		// (they should have existed because the button will have been disabled if not)
+		String file1Path = IOUtil.toAbsolutePath(__working_dir,__InputFile1_JTextField.getText() );
+		String file2Path = IOUtil.toAbsolutePath(__working_dir,__InputFile2_JTextField.getText() );
+		String [] programAndArgsList = { __diffProgram, file1Path, file2Path };
+		try {
+			ProcessManager pm = new ProcessManager ( programAndArgsList,
+					0, // No timeout
+	                null, // Exit status indicator
+	                false, // Use command shell
+	                new File((String)__command.getCommandProcessor().getPropContents("WorkingDir")));
+			Thread t = new Thread ( pm );
+            t.start();
+		}
+		catch ( Exception e ) {
+			Message.printWarning(1, "", "Unable to run program (" + e + ")" );
+		}
+	}
 	else {
 	    // Choices...
 		refresh();
@@ -258,10 +281,12 @@ private void commitEdits ()
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param diffProgram visual diff program
 */
-private void initialize ( JFrame parent, CompareFiles_Command command )
+private void initialize ( JFrame parent, CompareFiles_Command command, String diffProgram )
 {	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
+	__diffProgram = diffProgram;
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
@@ -399,9 +424,6 @@ private void initialize ( JFrame parent, CompareFiles_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
-	refresh ();
-
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -415,8 +437,13 @@ private void initialize ( JFrame parent, CompareFiles_Command command )
 		__path2_JButton = new SimpleJButton(__RemoveWorkingDirectoryFile2,this);
 		button_JPanel.add ( __path2_JButton );
 	}
+	button_JPanel.add(__visualDiff_JButton = new SimpleJButton(__VisualDiff, this));
+	__visualDiff_JButton.setToolTipText("Run program to visually compare output files.");
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	
+	// Refresh the contents (put after buttons because want to enable/disable...
+	refresh ();
 
 	setTitle ( "Edit " + __command.getCommandName() + "() command" );
 
@@ -586,6 +613,18 @@ private void refresh ()
 		}
 		else {
 		    __path2_JButton.setText (__AddWorkingDirectoryFile2 );
+		}
+	}
+	// Disable the Visual Diff button if the program file does not exist or
+	// either of the files to compare do not exist
+	if ( __visualDiff_JButton != null ) {
+		if ( IOUtil.fileExists(__diffProgram) &&
+			IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile1_JTextField.getText())) &&
+			IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile2_JTextField.getText())) ) {
+			__visualDiff_JButton.setEnabled(true);
+		}
+		else {
+			__visualDiff_JButton.setEnabled(false);
 		}
 	}
 }

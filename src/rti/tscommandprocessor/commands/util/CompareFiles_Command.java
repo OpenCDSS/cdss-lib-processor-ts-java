@@ -163,7 +163,12 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new CompareFiles_JDialog ( parent, this )).ok();
+	Prop prop = IOUtil.getProp("DiffProgram");
+	String diffProgram = null;
+	if ( prop != null ) {
+		diffProgram = prop.getValue();
+	}
+	return (new CompareFiles_JDialog ( parent, this, diffProgram )).ok();
 }
 
 /**

@@ -89,7 +89,39 @@ throws URISyntaxException, IOException
     
     // The following as per the AWDB tutorial:
     // http://www.wcc.nrcs.usda.gov/web_service/AWDB_Web_Service_Tutorial.htm
-    AwdbWebService_Service lookup = new AwdbWebService_Service(serviceRootURI.toString());
+    int connectionTimeout = -1;
+    int receiptTimeout = -1;
+    String propVal = props.getValue("ConnectTimeout");
+    if ( (propVal != null) && !propVal.trim().equals("") ) {
+    	int factor = 1000;
+    	try {
+    		// If property ends with "ms", then value is milliseconds, otherwise it is seconds
+    		if ( propVal.toUpperCase().endsWith("MS") ) {
+    			propVal = propVal.substring(0,propVal.length() - 2).trim();
+    			factor = 1;
+    		}
+    		connectionTimeout = Integer.parseInt(propVal)*factor;
+    	}
+    	catch ( NumberFormatException e ) {
+    		// For now ignore
+    	}
+    }
+    propVal = props.getValue("ReadTimeout");
+    if ( (propVal != null) && !propVal.trim().equals("") ) {
+    	int factor = 1000;
+    	try {
+    		// If property ends with "ms", then value is milliseconds, otherwise it is seconds
+    		if ( propVal.toUpperCase().endsWith("MS") ) {
+    			propVal = propVal.substring(0,propVal.length() - 2).trim();
+    			factor = 1;
+    		}
+    		receiptTimeout = Integer.parseInt(propVal)*factor;
+    	}
+    	catch ( NumberFormatException e ) {
+    		// For now ignore
+    	}
+    }
+    AwdbWebService_Service lookup = new AwdbWebService_Service(serviceRootURI.toString(),connectionTimeout,receiptTimeout);
     setAwdbWebService ( lookup.getAwdbWebServiceImplPort() );
     
     // Initialize cached data
@@ -114,6 +146,9 @@ throws IOException, Exception
     String name = IOUtil.expandPropertyForEnvironment("Name",props.getValue("Name"));
     String description = IOUtil.expandPropertyForEnvironment("Description",props.getValue("Description"));
     String serviceRootURI = IOUtil.expandPropertyForEnvironment("ServiceRootURI",props.getValue("ServiceRootURI"));
+    // Properties read and stored in the PropList
+    // ConnectTimeout
+    // ReadTimeout
     
     // Get the properties and create an instance
 

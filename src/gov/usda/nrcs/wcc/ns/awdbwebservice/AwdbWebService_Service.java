@@ -3,12 +3,19 @@ package gov.usda.nrcs.wcc.ns.awdbwebservice;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 import java.util.logging.Logger;
+
 import javax.xml.namespace.QName;
+import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Service;
 import javax.xml.ws.WebEndpoint;
 import javax.xml.ws.WebServiceClient;
 import javax.xml.ws.WebServiceFeature;
+
+import com.sun.xml.internal.ws.client.BindingProviderProperties;
+
+import RTi.Util.Message.Message;
 
 
 /**
@@ -42,12 +49,45 @@ public class AwdbWebService_Service
     Construct a SOAP object to allow API interaction.
     This version is called when constructing a datastore.
     @param wsdlLocation the WSDL location for the AwdbWebService web service
+    @param connectTimeout milliseconds for connection timeout, or -1 to keep default
+    @param requestTimeout milliseconds for receive timeout, or -1 to keep default
     @throws MalformedURLException
     */
-    public AwdbWebService_Service(String wsdlLocation)
+    public AwdbWebService_Service(String wsdlLocation, int connectTimeout, int requestTimeout )
     throws MalformedURLException
     {
         super(new URL(wsdlLocation), new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebService"));
+        String routine = "AdwdWebService_Service";
+        // Set the timeout for web service requests for this web service instance - impacts all calls
+        // First get the web service port
+        AwdbWebService ws = getAwdbWebServiceImplPort();
+        // Debug - figure out what properties are set for the request context
+        //Map<String,Object> map = ((BindingProvider)ws).getRequestContext();
+        //for ( Map.Entry<String, Object> entry: map.entrySet() ) {
+        //	Message.printStatus(2, routine, entry.getKey() + "=\"" + entry.getValue() + "\"");
+        //}
+        //Message.printStatus(2,routine,"CONNECT_TIMEOUT="+BindingProviderProperties.CONNECT_TIMEOUT);
+        //Message.printStatus(2,routine,"REQUEST_TIMEOUT="+BindingProviderProperties.REQUEST_TIMEOUT);
+        if ( connectTimeout >= 0 ) {
+            // Set the connection timeout so web service call does not hang
+        	// CONNECT_TIMEOUT = com.sun.xml.internal.ws.connect.timeout
+        	// NOT the following...
+        	// javax.xml.ws.client.connectionTimeout
+        	// com.sun.xml.ws.connect.timeout
+        	//Message.printStatus(2,routine,"Setting NRCS AWDB datastore connectTimeout=" + connectTimeout +
+        	//	" (initial value=" + ((BindingProvider)ws).getRequestContext().get(BindingProviderProperties.CONNECT_TIMEOUT) + ").");
+        	((BindingProvider)ws).getRequestContext().put(BindingProviderProperties.CONNECT_TIMEOUT, "" + connectTimeout );
+        }
+        if ( requestTimeout >= 0 ) {
+        	// Set the receive timeout so web service call does not hang
+        	// REQUEST_TIMEOUT = com.sun.xml.internal.ws.request.timeout
+        	// NOT the following...
+        	// javax.xml.ws.client.receiveTimeout
+        	// com.sun.xml.ws.request.timeout
+        	//Message.printStatus(2,routine,"Setting NRCS AWDB datastore requestTimeout=" + requestTimeout +
+        	//	" (initial value=" + ((BindingProvider)ws).getRequestContext().get(BindingProviderProperties.REQUEST_TIMEOUT) + ").");
+        	((BindingProvider)ws).getRequestContext().put(BindingProviderProperties.REQUEST_TIMEOUT, "" + requestTimeout );
+        }
     }   
     
     public AwdbWebService_Service(URL wsdlLocation, QName serviceName) {
@@ -67,7 +107,7 @@ public class AwdbWebService_Service
     public AwdbWebService getAwdbWebServiceImplPort() {
         return super.getPort(new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebServiceImplPort"), AwdbWebService.class);
     }
-
+    
     /**
      * 
      * @param features

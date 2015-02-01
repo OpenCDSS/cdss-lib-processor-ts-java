@@ -589,7 +589,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     __ColumnCellTypes_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(excelFormat_JPanel, new JScrollPane(__ColumnCellTypes_JTextArea),
         1, yExcelFormat, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(excelFormat_JPanel, new JLabel ("Optional - indicate columns to set celll types (default=" +
+    JGUIUtil.addComponent(excelFormat_JPanel, new JLabel ("Optional - indicate columns to set cell types (default=" +
         __command._Auto + ")."),
         3, yExcelFormat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(excelFormat_JPanel, new SimpleJButton ("Edit","EditColumnCellTypes",this),
@@ -766,16 +766,16 @@ private void refresh ()
         if ( Worksheet != null ) {
             __Worksheet_JTextField.setText ( Worksheet );
         }
-		if ( ExcelAddress != null ) {
+		if ( (ExcelAddress != null) && !ExcelAddress.equals("") ) {
 			__ExcelAddress_JTextField.setText ( ExcelAddress );
 			// Also select the tab to be visible
 			__excelSpace_JTabbedPane.setSelectedIndex(0);
 		}
-		if ( ExcelNamedRange != null ) {
+		if ( (ExcelNamedRange != null) && !ExcelNamedRange.equals("") ) {
 			__ExcelNamedRange_JTextField.setText ( ExcelNamedRange );
 			__excelSpace_JTabbedPane.setSelectedIndex(1);
 		}
-        if ( ExcelTableName != null ) {
+        if ( (ExcelTableName != null) && !ExcelTableName.equals("") ) {
             __ExcelTableName_JTextField.setText ( ExcelTableName );
             __excelSpace_JTabbedPane.setSelectedIndex(2);
         }

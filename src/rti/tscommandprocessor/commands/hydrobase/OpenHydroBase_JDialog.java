@@ -134,7 +134,7 @@ private SimpleJComboBox	__UseStoredProcedures_JComboBox=null;
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
 
-private List		__available_OdbcDsn = null;	// Available ODBC DSN to list.
+//private List		__available_OdbcDsn = null;	// Available ODBC DSN to list.
 private OpenHydroBase_Command __command = null;	// Command to edit
 private boolean		__ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
@@ -406,6 +406,7 @@ private void initialize ( JFrame parent, Command command )
    	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - when using SQL Server."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
+   	/*
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "ODBC DSN:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OdbcDsn_JComboBox = new SimpleJComboBox ( false );
@@ -430,6 +431,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - only used with Microsoft Access."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        */
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input name:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

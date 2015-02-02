@@ -100,6 +100,7 @@ import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 
+import rti.tscommandprocessor.commands.spreadsheet.CloseExcelWorkbook_Command;
 // Spreadsheet commands
 import rti.tscommandprocessor.commands.spreadsheet.NewExcelWorkbook_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableCellsFromExcel_Command;
@@ -425,6 +426,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("CheckTimeSeriesStatistic") ) {
         return new CheckTimeSeriesStatistic_Command ();
     }
+	else if ( commandName.equalsIgnoreCase("CloseExcelWorkbook") ) {
+		return new CloseExcelWorkbook_Command ();
+	}
 	else if ( commandName.equalsIgnoreCase("CompareFiles") ) {
 		return new CompareFiles_Command ();
 	}

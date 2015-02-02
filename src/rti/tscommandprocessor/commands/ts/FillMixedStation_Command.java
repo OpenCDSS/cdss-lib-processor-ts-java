@@ -634,7 +634,7 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String mthd = "fillMixedStation_Command.runCommand", mssg = "";
+{	String mthd = "FillMixedStation_Command.runCommand", mssg = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;           	
 	int warning_count = 0;
@@ -859,7 +859,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		__MixedStationAnalysis.analyze();
 
     		// Fill the time series...
-    		if (Fill_boolean) __MixedStationAnalysis.fill();
+    		if (Fill_boolean) {
+    			__MixedStationAnalysis.fill();
+    		}
     	}
     	catch ( Exception e ) {
     		mssg = "Unexpected error running Mixed Station Analysis (" + e + ").";

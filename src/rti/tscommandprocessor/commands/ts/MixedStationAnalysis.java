@@ -219,7 +219,7 @@ all Analysis Methods and Transformations.
 @throws Exception in case of error.
 */
 public void analyze()
-{
+{	String routine = "MixedStationAnalysis.analyze";
 	//copy time series so we don't get messed up with filling
 	//doing the copy all at once initially is more memory efficient
 	List<TS> copyTS = new Vector<TS>();
@@ -243,7 +243,6 @@ public void analyze()
 	List<TSUtil_FillRegression> finalAnalyses = new Vector<TSUtil_FillRegression>();
 	for (TS dependent : __dependentTSList) {
 		//go through each dependent....
-		
 		//copy so filling does not mess up analysis....
 		TS newDependent = (TS) dependent.clone();
 		
@@ -269,9 +268,18 @@ public void analyze()
 			//dependent and independent must be different
 			//independent must have data
 			//the two must overlap
-			if (independent.equals(dependent) || !independent.hasData() ||
-				!(independent.getNonMissingDataDate1().between(dependent.getNonMissingDataDate1(), dependent.getNonMissingDataDate2()) ||
-					independent.getNonMissingDataDate2().between(dependent.getNonMissingDataDate1(), dependent.getNonMissingDataDate2()))) {
+			if ( independent.equals(dependent) ) {
+				continue;
+			}
+			Message.printStatus(2, routine, "Processing dependent time series \"" + dependent.getIdentifierString() + "\", independent time series \"" +
+			independent.getIdentifierString() + "\"" );
+			if ( !independent.hasData() ) {
+				Message.printStatus(2,routine,"Independent time series does not have data.");
+				continue;
+			}
+			if ( !(independent.getNonMissingDataDate1().between(dependent.getNonMissingDataDate1(), dependent.getNonMissingDataDate2()) ||
+				independent.getNonMissingDataDate2().between(dependent.getNonMissingDataDate1(), dependent.getNonMissingDataDate2()))) {
+				Message.printStatus(2,routine,"Dependent and independent time series do not overlap.");
 				continue;
 			}
 			
@@ -399,7 +407,7 @@ public void analyze()
 					analysis.getNumberOfEquations());
 			} catch (Exception e) {
 				// Something went wrong with saving statistics....
-				Message.printWarning(2, "MixedStationAnalysis", "Unable to save statistics to table");
+				Message.printWarning(3, "MixedStationAnalysis", "Unable to save statistics to table");
 			}
 		}
 	}

@@ -735,9 +735,12 @@ Instantiates the GUI components.
 	int yNotes = -1;
 	if ( __commandUI == null ) {
 		JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
-				"This command determines the best fit to fill the dependent time"
-				+ " series with data from the independent time series, and performs the filling."),
-				0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+			"This command implements the \"mixed station\" approach to filling time series using regression relationships."),
+			0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+		JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
+			"The command determines the best fit to fill the dependent time"
+			+ " series with data from the independent time series, and optionally also fills missing values in the dependent time series."),
+			0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 	}
 	else {
 		JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
@@ -923,10 +926,16 @@ Instantiates the GUI components.
 			4, yAnalysis, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
 	//valid relationship controls
-	int yRelate = 0;
+	int yRelate = -1;
 	JPanel mainRelate_JPanel = new JPanel();
 	mainRelate_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Criteria for Valid Relationships", mainRelate_JPanel );
+    
+	JGUIUtil.addComponent(mainRelate_JPanel, new JLabel(
+			"These parameters specify the best fit criteria and constraints on valid data set for analysis."),
+			0, ++yRelate, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+	JGUIUtil.addComponent(mainRelate_JPanel, new JLabel(""),
+			0, ++yRelate, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
 	// Best fit indicator
 	JGUIUtil.addComponent(mainRelate_JPanel, new JLabel ( "Best Fit:" ),
@@ -977,16 +986,22 @@ Instantiates the GUI components.
 	3, yRelate, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
 	//fill controls
-	int yFill = 0;
+	int yFill = -1;
 	JPanel mainFill_JPanel = new JPanel();
 	mainFill_JPanel.setLayout( new GridBagLayout() );
 	__main_JTabbedPane.addTab ( "Control Filling", mainFill_JPanel );
+	
+	JGUIUtil.addComponent(mainFill_JPanel, new JLabel(
+			"These parameters control whether to fill dependent time series after the regression relationships are computed."),
+			0, ++yFill, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+	JGUIUtil.addComponent(mainFill_JPanel, new JLabel(""),
+			0, ++yFill, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
 	//Fill or not?
 	if (__commandUI == null) {
 		//only show if using command, not tool
 		JGUIUtil.addComponent(mainFill_JPanel, new JLabel ("Fill:"),
-				0, yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
+				0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 		__Fill_JComboBox = new SimpleJComboBox ( false );
 		__Fill_JComboBox.addItem( "" );
 		__Fill_JComboBox.addItem( "" + __command._False );
@@ -1003,20 +1018,25 @@ Instantiates the GUI components.
 	}
 
 	// Fill Period
-	JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Fill period:" ),
-			0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
-	__FillStart_JTextField = new JTextField ( "", 25 );
-	__FillStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(mainFill_JPanel, __FillStart_JTextField,
-			1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
-	JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "to" ),
-			3, yFill, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__FillEnd_JTextField = new JTextField ( "", 25 );
-	__FillEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(mainFill_JPanel, __FillEnd_JTextField,
-			5, yFill, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
-	JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Optional - range of dates to fill (default=all time)" ),
-			6, yFill, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+    JGUIUtil.addComponent(mainFill_JPanel,new JLabel( "Fill start date/time:"),
+        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillStart_JTextField = new JTextField ( "", 10 );
+    __FillStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(mainFill_JPanel, __FillStart_JTextField,
+        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainFill_JPanel, new JLabel(
+        "Optional - fill start (default=fill all)."), 
+        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(mainFill_JPanel,new JLabel("Fill end date/time:"),
+        0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillEnd_JTextField = new JTextField ( "", 10 );
+    __FillEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(mainFill_JPanel, __FillEnd_JTextField,
+        1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainFill_JPanel, new JLabel(
+        "Optional - fill end (default=fill all)."), 
+        3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	//Fill Flag
 	JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Fill flag:" ), 
@@ -1040,10 +1060,16 @@ Instantiates the GUI components.
 			3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 
 	//panel for outputs
-	int yOutput = 0;
+	int yOutput = -1;
 	JPanel mainOutput_JPanel = new JPanel();
 	mainOutput_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Output Table", mainOutput_JPanel );
+    
+	JGUIUtil.addComponent(mainOutput_JPanel, new JLabel(
+		"These parameters specify how to save the analysis results in a table."),
+		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
+	JGUIUtil.addComponent(mainOutput_JPanel, new JLabel(""),
+		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 	
 	// Table to save statistics
 	JGUIUtil.addComponent(mainOutput_JPanel, new JLabel ( "Table ID for output:" ), 

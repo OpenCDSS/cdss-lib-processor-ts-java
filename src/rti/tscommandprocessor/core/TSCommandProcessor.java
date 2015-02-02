@@ -35,12 +35,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.Vector;
-
 import java.awt.event.WindowListener; // To know when graph window closes to close entire application
 
 import RTi.Util.IO.Command;
@@ -74,7 +74,6 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.YearType;
-
 import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
@@ -780,11 +779,43 @@ public DataStore getDataStoreForName ( String name, Class dataStoreClass )
 
 /**
 Return the list of all DataStore instances known to the processor.  These are named database
-connections that correspond to input type/name for time series.
+connections that correspond to input type/name for time series.  Active and inactive datastores are returned.
 */
 public List<DataStore> getDataStores()
 {
     return __tsengine.getDataStoreList();
+}
+
+/**
+Return the list of all DataStore instances known to the processor.  These are named database
+connections that correspond to input type/name for time series.
+*/
+public List<DataStore> getDataStores ( boolean activeOnly )
+{
+	// Get the list of all datastores...
+	List<DataStore> datastoreList = __tsengine.getDataStoreList();
+	if ( activeOnly ) {
+		// Loop through and remove datastores where status != 0
+		for ( int i = datastoreList.size() - 1; i >= 0; i-- ) {
+			DataStore ds = datastoreList.get(i);
+			if ( ds.getStatus() != 0 ) {
+				datastoreList.remove(i);
+			}
+		}
+	}
+	return datastoreList;
+}
+
+/**
+Return the list of data stores for the requested type (e.g., RiversideDBDataStore).  A non-null list
+is guaranteed, but the list may be empty.  Only active datastores are returned, those that are enabled
+and status is 0 (Ok).
+@param dataStoreClass the data store class to match (required).
+@return the list of data stores matching the requested type
+*/
+public List<DataStore> getDataStoresByType ( Class dataStoreClass )
+{
+	return getDataStoresByType ( dataStoreClass, true );
 }
 
 /**
@@ -793,9 +824,13 @@ is guaranteed, but the list may be empty.
 @param dataStoreClass the data store class to match (required).
 @return the list of data stores matching the requested type
 */
-public List<DataStore> getDataStoresByType ( Class dataStoreClass )
-{   List<DataStore> dataStoreList = new Vector();
+public List<DataStore> getDataStoresByType ( Class dataStoreClass, boolean activeOnly )
+{   List<DataStore> dataStoreList = new ArrayList<DataStore>();
     for ( DataStore dataStore : getDataStores() ) {
+    	// If only active are requested, then status must be 0
+    	if ( activeOnly && (dataStore.getStatus() != 0) ) {
+    		continue;
+    	}
         // Check for exact match on class
         if ( dataStore.getClass() == dataStoreClass ) {
             dataStoreList.add(dataStore);

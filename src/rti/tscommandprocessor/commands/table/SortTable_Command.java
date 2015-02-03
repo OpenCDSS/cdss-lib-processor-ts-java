@@ -6,7 +6,9 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -21,7 +23,9 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringDictionary;
 import RTi.Util.Table.DataTable;
 
 /**
@@ -35,6 +39,11 @@ Values for SortOrder parameter.
 */
 protected final String _Ascending = "Ascending";
 protected final String _Descending = "Descending";
+
+/**
+Columns to sort, initialized in checkCommandParameters().
+*/
+private String [] sortColumns = new String[0];
 
 /**
 Constructor.
@@ -79,22 +88,41 @@ throws InvalidCommandParameterException
                 message, "Specify the name of the column to sort." ) );
     }
     else {
-        if ( SortColumns.indexOf(",") >= 0 ) {
-            message = "Currently only a single sort column can be specified.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a single column name to sort." ) );
-        }
+    	this.sortColumns = SortColumns.split(",");
+    	for ( int i = 0; i < this.sortColumns.length; i++ ) {
+    		this.sortColumns[i] = this.sortColumns[i].trim();
+    	}
     }
     
-    if ( (SortOrder != null) && (SortOrder.length() != 0) && !SortOrder.equalsIgnoreCase(_Ascending) &&
-        !SortOrder.equalsIgnoreCase(_Descending)) {
-        message = "The sort order (" + SortOrder + ") is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the sort order as " + _Ascending + " (default) or " + _Descending + ".") );
+    if ( (SortOrder != null) && (SortOrder.length() != 0) ) {
+    	StringDictionary sortOrder = new StringDictionary(SortOrder,":",",");
+    	LinkedHashMap<String,String> map = sortOrder.getLinkedHashMap();
+    	Set<String> set = map.keySet();
+    	for ( String s : set ) {
+    		// Look for column in the sort columns list
+    		boolean found = false;
+    		for ( int i = 0; i < this.sortColumns.length; i++ ) {
+    			if ( s.equalsIgnoreCase(sortColumns[i]) ) {
+    				found = true;
+    				break;
+    			}
+    		}
+    		if ( !found ) {
+    			message = "Column \"" + s + "\" specified with sort order is not included in SortColumns.";
+    	        warning += "\n" + message;
+    	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+    	            new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Only specify sort order for columns that are being sorted." ) );
+    		}
+    		String order = map.get(s);
+    		if ( !order.equalsIgnoreCase(_Ascending) && !order.equalsIgnoreCase(_Descending)) {
+    	        message = "The sort order (" + order + ") for sort column (" + s + ") is invalid.";
+    	        warning += "\n" + message;
+    	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+    	            new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Specify the sort order as " + _Ascending + " or " + _Descending + ".") );
+    		}
+    	}
     }
  
 	// Check for invalid parameters...
@@ -127,7 +155,26 @@ public boolean editCommand ( JFrame parent )
 	return (new SortTable_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
-// Use base class parseCommand()
+/**
+Parse the command.  Need to handle legacy SortOrder that does not use a dictionary.
+@param commandString the string representation of the command
+*/
+public void parseCommand ( String commandString )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{
+	super.parseCommand(commandString);
+	// Check for SortOrder that does not have the dictionary ":" delimiter
+	// If found, replace with the new syntax on the single column to be sorted
+	PropList props = getCommandParameters();
+	String propValue = props.getValue("SortOrder");
+	if ( propValue != null ) {
+		if ( propValue.indexOf(":") < 0 ) {
+			// Does not use the dictionary notation so set to new syntax
+			String col = props.getValue("SortColumns");
+			props.set("SortOrder",col + ":" + propValue);
+		}
+	}
+}
 
 /**
 Run the command.
@@ -152,12 +199,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
-    String SortColumns = parameters.getValue ( "SortColumns" );
     String SortOrder = parameters.getValue ( "SortOrder" );
-    int sortOrder = 1; // default
-    if ( (SortOrder != null) && SortOrder.equalsIgnoreCase(_Descending) ) {
-        sortOrder = -1;
-    }
+    StringDictionary sortOrder = new StringDictionary(SortOrder,":",",");
+	int [] sortOrderArray = new int[sortColumns.length];
+	for ( int i = 0; i < sortColumns.length; i++ ) {
+		sortOrderArray[i] = 1; // Default
+		Object o = sortOrder.get(sortColumns[i]);
+		if ( o != null ) {
+			String s = (String)o;
+			if ( s.equalsIgnoreCase(_Descending) ) {
+				sortOrderArray[i] = -1;
+			}
+		}
+	}
     
     // Get the table to process.
 
@@ -202,7 +256,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	try {
     	// Sort the table...
-        table.sortTable ( SortColumns, sortOrder );
+        table.sortTable ( sortColumns, sortOrderArray );
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );

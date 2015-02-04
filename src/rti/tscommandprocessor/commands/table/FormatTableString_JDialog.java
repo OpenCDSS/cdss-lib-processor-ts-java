@@ -43,6 +43,7 @@ private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __InputColumns_JTextField = null;
 private StringFormatterSpecifiersJPanel __Format_JPanel = null;
 private SimpleJComboBox __OutputColumn_JComboBox = null;
+private JTextField __InsertBeforeColumn_JTextField = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -125,6 +126,7 @@ private void checkInput ()
     String InputColumns = __InputColumns_JTextField.getText().trim();
     String Format = __Format_JPanel.getText().trim();
     String OutputColumn = __OutputColumn_JComboBox.getSelected();
+    String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
 	PropList parameters = new PropList ( "" );
 
 	__error_wait = false;
@@ -140,6 +142,9 @@ private void checkInput ()
     }
     if ( OutputColumn.length() > 0 ) {
         parameters.set ( "OutputColumn", OutputColumn );
+    }
+    if ( InsertBeforeColumn.length() > 0 ) {
+        parameters.set ( "InsertBeforeColumn", InsertBeforeColumn );
     }
 
 	try {
@@ -161,23 +166,12 @@ private void commitEdits ()
     String InputColumns = __InputColumns_JTextField.getText().trim();
     String Format = __Format_JPanel.getText().trim();
     String OutputColumn = __OutputColumn_JComboBox.getSelected();
+    String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "InputColumns", InputColumns );
     __command.setCommandParameter ( "Format", Format );
     __command.setCommandParameter ( "OutputColumn", OutputColumn );
-
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
+    __command.setCommandParameter ( "InsertBeforeColumn", InsertBeforeColumn );
 }
 
 /**
@@ -218,7 +212,7 @@ private void initialize ( JFrame parent, FormatTableString_Command command, List
        "  %d, %4d, %04d, %-04d - include integer, pad with spaces for 4 digits, pad with zeros for 4 digits, left-justify" ), 
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "  %f, %8.2f, %#8.2f, %-8.0f - include float, use width of 8 and 2 decimals, force decimal point, left-justify" ), 
+       "  %f, %8.2f, %#8.2f, %-8.0f, %08.1f - include float, use width of 8 and 2 decimals, force decimal point, left-justify, pad with zeros on left" ), 
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Future enhancements may provide more cell range addressing - currently full columns are processed." ), 
@@ -269,6 +263,15 @@ private void initialize ( JFrame parent, FormatTableString_Command command, List
     JGUIUtil.addComponent(main_JPanel, __OutputColumn_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - output column name."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Insert before column:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InsertBeforeColumn_JTextField = new JTextField ( 30 );
+    __InsertBeforeColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __InsertBeforeColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - column to insert before (default=at end)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -351,6 +354,7 @@ private void refresh ()
     String InputColumns = "";
     String Format = "";
     String OutputColumn = "";
+    String InsertBeforeColumn = "";
 
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -360,6 +364,7 @@ private void refresh ()
         InputColumns = props.getValue ( "InputColumns" );
         Format = props.getValue ( "Format" );
 		OutputColumn = props.getValue ( "OutputColumn" );
+		InsertBeforeColumn = props.getValue ( "InsertBeforeColumn" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -394,17 +399,22 @@ private void refresh ()
                 __OutputColumn_JComboBox.setText( OutputColumn );
             }
         }
+        if ( InsertBeforeColumn != null ) {
+            __InsertBeforeColumn_JTextField.setText ( InsertBeforeColumn );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
 	InputColumns = __InputColumns_JTextField.getText();
 	Format = __Format_JPanel.getText().trim();
     OutputColumn = __OutputColumn_JComboBox.getSelected();
+    InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "InputColumns=" + InputColumns );
     props.add ( "Format=" + Format );
     props.add ( "OutputColumn=" + OutputColumn );
+    props.add ( "InsertBeforeColumn=" + InsertBeforeColumn );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

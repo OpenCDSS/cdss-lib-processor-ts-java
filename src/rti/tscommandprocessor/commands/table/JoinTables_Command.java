@@ -346,9 +346,8 @@ CommandWarningException, CommandException
 	        // Table is already in the processor so no need to resubmit
 	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names
 	        for ( String p : problems ) {
-	            Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-	            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
-	                p, "Check input." ) );
+	            Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, p );
+	            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING, p, "Check input." ) );
 	        }
         }
 	}

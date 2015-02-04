@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -80,12 +81,13 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "InputColumns" );
-    valid_Vector.add ( "Format" );
-    valid_Vector.add ( "OutputColumn" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "TableID" );
+    validList.add ( "InputColumns" );
+    validList.add ( "Format" );
+    validList.add ( "OutputColumn" );
+    validList.add ( "InsertBeforeColumn" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
@@ -148,6 +150,7 @@ CommandWarningException, CommandException
     }
     String Format = parameters.getValue ( "Format" );
     String OutputColumn = parameters.getValue ( "OutputColumn" );
+    String InsertBeforeColumn = parameters.getValue ( "InsertBeforeColumn" );
 
     // Get the table to process.
 
@@ -196,7 +199,7 @@ CommandWarningException, CommandException
     List<String> problems = new Vector<String>();
     try {
         DataTableStringFormatter dtm = new DataTableStringFormatter ( table );
-        dtm.format ( inputColumnNames, Format, OutputColumn, problems );
+        dtm.format ( inputColumnNames, Format, OutputColumn, InsertBeforeColumn, problems );
     }
     catch ( Exception e ) {
         message = "Unexpected error formatting string (" + e + ").";
@@ -257,6 +260,7 @@ public String toString ( PropList parameters )
     String InputColumns = parameters.getValue( "InputColumns" );
     String Format = parameters.getValue( "Format" );
     String OutputColumn = parameters.getValue( "OutputColumn" );
+    String InsertBeforeColumn = parameters.getValue( "InsertBeforeColumn" );
         
     StringBuffer b = new StringBuffer ();
 
@@ -283,6 +287,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "OutputColumn=\"" + OutputColumn + "\"" );
+    }
+    if ( (InsertBeforeColumn != null) && (InsertBeforeColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InsertBeforeColumn=\"" + InsertBeforeColumn + "\"" );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

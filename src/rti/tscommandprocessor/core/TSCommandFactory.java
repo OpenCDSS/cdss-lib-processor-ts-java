@@ -144,7 +144,8 @@ import rti.tscommandprocessor.commands.table.ReadTableFromFixedFormatFile_Comman
 import rti.tscommandprocessor.commands.table.SetTableValues_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.SortTable_Command;
-import rti.tscommandprocessor.commands.table.SplitTableRowIntoSequence_Command;
+import rti.tscommandprocessor.commands.table.SplitTableColumn_Command;
+import rti.tscommandprocessor.commands.table.SplitTableRow_Command;
 import rti.tscommandprocessor.commands.table.TableMath_Command;
 import rti.tscommandprocessor.commands.table.TableTimeSeriesMath_Command;
 import rti.tscommandprocessor.commands.table.TableToTimeSeries_Command;
@@ -950,8 +951,11 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("SortTimeSeries") ) {
         return new SortTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("SplitTableRowIntoSequence") ) {
-        return new SplitTableRowIntoSequence_Command ();
+    else if ( commandName.equalsIgnoreCase("SplitTableColumn") ) {
+        return new SplitTableColumn_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("SplitTableRow") ) {
+        return new SplitTableRow_Command ();
     }
 	else if ( commandName.equalsIgnoreCase("StartLog") ){
 		return new StartLog_Command ();

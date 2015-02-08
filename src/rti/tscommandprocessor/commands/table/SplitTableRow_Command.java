@@ -27,9 +27,9 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 
 /**
-This class initializes, checks, and runs the SplitTableRowIntoSequence() command.
+This class initializes, checks, and runs the SplitTableRow() command.
 */
-public class SplitTableRowIntoSequence_Command extends AbstractCommand implements Command
+public class SplitTableRow_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -41,9 +41,9 @@ protected final String _True = "True";
 /**
 Constructor.
 */
-public SplitTableRowIntoSequence_Command ()
+public SplitTableRow_Command ()
 {	super();
-	setCommandName ( "SplitTableRowIntoSequence" );
+	setCommandName ( "SplitTableRow" );
 }
 
 /**
@@ -169,7 +169,7 @@ public boolean editCommand ( JFrame parent )
         TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)getCommandProcessor(), this);
     // The command will be modified if changed...
-	return (new SplitTableRowIntoSequence_JDialog ( parent, this, tableIDChoices )).ok();
+	return (new SplitTableRow_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 // Use base class parseCommand()

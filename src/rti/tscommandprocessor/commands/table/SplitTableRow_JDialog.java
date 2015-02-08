@@ -30,7 +30,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class SplitTableRowIntoSequence_JDialog extends JDialog
+public class SplitTableRow_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
@@ -47,7 +47,7 @@ private JTextField __MinimumEndSegmentLength_JTextField = null;
 private SimpleJComboBox __DeleteOriginalRow_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
-private SplitTableRowIntoSequence_Command __command = null;
+private SplitTableRow_Command __command = null;
 private JFrame __parent = null;
 private boolean __ok = false;
 
@@ -57,7 +57,7 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public SplitTableRowIntoSequence_JDialog ( JFrame parent, SplitTableRowIntoSequence_Command command, List<String> tableIDChoices )
+public SplitTableRow_JDialog ( JFrame parent, SplitTableRow_Command command, List<String> tableIDChoices )
 {	super(parent, true);
 	initialize ( parent, command, tableIDChoices );
 }
@@ -156,7 +156,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, SplitTableRowIntoSequence_Command command, List<String> tableIDChoices )
+private void initialize ( JFrame parent, SplitTableRow_Command command, List<String> tableIDChoices )
 {	__command = command;
     __parent = parent;
 

@@ -9,9 +9,7 @@ import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
-
 import RTi.TS.TS;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -677,15 +675,28 @@ CommandWarningException, CommandException
         DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
             DataStore, ReclamationHDBDataStore.class );
         if ( dataStore == null ) {
-            message = "Could not get data store for name \"" + DataStore + "\" to write time series.";
+            message = "Could not get datastore for name \"" + DataStore + "\" to query data.";
             Message.printWarning ( 2, routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a ReclamationHDB database connection has been opened with name \"" +
+                    message, "Verify that a ReclamationHDB datastore has been enabled with name \"" +
                     DataStore + "\"." ) );
-            throw new RuntimeException ( message );
+            throw new CommandException ( message );
         }
-        ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
+        // Check the connection in case the connection timed out.
+    	ReclamationHDBDataStore ds = (ReclamationHDBDataStore)dataStore;
+    	ds.checkDatabaseConnection();
+        ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)ds.getDMI();
+        if ( (dmi == null) || !dmi.isOpen() ) {
+            message = "Database connection for datastore \"" + DataStore + "\" is not open.";
+            Message.printWarning ( 2, routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that a ReclamationHDB datastore has been enabled with name \"" +
+                    DataStore + "\"." ) );
+            throw new CommandException ( message );
+        }
+        
         Message.printStatus ( 2, routine, "Writing ReclamationHDB time series to data store \"" + dataStore.getName() + "\"" );
         String loadingApp = "TSTool";
         boolean doWrite = true;

@@ -70,27 +70,33 @@ public DataStore create ( PropList props )
             readTimeout = 0;
         }
     }
+    // Create an initial datastore instance here with null DMI placeholder
+    ReclamationHDBDataStore ds = new ReclamationHDBDataStore ( name, description, null );
+    ReclamationHDB_DMI dmi = null;
     try {
-        ReclamationHDB_DMI dmi = new ReclamationHDB_DMI (
+        dmi = new ReclamationHDB_DMI (
             databaseEngine, // OK if null, will use SQL Server
             databaseServer, // Required
             databaseName, // Required
             port,
             systemLogin,
             systemPassword );
-        // Open the database connection
+        // Set the datastore here so it has a DMI instance, but DMI instance will not be open
+        ds = new ReclamationHDBDataStore ( name, description, dmi );
         dmi.setTSIDStyleSDI ( tsidStyleSDI );
         dmi.setReadNHourEndDateTime( readNHourEndDateTime );
         dmi.setLoginTimeout(connectTimeout);
         dmi.setReadTimeout(readTimeout);
+        // Open the database connection
         dmi.open();
-        return new ReclamationHDBDataStore ( name, description, dmi );
     }
     catch ( Exception e ) {
-        // TODO SAM 2010-09-02 Wrap the exception because need to move from default Exception
+        // Don't rethrow an exception because want datastore to be created with unopened DMI
         Message.printWarning(3,routine,e);
-        throw new RuntimeException ( "Error opening database connection", e );
+        ds.setStatus(1);
+        ds.setStatusMessage("" + e);
     }
+    return ds;
 }
 
 }

@@ -10,10 +10,8 @@ import javax.swing.JFrame;
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
-
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
@@ -510,15 +508,27 @@ CommandWarningException, CommandException
         DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
             DataStore, ReclamationHDBDataStore.class );
         if ( dataStore == null ) {
-            message = "Could not get data store for name \"" + DataStore + "\" to query data.";
+            message = "Could not get datastore for name \"" + DataStore + "\" to query data.";
             Message.printWarning ( 2, routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a ReclamationHDB database connection has been opened with name \"" +
+                    message, "Verify that a ReclamationHDB datastore has been enabled with name \"" +
                     DataStore + "\"." ) );
-            throw new Exception ( message );
+            throw new CommandException ( message );
         }
-        ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
+        // Check the connection in case the connection timed out.
+    	ReclamationHDBDataStore ds = (ReclamationHDBDataStore)dataStore;
+    	ds.checkDatabaseConnection();
+        ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)ds.getDMI();
+        if ( (dmi == null) || !dmi.isOpen() ) {
+            message = "Database connection for datastore \"" + DataStore + "\" is not open.";
+            Message.printWarning ( 2, routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that a ReclamationHDB datastore has been enabled with name \"" +
+                    DataStore + "\"." ) );
+            throw new CommandException ( message );
+        }
 
 	    if ( (DataType != null) && !DataType.equals("") ) {
 	        Message.printStatus(2,routine,"Reading time series using input filters.");

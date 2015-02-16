@@ -33,8 +33,6 @@ import javax.swing.event.DocumentListener;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
-
-import RTi.DMI.DatabaseDataStore;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.InputFilter_JPanel;
@@ -96,7 +94,6 @@ private JFrame __parent = null;
 
 private boolean __ignoreEvents = false; // Used to ignore cascading events when initializing the components
 
-private ReclamationHDBDataStore __dataStore = null; // selected ReclamationHDBDataStore
 private ReclamationHDB_DMI __dmi = null; // ReclamationHDB_DMI to do queries.
 
 private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new ArrayList<ReclamationHDB_SiteDataType>(); // Corresponds to displayed list
@@ -578,14 +575,18 @@ Return the selected datastore, used to provide intelligent parameter choices.
 */
 private ReclamationHDBDataStore getSelectedDataStore ()
 {   
+	// Get all matching data stores, not just the active ones
     List<DataStore> dataStoreList =
         ((TSCommandProcessor)__command.getCommandProcessor()).getDataStoresByType(
-            ReclamationHDBDataStore.class );
+            ReclamationHDBDataStore.class, false );
     String dataStoreNameSelected = __DataStore_JComboBox.getSelected();
     if ( (dataStoreNameSelected != null) && !dataStoreNameSelected.equals("") ) {
         for ( DataStore dataStore : dataStoreList ) {
             if ( dataStore.getName().equalsIgnoreCase(dataStoreNameSelected) ) {
-                return (ReclamationHDBDataStore)dataStore;
+            	// Check the connection in case the connection timed out.
+            	ReclamationHDBDataStore ds = (ReclamationHDBDataStore)dataStore;
+            	ds.checkDatabaseConnection();
+                return ds;
             }
         }
     }
@@ -750,8 +751,9 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
+    // Get all datastores for ReclamationHDB, even if not open (DMI open will be checked when selected).
     List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
-        ReclamationHDBDataStore.class );
+        ReclamationHDBDataStore.class, false );
     for ( DataStore dataStore: dataStoreList ) {
         __DataStore_JComboBox.addItem ( dataStore.getName() );
     }
@@ -2547,8 +2549,12 @@ private void response ( boolean ok )
 Set the internal data based on the selected datastore.
 */
 private void setDMIForSelectedDataStore()
-{   __dataStore = getSelectedDataStore();
-    __dmi = (ReclamationHDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
+{   ReclamationHDBDataStore ds = getSelectedDataStore();
+	if ( ds == null ) {
+		Message.printWarning(1,"ReadReclamationHDB","Unable to match datastore \"" +
+			__DataStore_JComboBox.getSelected() + "\" in command  with available datastores.");
+	}
+    __dmi = (ReclamationHDB_DMI)ds.getDMI();
 }
 
 /**

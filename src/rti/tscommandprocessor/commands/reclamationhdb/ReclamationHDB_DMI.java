@@ -2728,17 +2728,19 @@ throws SQLException
         sw.stop();
         Message.printStatus(2,routine,"Time to execute query was " + sw.getSeconds() + " seconds." );
         results = toReclamationHDBSiteTimeSeriesMetadataList ( routine, tsType, isEnsembleTrace, timeStep, rs );
-
     }
     catch (SQLException e) {
         Message.printWarning(3, routine, "Error getting object/site/datatype data from HDB (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
     finally {
-        rs.close();
-        stmt.close();
+    	if ( rs != null ) {
+    		rs.close();
+    	}
+    	if ( stmt != null ) {
+    		stmt.close();
+    	}
     }
-    
     return results;
 }
 
@@ -3532,6 +3534,7 @@ private void startKeepAliveThread()
         final long freqms = freq*1000;
         Runnable r = new Runnable() {
             public void run() {
+            	// TODO SAM 2015-02-14 doesn't this need a loop?
                 try {
                     // Put in some protection against injection by checking for keywords other than SELECT
                     String sql = __keepAliveSql.toUpperCase();

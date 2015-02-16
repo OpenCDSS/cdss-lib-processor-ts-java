@@ -4761,10 +4761,13 @@ throws Exception
 	}
 	else if ((dataStore != null) && (dataStore instanceof ReclamationHDBDataStore) ) {
         // New style TSID~dataStoreName for ReclamationHDB...
-        ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
-        if ( dmi == null ) {
-            Message.printWarning ( 3, routine, "Unable to get ReclamationHDB connection for " +
-            "data store name \"" + inputName +  "\".  Unable to read time series." );
+        // Check the connection in case the connection timed out.
+    	ReclamationHDBDataStore ds = (ReclamationHDBDataStore)dataStore;
+    	ds.checkDatabaseConnection();
+        ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)ds.getDMI();
+        if ( (dmi == null) || !dmi.isOpen() ) {
+            Message.printWarning ( 3, routine, "Unable to get open ReclamationHDB connection for " +
+            "datastore name \"" + inputName +  "\".  Unable to read time series." );
             ts = null;
         }
         else {

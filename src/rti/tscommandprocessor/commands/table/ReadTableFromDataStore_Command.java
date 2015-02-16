@@ -484,7 +484,7 @@ CommandWarningException, CommandException
             }
             ResultSetToDataTableFactory factory = new ResultSetToDataTableFactory();
             String tableID = TSCommandProcessorUtil.expandParameterValue(processor,this,TableID);
-            table = factory.createDataTable(rs, tableID);
+            table = factory.createDataTable(dmi.getDatabaseEngineType(), rs, tableID);
             
             // Set the table in the processor...
             

@@ -19,6 +19,7 @@ import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 // Datastream commands
 import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
 
+import rti.tscommandprocessor.commands.datastore.CloseDataStore_Command;
 // DateValue commands
 import rti.tscommandprocessor.commands.datastore.CreateDataStoreDataDictionary_Command;
 import rti.tscommandprocessor.commands.datastore.DeleteDataStoreTableRows_Command;
@@ -272,6 +273,7 @@ import rti.tscommandprocessor.commands.util.SetProperty_Command;
 import rti.tscommandprocessor.commands.util.SetWorkingDir_Command;
 import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Command;
 import rti.tscommandprocessor.commands.util.TestCommand_Command;
+import rti.tscommandprocessor.commands.util.Wait_Command;
 import rti.tscommandprocessor.commands.util.WebGet_Command;
 import rti.tscommandprocessor.commands.util.WritePropertiesToFile_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
@@ -427,6 +429,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("CheckTimeSeriesStatistic") ) {
         return new CheckTimeSeriesStatistic_Command ();
     }
+	else if ( commandName.equalsIgnoreCase("CloseDataStore") ) {
+		return new CloseDataStore_Command ();
+	}
 	else if ( commandName.equalsIgnoreCase("CloseExcelWorkbook") ) {
 		return new CloseExcelWorkbook_Command ();
 	}
@@ -996,6 +1001,9 @@ throws UnknownCommandException
 
 	// "W" commands...
 
+    else if ( commandName.equalsIgnoreCase("Wait") ) {
+        return new Wait_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("WebGet") ) {
         return new WebGet_Command ();
     }

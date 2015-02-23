@@ -1,18 +1,3 @@
-// ----------------------------------------------------------------------------
-// fillUsingDiversionComments_JDialog - editor for fillUsingDiversionComments()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2007-01-25	Kurt Tometich, RTi		Initial Version.
-// 2007-01-29	KAT, RTi		Added components needed for new CIU
-//							parameters -> FillUsingCIU and FillUsingCIUFlag.
-// 2007-02-26	SAM, RTi		Clean up code based on Eclipse feedback.
-// 2007-03-02	SAM, RTi		Add notes to dialog for CIU.
-//							Use JTextArea for command.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.hydrobase;
 
 import java.awt.FlowLayout;
@@ -25,7 +10,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -34,55 +18,58 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+/**
+Editor for FillUsingDiversionComments command.
+*/
 public class FillUsingDiversionComments_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private String __TRUE = "True";
-private String __FALSE = "False";
-
 private FillUsingDiversionComments_Command __command = null;
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-						__ok_JButton = null;	// Ok Button
-private JTextArea	__command_JTextArea= null;// Command as JTextArea
-private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series alias
-private SimpleJComboBox	__RecalcLimits_JComboBox = null; // Field for recalculation indicator
-private SimpleJComboBox __FillUsingCIU_JComboBox = null; // Flag for using CIU value
-private JTextField	__FillStart_JTextField = null; // Field for fill start
-private JTextField	__FillEnd_JTextField = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private JTextArea	__command_JTextArea= null;
+private JTabbedPane __main_JTabbedPane = null;
+private SimpleJComboBox __TSList_JComboBox = null;
+private JLabel __TSID_JLabel = null;
+private SimpleJComboBox	__TSID_JComboBox = null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JTextField __FillStart_JTextField = null;
+private JTextField __FillEnd_JTextField = null;
+private JTextField __FillFlag_JTextField = null;
+private JTextField __FillFlagDescription_JTextField = null;
+private SimpleJComboBox	__RecalcLimits_JComboBox = null;
+private SimpleJComboBox __FillUsingCIU_JComboBox = null;
+private JTextField __FillUsingCIUFlag_JTextField = null;
+private JTextField __FillUsingCIUFlagDescription_JTextField = null;
 
-private JTextField	__FillFlag_JTextField = null; // Flag for data filling
-private JTextField __FillUsingCIUFlag_JTextField = null; // CIU value
-
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK button
-										// has been pressed.
+private boolean __error_wait = false; // Is there an error waiting to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
-@param tsids Time series identifiers for time series available to fill.
 */
-public FillUsingDiversionComments_JDialog (	JFrame parent, Command command )
+public FillUsingDiversionComments_JDialog (	JFrame parent, FillUsingDiversionComments_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -108,24 +95,60 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __TSID_JComboBox.setEnabled(false);
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JComboBox.setEnabled(true);
+        __EnsembleID_JLabel.setEnabled ( true );
+    }
+    else {
+        __EnsembleID_JComboBox.setEnabled(false);
+        __EnsembleID_JLabel.setEnabled ( false );
+    }
+}
+
+/**
 Check the user input for errors and set __error_wait accordingly.
 */
 private void checkInput ()
 {	
 	PropList props = new PropList ( "" );
+    String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+	String FillFlagDescription = __FillFlagDescription_JTextField.getText().trim();
 	String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
 	String FillUsingCIU = __FillUsingCIU_JComboBox.getSelected();
 	String FillUsingCIUFlag = __FillUsingCIUFlag_JTextField.getText().trim();
+	String FillUsingCIUFlagDescription = __FillUsingCIUFlagDescription_JTextField.getText().trim();
 	
 	__error_wait = false;
 
+    if ( TSList.length() > 0 ) {
+    	props.set ( "TSList", TSList );
+    }
 	if ( TSID.length() > 0 ) {
 		props.set ( "TSID", TSID );
 	}
+    if ( EnsembleID.length() > 0 ) {
+    	props.set ( "EnsembleID", EnsembleID );
+    }
 	if ( FillStart.length() > 0 ) {
 		props.set ( "FillStart", FillStart );
 	}
@@ -135,6 +158,9 @@ private void checkInput ()
 	if ( FillFlag.length() > 0 ) {
 		props.set ( "FillFlag", FillFlag );
 	}
+	if ( FillFlagDescription.length() > 0 ) {
+		props.set ( "FillFlagDescription", FillFlagDescription );
+	}
 	if ( RecalcLimits.length() > 0 ) {
 		props.set( "RecalcLimits", RecalcLimits );
 	}
@@ -143,6 +169,9 @@ private void checkInput ()
 	}
 	if ( FillUsingCIUFlag.length() > 0 ) {
 		props.set( "FillUsingCIUFlag", FillUsingCIUFlag );
+	}
+	if ( FillUsingCIUFlagDescription.length() > 0 ) {
+		props.set( "FillUsingCIUFlagDescription", FillUsingCIUFlagDescription );
 	}
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -160,39 +189,29 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	
+    String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+	String FillFlagDescription = __FillFlagDescription_JTextField.getText().trim();
 	String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
 	String FillUsingCIU = __FillUsingCIU_JComboBox.getSelected();
 	String FillUsingCIUFlag = __FillUsingCIUFlag_JTextField.getText().trim();
+	String FillUsingCIUFlagDescription = __FillUsingCIUFlagDescription_JTextField.getText().trim();
 	
+    __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "FillStart", FillStart );
 	__command.setCommandParameter ( "FillEnd", FillEnd );
 	__command.setCommandParameter ( "FillFlag", FillFlag );
+	__command.setCommandParameter ( "FillFlagDescription", FillFlagDescription );
 	__command.setCommandParameter ( "RecalcLimits", RecalcLimits );
 	__command.setCommandParameter ( "FillUsingCIU", FillUsingCIU );
 	__command.setCommandParameter ( "FillUsingCIUFlag", FillUsingCIUFlag );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__RecalcLimits_JComboBox = null;
-	__FillStart_JTextField = null;
-	__FillEnd_JTextField = null;
-	__FillFlag_JTextField = null;
-	__FillUsingCIUFlag_JTextField = null;
-	__FillUsingCIU_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__ok_JButton = null;
-	super.finalize ();
+	__command.setCommandParameter ( "FillUsingCIUFlagDescription", FillUsingCIUFlagDescription );
 }
 
 /**
@@ -200,8 +219,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (FillUsingDiversionComments_Command)command;
+private void initialize ( JFrame parent, FillUsingDiversionComments_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 
@@ -213,134 +232,166 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"This command can be used to fill monthly, daily, and" +
-	" yearly diversions and reservoir releases for the HydroBase input type." ), 
-	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"This command can be used to specify additional zero values for daily, monthly, and" +
+		" yearly diversions and reservoir releases for HydroBase database time series." ), 
+		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"The diversion comments in HydroBase indicate years when no" +
-	" water was carried for an entire irrigation year." ), 
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Consequently, missing values in diversion time series" +
-	" can be set to zero for the period November to October."),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"If a yearly time series is filled, the zero value in an" +
-	" irrigation year will be matched with the time series year."),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"For the fill period, use standard date formats " +
-	"appropriate for the date precision of the time series."),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"The recalculate limits flag, if set to True, will cause the " +
-	"average to be recalculated, for use in other fill commands (see CIU note below)."), 
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"For example, use True with a fillUsingDiversionComments() " +
-	"command immediately after reading diversions."), 
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "If the \"currently in use\" (CIU) flag is used for filling, additional zeros " +
-    "will be added and limits are recalculated a specific way (see documentation)."), 
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"For the fill period, use standard date formats " +
+		"appropriate for the date precision of the time series."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to fill:" ), 
-	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TSID_JComboBox = new SimpleJComboBox ( false );
-    
-    int size = 0;
-    
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
+
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-			(TSCommandProcessor)__command.getCommandProcessor(), __command );
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
-    if ( tsids != null ) {
-    	size = tsids.size();
-    }
-    if ( size == 0 ) {
-    	tsids = new Vector();
-    }
-   	__TSID_JComboBox.setData ( tsids );
-	// Always allow a "*" to let all time series be filled...
-	__TSID_JComboBox.add ( "*" );
-	__TSID_JComboBox.addItemListener ( this );
-	    JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Fill start date:"),
-	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillStart_JTextField = new JTextField ( "", 10 );
 	__FillStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
-	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Optional - start of period to fill (default=fill entire period)."), 
-	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Optional - start of period to fill (default=fill entire period)."), 
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Fill end date:"),
-	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillEnd_JTextField = new JTextField ( "", 10 );
 	__FillEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
-	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Optional - end of period to fill (default=fill entire period)."), 
-	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Optional - end of period to fill (default=fill entire period)."), 
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for diversion comment choices
+    int yComment = -1;
+    JPanel comment_JPanel = new JPanel();
+    comment_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Diversion comments", comment_JPanel );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
-    0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"The diversion comments in HydroBase indicate years when no" +
+		" water was carried for an entire irrigation year." ), 
+		0, ++yComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"Consequently, missing values in diversion time series" +
+		" can be set to zero for the period November to October."),
+		0, ++yComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"If a yearly time series is filled, the zero value in an" +
+		" irrigation year will be matched with the time series year."),
+		0, ++yComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"The recalculate limits flag, if set to True, will cause the " +
+		"average to be recalculated with additional zeros, for use in other fill commands (see CIU for special case)."), 
+		0, ++yComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"Use a FillUsingDiversionComments(RecalLimits=True) commands immediately after reading diversions."), 
+		0, ++yComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(comment_JPanel, new JLabel ( "Fill flag:" ), 
+    	0, ++yComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FillFlag_JTextField = new JTextField ( 5 );
     __FillFlag_JTextField.addKeyListener ( this );
-       JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
-    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-    "Optional - string (or \"Auto\") to flag filled values (default=no flag)."), 
-    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, __FillFlag_JTextField,
+    	1, yComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel(
+    	"Optional - string (or \"Auto\") to flag filled values (default=no flag)."), 
+    	3, yComment, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Fill using CIU:"), 
-	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel ( "Fill flag description:" ), 
+    	0, ++yComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillFlagDescription_JTextField = new JTextField ( 20 );
+    __FillFlagDescription_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(comment_JPanel, __FillFlagDescription_JTextField,
+    	1, yComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel(
+    	"Optional - description for fill flag or \"Auto\"."), 
+    	3, yComment, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (	"Recalculate limits:"), 
+    	0, ++yComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__RecalcLimits_JComboBox = new SimpleJComboBox ( false );
+	__RecalcLimits_JComboBox.addItem ( __command._True );
+	__RecalcLimits_JComboBox.addItem ( __command._False );
+	__RecalcLimits_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(comment_JPanel, __RecalcLimits_JComboBox,
+    	1, yComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel(
+    	"Optional - recalculate original data limits after fill? (default=" + __command._False + ")."), 
+    	3, yComment, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for CIU choices
+    int yCiu = -1;
+    JPanel ciu_JPanel = new JPanel();
+    ciu_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Currently in use (CIU)", ciu_JPanel );
+    
+    JGUIUtil.addComponent(ciu_JPanel, new JLabel (
+	    "If the \"currently in use\" (CIU) flag is used for filling, additional zeros " +
+	    "will be added and limits are recalculated a specific way (see documentation)."), 
+	    0, ++yCiu, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ciu_JPanel, new JLabel ("Fill using CIU:"), 
+    	0, ++yCiu, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillUsingCIU_JComboBox = new SimpleJComboBox ( false );
-	__FillUsingCIU_JComboBox.addItem ( __TRUE );
-	__FillUsingCIU_JComboBox.addItem ( __FALSE );
+	__FillUsingCIU_JComboBox.addItem ( __command._True );
+	__FillUsingCIU_JComboBox.addItem ( __command._False );
 	__FillUsingCIU_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __FillUsingCIU_JComboBox,
-	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Required - use currently in use (CIU) information to fill."), 
-	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ciu_JPanel, __FillUsingCIU_JComboBox,
+    	1, yCiu, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ciu_JPanel, new JLabel(
+    	"Required - use currently in use (CIU) information to fill."), 
+    	3, yCiu, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill using CIU flag:" ), 
-    0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(ciu_JPanel, new JLabel ( "Fill using CIU flag:" ), 
+    	0, ++yCiu, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FillUsingCIUFlag_JTextField = new JTextField ( 5 );
     __FillUsingCIUFlag_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __FillUsingCIUFlag_JTextField,
-    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-    "Optional - string (or \"Auto\") to flag filled values (default=no flag)."), 
-    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ciu_JPanel, __FillUsingCIUFlag_JTextField,
+    	1, yCiu, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ciu_JPanel, new JLabel(
+    	"Optional - string (or \"Auto\") to flag filled values (default=no flag)."), 
+    	3, yCiu, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Recalculate limits:"), 
-	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__RecalcLimits_JComboBox = new SimpleJComboBox ( false );
-	__RecalcLimits_JComboBox.addItem ( __TRUE );
-	__RecalcLimits_JComboBox.addItem ( __FALSE );
-	__RecalcLimits_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,
-	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Optional - recalculate original data limits after fill? (default=" + __command._False + ")."), 
-	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+    JGUIUtil.addComponent(ciu_JPanel, new JLabel ( "Fill using CIU flag description:" ), 
+    	0, ++yCiu, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillUsingCIUFlagDescription_JTextField = new JTextField ( 20 );
+    __FillUsingCIUFlagDescription_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ciu_JPanel, __FillUsingCIUFlagDescription_JTextField,
+    	1, yCiu, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ciu_JPanel, new JLabel(
+    	"Optional - description for CIU fill flag or \"Auto\"."), 
+    	3, yCiu, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
-	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,60);
 	__command_JTextArea.setLineWrap ( true );
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-	1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
+    checkGUIState();
 	refresh ();
 
 	// South Panel: North
@@ -366,7 +417,8 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged ( ItemEvent e )
-{	refresh();
+{	checkGUIState();
+	refresh();
 }
 
 /**
@@ -403,43 +455,81 @@ Refresh the command from the other text field contents.
 */
 private void refresh()
 {	
-	String routine = "fillUsingDiversionComments_JDialog.refresh";
-	String TSID = "";
+	String routine = "FillUsingDiversionComments_JDialog.refresh";
+    String TSList = "";
+    String TSID = "";
+    String EnsembleID = "";
 	String FillStart = "";
 	String FillEnd = "";
 	String FillFlag = "";
+	String FillFlagDescription = "";
 	String RecalcLimits = "";
 	String FillUsingCIU = "";
 	String FillUsingCIUFlag = "";
+	String FillUsingCIUFlagDescription = "";
 	
 	PropList props = __command.getCommandParameters();
 	try {
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command...
+        TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
+        EnsembleID = props.getValue ( "EnsembleID" );
 		RecalcLimits = props.getValue ( "RecalcLimits" );
 		FillStart = props.getValue( "FillStart" );
 		FillEnd = props.getValue( "FillEnd" );
 		FillFlag = props.getValue( "FillFlag" );
+		FillFlagDescription = props.getValue( "FillFlagDescription" );
 		FillUsingCIU = props.getValue( "FillUsingCIU" );
 		FillUsingCIUFlag = props.getValue( "FillUsingCIUFlag" );
+		FillUsingCIUFlagDescription = props.getValue( "FillUsingCIUFlagDescription" );
 		
-		if (	JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-				JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
+        if ( TSList == null ) {
+            // Select default...
+            __TSList_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TSList_JComboBox,TSList, JGUIUtil.NONE, null, null ) ) {
+                __TSList_JComboBox.select ( TSList );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTSList value \"" + TSList +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+			__TSID_JComboBox.select ( TSID );
 		}
-		else {	
+		else {
+		    // Automatically add to the list after the blank...
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 1 );
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
-			else {	// Select the default (*)...
+			else {
+			    // Select the blank...
 				__TSID_JComboBox.select ( 0 );
 			}
 		}
-		
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 		if ( FillStart != null ) {
 			__FillStart_JTextField.setText( FillStart );
 		}
@@ -449,6 +539,14 @@ private void refresh()
 		if ( FillFlag != null ) {
 			__FillFlag_JTextField.setText ( FillFlag );
 		}
+		if ( FillFlagDescription != null ) {
+			__FillFlagDescription_JTextField.setText ( FillFlagDescription );
+		}
+		if ( RecalcLimits != null &&
+				JGUIUtil.isSimpleJComboBoxItem( __RecalcLimits_JComboBox, 
+				RecalcLimits, JGUIUtil.NONE, null, null ) ) {
+				__RecalcLimits_JComboBox.select ( RecalcLimits );
+		}
 		if ( FillUsingCIU != null && 
 				JGUIUtil.isSimpleJComboBoxItem( __FillUsingCIU_JComboBox, 
 				FillUsingCIU, JGUIUtil.NONE, null, null ) ) {
@@ -457,28 +555,34 @@ private void refresh()
 		if ( FillUsingCIUFlag != null ) {
 			__FillUsingCIUFlag_JTextField.setText ( FillUsingCIUFlag );
 		}
-		if ( RecalcLimits != null &&
-				JGUIUtil.isSimpleJComboBoxItem( __RecalcLimits_JComboBox, 
-				RecalcLimits, JGUIUtil.NONE, null, null ) ) {
-				__RecalcLimits_JComboBox.select ( RecalcLimits );
+		if ( FillUsingCIUFlagDescription != null ) {
+			__FillUsingCIUFlagDescription_JTextField.setText ( FillUsingCIUFlagDescription );
 		}
 	}
 	// Regardless, reset the command from the fields...
+    TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
 	FillStart = __FillStart_JTextField.getText().trim();
 	FillEnd = __FillEnd_JTextField.getText().trim();
 	FillFlag = __FillFlag_JTextField.getText().trim();
+	FillFlagDescription = __FillFlagDescription_JTextField.getText().trim();
+	RecalcLimits = __RecalcLimits_JComboBox.getSelected();
 	FillUsingCIU = __FillUsingCIU_JComboBox.getSelected();
 	FillUsingCIUFlag = __FillUsingCIUFlag_JTextField.getText().trim();
-	RecalcLimits = __RecalcLimits_JComboBox.getSelected();
+	FillUsingCIUFlagDescription = __FillUsingCIUFlagDescription_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
+    props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
+    props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "FillStart=" + FillStart );
 	props.add ( "FillEnd=" + FillEnd );
 	props.add ( "FillFlag=" + FillFlag );
+	props.add ( "FillFlagDescription=" + FillFlagDescription );
+	props.add ( "RecalcLimits=" + RecalcLimits);
 	props.add ( "FillUsingCIU=" + FillUsingCIU );
 	props.add ( "FillUsingCIUFlag=" + FillUsingCIUFlag );
-	props.add ( "RecalcLimits=" + RecalcLimits);
+	props.add ( "FillUsingCIUFlagDescription=" + FillUsingCIUFlagDescription );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	
 	}

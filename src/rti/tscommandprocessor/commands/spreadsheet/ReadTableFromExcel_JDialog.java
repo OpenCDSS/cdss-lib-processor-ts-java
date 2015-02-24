@@ -351,7 +351,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     __excelSpace_JTabbedPane = new JTabbedPane ();
     __excelSpace_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify the address for a contigous block of cells the in Excel worksheet" ));
+        "Specify the address for a contiguous block of cells the in Excel worksheet" ));
     JGUIUtil.addComponent(main_JPanel, __excelSpace_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JPanel address_JPanel = new JPanel();

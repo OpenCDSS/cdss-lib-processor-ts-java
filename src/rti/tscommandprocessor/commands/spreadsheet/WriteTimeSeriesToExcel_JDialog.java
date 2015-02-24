@@ -10,6 +10,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -21,7 +23,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -30,11 +31,10 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
 import java.io.File;
 import java.util.List;
 
-import RTi.Util.GUI.DictionaryJDialog;
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -44,12 +44,14 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
+import RTi.Util.Time.DateTimeFormatterType;
 
 /**
 Editor for the WriteTimeSeriesToExcel command.
 */
 public class WriteTimeSeriesToExcel_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, WindowListener
+implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 
 // Used for button labels...
@@ -60,27 +62,37 @@ private final String __RemoveWorkingDirectoryFromFile = "Remove Working Director
 private boolean __error_wait = false; // To track errors
 private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
+private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JTextField __Precision_JTextField = null;
+private JTextField __MissingValue_JTextField = null;
+private JTextField __OutputStart_JTextField = null;
+private JTextField __OutputEnd_JTextField = null;
+
 private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __Append_JComboBox = null;
 private JTextField __Worksheet_JTextField = null;
 private JTabbedPane __excelSpace_JTabbedPane = null;
 private JTextField __ExcelAddress_JTextField = null;
 private JTextField __ExcelNamedRange_JTextField = null;
 private JTextField __ExcelTableName_JTextField = null;
-private JTextField __Comment_JTextField = null;
-private SimpleJComboBox __ExcelColumnNames_JComboBox = null;
-private JTextArea __ColumnExcludeFilters_JTextArea = null;
-private JTextField __ExcelIntegerColumns_JTextField = null;
-private JTextField __ExcelDateTimeColumns_JTextField = null;
-private JTextField __NumberPrecision_JTextField = null;
-private SimpleJComboBox __WriteAllAsText_JComboBox = null;
-private JTextField __MissingValue_JTextField = null;// Missing value for output
-private JTextField __OutputStart_JTextField = null;
-private JTextField __OutputEnd_JTextField = null;
+private SimpleJComboBox __KeepOpen_JComboBox = null;
+private JTextField __DateTimeColumn_JTextField = null;
+private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
+private JTextField __DateColumn_JTextField = null;
+private DateTimeFormatterSpecifiersJPanel __DateFormat_JPanel = null;
+private JTextField __TimeColumn_JTextField = null;
+private DateTimeFormatterSpecifiersJPanel __TimeFormat_JPanel = null;
+private TSFormatSpecifiersJPanel __ValueColumns_JTextField = null;
+private JTextField __Author_JTextField = null;
+private TSFormatSpecifiersJPanel __ColumnComment_JTextField = null;
+private TSFormatSpecifiersJPanel __ValueComment_JTextField = null;
+private SimpleJComboBox __SkipValueCommentIfNoFlag_JComboBox = null;
+
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
@@ -88,7 +100,7 @@ private SimpleJButton __path_JButton = null;
 private String __working_dir = null;	
 private WriteTimeSeriesToExcel_Command __command = null;
 private boolean __ok = false;
-private JFrame __parent = null;
+//private JFrame __parent = null;
 
 /**
 Command dialog constructor.
@@ -159,6 +171,7 @@ public void actionPerformed(ActionEvent event)
 		}
 		refresh ();
 	}
+	/*
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnExcludeFilters") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
@@ -168,6 +181,64 @@ public void actionPerformed(ActionEvent event)
             __ColumnExcludeFilters_JTextArea.setText ( dict );
             refresh();
         }
+    }
+    */
+}
+
+//Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{   checkGUIState();
+  refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{   checkGUIState();
+  refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{   checkGUIState();
+  refresh();
+}
+
+//...End event handlers for DocumentListener
+
+/**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __TSID_JComboBox.setEnabled(false);
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JComboBox.setEnabled(true);
+        __EnsembleID_JLabel.setEnabled ( true );
+    }
+    else {
+        __EnsembleID_JComboBox.setEnabled(false);
+        __EnsembleID_JLabel.setEnabled ( false );
     }
 }
 
@@ -181,21 +252,31 @@ private void checkInput ()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
+	String MissingValue = __MissingValue_JTextField.getText().trim();
+	String Precision  = __Precision_JTextField.getText().trim();
+    String OutputStart = __OutputStart_JTextField.getText().trim();
+    String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String Append = __Append_JComboBox.getSelected();
 	String Worksheet = __Worksheet_JTextField.getText().trim();
 	String ExcelAddress = __ExcelAddress_JTextField.getText().trim();
 	String ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	String ExcelTableName = __ExcelTableName_JTextField.getText().trim();
-	String Comment = __Comment_JTextField.getText().trim();
-	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
-	String ColumnExcludeFilters  = __ColumnExcludeFilters_JTextArea.getText().trim();
-	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
-	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
-	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
-	String ReadAllAsText  = __WriteAllAsText_JComboBox.getSelected();
-	String MissingValue = __MissingValue_JTextField.getText().trim();
-    String OutputStart = __OutputStart_JTextField.getText().trim();
-    String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String KeepOpen = __KeepOpen_JComboBox.getSelected();
+	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+    String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
+    String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
+	String DateColumn = __DateColumn_JTextField.getText().trim();
+    String DateFormatterType = __DateFormat_JPanel.getSelectedFormatterType().trim();
+    String DateFormat = __DateFormat_JPanel.getText().trim();
+	String TimeColumn = __TimeColumn_JTextField.getText().trim();
+    String TimeFormatterType = __TimeFormat_JPanel.getSelectedFormatterType().trim();
+    String TimeFormat = __TimeFormat_JPanel.getText().trim();
+	String ValueColumns = __ValueColumns_JTextField.getText().trim();
+	String Author = __Author_JTextField.getText().trim();
+	String ColumnComment = __ColumnComment_JTextField.getText().trim();
+	String ValueComment = __ValueComment_JTextField.getText().trim();
+	String SkipValueCommentIfNoFlag = __SkipValueCommentIfNoFlag_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -207,8 +288,23 @@ private void checkInput ()
     if ( EnsembleID.length() > 0 ) {
         props.set ( "EnsembleID", EnsembleID );
     }
+    if ( MissingValue.length() > 0 ) {
+        props.set ( "MissingValue", MissingValue );
+    }
+    if ( Precision.length() > 0 ) {
+        props.set ( "Precision", Precision );
+    }
+    if ( OutputStart.length() > 0 ) {
+        props.set ( "OutputStart", OutputStart );
+    }
+    if ( OutputEnd.length() > 0 ) {
+        props.set ( "OutputEnd", OutputEnd );
+    }
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
+	}
+	if ( Append.length() > 0 ) {
+		props.set ( "Append", Append );
 	}
     if ( Worksheet.length() > 0 ) {
         props.set ( "Worksheet", Worksheet );
@@ -222,35 +318,50 @@ private void checkInput ()
     if ( ExcelTableName.length() > 0 ) {
         props.set ( "ExcelTableName", ExcelTableName );
     }
-    if ( ExcelColumnNames.length() > 0 ) {
-        props.set ( "ExcelColumnNames", ExcelColumnNames );
+    if ( KeepOpen.length() > 0 ) {
+        props.set ( "KeepOpen", KeepOpen );
     }
-    if ( ColumnExcludeFilters.length() > 0 ) {
-        props.set ( "ColumnExcludeFilters", ColumnExcludeFilters );
+    if  ( DateTimeColumn.length() > 0 ) {
+    	props.set("DateTimeColumn", DateTimeColumn);
     }
-    if (Comment.length() > 0) {
-        props.set("Comment", Comment);
+    if ( DateTimeFormatterType.length() > 0 ) {
+    	props.set ( "DateTimeFormatterType", DateTimeFormatterType );
     }
-    if ( ExcelIntegerColumns.length() > 0 ) {
-        props.set ( "ExcelIntegerColumns", ExcelIntegerColumns );
+    if ( DateTimeFormat.length() > 0 ) {
+    	props.set ( "DateTimeFormat", DateTimeFormat );
     }
-    if ( ExcelDateTimeColumns.length() > 0 ) {
-        props.set ( "ExcelDateTimeColumns", ExcelDateTimeColumns );
+    if  ( DateColumn.length() > 0 ) {
+    	props.set("DateColumn", DateColumn);
     }
-    if ( NumberPrecision.length() > 0 ) {
-        props.set ( "NumberPrecision", NumberPrecision );
+    if ( DateFormatterType.length() > 0 ) {
+    	props.set ( "DateFormatterType", DateFormatterType );
     }
-    if ( ReadAllAsText.length() > 0 ) {
-        props.set ( "ReadAllAsText", ReadAllAsText );
+    if ( DateFormat.length() > 0 ) {
+    	props.set ( "DateFormat", DateFormat );
     }
-    if ( MissingValue.length() > 0 ) {
-        props.set ( "MissingValue", MissingValue );
+    if  ( TimeColumn.length() > 0 ) {
+    	props.set("TimeColumn", TimeColumn);
     }
-    if ( OutputStart.length() > 0 ) {
-        props.set ( "OutputStart", OutputStart );
+    if ( TimeFormatterType.length() > 0 ) {
+    	props.set ( "TimeFormatterType", TimeFormatterType );
     }
-    if ( OutputEnd.length() > 0 ) {
-        props.set ( "OutputEnd", OutputEnd );
+    if ( TimeFormat.length() > 0 ) {
+    	props.set ( "TimeFormat", TimeFormat );
+    }
+    if  ( ValueColumns.length() > 0 ) {
+    	props.set("ValueColumns", ValueColumns);
+    }
+    if  ( Author.length() > 0 ) {
+    	props.set("Author", Author);
+    }
+    if  ( ColumnComment.length() > 0 ) {
+    	props.set("ColumnComment", ColumnComment);
+    }
+    if  ( ValueComment.length() > 0 ) {
+    	props.set("ValueComment", ValueComment);
+    }
+    if  ( SkipValueCommentIfNoFlag.length() > 0 ) {
+    	props.set("SkipValueCommentIfNoFlag", SkipValueCommentIfNoFlag);
     }
 	try {
 	    // This will warn the user...
@@ -269,41 +380,61 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
-    String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String OutputFile = __OutputFile_JTextField.getText().trim();
-    String Worksheet = __Worksheet_JTextField.getText().trim();
+	String TSID = __TSID_JComboBox.getSelected();
+	String EnsembleID = __EnsembleID_JComboBox.getSelected();
+	String MissingValue = __MissingValue_JTextField.getText().trim();
+	String Precision  = __Precision_JTextField.getText().trim();
+	String OutputStart = __OutputStart_JTextField.getText().trim();
+	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String OutputFile = __OutputFile_JTextField.getText().trim();
+    String Append = __Append_JComboBox.getSelected();
+	String Worksheet = __Worksheet_JTextField.getText().trim();
 	String ExcelAddress = __ExcelAddress_JTextField.getText().trim();
 	String ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	String ExcelTableName = __ExcelTableName_JTextField.getText().trim();
-	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
-	String ColumnExcludeFilters  = __ColumnExcludeFilters_JTextArea.getText().trim();
-	String Comment = __Comment_JTextField.getText().trim();
-	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
-	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
-	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
-	String ReadAllAsText  = __WriteAllAsText_JComboBox.getSelected();
-	String MissingValue = __MissingValue_JTextField.getText().trim();
-    String OutputStart = __OutputStart_JTextField.getText().trim();
-    String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String KeepOpen  = __KeepOpen_JComboBox.getSelected();
+	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+	String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
+	String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
+	String DateColumn = __DateColumn_JTextField.getText().trim();
+	String DateFormatterType = __DateFormat_JPanel.getSelectedFormatterType().trim();
+	String DateFormat = __DateFormat_JPanel.getText().trim();
+	String TimeColumn = __TimeColumn_JTextField.getText().trim();
+	String TimeFormatterType = __TimeFormat_JPanel.getSelectedFormatterType().trim();
+	String TimeFormat = __TimeFormat_JPanel.getText().trim();
+	String ValueColumns = __ValueColumns_JTextField.getText().trim();
+	String Author = __Author_JTextField.getText().trim();
+	String ColumnComment = __ColumnComment_JTextField.getText().trim();
+	String ValueComment = __ValueComment_JTextField.getText().trim();
+	String SkipValueCommentIfNoFlag = __SkipValueCommentIfNoFlag_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
+	__command.setCommandParameter ( "MissingValue", MissingValue );
+	__command.setCommandParameter ( "Precision", Precision );
+    __command.setCommandParameter ( "OutputStart", OutputStart );
+    __command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "Append", Append );
 	__command.setCommandParameter ( "Worksheet", Worksheet );
 	__command.setCommandParameter ( "ExcelAddress", ExcelAddress );
 	__command.setCommandParameter ( "ExcelNamedRange", ExcelNamedRange );
 	__command.setCommandParameter ( "ExcelTableName", ExcelTableName );
-	__command.setCommandParameter ( "ExcelColumnNames", ExcelColumnNames );
-	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
-	__command.setCommandParameter ( "Comment", Comment );
-	__command.setCommandParameter ( "ExcelIntegerColumns", ExcelIntegerColumns );
-	__command.setCommandParameter ( "ExcelDateTimeColumns", ExcelDateTimeColumns );
-	__command.setCommandParameter ( "NumberPrecision", NumberPrecision );
-	__command.setCommandParameter ( "ReadAllAsText", ReadAllAsText );
-	__command.setCommandParameter ( "MissingValue", MissingValue );
-    __command.setCommandParameter ( "OutputStart", OutputStart );
-    __command.setCommandParameter ( "OutputEnd", OutputEnd );
+	__command.setCommandParameter ( "KeepOpen", KeepOpen );
+    __command.setCommandParameter ( "DateTimeColumn", DateTimeColumn );
+    __command.setCommandParameter ( "DateTimeFormatterType", DateTimeFormatterType );
+	__command.setCommandParameter ( "DateTimeFormat", DateTimeFormat );
+	__command.setCommandParameter ( "DateColumn", DateColumn );
+	__command.setCommandParameter ( "DateFormatterType", DateFormatterType );
+	__command.setCommandParameter ( "DateFormat", DateFormat );
+	__command.setCommandParameter ( "TimeColumn", TimeColumn );
+	__command.setCommandParameter ( "TimeFormatterType", TimeFormatterType );
+	__command.setCommandParameter ( "TimeFormat", TimeFormat );
+	__command.setCommandParameter ( "ValueColumns", ValueColumns );
+	__command.setCommandParameter ( "Author", Author );
+	__command.setCommandParameter ( "ColumnComment", ColumnComment );
+	__command.setCommandParameter ( "ValueComment", ValueComment );
+	__command.setCommandParameter ( "SkipValueCommentIfNoFlag", SkipValueCommentIfNoFlag );
 }
 
 /**
@@ -313,7 +444,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command )
 {	__command = command;
-    __parent = parent;
+    //__parent = parent;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -332,16 +463,102 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command 
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
 
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "<html><b>This command is in the early stages of devevelopment - DO NOT USE FOR PRODUCTION WORK.<b></html>"),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
-    	"This command writes a list of time series to a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx).  " +
-    	"Currently the Excel file must exist."),
+    	"This command writes a list of time series to a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx)."),
     	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-		"A contiguous block of cells must be specified using one of the address methods below."),
+		"Time series are written as a sequence of columns, for simple data transfer of large amounts of data."),
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+		"See the WriteTimeSeriesToExcelFormatted() command for additional functionality for controlling the format of the Excel output."),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+	JGUIUtil.addComponent(main_JPanel, paragraph,
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for time series
+    int yTs = -1;
+    JPanel ts_JPanel = new JPanel();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Series to Write", ts_JPanel );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+		"Specify the time series to output.  Each time series will be output as a column."),
+		0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    yTs = CommandEditorUtil.addTSListToEditorDialogPanel ( this, ts_JPanel, __TSList_JComboBox, yTs );
+
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yTs = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTs );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yTs = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, ts_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yTs );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Missing value:" ),
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MissingValue_JTextField = new JTextField ( "", 10 );
+    __MissingValue_JTextField.setToolTipText("Specify " + __command._Blank + " to output a blank.");
+    __MissingValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ts_JPanel, __MissingValue_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "Optional - value to write for missing data (default=initial missing value)."),
+        3, yTs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Output precision:"),
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Precision_JTextField = new JTextField (10);
+    __Precision_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __Precision_JTextField,
+        1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel,
+        new JLabel ("Optional - precision for data values (default=based on units)."),
+        3, yTs, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Output start:"), 
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputStart_JTextField = new JTextField (20);
+    __OutputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __OutputStart_JTextField,
+        1, yTs, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "Optional - override the global output start (default=write all data)."),
+        3, yTs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Output end:"), 
+        0, ++yTs, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputEnd_JTextField = new JTextField (20);
+    __OutputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __OutputEnd_JTextField,
+        1, yTs, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "Optional - override the global output end (default=write all data)."),
+        3, yTs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for Excel output (column location in output, etc.)
+    int yExcelOutput = 0;
+    JPanel excelOutput_JPanel = new JPanel();
+    excelOutput_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Excel Output", excelOutput_JPanel );
+    
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
+		"Time series will be output in a block of cells with the upper left indicated by the address information."),
+		0, ++yExcelOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
+		"The worksheet will be created if it does not exist."),
+		0, ++yExcelOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
 		"It is recommended that the location of the Excel file be " +
 		"specified using a path relative to the working directory."),
@@ -353,52 +570,47 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command 
 		"The working directory is: " + __working_dir), 
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-
-	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-    __TSList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
-
-    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-        (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
-    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
-    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
-        (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output (workbook) file:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Output (workbook) file:"),
+		0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (45);
 	__OutputFile_JTextField.addKeyListener (this);
-        JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
-		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(excelOutput_JPanel, __OutputFile_JTextField,
+		1, yExcelOutput, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ("Browse", this);
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        JGUIUtil.addComponent(excelOutput_JPanel, __browse_JButton,
+		6, yExcelOutput, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Worksheet:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Append?:"),
+		0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Append_JComboBox = new SimpleJComboBox ( false );
+	__Append_JComboBox.addItem ( "" );	// Default
+	__Append_JComboBox.addItem ( __command._False );
+	__Append_JComboBox.addItem ( __command._True );
+	__Append_JComboBox.select ( 0 );
+	__Append_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(excelOutput_JPanel, __Append_JComboBox,
+		1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel(
+		"Optional - whether to append to Excel file (default=" + __command._False + " or " + __command._True + " if open)."), 
+		3, yExcelOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Worksheet:"),
+        0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Worksheet_JTextField = new JTextField (30);
     __Worksheet_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Worksheet_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Required (if not in address) - worksheet name (default=first sheet)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(excelOutput_JPanel, __Worksheet_JTextField,
+        1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel,
+        new JLabel ("Optional - worksheet name (default=first sheet if appending to existing)."),
+        3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     __excelSpace_JTabbedPane = new JTabbedPane ();
     __excelSpace_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify the address for a contigous block of cells the in Excel worksheet" ));
-    JGUIUtil.addComponent(main_JPanel, __excelSpace_JTabbedPane,
-        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        "Specify the address for the upper-left corner of a block of cells in the Excel worksheet" ));
+    JGUIUtil.addComponent(excelOutput_JPanel, __excelSpace_JTabbedPane,
+        0, ++yExcelOutput, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JPanel address_JPanel = new JPanel();
     address_JPanel.setLayout(new GridBagLayout());
     __excelSpace_JTabbedPane.addTab ( "by Excel Address", address_JPanel );
@@ -406,11 +618,11 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command 
         
     JGUIUtil.addComponent(address_JPanel, new JLabel ("Excel address:"),
         0, ++yAddress, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcelAddress_JTextField = new JTextField (10);
+    __ExcelAddress_JTextField = new JTextField (20);
     __ExcelAddress_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(address_JPanel, __ExcelAddress_JTextField,
-        1, yAddress, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(address_JPanel, new JLabel ("Excel cell block address in format A1:B2."),
+        1, yAddress, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(address_JPanel, new JLabel ("Excel cell block address in format A1, A1:B2, etc."),
         3, yAddress, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JPanel range_JPanel = new JPanel();
@@ -420,10 +632,10 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command 
     
     JGUIUtil.addComponent(range_JPanel, new JLabel ("Excel named range:"),
         0, ++yRange, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcelNamedRange_JTextField = new JTextField (10);
+    __ExcelNamedRange_JTextField = new JTextField (20);
     __ExcelNamedRange_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(range_JPanel, __ExcelNamedRange_JTextField,
-        1, yRange, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yRange, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(range_JPanel, new JLabel ("Excel named range."),
         3, yRange, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
@@ -434,130 +646,185 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command 
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Excel table name:"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcelTableName_JTextField = new JTextField (10);
+    __ExcelTableName_JTextField = new JTextField (20);
     __ExcelTableName_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(table_JPanel, __ExcelTableName_JTextField,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Excel table name."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Excel column names:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcelColumnNames_JComboBox = new SimpleJComboBox ( false );
-    __ExcelColumnNames_JComboBox.add("");
-    __ExcelColumnNames_JComboBox.add(__command._ColumnN);
-    __ExcelColumnNames_JComboBox.add(__command._FirstRowInRange);
-    __ExcelColumnNames_JComboBox.add(__command._RowBeforeRange);
-    __ExcelColumnNames_JComboBox.select ( 0 );
-    __ExcelColumnNames_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ExcelColumnNames_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - how to define column names (default=" +
-        __command._ColumnN + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Keep file open?:"),
+        0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __KeepOpen_JComboBox = new SimpleJComboBox ( false );
+    __KeepOpen_JComboBox.add("");
+    __KeepOpen_JComboBox.add(__command._False);
+    __KeepOpen_JComboBox.add(__command._True);
+    __KeepOpen_JComboBox.select ( 0 );
+    __KeepOpen_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(excelOutput_JPanel, __KeepOpen_JComboBox,
+        1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Optional - keep Excel file open? (default=" + __command._False + ")."),
+        3, yExcelOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to exclude rows:"),
-        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
-    __ColumnExcludeFilters_JTextArea.setLineWrap ( true );
-    __ColumnExcludeFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnExcludeFilters_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
-    __ColumnExcludeFilters_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
-        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - column patterns to exclude rows (default=include all)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
-        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Date/time column:"),
+        0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateTimeColumn_JTextField = new JTextField (10);
+    __DateTimeColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(excelOutput_JPanel, __DateTimeColumn_JTextField,
+        1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
+        "Optional - name for date/time column (default=Date or DateTime)."),
+        3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // TODO SAM 2013-11-03 Evaluate whether to enable or remove the following 3 parameters
-    //JGUIUtil.addComponent(main_JPanel, new JLabel ("Comment character:"),
-    //    0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Comment_JTextField = new JTextField (10);
-    //__Comment_JTextField.addKeyListener (this);
-    //JGUIUtil.addComponent(main_JPanel, __Comment_JTextField,
-    //    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    //JGUIUtil.addComponent(main_JPanel, new JLabel (
-    //    "Optional - character that indicates comment lines (default=none)."),
-    //    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    __Comment_JTextField.setVisible(false);
+    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
+    // is supported by the panel
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Date/time format:" ), 
+        0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
+    __DateTimeFormat_JPanel.addKeyListener ( this );
+    __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
+    __DateTimeFormat_JPanel.getDocument().addDocumentListener ( this );
+    JGUIUtil.addComponent(excelOutput_JPanel, __DateTimeFormat_JPanel,
+        1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Optional - format string for data date/time formatter (default=ISO)."), 
+        3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    //JGUIUtil.addComponent(main_JPanel, new JLabel ("Excel integer columns:"),
-    //    0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcelIntegerColumns_JTextField = new JTextField (20);
-    //__ExcelIntegerColumns_JTextField.addKeyListener (this);
-    //JGUIUtil.addComponent(main_JPanel, __ExcelIntegerColumns_JTextField,
-    //    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    //JGUIUtil.addComponent(main_JPanel,
-    //    new JLabel ("Optional - columns that are integers, separated by commas."),
-    //    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    __ExcelIntegerColumns_JTextField.setVisible(false);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Date column:"),
+        0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateColumn_JTextField = new JTextField (10);
+    __DateColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(excelOutput_JPanel, __DateColumn_JTextField,
+        1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
+        "Optional - name for date column (default=use date/time column only)."),
+        3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    //JGUIUtil.addComponent(main_JPanel, new JLabel ("Excel date/time columns:"),
-    //    0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcelDateTimeColumns_JTextField = new JTextField (20);
-    //__ExcelDateTimeColumns_JTextField.addKeyListener (this);
-    //JGUIUtil.addComponent(main_JPanel, __ExcelDateTimeColumns_JTextField,
-    //    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    //JGUIUtil.addComponent(main_JPanel,
-    //    new JLabel ("Optional - columns that are date/times, separated by commas."),
-    //    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    __ExcelDateTimeColumns_JTextField.setVisible(false);
+    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
+    // is supported by the panel
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Date format:" ), 
+        0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
+    __DateFormat_JPanel.addKeyListener ( this );
+    __DateFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
+    __DateFormat_JPanel.getDocument().addDocumentListener ( this );
+    JGUIUtil.addComponent(excelOutput_JPanel, __DateFormat_JPanel,
+        1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Optional - format string for date formatter (default=ISO)."), 
+        3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Number precision:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NumberPrecision_JTextField = new JTextField (10);
-    __NumberPrecision_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __NumberPrecision_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Optional - precision for numbers (default=6)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Time column:"),
+        0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeColumn_JTextField = new JTextField (10);
+    __TimeColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(excelOutput_JPanel, __TimeColumn_JTextField,
+        1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel (
+        "Optional - name for time column (default=use date/time column only)."),
+        3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Write all as text?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __WriteAllAsText_JComboBox = new SimpleJComboBox ( false );
-    __WriteAllAsText_JComboBox.add("");
-    __WriteAllAsText_JComboBox.add(__command._False);
-    __WriteAllAsText_JComboBox.add(__command._True);
-    __WriteAllAsText_JComboBox.select ( 0 );
-    __WriteAllAsText_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __WriteAllAsText_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - write all cells as text? (default=" + __command._False + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
+    // is supported by the panel
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Time format:" ), 
+        0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
+    __TimeFormat_JPanel.addKeyListener ( this );
+    __TimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
+    __TimeFormat_JPanel.getDocument().addDocumentListener ( this );
+    JGUIUtil.addComponent(excelOutput_JPanel, __TimeFormat_JPanel,
+        1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel( "Optional - format string for time formatter (default=ISO)."), 
+        3, yExcelOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MissingValue_JTextField = new JTextField ( "", 10 );
-    __MissingValue_JTextField.setToolTipText("Specify Blank to output a blank.");
-    __MissingValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - value to write for missing data (default=initial missing value)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel("Value column(s):"),
+        0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ValueColumns_JTextField = new TSFormatSpecifiersJPanel(30);
+    __ValueColumns_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, etc., " +
+    	"%{ts:property} for time series property, ${property} for processor property.");
+    __ValueColumns_JTextField.addKeyListener ( this );
+    __ValueColumns_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(excelOutput_JPanel, __ValueColumns_JTextField,
+        1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Optional - %L for location, ${ts:property} for property (default=%L_%T)."),
+        3, yExcelOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for Excel output (location in output, etc.)
+    int yComments = -1;
+    JPanel comment_JPanel = new JPanel();
+    comment_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Cell Comments", comment_JPanel );
+    
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"Comments can be added to column headings and data cells."),
+		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"Warning:  Using many comments can significantly increase the size of the Excel file."),
+		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"For column headings, format the comment using the following specifiers:"),
+		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"   %L for location, %T for data type, %I for interval, etc. (using the format choices)"),
+		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"   ${ts:property} for time series property"),
+		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"   ${property} for processor property"),
+		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"For data cells, format the comment using the specifiers indicated above and additionally:"),
+		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+    	"   ${tsdata:datetime}, ${tsdata:value}, or ${tsdata:flag}"),
+    	0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputStart_JTextField = new JTextField (20);
-    __OutputStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - override the global output start (default=write all data)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputEnd_JTextField = new JTextField (20);
-    __OutputEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - override the global output end (default=write all data)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
+    JGUIUtil.addComponent(comment_JPanel, new JLabel("Author:"),
+        0, ++yComments, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Author_JTextField = new JTextField(10);
+    __Author_JTextField.addKeyListener ( this );
+    __Author_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(comment_JPanel, __Author_JTextField,
+        1, yComments, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel ("Optional - author for comments (default=none)."),
+        3, yComments, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(comment_JPanel, new JLabel("Column comment:"),
+        0, ++yComments, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnComment_JTextField = new TSFormatSpecifiersJPanel(30);
+    __ColumnComment_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, etc., " +
+    	"${ts:property} for time series property, ${property} for processor property.");
+    __ColumnComment_JTextField.addKeyListener ( this );
+    __ColumnComment_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(comment_JPanel, __ColumnComment_JTextField,
+        1, yComments, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel ("Optional - %L for location, ${ts:property} for property, etc."),
+        3, yComments, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(comment_JPanel, new JLabel("Value comment:"),
+        0, ++yComments, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ValueComment_JTextField = new TSFormatSpecifiersJPanel(30);
+    __ValueComment_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, etc., " +
+    	"${ts:property} for time series property, ${property} for processor property.");
+    __ValueComment_JTextField.addKeyListener ( this );
+    __ValueComment_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(comment_JPanel, __ValueComment_JTextField,
+        1, yComments, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel ("Optional - %L for location, ${ts:property} for property, etc."),
+        3, yComments, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(comment_JPanel, new JLabel( "Skip value comment if no flag?:"),
+        0, ++yComments, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SkipValueCommentIfNoFlag_JComboBox = new SimpleJComboBox ( false );
+    __SkipValueCommentIfNoFlag_JComboBox.add("");
+    __SkipValueCommentIfNoFlag_JComboBox.add(__command._False);
+    __SkipValueCommentIfNoFlag_JComboBox.add(__command._True);
+    __SkipValueCommentIfNoFlag_JComboBox.select ( 0 );
+    __SkipValueCommentIfNoFlag_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(comment_JPanel, __SkipValueCommentIfNoFlag_JComboBox,
+        1, yComments, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel ( "Optional - skip comment if no flag? (default=" + __command._True + ")."),
+        3, yComments, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
@@ -592,6 +859,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command 
 	setResizable (false);
     pack();
     JGUIUtil.center(this);
+    checkGUIState();
 	refresh();	// Sets the __path_JButton status
     super.setVisible(true);
 }
@@ -601,6 +869,7 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged (ItemEvent e) {
+	checkGUIState();
 	refresh();
 }
 
@@ -641,42 +910,62 @@ private void refresh ()
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
+    String MissingValue = "";
+	String Precision = "";
+    String OutputStart = "";
+    String OutputEnd = "";
     String OutputFile = "";
+	String Append = "";
     String Worksheet = "";
 	String ExcelAddress = "";
 	String ExcelNamedRange = "";
 	String ExcelTableName = "";
-	String ExcelColumnNames = "";
-	String ColumnExcludeFilters = "";
-    String Comment = "";
-	String ExcelIntegerColumns = "";
-	String ExcelDateTimeColumns = "";
-	String NumberPrecision = "";
-	String ReadAllAsText = "";
-    String MissingValue = "";
-    String OutputStart = "";
-    String OutputEnd = "";
+	String KeepOpen = "";
+	String DateTimeColumn = "";
+    String dateTimeFormatterType = "";
+    String DateTimeFormat = "";
+	String DateColumn = "";
+    String DateFormatterType = "";
+    String DateFormat = "";
+	String TimeColumn = "";
+    String TimeFormatterType = "";
+    String TimeFormat = "";
+	String ValueColumns = "";
+	String Author = "";
+	String ColumnComment = "";
+	String ValueComment = "";
+	String SkipValueCommentIfNoFlag = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
 	    TSList = props.getValue ( "TSList" );
 	    TSID = props.getValue ( "TSID" );
 	    EnsembleID = props.getValue ( "EnsembleID" );
+        MissingValue = props.getValue("MissingValue");
+		Precision = props.getValue ( "Precision" );
+        OutputStart = props.getValue ( "OutputStart" );
+        OutputEnd = props.getValue ( "OutputEnd" );
 		OutputFile = props.getValue ( "OutputFile" );
+		Append = props.getValue ( "Append" );
 		Worksheet = props.getValue ( "Worksheet" );
 		ExcelAddress = props.getValue ( "ExcelAddress" );
 		ExcelNamedRange = props.getValue ( "ExcelNamedRange" );
 		ExcelTableName = props.getValue ( "ExcelTableName" );
-		ExcelColumnNames = props.getValue ( "ExcelColumnNames" );
-		ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
-		Comment = props.getValue ( "Comment" );
-		ExcelIntegerColumns = props.getValue ( "ExcelIntegerColumns" );
-		ExcelDateTimeColumns = props.getValue ( "ExcelDateTimeColumns" );
-		NumberPrecision = props.getValue ( "NumberPrecision" );
-		ReadAllAsText = props.getValue ( "ReadAllAsText" );
-        MissingValue = props.getValue("MissingValue");
-        OutputStart = props.getValue ( "OutputStart" );
-        OutputEnd = props.getValue ( "OutputEnd" );
+		KeepOpen = props.getValue ( "KeepOpen" );
+		DateTimeColumn = props.getValue ( "DateTimeColumn" );
+	    dateTimeFormatterType = props.getValue ( "DateTimeFormatterType" );
+	    DateTimeFormat = props.getValue ( "DateTimeFormat" );
+		DateColumn = props.getValue ( "DateColumn" );
+	    DateFormatterType = props.getValue ( "DateFormatterType" );
+	    DateFormat = props.getValue ( "DateFormat" );
+		TimeColumn = props.getValue ( "TimeColumn" );
+	    TimeFormatterType = props.getValue ( "TimeFormatterType" );
+	    TimeFormat = props.getValue ( "TimeFormat" );
+		ValueColumns = props.getValue ( "ValueColumns" );
+		Author = props.getValue ( "Author" );
+		ColumnComment = props.getValue ( "ColumnComment" );
+		ValueComment = props.getValue ( "ValueComment" );
+		SkipValueCommentIfNoFlag = props.getValue ( "SkipValueCommentIfNoFlag" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -722,8 +1011,33 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( MissingValue != null ) {
+            __MissingValue_JTextField.setText ( MissingValue );
+        }
+        if ( Precision != null ) {
+            __Precision_JTextField.setText ( Precision );
+        }
+        if ( OutputStart != null ) {
+            __OutputStart_JTextField.setText (OutputStart);
+        }
+        if ( OutputEnd != null ) {
+            __OutputEnd_JTextField.setText (OutputEnd);
+        }
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText ( OutputFile );
+		}
+		if ( JGUIUtil.isSimpleJComboBoxItem(__Append_JComboBox, Append,JGUIUtil.NONE, null, null ) ) {
+			__Append_JComboBox.select ( Append );
+		}
+		else {
+            if ( (Append == null) || Append.equals("") ) {
+				// New command...select the default...
+				__Append_JComboBox.select ( 0 );
+			}
+			else {	// Bad user command...
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid\nAppend parameter \"" +	Append + "\".  Select a\n value or Cancel." );
+			}
 		}
         if ( Worksheet != null ) {
             __Worksheet_JTextField.setText ( Worksheet );
@@ -741,95 +1055,166 @@ private void refresh ()
             __ExcelTableName_JTextField.setText ( ExcelTableName );
             __excelSpace_JTabbedPane.setSelectedIndex(2);
         }
-        if ( ExcelColumnNames == null || ExcelColumnNames.equals("") ) {
+        if ( KeepOpen == null || KeepOpen.equals("") ) {
             // Select a default...
-            __ExcelColumnNames_JComboBox.select ( 0 );
-        }
-        else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __ExcelColumnNames_JComboBox, ExcelColumnNames, JGUIUtil.NONE, null, null ) ) {
-                __ExcelColumnNames_JComboBox.select ( ExcelColumnNames );
-            }
-            else {
-                Message.printWarning ( 1, routine, "Existing command references an invalid\nExcelColumnNames \"" +
-                    ExcelColumnNames + "\".  Select a different choice or Cancel." );
-            }
-        }
-        if ( ColumnExcludeFilters != null ) {
-            __ColumnExcludeFilters_JTextArea.setText ( ColumnExcludeFilters );
-        }
-        if ( Comment != null) {
-            __Comment_JTextField.setText(Comment);
-        }
-        if ( ExcelIntegerColumns != null ) {
-            __ExcelIntegerColumns_JTextField.setText ( ExcelIntegerColumns );
-        }
-        if ( ExcelDateTimeColumns != null ) {
-            __ExcelDateTimeColumns_JTextField.setText ( ExcelDateTimeColumns );
-        }
-        if ( NumberPrecision != null ) {
-            __NumberPrecision_JTextField.setText ( NumberPrecision );
-        }
-        if ( ReadAllAsText == null || ReadAllAsText.equals("") ) {
-            // Select a default...
-            __WriteAllAsText_JComboBox.select ( 0 );
+            __KeepOpen_JComboBox.select ( 0 );
         } 
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __WriteAllAsText_JComboBox, ReadAllAsText, JGUIUtil.NONE, null, null ) ) {
-                __WriteAllAsText_JComboBox.select ( ReadAllAsText );
+            if ( JGUIUtil.isSimpleJComboBoxItem( __KeepOpen_JComboBox, KeepOpen, JGUIUtil.NONE, null, null ) ) {
+                __KeepOpen_JComboBox.select ( KeepOpen );
             }
             else {
-                Message.printWarning ( 1, routine, "Existing command references an invalid\nReadAllAsText \"" +
-                    ReadAllAsText + "\".  Select a different choice or Cancel." );
+                Message.printWarning ( 1, routine, "Existing command references an invalid\nKeepOpen \"" +
+                    KeepOpen + "\".  Select a different choice or Cancel." );
             }
         }
-        if ( MissingValue != null ) {
-            __MissingValue_JTextField.setText ( MissingValue );
+        if (DateTimeColumn != null) {
+            __DateTimeColumn_JTextField.setText(DateTimeColumn);
         }
-        if ( OutputStart != null ) {
-            __OutputStart_JTextField.setText (OutputStart);
+        if ( (dateTimeFormatterType == null) || dateTimeFormatterType.equals("") ) {
+            // Select default...
+            __DateTimeFormat_JPanel.selectFormatterType(null);
         }
-        if ( OutputEnd != null ) {
-            __OutputEnd_JTextField.setText (OutputEnd);
+        else {
+            try {
+                __DateTimeFormat_JPanel.selectFormatterType(DateTimeFormatterType.valueOfIgnoreCase(dateTimeFormatterType));
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nDateTimeFormatterType value \"" + dateTimeFormatterType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( DateTimeFormat != null ) {
+            __DateTimeFormat_JPanel.setText ( DateTimeFormat );
+        }
+        if (DateColumn != null) {
+            __DateColumn_JTextField.setText(DateColumn);
+        }
+        if ( (DateFormatterType == null) || DateFormatterType.equals("") ) {
+            // Select default...
+            __DateFormat_JPanel.selectFormatterType(null);
+        }
+        else {
+            try {
+                __DateFormat_JPanel.selectFormatterType(DateTimeFormatterType.valueOfIgnoreCase(DateFormatterType));
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nDateFormatterType value \"" + DateFormatterType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( DateFormat != null ) {
+            __DateFormat_JPanel.setText ( DateFormat );
+        }
+        if (TimeColumn != null) {
+            __TimeColumn_JTextField.setText(DateTimeColumn);
+        }
+        if ( (TimeFormatterType == null) || TimeFormatterType.equals("") ) {
+            // Select default...
+            __TimeFormat_JPanel.selectFormatterType(null);
+        }
+        else {
+            try {
+                __TimeFormat_JPanel.selectFormatterType(DateTimeFormatterType.valueOfIgnoreCase(TimeFormatterType));
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTimeFormatterType value \"" + TimeFormatterType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( TimeFormat != null ) {
+            __TimeFormat_JPanel.setText ( TimeFormat );
+        }
+        if (ValueColumns != null) {
+            __ValueColumns_JTextField.setText(ValueColumns);
+        }
+        if (Author != null) {
+            __Author_JTextField.setText(Author);
+        }
+        if (ColumnComment != null) {
+            __ColumnComment_JTextField.setText(ColumnComment);
+        }
+        if (ValueComment!= null) {
+            __ValueComment_JTextField.setText(ValueComment);
+        }
+        if ( SkipValueCommentIfNoFlag == null || SkipValueCommentIfNoFlag.equals("") ) {
+            // Select a default...
+            __SkipValueCommentIfNoFlag_JComboBox.select ( 0 );
+        } 
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __SkipValueCommentIfNoFlag_JComboBox, SkipValueCommentIfNoFlag, JGUIUtil.NONE, null, null ) ) {
+                __SkipValueCommentIfNoFlag_JComboBox.select ( SkipValueCommentIfNoFlag );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\nSkipValueCommentIfNoFlag \"" +
+                    SkipValueCommentIfNoFlag + "\".  Select a different choice or Cancel." );
+            }
         }
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
+    MissingValue = __MissingValue_JTextField.getText().trim();
+	Precision = __Precision_JTextField.getText().trim();
+    OutputStart = __OutputStart_JTextField.getText().trim();
+    OutputEnd = __OutputEnd_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	Append = __Append_JComboBox.getSelected();
 	Worksheet = __Worksheet_JTextField.getText().trim();
 	ExcelAddress = __ExcelAddress_JTextField.getText().trim();
 	ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	ExcelTableName = __ExcelTableName_JTextField.getText().trim();
-	ExcelColumnNames = __ExcelColumnNames_JComboBox.getSelected();
-	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
-	Comment = __Comment_JTextField.getText().trim();
-	ExcelIntegerColumns = __ExcelIntegerColumns_JTextField.getText().trim();
-	ExcelDateTimeColumns = __ExcelDateTimeColumns_JTextField.getText().trim();
-	NumberPrecision = __NumberPrecision_JTextField.getText().trim();
-	ReadAllAsText = __WriteAllAsText_JComboBox.getSelected();
-    MissingValue = __MissingValue_JTextField.getText().trim();
-    OutputStart = __OutputStart_JTextField.getText().trim();
-    OutputEnd = __OutputEnd_JTextField.getText().trim();
+	KeepOpen = __KeepOpen_JComboBox.getSelected();
+	DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+    dateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
+    DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
+	DateColumn = __DateColumn_JTextField.getText().trim();
+    DateFormatterType = __DateFormat_JPanel.getSelectedFormatterType().trim();
+    DateFormat = __DateFormat_JPanel.getText().trim();
+	TimeColumn = __TimeColumn_JTextField.getText().trim();
+    TimeFormatterType = __TimeFormat_JPanel.getSelectedFormatterType().trim();
+    TimeFormat = __TimeFormat_JPanel.getText().trim();
+	ValueColumns = __ValueColumns_JTextField.getText().trim();
+	Author = __Author_JTextField.getText().trim();
+	ColumnComment = __ColumnComment_JTextField.getText().trim();
+	ValueComment = __ValueComment_JTextField.getText().trim();
+	SkipValueCommentIfNoFlag = __SkipValueCommentIfNoFlag_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
+	props.add ( "MissingValue=" + MissingValue );
+	props.add ( "Precision=" + Precision );
+	props.add ( "OutputStart=" + OutputStart );
+	props.add ( "OutputEnd=" + OutputEnd );
 	props.add ( "OutputFile=" + OutputFile );
+	props.add ( "Append=" + Append );
 	props.add ( "Worksheet=" + Worksheet );
 	props.add ( "ExcelAddress=" + ExcelAddress );
 	props.add ( "ExcelNamedRange=" + ExcelNamedRange );
 	props.add ( "ExcelTableName=" + ExcelTableName );
-	props.add ( "ExcelColumnNames=" + ExcelColumnNames );
-	props.add ( "ColumnExcludeFilters=" + ColumnExcludeFilters );
-	props.add ( "Comment=" + Comment );
-	props.add ( "ExcelIntegerColumns=" + ExcelIntegerColumns );
-	props.add ( "ExcelDateTimeColumns=" + ExcelDateTimeColumns );
-	props.add ( "NumberPrecision=" + NumberPrecision );
-	props.add ( "ReadAllAsText=" + ReadAllAsText );
-	props.add ( "MissingValue=" + MissingValue );
-	props.add ( "OutputStart=" + OutputStart );
-	props.add ( "OutputEnd=" + OutputEnd );
+	props.add ( "KeepOpen=" + KeepOpen );
+	props.add ( "DateTimeColumn=" + DateTimeColumn );
+	props.add ( "DateTimeFormatterType=" + dateTimeFormatterType );
+	props.add ( "DateTimeFormat=" + DateTimeFormat );
+	props.add ( "DateColumn=" + DateColumn );
+	props.add ( "DateFormatterType=" + DateFormatterType );
+	props.add ( "DateFormat=" + DateFormat );
+	props.add ( "TimeColumn=" + TimeColumn );
+	props.add ( "TimeFormatterType=" + TimeFormatterType );
+	props.add ( "TimeFormat=" + TimeFormat );
+	props.add ( "ValueColumns=" + ValueColumns );
+	props.add ( "Author=" + Author );
+	props.add ( "ColumnComment=" + ColumnComment );
+	props.add ( "ValueComment=" + ValueComment );
+	props.add ( "SkipValueCommentIfNoFlag=" + SkipValueCommentIfNoFlag );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

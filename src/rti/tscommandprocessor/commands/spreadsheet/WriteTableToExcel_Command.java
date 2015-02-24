@@ -809,6 +809,8 @@ throws FileNotFoundException, IOException
     Workbook wb = null;
     InputStream inp = null;
     try {
+    	// Create a toolkit for utility functions.
+    	ExcelToolkit tk = new ExcelToolkit();
         // See if an open workbook by the same name exists
         wb = ExcelUtil.getOpenWorkbook(workbookFile);
         if ( wb == null ) {
@@ -983,21 +985,10 @@ throws FileNotFoundException, IOException
                         precision = 6;
                     }
                 }
-                String format = "0.";
-                if ( precision == 0 ) {
-                    // No decimal
-                    format= "0";
-                }
-                else {
-                    for ( int i = 0; i < precision; i++ ) {
-                        format += "0";
-                    }
-                }
-                cellStyles[col].setDataFormat(cellFormats[col].getFormat(format));
+                cellStyles[col].setDataFormat(cellFormats[col].getFormat(tk.createFormatForFloat(precision)));
             }
             else if ( (tableFieldType == TableField.DATA_TYPE_INT) || (tableFieldType == TableField.DATA_TYPE_LONG) ) {
-                String format = "0";
-                cellStyles[col].setDataFormat(cellFormats[col].getFormat(format));
+                cellStyles[col].setDataFormat(cellFormats[col].getFormat("0"));
             }
             // If named ranges are to be written, match the table columns and do it
             if ( columnNamedRanges != null ) {

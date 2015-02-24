@@ -16,10 +16,15 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Name;
+import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -372,6 +377,26 @@ public AreaReference getAreaReference ( Workbook wb, Sheet sheet, String excelAd
     else {
         return null;
     }
+}
+
+/**
+Create a format string for a floating point number.
+@param precision number of digits after the decimal, can be 0.
+@return format string for cell
+*/
+public String createFormatForFloat ( int precision )
+{
+    String format = "0.";
+    if ( precision == 0 ) {
+        // No decimal
+        format= "0";
+    }
+    else {
+        for ( int i = 0; i < precision; i++ ) {
+            format += "0";
+        }
+    }
+    return format;
 }
 
 /**
@@ -960,25 +985,146 @@ throws FileNotFoundException, IOException
 }
 
 /**
-Read the table from an Excel worksheet.  The cells must be specified by a contiguous address block specified
-by one of the parameters excelAddress, excelNamedRange, excelTableName.
+Set a cell to blank.  If necessary a new row will be created.
+@param sheet worksheet to write to
+@param row row (0+)
+@param col column (0+)
+@param s string to write
+@return the Cell instance being modified
+*/
+public Cell setCellBlank ( Sheet sheet, int row, int col )
+{
+	Row wbRowColumnNames = sheet.getRow(row);
+	// If it does not exist, create it
+	if ( wbRowColumnNames == null ) {
+	    wbRowColumnNames = sheet.createRow(row);
+	}
+	Cell wbCell = wbRowColumnNames.getCell(col);
+	if ( wbCell == null ) {
+	    wbCell = wbRowColumnNames.createCell(col);
+	}
+	wbCell.setCellType(Cell.CELL_TYPE_BLANK);
+	return wbCell;
+}
+
+/**
+Write a single float cell value.  If necessary a new row will be created.
+@param sheet worksheet to write to
+@param row row (0+)
+@param col column (0+)
+@param d string to write
+@param style cell style to set (or null to not set style)
+@return the Cell instance being modified
+*/
+public Cell setCellValue ( Sheet sheet, int row, int col, double d, CellStyle style )
+{
+	Row wbRowColumnNames = sheet.getRow(row);
+	// If it does not exist, create it
+	if ( wbRowColumnNames == null ) {
+	    wbRowColumnNames = sheet.createRow(row);
+	}
+	Cell wbCell = wbRowColumnNames.getCell(col);
+	if ( wbCell == null ) {
+	    wbCell = wbRowColumnNames.createCell(col);
+	}
+	wbCell.setCellValue(d);
+	if ( style != null ) {
+		wbCell.setCellStyle(style);
+	}
+	return wbCell;
+}
+
+/**
+Write a single float cell value.  If necessary a new row will be created.
+@param sheet worksheet to write to
+@param row row (0+)
+@param col column (0+)
+@param f string to write
+@param style cell style to set (or null to not set style)
+@return the Cell instance being modified
+*/
+public Cell setCellValue ( Sheet sheet, int row, int col, float f, CellStyle style )
+{
+	Row wbRowColumnNames = sheet.getRow(row);
+	// If it does not exist, create it
+	if ( wbRowColumnNames == null ) {
+	    wbRowColumnNames = sheet.createRow(row);
+	}
+	Cell wbCell = wbRowColumnNames.getCell(col);
+	if ( wbCell == null ) {
+	    wbCell = wbRowColumnNames.createCell(col);
+	}
+	wbCell.setCellValue(f);
+	if ( style != null ) {
+		wbCell.setCellStyle(style);
+	}
+	return wbCell;
+}
+
+/**
+Write a single string cell value.  If necessary a new row will be created.
+@param sheet worksheet to write to
+@param row row (0+)
+@param col column (0+)
+@param s string to write
+@return the Cell instance being modified
+*/
+public Cell setCellValue ( Sheet sheet, int row, int col, String s )
+{
+	Row wbRowColumnNames = sheet.getRow(row);
+	// If it does not exist, create it
+	if ( wbRowColumnNames == null ) {
+	    wbRowColumnNames = sheet.createRow(row);
+	}
+	Cell wbCell = wbRowColumnNames.getCell(col);
+	if ( wbCell == null ) {
+	    wbCell = wbRowColumnNames.createCell(col);
+	}
+	wbCell.setCellValue(s);
+	return wbCell;
+}
+
+/**
+Set a comment string.
+@param wb the workbook being updated
+@param sheet the worksheet being updated
+@param cell the cell for which to set the comment
+*/
+public void setComment ( Workbook wb, Sheet sheet, Cell cell, String commentString, String author )
+{
+	// When the comment box is visible, have it show in a 1x3 space
+	CreationHelper factory = wb.getCreationHelper();
+    ClientAnchor anchor = factory.createClientAnchor();
+    anchor.setCol1(cell.getColumnIndex());
+    anchor.setCol2(cell.getColumnIndex()+1);
+    Row row = cell.getRow();
+    anchor.setRow1(row.getRowNum());
+    anchor.setRow2(row.getRowNum()+3);
+
+    // Create the comment and set the text+author
+    Drawing drawing = sheet.createDrawingPatriarch();
+    Comment comment = drawing.createCellComment(anchor);
+    RichTextString str = factory.createRichTextString(commentString);
+    comment.setString(str);
+    comment.setAuthor(author);
+
+    // Assign the comment to the cell
+    cell.setCellComment(comment);
+}
+
+/**
+Write a list of values to table cells in an Excel worksheet.
 @param table the table to output
 @param workbookFile the name of the workbook file (*.xls or *.xlsx)
 @param sheetName the name of the sheet in the workbook
-@param ColumnIncludeFiltersMap a map indicating patters for column values, to exclude rows
-@param comment character that if at start of first column indicates row is a comment
-@param excelIntegerColumns names of columns that should be treated as integers, or null if none
-@param numberPrecision digits after decimal for floating point numbers (can't yet determine from Excel)
-@param writeAllAsText if True, treat all data as text values
+@param columnIncludeFiltersMap a map indicating patters for column values, to exclude rows
+@param columnCellMap a map indicating cell address and contents to write
 @param cellFormatExcel if true, retain the Excel cell formats, if false set formatting to match table column types
 @param keepOpen if true, keep the Excel file open, if false close after processing
 @param problems list of problems encountered during read, for formatted logging in calling code
-@return a DataTable with the Excel contents
 */
 public void writeTableCells ( DataTable table, String workbookFile, String sheetName,
     Hashtable columnIncludeFiltersMap,
-    // String comment, String [] excelIntegerColumns, String [] excelDateTimeColumns,
-    //int numberPrecision, boolean writeAllAsText,
     Hashtable columnCellMap, boolean cellFormatExcel, boolean keepOpen, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTableCells", message;
@@ -1165,7 +1311,6 @@ throws FileNotFoundException, IOException
         Float fieldValueFloat;
         Integer fieldValueInteger;
         Long fieldValueLong;
-        String NaNValue = "";
         String cellString;
         int colOut, rowOut;
         boolean writeAllAsText = false;
@@ -1276,19 +1421,12 @@ throws FileNotFoundException, IOException
                     }
                     else {
                         fieldValueInteger = (Integer)fieldValue;
-                        if ( fieldValueInteger == null ) {
-                            //cellString = "";
-                            //wbCell.setCellValue(cellString);
-                            wbCell.setCellType(Cell.CELL_TYPE_BLANK);
+                        if ( writeAllAsText ) {
+                            cellString = "" + fieldValue;
+                            wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( writeAllAsText ) {
-                                cellString = "" + fieldValue;
-                                wbCell.setCellValue(cellString);
-                            }
-                            else {
-                                wbCell.setCellValue(fieldValueInteger);
-                            }
+                            wbCell.setCellValue(fieldValueInteger);
                         }
                     }
                 }
@@ -1298,19 +1436,12 @@ throws FileNotFoundException, IOException
                     }
                     else {
                         fieldValueLong = (Long)fieldValue;
-                        if ( fieldValueLong == null ) {
-                            //cellString = "";
-                            //wbCell.setCellValue(cellString);
-                            wbCell.setCellType(Cell.CELL_TYPE_BLANK);
+                        if ( writeAllAsText ) {
+                            cellString = "" + fieldValue;
+                            wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( writeAllAsText ) {
-                                cellString = "" + fieldValue;
-                                wbCell.setCellValue(cellString);
-                            }
-                            else {
-                                wbCell.setCellValue(fieldValueLong);
-                            }
+                            wbCell.setCellValue(fieldValueLong);
                         }
                     }
                 }
@@ -1367,25 +1498,6 @@ throws FileNotFoundException, IOException
             ExcelUtil.removeOpenWorkbook(workbookFile);
         }
     }
-}
-
-/**
-Is the row a comment?
-@param sheet sheet being read
-@param iRow row in sheet (0+)
-@param comment if not null, character at start of row that indicates comment (e.g., "#")
-*/
-public boolean rowIsComment ( Sheet sheet, int iRow, String comment )
-{   Row dataRow = sheet.getRow(iRow);
-    Cell cell = dataRow.getCell(0);
-    if ( (cell != null) && (cell.getCellType() == Cell.CELL_TYPE_STRING) ) {
-        String cellValue = cell.getStringCellValue();
-        if ( (cellValue != null) && (cellValue.length() > 0) &&
-            cellValue.substring(0,1).equals(comment) ) {
-            return true;
-        }
-    }
-    return false;
 }
 
 }

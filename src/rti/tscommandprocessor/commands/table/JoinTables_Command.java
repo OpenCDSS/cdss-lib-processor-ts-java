@@ -222,7 +222,9 @@ CommandWarningException, CommandException
         // Now break pairs and put in hashtable
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
-            joinColumnsMap.put(parts[0].trim(), parts[1].trim() );
+            joinColumnsMap.put(
+            	TSCommandProcessorUtil.expandParameterValue(processor,this,parts[0].trim()),
+            	TSCommandProcessorUtil.expandParameterValue(processor,this,parts[1].trim()) );
         }
     }
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
@@ -241,7 +243,9 @@ CommandWarningException, CommandException
         // Now break pairs and put in hashtable
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
-            columnMap.put(parts[0].trim(), parts[1].trim() );
+            columnMap.put(
+            	TSCommandProcessorUtil.expandParameterValue(processor,this,parts[0].trim()),
+            	TSCommandProcessorUtil.expandParameterValue(processor,this,parts[1].trim()) );
         }
     }
     String ColumnFilters = parameters.getValue ( "ColumnFilters" );
@@ -252,7 +256,9 @@ CommandWarningException, CommandException
         // Now break pairs and put in hashtable
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
-            columnFilters.put(parts[0].trim(), parts[1].trim() );
+            columnFilters.put(
+        		TSCommandProcessorUtil.expandParameterValue(processor,this,parts[0].trim()),
+        		TSCommandProcessorUtil.expandParameterValue(processor,this,parts[1].trim()) );
         }
     }
     String JoinMethod = parameters.getValue ( "JoinMethod" );

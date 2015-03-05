@@ -85,8 +85,13 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnMap") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnMap = __ColumnMap_JTextArea.getText().trim();
+        String [] notes = {
+        	"Column names in the table being joined can be changed to a new name in the main table.",
+        	"Column Name in Join Table - the original column name (can use ${property})",
+        	"Column Name in the Joined Table - the column name after joining (can use ${property})"
+    		};
         String dict = (new DictionaryJDialog ( __parent, true, ColumnMap,
-            "Edit ColumnMap Parameter", null, "Column Name in Join Table", "Column Name in Joined Table",10)).response();
+            "Edit ColumnMap Parameter", notes, "Column Name in Join Table", "Column Name in Joined Table",10)).response();
         if ( dict != null ) {
             __ColumnMap_JTextArea.setText ( dict );
             refresh();
@@ -95,8 +100,13 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditJoinColumns") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String JoinColumns = __JoinColumns_JTextArea.getText().trim();
+        String [] notes = {
+        	"Specify the column name in the main table and the corresponding column in the table to be joined.",
+    		"These columns will be used to match column values for the join.",
+    		"The ${property} notation can be used to substitute processor properties."};
         String dict = (new DictionaryJDialog ( __parent, true, JoinColumns,
-            "Edit JoinColumns Parameter", null, "Column Name in First Table", "Column Name in Join (Second) Table",10)).response();
+            "Edit JoinColumns Parameter", notes,
+        	"Column Name in First Table", "Column Name in Join (Second) Table",10)).response();
         if ( dict != null ) {
             __JoinColumns_JTextArea.setText ( dict );
             refresh();
@@ -105,8 +115,13 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnFilters") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+        String [] notes = {
+        	"Rows to join can be filtered.  This may be needed to ignore rows from one-to-many relationships.",
+        	"Join Column Name - the original column name (can use ${property})",
+        	"Column Value Filter Pattern - a string pattern to match to include rows, using * for wildcard  (can use ${property})"
+    		};
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
-            null, "Join Column Name", "Column Value Filter Pattern",10)).response();
+            notes, "Join Column Name", "Column Value Filter Pattern",10)).response();
         if ( columnFilters != null ) {
             __ColumnFilters_JTextArea.setText ( columnFilters );
             refresh();
@@ -266,7 +281,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     __IncludeColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns in second table to copy (default=copy all)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns in second table to copy, can use ${property} (default=copy all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column map:"),
@@ -338,7 +353,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 	__ok_JButton.setToolTipText ( "Close window and save changes to command." );
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command");
-	setResizable (false);
+	setResizable (true);
     pack();
     JGUIUtil.center(this);
 	refresh();	// Sets the __path_JButton status

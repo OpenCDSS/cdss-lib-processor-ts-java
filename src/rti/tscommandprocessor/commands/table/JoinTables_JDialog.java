@@ -12,7 +12,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -21,7 +20,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -47,6 +46,7 @@ private JTextField __IncludeColumns_JTextField = null;
 private JTextArea __ColumnMap_JTextArea = null;
 private JTextArea __ColumnFilters_JTextArea = null;
 private SimpleJComboBox __JoinMethod_JComboBox = null;
+private SimpleJComboBox __NumberDuplicates_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JoinTables_Command __command = null;
@@ -143,6 +143,7 @@ private void checkInput ()
 	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
 	String JoinMethod = __JoinMethod_JComboBox.getSelected();
+	String NumberDuplicates = __NumberDuplicates_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -165,6 +166,9 @@ private void checkInput ()
     }
     if ( JoinMethod.length() > 0 ) {
         props.set ( "JoinMethod", JoinMethod );
+    }
+    if ( NumberDuplicates.length() > 0 ) {
+        props.set ( "NumberDuplicates", NumberDuplicates );
     }
 	try {
 	    // This will warn the user...
@@ -189,6 +193,7 @@ private void commitEdits ()
     String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
     String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
     String JoinMethod = __JoinMethod_JComboBox.getSelected();
+    String NumberDuplicates = __NumberDuplicates_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableToJoinID", TableToJoinID );
     __command.setCommandParameter ( "JoinColumns", JoinColumns );
@@ -196,6 +201,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ColumnMap", ColumnMap );
 	__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
 	__command.setCommandParameter ( "JoinMethod", JoinMethod );
+	__command.setCommandParameter ( "NumberDuplicates", NumberDuplicates );
 }
 
 /**
@@ -326,6 +332,21 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - join method (default=" + DataTableJoinMethodType.JOIN_IF_IN_BOTH + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Number duplicates:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NumberDuplicates_JComboBox = new SimpleJComboBox ( 12, false );
+    List<String> choices2 = new ArrayList<String>();
+    choices2.add("");
+    choices2.add(__command._False);
+    choices2.add(__command._True);
+    __NumberDuplicates_JComboBox.setData ( choices2 );
+    __NumberDuplicates_JComboBox.addItemListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __NumberDuplicates_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - create numbered columns if duplicates (default=" + __command._False + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -409,6 +430,7 @@ private void refresh ()
     String ColumnMap = "";
     String ColumnFilters = "";
     String JoinMethod = "";
+    String NumberDuplicates = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -419,6 +441,7 @@ private void refresh ()
         ColumnMap = props.getValue ( "ColumnMap" );
         ColumnFilters = props.getValue ( "ColumnFilters" );
         JoinMethod = props.getValue ( "JoinMethod" );
+        NumberDuplicates = props.getValue ( "NumberDuplicates" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -476,6 +499,21 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( NumberDuplicates == null ) {
+            // Select default...
+            __NumberDuplicates_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __NumberDuplicates_JComboBox,NumberDuplicates, JGUIUtil.NONE, null, null ) ) {
+                __NumberDuplicates_JComboBox.select ( NumberDuplicates );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nNumberDuplicates value \"" + NumberDuplicates +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
@@ -483,8 +521,9 @@ private void refresh ()
     JoinColumns = __JoinColumns_JTextArea.getText().trim();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
 	ColumnMap = __ColumnMap_JTextArea.getText().trim();
-	JoinMethod = __JoinMethod_JComboBox.getSelected();
 	ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
+	JoinMethod = __JoinMethod_JComboBox.getSelected();
+	NumberDuplicates = __NumberDuplicates_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "TableToJoinID=" + TableToJoinID );
@@ -493,6 +532,7 @@ private void refresh ()
 	props.add ( "ColumnMap=" + ColumnMap );
 	props.add ( "ColumnFilters=" + ColumnFilters );
 	props.add ( "JoinMethod=" + JoinMethod );
+	props.add ( "NumberDuplicates=" + NumberDuplicates );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

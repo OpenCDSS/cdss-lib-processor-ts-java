@@ -37,7 +37,13 @@ This class initializes, checks, and runs the JoinTables() command.
 */
 public class JoinTables_Command extends AbstractCommand implements Command //, CommandDiscoverable, ObjectListProvider
 {
-    
+
+/**
+Possible values for NumberDuplicates parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+
 /**
 The table that is created.
 */
@@ -64,6 +70,7 @@ throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String TableToJoinID = parameters.getValue ( "TableToJoinID" );
     String JoinMethod = parameters.getValue ( "JoinMethod" );
+    String NumberDuplicates = parameters.getValue ( "NumberDuplicates" );
 	String warning = "";
     String message;
     
@@ -104,18 +111,27 @@ throws InvalidCommandParameterException
                 message, "Specify the join method as " + DataTableJoinMethodType.JOIN_ALWAYS + " or " +
                 DataTableJoinMethodType.JOIN_IF_IN_BOTH) );
     }
-     
+    
+    if ( (NumberDuplicates != null) && !NumberDuplicates.isEmpty() && !NumberDuplicates.equalsIgnoreCase(_False) &&
+        !NumberDuplicates.equalsIgnoreCase(_True)) {
+        message = "The NumberDuplicates parameter (" + NumberDuplicates + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify NumberDuplicates as " + _False + " (default) or " + _True) );
+    }
  
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "TableToJoinID" );
-    valid_Vector.add ( "JoinColumns" );
-    valid_Vector.add ( "IncludeColumns" );
-    valid_Vector.add ( "ColumnMap" );
-    valid_Vector.add ( "ColumnFilters" );
-    valid_Vector.add ( "JoinMethod" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List<String> validList = new ArrayList<String>();
+    validList.add ( "TableID" );
+    validList.add ( "TableToJoinID" );
+    validList.add ( "JoinColumns" );
+    validList.add ( "IncludeColumns" );
+    validList.add ( "ColumnMap" );
+    validList.add ( "ColumnFilters" );
+    validList.add ( "JoinMethod" );
+    validList.add ( "NumberDuplicates" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -266,6 +282,11 @@ CommandWarningException, CommandException
     if ( joinMethodType == null ) {
         joinMethodType = DataTableJoinMethodType.JOIN_IF_IN_BOTH;
     }
+    String NumberDuplicates = parameters.getValue ( "NumberDuplicates" );
+    boolean numberDuplicates = false;
+    if ( (NumberDuplicates != null) && NumberDuplicates.equalsIgnoreCase(_True) ) {
+    	numberDuplicates = true;
+    }
     
     // Get the tables to process.
 
@@ -348,7 +369,7 @@ CommandWarningException, CommandException
 	try {
     	// Join the tables...
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	        table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters, joinMethodType, problems );
+	        table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters, joinMethodType, numberDuplicates, problems );
 	        // Table is already in the processor so no need to resubmit
 	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names
 	        for ( String p : problems ) {
@@ -408,6 +429,7 @@ public String toString ( PropList props )
 	String ColumnMap = props.getValue( "ColumnMap" );
 	String ColumnFilters = props.getValue( "ColumnFilters" );
 	String JoinMethod = props.getValue( "JoinMethod" );
+	String NumberDuplicates = props.getValue( "NumberDuplicates" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -450,6 +472,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "JoinMethod=" + JoinMethod );
+    }
+    if ( (NumberDuplicates != null) && (NumberDuplicates.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NumberDuplicates=" + NumberDuplicates );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

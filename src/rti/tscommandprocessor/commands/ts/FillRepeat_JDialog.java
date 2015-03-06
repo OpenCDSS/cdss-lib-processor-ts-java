@@ -185,23 +185,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__FillDirection_JComboBox = null;
-	__FillStart_JTextField = null;
-	__FillEnd_JTextField = null;
-	__MaxIntervals_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -477,6 +460,7 @@ private void refresh()
 	MaxIntervals = __MaxIntervals_JTextField.getText().trim();
 	FillFlag = __FillFlag_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
+    props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "FillDirection=" + FillDirection );

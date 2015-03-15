@@ -438,7 +438,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 		button_JPanel.add ( __path2_JButton );
 	}
 	button_JPanel.add(__visualDiff_JButton = new SimpleJButton(__VisualDiff, this));
-	__visualDiff_JButton.setToolTipText("Run program to visually compare output files.");
+	__visualDiff_JButton.setToolTipText("Run program to visually compare output files (see TSTool DiffProgram configuration property).");
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 	

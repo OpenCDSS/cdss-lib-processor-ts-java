@@ -196,8 +196,6 @@ CommandWarningException, CommandException
         setDiscoveryTable ( null );
     }
 
-	// Make sure there are time series available to operate on...
-	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
@@ -289,7 +287,7 @@ CommandWarningException, CommandException
 	}
 
 	try {
-    	// Create the table...
+    	// Copy the table...
 
 	    DataTable newTable = null;
 	    if ( command_phase == CommandPhaseType.RUN ) {

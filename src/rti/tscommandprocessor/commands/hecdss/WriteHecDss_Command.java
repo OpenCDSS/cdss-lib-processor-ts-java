@@ -314,8 +314,9 @@ CommandWarningException, CommandException
         throw new CommandException ( message );
     }
     
-    if ( IOUtil.getOSArch() == 64 ) {
-        message = "The command is not supported on 64 bit systems.";
+    int arch = IOUtil.getJreArchBits();
+    if ( arch != 32 ) {
+    	message = "Running as " + arch + "-bit environent. The command is only supported on 32-bit Java Runtime Environment (and corresponding 32-bit HEC-DSS libraries).";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
         status.addToLog(CommandPhaseType.RUN, new CommandLogRecord( CommandStatusType.FAILURE, message,

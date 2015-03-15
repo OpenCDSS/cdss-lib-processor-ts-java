@@ -96,8 +96,10 @@ static
                     // of this software and may result in a version issue.
                     if ( loadUsingJavaLibraryPath ) {
                         dll = libnames[ilib];
+                        Message.printStatus(2, routine, "Attempting to load library using System.loadLibrary(" + dll + ")." );
                         System.loadLibrary(dll);
                         // If successful, make sure the exception object is null and break out of the retries
+                        Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
                         libException[ilib] = null;
                         break;
                     }
@@ -139,7 +141,7 @@ static
         StringBuffer b = new StringBuffer();
         for ( int ilib = 0; ilib < libnames.length; ilib++ ) {
             if ( libException[ilib] != null ) {
-                b.append ( "Unable to load library \"" + libnames[ilib] + "\" after " + maxTries + " tries.");
+                b.append ( " Unable to load library \"" + libnames[ilib] + "\" after " + maxTries + " tries.  java.library.path=\"" + System.getProperty("java.library.path"));
             }
         }
         if ( b.length() > 0 ) {
@@ -530,7 +532,12 @@ public static DSSPathname getPathnamePartsFromDefaultTSIdent( TS ts )
 {
     TSIdent tsident = ts.getIdentifier();
     DSSPathname p = new DSSPathname();
+    // Do the following to preserve legacy code
+    String locType = tsident.getLocationType();
     String loc = tsident.getLocation();
+    if ( !locType.isEmpty() ) {
+    	loc = locType + ":" + loc;
+    }
     int pos = loc.indexOf(":");
     if ( pos < 0 ) {
         // No basin
@@ -749,7 +756,12 @@ throws Exception
     // Normally wildcards will only be used when doing a bulk read and a single time series
     // will be matched for a specific time series identifier.
     Vector pathnameList = new Vector();
+    String locType = tsident.getLocationType();
     String location = tsident.getLocation();
+    // Location type was added to TSIdent after original HEC-DSS features and A-part will be interpreted as the location type
+    if ( !locType.isEmpty() ) {
+    	location = locType + ":" + location;
+    }
     int posColon = location.indexOf(':');
     String aPartReq = "";
     String bPartReq = "";
@@ -1013,7 +1025,13 @@ throws Exception
         // TODO QUESTION FOR BILL CHARLEY - do DSS files have any narrative description or comments for each time
         // series other than the parts?  RTi time series have a description (typically like
         // "South Fork of ABC below XYZ") and also comments, which can be any number of strings.
-        ts.setDescription ( ts.getLocation() + " " + ts.getDataType() );
+        String locType = ts.getIdentifier().getLocationType();
+        if ( locType.isEmpty() ) {
+        	ts.setDescription ( ts.getLocation() + " " + ts.getDataType() );
+        }
+        else {
+        	ts.setDescription ( locType + ":" + ts.getLocation() + " " + ts.getDataType() );
+        }
         // Time series input name is the original HEC-DSS file
         ts.setInputName ( dssFilename );
         // Set the start date from the D part but might be reset below from actual data.
@@ -1026,6 +1044,13 @@ throws Exception
         if ( !date1FromDPart.equals(date2FromDPart) ) {
             ts.setDate2 ( date2FromDPart );
         }
+        // Set the time series properties
+        ts.setProperty("A", aPart);
+        ts.setProperty("B", bPart);
+        ts.setProperty("C", cPart);
+        ts.setProperty("D", dPart);
+        ts.setProperty("E", ePart);
+        ts.setProperty("F", fPart);
         if ( !readData ) {
             // Not reading the data (generally for performance reasons).  To get complete metadata including
             // the units, need to read something out of the time series.
@@ -1424,7 +1449,11 @@ private static DSSPathname getHecPathNameForTimeSeries ( TS ts, String A, String
     DSSPathname path = new DSSPathname();
     TSIdent tsid = ts.getIdentifier();
     // A part from first part of location, separated by ':'
+    String locType = tsid.getLocationType();
     String location = tsid.getLocation();
+    if ( !locType.isEmpty() ) {
+    	location = locType + ":" + location;
+    }
     int pos = location.indexOf(':');
     int intervalBase = ts.getDataIntervalBase();
     int intervalMult = ts.getDataIntervalMult();

@@ -299,25 +299,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	__OutputStart_JTextField = null;
-	__OutputEnd_JTextField = null;
-	__TSList_JComboBox = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__browse_JButton = null;
-	__working_dir = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
@@ -438,7 +419,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __A_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - A part to write (default=first : part of TSID location)."),
+        "Optional - A part to write (default=TSID location type)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("B:"), 
@@ -448,7 +429,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __B_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - B part to write (default=second : part of TSID location)."),
+        "Optional - B part to write (default=TSID location identifier)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("C:"), 

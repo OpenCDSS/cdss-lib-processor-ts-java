@@ -1193,7 +1193,7 @@ throws FileNotFoundException, IOException
         		String comment = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
                     processor, ts, columnComment, cs, commandPhase );
         		Cell cell = sheet.getRow(rowOutStart).getCell(col);
-        		tk.setComment(wb, sheet, cell, comment, author);
+        		tk.setCellComment(wb, sheet, cell, comment, author, 1, 3);
         	}
         }
         // Output the data rows
@@ -1308,7 +1308,7 @@ throws FileNotFoundException, IOException
 		                	// Then expand for the processor and time series properties
 	                		comment = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
 	                            processor, ts, comment, cs, commandPhase );
-	                		tk.setComment(wb, sheet, cell, comment, author);
+	                		tk.setCellComment(wb, sheet, cell, comment, author, 1, 3);
 	                	}
 	                }
             	}

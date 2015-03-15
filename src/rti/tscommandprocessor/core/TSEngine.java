@@ -2853,25 +2853,25 @@ throws Exception
                             catch ( Exception e ) {
                                 // This is serious and can lead to infinite loop so generate an exception and jump to the end of the loop
                                 okToRunFor = false;
-                                if ( command instanceof CommandStatusProvider ) {
-                                    // Add to the command log as a failure...
-                                    commandStatus.addToLog(CommandPhaseType.RUN,
-                                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                             "Error going to next iteration (" + e + ")", "Check For() command iteration data.") );
-                                }
+                                // Add to the command log as a failure...
+                                commandStatus.addToLog(CommandPhaseType.RUN,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                        "Error going to next iteration (" + e + ")", "Check For() command iteration data.") );
                                 // Same logic as ending the loop...
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
                                 // Modify the main command loop index and continue - the command after the end will be executed (or done)
                                 if ( endForIndex >= 0 ) {
                                     i = endForIndex; // OK because we don't want to trigger EndFor() going back to the top
-                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be
-                                    // skipped 
+                                    // TODO SAM 2014-06-29 Perhaps need some way to indicate the For() is in error so it can be skipped 
                                     continue;
                                 }
                                 else {
                                     // Did not match the end of the For() so generate an error and exit
                                     needToInterrupt = true;
-                                    throw new CommandException ( "Unable to match for loop name \"" + forCommand.getName() + "\" in ForEnd() commands");
+                                    commandStatus.addToLog(CommandPhaseType.RUN,
+                                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                        	"Unable to match for loop name \"" + forCommand.getName() + "\" in EndFor() commands", "Add a matching EndFor() command."));
+                                    throw new CommandException ( "Unable to match for loop name \"" + forCommand.getName() + "\" in EndFor() commands");
                                 }
                             }
                             if ( okToRunFor ) {
@@ -2891,7 +2891,10 @@ throws Exception
                                 else {
                                     // Did not match the end of the For() so generate an error and exit
                                     needToInterrupt = true;
-                                    throw new CommandException ( "Unable to match for loop name \"" + forCommand.getName() + "\" in ForEnd() commands");
+                                    commandStatus.addToLog(CommandPhaseType.RUN,
+                                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                        	"Unable to match for loop name \"" + forCommand.getName() + "\" in EndFor() commands", "Add a matching EndFor() command."));
+                                    throw new CommandException ( "Unable to match for loop name \"" + forCommand.getName() + "\" in EndFor() commands");
                                 }
                             }
                         }
@@ -4557,15 +4560,17 @@ throws Exception
         }
     }
     else if ( source.equalsIgnoreCase("HEC-DSS") ) {
+    	int arch = IOUtil.getJreArchBits();
         if ( IOUtil.isUNIXMachine() ) {
             // Probably OK to warn and ignore - UI should not allow HEC-DSS commands to be used on UNIX/Linux
             String message = "HEC-DSS input type is not supported on UNIX/Linux - cannot read time series \"" + tsidentString + "\".";
             Message.printWarning ( 2, routine, message );
             ts = null;
         }
-        else if ( IOUtil.getOSArch() == 64 ) {
+        if ( arch != 32 ) {
         	Message.printWarning ( 2, routine,
-                "HEC-DSS input type is not supported on 64 bit systems - cannot read time series \"" + tsidentString + "\".");
+                "HEC-DSS input type is not supported on " + arch +
+                "-bit runtime environment (only 32-bit runtime environment supported) - cannot read time series \"" + tsidentString + "\".");
             ts = null;
         }
         else {

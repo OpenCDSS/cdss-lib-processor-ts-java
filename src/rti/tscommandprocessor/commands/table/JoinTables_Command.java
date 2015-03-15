@@ -29,6 +29,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.DataTableJoinMethodType;
+import RTi.Util.Table.HandleMultipleJoinMatchesHowType;
 
 // TODO SAM 2013-08-19 Don't make discoverable because new table is not created.  In the future may allow the
 // joined table to be a copy
@@ -37,12 +38,6 @@ This class initializes, checks, and runs the JoinTables() command.
 */
 public class JoinTables_Command extends AbstractCommand implements Command //, CommandDiscoverable, ObjectListProvider
 {
-
-/**
-Possible values for NumberDuplicates parameter.
-*/
-protected final String _False = "False";
-protected final String _True = "True";
 
 /**
 The table that is created.
@@ -70,7 +65,7 @@ throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String TableToJoinID = parameters.getValue ( "TableToJoinID" );
     String JoinMethod = parameters.getValue ( "JoinMethod" );
-    String NumberDuplicates = parameters.getValue ( "NumberDuplicates" );
+    String HandleMultipleJoinMatchesHow = parameters.getValue ( "HandleMultipleJoinMatchesHow" );
 	String warning = "";
     String message;
     
@@ -112,13 +107,15 @@ throws InvalidCommandParameterException
                 DataTableJoinMethodType.JOIN_IF_IN_BOTH) );
     }
     
-    if ( (NumberDuplicates != null) && !NumberDuplicates.isEmpty() && !NumberDuplicates.equalsIgnoreCase(_False) &&
-        !NumberDuplicates.equalsIgnoreCase(_True)) {
-        message = "The NumberDuplicates parameter (" + NumberDuplicates + ") is invalid.";
+    if ( (HandleMultipleJoinMatchesHow != null) && !HandleMultipleJoinMatchesHow.isEmpty() &&
+    	!HandleMultipleJoinMatchesHow.equalsIgnoreCase(""+HandleMultipleJoinMatchesHowType.NUMBER_COLUMNS) &&
+        !HandleMultipleJoinMatchesHow.equalsIgnoreCase(""+HandleMultipleJoinMatchesHowType.USE_LAST_MATCH)) {
+        message = "The HandleMultipleJoinMatchesHow parameter (" + HandleMultipleJoinMatchesHow + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify NumberDuplicates as " + _False + " (default) or " + _True) );
+                message, "Specify HandleMultipleJoinMatchesHow as " + HandleMultipleJoinMatchesHowType.NUMBER_COLUMNS +
+                	" or " + HandleMultipleJoinMatchesHowType.USE_LAST_MATCH + " (default).") );
     }
  
 	// Check for invalid parameters...
@@ -130,7 +127,7 @@ throws InvalidCommandParameterException
     validList.add ( "ColumnMap" );
     validList.add ( "ColumnFilters" );
     validList.add ( "JoinMethod" );
-    validList.add ( "NumberDuplicates" );
+    validList.add ( "HandleMultipleJoinMatchesHow" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -282,10 +279,11 @@ CommandWarningException, CommandException
     if ( joinMethodType == null ) {
         joinMethodType = DataTableJoinMethodType.JOIN_IF_IN_BOTH;
     }
-    String NumberDuplicates = parameters.getValue ( "NumberDuplicates" );
-    boolean numberDuplicates = false;
-    if ( (NumberDuplicates != null) && NumberDuplicates.equalsIgnoreCase(_True) ) {
-    	numberDuplicates = true;
+    String HandleMultipleJoinMatchesHow0 = parameters.getValue ( "HandleMultipleJoinMatchesHow" );
+    HandleMultipleJoinMatchesHowType handleMultipleJoinMatchesHow =
+    	HandleMultipleJoinMatchesHowType.valueOfIgnoreCase(HandleMultipleJoinMatchesHow0);
+    if ( handleMultipleJoinMatchesHow == null ) {
+    	handleMultipleJoinMatchesHow = HandleMultipleJoinMatchesHowType.USE_LAST_MATCH; // Default
     }
     
     // Get the tables to process.
@@ -369,7 +367,8 @@ CommandWarningException, CommandException
 	try {
     	// Join the tables...
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	        table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters, joinMethodType, numberDuplicates, problems );
+	        table.joinTable ( table, tableToJoin, joinColumnsMap, includeColumns, columnMap, columnFilters,
+	        	joinMethodType, handleMultipleJoinMatchesHow, problems );
 	        // Table is already in the processor so no need to resubmit
 	        // TODO SAM 2013-07-31 at some point may need to refresh discovery on table column names
 	        for ( String p : problems ) {
@@ -429,7 +428,7 @@ public String toString ( PropList props )
 	String ColumnMap = props.getValue( "ColumnMap" );
 	String ColumnFilters = props.getValue( "ColumnFilters" );
 	String JoinMethod = props.getValue( "JoinMethod" );
-	String NumberDuplicates = props.getValue( "NumberDuplicates" );
+	String HandleMultipleJoinMatchesHow = props.getValue( "HandleMultipleJoinMatchesHow" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -473,11 +472,11 @@ public String toString ( PropList props )
         }
         b.append ( "JoinMethod=" + JoinMethod );
     }
-    if ( (NumberDuplicates != null) && (NumberDuplicates.length() > 0) ) {
+    if ( (HandleMultipleJoinMatchesHow != null) && (HandleMultipleJoinMatchesHow.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "NumberDuplicates=" + NumberDuplicates );
+        b.append ( "HandleMultipleJoinMatchesHow=" + HandleMultipleJoinMatchesHow );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

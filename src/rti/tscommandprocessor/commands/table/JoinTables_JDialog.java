@@ -31,6 +31,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Table.DataTableJoinMethodType;
+import RTi.Util.Table.HandleMultipleJoinMatchesHowType;
 
 public class JoinTables_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -46,7 +47,7 @@ private JTextField __IncludeColumns_JTextField = null;
 private JTextArea __ColumnMap_JTextArea = null;
 private JTextArea __ColumnFilters_JTextArea = null;
 private SimpleJComboBox __JoinMethod_JComboBox = null;
-private SimpleJComboBox __NumberDuplicates_JComboBox = null;
+private SimpleJComboBox __HandleMultipleJoinMatchesHow_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JoinTables_Command __command = null;
@@ -143,7 +144,7 @@ private void checkInput ()
 	String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
 	String JoinMethod = __JoinMethod_JComboBox.getSelected();
-	String NumberDuplicates = __NumberDuplicates_JComboBox.getSelected();
+	String HandleMultipleJoinMatchesHow = __HandleMultipleJoinMatchesHow_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -167,8 +168,8 @@ private void checkInput ()
     if ( JoinMethod.length() > 0 ) {
         props.set ( "JoinMethod", JoinMethod );
     }
-    if ( NumberDuplicates.length() > 0 ) {
-        props.set ( "NumberDuplicates", NumberDuplicates );
+    if ( HandleMultipleJoinMatchesHow.length() > 0 ) {
+        props.set ( "HandleMultipleJoinMatchesHow", HandleMultipleJoinMatchesHow );
     }
 	try {
 	    // This will warn the user...
@@ -193,7 +194,7 @@ private void commitEdits ()
     String ColumnMap = __ColumnMap_JTextArea.getText().trim().replace("\n"," ");
     String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
     String JoinMethod = __JoinMethod_JComboBox.getSelected();
-    String NumberDuplicates = __NumberDuplicates_JComboBox.getSelected();
+    String HandleMultipleJoinMatchesHow = __HandleMultipleJoinMatchesHow_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableToJoinID", TableToJoinID );
     __command.setCommandParameter ( "JoinColumns", JoinColumns );
@@ -201,7 +202,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ColumnMap", ColumnMap );
 	__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
 	__command.setCommandParameter ( "JoinMethod", JoinMethod );
-	__command.setCommandParameter ( "NumberDuplicates", NumberDuplicates );
+	__command.setCommandParameter ( "HandleMultipleJoinMatchesHow", HandleMultipleJoinMatchesHow );
 }
 
 /**
@@ -229,13 +230,13 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command modifies a table by joining columns from another table."),
+        "This command modifies a table by joining columns from a second table (the table to join)."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Specify 1+ join columns to match column values in each table."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Columns will be added to the original table."),
+        "Columns will be added to the original table.  Rows will be added only if JoinMethod=JoinAlways and there was not a match."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The rows being added from the second table can be filtered."),
@@ -320,7 +321,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Join method:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __JoinMethod_JComboBox = new SimpleJComboBox ( 12, false );
+    __JoinMethod_JComboBox = new SimpleJComboBox ( false );
     List<String> choices = new Vector<String>();
     choices.add("");
     choices.add("" + DataTableJoinMethodType.JOIN_ALWAYS);
@@ -333,19 +334,20 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - join method (default=" + DataTableJoinMethodType.JOIN_IF_IN_BOTH + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Number duplicates:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle multiple matches how?:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NumberDuplicates_JComboBox = new SimpleJComboBox ( 12, false );
+    __HandleMultipleJoinMatchesHow_JComboBox = new SimpleJComboBox ( false );
     List<String> choices2 = new ArrayList<String>();
     choices2.add("");
-    choices2.add(__command._False);
-    choices2.add(__command._True);
-    __NumberDuplicates_JComboBox.setData ( choices2 );
-    __NumberDuplicates_JComboBox.addItemListener ( this );
+    choices2.add(""+HandleMultipleJoinMatchesHowType.NUMBER_COLUMNS);
+    choices2.add(""+HandleMultipleJoinMatchesHowType.USE_LAST_MATCH);
+    __HandleMultipleJoinMatchesHow_JComboBox.setData ( choices2 );
+    __HandleMultipleJoinMatchesHow_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(main_JPanel, __NumberDuplicates_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __HandleMultipleJoinMatchesHow_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - create numbered columns if duplicates (default=" + __command._False + ")."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - how to handle multiple matches for row (default=" +
+        HandleMultipleJoinMatchesHowType.USE_LAST_MATCH + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -430,7 +432,7 @@ private void refresh ()
     String ColumnMap = "";
     String ColumnFilters = "";
     String JoinMethod = "";
-    String NumberDuplicates = "";
+    String HandleMultipleJoinMatchesHow = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -441,7 +443,7 @@ private void refresh ()
         ColumnMap = props.getValue ( "ColumnMap" );
         ColumnFilters = props.getValue ( "ColumnFilters" );
         JoinMethod = props.getValue ( "JoinMethod" );
-        NumberDuplicates = props.getValue ( "NumberDuplicates" );
+        HandleMultipleJoinMatchesHow = props.getValue ( "HandleMultipleJoinMatchesHow" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -499,17 +501,17 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( NumberDuplicates == null ) {
+        if ( HandleMultipleJoinMatchesHow == null ) {
             // Select default...
-            __NumberDuplicates_JComboBox.select ( 0 );
+            __HandleMultipleJoinMatchesHow_JComboBox.select ( 0 );
         }
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __NumberDuplicates_JComboBox,NumberDuplicates, JGUIUtil.NONE, null, null ) ) {
-                __NumberDuplicates_JComboBox.select ( NumberDuplicates );
+            if ( JGUIUtil.isSimpleJComboBoxItem( __HandleMultipleJoinMatchesHow_JComboBox,HandleMultipleJoinMatchesHow, JGUIUtil.NONE, null, null ) ) {
+                __HandleMultipleJoinMatchesHow_JComboBox.select ( HandleMultipleJoinMatchesHow );
             }
             else {
                 Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nNumberDuplicates value \"" + NumberDuplicates +
+                "Existing command references an invalid\nHandleMultipleJoinMatchesHow value \"" + HandleMultipleJoinMatchesHow +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
@@ -523,7 +525,7 @@ private void refresh ()
 	ColumnMap = __ColumnMap_JTextArea.getText().trim();
 	ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
 	JoinMethod = __JoinMethod_JComboBox.getSelected();
-	NumberDuplicates = __NumberDuplicates_JComboBox.getSelected();
+	HandleMultipleJoinMatchesHow = __HandleMultipleJoinMatchesHow_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "TableToJoinID=" + TableToJoinID );
@@ -532,7 +534,7 @@ private void refresh ()
 	props.add ( "ColumnMap=" + ColumnMap );
 	props.add ( "ColumnFilters=" + ColumnFilters );
 	props.add ( "JoinMethod=" + JoinMethod );
-	props.add ( "NumberDuplicates=" + NumberDuplicates );
+	props.add ( "HandleMultipleJoinMatchesHow=" + HandleMultipleJoinMatchesHow );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

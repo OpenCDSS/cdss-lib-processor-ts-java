@@ -303,7 +303,7 @@ public static String expandParameterValue( CommandProcessor processor, Command c
             return parameterValue;
         }
         // Else found the delimiter so continue with the replacement
-        Message.printStatus ( 2, routine, "Found " + delimStart + " at position [" + foundPos + "]");
+        //Message.printStatus ( 2, routine, "Found " + delimStart + " at position [" + foundPos + "]");
         // Get the name of the property
         propname = parameterValue.substring((foundPos+2),foundPosEnd);
         // Try to get the property from the processor

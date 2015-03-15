@@ -61,6 +61,7 @@ private JTextArea __command_JTextArea = null;
 private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __IncludeColumns_JTextField = null;
+private JTextField __ExcludeColumns_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __Worksheet_JTextField = null;
 private JTabbedPane __excelSpace_JTabbedPane = null;
@@ -68,6 +69,7 @@ private JTextField __ExcelAddress_JTextField = null;
 private JTextField __ExcelNamedRange_JTextField = null;
 private JTextField __ExcelTableName_JTextField = null;
 private SimpleJComboBox __ExcelColumnNames_JComboBox = null;
+private JTextArea __ColumnIncludeFilters_JTextArea = null;
 private JTextArea __ColumnExcludeFilters_JTextArea = null;
 private JTextArea __ColumnNamedRanges_JTextArea = null;
 private SimpleJComboBox __KeepOpen_JComboBox = null;
@@ -184,6 +186,20 @@ public void actionPerformed(ActionEvent event)
             refresh();
         }
     }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnIncludeFilters") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
+        String [] notes = {
+            "Include rows from the output by specifying a pattern to match for a column.",
+            "Only string columns can be specified."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, ColumnIncludeFilters,
+            "Edit ColumnIncludeFilters Parameter", notes, "Table Column", "Pattern to include rows (* allowed)",10)).response();
+        if ( dict != null ) {
+            __ColumnIncludeFilters_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnExcludeFilters") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
@@ -219,7 +235,10 @@ public void actionPerformed(ActionEvent event)
         String ColumnWidths = __ColumnWidths_JTextArea.getText().trim();
         String [] notes = {
             "A column's width can be set to make the Excel output more readable.",
-            "Column Name - column name in the table or Default to set default for all columns",
+            "Column Name - one of the following:",
+            "  column name in the table",
+            "  Default, to set default width for all columns (can be reset by specific column information)",
+            "  EmptyColumns, to set the width for empty columns (can be reset by specific column information)",
             "Width - " + __command._Auto + " to automatically size to data, or 1/256 of character width (max=256*256)"
         };
         String columnWidths = (new DictionaryJDialog ( __parent, true, ColumnWidths, "Edit ColumnWidths Parameter",
@@ -240,12 +259,14 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
 	String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Worksheet = __Worksheet_JTextField.getText().trim();
 	String ExcelAddress = __ExcelAddress_JTextField.getText().trim();
 	String ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	String ExcelTableName = __ExcelTableName_JTextField.getText().trim();
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
+	String ColumnIncludeFilters  = __ColumnIncludeFilters_JTextArea.getText().trim();
 	String ColumnExcludeFilters  = __ColumnExcludeFilters_JTextArea.getText().trim();
 	String ColumnNamedRanges = __ColumnNamedRanges_JTextArea.getText().trim().replace("\n"," ");
 	String ColumnCellTypes = __ColumnCellTypes_JTextArea.getText().trim().replace("\n"," ");
@@ -259,6 +280,9 @@ private void checkInput ()
     }
     if ( IncludeColumns.length() > 0 ) {
         props.set ( "IncludeColumns", IncludeColumns );
+    }
+    if ( ExcludeColumns.length() > 0 ) {
+        props.set ( "ExcludeColumns", ExcludeColumns );
     }
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
@@ -277,6 +301,9 @@ private void checkInput ()
     }
     if ( ExcelColumnNames.length() > 0 ) {
         props.set ( "ExcelColumnNames", ExcelColumnNames );
+    }
+    if ( ColumnIncludeFilters.length() > 0 ) {
+        props.set ( "ColumnIncludeFilters", ColumnIncludeFilters );
     }
     if ( ColumnExcludeFilters.length() > 0 ) {
         props.set ( "ColumnExcludeFilters", ColumnExcludeFilters );
@@ -314,6 +341,7 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+    String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String Worksheet = __Worksheet_JTextField.getText().trim();
 	String ExcelAddress = __ExcelAddress_JTextField.getText().trim();
@@ -330,6 +358,7 @@ private void commitEdits ()
     String ColumnDecimalPlaces = __ColumnDecimalPlaces_JTextArea.getText().trim().replace("\n"," ");
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "IncludeColumns", IncludeColumns );
+    __command.setCommandParameter ( "ExcludeColumns", ExcludeColumns );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Worksheet", Worksheet );
 	__command.setCommandParameter ( "ExcelAddress", ExcelAddress );
@@ -415,7 +444,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - table to write."), 
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Column names to write:"), 
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Columns to include:"), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (10);
     __IncludeColumns_JTextField.addKeyListener ( this );
@@ -423,6 +452,29 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - names of columns to write (default=write all)."),
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Columns to exclude:"), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeColumns_JTextField = new JTextField (10);
+    __ExcludeColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __ExcludeColumns_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - names of columns to NOT write (default=write all)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+ 
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Column filters to include rows:"),
+        0, ++yTable, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnIncludeFilters_JTextArea = new JTextArea (3,35);
+    __ColumnIncludeFilters_JTextArea.setLineWrap ( true );
+    __ColumnIncludeFilters_JTextArea.setWrapStyleWord ( true );
+    __ColumnIncludeFilters_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
+    __ColumnIncludeFilters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(table_JPanel, new JScrollPane(__ColumnIncludeFilters_JTextArea),
+        1, yTable, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - column patterns to include rows (default=include all)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(table_JPanel, new SimpleJButton ("Edit","EditColumnIncludeFilters",this),
+        3, ++yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Column filters to exclude rows:"),
         0, ++yTable, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -702,15 +754,17 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String IncludeColumns = "";
+    String ExcludeColumns = "";
     String OutputFile = "";
     String Worksheet = "";
 	String ExcelAddress = "";
 	String ExcelNamedRange = "";
 	String ExcelTableName = "";
 	String ExcelColumnNames = "";
+	String ColumnIncludeFilters = "";
 	String ColumnExcludeFilters = "";
 	String ExcelIntegerColumns = "";
 	String ExcelDateTimeColumns = "";
@@ -726,12 +780,14 @@ private void refresh ()
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         IncludeColumns = props.getValue ( "IncludeColumns" );
+        ExcludeColumns = props.getValue ( "ExcludeColumns" );
 		OutputFile = props.getValue ( "OutputFile" );
 		Worksheet = props.getValue ( "Worksheet" );
 		ExcelAddress = props.getValue ( "ExcelAddress" );
 		ExcelNamedRange = props.getValue ( "ExcelNamedRange" );
 		ExcelTableName = props.getValue ( "ExcelTableName" );
 		ExcelColumnNames = props.getValue ( "ExcelColumnNames" );
+		ColumnIncludeFilters = props.getValue ( "ColumnIncludeFilters" );
 		ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
 		ExcelIntegerColumns = props.getValue ( "ExcelIntegerColumns" );
 		ExcelDateTimeColumns = props.getValue ( "ExcelDateTimeColumns" );
@@ -759,6 +815,9 @@ private void refresh ()
         }
         if ( IncludeColumns != null ) {
             __IncludeColumns_JTextField.setText ( IncludeColumns );
+        }
+        if ( ExcludeColumns != null ) {
+            __ExcludeColumns_JTextField.setText ( ExcludeColumns );
         }
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText ( OutputFile );
@@ -792,6 +851,9 @@ private void refresh ()
                     ExcelColumnNames + "\".  Select a different choice or Cancel." );
             }
         }
+        if ( ColumnIncludeFilters != null ) {
+            __ColumnIncludeFilters_JTextArea.setText ( ColumnIncludeFilters );
+        }
         if ( ColumnExcludeFilters != null ) {
             __ColumnExcludeFilters_JTextArea.setText ( ColumnExcludeFilters );
         }
@@ -824,12 +886,14 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
 	IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+	ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Worksheet = __Worksheet_JTextField.getText().trim();
 	ExcelAddress = __ExcelAddress_JTextField.getText().trim();
 	ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	ExcelTableName = __ExcelTableName_JTextField.getText().trim();
 	ExcelColumnNames = __ExcelColumnNames_JComboBox.getSelected();
+	ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
 	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
 	ColumnNamedRanges = __ColumnNamedRanges_JTextArea.getText().trim().replace("\n"," ");
 	KeepOpen = __KeepOpen_JComboBox.getSelected();
@@ -839,12 +903,14 @@ private void refresh ()
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "IncludeColumns=" + IncludeColumns );
+    props.add ( "ExcludeColumns=" + ExcludeColumns );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "Worksheet=" + Worksheet );
 	props.add ( "ExcelAddress=" + ExcelAddress );
 	props.add ( "ExcelNamedRange=" + ExcelNamedRange );
 	props.add ( "ExcelTableName=" + ExcelTableName );
 	props.add ( "ExcelColumnNames=" + ExcelColumnNames );
+	props.add ( "ColumnIncludeFilters=" + ColumnIncludeFilters );
 	props.add ( "ColumnExcludeFilters=" + ColumnExcludeFilters );
 	props.add ( "ExcelIntegerColumns=" + ExcelIntegerColumns );
 	props.add ( "ExcelDateTimeColumns=" + ExcelDateTimeColumns );

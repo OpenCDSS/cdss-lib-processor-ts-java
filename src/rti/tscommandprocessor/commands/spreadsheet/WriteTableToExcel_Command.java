@@ -28,6 +28,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import RTi.Util.Message.Message;
@@ -52,15 +53,13 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
-import RTi.Util.Table.TableColumnType;
 import RTi.Util.Table.TableField;
-import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the WriteTableToExcel() command, using Apache POI.
 A useful link is:  http://poi.apache.org/spreadsheet/quick-guide.html
 */
-public class WriteTableToExcel_Command extends AbstractCommand implements Command
+public class WriteTableToExcel_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -94,47 +93,6 @@ public WriteTableToExcel_Command ()
 	setCommandName ( "WriteTableToExcel" );
 }
 
-// TODO SAM 2013-08-12 This can be optimized to not have to check column name and do upper-case conversions
-/**
-Evaluate whether a cell value matches an exclude pattern.
-@param columnName name of Excel column being checked
-@param cellValue cell value as string, to check
-@param filtersMap map of column 
-@return true if the cell matches a filter
-*/
-private boolean cellMatchesFilter ( String columnName, String cellValue, Hashtable<String,String> filtersMap )
-{
-    if ( filtersMap == null ) {
-        return false;
-    }
-    Enumeration keys = filtersMap.keys();
-    String key = null;
-    // Compare as upper case to treat as case insensitive
-    String cellValueUpper = null;
-    if ( cellValue != null ) {
-        cellValueUpper = cellValue.toUpperCase();
-    }
-    String columnNameUpper = columnName.toUpperCase();
-    String pattern;
-    while ( keys.hasMoreElements() ) {
-        key = (String)keys.nextElement();
-        pattern = filtersMap.get(key);
-        //Message.printStatus(2,"","Checking column \"" + columnNameUpper + "\" against key \"" + key +
-        //    "\" for cell value \"" + cellValueUpper + "\" and pattern \"" + pattern + "\"" );
-        if ( columnNameUpper.equals(key) ) {
-            if ( ((cellValue == null) || (cellValue.length() == 0)) &&
-                ((pattern == null) || (pattern.length() == 0)) ) {
-                // Blank cell should be ignored
-                return true;
-            }
-            else if ( (cellValueUpper != null) && cellValueUpper.matches(pattern) ) {
-                return true;
-            }
-        }
-    }
-    return false;
-} 
-
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
@@ -156,7 +114,7 @@ throws InvalidCommandParameterException
 
 	// If the input file does not exist, warn the user...
 
-	String working_dir = null;
+	//String working_dir = null;
 	
 	CommandProcessor processor = getCommandProcessor();
 	
@@ -171,7 +129,7 @@ throws InvalidCommandParameterException
 	    Object o = processor.getPropContents ( "WorkingDir" );
 		// Working directory is available so use it...
 		if ( o != null ) {
-			working_dir = (String)o;
+			//working_dir = (String)o;
 		}
 	}
 	catch ( Exception e ) {
@@ -242,6 +200,7 @@ throws InvalidCommandParameterException
 	List<String> validList = new ArrayList<String>(13);
     validList.add ( "TableID" );
     validList.add ( "IncludeColumns" );
+    validList.add ( "ExcludeColumns" );
     validList.add ( "OutputFile" );
     validList.add ( "Worksheet" );
     validList.add ( "ExcelAddress" );
@@ -280,102 +239,6 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
-Get the array of cell ranges based on one of the input address methods.
-@param wb the Excel workbook object
-@param sheet the sheet in the workbook, read in entirety if no other address information is given
-@param excelAddress Excel address range (e.g., A1:D10 or $A1:$D10 or variant)
-@param excelNamedRange a named range
-@param excelTableName a table name, treated as named range
-@return null if no area reference can be determined
-*/
-private AreaReference getAreaReference ( Workbook wb, Sheet sheet,
-    String excelAddress, String excelNamedRange, String excelTableName )
-{   String routine = "WriteTableToExcel_Command.getAreaReference";
-    if ( (excelTableName != null) && (excelTableName.length() > 0) ) {
-        // Table name takes precedence as range name
-        excelNamedRange = excelTableName;
-    }
-    // If sheet is specified but excelAddress, String excelNamedRange, String excelTableName are not,
-    // read the entire sheet
-    if ( ((excelAddress == null) || (excelAddress.length() == 0)) &&
-        ((excelNamedRange == null) || (excelNamedRange.length() == 0)) ) {
-        // Examine the sheet for blank columns/cells.  POI provides methods for the rows...
-        int firstRow = sheet.getFirstRowNum();
-        int lastRow = sheet.getLastRowNum();
-        Message.printStatus(2, routine, "Sheet firstRow=" + firstRow + ", lastRow=" + lastRow );
-        // ...but have to iterate through the rows as per:
-        //  http://stackoverflow.com/questions/2194284/how-to-get-the-last-column-index-reading-excel-file
-        Row row;
-        int firstCol = -1;
-        int lastCol = -1;
-        int cellNum; // Index of cell in row (not column number?)
-        int col;
-        for ( int iRow = firstRow; iRow <= lastRow; iRow++ ) {
-            row = sheet.getRow(iRow);
-            if ( row == null ) {
-                // TODO SAM 2013-06-28 Sometimes this happens with extra rows at the end of a worksheet?
-                continue;
-            }
-            cellNum = row.getFirstCellNum(); // Not sure what this returns if no columns.  Assume -1
-            if ( cellNum >= 0 ) {
-                col = row.getCell(cellNum).getColumnIndex();
-                if ( firstCol < 0 ) {
-                    firstCol = col;
-                }
-                else {
-                    firstCol = Math.min(firstCol, col);
-                }
-            }
-            cellNum = row.getLastCellNum() - 1; // NOTE -1, as per API docs
-            if ( cellNum >= 0 ) {
-                col = row.getCell(cellNum).getColumnIndex();
-                if ( lastCol < 0 ) {
-                    lastCol = col;
-                }
-                else {
-                    lastCol = Math.max(lastCol, col);
-                }
-            }
-            Message.printStatus(2, routine, "row " + iRow + ", firstCol=" + firstCol + ", lastCol=" + lastCol );
-        }
-        // Return null if the any of the row column limits were not determined
-        if ( (firstRow < 0) || (firstCol < 0) || (lastRow < 0) || (lastCol < 0) ) {
-            return null;
-        }
-        else {
-            return new AreaReference(new CellReference(firstRow,firstCol), new CellReference(lastRow,lastCol));
-        }
-    }
-    if ( (excelAddress != null) && (excelAddress.length() > 0) ) {
-        return new AreaReference(excelAddress);
-    }
-    else if ( (excelNamedRange != null) && (excelNamedRange.length() > 0) ) {
-        int namedCellIdx = wb.getNameIndex(excelNamedRange);
-        if ( namedCellIdx < 0 ) {
-            Message.printWarning(3, routine, "Unable to get Excel internal index for named range \"" +
-                excelNamedRange + "\"" );
-            return null;
-        }
-        Name aNamedCell = wb.getNameAt(namedCellIdx);
-
-        // Retrieve the cell at the named range and test its contents
-        // Will get back one AreaReference for C10, and
-        //  another for D12 to D14
-        AreaReference[] arefs = AreaReference.generateContiguous(aNamedCell.getRefersToFormula());
-        // Can only handle one area
-        if ( arefs.length != 1 ) {
-            return null;
-        }
-        else {
-            return arefs[0];
-        }
-    }
-    else {
-        return null;
-    }
-}
-
-/**
 Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
@@ -393,6 +256,98 @@ Return the output file generated by this file.  This method is used internally.
 private File getOutputFile ()
 {
     return __OutputFile_File;
+}
+
+// TODO SAM 2015-02-28 Need to insert into a DataTable toolkit class
+/**
+Determine whether a table row is matched for output.
+@param table table to check
+@param irow row [0+] in table to check
+@param columnIncludeFiltersNumbers column numbers to check for inclusion
+@param columnIncludeFiltersGlobs glob-style wildcards to check for inclusion filter
+@param columnExcludeFiltersNumbers column numbers to check for exclusion
+@param columnExcludeFiltersGlobs glob-style wildcards to check for exclusion filter
+@param errors list of errors to propagate to calling code
+@return true if row should be included in output, false if not
+*/
+private boolean isTableRowIncluded ( DataTable table, int irow,
+	int [] columnIncludeFiltersNumbers, String [] columnIncludeFiltersGlobs,
+	int [] columnExcludeFiltersNumbers, String [] columnExcludeFiltersGlobs,
+	List<String> errors )
+{   boolean filterMatches = true; // Default is match
+	Object o;
+	String s;
+    if ( columnIncludeFiltersNumbers.length > 0 ) {
+        // Filters can be done on any columns so loop through to see if row matches
+        for ( int icol = 0; icol < columnIncludeFiltersNumbers.length; icol++ ) {
+            if ( columnIncludeFiltersNumbers[icol] < 0 ) {
+                filterMatches = false;
+                break;
+            }
+            try {
+                o = table.getFieldValue(irow, columnIncludeFiltersNumbers[icol]);
+                if ( o == null ) {
+                    filterMatches = false;
+                    break; // Don't include nulls when checking values
+                }
+                s = ("" + o).toUpperCase();
+                if ( !s.matches(columnIncludeFiltersGlobs[icol]) ) {
+                    // A filter did not match so don't copy the record
+                    filterMatches = false;
+                    break;
+                }
+            }
+            catch ( Exception e ) {
+                errors.add("Error getting table data for [" + irow + "][" +
+                	columnIncludeFiltersNumbers[icol] + "] (" + e + ")." );
+            }
+        }
+        if ( !filterMatches ) {
+            // Skip the record.
+            return false;
+        }
+    }
+    if ( columnExcludeFiltersNumbers.length > 0 ) {
+        int matchesCount = 0;
+        // Filters can be done on any columns so loop through to see if row matches
+        for ( int icol = 0; icol < columnExcludeFiltersNumbers.length; icol++ ) {
+            if ( columnExcludeFiltersNumbers[icol] < 0 ) {
+                // Can't do filter so don't try
+                break;
+            }
+            try {
+                o = table.getFieldValue(irow, columnExcludeFiltersNumbers[icol]);
+                //Message.printStatus(2,"","Got cell object " + o );
+                if ( o == null ) {
+                	if ( columnExcludeFiltersGlobs[icol].isEmpty() ) {
+                		// Trying to match blank cells
+                		++matchesCount;
+                	}
+                	else { // Don't include nulls when checking values
+                		break;
+                	}
+                }
+                s = ("" + o).toUpperCase();
+                //Message.printStatus(2,"","Comparing table value \"" + s + "\" with exclude filter \"" + columnExcludeFiltersGlobs[icol] + "\"");
+                if ( s.matches(columnExcludeFiltersGlobs[icol]) ) {
+                    // A filter matched so don't copy the record
+                	//Message.printStatus(2,"","Exclude filter matches");
+                    ++matchesCount;
+                }
+            }
+            catch ( Exception e ) {
+            	errors.add("Error getting table data for [" + irow + "][" +
+                   	columnExcludeFiltersNumbers[icol] + "] (" + e + ")." );
+            }
+        }
+        //Message.printStatus(2,"","matchesCount=" + matchesCount + " excludeFiltersLength=" +  columnExcludeFiltersNumbers.length );
+        if ( matchesCount == columnExcludeFiltersNumbers.length ) {
+            // Skip the record since all exclude filters were matched
+        	//Message.printStatus(2,"","Skipping since all exclude filters matched");
+            return false;
+        }
+    }
+    return filterMatches;
 }
 
 /**
@@ -466,11 +421,20 @@ throws InvalidCommandParameterException, CommandWarningException
     String TableID = parameters.getValue ( "TableID" );
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
     String [] includeColumns = null;
-    if ( (IncludeColumns != null) && (IncludeColumns.length() != 0) ) {
+    if ( (IncludeColumns != null) && !IncludeColumns.isEmpty() ) {
         // Use the provided columns
         includeColumns = IncludeColumns.split(",");
         for ( int i = 0; i < includeColumns.length; i++ ) {
             includeColumns[i] = includeColumns[i].trim();
+        }
+    }
+    String ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
+    String [] excludeColumns = null;
+    if ( (ExcludeColumns != null) && !ExcludeColumns.isEmpty() ) {
+        // Use the provided columns
+        excludeColumns = ExcludeColumns.split(",");
+        for ( int i = 0; i < excludeColumns.length; i++ ) {
+            excludeColumns[i] = excludeColumns[i].trim();
         }
     }
 	String OutputFile = parameters.getValue ( "OutputFile" );
@@ -482,22 +446,29 @@ throws InvalidCommandParameterException, CommandWarningException
 	if ( (ExcelColumnNames == null) || ExcelColumnNames.equals("") ) {
 	    ExcelColumnNames = _None; // Default
 	}
+    String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
+    StringDictionary columnIncludeFilters = new StringDictionary(ColumnIncludeFilters,":",",");
+    // Expand the filter information
+    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.indexOf("${") >= 0) ) {
+        LinkedHashMap<String, String> map = columnIncludeFilters.getLinkedHashMap();
+        String key = null;
+        for ( Map.Entry<String,String> entry : map.entrySet() ) {
+            key = entry.getKey();
+            String key2 = TSCommandProcessorUtil.expandParameterValue(processor,this,key);
+            map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,map.get(key)));
+            map.remove(key);
+        }
+    }
     String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );
-    Hashtable<String,String> columnExcludeFiltersMap = null;
-    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) && (ColumnExcludeFilters.indexOf(":") > 0) ) {
-        columnExcludeFiltersMap = new Hashtable<String,String>();
-        // First break map pairs by comma
-        List<String>pairs = StringUtil.breakStringList(ColumnExcludeFilters, ",", 0 );
-        // Now break pairs and put in hashtable
-        for ( String pair : pairs ) {
-            String [] parts = pair.split(":");
-            String tableColumn = parts[0].trim().toUpperCase();
-            String pattern = "";
-            if ( parts.length > 1 ) {
-                // Use upper-case to facilitate case-independent comparisons, and replace * globbing with internal Java notation
-                pattern = parts[1].trim().toUpperCase().replace("*", ".*");
-            }
-            columnExcludeFiltersMap.put(tableColumn, pattern );
+    StringDictionary columnExcludeFilters = new StringDictionary(ColumnExcludeFilters,":",",");
+    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.indexOf("${") >= 0) ) {
+        LinkedHashMap<String, String> map = columnExcludeFilters.getLinkedHashMap();
+        String key = null;
+        for ( Map.Entry<String,String> entry : map.entrySet() ) {
+            key = entry.getKey();
+            String key2 = TSCommandProcessorUtil.expandParameterValue(processor,this,key);
+            map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,map.get(key)));
+            map.remove(key);
         }
     }
     String ColumnNamedRanges = parameters.getValue ( "ColumnNamedRanges" );
@@ -597,28 +568,13 @@ throws InvalidCommandParameterException, CommandWarningException
 	                includeColumnNumbers[i] = table.getFieldIndex(includeColumns[i]);
 	            }
 	            catch ( Exception e ) {
-	                message = "Table colument to include in output \"" + includeColumns[i] + "\" does not exist in table.";
+	                message = "Table column to include in output \"" + includeColumns[i] + "\" does not exist in table.";
 	                Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
 	                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
 	                    message, "Check the table column names." ) );
 	                includeColumnNumbers[i] = -1;
 	            }
 	        }
-	        // Remove -1 so only valid columns are output
-	        int count = 0;
-	        for ( int i = 0; i < includeColumnNumbers.length; i++ ) {
-	            if ( includeColumnNumbers[i] >= 0 ) {
-	                ++count;
-	            }
-	        }
-	        int [] includeColumnNumbers2 = new int[count];
-	        count = 0;
-	        for ( int i = 0; i < includeColumnNumbers.length; i++ ) {
-	            if ( includeColumnNumbers[i] >= 0 ) {
-	                includeColumnNumbers2[count++] = includeColumnNumbers[i];
-	            }
-	        }
-	        includeColumnNumbers = includeColumnNumbers2;
 	    }
 	    else {
 	        // Output all the columns
@@ -627,8 +583,46 @@ throws InvalidCommandParameterException, CommandWarningException
 	            includeColumnNumbers[i] = i;
 	        }
 	    }
+	    // Now remove output columns that are to be excluded.  Do so by setting column numbers for excluded columns to -1
+	    if ( (excludeColumns != null) && (excludeColumns.length > 0) ) {
+	        // Get the column numbers to exclude
+	        for ( int i = 0; i < excludeColumns.length; i++ ) {
+	            try {
+	                int excludeColumnNumber = table.getFieldIndex(excludeColumns[i]);
+	                // See if it exists in the array
+	                for ( int j = 0; j < includeColumnNumbers.length; j++ ) {
+	                	if ( includeColumnNumbers[j] == excludeColumnNumber ) {
+	                		includeColumnNumbers[j] = -1;
+	                	}
+	                }
+	            }
+	            catch ( Exception e ) {
+	                message = "Table column to exclude in output \"" + excludeColumns[i] + "\" does not exist in table.";
+	                Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+	                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Check the table column names." ) );
+	                includeColumnNumbers[i] = -1;
+	            }
+	        }
+	    }
+	    // Finally, remove column numbers -1 so only valid columns that are requested are output
+        int count = 0;
+        for ( int i = 0; i < includeColumnNumbers.length; i++ ) {
+            if ( includeColumnNumbers[i] >= 0 ) {
+                ++count;
+            }
+        }
+        int [] includeColumnNumbers2 = new int[count];
+        count = 0;
+        for ( int i = 0; i < includeColumnNumbers.length; i++ ) {
+            if ( includeColumnNumbers[i] >= 0 ) {
+                includeColumnNumbers2[count++] = includeColumnNumbers[i];
+            }
+        }
+        includeColumnNumbers = includeColumnNumbers2;
         writeTableToExcelFile ( table, includeColumnNumbers, OutputFile_full, Worksheet,
-            ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames, columnExcludeFiltersMap,
+            ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames,
+            columnIncludeFilters, columnExcludeFilters,
             columnNamedRanges, keepOpen, columnCellTypes, columnWidths, columnDecimalPlaces, problems );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
@@ -676,6 +670,7 @@ public String toString ( PropList props )
 	}
     String TableID = props.getValue( "TableID" );
     String IncludeColumns = props.getValue( "IncludeColumns" );
+    String ExcludeColumns = props.getValue( "ExcludeColumns" );
 	String OutputFile = props.getValue( "OutputFile" );
 	String Worksheet = props.getValue( "Worksheet" );
 	String ExcelAddress = props.getValue("ExcelAddress");
@@ -700,6 +695,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "IncludeColumns=\"" + IncludeColumns + "\"" );
+    }
+    if ( (ExcludeColumns != null) && (ExcludeColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcludeColumns=\"" + ExcludeColumns + "\"" );
     }
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -795,20 +796,69 @@ columns
 @param columnWidths column names and widths (Auto to auto-size, or integer points)
 @param columnDecimalPlaces column names and number of decimal places (used for floating point data)
 @param problems list of problems encountered during read, for formatted logging in calling code
-@return a DataTable with the Excel contents
 */
 private void writeTableToExcelFile ( DataTable table, int [] includeColumnNumbers, String workbookFile, String sheetName,
     String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
-    Hashtable<String,String> columnExcludeFiltersMap,
+    StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters,
     Hashtable<String,String> columnNamedRanges, boolean keepOpen,
     StringDictionary columnCellTypes, StringDictionary columnWidths,
     StringDictionary columnDecimalPlaces, List<String> problems )
 throws FileNotFoundException, IOException
-{   String routine = "WriteTableToExcel_Command.writeTableToExcelFile", message;
+{   String routine = "WriteTableToExcel_Command.writeTableToExcelFile";
     
     Workbook wb = null;
     InputStream inp = null;
     try {
+        // Get include filter columns and glob-style regular expressions
+        int [] columnIncludeFiltersNumbers = new int[0];
+        String [] columnIncludeFiltersGlobs = null;
+        if ( columnIncludeFilters != null ) {
+            LinkedHashMap<String, String> map = columnIncludeFilters.getLinkedHashMap();
+            columnIncludeFiltersNumbers = new int[map.size()];
+            columnIncludeFiltersGlobs = new String[map.size()];
+            int ikey = -1;
+            String key = null;
+            for ( Map.Entry<String,String> entry : map.entrySet() ) {
+                ++ikey;
+                columnIncludeFiltersNumbers[ikey] = -1;
+                try {
+                    key = entry.getKey();
+                    columnIncludeFiltersNumbers[ikey] = table.getFieldIndex(key);
+                    columnIncludeFiltersGlobs[ikey] = map.get(key);
+                    // Turn default globbing notation into internal Java regex notation
+                    columnIncludeFiltersGlobs[ikey] = columnIncludeFiltersGlobs[ikey].replace("*", ".*").toUpperCase();
+                }
+                catch ( Exception e ) {
+                    problems.add ( "ColumnIncludeFilters column \"" + key + "\" not found in table.");
+                }
+            }
+        }
+        // Get exclude filter columns and glob-style regular expressions
+        int [] columnExcludeFiltersNumbers = new int[0];
+        String [] columnExcludeFiltersGlobs = null;
+        if ( columnExcludeFilters != null ) {
+            LinkedHashMap<String, String> map = columnExcludeFilters.getLinkedHashMap();
+            columnExcludeFiltersNumbers = new int[map.size()];
+            columnExcludeFiltersGlobs = new String[map.size()];
+            int ikey = -1;
+            String key = null;
+            for ( Map.Entry<String,String> entry : map.entrySet() ) {
+                ++ikey;
+                columnExcludeFiltersNumbers[ikey] = -1;
+                try {
+                    key = entry.getKey();
+                    columnExcludeFiltersNumbers[ikey] = table.getFieldIndex(key);
+                    columnExcludeFiltersGlobs[ikey] = map.get(key);
+                    // Turn default globbing notation into internal Java regex notation
+                    columnExcludeFiltersGlobs[ikey] = columnExcludeFiltersGlobs[ikey].replace("*", ".*").toUpperCase();
+                    Message.printStatus(2,"","Exclude filter column \"" + key + "\" [" +
+                    	columnExcludeFiltersNumbers[ikey] + "] glob \"" + columnExcludeFiltersGlobs[ikey] + "\"" );
+                }
+                catch ( Exception e ) {
+                    problems.add ( "ColumnExcludeFilters column \"" + key + "\" not found in table.");
+                }
+            }
+        }
     	// Create a toolkit for utility functions.
     	ExcelToolkit tk = new ExcelToolkit();
         // See if an open workbook by the same name exists
@@ -856,7 +906,7 @@ throws FileNotFoundException, IOException
             }
         }
         // Get the contiguous block of data to process by evaluating user input
-        AreaReference area = getAreaReference ( wb, sheet, excelAddress, excelNamedRange, excelTableName );
+        AreaReference area = tk.getAreaReference ( wb, sheet, excelAddress, excelNamedRange, excelTableName );
         if ( area == null ) {
             problems.add ( "Unable to get worksheet area reference from address information (empty worksheet?)." );
             return;
@@ -964,7 +1014,7 @@ throws FileNotFoundException, IOException
                 Message.printWarning(3, routine, e);
             }
             // 3. Set the column width
-            //    Actually, have to do this after the data have been set
+            //    Actually, have to do this after the data have been set so see post-write section below
             // 4. Create the styles for the data values, including number of decimals (precision)
             cellFormats[col] = wb.createDataFormat();
             cellStyles[col] = wb.createCellStyle();
@@ -994,12 +1044,10 @@ throws FileNotFoundException, IOException
             if ( columnNamedRanges != null ) {
                 // Iterate through hashtable
                 Enumeration keys = columnNamedRanges.keys();
-                int ikey = -1;
                 String key = null;
                 boolean found = false;
                 String namedRange = null;
                 while ( keys.hasMoreElements() ) {
-                    ++ikey;
                     key = (String)keys.nextElement(); // Column name
                     // Find the table column
                     int namedRangeCol = table.getFieldIndex(key);
@@ -1037,9 +1085,18 @@ throws FileNotFoundException, IOException
         Long fieldValueLong;
         String NaNValue = "";
         String cellString;
-        int rowOut = rowOutDataStart;
+        int rowOut = rowOutDataStart - 1; // -1 because incremented at the top of the loop below
         Row wbRowData;
-        for ( int row = 0; (row < rows) && (rowOut <= rowOutDataEnd); row++, rowOut++) {
+        for ( int row = 0; (row < rows) && (rowOut <= rowOutDataEnd); row++) {
+        	// Check whether the in-memory row should be written
+        	if ( !isTableRowIncluded ( table, row,
+        		columnIncludeFiltersNumbers, columnIncludeFiltersGlobs,
+        		columnExcludeFiltersNumbers, columnExcludeFiltersGlobs,
+        		problems) ) {
+        		continue;
+        	}
+        	// The above is the only "continue" so increment the Excel row here
+        	++rowOut;
             // First try to get an existing row
             wbRowData = sheet.getRow(rowOut);
             // If it does not exist, create it
@@ -1111,47 +1168,29 @@ throws FileNotFoundException, IOException
                     }
                     else if ( tableFieldType == TableField.DATA_TYPE_INT ) {
                         fieldValueInteger = (Integer)fieldValue;
-                        if ( fieldValueInteger == null ) {
-                            cellString = "";
+                        if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
+                            cellString = "" + fieldValue;
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
-                                cellString = "" + fieldValue;
-                                wbCell.setCellValue(cellString);
-                            }
-                            else {
-                                wbCell.setCellValue(fieldValueInteger);
-                                wbCell.setCellStyle(cellStyles[col]);
-                            }
+                            wbCell.setCellValue(fieldValueInteger);
+                            wbCell.setCellStyle(cellStyles[col]);
                         }
                     }
                     else if ( tableFieldType == TableField.DATA_TYPE_LONG ) {
                         fieldValueLong = (Long)fieldValue;
-                        if ( fieldValueLong == null ) {
-                            cellString = "";
+                        if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
+                            cellString = "" + fieldValue;
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
-                                cellString = "" + fieldValue;
-                                wbCell.setCellValue(cellString);
-                            }
-                            else {
-                                wbCell.setCellValue(fieldValueLong);
-                                wbCell.setCellStyle(cellStyles[col]);
-                            }
+                            wbCell.setCellValue(fieldValueLong);
+                            wbCell.setCellStyle(cellStyles[col]);
                         }
                     }
                     else {
                         // Use default formatting.
-                        if ( fieldValue == null ) {
-                            // TODO SAM 2014-01-21 Need to handle as blanks in output, if user indicates to do so
-                            cellString = "";
-                        }
-                        else {
-                            cellString = "" + fieldValue;
-                        }
+                        cellString = "" + fieldValue;
                         wbCell.setCellValue(cellString);
                     }
                 }
@@ -1170,21 +1209,34 @@ throws FileNotFoundException, IOException
             String tableColumnName = table.getFieldName(includeColumnNumbers[col]);
             String width = columnWidths.get(tableColumnName);
             if ( width == null ) {
-                // Try default
+                // Try getting the empty columns width - this overrides "Default"
+                String width2 = columnWidths.get("EmptyColumns");
+                if ( width2 != null ) {
+                	// Need to check to see if the entire column is empty.
+                	// If the entire column is empty
+                	if ( table.isColumnEmpty(includeColumnNumbers[col]) ) {
+                		// Column is not empty so OK to set the column width
+                		width = width2;
+                	}
+                	// Else width=null still in effect so cascade to Default, etc. below
+                }
+            }
+            if ( width == null ) {
+                // Try getting the default width
                 width = columnWidths.get("Default");
             }
             if ( width != null ) {
                 // Set the column width
                 if ( width.equalsIgnoreCase("Auto") ) {
                     sheet.autoSizeColumn(colOut);
-                    Message.printStatus(2,routine,"Setting column \"" + tableColumnName + "\" width to auto.");
+                    Message.printStatus(2,routine,"Setting column \"" + tableColumnName + "\" [" + colOut + "] width to auto.");
                 }
                 else {
                     // Set the column width to 1/256 of character width, max of 256*256 since 256 is max characters shown
                     try {
                         int w = Integer.parseInt(width.trim());
                         sheet.setColumnWidth(colOut, w);
-                        Message.printStatus(2,routine,"Setting column \"" + tableColumnName + "\" width to " + w + ".");
+                        Message.printStatus(2,routine,"Setting column \"" + tableColumnName + "\" [" + colOut + "] width to " + w + ".");
                     }
                     catch ( NumberFormatException e ) {
                         problems.add ( "Column \"" + tableColumnName + "\" width \"" + width + "\" is not an integer." );

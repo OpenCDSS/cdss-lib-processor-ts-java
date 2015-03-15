@@ -41,6 +41,7 @@ private For_Command __command = null;
 private JTextField __Name_JTextField = null;
 private JTextField __IteratorProperty_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
+private JTextArea __List_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableColumn_JTextField = null;
 private JTextArea __command_JTextArea = null;
@@ -86,6 +87,7 @@ private void checkInput ()
     PropList props = new PropList ( "" );
     String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
+    String List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
     if ( Name.length() > 0 ) {
@@ -93,6 +95,9 @@ private void checkInput ()
     }
     if ( IteratorProperty.length() > 0 ) {
         props.set ( "IteratorProperty", IteratorProperty );
+    }
+    if ( List.length() > 0 ) {
+        props.set ( "List", List );
     }
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
@@ -116,10 +121,12 @@ Commit the edits to the command.
 private void commitEdits ()
 {   String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
+    String List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "IteratorProperty", IteratorProperty );
+    __command.setCommandParameter ( "List", List );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableColumn", TableColumn );
 }
@@ -156,9 +163,6 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         "the ${Property} notation."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Currently values from a table column can be used as the list of values for iteration (iterator through numbers will be added later)."),
-        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use an EndFor() command with matching name to indicate the end of the for loop."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
@@ -184,6 +188,27 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for list iteration
+    int yList = -1;
+    JPanel list_JPanel = new JPanel();
+    list_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "List", list_JPanel );
+    
+    JGUIUtil.addComponent(list_JPanel, new JLabel (
+        "The for loop can iterate over a list of values, separated by commas."),
+        0, ++yList, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(list_JPanel, new JLabel ( "List:" ), 
+        0, ++yList, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __List_JTextArea = new JTextArea ( 4, 60 );
+    __List_JTextArea.setLineWrap ( true );
+    __List_JTextArea.setWrapStyleWord ( true );
+    __List_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(list_JPanel, new JScrollPane(__List_JTextArea),
+        1, yList, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(list_JPanel, new JLabel("Required - list of values for iterator."), 
+        3, yList, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      
     // Panel to use table column for iteration
     int yTable = -1;
@@ -205,7 +230,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
-        1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel("Required - identifier for table."), 
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
@@ -214,7 +239,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     __TableColumn_JTextField = new JTextField (20);
     __TableColumn_JTextField.addKeyListener(this);
     JGUIUtil.addComponent(table_JPanel, __TableColumn_JTextField,
-        1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel("Required - name of table column."), 
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -291,6 +316,7 @@ private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
     String Name = "";
     String IteratorProperty = "";
+    String List = "";
 	String TableID = "";
 	String TableColumn = "";
 	__error_wait = false;
@@ -299,6 +325,7 @@ private void refresh ()
 		__first_time = false;
 		Name = props.getValue( "Name" );
 	    IteratorProperty = props.getValue( "IteratorProperty" );
+	    List = props.getValue( "List" );
 		TableID = props.getValue( "TableID" );
 		TableColumn = props.getValue( "TableColumn" );
 		if ( Name != null ) {
@@ -307,6 +334,10 @@ private void refresh ()
         if ( IteratorProperty != null ) {
             __IteratorProperty_JTextField.setText( IteratorProperty );
         }
+        if ( List != null ) {
+            __List_JTextArea.setText( List );
+            __main_JTabbedPane.setSelectedIndex(0);
+        }
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -314,6 +345,7 @@ private void refresh ()
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __TableID_JComboBox,TableID, JGUIUtil.NONE, null, null ) ) {
                 __TableID_JComboBox.select ( TableID );
+                __main_JTabbedPane.setSelectedIndex(1);
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -329,11 +361,13 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	Name = __Name_JTextField.getText().trim();
     IteratorProperty = __IteratorProperty_JTextField.getText().trim();
+    List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
     TableID = __TableID_JComboBox.getSelected();
     TableColumn = __TableColumn_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
     props.add ( "IteratorProperty=" + IteratorProperty );
+    props.add ( "List=" + List );
     props.set ( "TableID", TableID ); // May contain = so handle differently
     props.add ( "TableColumn=" + TableColumn );
     __command_JTextArea.setText( __command.toString(props) );

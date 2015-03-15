@@ -46,7 +46,12 @@ Data table to get list to iterate through.
 private DataTable table = null;
 
 /**
-List of objects to iterate through (from table, etc.).
+List of objects to iterate.
+*/
+private List<Object> list = null;
+
+/**
+List of objects to iterate through (from list, table, etc.).
 */
 private List<Object> iteratorObjectList = null;
 
@@ -75,6 +80,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String routine = getCommandName() + "_checkCommandParameters";
 	String Name = parameters.getValue ( "Name" );
+	String List = parameters.getValue ( "List" );
 	String TableID = parameters.getValue ( "TableID" );
 	String TableColumn = parameters.getValue ( "TableColumn" );
 	String warning = "";
@@ -89,23 +95,32 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
-    if ( (TableID == null) || TableID.equals("") ) {
-        message = "A table identifier must be specified";
+    if ( ((TableID == null) || TableID.isEmpty()) && ((List == null) || List.isEmpty()) ) {
+        message = "A list or table must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the table ID." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR table ID/column." ) );
     }
-    if ( (TableColumn == null) || TableColumn.equals("") ) {
-        message = "A table column must be specified";
+    else if ( ((TableID != null) && !TableID.isEmpty()) && ((List != null) && !List.isEmpty()) ) {
+        message = "A list or table must be specified, but not both";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the table column." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR table ID/column." ) );
+    }
+    if ( (TableID != null) && !TableID.isEmpty() ) {
+	    if ( (TableColumn == null) || TableColumn.equals("") ) {
+	        message = "A table column must be specified";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the table column." ) );
+	    }
     }
 
 	// Check for invalid parameters...
     List<String> validList = new ArrayList<String>(4);
 	validList.add ( "Name" );
 	validList.add ( "IteratorProperty" );
+	validList.add ( "List" );
 	validList.add ( "TableID" );
 	validList.add ( "TableColumn" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -158,69 +173,101 @@ If the increment will go past the end, return false.
 public boolean next ()
 {   String routine = getClass().getSimpleName() + ".next", message;
     Message.printStatus(2, routine, "forInitialized=" + this.forInitialized);
-    if ( !this.forInitialized ) {
-        // Initialize the loop
-        setIteratorPropertyValue(null);
-        // Create the list of objects for the iterator
-        // The table may change dynamically so lookup the column number here
-        String TableID = getCommandParameters().getValue ( "TableID" );
-        String columnName = getCommandParameters().getValue ( "TableColumn" );
-        // TODO SAM 2014-06-29 Need to optimize all of this - currently have duplicate code in runCommand()
-        CommandProcessor processor = getCommandProcessor();
-        CommandStatus status = getCommandStatus();
-        status.clearLog(CommandPhaseType.RUN);
-        PropList request_params = null;
-        CommandProcessorRequestResultsBean bean = null;
-        int warning_level = 2;
-        String command_tag = "";
-        int warning_count = 0;
-        if ( (TableID != null) && !TableID.equals("") ) {
-            // Get the table to be updated
-            request_params = new PropList ( "" );
-            request_params.set ( "TableID", TableID );
-            try {
-                bean = processor.processRequest( "GetTable", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
-                Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report problem to software support." ) );
-            }
-            PropList bean_PropList = bean.getResultsPropList();
-            Object o_Table = bean_PropList.getContents ( "Table" );
-            if ( o_Table == null ) {
-                message = "Unable to find table to process using TableID=\"" + TableID + "\".";
-                Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a table exists with the requested ID." ) );
-            }
-            else {
-                this.table = (DataTable)o_Table;
-            }
-        }
-        if ( this.table == null ) {
-            message = "Table for iteration is null.";
-            Message.printWarning(3, routine, message);
-            throw new RuntimeException ( message );
-        }
-        try {
-            this.iteratorObjectListIndex = 0;
-            this.iteratorObjectList = this.table.getFieldValues(columnName);
-            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
-            this.forInitialized = true;
-            Message.printStatus(2, routine, "Initialized iterator object to: " + this.iteratorObject );
-            return true;
-        }
-        catch ( Exception e ) {
-            message = "Error getting table column values for column \"" + columnName + "\" for iteration (" + e + ").";
-            Message.printWarning(3, routine, message);
-            Message.printWarning(3, routine, e);
-            throw new RuntimeException ( message, e );
-        }
-    }
+  	if ( !this.forInitialized ) {
+    	// Initialize the loop
+  		String List = getCommandParameters().getValue ( "List" );
+    	if ( (List != null) && !List.isEmpty() ) {
+    	    // Iterate with the list
+	        setIteratorPropertyValue(null);
+	    	if ( (List != null) && !List.isEmpty() ) {
+	    		String [] parts = List.split(",");
+	    		this.list = new ArrayList<Object>();
+	    		for ( int i = 0; i < parts.length; i++ ) {
+	    			this.list.add(parts[i].trim());
+	    		}
+	    	}
+	        CommandStatus status = getCommandStatus();
+	        status.clearLog(CommandPhaseType.RUN);
+	        try {
+	            this.iteratorObjectListIndex = 0;
+	            this.iteratorObjectList = this.list;
+	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
+	            this.forInitialized = true;
+	            Message.printStatus(2, routine, "Initialized iterator object to: " + this.iteratorObject );
+	            return true;
+	        }
+	        catch ( Exception e ) {
+	            message = "Error initializing For() iterator to initial value (" + e + ").";
+	            Message.printWarning(3, routine, message);
+	            Message.printWarning(3, routine, e);
+	            throw new RuntimeException ( message, e );
+	        }
+	    }
+	    else {
+	    	// Iterating on table (table must be specified if list is not)
+	        // Initialize the loop
+	        setIteratorPropertyValue(null);
+	        // Create the list of objects for the iterator
+	        // The table may change dynamically so lookup the column number here
+	        String TableID = getCommandParameters().getValue ( "TableID" );
+	        String columnName = getCommandParameters().getValue ( "TableColumn" );
+	        // TODO SAM 2014-06-29 Need to optimize all of this - currently have duplicate code in runCommand()
+	        CommandProcessor processor = getCommandProcessor();
+	        CommandStatus status = getCommandStatus();
+	        status.clearLog(CommandPhaseType.RUN);
+	        PropList request_params = null;
+	        CommandProcessorRequestResultsBean bean = null;
+	        int warning_level = 2;
+	        String command_tag = "";
+	        int warning_count = 0;
+	        if ( (TableID != null) && !TableID.equals("") ) {
+	            // Get the table to be updated
+	            request_params = new PropList ( "" );
+	            request_params.set ( "TableID", TableID );
+	            try {
+	                bean = processor.processRequest( "GetTable", request_params);
+	            }
+	            catch ( Exception e ) {
+	                message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
+	                Message.printWarning(warning_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Report problem to software support." ) );
+	            }
+	            PropList bean_PropList = bean.getResultsPropList();
+	            Object o_Table = bean_PropList.getContents ( "Table" );
+	            if ( o_Table == null ) {
+	                message = "Unable to find table to process using TableID=\"" + TableID + "\".";
+	                Message.printWarning ( warning_level,
+	                MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Verify that a table exists with the requested ID." ) );
+	            }
+	            else {
+	                this.table = (DataTable)o_Table;
+	            }
+	        }
+	        if ( this.table == null ) {
+	            message = "Table for iteration is null.";
+	            Message.printWarning(3, routine, message);
+	            throw new RuntimeException ( message );
+	        }
+	        try {
+	            this.iteratorObjectListIndex = 0;
+	            this.iteratorObjectList = this.table.getFieldValues(columnName);
+	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
+	            this.forInitialized = true;
+	            Message.printStatus(2, routine, "Initialized iterator object to: " + this.iteratorObject );
+	            return true;
+	        }
+	        catch ( Exception e ) {
+	            message = "Error getting table column values for column \"" + columnName + "\" for iteration (" + e + ").";
+	            Message.printWarning(3, routine, message);
+	            Message.printWarning(3, routine, e);
+	            throw new RuntimeException ( message, e );
+	        }
+	    }
+  	}
     else {
         // Increment the property
         if ( this.iteratorObjectListIndex >= (this.iteratorObjectList.size() - 1) ) {
@@ -270,6 +317,14 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	if ( (IteratorProperty == null) || IteratorProperty.equals("") ) {
 	    IteratorProperty = Name;
 	}
+	String List = parameters.getValue ( "List" );
+	if ( (List != null) && !List.isEmpty() ) {
+		String [] parts = List.split(",");
+		this.list = new ArrayList<Object>();
+		for ( int i = 0; i < parts.length; i++ ) {
+			this.list.add(parts[i].trim());
+		}
+	}
 	String TableID = parameters.getValue ( "TableID" );
 	//String TableColumn = parameters.getValue ( "TableColumn" );
 	
@@ -277,8 +332,9 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 
     PropList request_params = null;
     CommandProcessorRequestResultsBean bean = null;
+    this.table = null;
     if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be updated
+        // Get the table to provide the list
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
         try {
@@ -397,6 +453,7 @@ public String toString ( PropList props )
     }
     String Name = props.getValue( "Name" );
     String IteratorProperty = props.getValue( "IteratorProperty" );
+    String List = props.getValue( "List" );
     String TableID = props.getValue( "TableID" );
     String TableColumn = props.getValue( "TableColumn" );
     StringBuffer b = new StringBuffer ();
@@ -408,6 +465,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "IteratorProperty=\"" + IteratorProperty + "\"" );
+    }
+    if ( (List != null) && (List.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "List=\"" + List + "\"" );
     }
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {

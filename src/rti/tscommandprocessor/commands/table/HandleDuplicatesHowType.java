@@ -28,12 +28,12 @@ Use the last non-missing value.
 USE_LAST_NONMISSING("UseLastNonmissing");
 
 /**
-The name that should be displayed when the best fit type is used in UIs and reports.
+The name that should be displayed when the type is used in UIs and reports.
 */
 private final String displayName;
 
 /**
-Construct a time series statistic enumeration value.
+Construct with a display name.
 @param displayName name that should be displayed in choices, etc.
 */
 private HandleDuplicatesHowType(String displayName) {
@@ -41,7 +41,7 @@ private HandleDuplicatesHowType(String displayName) {
 }
 
 /**
-Return the display name for the statistic.  This is usually the same as the
+Return the display name for the enumeration type.  This is usually the same as the
 value but using appropriate mixed case.
 @return the display name.
 */

@@ -215,12 +215,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@param command_phase The command phase that is being run (RUN or DISCOVERY).
+@param commandPhase The command phase that is being run (RUN or DISCOVERY).
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-public void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "FormatDateTimeProperty_Command.runCommand", message;
 	int warning_count = 0;
@@ -228,7 +228,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String command_tag = "" + command_number;
 	int log_level = 3;  // Level for non-use messages for log file.
 
-	// Make sure there are time series available to operate on...
+	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+		setDiscoveryProp(null);
+	}
     
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
@@ -246,38 +248,47 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String Format = parameters.getValue ( "Format" );
 	
 	try {
-	    // Get the original property...
-	    Object dateTimeProperty = processor.getPropContents(DateTimePropertyName);
-	    // Format the new property...
-	    Object Property_Object = null;
-	    if ( dateTimeProperty != null ) {
-	        DateTime dt = (DateTime)dateTimeProperty;
-	        if ( formatterType == DateTimeFormatterType.C ) {
-	            Property_Object = TimeUtil.formatDateTime(dt, Format);
-	        }
-	    }
+		if ( commandPhase == CommandPhaseType.RUN ) {
+		    // Get the original property...
+		    Object dateTimeProperty = processor.getPropContents(DateTimePropertyName);
+		    // Format the new property...
+		    Object Property_Object = null;
+		    if ( dateTimeProperty != null ) {
+		        DateTime dt = (DateTime)dateTimeProperty;
+		        if ( formatterType == DateTimeFormatterType.C ) {
+		            Property_Object = TimeUtil.formatDateTime(dt, Format);
+		        }
+		    }
+		    
+	    	// Set the new property in the processor
 	    
-    	// Set the new property in the processor
-    
-    	PropList request_params = new PropList ( "" );
-    	request_params.setUsingObject ( "PropertyName", PropertyName );
-    	request_params.setUsingObject ( "PropertyValue", Property_Object );
-    	try {
-            processor.processRequest( "SetProperty", request_params);
-            // Set the 
-            if ( command_phase == CommandPhaseType.DISCOVERY ) {
-                setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-            }
-    	}
-    	catch ( Exception e ) {
-    		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor.";
-    		Message.printWarning(log_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-    	}
+	    	PropList request_params = new PropList ( "" );
+	    	request_params.setUsingObject ( "PropertyName", PropertyName );
+	    	request_params.setUsingObject ( "PropertyValue", Property_Object );
+	    	try {
+	            processor.processRequest( "SetProperty", request_params);
+	            // Set the 
+	            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	                setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+	            }
+	    	}
+	    	catch ( Exception e ) {
+	    		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor.";
+	    		Message.printWarning(log_level,
+	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	    				routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Report the problem to software support." ) );
+	    	}
+		}
+		else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+			// Set a property that will be listed for choices
+            Prop prop = new Prop();
+            prop.setKey ( PropertyName );
+            prop.setHowSet(Prop.SET_UNKNOWN);
+            setDiscoveryProp ( prop );
+		}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error setting property \""+ PropertyName + "\"=\"" + Format + "\" (" + e + ").";

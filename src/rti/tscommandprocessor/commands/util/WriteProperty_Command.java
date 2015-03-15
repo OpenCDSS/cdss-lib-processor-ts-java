@@ -135,6 +135,7 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify a property name." ) );
 	}
+	/* TODO SAM 2015-02-25 Not sure why this is hear since some properties won't be known until runtime?
 	else {
 		List valid_properties = new Vector(TSCommandProcessorUtil.getPropertyNameList(processor));
 		int size = 0;
@@ -156,6 +157,7 @@ throws InvalidCommandParameterException
 							message, "Specify a valid property name (use command editor choice)." ) );
 		}
 	}
+	*/
 	
 	if ( (Append != null) && (Append.length() != 0) && !Append.equalsIgnoreCase(_True) &&
 			!Append.equalsIgnoreCase(_False)) {
@@ -265,7 +267,7 @@ CommandWarningException, CommandException
 				routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Confirm that property name is valid - use the command editor." ) );
+						message, "Confirm that property name is valid - use the command editor.  May be OK if generated at runtime." ) );
 	}
 
 	// Now try to write...

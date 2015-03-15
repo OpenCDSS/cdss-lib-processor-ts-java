@@ -207,10 +207,12 @@ CommandWarningException, CommandException
 	    URI = TSCommandProcessorUtil.expandParameterValue(processor,this,URI);
 	}
     String LocalFile = parameters.getValue ( "LocalFile" );
+	if ( LocalFile != null ) {
+		LocalFile = TSCommandProcessorUtil.expandParameterValue(processor,this,LocalFile);
+	}
 
 	String LocalFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-            TSCommandProcessorUtil.expandParameterValue(processor,this,LocalFile) ) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LocalFile) );
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -226,6 +228,7 @@ CommandWarningException, CommandException
             // (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
             CookieHandler.setDefault(new CookieManager(null,CookiePolicy.ACCEPT_ALL));
             // Open the input stream...
+            Message.printStatus(2,routine,"Reading URI \"" + URI + "\"" );
             URL url = new URL(URI);
             URLConnection urlConnection = url.openConnection();
             InputStream is = urlConnection.getInputStream();

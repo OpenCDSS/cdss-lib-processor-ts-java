@@ -4,12 +4,11 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.AreaReference;
 
 /**
-Utility package for Excel.
+Utility package for Excel.  This class contains static methods.
+Use the ExcelToolkit class for most other methods that don't require static data.
 */
 public class ExcelUtil
 {

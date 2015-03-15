@@ -46,7 +46,8 @@ public class ExcelToolkit
 {
 
 /**
-Construct an Excel toolkit instance.
+Construct an Excel toolkit instance.  Once an instance is created, its methods can be called
+to manipulate Excel workbook, worksheet, and cell objects.
 */
 public ExcelToolkit()
 {
@@ -281,6 +282,66 @@ public String [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
 */
 
 /**
+Create a format string for a floating point number.
+@param precision number of digits after the decimal, can be 0.
+@return format string for cell
+*/
+public String createFormatForFloat ( int precision )
+{
+    String format = "0.";
+    if ( precision == 0 ) {
+        // No decimal
+        format= "0";
+    }
+    else {
+        for ( int i = 0; i < precision; i++ ) {
+            format += "0";
+        }
+    }
+    return format;
+}
+
+
+/**
+Find the column number (0+) by matching the cell contents
+@param columnHeading string column heading to match
+@param columnHeadingRow row number for column
+*/
+public int findColumn ( Workbook wb, Sheet sheet, String columnHeading, int columnHeadingRow )
+{
+    int colNum = -1;
+	// Get the maximum column and row
+	AreaReference area = getAreaReference(wb, sheet, null, null, null);
+    int colStart = area.getFirstCell().getCol();
+    int colEnd = area.getLastCell().getCol();
+    Row row = sheet.getRow(columnHeadingRow);
+    if ( row == null ) {
+    	return colNum;
+    }
+    Cell cell;
+    int type;
+    String cellString;
+    for ( int icol = colStart; icol <= colEnd; icol++ ) {
+    	cell = row.getCell(icol);
+    	cellString = null;
+    	if ( cell == null ) {
+    		continue;
+    	}
+    	type = cell.getCellType();
+    	if ( type == Cell.CELL_TYPE_STRING ) {
+        	cellString = cell.getStringCellValue();
+    	}
+    	// TODO SAM 2015-03-01 Evaluate if other types should be converted to strings and compared
+    	if ( cellString != null ) {
+    		if ( cellString.equalsIgnoreCase(columnHeading) ) {
+    			return icol;
+    		}
+    	}
+    }
+    return colNum;
+}
+
+/**
 Get the array of cell ranges based on one of the input address methods.
 @param wb the Excel workbook object
 @param sheet the sheet in the workbook, read in entirety if no other address information is given
@@ -380,23 +441,52 @@ public AreaReference getAreaReference ( Workbook wb, Sheet sheet, String excelAd
 }
 
 /**
-Create a format string for a floating point number.
-@param precision number of digits after the decimal, can be 0.
-@return format string for cell
+Get a sheet's maximum column number.
+This requires looping through all rows and getting the maximum column.
+@param sheet sheet to process
+@return the maximum column number in the sheet
 */
-public String createFormatForFloat ( int precision )
-{
-    String format = "0.";
-    if ( precision == 0 ) {
-        // No decimal
-        format= "0";
-    }
-    else {
-        for ( int i = 0; i < precision; i++ ) {
-            format += "0";
-        }
-    }
-    return format;
+public int getSheetMaxColumn ( Sheet sheet )
+{	int icolMax = -1;
+	int icol;
+	Row row;
+	for ( int irow = sheet.getFirstRowNum(); irow <= sheet.getLastRowNum(); irow++ ) {
+		row = sheet.getRow(irow);
+		if ( row == null ) {
+			continue;
+		}
+		icol = row.getLastCellNum();
+		if ( icol > icolMax ) {
+			icolMax = icol;
+		}
+	}
+	return icolMax;
+}
+
+/**
+Get a sheet's minimum column number.
+This requires looping through all rows and getting the minimum column.
+@param sheet sheet to process
+@return the minimum column number in the sheet
+*/
+public int getSheetMinColumn ( Sheet sheet )
+{	int icolMin = -1;
+	int icol;
+	Row row;
+	for ( int irow = sheet.getFirstRowNum(); irow <= sheet.getLastRowNum(); irow++ ) {
+		row = sheet.getRow(irow);
+		if ( row == null ) {
+			continue;
+		}
+		icol = row.getFirstCellNum();
+		if ( icolMin < 0 ) {
+			icolMin = icol;
+		}
+		else if ( icol < icolMin ) {
+			icolMin = icol;
+		}
+	}
+	return icolMin;
 }
 
 /**
@@ -1008,6 +1098,76 @@ public Cell setCellBlank ( Sheet sheet, int row, int col )
 }
 
 /**
+Set a comment string.  The comment will be displayed near the cell.
+@param wb the workbook being updated
+@param sheet the worksheet being updated
+@param cell the cell for which to set the comment
+@param widthColumns the width of the displayed comment box, as column width
+@param heightRows the height of the displayed comment box, as row height (if -1 set the height to the number of lines in the comment + author)
+*/
+public void setCellComment ( Workbook wb, Sheet sheet, Cell cell, String commentString, String author, int widthColumns, int heightRows )
+{	if ( heightRows < 0 ) {
+		heightRows = StringUtil.patternCount(commentString,"\n") + 1;
+		if ( (author != null) && !author.isEmpty() ) {
+			++heightRows;
+		}
+	}
+	if ( widthColumns < 0 ) {
+		widthColumns = 6;
+	}
+	CreationHelper factory = wb.getCreationHelper();
+    ClientAnchor anchor = factory.createClientAnchor();
+    int firstRow = sheet.getFirstRowNum();
+    int lastRow = sheet.getLastRowNum();
+    int firstCol = getSheetMinColumn(sheet);
+    int lastCol = getSheetMaxColumn(sheet);
+    int anchorCol1 = cell.getColumnIndex();
+    int anchorCol2 = cell.getColumnIndex()+widthColumns;
+    if ( anchorCol2 > lastCol ) {
+    	// Can't specify anchor past the last cell
+    	anchorCol2 = lastCol;
+    	anchorCol1 = anchorCol2 - widthColumns;
+    	if ( anchorCol1 < firstCol ) {
+    		anchorCol1 = firstCol;
+    	}
+    }
+    anchor.setCol1(anchorCol1);
+    anchor.setCol2(anchorCol2);
+    // TODO SAM 2015-03-01 Would be nice to set the flag on the anchor to automatically resize - not in POI yet
+    Row row = cell.getRow();
+    int anchorRow1 = row.getRowNum();
+    int anchorRow2 = row.getRowNum()+heightRows;
+    if ( anchorRow2 > lastRow ) {
+    	anchorRow2 = lastRow;
+    	anchorRow1 = lastRow - heightRows;
+    	if ( anchorRow1 < firstRow ) {
+    		anchorRow1 = firstRow;
+    	}
+    }
+    anchor.setRow1(anchorRow1);
+    anchor.setRow2(anchorRow2);
+
+    // Create the comment and set the text+author
+    Drawing drawing = sheet.createDrawingPatriarch();
+    Comment comment = drawing.createCellComment(anchor);
+    if ( commentString == null ) {
+    	commentString = "";
+    }
+    RichTextString str = factory.createRichTextString(commentString);
+    comment.setString(str);
+    if ( author != null ) {
+    	comment.setAuthor(author);
+    }
+
+    // Assign the comment to the cell - if already set, remove it because it can corrupt the file (fixed in POI 3.11)
+    Comment comment2 = cell.getCellComment();
+    if ( comment2 != null ) {
+    	cell.removeCellComment();
+    }
+    cell.setCellComment(comment);
+}
+
+/**
 Write a single float cell value.  If necessary a new row will be created.
 @param sheet worksheet to write to
 @param row row (0+)
@@ -1082,34 +1242,6 @@ public Cell setCellValue ( Sheet sheet, int row, int col, String s )
 	}
 	wbCell.setCellValue(s);
 	return wbCell;
-}
-
-/**
-Set a comment string.
-@param wb the workbook being updated
-@param sheet the worksheet being updated
-@param cell the cell for which to set the comment
-*/
-public void setComment ( Workbook wb, Sheet sheet, Cell cell, String commentString, String author )
-{
-	// When the comment box is visible, have it show in a 1x3 space
-	CreationHelper factory = wb.getCreationHelper();
-    ClientAnchor anchor = factory.createClientAnchor();
-    anchor.setCol1(cell.getColumnIndex());
-    anchor.setCol2(cell.getColumnIndex()+1);
-    Row row = cell.getRow();
-    anchor.setRow1(row.getRowNum());
-    anchor.setRow2(row.getRowNum()+3);
-
-    // Create the comment and set the text+author
-    Drawing drawing = sheet.createDrawingPatriarch();
-    Comment comment = drawing.createCellComment(anchor);
-    RichTextString str = factory.createRichTextString(commentString);
-    comment.setString(str);
-    comment.setAuthor(author);
-
-    // Assign the comment to the cell
-    cell.setCellComment(comment);
 }
 
 /**

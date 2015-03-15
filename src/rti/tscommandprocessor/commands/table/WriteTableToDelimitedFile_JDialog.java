@@ -304,6 +304,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel ("NaN value:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __NaNValue_JTextField = new JTextField (10);
+     __NaNValue_JTextField.setToolTipText("Specify Blank to write a blank in the output");
      __NaNValue_JTextField.addKeyListener (this);
      JGUIUtil.addComponent(main_JPanel, __NaNValue_JTextField,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

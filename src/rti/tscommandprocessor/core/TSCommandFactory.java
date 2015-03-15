@@ -18,7 +18,6 @@ import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 
 // Datastream commands
 import rti.tscommandprocessor.commands.datastream.WriteTimeSeriesToDataStream_Command;
-
 import rti.tscommandprocessor.commands.datastore.CloseDataStore_Command;
 // DateValue commands
 import rti.tscommandprocessor.commands.datastore.CreateDataStoreDataDictionary_Command;
@@ -105,9 +104,11 @@ import rti.tscommandprocessor.commands.spreadsheet.CloseExcelWorkbook_Command;
 import rti.tscommandprocessor.commands.spreadsheet.NewExcelWorkbook_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableCellsFromExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableFromExcel_Command;
+import rti.tscommandprocessor.commands.spreadsheet.SetExcelCell_Command;
 import rti.tscommandprocessor.commands.spreadsheet.SetExcelWorksheetViewProperties_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTableCellsToExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTableToExcel_Command;
+import rti.tscommandprocessor.commands.spreadsheet.WriteTimeSeriesToExcelFormatted_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTimeSeriesToExcel_Command;
 
 // StateCU commands.
@@ -142,6 +143,7 @@ import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromFixedFormatFile_Command;
+import rti.tscommandprocessor.commands.table.SetPropertyFromTable_Command;
 import rti.tscommandprocessor.commands.table.SetTableValues_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.SortTable_Command;
@@ -258,6 +260,7 @@ import rti.tscommandprocessor.commands.util.Exit_Command;
 import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.For_Command;
 import rti.tscommandprocessor.commands.util.FormatDateTimeProperty_Command;
+import rti.tscommandprocessor.commands.util.FormatStringProperty_Command;
 import rti.tscommandprocessor.commands.util.If_Command;
 import rti.tscommandprocessor.commands.util.ListFiles_Command;
 import rti.tscommandprocessor.commands.util.MergeListFileColumns_Command;
@@ -571,6 +574,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("FormatDateTimeProperty") ) {
         return new FormatDateTimeProperty_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("FormatStringProperty") ) {
+        return new FormatStringProperty_Command ();
     }
     else if ( commandName.equalsIgnoreCase("FormatTableDateTime") ) {
         return new FormatTableDateTime_Command ();
@@ -886,6 +892,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("SetDebugLevel") ) {
         return new SetDebugLevel_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("SetExcelCell") ) {
+        return new SetExcelCell_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("SetExcelWorksheetViewProperties") ) {
         return new SetExcelWorksheetViewProperties_Command ();
     }
@@ -914,6 +923,10 @@ throws UnknownCommandException
     // Put this before the shorter SetProperty() to avoid ambiguity.
     else if ( commandName.equalsIgnoreCase("SetPropertyFromNwsrfsAppDefault") ) {
         return new SetPropertyFromNwsrfsAppDefault_Command ();
+    }
+    // Put this before the shorter SetProperty() to avoid ambiguity.
+    else if ( commandName.equalsIgnoreCase("SetPropertyFromTable") ) {
+        return new SetPropertyFromTable_Command ();
     }
     else if ( commandName.equalsIgnoreCase("SetProperty") ) {
         return new SetProperty_Command ();
@@ -1084,6 +1097,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToExcel") ) {
         return new WriteTimeSeriesToExcel_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToExcelFormatted") ) {
+        return new WriteTimeSeriesToExcelFormatted_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToJson") ) {
         return new WriteTimeSeriesToJson_Command ();

@@ -210,30 +210,31 @@ CommandWarningException, CommandException
             message, "Check log file for details." ) );
         throw new CommandException ( message );
     }
-    
-    int MaxWarnings_int = 500; // Limit the problems to 500 to prevent command overload
-    int problemsSize = problems.size();
-    int problemsSizeOutput = problemsSize;
-    String ProblemType = "FormatTableString";
-    if ( (MaxWarnings_int > 0) && (problemsSize > MaxWarnings_int) ) {
-        // Limit the warnings to the maximum
-        problemsSizeOutput = MaxWarnings_int;
-    }
-    if ( problemsSizeOutput < problemsSize ) {
-        message = "Performing string formatting had " + problemsSize + " warnings - only " + problemsSizeOutput + " are listed.";
-        Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-        // No recommendation since it is a user-defined check
-        // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
-    }
-    for ( int iprob = 0; iprob < problemsSizeOutput; iprob++ ) {
-        message = problems.get(iprob);
-        Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-        // No recommendation since it is a user-defined check
-        // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
+    finally {
+	    int MaxWarnings_int = 500; // Limit the problems to 500 to prevent command overload
+	    int problemsSize = problems.size();
+	    int problemsSizeOutput = problemsSize;
+	    String ProblemType = "FormatTableString";
+	    if ( (MaxWarnings_int > 0) && (problemsSize > MaxWarnings_int) ) {
+	        // Limit the warnings to the maximum
+	        problemsSizeOutput = MaxWarnings_int;
+	    }
+	    if ( problemsSizeOutput < problemsSize ) {
+	        message = "Performing string formatting had " + problemsSize + " warnings - only " + problemsSizeOutput + " are listed.";
+	        Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+	        // No recommendation since it is a user-defined check
+	        // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+	        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
+	    }
+	    for ( int iprob = 0; iprob < problemsSizeOutput; iprob++ ) {
+	        message = problems.get(iprob);
+	        Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+	        // No recommendation since it is a user-defined check
+	        // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+	        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
+	    }
     }
     
     if ( warning_count > 0 ) {

@@ -1160,10 +1160,10 @@ public void setCellComment ( Workbook wb, Sheet sheet, Cell cell, String comment
     }
 
     // Assign the comment to the cell - if already set, remove it because it can corrupt the file (fixed in POI 3.11)
-    Comment comment2 = cell.getCellComment();
-    if ( comment2 != null ) {
-    	cell.removeCellComment();
-    }
+    //Comment comment2 = cell.getCellComment();
+    //if ( comment2 != null ) {
+    // 	cell.removeCellComment();
+    //}
     cell.setCellComment(comment);
 }
 

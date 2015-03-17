@@ -24,6 +24,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Time.DateTime;
@@ -187,7 +188,31 @@ public boolean editCommand ( JFrame parent )
 	return (new FillUsingDiversionComments_JDialog ( parent, this )).ok();
 }
 
-// Use super parseCommand
+/**
+Parse the command string into a PropList of parameters.
+@param commandString A string command to parse.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
+*/
+public void parseCommand ( String commandString )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{
+    super.parseCommand( commandString);
+    // Recently added TSList so handle it properly
+    PropList parameters = getCommandParameters();
+    String TSList = parameters.getValue ( "TSList");
+    String TSID = parameters.getValue ( "TSID");
+    if ( ((TSList == null) || TSList.isEmpty() ) && // TSList not specified
+            ((TSID != null) && !TSID.isEmpty()) ) { // but TSID is specified
+        // Assume old-style where TSList was not specified but TSID was...
+        if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
+            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+        }
+        else {
+            parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+        }
+    }
+}
 
 /**
 Calls TSCommandProcessor to re-calculate limits for this time series.

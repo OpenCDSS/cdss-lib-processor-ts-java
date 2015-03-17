@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.commands.ts.ReadTimeSeries_Command;
-
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
@@ -35,6 +34,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeRange;
 
@@ -46,12 +46,25 @@ public abstract class TSCommandProcessorUtil
 {
 
 /**
-Used to handle regression test results during testing.
+PrintWriter for regression test results report.
 */
 private static PrintWriter __regression_test_fp = null;
+/**
+Count of regression tests that fail.
+*/
 private static int __regressionTestFailCount = 0;
+/**
+Count of regression tests that pass.
+*/
 private static int __regressionTestPassCount = 0;
+/**
+Count of regression tests that are disabled.
+*/
 private static int __regressionTestDisabledCount = 0;
+/**
+Table to contain regression test results.
+*/
+private static DataTable __regressionTestTable = null;
 
 /**
 Append a time series to the processor time series results list.
@@ -92,12 +105,13 @@ public static int appendEnsembleToResultsEnsembleList ( CommandProcessor process
 }
 
 /**
-Count of output lines in regression output report.
+Count of output lines in regression output report body (basically a count of the tests).
 */
 private static int __regressionTestLineCount = 0;
 /**
-Add a record to the regression test results report.  The report is a simple text file
-that indicates whether a test passed.
+Add a record to the regression test results report and optionally results table.
+The report is a simple text file that indicates whether a test passed.
+The data table is a table maintained by the processor to report on test results.
 @param processor CommandProcessor that is being run.
 @param isEnabled whether the command file is enabled (it is useful to list all tests even if not
 enabled in order to generate an inventory of disabled tests that need cleanup)
@@ -106,39 +120,100 @@ enabled in order to generate an inventory of disabled tests that need cleanup)
 be a successful even if the command file failed, if failure was expected)
 @param expectedStatus the expected status (as a string)
 @param maxSeverity the maximum severity from the command file that was run.
-@param InputFile_full the full path to the command file that was run.
+@param testCommandFile the full path to the command file that was run.
 */
 public static void appendToRegressionTestReport(CommandProcessor processor, boolean isEnabled, long runTimeMs,
     String testPassFail, String expectedStatus, CommandStatusType maxSeverity,
-    String InputFile_full )
+    String testCommandFile )
 {
     ++__regressionTestLineCount;
+    String indicator = " ";
+    if ( testPassFail.toUpperCase().indexOf("FAIL") >= 0 ) {
+        indicator = "*";
+        ++__regressionTestFailCount;
+    }
+    else {
+        ++__regressionTestPassCount;
+    }
+    String lineCount = StringUtil.formatString(__regressionTestLineCount,"%5d");
+    String enabled = "TRUE   ";
+    //String runTime = "        ";
+    if ( !isEnabled ) {
+        ++__regressionTestDisabledCount;
+        enabled = "FALSE  ";
+        testPassFail = "    ";
+    }
+    //runTime = StringUtil.formatString(runTimeMs,"%7d");
+    String delim = "|";
     if ( __regression_test_fp != null ) {
-        String indicator = " ";
-        if ( testPassFail.toUpperCase().indexOf("FAIL") >= 0 ) {
-            indicator = "*";
-            ++__regressionTestFailCount;
-        }
-        else {
-            ++__regressionTestPassCount;
-        }
-        String lineCount = StringUtil.formatString(__regressionTestLineCount,"%5d");
-        String enabled = "       ";
-        String runTime = "        ";
-        if ( !isEnabled ) {
-            ++__regressionTestDisabledCount;
-            enabled = "FALSE  ";
-            testPassFail = "    ";
-        }
-        runTime = StringUtil.formatString(runTimeMs,"%7d");
-        String delim = "|";
         __regression_test_fp.println (
             lineCount + delim +
             enabled + delim +
-            runTime + delim +
+            // Moved the runTime to the table because in the report it makes it difficult to "diff" previous and current reports
+            //runTime + delim +
             indicator + StringUtil.formatString(testPassFail,"%-4.4s") + indicator + delim +
             StringUtil.formatString(expectedStatus,"%-10.10s") + delim +
-            StringUtil.formatString(maxSeverity,"%-10.10s") + " " + delim + InputFile_full);
+            StringUtil.formatString(maxSeverity,"%-10.10s") + " " + delim + testCommandFile);
+    }
+    if ( __regressionTestTable != null ) {
+    	TableRecord rec = __regressionTestTable.emptyRecord();
+    	// Look up the column numbers using the names from the table initialization - make sure they agree!
+    	int col = -1;
+    	try {
+    		col = __regressionTestTable.getFieldIndex("Num");
+    		rec.setFieldValue(col, new Integer(__regressionTestLineCount));
+    	}
+    	catch ( Exception e ) {
+    		// Just ignore setting
+    	}
+    	try {
+    		col = __regressionTestTable.getFieldIndex("Enabled");
+    		rec.setFieldValue(col, enabled.trim());
+    	}
+    	catch ( Exception e ) {
+    		// Just ignore setting
+    	}
+    	try {
+    		col = __regressionTestTable.getFieldIndex("Run Time (ms)");
+    		rec.setFieldValue(col, runTimeMs);
+    	}
+    	catch ( Exception e ) {
+    		// Just ignore setting
+    	}
+    	try {
+    		col = __regressionTestTable.getFieldIndex("Test Pass/Fail");
+    		rec.setFieldValue(col, testPassFail.trim());
+    	}
+    	catch ( Exception e ) {
+    		// Just ignore setting
+    	}
+    	try {
+    		col = __regressionTestTable.getFieldIndex("Commands Expected Status");
+    		rec.setFieldValue(col, expectedStatus.trim());
+    	}
+    	catch ( Exception e ) {
+    		// Just ignore setting
+    	}
+    	try {
+    		col = __regressionTestTable.getFieldIndex("Commands Actual Status");
+    		rec.setFieldValue(col, ""+maxSeverity);
+    	}
+    	catch ( Exception e ) {
+    		// Just ignore setting
+    	}
+    	try {
+    		col = __regressionTestTable.getFieldIndex("Command File");
+    		rec.setFieldValue(col, testCommandFile);
+    	}
+    	catch ( Exception e ) {
+    		// Just ignore setting
+    	}
+    	try {
+    		__regressionTestTable.addRecord(rec);
+    	}
+    	catch ( Exception e ) {
+    		// Just ignore adding
+    	}
     }
 }
 
@@ -236,10 +311,10 @@ public static Command convertTSIDToReadCommand ( TSCommandProcessor processor, S
 throws Exception
 {
     // First create a TSIdent object
-    TSIdent tsident = new TSIdent ( tsid );
+    //TSIdent tsident = new TSIdent ( tsid );
     // Figure out if there is an input type and name...
-    String inputType = tsident.getInputType();
-    String inputName = tsident.getInputName();
+    //String inputType = tsident.getInputType();
+    //String inputName = tsident.getInputName();
     // TODO SAM 2011-04-04 Here need to check for matching data stores, etc. to know the command to use
     // for the TSID.
     boolean specificCreated = false; // Whether specific read command was created
@@ -2114,17 +2189,20 @@ public static void killCommandProcesses ( List<Command>commandList )
 
 /**
 Open a new regression test report file.
-@param OutputFile_full Full path to report file to open.
-@param Append_boolean indicates whether the file should be opened in append mode.
+@param outputFile Full path to report file to open.
+@param table data table to receive report results, or null if no table will be used.
+@param append indicates whether the file should be opened in append mode.
 */
-public static void openNewRegressionTestReportFile ( String OutputFile_full, boolean Append_boolean )
+public static void openNewRegressionTestReportFile ( String outputFile, DataTable table, boolean append )
 throws FileNotFoundException
 {   // Initialize the report counts.
     __regressionTestLineCount = 0;
     __regressionTestFailCount = 0;
     __regressionTestPassCount = 0;
+    // Save the table to be used for the regression summary
+    __regressionTestTable = table;
     // Print the report headers.
-    __regression_test_fp = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
+    __regression_test_fp = new PrintWriter ( new FileOutputStream ( outputFile, append ) );
     IOUtil.printCreatorHeader ( __regression_test_fp, "#", 80, 0 );
     __regression_test_fp.println ( "#" );
     __regression_test_fp.println ( "# Command file regression test report from StartRegressionTestResultsReport() and RunCommands()" );
@@ -2132,7 +2210,7 @@ throws FileNotFoundException
     __regression_test_fp.println ( "# Explanation of columns:" );
     __regression_test_fp.println ( "#" );
     __regression_test_fp.println ( "# Num: count of the tests" );
-    __regression_test_fp.println ( "# Enabled: blank if test enabled or FALSE if \"#@enabled false\" in command file" );
+    __regression_test_fp.println ( "# Enabled: TRUE if test enabled or FALSE if \"#@enabled false\" in command file" );
     __regression_test_fp.println ( "# Run Time: run time in milliseconds" );
     __regression_test_fp.println ( "# Test Pass/Fail:" );
     __regression_test_fp.println ( "#    The test status below may be PASS or FAIL (or blank if disabled)." );
@@ -2145,10 +2223,10 @@ throws FileNotFoundException
     __regression_test_fp.println ( "# Commands Actual Status:" );
     __regression_test_fp.println ( "#    The most severe status (Success|Warning|Failure) for each command file." );
     __regression_test_fp.println ( "#" );
-    __regression_test_fp.println ( "#    |       |       |Test  |Commands  |Commands   |" );
-    __regression_test_fp.println ( "#    |       |Run    |Pass/ |Expected  |Actual     |" );
-    __regression_test_fp.println ( "# Num|Enabled|Time   |Fail  |Status    |Status     |Command File" );
-    __regression_test_fp.println ( "#----+-------+-------+------+----------+-----------+------------------" +
+    __regression_test_fp.println ( "#    |       |Test  |Commands  |Commands   |" );
+    __regression_test_fp.println ( "#    |       |Pass/ |Expected  |Actual     |" );
+    __regression_test_fp.println ( "# Num|Enabled|Fail  |Status    |Status     |Command File" );
+    __regression_test_fp.println ( "#----+-------+------+----------+-----------+------------------" +
     		"---------------------------------------------------------------------------" );
 }
 

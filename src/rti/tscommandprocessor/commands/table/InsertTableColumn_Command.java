@@ -25,6 +25,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableColumnType;
 import RTi.Util.Table.TableField;
+import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the InsertTableColumn() command.
@@ -116,6 +117,7 @@ throws InvalidCommandParameterException
     validList.add ( "InsertColumn" );
     validList.add ( "InsertBeforeColumn" );
     validList.add ( "ColumnType" );
+    validList.add ( "InitialValue" );
     validList.add ( "ColumnWidth" );
     validList.add ( "ColumnPrecision" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
@@ -169,6 +171,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (ColumnType == null) || ColumnType.equals("") ) {
         ColumnType = "" + TableColumnType.STRING;
     }
+    String InitialValue = parameters.getValue ( "InitialValue" );
     String ColumnWidth = parameters.getValue ( "ColumnWidth" );
     int columnWidth = -1;
     if ( (ColumnWidth != null) && !ColumnWidth.equals("") ) {
@@ -225,22 +228,115 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new InvalidCommandParameterException ( message );
 	}
 
+	// Insert the column...
+	
 	try {
-    	// Insert column...
+		// Figure out the initial value
+        Object initValue = null;
+        int columnType = TableField.lookupDataType(ColumnType);
+        if ( (InitialValue != null) && !InitialValue.isEmpty() ) {
+        	if ( (columnType == TableField.DATA_TYPE_DATE) || (columnType == TableField.DATA_TYPE_DATETIME) ) {
+        		// Try parsing the date string
+        		try {
+        			initValue = DateTime.parse(InitialValue);
+        		}
+        		catch ( Exception e ) {
+    	        	Message.printWarning ( 3, routine, e );
+    	    		message = "Error parsing date/time \"" + InitialValue + "\" (" + e + ").";
+    	    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+    	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Verify the initial value." ) );
+        		}
+        		if ( initValue != null ) {
+        			if ( columnType == TableField.DATA_TYPE_DATE ) {
+        				// Actually want Date
+        				initValue = ((DateTime)initValue).getDate();
+        			}
+        		}
+        	}
+    		else if ( columnType == TableField.DATA_TYPE_DOUBLE ) {
+    			try {
+    				initValue = Double.parseDouble(InitialValue);
+    			}
+    			catch ( NumberFormatException e ) {
+    	    		message = "Error parsing initial value \"" + InitialValue + "\" as type \"" + ColumnType + "\".";
+    	    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+    	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Verify the initial value." ) );
+    			}
+    		}
+    		else if ( columnType == TableField.DATA_TYPE_FLOAT ) {
+    			try {
+    				initValue = Float.parseFloat(InitialValue);
+    			}
+    			catch ( NumberFormatException e ) {
+    	    		message = "Error parsing initial value \"" + InitialValue + "\" as type \"" + ColumnType + "\".";
+    	    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+    	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Verify the initial value." ) );
+    			}
+    		}
+    		else if ( columnType == TableField.DATA_TYPE_INT ) {
+    			try {
+    				initValue = Integer.parseInt(InitialValue);
+    			}
+    			catch ( NumberFormatException e ) {
+    	    		message = "Error parsing initial value \"" + InitialValue + "\" as type \"" + ColumnType + "\".";
+    	    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+    	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Verify the initial value." ) );
+    			}
+    		}
+    		else if ( columnType == TableField.DATA_TYPE_LONG ) {
+    			try {
+    				initValue = Long.parseLong(InitialValue);
+    			}
+    			catch ( NumberFormatException e ) {
+    	    		message = "Error parsing initial value \"" + InitialValue + "\" as type \"" + ColumnType + "\".";
+    	    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+    	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Verify the initial value." ) );
+    			}
+    		}
+    		else if ( columnType == TableField.DATA_TYPE_SHORT ) {
+    			try {
+    				initValue = Short.parseShort(InitialValue);
+    			}
+    			catch ( NumberFormatException e ) {
+    	    		message = "Error parsing initial value \"" + InitialValue + "\" as type \"" + ColumnType + "\".";
+    	    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+    	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Verify the initial value." ) );
+    			}
+    		}
+    		else if ( columnType == TableField.DATA_TYPE_STRING ) {
+    			initValue = InitialValue;
+    		}
+        	else {
+	    		message = "Do not know how to process column type \"" + ColumnType + "\" for initial value \"" + InitialValue + "\".";
+	    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Report problem to software support - column type needs to be enabled." ) );
+        	}
+        }
 	    if ( (InsertBeforeColumn != null) && !InsertBeforeColumn.equals("") ) {
 	        // Insert before an existing column
 	        int col = -1;
 	        try {
 	            col = table.getFieldIndex(InsertBeforeColumn);
-	            table.addField(col,new TableField(TableField.lookupDataType(ColumnType),InsertColumn,columnWidth,columnPrecision), null);
 	        }
 	        catch ( Exception e ) {
-	            
+	        	Message.printWarning ( 3, routine, e );
+	    		message = "Error determining column number for InsertBeforeColumn \"" + InsertBeforeColumn + "\" (" + e + ").";
+	    		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify the column name." ) );
 	        }
+            table.addField(col,new TableField(columnType,InsertColumn,columnWidth,columnPrecision), initValue);
 	    }
         else {
             // Insert the column at the end of the table
-            table.addField(new TableField(TableField.lookupDataType(ColumnType),InsertColumn,columnWidth,columnPrecision), null);
+            table.addField(new TableField(TableField.lookupDataType(ColumnType),InsertColumn,columnWidth,columnPrecision), initValue);
         }
  	}
 	catch ( Exception e ) {
@@ -273,6 +369,7 @@ public String toString ( PropList props )
     String InsertColumn = props.getValue( "InsertColumn" );
     String InsertBeforeColumn = props.getValue( "InsertBeforeColumn" );
     String ColumnType = props.getValue( "ColumnType" );
+    String InitialValue = props.getValue( "InitialValue" );
     String ColumnWidth = props.getValue( "ColumnWidth" );
     String ColumnPrecision = props.getValue( "ColumnPrecision" );
 	StringBuffer b = new StringBuffer ();
@@ -299,6 +396,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ColumnType=" + ColumnType );
+    }
+    if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InitialValue=\"" + InitialValue + "\"" );
     }
     if ( (ColumnWidth != null) && (ColumnWidth.length() > 0) ) {
         if ( b.length() > 0 ) {

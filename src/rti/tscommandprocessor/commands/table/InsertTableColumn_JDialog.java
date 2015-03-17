@@ -44,6 +44,7 @@ private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __InsertColumn_JTextField = null;
 private JTextField __InsertBeforeColumn_JTextField = null;
 private SimpleJComboBox __ColumnType_JComboBox = null;
+private JTextField __InitialValue_JTextField = null;
 private JTextField __ColumnWidth_JTextField = null;
 private JTextField __ColumnPrecision_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
@@ -93,6 +94,7 @@ private void checkInput ()
 	String InsertColumn = __InsertColumn_JTextField.getText().trim();
 	String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
 	String ColumnType = __ColumnType_JComboBox.getSelected();
+	String InitialValue = __InitialValue_JTextField.getText().trim();
 	String ColumnWidth = __ColumnWidth_JTextField.getText().trim();
 	String ColumnPrecision = __ColumnPrecision_JTextField.getText().trim();
 	__error_wait = false;
@@ -108,6 +110,9 @@ private void checkInput ()
     }
     if ( ColumnType.length() > 0 ) {
         props.set ( "ColumnType", ColumnType );
+    }
+    if ( InitialValue.length() > 0 ) {
+        props.set ( "InitialValue", InitialValue );
     }
     if ( ColumnWidth.length() > 0 ) {
         props.set ( "ColumnWidth", ColumnWidth );
@@ -135,12 +140,14 @@ private void commitEdits ()
     String InsertColumn = __InsertColumn_JTextField.getText().trim();
     String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
     String ColumnType = __ColumnType_JComboBox.getSelected();
+    String InitialValue = __InitialValue_JTextField.getText().trim();
     String ColumnWidth = __ColumnWidth_JTextField.getText().trim();
     String ColumnPrecision = __ColumnPrecision_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "InsertColumn", InsertColumn );
     __command.setCommandParameter ( "InsertBeforeColumn", InsertBeforeColumn );
     __command.setCommandParameter ( "ColumnType", ColumnType );
+    __command.setCommandParameter ( "InitialValue", InitialValue );
     __command.setCommandParameter ( "ColumnWidth", ColumnWidth );
     __command.setCommandParameter ( "ColumnPrecision", ColumnPrecision );
 }
@@ -169,10 +176,10 @@ private void initialize ( JFrame parent, InsertTableColumn_Command command, List
 	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command inserts a column into a table."),
+        "This command inserts a new column into a table."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The column is initialized with blank (null) values."),
+        "The column is initialized with blank (null) values unless an initial value is provided."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -225,9 +232,18 @@ private void initialize ( JFrame parent, InsertTableColumn_Command command, List
     __ColumnType_JComboBox.addItemListener ( this );
     __ColumnType_JComboBox.setMaximumRowCount(typeChoices.size());
     JGUIUtil.addComponent(main_JPanel, __ColumnType_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - column type (default=" + TableColumnType.STRING + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Initial value:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InitialValue_JTextField = new JTextField ( "", 10 );
+    __InitialValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __InitialValue_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - initial value (default=null)." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Column width (if string):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -326,6 +342,7 @@ private void refresh ()
     String InsertColumn = "";
     String InsertBeforeColumn = "";
     String ColumnType = "";
+    String InitialValue = "";
     String ColumnWidth = "";
     String ColumnPrecision = "";
 	PropList props = __command.getCommandParameters();
@@ -335,6 +352,7 @@ private void refresh ()
         InsertColumn = props.getValue ( "InsertColumn" );
         InsertBeforeColumn = props.getValue ( "InsertBeforeColumn" );
         ColumnType = props.getValue ( "ColumnType" );
+        InitialValue = props.getValue ( "InitialValue" );
         ColumnWidth = props.getValue ( "ColumnWidth" );
         ColumnPrecision = props.getValue ( "ColumnPrecision" );
         if ( TableID == null ) {
@@ -374,6 +392,9 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( InitialValue != null ) {
+            __InitialValue_JTextField.setText ( InitialValue );
+        }
         if ( ColumnWidth != null ) {
             __ColumnWidth_JTextField.setText ( ColumnWidth );
         }
@@ -386,6 +407,7 @@ private void refresh ()
     InsertColumn = __InsertColumn_JTextField.getText().trim();
     InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
     ColumnType = __ColumnType_JComboBox.getSelected();
+    InitialValue = __InitialValue_JTextField.getText().trim();
     ColumnWidth = __ColumnWidth_JTextField.getText().trim();
     ColumnPrecision = __ColumnPrecision_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
@@ -393,6 +415,7 @@ private void refresh ()
     props.add ( "InsertColumn=" + InsertColumn );
     props.add ( "InsertBeforeColumn=" + InsertBeforeColumn );
     props.add ( "ColumnType=" + ColumnType );
+    props.add ( "InitialValue=" + InitialValue );
     props.add ( "ColumnWidth=" + ColumnWidth );
     props.add ( "ColumnPrecision=" + ColumnPrecision );
 	__command_JTextArea.setText( __command.toString ( props ) );

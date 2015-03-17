@@ -28,8 +28,6 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
-//import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -41,30 +39,25 @@ implements ActionListener, KeyListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 
-private SimpleJButton	__cancel_JButton = null,	// Cancel Button
-			__browse_JButton = null,	// Browse Button
-			__ok_JButton = null,		// Ok Button
-			__path_JButton = null;		// Button to add/remove
-							// path
-private JTextField	__OutputFile_JTextField = null;	// Field for report file
-/* TODO SAM 2007-11-23 Evaluate whether needed
-private SimpleJComboBox	__Suffix_JComboBox = null;	// Choice for file suffix
-*/
-private JTextArea	__command_JTextArea = null;	// Command as JTextField
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
+private JTextField __OutputFile_JTextField = null;
+private JTextField __TestResultsTableID_JTextField = null;
+private JTextArea __command_JTextArea = null;
+private boolean __error_wait = false;
+private boolean __first_time = true;
 private StartRegressionTestResultsReport_Command __command = null;	// Command to edit
-private boolean		__ok = false;		// Indicates whether the user
-						// has pressed OK to close the
-						// dialog.
-private String		__working_dir = null;	// The working directory.
+private boolean __ok = false; // Whether the user has pressed OK to close the dialog.
+private String __working_dir = null;
 
 /**
 Editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public StartRegressionTestResultsReport_JDialog ( JFrame parent, Command command )
+public StartRegressionTestResultsReport_JDialog ( JFrame parent, StartRegressionTestResultsReport_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -108,12 +101,6 @@ public void actionPerformed( ActionEvent event )
 		response ( false );
 	}
 	else if (o == __ok_JButton) {
-		// Enforce the ".log" extension if a filename has been entered
-		String OutputFile = __OutputFile_JTextField.getText().trim();
-		if (!OutputFile.equals("")) {
-			OutputFile = IOUtil.enforceFileExtension(OutputFile, "log");
-			__OutputFile_JTextField.setText(OutputFile);
-		}
 		refresh();
 		checkInput();
 		if (!__error_wait) {
@@ -121,14 +108,14 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(__AddWorkingDirectory) ) {
+		if ( __path_JButton.getText().equals(__AddWorkingDirectory) ) {
 			__OutputFile_JTextField.setText (
 			IOUtil.toAbsolutePath(__working_dir,
 			__OutputFile_JTextField.getText() ) );
 		}
 		else if ( __path_JButton.getText().equals(__RemoveWorkingDirectory) ) {
-			try {	__OutputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
+			try {
+				__OutputFile_JTextField.setText (IOUtil.toRelativePath ( __working_dir,
 				__OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
@@ -152,15 +139,13 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String OutputFile = __OutputFile_JTextField.getText().trim();
-	//String Suffix = __Suffix_JComboBox.getSelected();
+	String TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
 	}
-    /*
-	if ( Suffix.length() > 0 ) {
-		props.set ( "Suffix", Suffix );
+	if ( TestResultsTableID.length() > 0 ) {
+		props.set ( "TestResultsTableID", TestResultsTableID );
 	}
-    */
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -176,24 +161,9 @@ to check its low-level values.
 */
 private void commitEdits ()
 {	String OutputFile = __OutputFile_JTextField.getText().trim();
-	//String Suffix = __Suffix_JComboBox.getSelected();
+	String TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
 	__command.setCommandParameter ( "OutputFile", OutputFile );
-	//__command.setCommandParameter ( "Suffix", Suffix );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__browse_JButton = null;
-	__path_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	//__Suffix_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
+	__command.setCommandParameter ( "TestResultsTableID", TestResultsTableID );
 }
 
 /**
@@ -201,8 +171,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (StartRegressionTestResultsReport_Command)command;
+private void initialize ( JFrame parent, StartRegressionTestResultsReport_Command command )
+{	__command = command;
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)__command.getCommandProcessor(), __command );
 
 	addWindowListener( this );
@@ -217,33 +187,26 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"(Re)start the regression test results report file, written to by the CompareFiles() command." ),
+		"(Re)start the regression test results report file, written to by the RunCommands() command to summarize automated test results." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     /*
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A blank log file name will restart the current file."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        */
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The report file can be specified using a full or " +
-		"relative path (relative to the working directory)."),
+    */
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The report file can be specified using a full or relative path (relative to the working directory)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        	"The working directory is: " + __working_dir ), 
+        	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The Browse button can be used to select an existing file to overwrite."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The text report is formatted to allow comparison with previous runs to see if problems are being resolved."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        /*
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying a suffix for the file will insert the suffix " +
-		"before the \"log\" file extension."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        */
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Report (output) file:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Report (output) file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -252,24 +215,17 @@ private void initialize ( JFrame parent, Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Test results table ID:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TestResultsTableID_JTextField = new JTextField (10);
+    __TestResultsTableID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __TestResultsTableID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - identifier for table containing results."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        /*
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Suffix:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Suffix_JComboBox = new SimpleJComboBox ( false );
-	__Suffix_JComboBox.addItem ( "" );	// Default
-	__Suffix_JComboBox.addItem ( __command._Date );
-	__Suffix_JComboBox.addItem ( __command._DateTime );
-	__Suffix_JComboBox.select ( 0 );
-	__Suffix_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Suffix_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Suffix for log file (blank=none)."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        */
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -335,41 +291,27 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String OutputFile = "";
-    //String Suffix = "";
+    String TestResultsTableID = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command...
         parameters = __command.getCommandParameters();
-		//Suffix = props.getValue ( "Suffix" );
 		OutputFile = parameters.getValue ( "OutputFile" );
+		TestResultsTableID = parameters.getValue ( "TestResultsTableID" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText ( OutputFile );
 		}
-        /*
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__Suffix_JComboBox, Suffix, JGUIUtil.NONE, null, null)){
-			__Suffix_JComboBox.select ( Suffix );
+		if ( TestResultsTableID != null ) {
+			__TestResultsTableID_JTextField.setText ( TestResultsTableID );
 		}
-		else {	if ( (Suffix == null) || Suffix.equals("") ) {
-				// New command...select the default...
-				__Suffix_JComboBox.select ( 0 );
-			}
-			else {	// Bad user command...
-				Message.printWarning ( 1, routine, "Existing " +
-				"command references an invalid\n"+
-				"suffix \"" + Suffix +
-				"\".  Select a\ndifferent value or Cancel." );
-			}
-		}
-        */
 	}
 	// Regardless, reset the command from the fields.  This is only visible
 	// information that has not been committed in the command.
 	OutputFile = __OutputFile_JTextField.getText().trim();
-	//Suffix = __Suffix_JComboBox.getSelected();
+	TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
 	parameters.add ( "OutputFile=" + OutputFile );
-	//parameters.add ( "Suffix=" + Suffix );
+	parameters.add ( "TestResultsTableID=" + TestResultsTableID );
 	__command_JTextArea.setText( __command.toString(parameters) );
 	// Check the path and determine what the label on the path button should be...
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
@@ -423,4 +365,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end StartRegressionTestResultsReport_JDialog
+}

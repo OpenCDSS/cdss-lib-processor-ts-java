@@ -8,12 +8,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -32,9 +33,7 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the CreateRegressionTestCommandFile() command.
-</p>
 */
 public class CreateRegressionTestCommandFile_Command extends AbstractCommand
 implements Command, FileGenerator
@@ -73,6 +72,7 @@ throws InvalidCommandParameterException
     String SearchFolder = parameters.getValue ( "SearchFolder" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String SetupCommandFile = parameters.getValue ( "SetupCommandFile" );
+	String EndCommandFile = parameters.getValue ( "EndCommandFile" );
 	//String FilenamePattern = parameters.getValue ( "FilenamePattern" );
 	String Append = parameters.getValue ( "Append" );
 	String warning = "";
@@ -202,6 +202,39 @@ throws InvalidCommandParameterException
                 message, "Verify that setup command file and working directory paths are compatible." ) );
         }
     }
+    
+    if ( (EndCommandFile != null) && !EndCommandFile.isEmpty() ) {
+        String working_dir = null;
+        try {
+            Object o = processor.getPropContents ( "WorkingDir" );
+            // Working directory is available so use it...
+            if ( o != null ) {
+                working_dir = (String)o;
+            }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            Message.printWarning(3, routine, message );
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        }
+    
+        try {
+            //String adjusted_path = 
+            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor,this,EndCommandFile)));
+        }
+        catch ( Exception e ) {
+            message = "The end command file:\n" +
+            "    \"" + EndCommandFile +
+            "\"\ncannot be adjusted using the working directory:\n" +
+            "    \"" + working_dir + "\".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that end command file and working directory paths are compatible." ) );
+        }
+    }
 	
 	if ( (Append != null) && !Append.equals("") ) {
 		if ( !Append.equalsIgnoreCase(_False) && !Append.equalsIgnoreCase(_True) ) {
@@ -213,15 +246,17 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-	valid_Vector.add ( "SearchFolder" );
-	valid_Vector.add ( "OutputFile" );
-    valid_Vector.add ( "SetupCommandFile" );
-    valid_Vector.add ( "FilenamePattern" );
-	valid_Vector.add ( "Append" );
-	valid_Vector.add ( "IncludeTestSuite" );
-	valid_Vector.add ( "IncludeOS" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List validList = new ArrayList<String>();
+	validList.add ( "SearchFolder" );
+	validList.add ( "OutputFile" );
+    validList.add ( "SetupCommandFile" );
+    validList.add ( "EndCommandFile" );
+    validList.add ( "FilenamePattern" );
+	validList.add ( "Append" );
+	validList.add ( "IncludeTestSuite" );
+	validList.add ( "IncludeOS" );
+	validList.add ( "TestResultsTableID" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
     // Throw an InvalidCommandParameterException in case of errors.
     if ( warning.length() > 0 ) {       
@@ -448,18 +483,19 @@ private File getOutputFile ()
 /**
 Include the setup command file in the regression test command file.
 @param out PrintWriter to write to.
-@param SetupCommandFile_full full path for setup command file.
+@param includeCommandFile full path for setup command file.
+@param label a short label that indicates the type of file being included ("setup" or "end")
 @exception IOException if there is an error including the file.
 */
-private void includeSetupCommandFile ( PrintWriter out, String SetupCommandFile_full )
+private void includeCommandFile ( PrintWriter out, String includeCommandFile, String label )
 throws IOException
 {   //String routine = getClass().getName() + ".includeSetupCommandFile";
-    if ( SetupCommandFile_full == null ) {
+    if ( includeCommandFile == null ) {
         return;
     }
-    BufferedReader in = new BufferedReader ( new InputStreamReader( IOUtil.getInputStream ( SetupCommandFile_full )) );
+    BufferedReader in = new BufferedReader ( new InputStreamReader( IOUtil.getInputStream ( includeCommandFile )) );
     out.println ( "#----------------" );
-    out.println ( "# The following setup commands were imported from:  " + SetupCommandFile_full );
+    out.println ( "# The following " + label + " commands were imported from:  " + includeCommandFile );
     String line;
     while ( true ) {
         line = in.readLine();
@@ -497,6 +533,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String SearchFolder = parameters.getValue ( "SearchFolder" );
     String OutputFile = parameters.getValue ( "OutputFile" );
     String SetupCommandFile = parameters.getValue ( "SetupCommandFile" );
+    String EndCommandFile = parameters.getValue ( "EndCommandFile" );
 	String FilenamePattern = parameters.getValue ( "FilenamePattern" );
 	String FilenamePattern_Java = "";
 	if ( FilenamePattern == null ) {
@@ -520,6 +557,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (IncludeOS == null) || IncludeOS.equals("") ) {
         IncludeOS = "*"; // Default - include all OS
     }
+    String TestResultsTableID = parameters.getValue ( "TestResultsTableID" );
     // Get Java regular expression pattern to match
     String IncludeTestSuitePattern = StringUtil.replaceString(IncludeTestSuite,"*",".*");
     String IncludeOSPattern = StringUtil.replaceString(IncludeOS,"*",".*");
@@ -528,7 +566,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSCommandProcessorUtil.getWorkingDir(processor), SearchFolder ) );
 	String OutputFile_full = IOUtil.verifyPathForOS (IOUtil.toAbsolutePath(
         TSCommandProcessorUtil.getWorkingDir(processor), OutputFile ) );
-    String SetupCommandFile_full = null;
 	if ( !IOUtil.fileExists(SearchFolder_full) ) {
 		message = "The folder to search \"" + SearchFolder_full + "\" does not exist.";
 		Message.printWarning ( warning_level,
@@ -536,6 +573,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
 			"Verify that the folder exists at the time the command is run."));
 	}
+	String SetupCommandFile_full = null;
 	if ( (SetupCommandFile != null) && !SetupCommandFile.equals("") ) {
 	    SetupCommandFile_full = IOUtil.verifyPathForOS (IOUtil.toAbsolutePath(
             TSCommandProcessorUtil.getWorkingDir(processor), SetupCommandFile ) );
@@ -547,19 +585,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the file exists at the time the command is run."));
         }
 	}
-	/* TODO SAM 2007-10-15 Need to check for parent folder
-	if ( !IOUtil.fileExists(InputFile2_full) ) {
-		message = "Second input file \"" + InputFile2_full +
-			"\" does not exist.";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message );
-		status.addToLog(CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-					"Second input file \"" + InputFile2_full + "\" does not exist.",
-					"Verify that the file exists at the time the command is run."));
+	String EndCommandFile_full = null;
+	if ( (EndCommandFile != null) && !EndCommandFile.equals("") ) {
+	    EndCommandFile_full = IOUtil.verifyPathForOS (IOUtil.toAbsolutePath(
+            TSCommandProcessorUtil.getWorkingDir(processor), EndCommandFile ) );
+        if ( !IOUtil.fileExists(EndCommandFile_full) ) {
+            message = "The end command file \"" + EndCommandFile_full + "\" does not exist.";
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                "Verify that the file exists at the time the command is run."));
+        }
 	}
-	*/
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
@@ -587,7 +625,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		IOUtil.printCreatorHeader(out, "#", 120, 0 );
 		// Include the setup command file if requested
 		//Message.printStatus ( 2, routine, "Adding commands from setup command file \"" + SetupCommandFile_full + "\"");
-		includeSetupCommandFile ( out, SetupCommandFile_full );
+		includeCommandFile ( out, SetupCommandFile_full, "setup" );
 		// Include the matching test cases
 		out.println ( "#" );
 		out.println ( "# The following " + size + " test cases will be run to compare results with expected results.");
@@ -606,9 +644,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         // FIXME SAM 2007-11-20 Disable this for now because it might interfere with the
         // individual logs for each command file regression test
-		// Open a log file for the runner...
-		out.println ( "StartRegressionTestResultsReport(OutputFile=\"" + OutputFile_full_File.getName() + ".out.txt\")");
-		//out.println ( "StartLog(LogFile=\"" + OutputFile_full_File.getName() + ".log\")");
+        String tableParam = "";
+        if ( (TestResultsTableID != null) && !TestResultsTableID.isEmpty() ) {
+        	tableParam = ",TestResultsTableID=\"" + TestResultsTableID + "\"";
+        }
+		out.println ( "StartRegressionTestResultsReport(OutputFile=\"" + OutputFile_full_File.getName() + ".out.txt\"" + tableParam + ")");
 		// Find the list of matching files...
 		String commandFileToRun;
 		for ( int i = 0; i < size; i++ ) {
@@ -619,6 +659,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			out.println ( "RunCommands(InputFile=\"" + commandFileToRun + "\"" +
 		        determineExpectedStatusParameter ( (String)files.get(i) ) + ")");
 		}
+		// Include the end command file if requested
+		//Message.printStatus ( 2, routine, "Adding commands from end command file \"" + EndCommandFile_full + "\"");
+		includeCommandFile ( out, EndCommandFile_full, "end" );
 		out.close();
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));
@@ -654,10 +697,12 @@ public String toString ( PropList parameters )
 	String SearchFolder = parameters.getValue("SearchFolder");
 	String OutputFile = parameters.getValue("OutputFile");
 	String SetupCommandFile = parameters.getValue("SetupCommandFile");
+	String EndCommandFile = parameters.getValue("EndCommandFile");
 	String FilenamePattern = parameters.getValue("FilenamePattern");
 	String Append = parameters.getValue("Append");
 	String IncludeTestSuite = parameters.getValue("IncludeTestSuite");
 	String IncludeOS = parameters.getValue("IncludeOS");
+	String TestResultsTableID = parameters.getValue("TestResultsTableID");
 	StringBuffer b = new StringBuffer ();
 	if ( (SearchFolder != null) && (SearchFolder.length() > 0) ) {
 		b.append ( "SearchFolder=\"" + SearchFolder + "\"" );
@@ -673,6 +718,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "SetupCommandFile=\"" + SetupCommandFile + "\"");
+    }
+    if ( (EndCommandFile != null) && !EndCommandFile.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EndCommandFile=\"" + EndCommandFile + "\"");
     }
     if ( (FilenamePattern != null) && (FilenamePattern.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -697,6 +748,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "IncludeOS=\"" + IncludeOS + "\"" );
+    }
+    if ( (TestResultsTableID != null) && (TestResultsTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TestResultsTableID=\"" + TestResultsTableID + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

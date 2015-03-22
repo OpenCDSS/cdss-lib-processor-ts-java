@@ -1,17 +1,19 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
+import javax.swing.JFrame;
+
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import riverside.datastore.DataStore;
+import riverside.datastore.DataStoreConnectionUIProvider;
 import riverside.datastore.DataStoreFactory;
 
 /**
- * Factory to instantiate ReclamationHDBDataStore instances.
- * @author sam
- *
- */
-public class ReclamationHDBDataStoreFactory implements DataStoreFactory
+Factory to instantiate ReclamationHDBDataStore instances.
+@author sam
+*/
+public class ReclamationHDBDataStoreFactory implements DataStoreFactory, DataStoreConnectionUIProvider
 {
 
 /**
@@ -75,7 +77,7 @@ public DataStore create ( PropList props )
     ReclamationHDB_DMI dmi = null;
     try {
         dmi = new ReclamationHDB_DMI (
-            databaseEngine, // OK if null, will use SQL Server
+            databaseEngine, // OK if null, will use Oracle
             databaseServer, // Required
             databaseName, // Required
             port,
@@ -97,6 +99,16 @@ public DataStore create ( PropList props )
         ds.setStatusMessage("" + e);
     }
     return ds;
+}
+
+/**
+Open a connection UI dialog that displays the connection information for the database.
+@param props properties read from datastore configuration file
+@param frame a JFrame to use as the parent of the editor dialog
+*/
+public DataStore openDataStoreConnectionUI ( PropList props, JFrame frame )
+{
+	return new ReclamationHDBConnectionUI ( this, props, frame ).getDataStore();
 }
 
 }

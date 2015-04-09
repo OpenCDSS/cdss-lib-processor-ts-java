@@ -4567,7 +4567,7 @@ throws Exception
             Message.printWarning ( 2, routine, message );
             ts = null;
         }
-        if ( arch != 32 ) {
+        else if ( arch != 32 ) {
         	Message.printWarning ( 2, routine,
                 "HEC-DSS input type is not supported on " + arch +
                 "-bit runtime environment (only 32-bit runtime environment supported) - cannot read time series \"" + tsidentString + "\".");

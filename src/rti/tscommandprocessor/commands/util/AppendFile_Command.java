@@ -109,6 +109,7 @@ throws InvalidCommandParameterException
 	validList.add ( "OutputFile" );
 	validList.add ( "IncludeText" );
 	validList.add ( "ExcludeText" );
+	validList.add ( "Newline" );
 	validList.add ( "IfNotFound" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -153,14 +154,14 @@ private File getOutputFile ()
 
 /**
 Run the command.
-@param command_line Command number in sequence.
+@param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -185,6 +186,13 @@ CommandWarningException, CommandException
     boolean doExcludeText = false;
     if ( (ExcludeText != null) && !ExcludeText.equals("") ) {
         doExcludeText = true;
+    }
+    String Newline = parameters.getValue ( "Newline" );
+    String nl = System.getProperty("line.separator"); // Default is native computer newline
+    if ( (Newline != null) && !Newline.isEmpty() ) {
+    	// Replace literal string with internal representation
+    	nl = nl.replace("\\r", "\r" );
+    	nl = nl.replace("\\n", "\n" );
     }
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
@@ -269,10 +277,8 @@ CommandWarningException, CommandException
         throw new CommandException ( message );
 	}
 
-    int lineCount = 0;
     String line;
     boolean includeLine;
-    String nl = System.getProperty("line.separator");
     int fileCount = 0;
 	for ( File file : fileList ) {
 	    BufferedReader in = null;
@@ -282,7 +288,6 @@ CommandWarningException, CommandException
 	        in = new BufferedReader ( new InputStreamReader( IOUtil.getInputStream ( file.getPath() )) );
 	        // Read lines and check against the pattern to match.  Default is regex syntax
 	        while( (line = in.readLine()) != null ) {
-	            ++lineCount;
 	            includeLine = true;
 	            if ( doIncludeText ) {
 	                if ( line.matches(IncludeText) ) {
@@ -364,6 +369,7 @@ public String toString ( PropList parameters )
 	String OutputFile = parameters.getValue("OutputFile");
 	String IncludeText = parameters.getValue("IncludeText");
 	String ExcludeText = parameters.getValue("ExcludeText");
+	String Newline = parameters.getValue("Newline");
 	String IfNotFound = parameters.getValue("IfNotFound");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
@@ -386,6 +392,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "ExcludeText=\"" + ExcludeText + "\"" );
+    }
+    if ( (Newline != null) && (Newline.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Newline=\"" + Newline + "\"" );
     }
 	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
 		if ( b.length() > 0 ) {

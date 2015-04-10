@@ -50,6 +50,7 @@ private JTextField __InputFile_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __IncludeText_JTextField = null;
 private JTextField __ExcludeText_JTextField = null;
+private JTextField __Newline_JTextField = null;
 private SimpleJComboBox __IfNotFound_JComboBox =null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
@@ -187,6 +188,7 @@ private void checkInput ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String IncludeText = __IncludeText_JTextField.getText().trim();
 	String ExcludeText = __ExcludeText_JTextField.getText().trim();
+	String Newline = __Newline_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
@@ -200,6 +202,9 @@ private void checkInput ()
     }
     if ( ExcludeText.length() > 0 ) {
         props.set ( "ExcludeText", ExcludeText );
+    }
+    if ( Newline.length() > 0 ) {
+        props.set ( "Newline", Newline );
     }
 	if ( IfNotFound.length() > 0 ) {
 		props.set ( "IfNotFound", IfNotFound );
@@ -222,11 +227,13 @@ private void commitEdits ()
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String IncludeText = __IncludeText_JTextField.getText().trim();
     String ExcludeText = __ExcludeText_JTextField.getText().trim();
+    String Newline = __Newline_JTextField.getText().trim();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "IncludeText", IncludeText );
 	__command.setCommandParameter ( "ExcludeText", ExcludeText );
+	__command.setCommandParameter ( "Newline", Newline );
 	__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
 
@@ -308,6 +315,17 @@ private void initialize ( JFrame parent, AppendFile_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - exclude lines matching regular expression (default=include all)"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Newline character(s)"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Newline_JTextField = new JTextField ( 5 );
+    __Newline_JTextField.setToolTipText("Operationg system uses \\n for Linux, \\r for Mac, \\r\\n for Windows.");
+    __Newline_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Newline_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - newline character(s) for end of line: \\n or \\r or \\r\\n (default=as per operating system)"), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
@@ -396,6 +414,7 @@ private void refresh ()
 	String OutputFile = "";
 	String IncludeText = "";
 	String ExcludeText = "";
+	String Newline = "";
 	String IfNotFound = "";
     PropList parameters = null;
 	if ( __first_time ) {
@@ -405,6 +424,7 @@ private void refresh ()
 		OutputFile = parameters.getValue ( "OutputFile" );
 		IncludeText = parameters.getValue ( "IncludeText" );
 		ExcludeText = parameters.getValue ( "ExcludeText" );
+		Newline = parameters.getValue ( "Newline" );
 		IfNotFound = parameters.getValue ( "IfNotFound" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
@@ -417,6 +437,9 @@ private void refresh ()
         }
         if ( ExcludeText != null ) {
             __ExcludeText_JTextField.setText ( ExcludeText );
+        }
+        if ( Newline != null ) {
+            __Newline_JTextField.setText ( Newline );
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound,JGUIUtil.NONE, null, null ) ) {
 			__IfNotFound_JComboBox.select ( IfNotFound );
@@ -440,12 +463,14 @@ private void refresh ()
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IncludeText = __IncludeText_JTextField.getText().trim();
 	ExcludeText = __ExcludeText_JTextField.getText().trim();
+	Newline = __Newline_JTextField.getText().trim();
 	IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "IncludeText=" + IncludeText );
 	props.add ( "ExcludeText=" + ExcludeText );
+	props.add ( "Newline=" + Newline );
 	props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...

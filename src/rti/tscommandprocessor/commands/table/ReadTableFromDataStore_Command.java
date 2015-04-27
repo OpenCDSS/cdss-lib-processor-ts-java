@@ -8,6 +8,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -182,19 +183,20 @@ throws InvalidCommandParameterException
     }
     
 	//  Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "DataStoreCatalog" );
-    valid_Vector.add ( "DataStoreSchema" );
-    valid_Vector.add ( "DataStoreTable" );
-    valid_Vector.add ( "DataStoreColumns" );
-    valid_Vector.add ( "OrderBy" );
-    valid_Vector.add ( "Top" );
-    valid_Vector.add ( "Sql" );
-    valid_Vector.add ( "SqlFile" );
-    valid_Vector.add ( "DataStoreProcedure" );
-    valid_Vector.add ( "TableID" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List<String> validList = new ArrayList<String>(12);
+    validList.add ( "DataStore" );
+    validList.add ( "DataStoreCatalog" );
+    validList.add ( "DataStoreSchema" );
+    validList.add ( "DataStoreTable" );
+    validList.add ( "DataStoreColumns" );
+    validList.add ( "OrderBy" );
+    validList.add ( "Top" );
+    validList.add ( "Sql" );
+    validList.add ( "SqlFile" );
+    validList.add ( "DataStoreProcedure" );
+    validList.add ( "TableID" );
+    validList.add ( "RowCountProperty" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -275,6 +277,7 @@ private void runCommandInternal ( int command_number, CommandPhaseType commandPh
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = getClass().getName() + ".runCommand", message = "";
+	int log_level = 3; // Level for non-user messages for log file.
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -314,6 +317,7 @@ CommandWarningException, CommandException
     String SqlFile = parameters.getValue("SqlFile");
     String DataStoreProcedure = parameters.getValue("DataStoreProcedure");
     String TableID = parameters.getValue ( "TableID" );
+    String RowCountProperty = parameters.getValue ( "RowCountProperty" );
     
     // Find the data store to use...
     DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
@@ -515,6 +519,29 @@ CommandWarningException, CommandException
         finally {
             DMI.closeResultSet(rs);
         }
+	    // Set the property indicating the number of rows in the table
+        if ( (RowCountProperty != null) && !RowCountProperty.equals("") ) {
+        	String rowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
+            int rowCount = 0;
+            if ( table != null ) {
+                rowCount = table.getNumberOfRecords();
+            }
+            PropList request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", rowCountProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // TODO SAM 2012-01-31 Evaluate whether discover should create table with proper column names
@@ -559,6 +586,7 @@ public String toString ( PropList props )
 	String SqlFile = props.getValue( "SqlFile" );
 	String DataStoreProcedure = props.getValue( "DataStoreProcedure" );
     String TableID = props.getValue( "TableID" );
+    String RowCountProperty = props.getValue( "RowCountProperty" );
 	StringBuffer b = new StringBuffer ();
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -625,6 +653,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RowCountProperty=\"" + RowCountProperty +"\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

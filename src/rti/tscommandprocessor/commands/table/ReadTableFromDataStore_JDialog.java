@@ -20,7 +20,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -30,7 +29,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-
 import java.util.List;
 import java.util.Vector;
 
@@ -60,6 +58,7 @@ private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private JTextField __TableID_JTextField = null;
+private JTextField __RowCountProperty_JTextField = null;
 private JTabbedPane __sql_JTabbedPane = null;
 private SimpleJComboBox __DataStoreCatalog_JComboBox = null;
 private SimpleJComboBox __DataStoreSchema_JComboBox = null;
@@ -229,6 +228,7 @@ private void checkInput ()
 	String SqlFile = __SqlFile_JTextField.getText().trim();
 	String DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
     String TableID = __TableID_JTextField.getText().trim();
+    String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( DataStoreCatalog.length() > 0 ) {
@@ -261,6 +261,9 @@ private void checkInput ()
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
     }
+    if ( RowCountProperty.length() > 0 ) {
+        props.set ( "RowCountProperty", RowCountProperty );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -288,6 +291,7 @@ private void commitEdits ()
     String SqlFile = __SqlFile_JTextField.getText().trim();
     String DataStoreProcedure = __DataStoreProcedure_JComboBox.getSelected();
     String TableID = __TableID_JTextField.getText().trim();
+    String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "DataStore", DataStore );
     __command.setCommandParameter ( "DataStoreCatalog", DataStoreCatalog );
     __command.setCommandParameter ( "DataStoreSchema", DataStoreSchema );
@@ -299,6 +303,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "SqlFile", SqlFile );
 	__command.setCommandParameter ( "DataStoreProcedure", DataStoreProcedure );
     __command.setCommandParameter ( "TableID", TableID );
+	__command.setCommandParameter ( "RowCountProperty", RowCountProperty );
 }
 
 /**
@@ -545,6 +550,16 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the output table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Row count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RowCountProperty_JTextField = new JTextField ( "", 20 );
+    __RowCountProperty_JTextField.setToolTipText("The property can be referenced in other commands using ${Property}.");
+    __RowCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RowCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as output table row count." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -829,6 +844,7 @@ try{
     String SqlFile = "";
     String DataStoreProcedure = "";
     String TableID = "";
+    String RowCountProperty = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -843,6 +859,7 @@ try{
 		SqlFile = props.getValue ( "SqlFile" );
 		DataStoreProcedure = props.getValue ( "DataStoreProcedure" );
 		TableID = props.getValue ( "TableID" );
+        RowCountProperty = props.getValue ( "RowCountProperty" );
         // The data store list is set up in initialize() but is selected here
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
@@ -952,6 +969,9 @@ try{
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
         }
+        if ( RowCountProperty != null ) {
+            __RowCountProperty_JTextField.setText ( RowCountProperty );
+        }
 	}
 	// Regardless, reset the command from the fields...
     DataStore = __DataStore_JComboBox.getSelected();
@@ -980,6 +1000,7 @@ try{
         DataStoreProcedure = "";
     }
     TableID = __TableID_JTextField.getText().trim();
+	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "DataStoreCatalog=" + DataStoreCatalog );
@@ -992,6 +1013,8 @@ try{
 	props.add ( "SqlFile=" + SqlFile);
 	props.add ( "DataStoreProcedure=" + DataStoreProcedure );
     props.add ( "TableID=" + TableID );
+	props.add ( "RowCountProperty=" + RowCountProperty );
+    
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Refresh the Path text.
     refreshPathControl();

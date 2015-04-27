@@ -24,7 +24,6 @@ import javax.swing.JTextField;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -47,7 +46,7 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetProperty_JDialog ( JFrame parent, Command command )
+public SetProperty_JDialog ( JFrame parent, SetProperty_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -131,8 +130,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command The command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (SetProperty_Command)command;
+private void initialize ( JFrame parent, SetProperty_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 
@@ -179,6 +178,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property type:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
+    __PropertyType_JComboBox.addItem ( __command._Boolean );
     __PropertyType_JComboBox.addItem ( __command._DateTime );
     __PropertyType_JComboBox.addItem ( __command._Double );
     __PropertyType_JComboBox.addItem ( __command._Integer );

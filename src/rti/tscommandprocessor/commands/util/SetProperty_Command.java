@@ -35,6 +35,7 @@ public class SetProperty_Command extends AbstractCommand implements Command, Com
 /**
 Possible value for PropertyType.
 */
+protected final String _Boolean = "Boolean";
 protected final String _DateTime = "DateTime";
 protected final String _Double = "Double";
 protected final String _Integer = "Integer";
@@ -107,7 +108,14 @@ throws InvalidCommandParameterException
 	else {
 	    // Check the value given the type.
 	    PropertyValue = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, PropertyValue);
-	    if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
+	    if ( PropertyType.equalsIgnoreCase(_Boolean) && !PropertyValue.equalsIgnoreCase("true") && !PropertyValue.equalsIgnoreCase("false") ) {
+    		message = "The property value \"" + PropertyValue + "\" is not a boolean.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the property value as a boolean True or False" ));
+		}
+	    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
 	        // Try parsing because the parse method recognizes the special values CurrentToHour, etc.
 	        try {
 	            // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour"
@@ -254,7 +262,10 @@ CommandWarningException, CommandException
 	try {
 
 	    Object Property_Object = null;
-	    if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
+	    if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
+	        Property_Object = Boolean.valueOf(PropertyValue);
+	    }
+	    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
 	        // This handles special strings like CurrentToHour
 	        // Have to specify a PropList to ensure the special syntax is handled
 	        Property_Object = DateTime.parse(PropertyValue,(PropList)null);

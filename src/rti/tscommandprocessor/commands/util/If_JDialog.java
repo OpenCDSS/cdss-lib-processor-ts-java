@@ -2,17 +2,17 @@ package rti.tscommandprocessor.commands.util;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 
-import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -24,13 +24,15 @@ import javax.swing.JTextField;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
 
 /**
 Editor dialog for the If() command.
 */
 public class If_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -38,6 +40,7 @@ private If_Command __command = null;
 private JTextField __Name_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __Condition_JTextArea = null;
+private SimpleJComboBox __CompareAsStrings_JComboBox = null;
 private JTextField __TSExists_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -82,12 +85,16 @@ private void checkInput ()
     PropList props = new PropList ( "" );
     String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().trim();
+    String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
     String TSExists = __TSExists_JTextField.getText().trim();
     if ( Name.length() > 0 ) {
         props.set ( "Name", Name );
     }
     if ( Condition.length() > 0 ) {
         props.set ( "Condition", Condition );
+    }
+    if ( CompareAsStrings.length() > 0 ) {
+        props.set ( "CompareAsStrings", CompareAsStrings );
     }
     if ( TSExists.length() > 0 ) {
         props.set ( "TSExists", TSExists );
@@ -108,9 +115,11 @@ Commit the edits to the command.
 private void commitEdits ()
 {   String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
+    String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
     String TSExists = __TSExists_JTextField.getText().trim();
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "Condition", Condition );
+    __command.setCommandParameter ( "CompareAsStrings", CompareAsStrings );
     __command.setCommandParameter ( "TSExists", TSExists );
 }
 
@@ -169,7 +178,7 @@ private void initialize ( JFrame parent, If_Command command )
         "   Value1 operator Value2"),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "where operator is <, <=, >, >=, ==, or !=, and values are integers."),
+        "where operator is <, <=, >, >=, ==, or !=, and values are integers, floating point numbers, booleans, or strings."),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
         "Values can use ${Property} processor property syntax."),
@@ -187,6 +196,19 @@ private void initialize ( JFrame parent, If_Command command )
     JGUIUtil.addComponent(cond_JPanel, new JScrollPane(__Condition_JTextArea),
         1, yCond, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel("Optional - condition to evaluate."), 
+        3, yCond, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Compare as strings?:" ), 
+        0, ++yCond, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CompareAsStrings_JComboBox = new SimpleJComboBox ( false );
+    __CompareAsStrings_JComboBox.addItem ( "" );
+    __CompareAsStrings_JComboBox.addItem ( __command._False );
+    __CompareAsStrings_JComboBox.addItem ( __command._True );
+    __CompareAsStrings_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(cond_JPanel, __CompareAsStrings_JComboBox,
+        1, yCond, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel(
+        "Optional - compare values as strings (default = " + __command._False + ")."), 
         3, yCond, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel whether time series exists
@@ -240,6 +262,15 @@ private void initialize ( JFrame parent, If_Command command )
 }
 
 /**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{	//checkGUIState();
+    refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
@@ -271,8 +302,10 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String Name = "";
+{	String routine = getClass().getSimpleName() + ".refresh";
+	String Name = "";
 	String Condition = "";
+	String CompareAsStrings = "";
 	String TSExists = "";
 	__error_wait = false;
 	PropList props = __command.getCommandParameters();
@@ -280,12 +313,28 @@ private void refresh ()
 		__first_time = false;
 		Name = props.getValue( "Name" );
 		Condition = props.getValue( "Condition" );
+		CompareAsStrings = props.getValue( "CompareAsStrings" );
 		TSExists = props.getValue( "TSExists" );
 		if ( Name != null ) {
 		    __Name_JTextField.setText( Name );
 		}
         if ( Condition != null ) {
             __Condition_JTextArea.setText( Condition );
+        }
+        if ( CompareAsStrings == null ) {
+            // Select default...
+            __CompareAsStrings_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __CompareAsStrings_JComboBox,CompareAsStrings, JGUIUtil.NONE, null, null ) ) {
+                __CompareAsStrings_JComboBox.select ( CompareAsStrings );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nCompareAsStrings value \"" + CompareAsStrings +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
         }
         if ( TSExists != null ) {
             __TSExists_JTextField.setText( TSExists );
@@ -294,10 +343,12 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	Name = __Name_JTextField.getText().trim();
 	Condition = __Condition_JTextArea.getText().trim();
+	CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
     TSExists = __TSExists_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
     props.set ( "Condition", Condition ); // May contain = so handle differently
+    props.add ( "CompareAsStrings=" + CompareAsStrings );
     props.add ( "TSExists=" + TSExists );
     __command_JTextArea.setText( __command.toString(props) );
 }

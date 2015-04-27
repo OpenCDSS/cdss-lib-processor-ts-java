@@ -6,7 +6,6 @@ import java.util.List;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
@@ -22,12 +21,19 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 
 /**
 This class initializes, checks, and runs the If() command.
 */
 public class If_Command extends AbstractCommand implements Command
 {
+
+/**
+Possible values for CompareAsStrings parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 Result of evaluating the condition.
@@ -55,6 +61,7 @@ throws InvalidCommandParameterException
 {	String routine = getCommandName() + "_checkCommandParameters";
 	String Name = parameters.getValue ( "Name" );
 	String Condition = parameters.getValue ( "Condition" );
+	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
 	String TSExists = parameters.getValue ( "TSExists" );
 	String warning = "";
 	String message;
@@ -74,11 +81,20 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the condition." ) );
     }
+    if ( CompareAsStrings != null && !CompareAsStrings.isEmpty() &&
+    	!CompareAsStrings.equalsIgnoreCase(_False) && !CompareAsStrings.equalsIgnoreCase(_True) ) {
+		message = "The property value \"" + CompareAsStrings + "\" is not valid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify CompareAsStrings as " + _False + " (default) or " + _True + "." ));
+	}
 
 	// Check for invalid parameters...
     List<String> validList = new ArrayList<String>(3);
 	validList.add ( "Name" );
 	validList.add ( "Condition" );
+	validList.add ( "CompareAsStrings" );
 	validList.add ( "TSExists" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
@@ -104,7 +120,7 @@ public boolean editCommand ( JFrame parent )
 
 /**
 Return the result of evaluating the condition, which is set when runCommand() is called.
-@return the result of evaluting the condition
+@return the result of evaluating the condition
 */
 public boolean getConditionEval ()
 {
@@ -140,6 +156,11 @@ throws CommandWarningException, CommandException
 	
 	//String Name = parameters.getValue ( "Name" );
 	String Condition = parameters.getValue ( "Condition" );
+	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
+	boolean compareAsStrings = false;
+	if ( (CompareAsStrings != null) && CompareAsStrings.equalsIgnoreCase(_True) ) {
+		compareAsStrings = true;
+	}
 	String TSExists = parameters.getValue ( "TSExists" );
 
 	try {
@@ -150,7 +171,6 @@ throws CommandWarningException, CommandException
     	    // Currently only Value1 Operator Value2 is allowed.  Brute force split by finding the operator
     	    int pos, pos1 = -1, pos2 = -1;
     	    String value1 = "", value2 = "";
-    	    int ivalue1, ivalue2;
     	    String op = "??";
     	    if ( Condition.indexOf("<=") > 0 ) {
     	        pos = Condition.indexOf("<=");
@@ -210,38 +230,165 @@ throws CommandWarningException, CommandException
                 this.getCommandProcessor(),this,Condition.substring(0,pos1).trim() );
             value2 = TSCommandProcessorUtil.expandParameterValue(
                 this.getCommandProcessor(),this,Condition.substring(pos2).trim() );
-    	    ivalue1 = Integer.parseInt(value1);
-    	    ivalue2 = Integer.parseInt(value2);
-    	    if ( op.equals("<=") ) {
-    	        if ( ivalue1 <= ivalue2 ) {
-    	            conditionEval = true;
-    	        }
-    	    }
-    	    else if ( op.equals("<") ) {
-                if ( ivalue1 < ivalue2 ) {
-                    conditionEval = true;
-                } 
-    	    }
-    	    else if ( op.equals(">=") ) {
-                if ( ivalue1 >= ivalue2 ) {
-                    conditionEval = true;
-                }
-    	    }
-    	    else if ( op.equals(">") ) {
-                if ( ivalue1 > ivalue2 ) {
-                    conditionEval = true;
-                }
-    	    }
-    	    else if ( op.equals("==") ) {
-                if ( ivalue1 == ivalue2 ) {
-                    conditionEval = true;
-                }
-    	    }
-    	    else if ( op.equals("!=") ) {
-                if ( ivalue1 != ivalue2 ) {
-                    conditionEval = true;
-                }
-    	    }
+            boolean isValue1Integer = StringUtil.isInteger(value1);
+            boolean isValue2Integer = StringUtil.isInteger(value2);
+            boolean isValue1Double = StringUtil.isDouble(value1);
+            boolean isValue2Double = StringUtil.isDouble(value2);
+            boolean isValue1Boolean = StringUtil.isBoolean(value1);
+            boolean isValue2Boolean = StringUtil.isBoolean(value2);
+            if ( !compareAsStrings && isValue1Integer && isValue2Integer ) {
+            	// Do an integer comparison
+	    	    int ivalue1 = Integer.parseInt(value1);
+	    	    int ivalue2 = Integer.parseInt(value2);
+	    	    if ( op.equals("<=") ) {
+	    	        if ( ivalue1 <= ivalue2 ) {
+	    	            conditionEval = true;
+	    	        }
+	    	    }
+	    	    else if ( op.equals("<") ) {
+	                if ( ivalue1 < ivalue2 ) {
+	                    conditionEval = true;
+	                } 
+	    	    }
+	    	    else if ( op.equals(">=") ) {
+	                if ( ivalue1 >= ivalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals(">") ) {
+	                if ( ivalue1 > ivalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("==") ) {
+	                if ( ivalue1 == ivalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("!=") ) {
+	                if ( ivalue1 != ivalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+            }
+            else if ( !compareAsStrings && isValue1Double && isValue2Double ) {
+            	// Compare doubles
+	    	    double dvalue1 = Double.parseDouble(value1);
+	    	    double dvalue2 = Double.parseDouble(value2);
+	    	    if ( op.equals("<=") ) {
+	    	        if ( dvalue1 <= dvalue2 ) {
+	    	            conditionEval = true;
+	    	        }
+	    	    }
+	    	    else if ( op.equals("<") ) {
+	                if ( dvalue1 < dvalue2 ) {
+	                    conditionEval = true;
+	                } 
+	    	    }
+	    	    else if ( op.equals(">=") ) {
+	                if ( dvalue1 >= dvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals(">") ) {
+	                if ( dvalue1 > dvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("==") ) {
+	                if ( dvalue1 == dvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("!=") ) {
+	                if ( dvalue1 != dvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+            }
+            else if ( !compareAsStrings && isValue1Boolean && isValue2Boolean ) {
+            	// Do a boolean comparison
+	    	    boolean bvalue1 = Boolean.parseBoolean(value1);
+	    	    boolean bvalue2 = Boolean.parseBoolean(value2);
+	    	    if ( op.equals("<=") ) {
+	    	        if ( !bvalue1 ) {
+	    	        	// false <= false or true
+	    	            conditionEval = true;
+	    	        }
+	    	    }
+	    	    else if ( op.equals("<") ) {
+	                if ( !bvalue1 && bvalue2 ) {
+	                	// false < true
+	                    conditionEval = true;
+	                } 
+	    	    }
+	    	    else if ( op.equals(">=") ) {
+	                if ( bvalue1 ) {
+	                	// true >= false or true
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals(">") ) {
+	                if ( bvalue1 && !bvalue2 ) {
+	                	// true > false
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("==") ) {
+	                if ( bvalue1 == bvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+	    	    else if ( op.equals("!=") ) {
+	                if ( bvalue1 != bvalue2 ) {
+	                    conditionEval = true;
+	                }
+	    	    }
+            }
+            else if ( compareAsStrings || (!isValue1Integer && !isValue2Integer &&
+            	!isValue1Double && !isValue2Double && !isValue1Boolean && !isValue2Boolean) ) {
+            	// Always compare the string values or the input is not other types so assume strings
+            	int comp = value1.compareTo(value2);
+            	if ( op.equals("<=") ) {
+ 	    	        if ( comp <= 0 ) {
+ 	    	            conditionEval = true;
+ 	    	        }
+ 	    	    }
+ 	    	    else if ( op.equals("<") ) {
+ 	                if ( comp < 0 ) {
+ 	                    conditionEval = true;
+ 	                } 
+ 	    	    }
+ 	    	    else if ( op.equals(">=") ) {
+ 	                if ( comp >= 0 ) {
+ 	                    conditionEval = true;
+ 	                }
+ 	    	    }
+ 	    	    else if ( op.equals(">") ) {
+ 	                if ( comp > 0 ) {
+ 	                    conditionEval = true;
+ 	                }
+ 	    	    }
+ 	    	    else if ( op.equals("==") ) {
+ 	                if ( comp == 0 ) {
+ 	                    conditionEval = true;
+ 	                }
+ 	    	    }
+ 	    	    else if ( op.equals("!=") ) {
+ 	                if ( comp != 0 ) {
+ 	                    conditionEval = true;
+ 	                }
+ 	    	    }
+            }
+            else {
+	            message = "Data types to left and right are not consistent to evaluate condition \"" + Condition + "\"";
+	            Message.printWarning(3,
+	                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Make sure data types on each side of operator are the same - refer to command editor and documentation." ) );
+            }
     	    if ( Condition.indexOf("${") >= 0 ) {
     	        // Show the original
     	        status.addToLog ( CommandPhaseType.RUN,
@@ -325,6 +472,7 @@ public String toString ( PropList props )
     }
     String Name = props.getValue( "Name" );
     String Condition = props.getValue( "Condition" );
+    String CompareAsStrings = props.getValue( "CompareAsStrings" );
     String TSExists = props.getValue( "TSExists" );
     StringBuffer b = new StringBuffer ();
     if ( (Name != null) && (Name.length() > 0) ) {
@@ -335,6 +483,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "Condition=\"" + Condition + "\"" );
+    }
+    if ( (CompareAsStrings != null) && !CompareAsStrings.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CompareAsStrings=" + CompareAsStrings );
     }
     if ( (TSExists != null) && (TSExists.length() > 0) ) {
         if ( b.length() > 0 ) {

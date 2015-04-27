@@ -44,7 +44,9 @@ public void setFilters ( ReclamationHDB_DMI dmi, int numFilterGroups )
     //String ld = dmi.getLeftIdDelim();
 
     List<InputFilter> filters = new Vector();
-    
+
+    // The database may have timed out so check here
+    __dataStore.checkDatabaseConnection();
     List<ReclamationHDB_DataType>dataTypeList = dmi.getDataTypeList();
 
     //String dataTableName = "";//dmi.getSchemaPrefix() + "v" + subjectType + "DataMetaData." + ld;

@@ -1,11 +1,7 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
-import java.io.IOException;
-
 import RTi.DMI.AbstractDatabaseDataStore;
 import RTi.DMI.DMI;
-import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
 
@@ -81,6 +77,7 @@ public boolean checkDatabaseConnection ()
 Factory method to construct a data store connection from a properties file.
 @param filename name of file containing property strings
 */
+/* TODO SAM 2015-03-22 This seems to be not needed - if needed, call the factory.create() method
 public static ReclamationHDBDataStore createFromFile ( String filename )
 throws IOException, Exception
 {
@@ -149,5 +146,6 @@ throws IOException, Exception
     ReclamationHDBDataStore ds = new ReclamationHDBDataStore( name, description, dmi );
     return ds;
 }
+*/
 
 }

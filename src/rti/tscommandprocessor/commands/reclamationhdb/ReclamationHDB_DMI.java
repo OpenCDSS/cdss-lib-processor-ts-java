@@ -3,7 +3,6 @@ package rti.tscommandprocessor.commands.reclamationhdb;
 import java.security.InvalidParameterException;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,8 +12,6 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
-
-import javax.swing.SwingUtilities;
 
 import rti.tscommandprocessor.commands.reclamationhdb.java_lib.hdbLib.JavaConnections;
 
@@ -66,9 +63,20 @@ private List<ReclamationHDB_DataType> __dataTypeList = new Vector<ReclamationHDB
 /**
 Keep alive SQL string and frequency.  If specified in configuration file and set with
 setKeepAlive(), will be used to run a thread and query the database to keep the connection open.
+TODO SAM 2015-03-23 This feature is not needed now that database re-connection is enabled in TSTool 11.00.00 - remove once confirmed.
 */
-private String __keepAliveSql = null;
-private String __keepAliveFrequency = null;
+//private String __keepAliveSql = null;
+//private String __keepAliveFrequency = null;
+
+/**
+The maximum number of insert statements to execute in a batch.
+*/
+private int __writeToHdbInsertStatementMax = 10000;
+
+/**
+The result set fetch size.  Oracle defaults to 10 which results in slow performance.
+*/
+private int __resultSetFetchSize = 10000;
 
 /**
 Timeout for database statements.
@@ -82,9 +90,10 @@ private boolean __tsidStyleSDI = true; // Default
 
 /**
 Indicate whether when reading NHour data the end date time can be used for the TSTool date/time.
-False corresponds to a datastore property ReadNHourEndDateTime=StartDateTimePlusIntervalMinus1Hour
+True corresponds to a datastore property ReadNHourEndDateTime=EndDateTime
+False corresponds to a datastore property ReadNHourEndDateTime=StartDateTimePlusInterval
 */
-private boolean __readNHourEndDateTime = true; // Default, for when WRITE_TO_HDB end_date_time actually works for NHour
+private boolean __readNHourEndDateTime = false; // Default, because WRITE_TO_HDB end_date_time does not currently work for NHour
 
 /**
 Loading applications from HDB_LOADING_APPLICATION.
@@ -481,7 +490,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         if ( rs == null ) {
             Message.printWarning(3, routine, "Resultset is null.");
         }
@@ -860,7 +869,7 @@ public void open ()
     Message.printStatus(2, routine, "Opened the database connection." );
     readGlobalData();
     // Start a "keep alive" thread to make sure the database connection is not lost
-    startKeepAliveThread();
+    //startKeepAliveThread();
 }
 
 /**
@@ -1001,7 +1010,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         int record = 0;
@@ -1066,7 +1075,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         int record = 0;
@@ -1147,7 +1156,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         int record = 0;
@@ -1216,7 +1225,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         int record = 0;
@@ -1331,7 +1340,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         Date date;
@@ -1411,7 +1420,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         while (rs.next()) {
             i = rs.getInt(1);
@@ -1454,7 +1463,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         int record = 0;
@@ -1518,7 +1527,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         String s;
         int record = 0;
         int col;
@@ -1580,7 +1589,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         int record = 0;
@@ -1670,7 +1679,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         float f;
@@ -1790,7 +1799,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         String s;
         int record = 0;
         int col;
@@ -1996,7 +2005,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         while (rs.next()) {
             i = rs.getInt(1);
@@ -2042,7 +2051,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         int record = 0;
@@ -2126,7 +2135,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         int record = 0;
@@ -2193,7 +2202,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         String s;
         int record = 0;
         while (rs.next()) {
@@ -2280,7 +2289,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand.toString());
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
         int record = 0;
@@ -2724,7 +2733,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSize);
         sw.stop();
         Message.printStatus(2,routine,"Time to execute query was " + sw.getSeconds() + " seconds." );
         results = toReclamationHDBSiteTimeSeriesMetadataList ( routine, tsType, isEnsembleTrace, timeStep, rs );
@@ -3200,7 +3209,7 @@ throws Exception
             rs = stmt.executeQuery(selectSQL.toString());
             // Set the fetch size to a relatively big number to try to improve performance.
             // Hopefully this improves performance over VPN and using remote databases
-            rs.setFetchSize(10000);
+            rs.setFetchSize(__resultSetFetchSize);
             sw.stop();
             Message.printStatus(2,routine,"Query of \"" + tsidentString + "\" data took " + sw.getSeconds() + " seconds.");
             sw.clearAndStart();
@@ -3396,11 +3405,13 @@ Set whether the "keep alive" query thread should run, useful when accessing an H
 @param keepAliveSql SQL string to run periodically to keep database connection alive
 @param keepAliveFrequency number of seconds between "keep alive" queries
 */
+/* TODO SAM 2015-03-23 Remove once new reconnect feature in TSTool 11.00.00 proves out
 public void setKeepAlive ( String keepAliveSql, String keepAliveFrequency )
 {
     __keepAliveSql = keepAliveSql;
     __keepAliveFrequency = keepAliveFrequency;
 }
+*/
 
 /**
 Set the database read timeout.
@@ -3413,10 +3424,26 @@ public void setReadTimeout ( int readTimeout )
 
 /**
 Indicate whether the date/time for data when reading NHour should just be the *_HOUR.END_DATE_TIME.
+True=EndDateTime, False=StartDateTimePlusInterval
 */
 public void setReadNHourEndDateTime ( boolean readNHourEndDateTime )
 {
     __readNHourEndDateTime = readNHourEndDateTime;
+}
+
+/**
+Set the result set fetch size used with JDBC rs.setFetchSize().
+@param resultSetFetchSize the maximum number of statements to write when doing a batch insert/update.
+*/
+public void setResultSetFetchSize(int resultSetFetchSize)
+{	String routine = getClass().getSimpleName() + ".setResultSetFetchSize";
+	if ( resultSetFetchSize <= 0 ) {
+		// Reset to default
+		resultSetFetchSize = 10000;
+	}
+	__resultSetFetchSize = resultSetFetchSize;
+	// Print a message to make sure the value is being set from config files
+	Message.printStatus(2,routine,"Set ResultSetFetchSize="+__resultSetFetchSize);
 }
 
 /**
@@ -3518,6 +3545,7 @@ public void setTSIDStyleSDI ( boolean tsidStyleSDI )
 Start a keep alive thread going that periodically does a trivial SQL query to ensure
 that the database connection is kept open.
 */
+/* TODO SAM 2015-03-23 remove this if the reconnect funcitonality in TSTool 11.00.00 works
 private void startKeepAliveThread()
 {
     // Only start the thread if the KeepAliveSQL and KeepAliveFrequency datastore properties
@@ -3557,6 +3585,22 @@ private void startKeepAliveThread()
             SwingUtilities.invokeLater ( r );
         }
     }
+}
+*/
+
+/**
+Set the maximum number of statements to execute in a batch insert.
+@param writeToHdbInsertStatementMax the maximum number of statements to write when doing a batch insert/update.
+*/
+public void setWriteToHdbInsertStatementMax(int writeToHdbInsertStatementMax)
+{	String routine = getClass().getSimpleName() + ".setWriteToHdbInsertStatementMax";
+	if ( writeToHdbInsertStatementMax <= 0 ) {
+		// Reset to default
+		writeToHdbInsertStatementMax = 10000;
+	}
+	__writeToHdbInsertStatementMax = writeToHdbInsertStatementMax;
+	// Print a message to make sure the value is being set from config files
+	Message.printStatus(2,routine,"Set WriteToHDBInsertStatementMax="+__writeToHdbInsertStatementMax);
 }
 
 /**
@@ -4010,7 +4054,7 @@ throws SQLException
     Timestamp startTimeStamp, endTimeStamp;
     int batchCount = 0;
     // Maximum batch, 256 as per: http://docs.oracle.com/cd/E11882_01/timesten.112/e21638/tuning.htm
-    int batchCountMax = 10000; // Putting a large number here works with new Oracle driver
+    int batchCountMax = __writeToHdbInsertStatementMax; // Putting a large number here works with new Oracle driver
     int batchCountTotal = 0;
     try {
         while ( true ) {

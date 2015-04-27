@@ -247,10 +247,10 @@ CommandWarningException, CommandException
 	String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
 	if ( !IOUtil.fileExists(InputFile_full) ) {
-		message += "\nThe delimited table file \"" + InputFile_full + "\" does not exist.";
+		message += "\nThe DBF file \"" + InputFile_full + "\" does not exist.";
 		++warning_count;
         status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Verify that the delimited table file exists." ) );
+            message, "Verify that the DBF file exists." ) );
 	}
 
 	if ( warning_count > 0 ) {

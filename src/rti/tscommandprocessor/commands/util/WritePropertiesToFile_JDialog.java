@@ -234,7 +234,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write one or more properties to a file." ),
+		"Write one or more properties to a file.  Currently wildcards can only be applied to user-specified properties, not internal properties." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the output file be relative to the current working directory." ), 
@@ -247,7 +247,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputFile_JTextField = new JTextField ( 50 );
+	__OutputFile_JTextField = new JTextField ( 40 );
 	__OutputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -262,7 +262,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
 	JGUIUtil.addComponent(main_JPanel, __IncludeProperty_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - properties to write, separated by commas (default=write all)."),
+		"Optional - properties to write, separated by commas, *=wildcard (default=write all)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write mode:"),

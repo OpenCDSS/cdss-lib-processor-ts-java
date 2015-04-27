@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.awt.event.WindowListener; // To know when graph window closes to close entire application
@@ -1768,6 +1769,19 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>GetPropertyHashtable</b></td>
+<td>Get the hash table of processor properties.  Parameters to this request are:
+<ol>
+<li>    <b>GetUserProperties</b> Set to "true" if the list of user-supplied properties is to be returned.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    <b>PropertyHashtable</b> Hashtable of properties including internal and user-defined properties.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>GetTable</b></td>
 <td>Get a DataTable instance managed by the processor.  Parameters to this request are:
 <ol>
@@ -2100,6 +2114,10 @@ throws Exception
     }
     else if ( request.equalsIgnoreCase("GetOutputPeriodForCommand") ) {
         return processRequest_GetOutputPeriodForCommand ( request, request_params );
+    }
+    // Put before shorter GetProperty
+    else if ( request.equalsIgnoreCase("GetPropertyHashtable") ) {
+        return processRequest_GetPropertyHashtable ( request, request_params );
     }
     else if ( request.equalsIgnoreCase("GetProperty") ) {
         return processRequest_GetProperty ( request, request_params );
@@ -2483,6 +2501,37 @@ throws Exception
     PropList results = bean.getResultsPropList();
     // This will be set in the bean because the PropList is a reference...
     results.setUsingObject("PropertyValue", PropertyValue );
+    return bean;
+}
+
+/**
+Process the GetPropertyHashtable request.  Currently only user-specified properties are returned and only if the request parameter "UserProperties=True".
+@return Hashtable of properties, not in sorted order.  This is a new Hashtable instance whose contents generally should not be modified.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetPropertyHashtable (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+	// New Hashtable to return
+	Hashtable<String,Object> ph = new Hashtable<String,Object>();
+	// Get the necessary parameters...
+	Object o = request_params.getContents ( "GetUserProperties" );
+	if ( o != null ) {
+		String propval = (String)o;
+		if ( (propval != null) && propval.equalsIgnoreCase("true") ) {
+			// Transfer the user-specified properties
+			Set<String> keys = __property_Hashtable.keySet();
+			for ( String key : keys ) {
+				o = __property_Hashtable.get ( key );
+				ph.put(key,o);
+			}			
+		}
+	}
+	// TODO SAM 2015-04-26 Transfer the internal properties
+    // Return the property value in the bean.
+    PropList results = bean.getResultsPropList();
+    // This will be set in the bean because the PropList is a reference...
+    results.setUsingObject("PropertyHashtable", ph );
     return bean;
 }
 
@@ -3598,8 +3647,50 @@ throws Exception
     __property_Hashtable.clear();
     // Define some standard properties
     __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
+    // Set the program version as a property, useful for version-dependent command logic
+    // Assume the version is xxx.xxx.xxx beta (date), with at least one period
+    // Save the program version as a string
+    String programVersion = IOUtil.getProgramVersion();
+    int pos = programVersion.indexOf(" ");
+    if ( pos > 0 ) {
+    	programVersion = programVersion.substring(0,pos);
+    }
+    __property_Hashtable.put ( "ProgramVersionString", programVersion );
+    // Also save the numerical version.
+    double programVersionNumber = -1.0;
+    pos = programVersion.indexOf(".");
+    StringBuilder b = new StringBuilder();
+    if ( pos < 0 ) {
+    	// Just a number
+    	b.append(programVersion);
+    }
+    else {
+    	// Transfer the characters including the first period but no other periods
+    	b.append(programVersion.substring(0,pos) + ".");
+    	for ( int i = pos + 1; i < programVersion.length(); i++ ) {
+    		if ( programVersion.charAt(i) == '.' ) {
+    			continue;
+    		}
+    		else {
+    			b.append ( programVersion.charAt(i) );
+    		}
+    	}
+    }
+    // Also remove any non-digits like would occur in "beta", etc.
+    for ( int i = pos + 1; i < b.length(); i++ ) {
+    	if ( !Character.isDigit(b.charAt(i)) ) {
+    		b.deleteCharAt(i--);
+    	}
+    }
+    try {
+    	programVersionNumber = Double.parseDouble(b.toString());
+    }
+    catch ( NumberFormatException e ) {
+    	programVersionNumber = -1.0;
+    }
+    __property_Hashtable.put ( "ProgramVersionNumber", new Double(programVersionNumber) );
     // Now make sure that specific controlling properties are cleared out.
-    // FIXME SAM 2008-07-15 Move data members to this class
+    // FIXME SAM 2008-07-15 Move data members from TSEngine to this class
     __tsengine.setIgnoreLEZero ( false );
     __tsengine.setIncludeMissingTS ( false );
     __tsengine.setInputEnd ( null );

@@ -143,6 +143,7 @@ import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromFixedFormatFile_Command;
+import rti.tscommandprocessor.commands.table.ReadTableFromXML_Command;
 import rti.tscommandprocessor.commands.table.SetPropertyFromTable_Command;
 import rti.tscommandprocessor.commands.table.SetTableValues_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
@@ -797,6 +798,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadTableFromFixedFormatFile") ) {
         return new ReadTableFromFixedFormatFile_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadTableFromXML") ) {
+        return new ReadTableFromXML_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadTimeSeries") ) {
         return new ReadTimeSeries_Command ();

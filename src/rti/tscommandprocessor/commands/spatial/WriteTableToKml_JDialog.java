@@ -429,7 +429,7 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     __PlacemarkDescriptionColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(gen_JPanel, __PlacemarkDescriptionColumn_JTextField,
         1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - longer descrption for map popup."),
+    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - longer description for map popup."),
         3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Panel for point data in separate columns

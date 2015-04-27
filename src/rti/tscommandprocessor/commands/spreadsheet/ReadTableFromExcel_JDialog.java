@@ -111,6 +111,7 @@ public void actionPerformed(ActionEvent event)
      	fc.addChoosableFileFilter(new SimpleFileFilter("xls", "Excel File"));
 		SimpleFileFilter sff = new SimpleFileFilter("xlsx", "Excel File");
 		fc.addChoosableFileFilter(sff);
+     	fc.addChoosableFileFilter(new SimpleFileFilter("xlsm", "Excel File with macros enabled"));
 		fc.setFileFilter(sff);
 
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -299,7 +300,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
 	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-    	"This command reads a table from a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx)."),
+    	"This command reads a table from a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx, *.xlsm)."),
     	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
 		"A contiguous block of cells must be specified using one of the address methods below."),

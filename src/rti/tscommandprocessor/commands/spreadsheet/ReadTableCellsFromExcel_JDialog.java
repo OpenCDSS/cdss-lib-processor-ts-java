@@ -111,6 +111,7 @@ public void actionPerformed(ActionEvent event)
      	fc.addChoosableFileFilter(new SimpleFileFilter("xls", "Excel File"));
 		SimpleFileFilter sff = new SimpleFileFilter("xlsx", "Excel File");
 		fc.addChoosableFileFilter(sff);
+     	fc.addChoosableFileFilter(new SimpleFileFilter("xlsm", "Excel File with macros enabled"));
 		fc.setFileFilter(sff);
 
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {

@@ -187,6 +187,7 @@ InitialWorkingDir and modified by SetWorkingDir() commands.
 */
 private String __WorkingDir_String = null;
 
+// TODO SAM Need to evaluate whether a different object should be used to allow null values
 /**
 Hashtable of properties used by the processor.
 */
@@ -1153,7 +1154,7 @@ public Object getPropContents ( String prop ) throws Exception
 	}
 	else {
 	    // Property is not one of the individual objects that have been historically
-	    // maintained, but it may be a property in the hashtable.
+	    // maintained, but it may be a user-supplied property in the hashtable.
 	    Object o = __property_Hashtable.get ( prop );
 	    if ( o == null ) {
     	    String warning = "Unknown GetPropContents request \"" + prop + "\"";
@@ -1441,7 +1442,7 @@ public Collection getPropertyNameList ( boolean includeBuiltInProperties, boolea
 	// properties be available (and rely on discovery to pass to other commands)?
 	// Add properties that are hard-coded.
 	if ( includeBuiltInProperties ) {
-	    List<String> v = new Vector<String>();
+	    List<String> v = new ArrayList<String>();
         v.add ( "AutoExtendPeriod" );
         v.add ( "AverageStart" );
         v.add ( "AverageEnd" );
@@ -3263,7 +3264,7 @@ throws Exception
 }
 
 /**
-Process the SetProperty request.
+Process the SetProperty request.  Null property values are NOT allowed.
 */
 private CommandProcessorRequestResultsBean processRequest_SetProperty (
         String request, PropList request_params )
@@ -3279,11 +3280,12 @@ throws Exception
     }
     String PropertyName = (String)o;
     Object o2 = request_params.getContents ( "PropertyValue" );
+    // Nulls are not allowed because Hashtable does not allow.
     if ( o2 == null ) {
-            String warning = "Request SetProperty() does not provide a PropertyValue parameter.";
-            bean.setWarningText ( warning );
-            bean.setWarningRecommendationText ( "This is likely a software code error.");
-            throw new RequestParameterNotFoundException ( warning );
+        String warning = "Request SetProperty() does not provide a PropertyValue parameter.";
+        bean.setWarningText ( warning );
+        bean.setWarningRecommendationText ( "This is likely a software code error.");
+        throw new RequestParameterNotFoundException ( warning );
     }
     // Try to set official property...
     try {
@@ -3292,6 +3294,7 @@ throws Exception
     catch ( UnrecognizedRequestException e ) {
         // Not recognized as a core internal so will set below as a user property
     }
+    // TODO SAM 2015-05-05 Why is this not an "if" with official property?
     // Otherwise it is a user-defined property...
     __property_Hashtable.put ( PropertyName, o2 );
     // No data are returned in the bean.

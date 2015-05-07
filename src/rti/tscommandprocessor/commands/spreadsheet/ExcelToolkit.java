@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -552,6 +553,322 @@ public AreaReference parseAreaReferenceFromAddress ( Workbook wb, Sheet sheet, S
 /**
 Read the table from an Excel worksheet and transfer to a row in the given table.
 The column and matching cells are specified by the columnMap parameter.
+@param workbookFile the name of the workbook file (*.xls or *.xlsx)
+@param sheetName the name of the sheet in the workbook
+@param nameCellMap a map indicating names for cells and matching cell addresses (named range or A1 notation) to read.
+@param booleanProperties names of properties that should be created as Boolean
+@param dateTimeProperties names of properties that should be created as DateTime
+@param integerProperties names of properties that should be created as Integer 
+@param problems list of problems encountered during read, for formatted logging in calling code
+@return a HashMap with the Excel contents with names matching the requested properties
+*/
+public HashMap<String,Object> readNamedCells ( String workbookFile, String sheetName, boolean keepOpen,
+    LinkedHashMap<String,String> nameCellMap,
+    String [] booleanProperties, String [] dateTimeProperties, String [] integerProperties,
+    List<String> problems )
+throws FileNotFoundException, IOException
+{   String routine = "ExcelToolkit.readNamedCells";
+    HashMap<String,Object> map = new HashMap<String,Object>();
+    Workbook wb = null;
+    InputStream inp = null;
+    try {
+        // See if an open workbook by the same name exists
+        wb = ExcelUtil.getOpenWorkbook(workbookFile);
+        if ( wb == null ) {
+            try {
+                inp = new FileInputStream(workbookFile);
+            }
+            catch ( IOException e ) {
+                problems.add ( "Error opening workbook file \"" + workbookFile + "\" (" + e + ")." );
+                return map;
+            }
+            try {
+                wb = WorkbookFactory.create(inp);
+            }
+            catch ( InvalidFormatException e ) {
+                problems.add ( "Error creating workbook object from \"" + workbookFile + "\" (" + e + ")." );
+                return map;
+            }
+        }
+        // Evaluate the formulas in the workbook, to make sure the cache is updated
+        // Formulas are evaluated as formula cells are encountered but declare the instance here for reuse
+        FormulaEvaluator formulaEvaluator = null;
+        Sheet sheet = null;
+        // TODO SAM 2013-02-22 In the future sheet may be determined from named address (e.g., named ranges
+        // are global in workbook)
+        if ( (sheetName == null) || (sheetName.length() == 0) ) {
+            // Default is to use the first sheet
+            sheet = wb.getSheetAt(0);
+            if ( sheet == null ) {
+                problems.add ( "Workbook does not include any worksheets" );
+                return map;
+            }
+        }
+        else {
+            sheet = wb.getSheet(sheetName);
+            if ( sheet == null ) {
+                problems.add ( "Workbook does not include worksheet named \"" + sheetName + "\"" );
+                return map;
+            }
+        }
+        // Loop through the cells to read and get the cells
+        String cellAddress;
+        AreaReference area = null;
+        Row row;
+        Cell cell;
+        CellValue formulaCellValue = null; // Cell value after formula evaluation
+        int cellType;
+        String cellValueString;
+        boolean cellValueBoolean;
+        double cellValueDouble;
+        boolean cellIsFormula; // Used to know when the evaluate cell formula to get output object
+        Date cellValueDate;
+        String propertyName;
+        for ( Map.Entry<String,String> entry: nameCellMap.entrySet() ) {
+            propertyName = entry.getKey();
+            cellAddress = entry.getValue();
+            Message.printStatus(2,routine,"Processing property \"" + propertyName + "\" cellAddress=\"" + cellAddress + "\"" );
+            // Determine if a specific property type is requested
+            boolean isBoolean = false;
+            boolean isDateTime = false;
+            boolean isInteger = false;
+            for ( int i = 0; i < booleanProperties.length; i++ ) {
+            	if ( propertyName.equalsIgnoreCase(booleanProperties[i]) ) {
+            		isBoolean = true;
+            		break;
+            	}
+            }
+            for ( int i = 0; i < dateTimeProperties.length; i++ ) {
+            	if ( propertyName.equalsIgnoreCase(dateTimeProperties[i]) ) {
+            		isDateTime = true;
+            		break;
+            	}
+            }
+            for ( int i = 0; i < integerProperties.length; i++ ) {
+            	if ( propertyName.equalsIgnoreCase(integerProperties[i]) ) {
+            		isInteger = true;
+            		break;
+            	}
+            }
+            if ( (cellAddress != null) && !cellAddress.equals("") ) {
+                area = null;
+                // First try to get a named range
+                int namedCellIdx = wb.getNameIndex(cellAddress);
+                if ( namedCellIdx < 0 ) {
+                    // Must be an A1 address
+                    area = new AreaReference(cellAddress);
+                }
+                else {
+                    Name aNamedCell = wb.getNameAt(namedCellIdx);
+                    // Retrieve the cell at the named range and test its contents
+                    // Will get back one AreaReference for C10, and another for D12 to D14
+                    AreaReference[] arefs = AreaReference.generateContiguous(aNamedCell.getRefersToFormula());
+                    // Can only handle one area
+                    if ( arefs.length != 1 ) {
+                        continue;
+                    }
+                    else {
+                        area = arefs[0];
+                    }
+                }
+            }
+            if ( area != null ) {
+                // Get the cell for the area
+                int rowStart = area.getFirstCell().getRow();
+                int rowEnd = area.getLastCell().getRow();
+                int colStart = area.getFirstCell().getCol();
+                int colEnd = area.getLastCell().getCol();
+                if ( (rowStart != rowEnd) || (colStart != colEnd) ) {
+                    // Problem - can only read single cells
+                    problems.add ( "Cell range " + cellAddress + " is not a single cell - cannot read." );
+                }
+                int iRow = rowStart;
+                int iCol = colStart;
+                // Read the row for the cell
+                row = sheet.getRow(iRow);
+                if ( row == null ) {
+                    // Seems to happen at bottom of worksheets where there are extra junk rows
+                    problems.add ( "Row is null for cell address " + cellAddress + " - cannot read cell - check case-sensitive spelling if a named range.");
+                    continue;
+                }
+                // Read the cell object
+                cell = row.getCell(iCol);
+                if ( cell == null ) {
+                    // OK, set the property to null
+                	map.put(propertyName, null);
+                	continue;
+                }
+                // First get the data using the type indicated for the cell.  Then translate to
+                // the appropriate type as a Java object.  Handling at cell level is needed because
+                // the Excel worksheet might have cell values that are mixed type in the column.
+                // The checks are exhaustive, so list in the order that is most likely (string, double,
+                // boolean, blank, error, formula).
+                cellType = cell.getCellType();
+                cellIsFormula = false;
+                Message.printStatus(2,routine,"Cell type for \"" + cellAddress + "\" property \"" + propertyName +
+                	"\" is " + cellType + " " + lookupExcelCellType(cellType) );
+                if ( cellType == Cell.CELL_TYPE_FORMULA ) {
+                    // Have to evaluate the cell and get the value as the result
+                    cellIsFormula = true;
+                    try {
+                        if ( formulaEvaluator == null ) {
+                        	formulaEvaluator = wb.getCreationHelper().createFormulaEvaluator();
+                        }
+                        formulaCellValue = formulaEvaluator.evaluate(cell);
+                        // Reset cellType for following code
+                        cellType = formulaCellValue.getCellType();
+                        if ( Message.isDebugOn ) {
+                            Message.printDebug(1, routine, "Detected formula, new cellType=" + cellType +
+                                ", " + lookupExcelCellType(cellType) + ", cell value=\"" + formulaCellValue + "\"" );
+                        }
+                    }
+                    catch ( Exception e ) {
+                        // Handle as an error in processing below.
+                        problems.add ( "Error evaluating formula for row [" + iRow + "][" + iCol + "] \"" +
+                            cell + "\" - setting to error cell type (" + e + ")");
+                        cellType = Cell.CELL_TYPE_ERROR;
+                    }
+                }
+                if ( cellType == Cell.CELL_TYPE_STRING ) {
+                    if ( cellIsFormula ) {
+                        cellValueString = formulaCellValue.getStringValue();
+                    }
+                    else {
+                        cellValueString = cell.getStringCellValue();
+                    }
+                    Message.printStatus(2, routine, "Cell string value=\"" + cellValueString + "\"" );
+                    if ( isBoolean ) {
+                    	if ( cellValueString.equals("1") || cellValueString.equalsIgnoreCase("Yes") || cellValueString.equalsIgnoreCase("True") ) {
+                    		map.put(propertyName, new Boolean(true));
+                    	}
+                    	else {
+                    		map.put(propertyName, new Boolean(false));
+                    	}
+                    }
+                    else if ( isDateTime ) {
+                    	try {
+                    		DateTime dt = DateTime.parse(cellValueString);
+                    		map.put(propertyName, dt);
+                    	}
+                    	catch ( NumberFormatException e ) {
+                    		map.put(propertyName, null);
+                    	}
+                    }
+                    else if ( isInteger ) {
+                    	try {
+                    		map.put(propertyName, Integer.parseInt(cellValueString));
+                    	}
+                    	catch ( NumberFormatException e ) {
+                    		map.put(propertyName, null);
+                    	}
+                    }
+                    else {
+                    	// Default
+                    	map.put(propertyName, cellValueString);
+                    }
+                }
+                else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
+                    if (DateUtil.isCellDateFormatted(cell)) {
+                    	Message.printStatus(2,routine,"Cell is number formatted as date.");
+                        if ( cellIsFormula ) {
+                            // Convert the internal numerical date to a Java Date, no time zone 
+                            cellValueDate = DateUtil.getJavaDate(formulaCellValue.getNumberValue());
+                        }
+                        else {
+                            cellValueDate = cell.getDateCellValue();
+                        }
+                        // Use DateTime by default because it behaves better than Date, especially toString()
+                        if ( cellValueDate == null ) {
+                        	map.put(propertyName,cellValueDate);
+                        }
+                        else {
+                        	map.put(propertyName,new DateTime(cellValueDate));
+                        }
+                    }
+                    else {
+                        // Floating point value
+                        if ( cellIsFormula ) {
+                            cellValueDouble = formulaCellValue.getNumberValue();
+                        }
+                        else {
+                            cellValueDouble = cell.getNumericCellValue();
+                        }
+                        Message.printStatus(2, routine, "Cell numeric value=" + cellValueDouble );
+                        if ( isInteger ) {
+                        	map.put(propertyName,new Integer((int)cellValueDouble));
+                        }
+                        else if ( isBoolean ) {
+                        	int i = (int)cellValueDouble;
+                        	boolean b = false;
+                        	if ( i != 0 ) {
+                        		b = true;
+                        	}
+                        	map.put(propertyName,new Boolean(b));
+                        }
+                        else {
+                        	// Default is double
+                            map.put(propertyName, cellValueDouble);
+                        }
+                    }
+                }
+                else if ( cellType == Cell.CELL_TYPE_BOOLEAN ) {
+                    if ( cellIsFormula ) {
+                        cellValueBoolean = formulaCellValue.getBooleanValue();
+                    }
+                    else {
+                        cellValueBoolean = cell.getBooleanCellValue();
+                    }
+                    Message.printStatus(2, routine, "Cell boolean value=" + cellValueBoolean );
+                    if ( isInteger ) {
+                    	if ( cellValueBoolean ) {
+                    		map.put(propertyName,new Integer(1));
+                    	}
+                    	else {
+                    		map.put(propertyName,new Integer(0));
+                    	}
+                    }
+                    map.put(propertyName,cellValueBoolean);
+                }
+                else if ( cellType == Cell.CELL_TYPE_BLANK ) {
+                    // Null works for all object types.  If truly a blank string in text cell, use "" as text
+                    Message.printStatus(2, routine, "Cell is blank");
+                    map.put(propertyName, null);
+                }
+                else if ( cellType == Cell.CELL_TYPE_ERROR ) {
+                    Message.printStatus(2, routine, "Cell is error");
+                    map.put(propertyName, null);
+                }
+                else {
+                    Message.printStatus(2, routine, "Cell type is unknown - setting null");
+                    map.put(propertyName, null);
+                }
+            }
+        }
+    }
+    catch ( Exception e ) {
+        problems.add ( "Error reading workbook \"" + workbookFile + "\" (" + e + ")." );
+        Message.printWarning(3,routine,e);
+    }
+    finally {
+        // If keeping open skip because it will be written by a later command.
+        if ( keepOpen ) {
+            // Save the open workbook for other commands to use
+            ExcelUtil.setOpenWorkbook(workbookFile,wb);
+        }
+        else {
+            // Close the workbook and remove from the cache
+            if ( inp != null ) {
+                inp.close();
+            }
+            ExcelUtil.removeOpenWorkbook(workbookFile);
+        }
+    }
+    return map;
+}
+
+/**
+Read the table from an Excel worksheet and transfer to a row in the given table.
+The column and matching cells are specified by the columnMap parameter.
 @param table existing table to be appended to, or null to create a new table
 @param workbookFile the name of the workbook file (*.xls or *.xlsx)
 @param sheetName the name of the sheet in the workbook
@@ -939,8 +1256,8 @@ throws FileNotFoundException, IOException
                 else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
                     if (DateUtil.isCellDateFormatted(cell)) {
                         if ( cellIsFormula ) {
-                            // TODO SAM 2013-02-25 Does not seem to method to return date 
-                            cellValueDate = null;
+                        	// Convert the internal numerical date to a Java Date, no time zone 
+                            cellValueDate = DateUtil.getJavaDate(formulaCellValue.getNumberValue());
                         }
                         else {
                             cellValueDate = cell.getDateCellValue();

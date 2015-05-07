@@ -456,7 +456,7 @@ private void initialize ( JFrame parent, ReadTableCellsFromExcel_Command command
     __ColumnCellMap_JTextArea = new JTextArea (7,45);
     __ColumnCellMap_JTextArea.setLineWrap ( true );
     __ColumnCellMap_JTextArea.setWrapStyleWord ( true );
-    __ColumnCellMap_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnCellMap_JTextArea.setToolTipText("ColumnName1:ExcelAddress1,ColumnName2:ExcelAddress2");
     __ColumnCellMap_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(excelTable_JPanel, new JScrollPane(__ColumnCellMap_JTextArea),
         1, yExcelTable, 2, 2, 1, .5, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);

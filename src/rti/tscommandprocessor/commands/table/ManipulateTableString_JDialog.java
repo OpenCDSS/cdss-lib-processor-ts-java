@@ -191,10 +191,16 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
 		"Perform simple manipulation on columns of string data in a table, using one of the following approaches:" ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - process input from two columns to populate the output column" ), 
+        "   - process input values from two columns to populate the output column" ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - process input from a column and a constant to populate the output column" ), 
+        "   - process input values from a column and a constant to populate the output column" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "   - convert an input string value into an output value (operator ToDate,ToDateTime, etc.)" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The operator defines the number of values that are needed as input and the column or input values provide the input for processing." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Future enhancements may provide more cell range addressing - currently full columns are processed." ), 

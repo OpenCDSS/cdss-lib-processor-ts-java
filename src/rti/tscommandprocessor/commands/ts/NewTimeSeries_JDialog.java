@@ -477,7 +477,7 @@ private void refresh ()
 		Units = props.getValue ( "Units" );
 		MissingValue = props.getValue ( "MissingValue" );
 		InitialValue = props.getValue ( "InitialValue" );
-		InitialValue = props.getValue ( "InitialFlag" );
+		InitialFlag = props.getValue ( "InitialFlag" );
 		InitialFunction = props.getValue ( "InitialFunction" );
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );

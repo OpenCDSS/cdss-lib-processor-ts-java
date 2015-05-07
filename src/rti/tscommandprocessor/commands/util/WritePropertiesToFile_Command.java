@@ -5,13 +5,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
@@ -22,7 +22,6 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -30,7 +29,6 @@ import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.FileWriteModeType;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.PropertyFileFormatType;
 
@@ -39,6 +37,13 @@ This class initializes, checks, and runs the WritePropertiesToFile() command.
 */
 public class WritePropertiesToFile_Command extends AbstractCommand implements Command, FileGenerator
 {
+
+/**
+Values for SortOrder property.
+*/
+protected final String _Ascending = "Ascending";
+protected final String _Descending = "Descending";
+protected final String _None = "None";
 	
 /**
 Output file that is created by this command.
@@ -67,6 +72,7 @@ throws InvalidCommandParameterException
 	//String IncludeProperty = parameters.getValue ( "IncludeProperty" );
 	String WriteMode = parameters.getValue ( "WriteMode" );
 	String FileFormat = parameters.getValue ( "FileFormat" );
+	String SortOrder = parameters.getValue ( "SortOrder" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -183,14 +189,23 @@ throws InvalidCommandParameterException
                PropertyFileFormatType.NAME_TYPE_VALUE + " (default), " +
                PropertyFileFormatType.NAME_TYPE_VALUE_PYTHON + "." ) );
    }
+   
+   if ( (SortOrder != null) && !SortOrder.equals("") && !SortOrder.equals(_Ascending) && !SortOrder.equals(_Descending) && !SortOrder.equals(_None) ) {
+       message = "The sort order is invalid.";
+       warning += "\n" + message;
+       status.addToLog ( CommandPhaseType.INITIALIZATION,
+           new CommandLogRecord(CommandStatusType.FAILURE,
+               message, "Specify the sort order as " + _Ascending + ", " + _Descending + ", or " +_None + " (default)." ) );
+   }
 	
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "IncludeProperty" );
-	valid_Vector.add ( "WriteMode" );
-	valid_Vector.add ( "FileFormat" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(5);
+	validList.add ( "OutputFile" );
+	validList.add ( "IncludeProperty" );
+	validList.add ( "WriteMode" );
+	validList.add ( "FileFormat" );
+	validList.add ( "SortOrder" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -217,7 +232,7 @@ Return the list of supported FileFormat parameter choices.
 */
 protected List<PropertyFileFormatType> getFileFormatChoices ()
 {
-    List<PropertyFileFormatType> fileFormatChoices = new Vector();
+    List<PropertyFileFormatType> fileFormatChoices = new ArrayList<PropertyFileFormatType>(3);
     fileFormatChoices.add ( PropertyFileFormatType.NAME_TYPE_VALUE );
     fileFormatChoices.add ( PropertyFileFormatType.NAME_TYPE_VALUE_PYTHON );
     fileFormatChoices.add ( PropertyFileFormatType.NAME_VALUE );
@@ -229,7 +244,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector();
+	List<File> list = new ArrayList();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -250,7 +265,7 @@ Return the list of supported WriteMode parameter choices.
 */
 protected List<FileWriteModeType> getWriteModeChoices ()
 {
-    List<FileWriteModeType> writeModeChoices = new Vector();
+    List<FileWriteModeType> writeModeChoices = new ArrayList<FileWriteModeType>(2);
     writeModeChoices.add ( FileWriteModeType.APPEND );
     writeModeChoices.add ( FileWriteModeType.OVERWRITE );
     // TODO SAM 2012-07-27 Need to update
@@ -315,6 +330,16 @@ CommandWarningException, CommandException
     if ( fileFormat == null ) {
         fileFormat = PropertyFileFormatType.NAME_TYPE_VALUE; // Default
     }
+    String SortOrder = parameters.getValue ( "SortOrder" );
+    int sortOrder = 0; // No sort
+    if ( SortOrder != null ) {
+    	if ( SortOrder.equalsIgnoreCase(_Descending) ) {
+    		sortOrder = -1;
+    	}
+    	else if ( SortOrder.equalsIgnoreCase(_Ascending) ) {
+    		sortOrder = 1;
+    	}
+    }
 	
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
@@ -328,7 +353,7 @@ CommandWarningException, CommandException
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFile) ) );
 	    List<String> problems = new ArrayList<String>();
-		writePropertyFile ( processor, OutputFile_full, includeProperty, writeMode, fileFormat, problems );
+		writePropertyFile ( processor, OutputFile_full, includeProperty, writeMode, fileFormat, sortOrder, problems );
 		for ( String problem : problems ) {
 			Message.printWarning ( warning_level, 
 				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, problem );
@@ -371,6 +396,7 @@ public String toString ( PropList parameters )
 	String IncludeProperty = parameters.getValue ( "IncludeProperty" );
 	String WriteMode = parameters.getValue ( "WriteMode" );
 	String FileFormat = parameters.getValue ( "FileFormat" );
+	String SortOrder = parameters.getValue( "SortOrder" );
 	StringBuffer b = new StringBuffer ();
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -395,6 +421,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "FileFormat=" + FileFormat );
+    }
+    if ( (SortOrder != null) && (SortOrder.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SortOrder=" + SortOrder );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }
@@ -459,9 +491,10 @@ private void writeProperty ( PrintWriter fout, String propertyName, Object prope
 // TODO SAM 2012-07-27 Evaluate putting this in more generic code, perhaps IOUtil.PropList.writePersistent()?
 /**
 Write the property file.
+@param sortOrder sort order for output: -1=descending, 0=no sort, 1=ascending
 */
 private List<String> writePropertyFile ( CommandProcessor processor, String outputFileFull,
-    String [] includeProperty, FileWriteModeType writeMode, PropertyFileFormatType formatType, List<String> problems )
+    String [] includeProperty, FileWriteModeType writeMode, PropertyFileFormatType formatType, int sortOrder, List<String> problems )
 {
     PrintWriter fout = null;
     try {
@@ -471,47 +504,78 @@ private List<String> writePropertyFile ( CommandProcessor processor, String outp
             doAppend = true;
         }
         fout = new PrintWriter ( new FileOutputStream ( outputFileFull, doAppend ) );
-        // Get all the user-specified properties
-        Hashtable<String,Object> userProps = null;
-        try {
-        	PropList requestProps = new PropList("");
-        	requestProps.set("GetUserProperties=True");
-        	CommandProcessorRequestResultsBean r = processor.processRequest("GetPropertyHashtable", requestProps);
-        	PropList resultsProps = r.getResultsPropList();
-        	Prop prop = resultsProps.getProp("PropertyHashtable");
-        	if ( prop != null ) {
-        		userProps = (Hashtable<String,Object>)prop.getContents();
+        // Get the list of all processor properties
+        TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
+        Collection<String> list = tsprocessor.getPropertyNameList(true, true);
+        List<String> propNameList = new ArrayList(list);
+        if ( sortOrder == 0 ) {
+        	// Want to output in the order of the properties that were requested, not the order from the processor
+        	// Rearrange the full list to make sure the requested properties are at the front
+        	int foundCount = 0;
+        	for ( int i = 0; i < includeProperty.length; i++ ) {
+        		for ( int j = 0; j < propNameList.size(); j++ ) {
+        			if ( includeProperty[i].equalsIgnoreCase(propNameList.get(j))) {
+        				// Move to the front of the list and remove the original
+        				propNameList.add(foundCount++,includeProperty[i]);
+        				propNameList.remove(j + 1);
+        			}
+        		}
         	}
         }
-        catch ( Exception e ) {
-            problems.add("Error requesting user-specified property hashtable from processor (" + e + ")." );
-        }
-        // Loop through property names and retrieve from the processor
-        for ( int i = 0; i < includeProperty.length; i++ ) {
-            //Message.printStatus(2, "", "Writing property \"" + includeProperty[i] + "\"" );
-            if ( includeProperty[i].indexOf("*") >= 0 ) {
-            	// Includes wildcards.  Check the user-specified properties
-            	Set<String> keys = userProps.keySet();
-            	for ( String key : keys ) {
-            		if ( key.matches(includeProperty[i]) ) {
-            			// Have a match so output
-            			writeProperty(fout,key,userProps.get(key),formatType);
-            		}
-            	}
+    	if ( sortOrder != 0 ) {
+    		// Want to output sorted - first sort ascending
+    		Collections.sort(propNameList,String.CASE_INSENSITIVE_ORDER);
+    	}
+    	if ( sortOrder < 0 ) {
+    		// Reverse the order if needed
+    		Collections.reverse(propNameList);
+    	}
+        // Loop through property names retrieved from the processor
+        // If no specific properties were requested, write them all
+        // TODO SAM 2015-05-05 the list of properties only includes user properties, not built-in properties - need to combine
+    	boolean doWrite;
+    	boolean [] includePropertyMatched = new boolean[includeProperty.length];
+    	for ( int i = 0; i < includePropertyMatched.length; i++ ) {
+    		includePropertyMatched[i] = false;
+    	}
+        for ( String propName : propNameList ) {
+        	doWrite = false;
+            if ( includeProperty.length == 0 ) {
+            	doWrite = true;
             }
             else {
-	            // Get the property to output...
-	            Object propertyObject = null;
-	            try {
-	                propertyObject = processor.getPropContents ( includeProperty[i] );
-	            }
-	            catch ( Exception e ) {
-	                problems.add("Error requesting property named \"" + includeProperty[i] + "\" from processor (" +
-	                    e + ")." );
-	                continue;
-	            }
-	            writeProperty(fout,includeProperty[i],propertyObject,formatType);
+            	// Loop through the properties to include and see if there is a match
+            	for ( int i = 0; i < includeProperty.length; i++ ) {
+    	            //Message.printStatus(2, "", "Writing property \"" + includeProperty[i] + "\"" );
+    	            if ( includeProperty[i].indexOf("*") >= 0 ) {
+    	            	// Includes wildcards.  Check the user-specified properties
+	            		if ( propName.matches(includeProperty[i]) ) {
+	            			doWrite = true;
+	            			includePropertyMatched[i] = true;
+	            		}
+    	            }
+    	            else {
+    		            // Match exactly
+    	            	if ( propName.equals(includeProperty[i]) ) {
+	            			doWrite = true;
+	            			includePropertyMatched[i] = true;
+	            		}
+    	            }
+            	}
             }
+            if ( doWrite ) {
+            	try {
+            		writeProperty(fout,propName,tsprocessor.getPropContents(propName),formatType);
+            	}
+            	catch ( Exception e ) {
+            		problems.add ( "Error writing property \"" + propName + "\" (" + e + ").");
+            	}
+        	}
+        }
+        for ( int i = 0; i < includePropertyMatched.length; i++ ) {
+        	if ( !includePropertyMatched[i] ) {
+        		problems.add ( "Unable to match property \"" + includeProperty[i] + "\" to write.");
+        	}
         }
     }
     catch ( FileNotFoundException e ) {

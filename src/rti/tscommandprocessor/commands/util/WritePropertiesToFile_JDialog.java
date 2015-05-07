@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -63,6 +62,7 @@ private JTextField __OutputFile_JTextField = null;
 private JTextField __IncludeProperty_JTextField = null;
 private SimpleJComboBox	__WriteMode_JComboBox = null;
 private SimpleJComboBox __FileFormat_JComboBox = null;
+private SimpleJComboBox __SortOrder_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
@@ -155,6 +155,7 @@ private void checkInput ()
 	String IncludeProperty = __IncludeProperty_JTextField.getText().trim();
 	String WriteMode = __WriteMode_JComboBox.getSelected();
 	String FileFormat = __FileFormat_JComboBox.getSelected();
+    String SortOrder = __SortOrder_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -169,6 +170,9 @@ private void checkInput ()
 	}
     if ( FileFormat.length() > 0 ) {
         parameters.set ( "FileFormat", FileFormat );
+    }
+    if (SortOrder.length() > 0) {
+    	parameters.set("SortOrder", SortOrder);
     }
 	try {
 	    // This will warn the user...
@@ -190,28 +194,12 @@ private void commitEdits ()
     String IncludeProperty = __IncludeProperty_JTextField.getText().trim();
     String WriteMode = __WriteMode_JComboBox.getSelected();
     String FileFormat = __FileFormat_JComboBox.getSelected();
+    String SortOrder = __SortOrder_JComboBox.getSelected();
     __command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "IncludeProperty", IncludeProperty );
 	__command.setCommandParameter ( "WriteMode", WriteMode );
 	__command.setCommandParameter ( "FileFormat", FileFormat );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	__FileFormat_JComboBox = null;
-	__WriteMode_JComboBox = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__browse_JButton = null;
-	__working_dir = null;
-	super.finalize ();
+    __command.setCommandParameter ( "SortOrder", SortOrder );
 }
 
 /**
@@ -234,7 +222,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write one or more properties to a file.  Currently wildcards can only be applied to user-specified properties, not internal properties." ),
+		"Write one or more properties to a file.  Properties include build-in properties (e.g., OutputStart) and user-defined properties." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the output file be relative to the current working directory." ), 
@@ -298,6 +286,19 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - property file format (default=" + PropertyFileFormatType.NAME_TYPE_VALUE + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Sort order:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SortOrder_JComboBox = new SimpleJComboBox ( false );
+    __SortOrder_JComboBox.add ( "" );
+    __SortOrder_JComboBox.add ( __command._Ascending );
+    __SortOrder_JComboBox.add ( __command._Descending );
+    __SortOrder_JComboBox.add ( __command._None );
+    __SortOrder_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SortOrder_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - sort order (default=" + __command._None + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -377,11 +378,12 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WritePropertiesToFile_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String OutputFile = "";
 	String IncludeProperty = "";
 	String WriteMode = "";
 	String FileFormat = "";
+    String SortOrder = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -392,6 +394,7 @@ private void refresh ()
 		IncludeProperty = parameters.getValue ( "IncludeProperty" );
 		WriteMode = parameters.getValue ( "WriteMode" );
 		FileFormat = parameters.getValue ( "FileFormat" );
+		SortOrder = parameters.getValue("SortOrder");
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -430,17 +433,34 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( SortOrder == null ) {
+            // Select default...
+            __SortOrder_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem(
+                __SortOrder_JComboBox, SortOrder, JGUIUtil.NONE, null, null )) {
+                __SortOrder_JComboBox.select ( SortOrder );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n" +
+                "SortOrder value \"" + SortOrder + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	IncludeProperty = __IncludeProperty_JTextField.getText().trim();
 	WriteMode = __WriteMode_JComboBox.getSelected();
 	FileFormat = __FileFormat_JComboBox.getSelected();
+	SortOrder = __SortOrder_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
 	parameters.add ( "IncludeProperty=" + IncludeProperty );
 	parameters.add ( "WriteMode=" + WriteMode );
 	parameters.add ( "FileFormat=" + FileFormat );
+	parameters.add ( "SortOrder=" + SortOrder );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

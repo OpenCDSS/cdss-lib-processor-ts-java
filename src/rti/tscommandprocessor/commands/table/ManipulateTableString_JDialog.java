@@ -23,12 +23,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Table.DataTableStringManipulation;
+import RTi.Util.Table.DataTableStringOperatorType;
 
 public class ManipulateTableString_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -44,9 +46,12 @@ private SimpleJComboBox __InputColumn2_JComboBox = null;
 private JTextField __InputValue2_JTextField = null;
 private JTextField __InputValue3_JTextField = null;
 private SimpleJComboBox __OutputColumn_JComboBox = null;
+private JTextArea __ColumnIncludeFilters_JTextArea = null;
+private JTextArea __ColumnExcludeFilters_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
+private JFrame __parent = null;
 
 /**
 Command dialog constructor.
@@ -76,6 +81,34 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnIncludeFilters") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
+        String [] notes = {
+            "Include rows from the output by specifying a pattern to match for a column.",
+            "Only string columns can be specified."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, ColumnIncludeFilters,
+            "Edit ColumnIncludeFilters Parameter", notes, "Table Column", "Pattern to include rows (* allowed)",10)).response();
+        if ( dict != null ) {
+            __ColumnIncludeFilters_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnExcludeFilters") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
+        String [] notes = {
+            "Exclude rows from the output by specifying a pattern to match for a column.",
+            "Only string columns can be specified."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, ColumnExcludeFilters,
+            "Edit ColumnExcludeFilters Parameter", notes, "Table Column", "Pattern to exclude rows (* allowed)",10)).response();
+        if ( dict != null ) {
+            __ColumnExcludeFilters_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
 }
 
 /**
@@ -83,6 +116,46 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 */
 private void checkGUIState ()
 {
+	// Reset the tooltips based on the selected operator.
+	__InputColumn1_JComboBox.setToolTipText("");
+	__InputColumn2_JComboBox.setToolTipText("");
+	__InputValue2_JTextField.setToolTipText("");
+	__InputValue3_JTextField.setToolTipText("");
+	String operator = __Operator_JComboBox.getSelected();
+    if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.APPEND) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify an input column as the input - see also InputColumn2 and InputValue2");
+    	__InputColumn2_JComboBox.setToolTipText("Specify an input column that will be appended to InputColumn1... OR use InputValue2");
+    	__InputValue2_JTextField.setToolTipText("Specify an input value that will be appended to InputColumn1... OR use InputColumn2");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.PREPEND) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify an input column as the input - see also InputColumn2 and InputValue2");
+    	__InputColumn2_JComboBox.setToolTipText("Specify an input column that will be prepended to InputColumn1... OR use InputValue2");
+    	__InputValue2_JTextField.setToolTipText("Specify an input value that will be prepended to InputColumn1... OR use InputColumn2");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.REPLACE) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have substrings replaced - see also InputValue2 and InputValue3");
+    	__InputValue2_JTextField.setToolTipText("Specify the substring from the input to be replaced - see also InputValue3");
+    	__InputValue3_JTextField.setToolTipText("Specify the substring to be inserted as the replacement for InputValue2");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.SUBSTRING) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have a substring extracted - see also InputValue2 and InputValue3");
+    	__InputValue2_JTextField.setToolTipText("Specify the starting character position 1+ for the extracted substring - see also InputValue3");
+    	__InputValue3_JTextField.setToolTipText("Specify the ending character position 1+ for the extracted substring");
+    }
+    // TODO SAM 2015-04-29 Need to enable boolean
+    //choices.add ( DataTableStringOperatorType.TO_BOOLEAN );
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_DATE) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to date value");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_DATE_TIME) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to date/time value");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_DOUBLE) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to double value");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.TO_INTEGER) ) {
+    	__InputColumn1_JComboBox.setToolTipText("Specify a table input column to convert to integer value");
+    }
 }
 
 /**
@@ -92,6 +165,8 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
     String TableID = __TableID_JComboBox.getSelected();
+	String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
+	String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
     String InputColumn1 = __InputColumn1_JComboBox.getSelected();
     String InputColumn2 = __InputColumn2_JComboBox.getSelected();
     String InputValue2 = __InputValue2_JTextField.getText();
@@ -104,6 +179,12 @@ private void checkInput ()
 
     if ( TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
+    }
+    if ( ColumnIncludeFilters.length() > 0 ) {
+    	parameters.set ( "ColumnIncludeFilters", ColumnIncludeFilters );
+    }
+    if ( ColumnExcludeFilters.length() > 0 ) {
+    	parameters.set ( "ColumnExcludeFilters", ColumnExcludeFilters );
     }
     if ( InputColumn1.length() > 0 ) {
         parameters.set ( "InputColumn1", InputColumn1 );
@@ -140,6 +221,8 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
+	String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
+	String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
     String InputColumn1 = __InputColumn1_JComboBox.getSelected();
     String InputColumn2 = __InputColumn2_JComboBox.getSelected();
     String InputValue2 = __InputValue2_JTextField.getText();
@@ -147,6 +230,8 @@ private void commitEdits ()
     String Operator = __Operator_JComboBox.getSelected();
     String OutputColumn = __OutputColumn_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
+	__command.setCommandParameter ( "ColumnIncludeFilters", ColumnIncludeFilters );
+	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
     __command.setCommandParameter ( "InputColumn1", InputColumn1 );
     __command.setCommandParameter ( "InputColumn2", InputColumn2 );
     __command.setCommandParameter ( "InputValue2", InputValue2 );
@@ -157,18 +242,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param title Dialog title.
@@ -176,7 +249,8 @@ Instantiates the GUI components.
 @param tableIDChoices list of choices for table identifiers
 */
 private void initialize ( JFrame parent, ManipulateTableString_Command command, List<String> tableIDChoices )
-{	__command = command;
+{	__parent = parent;
+	__command = command;
 
 	addWindowListener( this );
 
@@ -197,13 +271,10 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
         "   - process input values from a column and a constant to populate the output column" ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - convert an input string value into an output value (operator ToDate,ToDateTime, etc.)" ), 
+        "   - convert an input string value into an output value (operator ToDate, ToDateTime, etc.)" ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The operator defines the number of values that are needed as input and the column or input values provide the input for processing." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Future enhancements may provide more cell range addressing - currently full columns are processed." ), 
+        "The operator defines the number of values that are needed as input - mouse over the input fields for feedback on what is needed." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
@@ -217,6 +288,34 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to include rows:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnIncludeFilters_JTextArea = new JTextArea (3,35);
+    __ColumnIncludeFilters_JTextArea.setLineWrap ( true );
+    __ColumnIncludeFilters_JTextArea.setWrapStyleWord ( true );
+    __ColumnIncludeFilters_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
+    __ColumnIncludeFilters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnIncludeFilters_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - column patterns to include rows (default=include all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnIncludeFilters",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to exclude rows:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
+    __ColumnExcludeFilters_JTextArea.setLineWrap ( true );
+    __ColumnExcludeFilters_JTextArea.setWrapStyleWord ( true );
+    __ColumnExcludeFilters_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
+    __ColumnExcludeFilters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - column patterns to exclude rows (default=include all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column 1:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -279,6 +378,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __OutputColumn_JComboBox.setToolTipText("Specify the column name for the output string.");
     Vector outputChoices = new Vector();
     outputChoices.add("");
     __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
@@ -365,8 +465,10 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "ManipulateTableString_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
+	String ColumnIncludeFilters = "";
+	String ColumnExcludeFilters = "";
     String InputColumn1 = "";
     String InputColumn2 = "";
     String InputValue2 = "";
@@ -379,6 +481,8 @@ private void refresh ()
 		__first_time = false;
 		// Get the parameters from the command...
 	    TableID = props.getValue ( "TableID" );
+		ColumnIncludeFilters = props.getValue ( "ColumnIncludeFilters" );
+		ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
         InputColumn1 = props.getValue ( "InputColumn1" );
         InputColumn2 = props.getValue ( "InputColumn2" );
         InputValue2 = props.getValue ( "InputValue2" );
@@ -399,6 +503,12 @@ private void refresh ()
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
+        }
+        if ( ColumnIncludeFilters != null ) {
+            __ColumnIncludeFilters_JTextArea.setText ( ColumnIncludeFilters );
+        }
+        if ( ColumnExcludeFilters != null ) {
+            __ColumnExcludeFilters_JTextArea.setText ( ColumnExcludeFilters );
         }
         if ( InputColumn1 == null ) {
             // Select default...
@@ -463,6 +573,8 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
+	ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
+	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
 	InputColumn1 = __InputColumn1_JComboBox.getSelected();
     Operator = __Operator_JComboBox.getSelected();
     InputColumn2 = __InputColumn2_JComboBox.getSelected();
@@ -471,6 +583,8 @@ private void refresh ()
     OutputColumn = __OutputColumn_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
+	props.add ( "ColumnIncludeFilters=" + ColumnIncludeFilters );
+	props.add ( "ColumnExcludeFilters=" + ColumnExcludeFilters );
     props.add ( "InputColumn1=" + InputColumn1 );
     props.add ( "Operator=" + Operator );
     props.add ( "InputColumn2=" + InputColumn2 );

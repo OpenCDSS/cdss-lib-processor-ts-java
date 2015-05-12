@@ -5,8 +5,10 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Vector;
+import java.util.Map;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -22,6 +24,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringDictionary;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.DataTableStringManipulation;
 import RTi.Util.Table.DataTableStringOperatorType;
@@ -230,15 +233,17 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "InputColumn1" );
-    valid_Vector.add ( "Operator" );
-    valid_Vector.add ( "InputColumn2" );
-    valid_Vector.add ( "InputValue2" );
-    valid_Vector.add ( "InputValue3" );
-    valid_Vector.add ( "OutputColumn" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(9);
+    validList.add ( "TableID" );
+    validList.add ( "ColumnIncludeFilters" );
+    validList.add ( "ColumnExcludeFilters" );
+    validList.add ( "InputColumn1" );
+    validList.add ( "Operator" );
+    validList.add ( "InputColumn2" );
+    validList.add ( "InputValue2" );
+    validList.add ( "InputValue3" );
+    validList.add ( "OutputColumn" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
@@ -286,6 +291,31 @@ CommandWarningException, CommandException
     // Get the input parameters...
     
     String TableID = parameters.getValue ( "TableID" );
+    String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
+    StringDictionary columnIncludeFilters = new StringDictionary(ColumnIncludeFilters,":",",");
+    // Expand the filter information
+    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.indexOf("${") >= 0) ) {
+        LinkedHashMap<String, String> map = columnIncludeFilters.getLinkedHashMap();
+        String key = null;
+        for ( Map.Entry<String,String> entry : map.entrySet() ) {
+            key = entry.getKey();
+            String key2 = TSCommandProcessorUtil.expandParameterValue(processor,this,key);
+            map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,map.get(key)));
+            map.remove(key);
+        }
+    }
+    String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );
+    StringDictionary columnExcludeFilters = new StringDictionary(ColumnExcludeFilters,":",",");
+    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.indexOf("${") >= 0) ) {
+        LinkedHashMap<String, String> map = columnExcludeFilters.getLinkedHashMap();
+        String key = null;
+        for ( Map.Entry<String,String> entry : map.entrySet() ) {
+            key = entry.getKey();
+            String key2 = TSCommandProcessorUtil.expandParameterValue(processor,this,key);
+            map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,map.get(key)));
+            map.remove(key);
+        }
+    }
     String InputColumn1 = parameters.getValue ( "InputColumn1" );
     String Operator = parameters.getValue ( "Operator" );
     DataTableStringOperatorType operator = DataTableStringOperatorType.valueOfIgnoreCase(Operator);
@@ -338,9 +368,9 @@ CommandWarningException, CommandException
     
     // Now process...
 
-    List<String> problems = new Vector();
+    List<String> problems = new ArrayList();
     try {
-        DataTableStringManipulation dtm = new DataTableStringManipulation ( table );
+        DataTableStringManipulation dtm = new DataTableStringManipulation ( table, columnIncludeFilters, columnExcludeFilters );
         dtm.manipulate ( InputColumn1, operator, InputColumn2, InputValue2, InputValue3, OutputColumn, problems );
     }
     catch ( Exception e ) {
@@ -399,6 +429,8 @@ public String toString ( PropList parameters )
     }
     
     String TableID = parameters.getValue( "TableID" );
+	String ColumnIncludeFilters = parameters.getValue("ColumnIncludeFilters");
+	String ColumnExcludeFilters = parameters.getValue("ColumnExcludeFilters");
     String InputColumn1 = parameters.getValue( "InputColumn1" );
     String Operator = parameters.getValue( "Operator" );
     String InputColumn2 = parameters.getValue( "InputColumn2" );
@@ -413,6 +445,18 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnIncludeFilters=\"" + ColumnIncludeFilters + "\"" );
+    }
+    if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnExcludeFilters=\"" + ColumnExcludeFilters + "\"" );
     }
     if ( (InputColumn1 != null) && (InputColumn1.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -677,6 +677,7 @@ public String toString ( PropList props )
 	String ExcelNamedRange = props.getValue("ExcelNamedRange");
 	String ExcelTableName = props.getValue("ExcelTableName");
 	String ExcelColumnNames = props.getValue("ExcelColumnNames");
+	String ColumnIncludeFilters = props.getValue("ColumnIncludeFilters");
 	String ColumnExcludeFilters = props.getValue("ColumnExcludeFilters");
 	String ColumnNamedRanges = props.getValue("ColumnNamedRanges");
 	String KeepOpen = props.getValue("KeepOpen");
@@ -737,6 +738,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ExcelColumnNames=" + ExcelColumnNames );
+    }
+    if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnIncludeFilters=\"" + ColumnIncludeFilters + "\"" );
     }
     if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) ) {
         if ( b.length() > 0 ) {

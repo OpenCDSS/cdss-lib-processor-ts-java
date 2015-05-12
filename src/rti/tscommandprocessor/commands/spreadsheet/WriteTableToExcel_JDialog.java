@@ -348,6 +348,7 @@ private void commitEdits ()
 	String ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	String ExcelTableName = __ExcelTableName_JTextField.getText().trim();
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
+	String ColumnIncludeFilters  = __ColumnIncludeFilters_JTextArea.getText().trim();
 	String ColumnExcludeFilters  = __ColumnExcludeFilters_JTextArea.getText().trim();
 	//String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
 	//String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
@@ -365,6 +366,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ExcelNamedRange", ExcelNamedRange );
 	__command.setCommandParameter ( "ExcelTableName", ExcelTableName );
 	__command.setCommandParameter ( "ExcelColumnNames", ExcelColumnNames );
+	__command.setCommandParameter ( "ColumnIncludeFilters", ColumnIncludeFilters );
 	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
 	//__command.setCommandParameter ( "ExcelIntegerColumns", ExcelIntegerColumns );
 	//__command.setCommandParameter ( "ExcelDateTimeColumns", ExcelDateTimeColumns );

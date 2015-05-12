@@ -6,28 +6,33 @@ import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMIUtil;
 import RTi.DMI.DatabaseDataStore;
+import RTi.DMI.ERDiagram_JFrame;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.Table.DataTable;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.PrintUtil;
 import RTi.Util.IO.PropList;
 
 /**
@@ -35,6 +40,12 @@ This class initializes, checks, and runs the CreateDataStoreDataDictionary() com
 */
 public class CreateDataStoreDataDictionary_Command extends AbstractCommand implements Command, FileGenerator
 {
+
+/**
+Possible values for ViewERDiagram.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 Output file that is created by this command.
@@ -60,6 +71,12 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {   String DataStore = parameters.getValue ( "DataStore" );
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String ERDiagramLayoutTableID = parameters.getValue ( "ERDiagramLayoutTableID" );
+    String ERDiagramLayoutTableNameColumn = parameters.getValue ( "ERDiagramLayoutTableNameColumn" );
+    String ERDiagramLayoutTableXColumn = parameters.getValue ( "ERDiagramLayoutTableXColumn" );
+    String ERDiagramLayoutTableYColumn = parameters.getValue ( "ERDiagramLayoutTableYColumn" );
+    String ERDiagramOrientation = parameters.getValue ( "ERDiagramOrientation" );
+    String ViewERDiagram = parameters.getValue ( "ViewERDiagram" );
 
 	String warning = "";
     String message;
@@ -122,11 +139,63 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (ERDiagramLayoutTableID != null) && !ERDiagramLayoutTableID.isEmpty() ) {
+    	// Make sure the coordinate columns and page size are specified
+    	if ( (ERDiagramLayoutTableNameColumn == null) || ERDiagramLayoutTableNameColumn.isEmpty() ) {
+            message = "The layout table name column must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the layout table name column." ) );
+        }
+    	if ( (ERDiagramLayoutTableXColumn == null) || ERDiagramLayoutTableXColumn.isEmpty() ) {
+            message = "The layout table X column must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the layout table X column." ) );
+        }
+    	if ( (ERDiagramLayoutTableYColumn == null) || ERDiagramLayoutTableYColumn.isEmpty() ) {
+            message = "The layout table Y column must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the layout table Y column." ) );
+        }
+    	String landscape = PrintUtil.getOrientationAsString(PageFormat.LANDSCAPE);
+    	String portrait = PrintUtil.getOrientationAsString(PageFormat.PORTRAIT);
+        if ( (ERDiagramOrientation != null) && !ERDiagramOrientation.isEmpty() ) {
+            if ( !ERDiagramOrientation.equalsIgnoreCase(landscape) && !ERDiagramOrientation.equalsIgnoreCase(portrait) ) {
+                message = "The Orientation parameter \"" + ERDiagramOrientation + "\" is invalid.";
+                warning += "\n" + message;
+                status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the parameter as " + landscape + " or " + portrait + " (default)."));
+            }
+        }
+        if ( (ViewERDiagram != null) && !ViewERDiagram.isEmpty() ) {
+            if ( !ViewERDiagram.equalsIgnoreCase(_False) && !ViewERDiagram.equalsIgnoreCase(_True) ) {
+                message = "The ViewERDiagram parameter \"" + ViewERDiagram + "\" is invalid.";
+                warning += "\n" + message;
+                status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the parameter as " + _False + " (default) or " + _True + "."));
+            }
+        }
+    }
+    
 	//  Check for invalid parameters...
 	List<String> validList = new ArrayList<String>(3);
     validList.add ( "DataStore" );
     validList.add ( "ReferenceTables" );
     validList.add ( "OutputFile" );
+    validList.add ( "ERDiagramLayoutTableID" );
+    validList.add ( "ERDiagramLayoutTableNameColumn" );
+    validList.add ( "ERDiagramLayoutTableXColumn" );
+    validList.add ( "ERDiagramLayoutTableYColumn" );
+    validList.add ( "ERDiagramPageSize" );
+    validList.add ( "ERDiagramOrientation" );
+    validList.add ( "ViewERDiagram" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -144,8 +213,10 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	return (new CreateDataStoreDataDictionary_JDialog ( parent, this )).ok();
+{	List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)getCommandProcessor(), this);
+	// The command will be modified if changed...
+	return (new CreateDataStoreDataDictionary_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 /**
@@ -153,7 +224,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new Vector();
+    List<File> list = new ArrayList<File>(1);
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -195,11 +266,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String DataStore = parameters.getValue ( "DataStore" );
     String ReferenceTables = parameters.getValue ( "ReferenceTables" );
     String [] referenceTables = null;
+    List<String> referenceTablesList = new ArrayList<String>();
     if ( (ReferenceTables != null) && !ReferenceTables.equals("") ) {
-        referenceTables = ReferenceTables.split(",");
+    	referenceTables = ReferenceTables.split(",");
+        for ( int i = 0; i < referenceTables.length; i++ ) {
+        	referenceTablesList.add(referenceTables[i]);
+        }
     }
+    // TODO SAM 2015-05-10 Enable exclude tables
     List<String> excludeTables = null;
     String OutputFile = parameters.getValue("OutputFile");
+    String ERDiagramLayoutTableID = parameters.getValue("ERDiagramLayoutTableID");
+    String ERDiagramLayoutTableNameColumn = parameters.getValue("ERDiagramLayoutTableNameColumn");
+    String ERDiagramLayoutTableXColumn = parameters.getValue("ERDiagramLayoutTableXColumn");
+    String ERDiagramLayoutTableYColumn = parameters.getValue("ERDiagramLayoutTableYColumn");
+    String ERDiagramPageSize = parameters.getValue("ERDiagramPageSize");
+    String ERDiagramOrientation = parameters.getValue("ERDiagramOrientation");
+    String ViewERDiagram = parameters.getValue("ViewERDiagram");
+    boolean viewERDiagram = false;
+    if ( (ViewERDiagram != null) && ViewERDiagram.equalsIgnoreCase("True") ) {
+    	viewERDiagram = true;
+    }
     
     // Find the data store to use...
     DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStore, DatabaseDataStore.class );
@@ -214,6 +301,39 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     else {
         dmi = ((DatabaseDataStore)dataStore).getDMI();
+    }
+    
+    // Get the table to process for the ER diagram.
+
+    DataTable layoutTable = null;
+    PropList request_params = null;
+    CommandProcessorRequestResultsBean bean = null;
+    if ( (ERDiagramLayoutTableID != null) && !ERDiagramLayoutTableID.equals("") ) {
+        // Get the table to be updated
+        request_params = new PropList ( "" );
+        request_params.set ( "TableID", ERDiagramLayoutTableID );
+        try {
+            bean = processor.processRequest( "GetTable", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetTable(TableID=\"" + ERDiagramLayoutTableID + "\") from processor.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        }
+        PropList bean_PropList = bean.getResultsPropList();
+        Object o_Table = bean_PropList.getContents ( "Table" );
+        if ( o_Table == null ) {
+            message = "Unable to find table to process using ERDiagramLayoutTableID=\"" + ERDiagramLayoutTableID + "\".";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that a table exists with the requested ID." ) );
+        }
+        else {
+            layoutTable = (DataTable)o_Table;
+        }
     }
     
 	if ( warning_count > 0 ) {
@@ -234,6 +354,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         DMIUtil.createHTMLDataDictionary(dmi, OutputFile_full, referenceTables, excludeTables);
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));
+        
+        // TODO SAM 2015-05-09 Figure out how to create ER diagram output file
+        // View the ER diagram
+        if ( viewERDiagram ) {
+        	String tableNameField = ERDiagramLayoutTableNameColumn;
+        	String erdXField = ERDiagramLayoutTableXColumn;
+        	String erdYField = ERDiagramLayoutTableYColumn;
+        	PageFormat pageFormat = new PageFormat();
+        	pageFormat.setOrientation(PageFormat.LANDSCAPE);
+        	if ( ERDiagramOrientation.equalsIgnoreCase("" + PrintUtil.getOrientationAsString(PageFormat.PORTRAIT)) ) {
+        		pageFormat.setOrientation(PageFormat.PORTRAIT);
+        	}
+        	Paper paper = new Paper();
+        	//paper.
+        	pageFormat.setPaper(paper);
+        	boolean debug = false;
+        	Message.printStatus(2, routine, "Creating ER diagram");
+        	new ERDiagram_JFrame ( dmi, layoutTable, tableNameField,
+        		erdXField, erdYField, referenceTablesList, pageFormat, debug );
+        }
     }
     catch ( Exception e ) {
         message = "Error creating data dictionary for datastore \"" + DataStore + "\" (" + e + ").";
@@ -273,6 +413,13 @@ public String toString ( PropList props )
 	String DataStore = props.getValue( "DataStore" );
 	String ReferenceTables = props.getValue( "ReferenceTables" );
 	String OutputFile = props.getValue( "OutputFile" );
+	String ERDiagramLayoutTableID = props.getValue( "ERDiagramLayoutTableID" );
+	String ERDiagramLayoutTableNameColumn = props.getValue( "ERDiagramLayoutTableNameColumn" );
+	String ERDiagramLayoutTableXColumn = props.getValue( "ERDiagramLayoutTableXColumn" );
+	String ERDiagramLayoutTableYColumn = props.getValue( "ERDiagramLayoutTableYColumn" );
+	String ERDiagramPageSize = props.getValue( "ERDiagramPageSize" );
+	String ERDiagramOrientation = props.getValue( "ERDiagramOrientation" );
+	String ViewERDiagram = props.getValue( "ViewERDiagram" );
 	StringBuffer b = new StringBuffer ();
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -291,6 +438,48 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "OutputFile=\"" + OutputFile + "\"" );
+    }
+    if ( (ERDiagramLayoutTableID != null) && !ERDiagramLayoutTableID.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ERDiagramLayoutTableID=\"" + ERDiagramLayoutTableID + "\"" );
+    }
+    if ( (ERDiagramLayoutTableNameColumn != null) && !ERDiagramLayoutTableNameColumn.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ERDiagramLayoutTableNameColumn=\"" + ERDiagramLayoutTableNameColumn + "\"" );
+    }
+    if ( (ERDiagramLayoutTableXColumn != null) && !ERDiagramLayoutTableXColumn.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ERDiagramLayoutTableXColumn=\"" + ERDiagramLayoutTableXColumn + "\"" );
+    }
+    if ( (ERDiagramLayoutTableYColumn != null) && !ERDiagramLayoutTableYColumn.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ERDiagramLayoutTableYColumn=\"" + ERDiagramLayoutTableYColumn + "\"" );
+    }
+    if ( (ERDiagramPageSize != null) && !ERDiagramPageSize.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ERDiagramPageSize=\"" + ERDiagramPageSize + "\"" );
+    }
+    if ( (ERDiagramOrientation != null) && !ERDiagramOrientation.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ERDiagramOrientation=" + ERDiagramOrientation );
+    }
+    if ( (ViewERDiagram != null) && (ViewERDiagram.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ViewERDiagram=" + ViewERDiagram );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

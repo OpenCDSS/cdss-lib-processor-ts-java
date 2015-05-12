@@ -6,6 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -17,7 +18,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -26,12 +26,14 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
 import java.io.File;
-
 import java.util.List;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DatabaseDataStore;
+import RTi.DMI.ERDiagram_JFrame;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -39,6 +41,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.PrintUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -54,12 +57,21 @@ private final String __AddWorkingDirectory = "Add Working Directory";
 
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
+private SimpleJButton __view_JButton = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
+private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __ReferenceTables_JTextField = null;
+private SimpleJComboBox __ERDiagramLayoutTableID_JComboBox = null;
+private JTextField __ERDiagramLayoutTableNameColumn_JTextField = null;
+private JTextField __ERDiagramLayoutTableXColumn_JTextField = null;
+private JTextField __ERDiagramLayoutTableYColumn_JTextField = null;
+private SimpleJComboBox __ERDiagramPageSize_JComboBox = null;
+private SimpleJComboBox __ERDiagramOrientation_JComboBox = null;
+private SimpleJComboBox	__ViewERDiagram_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private CreateDataStoreDataDictionary_Command __command = null;
@@ -75,10 +87,11 @@ private DMI __dmi = null; // DMI to do queries.
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param tableIDChoices table identifiers that can be used for layout
 */
-public CreateDataStoreDataDictionary_JDialog ( JFrame parent, CreateDataStoreDataDictionary_Command command )
+public CreateDataStoreDataDictionary_JDialog ( JFrame parent, CreateDataStoreDataDictionary_Command command, List<String> tableIDChoices )
 {	super(parent, true);
-	initialize ( parent, command );
+	initialize ( parent, command, tableIDChoices );
 }
 
 /**
@@ -142,6 +155,11 @@ public void actionPerformed(ActionEvent event)
         }
         refresh ();
     }
+    else if ( o == __view_JButton ) {
+		// Display the ER Diagram viewer
+    	// TODO SAM 2015-05-09 need to figure out how to connect a table with layout coordinates
+    	viewDiagram();
+	}
 }
 
 /**
@@ -175,6 +193,13 @@ private void checkInput ()
     }
     String ReferenceTables = __ReferenceTables_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String ERDiagramLayoutTableID = __ERDiagramLayoutTableID_JComboBox.getSelected();
+	String ERDiagramLayoutTableNameColumn = __ERDiagramLayoutTableXColumn_JTextField.getText().trim();
+	String ERDiagramLayoutTableXColumn = __ERDiagramLayoutTableXColumn_JTextField.getText().trim();
+	String ERDiagramLayoutTableYColumn = __ERDiagramLayoutTableYColumn_JTextField.getText().trim();
+	String ERDiagramPageSize = __ERDiagramPageSize_JComboBox.getSelected();
+	String ERDiagramOrientation = __ERDiagramOrientation_JComboBox.getSelected();
+	String ViewERDiagram = __ViewERDiagram_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( ReferenceTables.length() > 0 ) {
@@ -182,6 +207,27 @@ private void checkInput ()
     }
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
+    }
+    if ( ERDiagramLayoutTableID.length() > 0 ) {
+    	props.set ( "ERDiagramLayoutTableID", ERDiagramLayoutTableID );
+    }
+    if ( ERDiagramLayoutTableNameColumn.length() > 0 ) {
+    	props.set ( "ERDiagramLayoutTableNameColumn", ERDiagramLayoutTableNameColumn );
+    }
+    if ( ERDiagramLayoutTableXColumn.length() > 0 ) {
+    	props.set ( "ERDiagramLayoutTableXColumn", ERDiagramLayoutTableXColumn );
+    }
+    if ( ERDiagramLayoutTableYColumn.length() > 0 ) {
+    	props.set ( "ERDiagramLayoutTableYColumn", ERDiagramLayoutTableYColumn );
+    }
+    if ( ERDiagramPageSize.length() > 0 ) {
+    	props.set ( "ERDiagramPageSize", ERDiagramPageSize );
+    }
+    if ( ERDiagramOrientation.length() > 0 ) {
+    	props.set ( "ERDiagramOrientation", ERDiagramOrientation );
+    }
+    if ( ViewERDiagram.length() > 0 ) {
+        props.set ( "ViewERDiagram", ViewERDiagram );
     }
 	try {
 	    // This will warn the user...
@@ -202,9 +248,23 @@ private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
     String ReferenceTables = __ReferenceTables_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
+	String ERDiagramLayoutTableID = __ERDiagramLayoutTableID_JComboBox.getSelected();
+	String ERDiagramLayoutTableNameColumn = __ERDiagramLayoutTableNameColumn_JTextField.getText().trim();
+	String ERDiagramLayoutTableXColumn = __ERDiagramLayoutTableXColumn_JTextField.getText().trim();
+	String ERDiagramLayoutTableYColumn = __ERDiagramLayoutTableYColumn_JTextField.getText().trim();
+	String ERDiagramPageSize = __ERDiagramPageSize_JComboBox.getSelected();
+	String ERDiagramOrientation = __ERDiagramOrientation_JComboBox.getSelected();
+    String ViewERDiagram = __ViewERDiagram_JComboBox.getSelected();
     __command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "ReferenceTables", ReferenceTables );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "ERDiagramLayoutTableID", ERDiagramLayoutTableID );
+	__command.setCommandParameter ( "ERDiagramLayoutTableNameColumn", ERDiagramLayoutTableNameColumn );
+	__command.setCommandParameter ( "ERDiagramLayoutTableXColumn", ERDiagramLayoutTableXColumn );
+	__command.setCommandParameter ( "ERDiagramLayoutTableYColumn", ERDiagramLayoutTableYColumn );
+	__command.setCommandParameter ( "ERDiagramPageSize", ERDiagramPageSize );
+	__command.setCommandParameter ( "ERDiagramOrientation", ERDiagramOrientation );
+	__command.setCommandParameter ( "ViewERDiagram", ViewERDiagram );
 }
 
 /**
@@ -237,8 +297,9 @@ private DatabaseDataStore getSelectedDataStore ()
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
+@param tableIDChoices table identifiers candidates for layout table
 */
-private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command command )
+private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command command, List<String> tableIDChoices )
 {	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
@@ -303,16 +364,129 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of reference tables (default=none)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for data dictionary
+    int yDict = -1;
+    JPanel dict_JPanel = new JPanel();
+    dict_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Data Dictionary", dict_JPanel );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(dict_JPanel, new JLabel ( "Output file:" ), 
+        0, ++yDict, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
+    __OutputFile_JTextField.setToolTipText("Specify an output file for the data dictionary as *.hmtl");
     __OutputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
-        1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(dict_JPanel, __OutputFile_JTextField,
+        1, yDict, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     __browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        JGUIUtil.addComponent(dict_JPanel, __browse_JButton,
+        6, yDict, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    // Panel for entity relationship (ER) diagram
+    int yDiag = -1;
+    JPanel diag_JPanel = new JPanel();
+    diag_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Entity-Relationship Diagram", diag_JPanel );
+    
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ( "Layout table ID:" ), 
+        0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ERDiagramLayoutTableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    tableIDChoices.add(0,""); // Add blank to ignore table
+    __ERDiagramLayoutTableID_JComboBox.setData ( tableIDChoices );
+    __ERDiagramLayoutTableID_JComboBox.addItemListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(diag_JPanel, __ERDiagramLayoutTableID_JComboBox,
+        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(diag_JPanel, new JLabel( "Required - table containing ER diagram layout data."), 
+        3, yDiag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ("Layout table name column:"), 
+        0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ERDiagramLayoutTableNameColumn_JTextField = new JTextField (10);
+    __ERDiagramLayoutTableNameColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(diag_JPanel, __ERDiagramLayoutTableNameColumn_JTextField,
+        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ("Required - name of column containing table names."),
+        3, yDiag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ("Layout table X column:"), 
+        0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ERDiagramLayoutTableXColumn_JTextField = new JTextField (10);
+    __ERDiagramLayoutTableXColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(diag_JPanel, __ERDiagramLayoutTableXColumn_JTextField,
+        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ("Required - name of X-coordinate column."),
+        3, yDiag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ("Layout table Y column:"), 
+        0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ERDiagramLayoutTableYColumn_JTextField = new JTextField (10);
+    __ERDiagramLayoutTableYColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(diag_JPanel, __ERDiagramLayoutTableYColumn_JTextField,
+        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ("Required - name of Y-coordinate column."),
+        3, yDiag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ( "Page size:"),
+        0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ERDiagramPageSize_JComboBox = new SimpleJComboBox ( 30, false );
+    __ERDiagramPageSize_JComboBox.addItem ( "" ); // Default
+    // TODO SAM 2015-05-11 Need to fill dynamically - can it be done independent of printer?
+    __ERDiagramPageSize_JComboBox.addItem ( "A" );
+    __ERDiagramPageSize_JComboBox.addItem ( "B" );
+    __ERDiagramPageSize_JComboBox.addItem ( "C" );
+    __ERDiagramPageSize_JComboBox.addItem ( "D" );
+    __ERDiagramPageSize_JComboBox.addItem ( "E" );
+    // TODO SAM 2011-06-24 Get from a PrinterJob
+    __ERDiagramPageSize_JComboBox.select ( 0 );
+    __ERDiagramPageSize_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(diag_JPanel, __ERDiagramPageSize_JComboBox,
+        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(diag_JPanel, new JLabel(
+        "Optional - page size name (default=11x17 [B])."), 
+        3, yDiag, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ( "Orientation:"),
+        0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ERDiagramOrientation_JComboBox = new SimpleJComboBox ( false );
+    __ERDiagramOrientation_JComboBox.addItem ( "" ); // Default
+    __ERDiagramOrientation_JComboBox.addItem ( PrintUtil.getOrientationAsString(PageFormat.LANDSCAPE) );
+    __ERDiagramOrientation_JComboBox.addItem ( PrintUtil.getOrientationAsString(PageFormat.PORTRAIT) );
+    __ERDiagramOrientation_JComboBox.select ( 0 );
+    __ERDiagramOrientation_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(diag_JPanel, __ERDiagramOrientation_JComboBox,
+        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(diag_JPanel, new JLabel(
+        "Optional - page orientation (default=" + PrintUtil.getOrientationAsString(PageFormat.LANDSCAPE) + ")."), 
+        3, yDiag, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(diag_JPanel, new JLabel ( "View diagram:" ), 
+		0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__ViewERDiagram_JComboBox = new SimpleJComboBox ( false );
+	__ViewERDiagram_JComboBox.add ( "" );
+	__ViewERDiagram_JComboBox.add ( __command._False );
+	__ViewERDiagram_JComboBox.add ( __command._True );
+	__ViewERDiagram_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(diag_JPanel, __ViewERDiagram_JComboBox,
+		1, yDiag, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(diag_JPanel,
+		new JLabel ( "Optional - display ER diagram in window (default=" + __command._False + ")." ), 
+		2, yDiag, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    //JGUIUtil.addComponent(diag_JPanel, new JLabel ( "Output file:" ), 
+    //    0, ++yDict, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    //__OutputFile_JTextField = new JTextField ( 50 );
+    //__OutputFile_JTextField.setToolTipText("Specify an output file for the data dictionary as *.hmtl");
+    //__OutputFile_JTextField.addKeyListener ( this );
+    //    JGUIUtil.addComponent(diag_JPanel, __OutputFile_JTextField,
+    //    1, yDict, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __view_JButton = new SimpleJButton ( "View Diagram", this );
+    JGUIUtil.addComponent(diag_JPanel, __view_JButton,
+        1, ++yDiag, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -405,12 +579,26 @@ try{
     String DataStore = "";
     String ReferenceTables = "";
     String OutputFile = "";
+    String ERDiagramLayoutTableID = "";
+    String ERDiagramLayoutTableNameColumn = "";
+    String ERDiagramLayoutTableXColumn = "";
+    String ERDiagramLayoutTableYColumn = "";
+    String ERDiagramPageSize = "";
+    String ERDiagramOrientation = "";
+    String ViewERDiagram = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
 		DataStore = props.getValue ( "DataStore" );
 		ReferenceTables = props.getValue ( "ReferenceTables" );
 		OutputFile = props.getValue ( "OutputFile" );
+		ERDiagramLayoutTableID = props.getValue ( "ERDiagramLayoutTableID" );
+		ERDiagramLayoutTableXColumn = props.getValue ( "ERDiagramLayoutTableXColumn" );
+		ERDiagramLayoutTableNameColumn = props.getValue ( "ERDiagramLayoutTableNameColumn" );
+		ERDiagramLayoutTableYColumn = props.getValue ( "ERDiagramLayoutTableYColumn" );
+		ERDiagramPageSize = props.getValue ( "ERDiagramPageSize" );
+		ERDiagramOrientation = props.getValue ( "ERDiagramOrientation" );
+		ViewERDiagram = props.getValue ( "ViewERDiagram" );
         // The data store list is set up in initialize() but is selected here
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
@@ -434,6 +622,79 @@ try{
         if ( (OutputFile != null) && !OutputFile.equals("") ) {
             __OutputFile_JTextField.setText(OutputFile);
         }
+        if ( ERDiagramLayoutTableID == null ) {
+            // Select default...
+            __ERDiagramLayoutTableID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ERDiagramLayoutTableID_JComboBox,ERDiagramLayoutTableID, JGUIUtil.NONE, null, null ) ) {
+                __ERDiagramLayoutTableID_JComboBox.select ( ERDiagramLayoutTableID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nERDiagramLayoutTableID value \"" + ERDiagramLayoutTableID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( (ERDiagramLayoutTableNameColumn != null) && !ERDiagramLayoutTableNameColumn.isEmpty() ) {
+            __ERDiagramLayoutTableNameColumn_JTextField.setText(ERDiagramLayoutTableNameColumn);
+        }
+        if ( (ERDiagramLayoutTableXColumn != null) && !ERDiagramLayoutTableXColumn.isEmpty() ) {
+            __ERDiagramLayoutTableXColumn_JTextField.setText(ERDiagramLayoutTableXColumn);
+        }
+        if ( (ERDiagramLayoutTableYColumn != null) && !ERDiagramLayoutTableYColumn.isEmpty() ) {
+            __ERDiagramLayoutTableYColumn_JTextField.setText(ERDiagramLayoutTableYColumn);
+        }
+        if ( ERDiagramPageSize == null ) {
+            // Select default...
+            __ERDiagramPageSize_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ERDiagramPageSize_JComboBox,ERDiagramPageSize, JGUIUtil.NONE, null, null ) ) {
+                __ERDiagramPageSize_JComboBox.select ( ERDiagramPageSize );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nERDiagramPageSize value \"" + ERDiagramPageSize +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( ERDiagramOrientation == null ) {
+            // Select default...
+            __ERDiagramOrientation_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ERDiagramOrientation_JComboBox,ERDiagramOrientation, JGUIUtil.NONE, null, null ) ) {
+                __ERDiagramOrientation_JComboBox.select ( ERDiagramOrientation );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nERDiagramOrientation value \"" + ERDiagramOrientation +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( (OutputFile != null) && !OutputFile.equals("") ) {
+            __OutputFile_JTextField.setText(OutputFile);
+        }
+		if ( (ViewERDiagram == null) || ViewERDiagram.isEmpty() ) {
+			// Select default...
+			__ViewERDiagram_JComboBox.select ( 0 );
+		}
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __ViewERDiagram_JComboBox,
+		    	ViewERDiagram, JGUIUtil.NONE, null, null ) ) {
+				__ViewERDiagram_JComboBox.select ( ViewERDiagram );
+			}
+			else {
+			    Message.printWarning ( 1,
+				routine, "Existing command references an invalid\n"+
+				"ViewERDiagram parameter \"" + ViewERDiagram +
+				"\".  Select a different value or Cancel." );
+			}
+		}
 	}
 	// Regardless, reset the command from the fields...
     DataStore = __DataStore_JComboBox.getSelected();
@@ -442,10 +703,24 @@ try{
     }
 	ReferenceTables = __ReferenceTables_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	ERDiagramLayoutTableID = __ERDiagramLayoutTableID_JComboBox.getSelected();
+	ERDiagramLayoutTableNameColumn = __ERDiagramLayoutTableNameColumn_JTextField.getText().trim();
+	ERDiagramLayoutTableXColumn = __ERDiagramLayoutTableXColumn_JTextField.getText().trim();
+	ERDiagramLayoutTableYColumn = __ERDiagramLayoutTableYColumn_JTextField.getText().trim();
+	ERDiagramPageSize = __ERDiagramPageSize_JComboBox.getSelected();
+	ERDiagramOrientation = __ERDiagramOrientation_JComboBox.getSelected();
+	ViewERDiagram = __ViewERDiagram_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "ReferenceTables=" + ReferenceTables );
 	props.add ( "OutputFile=" + OutputFile);
+	props.add ( "ERDiagramLayoutTableID=" + ERDiagramLayoutTableID);
+	props.add ( "ERDiagramLayoutTableNameColumn=" + ERDiagramLayoutTableNameColumn);
+	props.add ( "ERDiagramLayoutTableXColumn=" + ERDiagramLayoutTableXColumn);
+	props.add ( "ERDiagramLayoutTableYColumn=" + ERDiagramLayoutTableYColumn);
+	props.add ( "ERDiagramPageSize=" + ERDiagramPageSize);
+	props.add ( "ERDiagramOrientation=" + ERDiagramOrientation);
+	props.add ( "ViewERDiagram=" + ViewERDiagram);
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Refresh the Path text.
     refreshPathControl();
@@ -498,6 +773,23 @@ private void response ( boolean ok )
 	// Now close out...
 	setVisible( false );
 	dispose();
+}
+
+/**
+Display/view the ER diagram.
+*/
+private void viewDiagram ()
+{
+	String tablesTableName = "";
+	String tableNameField = "";
+	String erdXField = "";
+	String erdYField = "";
+	PageFormat pageFormat = new PageFormat();
+	pageFormat.setOrientation(PageFormat.LANDSCAPE);
+	Paper paper = new Paper();
+	pageFormat.setPaper(paper);
+	new ERDiagram_JFrame ( getDMI(), tablesTableName, tableNameField,
+		erdXField, erdYField, pageFormat );
 }
 
 /**

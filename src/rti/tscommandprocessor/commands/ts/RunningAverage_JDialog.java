@@ -100,8 +100,8 @@ private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
-            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
-            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }
@@ -121,7 +121,11 @@ private void checkGUIState ()
     __Bracket_JLabel.setEnabled(true);
     __Bracket_JTextField.setEnabled(true);
     String AverageMethod = __AverageMethod_JComboBox.getSelected();
-    if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.CENTERED ) ) {
+    if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.ALL_YEARS ) ) {
+        __Bracket_JLabel.setText ( "Bracket:" );
+        __Bracket_JTextField.setEnabled(false);
+    }
+    else if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.CENTERED ) ) {
         __Bracket_JLabel.setText ( __BRACKET_LABEL_CENTERED );
     }
     else if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.NYEAR ) ){
@@ -197,22 +201,6 @@ private void commitEdits ()
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "AverageMethod", AverageMethod );
     __command.setCommandParameter ( "Bracket", Bracket );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__AverageMethod_JComboBox = null;
-	__Bracket_JLabel = null;
-	__Bracket_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**

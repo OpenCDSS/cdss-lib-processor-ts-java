@@ -18,7 +18,6 @@ import RTi.TS.RunningAverageType;
 import RTi.TS.TS;
 import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_RunningStatistic;
-
 import RTi.Util.Math.DistributionType;
 import RTi.Util.Math.SortOrderType;
 import RTi.Util.Message.Message;
@@ -78,6 +77,11 @@ throws InvalidCommandParameterException
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String SampleMethod = parameters.getValue ( "SampleMethod" );
     String Bracket = parameters.getValue ( "Bracket" );
+    String BracketByMonth = parameters.getValue ( "BracketByMonth" );
+    String CustomBracketByMonth = parameters.getValue ( "CustomBracketByMonth" );
+    if ( BracketByMonth == null ) {
+        BracketByMonth = ""; // To simplify checks below
+    }
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
     //String Alias = parameters.getValue ( "Alias" );
@@ -221,19 +225,59 @@ throws InvalidCommandParameterException
                 message, "SampleMethod must be one of: " + b ) );
 	}
     if ( (sampleMethod != RunningAverageType.ALL_YEARS) && (sampleMethod != RunningAverageType.N_ALL_YEAR) ) {
-        if ( (Bracket == null) || Bracket.equals("") ) {
-            message = "The Bracket parameter must be specified.";
+        if ( ((Bracket == null) || Bracket.isEmpty()) && ((BracketByMonth == null) || BracketByMonth.isEmpty()) ) {
+            message = "The Bracket or BracketByMonth parameter must be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the bracket as an integer." ) );
+                    message, "Specify the bracket as an integer or bracket by month as 12 integers." ) );
         }
-        else if ( !StringUtil.isInteger(Bracket) ) {
+        if ( ((Bracket != null) && !Bracket.isEmpty()) && ((BracketByMonth != null) && !BracketByMonth.isEmpty()) ) {
+            message = "Bracket OR BracketByMonth parameter must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the bracket as an integer OR bracket by month as 12 integers." ) );
+        }
+        if ( (Bracket != null) && !Bracket.isEmpty() && !StringUtil.isInteger(Bracket) ) {
             message = "The Bracket parameter (" + Bracket + ") is invalid.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify the bracket as an integer." ) );
+        }
+        if ( (BracketByMonth != null) && !BracketByMonth.isEmpty() ) {
+            List<String> v = StringUtil.breakStringList ( BracketByMonth,",", 0 );
+        	// breakStringList will not add value if delimiter at end so count commas
+            if ( v == null ) {
+                message = "12 bracket values must be specified (have " + v.size() + ").";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify 12 bracket values separated by commas." ) );
+            }
+            else {
+            	 if ( v.size() != 12 ) {
+            		 // Add empty values at end
+            		 for ( int i = v.size(); i < 12; i++ ) {
+            			 v.add("");
+            		 }
+            	 }
+            }
+            if ( v != null ) {
+                String val;
+                for ( int i = 0; i < 12; i++ ) {
+                	// Values can be missing - will indicate to NOT compute the statistic for the month
+                    val = v.get(i).trim();
+                    if ( !val.isEmpty() && !StringUtil.isInteger(val) ) {
+                        message = "Monthly bracket value for month " + (i + 1) + " \"" + val + "\" is not an integer.";
+                        warning += "\n" + message;
+                        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                 message, "Specify 12 bracket values separated by commas." ) );
+                    }
+                }
+            }
         }
     }
     
@@ -363,6 +407,8 @@ throws InvalidCommandParameterException
     validList.add ( "AnalysisEnd" );
     validList.add ( "SampleMethod" );
     validList.add ( "Bracket" );
+    validList.add ( "BracketByMonth" );
+    validList.add ( "CustomBracketByMonth" );
     validList.add ( "AllowMissingCount" );
     validList.add ( "MinimumSampleSize" );
     validList.add ( "NormalStart" );
@@ -523,6 +569,28 @@ CommandWarningException, CommandException
     int Bracket_int = 0;
     if ( (Bracket != null) && Bracket.length() > 0) {
         Bracket_int = Integer.valueOf ( Bracket );
+    }
+    String BracketByMonth = parameters.getValue("BracketByMonth");
+    Integer [] bracketByMonth = null;
+    if ( (BracketByMonth != null) && (BracketByMonth.length() > 0) ) {
+        bracketByMonth = new Integer[12];
+        List<String> v = StringUtil.breakStringList ( BracketByMonth,",", 0 );
+        // If less than 12 values are returned, add blanks at end
+        String val;
+        for ( int i = 0; i < 12; i++ ) {
+        	if ( i >= v.size() ) {
+        		val = "";
+        	}
+        	else {
+        		val = v.get(i);
+        	}
+            if ( (val != null) && !val.isEmpty() ) {
+            	bracketByMonth[i] = Integer.parseInt ( val.trim() );
+            }
+            else {
+            	bracketByMonth[i] = null;
+            }
+        }
     }
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     int allowMissingCount = 0;
@@ -932,7 +1000,7 @@ CommandWarningException, CommandException
 	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Calculating running statistic for: \"" + ts.getIdentifier() + "\"." );
 			TSUtil_RunningStatistic tsu =
-			    new TSUtil_RunningStatistic(ts, Bracket_int, statisticType,
+			    new TSUtil_RunningStatistic(ts, Bracket_int, bracketByMonth, statisticType,
 			        AnalysisStart_DateTime, AnalysisEnd_DateTime, sampleMethod, allowMissingCount,
 			        minimumSampleSize, distributionType, distParams, ProbabilityUnits, sortOrderType,
 			        NormalStart_DateTime, NormalEnd_DateTime, OutputStart_DateTime, OutputEnd_DateTime );
@@ -1048,6 +1116,8 @@ public String toString ( PropList props )
     String AnalysisEnd = props.getValue( "AnalysisEnd" );
 	String SampleMethod = props.getValue("SampleMethod");
 	String Bracket = props.getValue("Bracket");
+	String BracketByMonth = props.getValue("BracketByMonth");
+	String CustomBracketByMonth = props.getValue("CustomBracketByMonth");
 	String AllowMissingCount = props.getValue("AllowMissingCount");
 	String MinimumSampleSize = props.getValue("MinimumSampleSize");
     String NormalStart = props.getValue( "NormalStart" );
@@ -1129,6 +1199,18 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "Bracket=" + Bracket );
+	}
+	if ( (BracketByMonth != null) && (BracketByMonth.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "BracketByMonth=\"" + BracketByMonth + "\"" );
+	}
+	if ( (CustomBracketByMonth != null) && (CustomBracketByMonth.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "CustomBracketByMonth=\"" + CustomBracketByMonth + "\"" );
 	}
     if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
         if ( b.length() > 0 ) {

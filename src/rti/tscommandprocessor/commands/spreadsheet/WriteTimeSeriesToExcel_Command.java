@@ -1027,7 +1027,13 @@ throws FileNotFoundException, IOException
         for ( int its = 0; its < tslist.size(); its++ ) {
             if ( precision == null ) {
             	// Get the precision from the data units
-            	DataUnits units = DataUnits.lookupUnits(tslist.get(its).getDataUnits());
+            	DataUnits units = null;
+            	try {
+            		units = DataUnits.lookupUnits(tslist.get(its).getDataUnits());
+            	}
+            	catch ( Exception e ) {
+            		units = null;
+            	}
             	if ( units != null ) {
             		tsPrecision[its] = units.getOutputPrecision();
             	}

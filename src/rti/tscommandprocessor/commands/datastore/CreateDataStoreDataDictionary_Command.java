@@ -14,6 +14,7 @@ import java.util.List;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMIUtil;
+import RTi.DMI.DataDictionary;
 import RTi.DMI.DatabaseDataStore;
 import RTi.DMI.ERDiagram_JFrame;
 import RTi.Util.Message.Message;
@@ -351,7 +352,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
         OutputFile_full = IOUtil.enforceFileExtension(OutputFile_full, "html");
         // Create the data dictionary.
-        DMIUtil.createHTMLDataDictionary(dmi, OutputFile_full, referenceTables, excludeTables);
+        DataDictionary dd = new DataDictionary();
+        dd.createHTMLDataDictionary(dmi, OutputFile_full, referenceTablesList, excludeTables);
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));
         

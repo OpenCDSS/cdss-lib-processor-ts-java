@@ -224,7 +224,17 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "SampleMethod must be one of: " + b ) );
 	}
-    if ( (sampleMethod != RunningAverageType.ALL_YEARS) && (sampleMethod != RunningAverageType.N_ALL_YEAR) ) {
+	if ( sampleMethod == RunningAverageType.CUSTOM ) {
+		// TODO SAM 2015-05-12 Add check
+		if ( (CustomBracketByMonth == null) || CustomBracketByMonth.isEmpty() ) {
+            message = "The CustomBracketByMonth parameter must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the custom bracket as a list of ranges like 1-2,3-6,..." ) );
+        }
+	}
+	else if ( (sampleMethod != RunningAverageType.ALL_YEARS) && (sampleMethod != RunningAverageType.N_ALL_YEAR) ) {
         if ( ((Bracket == null) || Bracket.isEmpty()) && ((BracketByMonth == null) || BracketByMonth.isEmpty()) ) {
             message = "The Bracket or BracketByMonth parameter must be specified.";
             warning += "\n" + message;
@@ -394,7 +404,7 @@ throws InvalidCommandParameterException
     }
       
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(20);
+    List<String> validList = new ArrayList<String>(23);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -589,6 +599,32 @@ CommandWarningException, CommandException
             }
             else {
             	bracketByMonth[i] = null;
+            }
+        }
+    }
+    String CustomBracketByMonth = parameters.getValue("CustomBracketByMonth");
+    Integer [][] customBracketByMonth = null;
+    if ( (CustomBracketByMonth != null) && (CustomBracketByMonth.length() > 0) ) {
+        customBracketByMonth = new Integer[12][2];
+        List<String> v = StringUtil.breakStringList ( CustomBracketByMonth,",", 0 );
+        // If less than 12 values are returned, add nulls at end
+        String val;
+        for ( int i = 0; i < 12; i++ ) {
+        	if ( i >= v.size() ) {
+        		val = "";
+        	}
+        	else {
+        		val = v.get(i);
+        	}
+            if ( (val != null) && !val.isEmpty() ) {
+            	// Value should be like 1-2
+            	String [] parts = val.split("-");
+           		customBracketByMonth[i][0] = Integer.parseInt(parts[0].trim());
+           		customBracketByMonth[i][1] = Integer.parseInt(parts[1].trim());
+            }
+            else {
+            	customBracketByMonth[i][0] = null;
+            	customBracketByMonth[i][1] = null;
             }
         }
     }
@@ -1000,7 +1036,7 @@ CommandWarningException, CommandException
 	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Calculating running statistic for: \"" + ts.getIdentifier() + "\"." );
 			TSUtil_RunningStatistic tsu =
-			    new TSUtil_RunningStatistic(ts, Bracket_int, bracketByMonth, statisticType,
+			    new TSUtil_RunningStatistic(ts, Bracket_int, bracketByMonth, customBracketByMonth, statisticType,
 			        AnalysisStart_DateTime, AnalysisEnd_DateTime, sampleMethod, allowMissingCount,
 			        minimumSampleSize, distributionType, distParams, ProbabilityUnits, sortOrderType,
 			        NormalStart_DateTime, NormalEnd_DateTime, OutputStart_DateTime, OutputEnd_DateTime );

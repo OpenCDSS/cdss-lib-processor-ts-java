@@ -239,11 +239,6 @@ private void checkGUIState ()
     __Bracket_JTextField.setEnabled(true);
     __BracketByMonth_JLabel.setEnabled(true);
     __BracketByMonth_JTextField.setEnabled(true);
-    // Custom bracket by default is not used.
-    __CustomBracketByMonth_JLabel.setText ( "Custom bracket (by month):" );
-    __CustomBracketByMonth_JLabel.setEnabled(false);
-    __CustomBracketByMonth_JTextField.setEnabled(false);
-    __CustomBracketByMonth_JTextField.setText("");
     String AverageMethod = __SampleMethod_JComboBox.getSelected();
     if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.ALL_YEARS ) ) {
         __Bracket_JLabel.setText ( "Bracket:" );
@@ -254,6 +249,10 @@ private void checkGUIState ()
         __BracketByMonth_JLabel.setEnabled(false);
         __BracketByMonth_JTextField.setEnabled(false);
         __BracketByMonth_JTextField.setText("");
+        __CustomBracketByMonth_JLabel.setText ( "Custom bracket (by month):" );
+        __CustomBracketByMonth_JLabel.setEnabled(false);
+        __CustomBracketByMonth_JTextField.setEnabled(false);
+        __CustomBracketByMonth_JTextField.setText("");
     }
     else if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.CENTERED ) ) {
         __Bracket_JLabel.setText ( __BRACKET_LABEL_CENTERED );
@@ -278,6 +277,10 @@ private void checkGUIState ()
         __BracketByMonth_JLabel.setEnabled(false);
         __BracketByMonth_JTextField.setEnabled(false);
         __BracketByMonth_JTextField.setText("");
+        __CustomBracketByMonth_JLabel.setText ( "Custom bracket (by month):" );
+        __CustomBracketByMonth_JLabel.setEnabled(false);
+        __CustomBracketByMonth_JTextField.setEnabled(false);
+        __CustomBracketByMonth_JTextField.setText("");
     }
     else if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.N_ALL_YEAR) ) {
         // Bracket is not needed
@@ -289,6 +292,10 @@ private void checkGUIState ()
         __BracketByMonth_JLabel.setEnabled(false);
         __BracketByMonth_JTextField.setEnabled(false);
         __BracketByMonth_JTextField.setText("");
+        __CustomBracketByMonth_JLabel.setText ( "Custom bracket (by month):" );
+        __CustomBracketByMonth_JLabel.setEnabled(false);
+        __CustomBracketByMonth_JTextField.setEnabled(false);
+        __CustomBracketByMonth_JTextField.setText("");
     }
     else if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.PREVIOUS) ||
         AverageMethod.equalsIgnoreCase( "" + RunningAverageType.PREVIOUS_INCLUSIVE) ) {
@@ -681,18 +688,18 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
 	__BracketByMonth_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(sample_JPanel, __BracketByMonth_JTextField,
 		1, ySample, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Optional - 12 monthly bracket values (Jan,Feb,...)."),
+    JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Optional - 12 monthly bracket values 4,1,... (Jan first)."),
         3, ySample, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
 	__CustomBracketByMonth_JLabel = new JLabel ( __CUSTOM_BRACKET_BY_MONTH_LABEL );
     JGUIUtil.addComponent(sample_JPanel, __CustomBracketByMonth_JLabel,
 		0, ++ySample, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__CustomBracketByMonth_JTextField = new JTextField ( 20 );
-	__CustomBracketByMonth_JTextField.setToolTipText("Specify 12 ranges \"a-b,d-e,f-g,...\" where the values indicate interval offset for start and end of bracket for sample.");
+	__CustomBracketByMonth_JTextField.setToolTipText("Specify 12 ranges \"1-3,3-6,...\" where the values indicate interval offset for start and end of bracket for sample.");
 	__CustomBracketByMonth_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(sample_JPanel, __CustomBracketByMonth_JTextField,
 		1, ySample, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Optional - custom bracket values  (Jan,Feb,...)."),
+    JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Optional - 12 monthly bracket ranges 1-3,3-6,... (Jan first)."),
         3, ySample, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(sample_JPanel, new JLabel ("Allow missing count:"),

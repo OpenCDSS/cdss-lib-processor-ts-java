@@ -66,9 +66,11 @@ private JTextField __ExcelNamedRange_JTextField = null;
 private JTextField __ExcelTableName_JTextField = null;
 private JTextField __Comment_JTextField = null;
 private SimpleJComboBox __ExcelColumnNames_JComboBox = null;
+private JTextArea __ColumnIncludeFilters_JTextArea = null;
 private JTextArea __ColumnExcludeFilters_JTextArea = null;
 private JTextField __ExcelIntegerColumns_JTextField = null;
 private JTextField __ExcelDateTimeColumns_JTextField = null;
+private JTextField __ExcelTextColumns_JTextField = null;
 private JTextField __NumberPrecision_JTextField = null;
 private SimpleJComboBox __ReadAllAsText_JComboBox = null;
 private SimpleJComboBox __KeepOpen_JComboBox = null;
@@ -150,6 +152,16 @@ public void actionPerformed(ActionEvent event)
 		}
 		refresh ();
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditColumnIncludeFilters") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
+        String dict = (new DictionaryJDialog ( __parent, true, ColumnIncludeFilters,
+            "Edit ColumnIncludeFilters Parameter", null, "Excel Column", "Pattern to include rows (* allowed)",10)).response();
+        if ( dict != null ) {
+            __ColumnIncludeFilters_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnExcludeFilters") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
@@ -177,9 +189,11 @@ private void checkInput ()
 	String ExcelTableName = __ExcelTableName_JTextField.getText().trim();
 	String Comment = __Comment_JTextField.getText().trim();
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
+	String ColumnIncludeFilters  = __ColumnIncludeFilters_JTextArea.getText().trim();
 	String ColumnExcludeFilters  = __ColumnExcludeFilters_JTextArea.getText().trim();
 	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
 	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
+	String ExcelTextColumns  = __ExcelTextColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
 	String KeepOpen = __KeepOpen_JComboBox.getSelected();
@@ -206,6 +220,9 @@ private void checkInput ()
     if ( ExcelColumnNames.length() > 0 ) {
         props.set ( "ExcelColumnNames", ExcelColumnNames );
     }
+    if ( ColumnIncludeFilters.length() > 0 ) {
+        props.set ( "ColumnIncludeFilters", ColumnIncludeFilters );
+    }
     if ( ColumnExcludeFilters.length() > 0 ) {
         props.set ( "ColumnExcludeFilters", ColumnExcludeFilters );
     }
@@ -217,6 +234,9 @@ private void checkInput ()
     }
     if ( ExcelDateTimeColumns.length() > 0 ) {
         props.set ( "ExcelDateTimeColumns", ExcelDateTimeColumns );
+    }
+    if ( ExcelTextColumns.length() > 0 ) {
+        props.set ( "ExcelTextColumns", ExcelTextColumns );
     }
     if ( NumberPrecision.length() > 0 ) {
         props.set ( "NumberPrecision", NumberPrecision );
@@ -250,10 +270,12 @@ private void commitEdits ()
 	String ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	String ExcelTableName = __ExcelTableName_JTextField.getText().trim();
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
+	String ColumnIncludeFilters  = __ColumnIncludeFilters_JTextArea.getText().trim();
 	String ColumnExcludeFilters  = __ColumnExcludeFilters_JTextArea.getText().trim();
 	String Comment = __Comment_JTextField.getText().trim();
 	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
 	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
+	String ExcelTextColumns  = __ExcelTextColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
     String KeepOpen  = __KeepOpen_JComboBox.getSelected();
@@ -264,10 +286,12 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ExcelNamedRange", ExcelNamedRange );
 	__command.setCommandParameter ( "ExcelTableName", ExcelTableName );
 	__command.setCommandParameter ( "ExcelColumnNames", ExcelColumnNames );
+	__command.setCommandParameter ( "ColumnIncludeFilters", ColumnIncludeFilters );
 	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
 	__command.setCommandParameter ( "Comment", Comment );
 	__command.setCommandParameter ( "ExcelIntegerColumns", ExcelIntegerColumns );
 	__command.setCommandParameter ( "ExcelDateTimeColumns", ExcelDateTimeColumns );
+	__command.setCommandParameter ( "ExcelTextColumns", ExcelTextColumns );
 	__command.setCommandParameter ( "NumberPrecision", NumberPrecision );
 	__command.setCommandParameter ( "ReadAllAsText", ReadAllAsText );
 	__command.setCommandParameter ( "KeepOpen", KeepOpen );
@@ -411,13 +435,27 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - how to define column names (default=" +
         __command._ColumnN + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to include rows:"),
+        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnIncludeFilters_JTextArea = new JTextArea (3,35);
+    __ColumnIncludeFilters_JTextArea.setLineWrap ( true );
+    __ColumnIncludeFilters_JTextArea.setWrapStyleWord ( true );
+    __ColumnIncludeFilters_JTextArea.setToolTipText("TableColumn1:DatastoreColumn1,TableColumn2:DataStoreColumn2");
+    __ColumnIncludeFilters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnIncludeFilters_JTextArea),
+        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - column patterns to include rows (default=include all)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnIncludeFilters",this),
+        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to exclude rows:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
     __ColumnExcludeFilters_JTextArea.setLineWrap ( true );
     __ColumnExcludeFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnExcludeFilters_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
+    __ColumnExcludeFilters_JTextArea.setToolTipText("TableColumn1:DatastoreColumn1,TableColumn2:DataStoreColumn2");
     __ColumnExcludeFilters_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -433,7 +471,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     JGUIUtil.addComponent(main_JPanel, __Comment_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - character that indicates comment lines (default=none)."),
+        "Optional - string that indicates comment lines (default=none)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Excel integer columns:"),
@@ -454,6 +492,16 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
         new JLabel ("Optional - columns that are date/times, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Excel text columns:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcelTextColumns_JTextField = new JTextField (20);
+    __ExcelTextColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ExcelTextColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ("Optional - columns that are text, separated by commas."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Number precision:"),
@@ -580,10 +628,12 @@ private void refresh ()
 	String ExcelNamedRange = "";
 	String ExcelTableName = "";
 	String ExcelColumnNames = "";
+	String ColumnIncludeFilters = "";
 	String ColumnExcludeFilters = "";
     String Comment = "";
 	String ExcelIntegerColumns = "";
 	String ExcelDateTimeColumns = "";
+	String ExcelTextColumns = "";
 	String NumberPrecision = "";
 	String ReadAllAsText = "";
     String KeepOpen = "";
@@ -597,10 +647,12 @@ private void refresh ()
 		ExcelNamedRange = props.getValue ( "ExcelNamedRange" );
 		ExcelTableName = props.getValue ( "ExcelTableName" );
 		ExcelColumnNames = props.getValue ( "ExcelColumnNames" );
+		ColumnIncludeFilters = props.getValue ( "ColumnIncludeFilters" );
 		ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
 		Comment = props.getValue ( "Comment" );
 		ExcelIntegerColumns = props.getValue ( "ExcelIntegerColumns" );
 		ExcelDateTimeColumns = props.getValue ( "ExcelDateTimeColumns" );
+		ExcelTextColumns = props.getValue ( "ExcelTextColumns" );
 		NumberPrecision = props.getValue ( "NumberPrecision" );
 		ReadAllAsText = props.getValue ( "ReadAllAsText" );
 		KeepOpen = props.getValue ( "KeepOpen" );
@@ -639,6 +691,9 @@ private void refresh ()
                     ExcelColumnNames + "\".  Select a different choice or Cancel." );
             }
         }
+        if ( ColumnIncludeFilters != null ) {
+            __ColumnIncludeFilters_JTextArea.setText ( ColumnIncludeFilters );
+        }
         if ( ColumnExcludeFilters != null ) {
             __ColumnExcludeFilters_JTextArea.setText ( ColumnExcludeFilters );
         }
@@ -650,6 +705,9 @@ private void refresh ()
         }
         if ( ExcelDateTimeColumns != null ) {
             __ExcelDateTimeColumns_JTextField.setText ( ExcelDateTimeColumns );
+        }
+        if ( ExcelTextColumns != null ) {
+            __ExcelTextColumns_JTextField.setText ( ExcelTextColumns );
         }
         if ( NumberPrecision != null ) {
             __NumberPrecision_JTextField.setText ( NumberPrecision );
@@ -689,10 +747,12 @@ private void refresh ()
 	ExcelNamedRange = __ExcelNamedRange_JTextField.getText().trim();
 	ExcelTableName = __ExcelTableName_JTextField.getText().trim();
 	ExcelColumnNames = __ExcelColumnNames_JComboBox.getSelected();
+	ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
 	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
 	Comment = __Comment_JTextField.getText().trim();
 	ExcelIntegerColumns = __ExcelIntegerColumns_JTextField.getText().trim();
 	ExcelDateTimeColumns = __ExcelDateTimeColumns_JTextField.getText().trim();
+	ExcelTextColumns = __ExcelTextColumns_JTextField.getText().trim();
 	NumberPrecision = __NumberPrecision_JTextField.getText().trim();
 	ReadAllAsText = __ReadAllAsText_JComboBox.getSelected();
 	KeepOpen = __KeepOpen_JComboBox.getSelected();
@@ -704,10 +764,12 @@ private void refresh ()
 	props.add ( "ExcelNamedRange=" + ExcelNamedRange );
 	props.add ( "ExcelTableName=" + ExcelTableName );
 	props.add ( "ExcelColumnNames=" + ExcelColumnNames );
+	props.add ( "ColumnIncludeFilters=" + ColumnIncludeFilters );
 	props.add ( "ColumnExcludeFilters=" + ColumnExcludeFilters );
 	props.add ( "Comment=" + Comment );
 	props.add ( "ExcelIntegerColumns=" + ExcelIntegerColumns );
 	props.add ( "ExcelDateTimeColumns=" + ExcelDateTimeColumns );
+	props.add ( "ExcelTextColumns=" + ExcelTextColumns );
 	props.add ( "NumberPrecision=" + NumberPrecision );
 	props.add ( "ReadAllAsText=" + ReadAllAsText );
 	props.add ( "KeepOpen=" + KeepOpen );

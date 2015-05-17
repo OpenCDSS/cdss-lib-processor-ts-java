@@ -240,6 +240,7 @@ import rti.tscommandprocessor.commands.ts.Subtract_Command;
 import rti.tscommandprocessor.commands.ts.TSID_Command;
 import rti.tscommandprocessor.commands.ts.VariableLagK_Command;
 import rti.tscommandprocessor.commands.ts.WeightTraces_Command;
+import rti.tscommandprocessor.commands.ts.WriteTimeSeriesPropertiesToFile_Command;
 import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
 // USGS commands
@@ -1093,6 +1094,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToKml") ) {
         return new WriteTableToKml_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesPropertiesToFile") ) {
+        return new WriteTimeSeriesPropertiesToFile_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesProperty") ) {
         return new WriteTimeSeriesProperty_Command ();

@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -254,23 +255,24 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "Statistic" );
-    valid_Vector.add ( "Value1" );
-    valid_Vector.add ( "Value2" );
-    valid_Vector.add ( "Value3" );
-    valid_Vector.add ( "AnalysisStart" );
-    valid_Vector.add ( "AnalysisEnd" );
-    valid_Vector.add ( "AnalysisWindowStart" );
-    valid_Vector.add ( "AnalysisWindowEnd" );
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "TableTSIDColumn" );
-    valid_Vector.add ( "TableTSIDFormat" );
-    valid_Vector.add ( "TableStatisticColumn" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(16);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "Statistic" );
+    validList.add ( "Value1" );
+    validList.add ( "Value2" );
+    validList.add ( "Value3" );
+    validList.add ( "AnalysisStart" );
+    validList.add ( "AnalysisEnd" );
+    validList.add ( "AnalysisWindowStart" );
+    validList.add ( "AnalysisWindowEnd" );
+    validList.add ( "TableID" );
+    validList.add ( "TableTSIDColumn" );
+    validList.add ( "TableTSIDFormat" );
+    validList.add ( "TableStatisticColumn" );
+    validList.add ( "TimeSeriesProperty" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
@@ -394,7 +396,11 @@ CommandWarningException, CommandException
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
     String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
+    boolean doTable = false;
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() ) {
+    	doTable = true;
+    }
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
@@ -418,6 +424,7 @@ CommandWarningException, CommandException
         }
     }
     int [] statisticColumnNum = new int[tableStatisticResultsColumn.length]; // Integer columns for performance
+    String TimeSeriesProperty = parameters.getValue ( "TimeSeriesProperty" );
 
     // Figure out the dates to use for the analysis.
     // Default of null means to analyze the full period.
@@ -603,28 +610,30 @@ CommandWarningException, CommandException
     // Get the table to process.
 
     DataTable table = null;
-    PropList request_params = null;
-    CommandProcessorRequestResultsBean bean = null;
-    if ( (TableID != null) && !TableID.equals("") ) {
-        // Get the table to be updated/created
-        request_params = new PropList ( "" );
-        request_params.set ( "TableID", TableID );
-        try {
-            bean = processor.processRequest( "GetTable", request_params);
-            PropList bean_PropList = bean.getResultsPropList();
-            Object o_Table = bean_PropList.getContents ( "Table" );
-            if ( o_Table != null ) {
-                // Found the table so no need to create it
-                table = (DataTable)o_Table;
-            }
-        }
-        catch ( Exception e ) {
-            message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report problem to software support." ) );
-        }
+    if ( doTable ) {
+	    PropList request_params = null;
+	    CommandProcessorRequestResultsBean bean = null;
+	    if ( (TableID != null) && !TableID.equals("") ) {
+	        // Get the table to be updated/created
+	        request_params = new PropList ( "" );
+	        request_params.set ( "TableID", TableID );
+	        try {
+	            bean = processor.processRequest( "GetTable", request_params);
+	            PropList bean_PropList = bean.getResultsPropList();
+	            Object o_Table = bean_PropList.getContents ( "Table" );
+	            if ( o_Table != null ) {
+	                // Found the table so no need to create it
+	                table = (DataTable)o_Table;
+	            }
+	        }
+	        catch ( Exception e ) {
+	            message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
+	            Message.printWarning(warning_level,
+	                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Report problem to software support." ) );
+	        }
+	    }
     }
     
     if ( warning_count > 0 ) {
@@ -640,43 +649,47 @@ CommandWarningException, CommandException
     
     try {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            if ( table == null ) {
-                // Did not find table so is being created in this command
-                // Create an empty table and set the ID
-                table = new DataTable();
-                table.setTableID ( TableID );
-                setDiscoveryTable ( table );
-            }
+        	if ( doTable ) {
+	            if ( table == null ) {
+	                // Did not find table so is being created in this command
+	                // Create an empty table and set the ID
+	                table = new DataTable();
+	                table.setTableID ( TableID );
+	                setDiscoveryTable ( table );
+	            }
+        	}
         }
         else if ( commandPhase == CommandPhaseType.RUN ) {
-            if ( table == null ) {
-                // Did not find the table above so create it
-                table = new DataTable( /*columnList*/ );
-                table.setTableID ( TableID );
-                Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
-                
-                // Set the table in the processor...
-                
-                request_params = new PropList ( "" );
-                request_params.setUsingObject ( "Table", table );
-                try {
-                    processor.processRequest( "SetTable", request_params);
-                }
-                catch ( Exception e ) {
-                    message = "Error requesting SetTable(Table=...) from processor.";
-                    Message.printWarning(warning_level,
-                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                            routine, message );
-                    status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                               message, "Report problem to software support." ) );
-                }
-            }
+        	if ( doTable ) {
+	            if ( table == null ) {
+	                // Did not find the table above so create it
+	                table = new DataTable( /*columnList*/ );
+	                table.setTableID ( TableID );
+	                Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
+	                
+	                // Set the table in the processor...
+	                PropList request_params = null;
+	                request_params = new PropList ( "" );
+	                request_params.setUsingObject ( "Table", table );
+	                try {
+	                    processor.processRequest( "SetTable", request_params);
+	                }
+	                catch ( Exception e ) {
+	                    message = "Error requesting SetTable(Table=...) from processor.";
+	                    Message.printWarning(warning_level,
+	                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                            routine, message );
+	                    status.addToLog ( commandPhase,
+	                            new CommandLogRecord(CommandStatusType.FAILURE,
+	                               message, "Report problem to software support." ) );
+	                }
+	            }
+        	}
             // Process the time series and add statistics columns to the table if not found...
             TS ts = null;
             Object o_ts = null;
             for ( int its = 0; its < nts; its++ ) {
-                // The the time series to process, from the list that was returned above.
+                // Get the time series to process, from the list that was returned above.
                 o_ts = tslist.get(its);
                 if ( o_ts == null ) {
                     message = "Time series to process is null.";
@@ -690,50 +703,51 @@ CommandWarningException, CommandException
                 ts = (TS)o_ts;
                 notifyCommandProgressListeners ( its, nts, (float)-1.0, "Calculating statistic for " +
                     ts.getIdentifier().toStringAliasAndTSID() );
-                
-                // Make sure that the output table includes the TSID column.
                 int tableTSIDColumnNumber = -1;
-                try {
-                    tableTSIDColumnNumber = table.getFieldIndex(TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                            processor, ts, TableTSIDColumn, status, commandPhase));
-                }
-                catch ( Exception e2 ) {
-                    tableTSIDColumnNumber =
-                        table.addField(new TableField(TableField.DATA_TYPE_STRING, TableTSIDColumn, -1, -1), null);
-                    Message.printStatus(2, routine, "Did not match TableTSIDColumn \"" + TableTSIDColumn +
-                        "\" as column table so added to table." );
-                }
-                
-                // Expand the statistic output column based on runtime information
-                // Also reset the statistic columns each time because can vary based on time series property
-                // TODO SAM 2014-06-09 Optimize this to only reset when the statistic column is dynamically determined
-                for ( int i = 0; i < tableStatisticResultsColumn.length; i++ ) {
-                    statisticColumnNum[i] = -1;
-                }
-                if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
-                    String [] tableStatisticColumnParts = TableStatisticColumn.split(",");
-                    if ( Statistic.equalsIgnoreCase("" + TSStatisticType.TREND_OLS) ) {
-                        // Output will consist of multiple statistics corresponding to parameter-assigned column + suffix
-                        tableStatisticResultsColumn = new String[3];
-                        tableStatisticResultsColumn[0] = "" + tableStatisticColumnParts[0] + "_Intercept";
-                        tableStatisticResultsColumn[0] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                            processor, ts, tableStatisticResultsColumn[0], status, commandPhase);
-                        tableStatisticResultsColumn[1] = "" + tableStatisticColumnParts[0] + "_Slope";
-                        tableStatisticResultsColumn[1] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                            processor, ts, tableStatisticResultsColumn[1], status, commandPhase);
-                        tableStatisticResultsColumn[2] = "" + tableStatisticColumnParts[0] + "_R2";
-                        tableStatisticResultsColumn[2] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                            processor, ts, tableStatisticResultsColumn[2], status, commandPhase);
-                    }
-                    else {
-                        // Output will consist of single statistic corresponding to parameter-assigned column
-                        // Some statistics like "Last" also have the date
-                        tableStatisticResultsColumn = new String[tableStatisticColumnParts.length];
-                        for ( int i = 0; i < tableStatisticColumnParts.length; i++ ) {
-                            tableStatisticResultsColumn[i] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                                processor, ts, tableStatisticColumnParts[i], status, commandPhase);
-                        }
-                    }
+                if ( doTable ) {
+	                // Make sure that the output table includes the TSID column.
+	                try {
+	                    tableTSIDColumnNumber = table.getFieldIndex(TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+	                        processor, ts, TableTSIDColumn, status, commandPhase));
+	                }
+	                catch ( Exception e2 ) {
+	                    tableTSIDColumnNumber =
+	                        table.addField(new TableField(TableField.DATA_TYPE_STRING, TableTSIDColumn, -1, -1), null);
+	                    Message.printStatus(2, routine, "Did not match TableTSIDColumn \"" + TableTSIDColumn +
+	                        "\" as column table so added to table." );
+	                }
+	                
+	                // Expand the statistic output column based on runtime information
+	                // Also reset the statistic columns each time because can vary based on time series property
+	                // TODO SAM 2014-06-09 Optimize this to only reset when the statistic column is dynamically determined
+	                for ( int i = 0; i < tableStatisticResultsColumn.length; i++ ) {
+	                    statisticColumnNum[i] = -1;
+	                }
+	                if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
+	                    String [] tableStatisticColumnParts = TableStatisticColumn.split(",");
+	                    if ( Statistic.equalsIgnoreCase("" + TSStatisticType.TREND_OLS) ) {
+	                        // Output will consist of multiple statistics corresponding to parameter-assigned column + suffix
+	                        tableStatisticResultsColumn = new String[3];
+	                        tableStatisticResultsColumn[0] = "" + tableStatisticColumnParts[0] + "_Intercept";
+	                        tableStatisticResultsColumn[0] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+	                            processor, ts, tableStatisticResultsColumn[0], status, commandPhase);
+	                        tableStatisticResultsColumn[1] = "" + tableStatisticColumnParts[0] + "_Slope";
+	                        tableStatisticResultsColumn[1] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+	                            processor, ts, tableStatisticResultsColumn[1], status, commandPhase);
+	                        tableStatisticResultsColumn[2] = "" + tableStatisticColumnParts[0] + "_R2";
+	                        tableStatisticResultsColumn[2] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+	                            processor, ts, tableStatisticResultsColumn[2], status, commandPhase);
+	                    }
+	                    else {
+	                        // Output will consist of single statistic corresponding to parameter-assigned column
+	                        // Some statistics like "Last" also have the date
+	                        tableStatisticResultsColumn = new String[tableStatisticColumnParts.length];
+	                        for ( int i = 0; i < tableStatisticColumnParts.length; i++ ) {
+	                            tableStatisticResultsColumn[i] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+	                                processor, ts, tableStatisticColumnParts[i], status, commandPhase);
+	                        }
+	                    }
+	                }
                 }
                 
                 try {
@@ -744,9 +758,14 @@ CommandWarningException, CommandException
                         AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime,
                         Value1_Double, Value2_Double, Value3_Double );
                     tsu.calculateTimeSeriesStatistic();
+                    // Set the statistic as a property on the time series
+                    if ( (TimeSeriesProperty != null) && !TimeSeriesProperty.isEmpty() ) {
+                    	setProperty ( ts, TimeSeriesProperty, tsu );
+                    }
                     // Now set the statistic value(s) in the table by matching the row (via TSID) and column
                     // (via statistic column name)
-                    if ( table != null ) {
+                    if ( doTable ) {
+                    	// Table will have been found or created above
                         if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
                             // See if a matching row exists using the specified TSID column...
                             String tsid = null;
@@ -897,6 +916,15 @@ private void setDiscoveryTable ( DataTable table )
 }
 
 /**
+Set the property on the time series.
+*/
+private void setProperty ( TS ts, String propertyName, TSUtil_CalculateTimeSeriesStatistic tsu )
+{
+	Class c = tsu.getStatisticDataClass();
+    ts.setProperty(propertyName,tsu.getStatisticResult());
+}
+
+/**
 Return the string representation of the command.
 @param parameters parameters for the command.
 */
@@ -922,6 +950,7 @@ public String toString ( PropList parameters )
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
+    String TimeSeriesProperty = parameters.getValue ( "TimeSeriesProperty" );
         
     StringBuffer b = new StringBuffer ();
 
@@ -1020,6 +1049,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TableStatisticColumn=\"" + TableStatisticColumn + "\"" );
+    }
+    if ( (TimeSeriesProperty != null) && (TimeSeriesProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TimeSeriesProperty=\"" + TimeSeriesProperty + "\"" );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

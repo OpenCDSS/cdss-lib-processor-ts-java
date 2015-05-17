@@ -20,6 +20,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -27,8 +28,8 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -42,9 +43,10 @@ import RTi.Util.Time.TimeInterval;
 public class CalculateTimeSeriesStatistic_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
-private CalculateTimeSeriesStatistic_Command __command = null;	// Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private CalculateTimeSeriesStatistic_Command __command = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -64,6 +66,7 @@ private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers
 private JTextField __TableStatisticColumn_JTextField = null;
+private JTextField __TimeSeriesProperty_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -137,6 +140,32 @@ private void checkGUIState ()
         __AnalysisWindowStart_JPanel.setEnabled ( false );
         __AnalysisWindowEnd_JPanel.setEnabled ( false );
     }
+    
+    // Set the tooltips on the Value input fields to help users know what to enter
+    __Value1_JTextField.setToolTipText("");
+    __Value2_JTextField.setToolTipText("");
+    __Value3_JTextField.setToolTipText("");
+    String Statistic = __Statistic_JComboBox.getSelected();
+    TSStatisticType stat = TSStatisticType.valueOfIgnoreCase(Statistic);
+    if ( stat != null ) {
+    	if ( stat == TSStatisticType.GE_COUNT ) {
+    		__Value1_JTextField.setToolTipText("Value that is compared to determine count >= the value");
+    	}
+    	else if ( stat == TSStatisticType.GT_COUNT ) {
+    		__Value1_JTextField.setToolTipText("Value that is compared to determine count > the value");
+    	}
+    	else if ( stat == TSStatisticType.LE_COUNT ) {
+    		__Value1_JTextField.setToolTipText("Value that is compared to determine count <= the value");
+    	}
+    	else if ( stat == TSStatisticType.LT_COUNT ) {
+    		__Value1_JTextField.setToolTipText("Value that is compared to determine count < the value");
+    	}
+    	else if ( stat == TSStatisticType.NQYY ) {
+    		__Value1_JTextField.setToolTipText("N = number of days centered on date/time to average, must be odd number");
+    		__Value2_JTextField.setToolTipText("Q = the return interval, e.g., 10 for 1 year in 10 return interval");
+    		__Value3_JTextField.setToolTipText("Number of missing values allowed to compute average (default is 0)");
+    	}
+    }
 }
 
 /**
@@ -159,6 +188,7 @@ private void checkInput ()
 	String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
 	String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
 	String TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
+	String TimeSeriesProperty = __TimeSeriesProperty_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -210,6 +240,9 @@ private void checkInput ()
     if ( TableStatisticColumn.length() > 0 ) {
         parameters.set ( "TableStatisticColumn", TableStatisticColumn );
     }
+    if ( TimeSeriesProperty.length() > 0 ) {
+        parameters.set ( "TimeSeriesProperty", TimeSeriesProperty );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -238,6 +271,7 @@ private void commitEdits ()
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
+    String TimeSeriesProperty = __TimeSeriesProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -257,6 +291,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "TableStatisticColumn", TableStatisticColumn );
+    __command.setCommandParameter ( "TimeSeriesProperty", TimeSeriesProperty );
 }
 
 /**
@@ -278,104 +313,121 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
 	int y = -1;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Calculate a statistic for time series and optionally save in a table." ), 
+		"Calculate a statistic for time series and optionally save in a table and/or time series property." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "The table and its columns will be created if not found." ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Statistics results may include 1+ values and may include the date/time of the result." ), 
+        "An example of a statistic is the count of missing values." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Use table commands to save the table results to a file." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify dates with precision appropriate for the data, " +
-		"use blank for all available data, OutputStart, or OutputEnd."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for input
+    int yInput = 0;
+    JPanel input_JPanel = new JPanel();
+    input_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Input", input_JPanel );
     
     __TSList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
+    yInput = CommandEditorUtil.addTSListToEditorDialogPanel ( this, input_JPanel, __TSList_JComboBox, yInput );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    yInput = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, input_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yInput );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+    yInput = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, input_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yInput );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Statistic to calculate:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for analysis
+    int yAnalysis = -1;
+    JPanel analysis_JPanel = new JPanel();
+    analysis_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Analysis", analysis_JPanel );
+
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "Statistics results may include 1+ values and may include the date/time of the result." ), 
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+        "Mouse over Value1, Value2, and Value3 fields for help understanding input - help will be blank if value is not used for a statistic." ), 
+        0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+		"Specify dates with precision appropriate for the data, " +
+		"use blank for all available data, OutputStart, or OutputEnd."),
+		0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Statistic to calculate:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Statistic_JComboBox = new SimpleJComboBox ( 12, false ); // Do not allow edit
     __Statistic_JComboBox.setData ( TSUtil_CalculateTimeSeriesStatistic.getStatisticChoicesAsStrings() );
     __Statistic_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
-    JGUIUtil.addComponent(main_JPanel, __Statistic_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __Statistic_JComboBox,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Required - may require other parameters."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value1:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Value1:" ), 
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Value1_JTextField = new JTextField ( 10 );
 	__Value1_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Value1_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __Value1_JTextField,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
 		"Optional - may be needed as input to calculate statistic."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value2:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Value2:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Value2_JTextField = new JTextField ( 10 );
     __Value2_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Value2_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __Value2_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - may be needed as input to calculate statistic."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value3:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Value3:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Value3_JTextField = new JTextField ( 10 );
     __Value3_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Value3_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __Value3_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - may be needed as input to calculate statistic."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
     __AnalysisStart_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisStart_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis start date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
     __AnalysisEnd_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisEnd_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis end date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __AnalysisWindow_JCheckBox = new JCheckBox ( "Analysis window:", false );
     __AnalysisWindow_JCheckBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisWindow_JCheckBox, 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisWindow_JCheckBox, 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     JPanel analysisWindow_JPanel = new JPanel();
     analysisWindow_JPanel.setLayout(new GridBagLayout());
     __AnalysisWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.HOUR, null );
@@ -389,54 +441,107 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     __AnalysisWindowEnd_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(analysisWindow_JPanel, __AnalysisWindowEnd_JPanel,
         4, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, analysisWindow_JPanel,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, analysisWindow_JPanel,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis window within input year (default=full year)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(""),
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for table
+    int yTable = -1;
+    JPanel table_JPanel = new JPanel();
+    table_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output Table", table_JPanel );
+    
+	JGUIUtil.addComponent(table_JPanel, new JLabel (
+       "Statistics results can be saved to a table. The table and its columns will be created if not found." ), 
+       0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "The TSID column is used to match a row in the table to receive output statistics, which are written to columns." ), 
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(table_JPanel, new JLabel (
+	    "Use table commands to save the table results to a file." ), 
+	    0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(table_JPanel, new JLabel (""), 
+	    0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID for output:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID for output:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Optional - if statistic should be saved in table."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table TSID column:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table TSID column:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableTSIDColumn_JTextField = new JTextField ( 10 );
     __TableTSIDColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __TableTSIDColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if using table - column name for TSID."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, __TableTSIDColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required if using table - column name for TSID."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Format of TSID:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel("Format of TSID:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
     __TableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __TableTSIDFormat_JTextField.addKeyListener ( this );
     __TableTSIDFormat_JTextField.setToolTipText("%L for location, %T for data type.");
-    JGUIUtil.addComponent(main_JPanel, __TableTSIDFormat_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(table_JPanel, __TableTSIDFormat_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
+        3, yTable, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table statistic column:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table statistic column:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableStatisticColumn_JTextField = new JTextField ( 10 );
     __TableStatisticColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __TableStatisticColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, __TableStatisticColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Required if using table - column name(s) for statistic(s)."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for property
+    int yProp = -1;
+    JPanel prop_JPanel = new JPanel();
+    prop_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output Property", prop_JPanel );
+    
+	JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"The calculated statistic can be set as a time series property.  It can be referenced later in some commands with ${ts:Property}." ), 
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(prop_JPanel, new JLabel (""), 
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    /* TODO SAM 2015-05-15 Enable later if needed
+    JGUIUtil.addComponent(prop_JPanel, new JLabel("Statistic property:"),
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StatisticProperty_JTextField = new JTextField ( "", 20 );
+    __StatisticProperty_JTextField.setToolTipText("The property can be referenced in other commands using ${Property}.");
+    __StatisticProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(prop_JPanel, __StatisticProperty_JTextField,
+        1, yProp, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Optional - property to set as statistic." ),
+        3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    */
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel("Time series property:"),
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeSeriesProperty_JTextField = new JTextField ( "", 20 );
+    __TimeSeriesProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(prop_JPanel, __TimeSeriesProperty_JTextField,
+        1, yProp, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Optional - time series property to set as statistic value." ),
+        3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -529,6 +634,7 @@ private void refresh ()
 	String TableTSIDColumn = "";
 	String TableTSIDFormat = "";
 	String TableStatisticColumn = "";
+	String TimeSeriesProperty = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -548,6 +654,7 @@ private void refresh ()
 		TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
 		TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
 		TableStatisticColumn = props.getValue ( "TableStatisticColumn" );
+		TimeSeriesProperty = props.getValue ( "TimeSeriesProperty" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -681,6 +788,9 @@ private void refresh ()
         if ( TableStatisticColumn != null ) {
             __TableStatisticColumn_JTextField.setText ( TableStatisticColumn );
         }
+        if ( TimeSeriesProperty != null ) {
+            __TimeSeriesProperty_JTextField.setText ( TimeSeriesProperty );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	checkGUIState();
@@ -697,6 +807,7 @@ private void refresh ()
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
+    TimeSeriesProperty = __TimeSeriesProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
@@ -717,6 +828,7 @@ private void refresh ()
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "TableStatisticColumn=" + TableStatisticColumn );
+    props.add ( "TimeSeriesProperty=" + TimeSeriesProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

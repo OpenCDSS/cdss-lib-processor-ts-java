@@ -271,7 +271,8 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "<HTML><B>This command is experimental.</B></HTML>" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"<HTML><B>This command is being phased out. Use the WriteTimeSeriesPropertiesToFile() command instead.</B></HTML>" ),
     0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write a time series property to a file.  This is useful for automated software testing." ),

@@ -51,6 +51,7 @@ private boolean __first_time = true;	// Indicate first time display
 private JTextArea __command_JTextArea=null;// For command
 private JTextField  __TableID_JTextField = null;
 private JTextField __InputFile_JTextField = null;
+private JTextField __Delimiter_JTextField = null;
 private JTextField __SkipLines_JTextField = null;
 // FIXME SAM 2008-01-27 Enable later
 //private JTextField __SkipColumns_JTextField = null;
@@ -142,6 +143,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
     String TableID = __TableID_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
+	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String SkipLines = __SkipLines_JTextField.getText().trim();
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
@@ -152,6 +154,9 @@ private void checkInput ()
     }
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
+	}
+	if ( Delimiter.length() > 0 ) {
+		props.set ( "Delimiter", Delimiter );
 	}
 	if ( SkipLines.length() > 0 ) {
 		props.set ( "SkipLines", SkipLines );
@@ -180,31 +185,16 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TableID = __TableID_JTextField.getText().trim();
     String InputFile = __InputFile_JTextField.getText().trim();
+    String Delimiter = __Delimiter_JTextField.getText().trim();
 	String SkipLines = __SkipLines_JTextField.getText().trim();
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
+	__command.setCommandParameter ( "Delimiter", Delimiter );
 	__command.setCommandParameter ( "SkipLines", SkipLines );
 	//__command.setCommandParameter ( "SkipColumns", SkipColumns );
 	__command.setCommandParameter ( "HeaderLines", HeaderLines );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__InputFile_JTextField = null;
-	__SkipLines_JTextField = null;
-	__browse_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__working_dir = null;
-	super.finalize ();
 }
 
 /**
@@ -236,8 +226,7 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
 	"This command reads a table from a delimited file.  The table can then be used by other commands."),
 	0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-		"Columns in the file should be delimited by commas (user-specified delimiters will be added " +
-		"in the future)."),
+		"Columns in the file should be delimited by commas (default) or other character."),
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "An example data file is shown below (line and data row numbers are shown on the left for illustration):"),
@@ -294,6 +283,16 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Delimiter_JTextField = new JTextField (5);
+    __Delimiter_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - delimiter, \\t=tab (default=comma ,)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
     JGUIUtil.addComponent(main_JPanel, new JLabel ("File lines to skip:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SkipLines_JTextField = new JTextField (10);
@@ -321,7 +320,7 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
 	__HeaderLines_JTextField = new JTextField (10);
 	__HeaderLines_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __HeaderLines_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel,
    	    new JLabel ( "Optional - specify line number 1+ (default=first row if double quoted)." ),
 		//"Specify as a range (e.g., \"5-7\")."),
@@ -408,6 +407,7 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String TableID = "";
     String InputFile = "";
+    String Delimiter = "";
 	String SkipLines = "";
 	//String SkipColumns = "";
 	String HeaderLines = "";
@@ -416,6 +416,7 @@ private void refresh ()
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
 		InputFile = props.getValue ( "InputFile" );
+		Delimiter = props.getValue ( "Delimiter" );
 		SkipLines = props.getValue ( "SkipLines" );
 		//SkipColumns = props.getValue ( "SkipColumns" );
 		HeaderLines = props.getValue ( "HeaderLines" );
@@ -424,6 +425,9 @@ private void refresh ()
         }
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
+		}
+		if ( Delimiter != null ) {
+			__Delimiter_JTextField.setText ( Delimiter );
 		}
 		if ( SkipLines != null ) {
 			__SkipLines_JTextField.setText ( SkipLines );
@@ -438,14 +442,16 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
     TableID = __TableID_JTextField.getText().trim();
 	InputFile = __InputFile_JTextField.getText().trim();
+	Delimiter = __Delimiter_JTextField.getText().trim();
 	SkipLines = __SkipLines_JTextField.getText().trim();
 	//SkipColumns = __SkipColumns_JTextField.getText().trim();
 	HeaderLines = __HeaderLines_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
+	props.add ( "Delimiter=" + Delimiter );
 	props.add ( "SkipLines=" + SkipLines );
-	//props.add ( "SkiipColumns=" + SkipColumns );
+	//props.add ( "SkipColumns=" + SkipColumns );
 	props.add ( "HeaderLines=" + HeaderLines );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...

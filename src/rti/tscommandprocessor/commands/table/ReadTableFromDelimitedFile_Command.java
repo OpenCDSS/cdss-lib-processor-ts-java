@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -28,9 +29,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
 /**
-<p>
 This class initializes, checks, and runs the ReadTableFromDelimitedFile() command.
-</p>
 */
 public class ReadTableFromDelimitedFile_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
@@ -170,13 +169,14 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "SkipLines" );
-    valid_Vector.add ( "SkipColumns" );
-    valid_Vector.add ( "HeaderLines" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List validList = new ArrayList<String>(6);
+    validList.add ( "TableID" );
+    validList.add ( "InputFile" );
+    validList.add ( "Delimiter" );
+    validList.add ( "SkipLines" );
+    validList.add ( "SkipColumns" );
+    validList.add ( "HeaderLines" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -274,6 +274,12 @@ CommandWarningException, CommandException
 
     String TableID = parameters.getValue ( "TableID" );
 	String InputFile = parameters.getValue ( "InputFile" );
+	String Delimiter = parameters.getValue ( "Delimiter" );
+	String delimiter = ","; // default
+	if ( (Delimiter != null) && !Delimiter.isEmpty() ) {
+		delimiter = Delimiter;
+		delimiter = delimiter.replace("\\t", "\t");
+	}
 	//String SkipColumns = parameters.getValue ( "SkipColumns" );
 	String SkipLines = parameters.getValue ( "SkipLines" );
 	String HeaderLines = parameters.getValue ( "HeaderLines" );
@@ -356,11 +362,11 @@ CommandWarningException, CommandException
     if ( command_phase == CommandPhaseType.RUN ) {
     	DataTable table = null;
     	PropList props = new PropList ( "DataTable" );
-    	props.set ( "Delimiter", "," );	// Default
+    	props.set ( "Delimiter", delimiter );
     	props.set ( "CommentLineIndicator=#" );	// Skip comment lines
-    	props.set ( "TrimInput=True" );		// Trim strings after reading.
-    	props.set ( "TrimStrings=True" );	// Trim strings after parsing
-    	//props.set ( "ColumnDataTypes=Auto" );  // Automatically determine column data types
+    	props.set ( "TrimInput=True" ); // Trim strings before parsing.
+    	props.set ( "TrimStrings=True" ); // Trim strings after parsing
+    	//props.set ( "ColumnDataTypes=Auto" ); // Automatically determine column data types
     	if ( (SkipLines != null) && (SkipLines.length() > 0) ) {
     	    props.set ( "SkipLines=" + StringUtil.convertNumberSequenceToZeroOffset(SkipLines) );
     	}
@@ -438,6 +444,7 @@ public String toString ( PropList props )
 	}
     String TableID = props.getValue( "TableID" );
 	String InputFile = props.getValue( "InputFile" );
+	String Delimiter = props.getValue( "Delimiter" );
 	String SkipLines = props.getValue("SkipLines");
 	String SkipColumns = props.getValue("SkipColumns");
 	String HeaderLines = props.getValue("HeaderLines");
@@ -453,6 +460,12 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "InputFile=\"" + InputFile + "\"" );
+	}
+	if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "Delimiter=\"" + Delimiter + "\"" );
 	}
 	if ( (SkipLines != null) && (SkipLines.length() > 0) ) {
 		if ( b.length() > 0 ) {

@@ -818,6 +818,7 @@ End date for averaging.
 */
 private DateTime __AverageEnd_DateTime = null;
 
+// TODO SAM 2015-05-17 Evaluate whether this can be removed - instead using general processor properties
 /**
 List of DateTime initialized from commands.
 */
@@ -854,6 +855,20 @@ private boolean __IgnoreLEZero_boolean = false;
 Indicates whether missing time series should be added automatically.
 */
 private boolean __IncludeMissingTS_boolean = false;
+
+// TODO SAM 2015-05-17 Need to put this in properties when all are consolidated - this is a kludge
+// implemented for the ReadTimeSeriesList command
+/**
+Start date/time when reading time series and returning empty missing time series.
+*/
+private DateTime __IncludeMissingTSOutputStart = null;
+
+// TODO SAM 2015-05-17 Need to put this in properties when all are consolidated - this is a kludge
+// implemented for the ReadTimeSeriesList command
+/**
+End date/time when reading time series and returning empty missing time series.
+*/
+private DateTime __IncludeMissingTSOutputEnd = null;
 
 /**
 Start date for read.
@@ -1863,53 +1878,72 @@ protected List<DataStore> getDataStoreList()
 }
 
 /**
-Get a date/time from a string.  This is done using the following rules:
+Get a date/time from a string.  The string is first expanded to fill ${Property} strings and then the
+matching property name is used to determine the date/time using the following rules:
 <ol>
-<li>	If the string is null, "*" or "", return null.</li>
-<li>	If the string uses a standard name InputStart (QueryStart),
-	InputEnd (QueryEnd), OutputStart, OutputEnd,
-	return the corresponding DateTime.</li>
-<li>	Check the date/time hash table for user-defined date/times.
-<li>	Parse the string.
+<li> If the string is null, "*" or "", return null.</li>
+<li> If the string uses a standard name InputStart (QueryStart), InputEnd (QueryEnd), OutputStart, OutputEnd, return the corresponding DateTime.</li>
+<li> Check the processor date/time hash table for user-defined date/time properties.</li>
+<li> Parse the string using DateTime.parse().
 </ol>
-@param date_string Date/time string to parse.
-@exception if the date cannot be determined using the defined procedure.
+@param dtString Date/time string to parse.
+@exception if the date/time cannot be determined using the defined procedure.
 */
-protected DateTime getDateTime ( String date_string )
+protected DateTime getDateTime ( String dtString )
 throws Exception
-{	if ( (date_string == null) || date_string.equals("") || date_string.equals("*") ) {
+{
+	if ( dtString != null ) {
+		dtString = dtString.trim();
+	}
+	if ( (dtString == null) || dtString.isEmpty() || dtString.equals("*") ) {
 		// Want to use all available...
 		return null;
 	}
 
 	// Check for user DateTime instances...
 
-	DateTime date = (DateTime)__datetime_Hashtable.get ( date_string );
+	DateTime date = (DateTime)__datetime_Hashtable.get ( dtString );
 	if ( date != null ) {
 		// Found date in the hash table so use it...
 		return date;
 	}
+	
+	// Check for requested property
+	if ( dtString.startsWith("${") && dtString.endsWith("}") ) {
+		String propName = dtString.substring(2,dtString.length() - 1);
+		Object o = __ts_processor.getPropContents(propName);
+		if ( o != null ) {
+			if ( o instanceof DateTime ) {
+				return (DateTime)o;
+			}
+			else if ( o instanceof String ) {
+				// Reset the string and try parsing below
+				dtString = (String)o;
+			}
+		}
+	}
 
+	// TODO SAM 2015-05-17 Need to decide whether to continue supporting or move to ${OutputEnd} notation exclusively
 	// Check for named DateTime instances...
 
-	if ( date_string.equalsIgnoreCase("OutputEnd") || date_string.equalsIgnoreCase("OutputPeriodEnd") ) {
+	if ( dtString.equalsIgnoreCase("OutputEnd") || dtString.equalsIgnoreCase("OutputPeriodEnd") ) {
 		return __OutputEnd_DateTime;
 	}
-	else if(date_string.equalsIgnoreCase("OutputStart") || date_string.equalsIgnoreCase("OutputPeriodStart") ) {
+	else if(dtString.equalsIgnoreCase("OutputStart") || dtString.equalsIgnoreCase("OutputPeriodStart") ) {
 		return __OutputStart_DateTime;
 	}
-	else if(date_string.equalsIgnoreCase("InputEnd") || date_string.equalsIgnoreCase("QueryEnd") ||
-		date_string.equalsIgnoreCase("QueryPeriodEnd") ) {
+	else if(dtString.equalsIgnoreCase("InputEnd") || dtString.equalsIgnoreCase("QueryEnd") ||
+		dtString.equalsIgnoreCase("QueryPeriodEnd") ) {
 		return __InputEnd_DateTime;
 	}
-	else if(date_string.equalsIgnoreCase("InputStart") || date_string.equalsIgnoreCase("QueryStart") ||
-		date_string.equalsIgnoreCase("QueryPeriodStart") ) {
+	else if(dtString.equalsIgnoreCase("InputStart") || dtString.equalsIgnoreCase("QueryStart") ||
+		dtString.equalsIgnoreCase("QueryPeriodStart") ) {
 		return __InputStart_DateTime;
 	}
 
 	// Else did not find a date time so try parse the string...
 
-	return DateTime.parse ( date_string );
+	return DateTime.parse ( dtString );
 }
 
 /**
@@ -1969,6 +2003,20 @@ than a warning and no time series).
 */
 protected boolean getIncludeMissingTS()
 {   return __IncludeMissingTS_boolean;
+}
+
+/**
+Return the default output start to be used with processing missing time series.
+*/
+protected DateTime getIncludeMissingTSOutputEnd()
+{   return __IncludeMissingTSOutputEnd;
+}
+
+/**
+Return the default output start to be used with processing missing time series.
+*/
+protected DateTime getIncludeMissingTSOutputStart()
+{   return __IncludeMissingTSOutputStart;
 }
 
 /**
@@ -4317,8 +4365,8 @@ FIXME - need to phase out "full_period".
 */
 private TS readTimeSeries (	int wl, String commandTag, String tsidentString, boolean fullPeriod, boolean readData )
 throws Exception
-{	TS	ts = null;
-	String	routine = "TSEngine.readTimeSeries";
+{	TS ts = null;
+	String routine = "TSEngine.readTimeSeries";
 	
 	// Figure out what dates to use for the query...
 
@@ -4335,13 +4383,21 @@ throws Exception
     ts = readTimeSeries0 ( tsidentString, inputStart, inputEnd, null, readData );
 
 	if ( ts == null ) {
-		if ( getIncludeMissingTS() && haveOutputPeriod() ) {
+		DateTime start = getOutputStart();
+		DateTime end = getOutputEnd();
+		if ( getIncludeMissingTSOutputStart() != null ) {
+			start = getIncludeMissingTSOutputStart();
+		}
+		if ( getIncludeMissingTSOutputEnd() != null ) {
+			end = getIncludeMissingTSOutputEnd();
+		}
+		if ( getIncludeMissingTS() && (start != null) && (end != null) ) {
 			// Even if time series is missing, create an empty one for output.
 			ts = TSUtil.newTimeSeries ( tsidentString, true );
 			// else leave null and ignore
 			if ( ts != null ) {
-				ts.setDate1 ( __OutputStart_DateTime );
-				ts.setDate2 ( __OutputEnd_DateTime );
+				ts.setDate1 ( start );
+				ts.setDate2 ( end );
 				// Leave original dates as is.  The following will fill with missing...
 				if ( readData ) {
 				    ts.allocateDataSpace();
@@ -4351,6 +4407,9 @@ throws Exception
 				String tsident_string2;
 				tsident_string2 = (String)v.get(0);
 				ts.setIdentifier ( tsident_string2 );
+				// Set a property indicating that a default time series was initialized
+				ts.setProperty("DefaultTimeSeriesRead",new Boolean(true));
+				ts.addToGenesis("Created empty time series - not in data source and SetIncludeMissingTS(true) or similar is requested.");
 				Message.printStatus ( 2, routine, "Created empty time series for \"" +
 				tsident_string2 + "\" - not in DB and SetIncludeMissingTS(true) is specified." );
 			}
@@ -5461,6 +5520,20 @@ Set the value of the IncludeMissingTS property.
 protected void setIncludeMissingTS ( boolean IncludeMissingTS_boolean )
 {
     __IncludeMissingTS_boolean = IncludeMissingTS_boolean;
+}
+
+/**
+Set the default output end to be used with processing missing time series.
+*/
+protected void setIncludeMissingTSOutputEnd ( DateTime dt )
+{   __IncludeMissingTSOutputEnd = dt;
+}
+
+/**
+Set the default output start to be used with processing missing time series.
+*/
+protected void setIncludeMissingTSOutputStart ( DateTime dt )
+{   __IncludeMissingTSOutputStart = dt;
 }
 
 /**

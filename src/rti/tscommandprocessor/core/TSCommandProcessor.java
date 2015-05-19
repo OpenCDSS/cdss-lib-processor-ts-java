@@ -910,8 +910,9 @@ public Prop getProp ( String prop ) throws Exception
 
 // TODO SAM 2007-02-18 Need to enable NDFD Adapter
 /**
-Return the contents for a named property, required by the CommandProcessor
-interface. Currently the following properties are handled:
+Return the contents for a named property, required by the CommandProcessor interface.
+Internal properties are checked first and if not matched the list of user-defined properties is searched.
+Currently the following internal properties are handled:
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
 <td><b>Property</b></td>	<td><b>Description</b></td>
@@ -926,7 +927,7 @@ speed performance during initial testing.
 
 <tr>
 <td><b>DataTestList</b></td>
-<td>The Vector of DataTests.</td>
+<td>The List of DataTests.</td>
 </tr>
 
 <tr>
@@ -947,7 +948,7 @@ speed performance during initial testing.
 
 <tr>
 <td><b>HydroBaseDMIList</b></td>
-<td>A Vector of open HydroBaseDMI, available for reading.
+<td>A List of open HydroBaseDMI, available for reading.
 </td>
 </tr>
 
@@ -972,7 +973,7 @@ where the commands file lives.
 
 <tr>
 <td><b>OutputComments</b></td>
-<td>A Vector of String with comments suitable for output.  The comments
+<td>A List of String with comments suitable for output.  The comments
 DO NOT contain the leading comment character (specific code that writes the
 output should add the comment characters).  Currently the comments contain
 open HydroBase connection information, if available.
@@ -1015,14 +1016,14 @@ open HydroBase connection information, if available.
 
 <tr>
 <td><b>TSProductAnnotationProviderList</b></td>
-<td>A Vector of TSProductAnnotationProvider (for example, this is requested
+<td>A List of TSProductAnnotationProvider (for example, this is requested
 by the processTSProduct() command).
 </td>
 </tr>
 
 <tr>
 <td><b>TSResultsList</b></td>
-<td>The Vector of time series results.</td>
+<td>The List of time series results.</td>
 </tr>
 
 <tr>
@@ -1058,106 +1059,106 @@ working directory and changes from setWorkingDir() commands.
 @return the contents for a named property, or null if a value is not found.
 @exception UnrecognizedRequestException if an unknown property is requested.
 */
-public Object getPropContents ( String prop ) throws Exception
-{	if ( prop.equalsIgnoreCase("AutoExtendPeriod") ) {
+public Object getPropContents ( String propName ) throws Exception
+{	if ( propName.equalsIgnoreCase("AutoExtendPeriod") ) {
 		return getPropContents_AutoExtendPeriod();
 	}
-    else if ( prop.equalsIgnoreCase("AverageEnd") ) {
+    else if ( propName.equalsIgnoreCase("AverageEnd") ) {
         return getPropContents_AverageEnd();
     }
-    else if ( prop.equalsIgnoreCase("AverageStart") ) {
+    else if ( propName.equalsIgnoreCase("AverageStart") ) {
         return getPropContents_AverageStart();
     }
-    else if ( prop.equalsIgnoreCase("CommandFileName") ) {
+    else if ( propName.equalsIgnoreCase("CommandFileName") ) {
         return getCommandFileName();
     }
-	else if ( prop.equalsIgnoreCase("CreateOutput") ) {
+	else if ( propName.equalsIgnoreCase("CreateOutput") ) {
 		return getPropContents_CreateOutput();
 	}
-    else if ( prop.equalsIgnoreCase("DebugLevelLogFile") ) {
+    else if ( propName.equalsIgnoreCase("DebugLevelLogFile") ) {
         return new Integer(Message.getDebugLevel(Message.LOG_OUTPUT));
     }
-    else if ( prop.equalsIgnoreCase("DebugLevelScreen") ) {
+    else if ( propName.equalsIgnoreCase("DebugLevelScreen") ) {
         return new Integer(Message.getDebugLevel(Message.TERM_OUTPUT));
     }
-    else if ( prop.equalsIgnoreCase("EnsembleResultsList") ) {
+    else if ( propName.equalsIgnoreCase("EnsembleResultsList") ) {
         return getPropContents_EnsembleResultsList();
     }
-	else if ( prop.equalsIgnoreCase("HaveOutputPeriod") ) {
+	else if ( propName.equalsIgnoreCase("HaveOutputPeriod") ) {
 		return getPropContents_HaveOutputPeriod();
 	}
-    else if ( prop.equalsIgnoreCase("HydroBaseDMIList") ) {
+    else if ( propName.equalsIgnoreCase("HydroBaseDMIList") ) {
         return getPropContents_HydroBaseDMIList();
     }
-    else if ( prop.equalsIgnoreCase("HydroBaseDMIListSize") ) {
+    else if ( propName.equalsIgnoreCase("HydroBaseDMIListSize") ) {
         return getPropContents_HydroBaseDMIListSize();
     }
-    else if ( prop.equalsIgnoreCase("IgnoreLEZero") ) {
+    else if ( propName.equalsIgnoreCase("IgnoreLEZero") ) {
         return getPropContents_IgnoreLEZero();
     }
-	else if ( prop.equalsIgnoreCase("IncludeMissingTS") ) {
+	else if ( propName.equalsIgnoreCase("IncludeMissingTS") ) {
 		return getPropContents_IncludeMissingTS();
 	}
-	else if ( prop.equalsIgnoreCase("InitialWorkingDir") ) {
+	else if ( propName.equalsIgnoreCase("InitialWorkingDir") ) {
 		return getPropContents_InitialWorkingDir();
 	}
-	else if ( prop.equalsIgnoreCase("InputEnd") ) {
+	else if ( propName.equalsIgnoreCase("InputEnd") ) {
 		return getPropContents_InputEnd();
 	}
-	else if ( prop.equalsIgnoreCase("InputStart") ) {
+	else if ( propName.equalsIgnoreCase("InputStart") ) {
 		return getPropContents_InputStart();
 	}
-	else if ( prop.equalsIgnoreCase("OutputComments") ) {
+	else if ( propName.equalsIgnoreCase("OutputComments") ) {
 		return getPropContents_OutputComments();
 	}
-	else if ( prop.equalsIgnoreCase("OutputEnd") ) {
+	else if ( propName.equalsIgnoreCase("OutputEnd") ) {
 		return getPropContents_OutputEnd();
 	}
-	else if ( prop.equalsIgnoreCase("OutputStart") ) {
+	else if ( propName.equalsIgnoreCase("OutputStart") ) {
 		return getPropContents_OutputStart();
 	}
-	else if ( prop.equalsIgnoreCase("OutputYearType") ) {
+	else if ( propName.equalsIgnoreCase("OutputYearType") ) {
 		return getPropContents_OutputYearType();
 	}
-    else if ( prop.equalsIgnoreCase("PatternTSList") ) {
+    else if ( propName.equalsIgnoreCase("PatternTSList") ) {
         return getPropContents_PatternTSList();
     }
-    else if ( prop.equalsIgnoreCase("TableResultsList") ) {
+    else if ( propName.equalsIgnoreCase("TableResultsList") ) {
         return getPropContents_TableResultsList();
     }
-    else if ( prop.equalsIgnoreCase("TimeSeriesViewResultsList") ) {
+    else if ( propName.equalsIgnoreCase("TimeSeriesViewResultsList") ) {
         return getPropContents_TimeSeriesViewResultsList();
     }
-    else if ( prop.equalsIgnoreCase("TSEnsembleResultsListSize") ) {
+    else if ( propName.equalsIgnoreCase("TSEnsembleResultsListSize") ) {
         return getPropContents_TSEnsembleResultsListSize();
     }
-	else if ( prop.equalsIgnoreCase("TSProductAnnotationProviderList") ) {
+	else if ( propName.equalsIgnoreCase("TSProductAnnotationProviderList") ) {
 		return getPropContents_TSProductAnnotationProviderList();
 	}
-	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
+	else if ( propName.equalsIgnoreCase("TSResultsList") ) {
 		return getPropContents_TSResultsList();
 	}
-	else if ( prop.equalsIgnoreCase("TSResultsListSize") ) {
+	else if ( propName.equalsIgnoreCase("TSResultsListSize") ) {
 		return getPropContents_TSResultsListSize();
 	}
-	else if ( prop.equalsIgnoreCase("TSViewWindowListener") ) {
+	else if ( propName.equalsIgnoreCase("TSViewWindowListener") ) {
 		return getPropContents_TSViewWindowListener();
 	}
-    else if ( prop.equalsIgnoreCase("WarningLevelLogFile") ) {
+    else if ( propName.equalsIgnoreCase("WarningLevelLogFile") ) {
         return new Integer(Message.getWarningLevel(Message.LOG_OUTPUT));
     }
-    else if ( prop.equalsIgnoreCase("WarningLevelScreen") ) {
+    else if ( propName.equalsIgnoreCase("WarningLevelScreen") ) {
         return new Integer(Message.getWarningLevel(Message.TERM_OUTPUT));
     }
-	else if ( prop.equalsIgnoreCase("WorkingDir") ) {
+	else if ( propName.equalsIgnoreCase("WorkingDir") ) {
 		return getPropContents_WorkingDir();
 	}
 	else {
 	    // Property is not one of the individual objects that have been historically
 	    // maintained, but it may be a user-supplied property in the hashtable.
-	    Object o = __property_Hashtable.get ( prop );
+	    Object o = __property_Hashtable.get ( propName );
 	    if ( o == null ) {
-    	    String warning = "Unknown GetPropContents request \"" + prop + "\"";
+    	    String warning = "Unknown GetPropContents request \"" + propName + "\"";
     		// TODO SAM 2007-02-07 Need to figure out a way to indicate
     		// an error and pass back useful information.
     		throw new UnrecognizedRequestException ( warning );
@@ -2300,20 +2301,30 @@ throws Exception
 }
 
 /**
-Process the DateTime request.
+Get a date/time property (DateTime instances) from a string.  The string is first expanded to fill ${Property} strings and then the
+matching property name is used to determine the date/time using the following rules:
+<ol>
+<li> If the string is null, "*" or "", return null.</li>
+<li> If the string uses a standard name InputStart (QueryStart), InputEnd (QueryEnd), OutputStart, OutputEnd, return the corresponding DateTime.</li>
+<li> Check the processor date/time hash table for user-defined date/time properties.</li>
+<li> Parse the string using DateTime.parse().
+</ol>
+@param request the processor request "DateTime" for logging
+@param request_params request parameters:
+<ol>
+<li> DateTime - date/time string to process into a DateTime object
+</ol>
 */
-private CommandProcessorRequestResultsBean processRequest_DateTime (
-		String request, PropList request_params )
+private CommandProcessorRequestResultsBean processRequest_DateTime ( String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "DateTime" );
 	if ( o == null ) {
-			String warning = "Request DateTime() does not provide a DateTime parameter.";
-			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText ( "This is likely a software code error.");
-			throw new RequestParameterNotFoundException ( warning );
+		String warning = "Request DateTime() does not provide a DateTime parameter.";
+		bean.setWarningText ( warning );
+		bean.setWarningRecommendationText ( "This is likely a software code error.");
+		throw new RequestParameterNotFoundException ( warning );
 	}
 	String DateTime = (String)o;
 	DateTime dt = __tsengine.getDateTime ( DateTime );
@@ -2921,6 +2932,20 @@ This request is used with the CreateFromList() and ReadTimeSeries() commands.  B
 method performs fundamental tasks, some of the error handling is different than other requests, 
 in particular passing in the WarningLevel and CommandTag request parameters.
 This reads the time series and post-processes.  To only post-process, request ReadTimeSeries2.
+The following properties are expected:
+<ol>
+<li> CommandTag - string to tag warnings for logging</li>
+<li> DefaultOutputStart - DateTime with output start date if IfNotFound=Default</li>
+<li> DefaultOutputEnd - DateTime with output date if IfNotFound=Default</li>
+<li> IfNotFound - Default, Ignore, or Warn (default)</li>
+<li> ReadData - true (default) to read data, false to only initialize time series</li>
+<li> TSID - time series identifier to read</li>
+<li> WarningLevel - warning level for warning messages</li>
+</ol>
+@return a result bean with the following property contents:
+<ol>
+<li> TS - time series object</li>
+</ol>
 */
 private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries (
         String request, PropList request_params )
@@ -2975,6 +3000,16 @@ throws Exception
     }
     String IfNotFound = (String)o_IfNotFound;
     boolean includeMissingTS = false; // Default
+    Object o_DefaultOutputStart = request_params.getContents ( "DefaultOutputStart" );
+    Object o_DefaultOutputEnd = request_params.getContents ( "DefaultOutputEnd" );
+    DateTime defaultOutputStart = null;
+    DateTime defaultOutputEnd = null;
+    if ( o_DefaultOutputStart != null ) {
+    	defaultOutputStart = (DateTime)o_DefaultOutputStart;
+    }
+    if ( o_DefaultOutputEnd != null ) {
+    	defaultOutputEnd = (DateTime)o_DefaultOutputEnd;
+    }
     if ( IfNotFound.equalsIgnoreCase("Default") ) {
         includeMissingTS = true;
     }
@@ -2983,16 +3018,32 @@ throws Exception
            o_ReadData = new Boolean(true); // Default
     }
     boolean readData = ((Boolean)o_ReadData).booleanValue();
-    // Save the current IgnoreMissingTS global flag, set to the value for this command, and then
+    // If values have been specified for default time series,
+    // save the current IgnoreMissingTS global flag, set to the value for this command, and then
     // reset to the global value
     TS ts = null;
     boolean includeMissingTsOld = __tsengine.getIncludeMissingTS();
+    DateTime outputStartOld = __tsengine.getIncludeMissingTSOutputStart();
+    DateTime outputEndOld = __tsengine.getIncludeMissingTSOutputEnd();
     try {
         __tsengine.setIncludeMissingTS ( includeMissingTS );
+        if ( defaultOutputStart != null ) {
+        	__tsengine.setIncludeMissingTSOutputStart(defaultOutputStart);
+        }
+        if ( defaultOutputEnd != null ) {
+        	__tsengine.setIncludeMissingTSOutputEnd(defaultOutputEnd);
+        }
         ts = __tsengine.readTimeSeries ( warningLevel, commandTag, TSID, readData );
     }
     finally {
+    	// Reset the global property to include missing time series
         __tsengine.setIncludeMissingTS ( includeMissingTsOld );
+        if ( defaultOutputStart != null ) {
+        	__tsengine.setIncludeMissingTSOutputStart(outputStartOld);
+        }
+        if ( defaultOutputEnd != null ) {
+        	__tsengine.setIncludeMissingTSOutputEnd(outputEndOld);
+        }
     }
     PropList results = bean.getResultsPropList();
     // Return the time series.

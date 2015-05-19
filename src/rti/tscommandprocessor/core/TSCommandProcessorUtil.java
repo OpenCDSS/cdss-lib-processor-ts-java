@@ -688,36 +688,40 @@ public static boolean getCreateOutput ( CommandProcessor processor )
 }
 
 /**
-Get a date/time property from the processor, recognizing normal date/time strings and special strings
-like OutputPeriod.
-@param dateTime date/time string to process.
+Get a date/time property from the processor, recognizing normal date/time strings like "YYYY-MM-DD",
+processor properties "${Property}", and special strings including:
+<ol>
+<li>	"OutputPeriod"</li>
+</ol>
+If an error occurs, the command log messages and status will be updated.
+Additionally, if the parameter string is invalid an exception will be thrown.
+@param dtString date/time string to process.
 @param parameterName name for parameter for messages.
 @param processor command processor from which to retrieve the date.
 @param status command status, to receive logging information.
-@param int warning_level level at which to log information.
+@param int warningLevel level at which to log information.
 @param commandTag string tag for logging.
 @exception InvalidCommandParameterException if the parameter is not valid.
 */
-public static DateTime getDateTime ( String dateTime, String parameterName, CommandProcessor processor,
+public static DateTime getDateTime ( String dtString, String parameterName, CommandProcessor processor,
     CommandStatus status, int warningLevel, String commandTag )
 throws InvalidCommandParameterException
 {   String routine = "TSCommandProcessorUtil.getDateTime", message;
     DateTime dt = null;
     int logLevel = 3;
     int warningCount = 0; // only has local scope and limited meaning
-    if ( (dateTime == null) || dateTime.equals("") ) {
+    if ( (dtString == null) || dtString.equals("") ) {
         return null;
     }
     try {
         PropList request_params = new PropList ( "" );
-        request_params.set ( "DateTime", dateTime );
+        request_params.set ( "DateTime", dtString );
         CommandProcessorRequestResultsBean bean = null;
         try {
             bean = processor.processRequest( "DateTime", request_params);
         }
         catch ( Exception e ) {
-            message = "Error requesting " + parameterName + " DateTime(DateTime=" + dateTime +
-                "\") from processor.";
+            message = "Error requesting " + parameterName + " DateTime(DateTime=" + dtString + "\") from processor (" + e + ").";
             Message.printWarning(logLevel,
                 MessageUtil.formatMessageTag( commandTag, ++warningCount), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
@@ -729,14 +733,13 @@ throws InvalidCommandParameterException
         PropList bean_PropList = bean.getResultsPropList();
         Object prop_contents = bean_PropList.getContents ( "DateTime" );
         if ( prop_contents == null ) {
-            message = "Null value for " + parameterName + " DateTime(DateTime=" + dateTime +
-                "\") returned from processor.";
+            message = "Null value for " + parameterName + " DateTime(DateTime=" + dtString + "\") returned from processor.";
             Message.printWarning(logLevel,
                 MessageUtil.formatMessageTag( commandTag, ++warningCount),
                 routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a valid date/time or OutputEnd." ) );
+                    message, "Specify a valid date/time string, or a recognized internal property such as ${OutputEnd}." ) );
             throw new InvalidCommandParameterException ( message );
         }
         else {
@@ -744,13 +747,13 @@ throws InvalidCommandParameterException
         }
     }
     catch ( Exception e ) {
-        message = parameterName + " \"" + dateTime + "\" is invalid.";
+        message = parameterName + " \"" + dtString + "\" is invalid.";
         Message.printWarning(warningLevel,
             MessageUtil.formatMessageTag( commandTag, ++warningCount),
             routine, message );
         status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a valid date/time or OutputEnd." ) );
+                message, "Specify a valid date/time string, or a recognized internal property such as ${OutputEnd}." ) );
         throw new InvalidCommandParameterException ( message );
     }
     return dt;

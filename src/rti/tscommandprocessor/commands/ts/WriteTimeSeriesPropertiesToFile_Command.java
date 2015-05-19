@@ -73,7 +73,7 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
-	String IncludeProperty = parameters.getValue ( "IncludeProperty" );
+	String IncludeProperties = parameters.getValue ( "IncludeProperties" );
 	String WriteMode = parameters.getValue ( "WriteMode" );
 	String FileFormat = parameters.getValue ( "FileFormat" );
 	String SortOrder = parameters.getValue ( "SortOrder" );
@@ -138,8 +138,8 @@ throws InvalidCommandParameterException
 	}
 	*/
 		
-	if ( (IncludeProperty == null) || (IncludeProperty.length() == 0) ) {
-		message = "A property name must be specified.";
+	if ( (IncludeProperties == null) || (IncludeProperties.length() == 0) ) {
+		message = "One or more property names must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
@@ -179,9 +179,12 @@ throws InvalidCommandParameterException
     }
 	
 	// Check for invalid parameters...
-	List validList = new ArrayList<String>(5);
+	List validList = new ArrayList<String>(8);
+	validList.add ( "TSList" );
+	validList.add ( "TSID" );
+	validList.add ( "EnsembleID" );
 	validList.add ( "OutputFile" );
-	validList.add ( "IncludeProperty" );
+	validList.add ( "IncludeProperties" );
 	validList.add ( "WriteMode" );
 	validList.add ( "FileFormat" );
 	validList.add ( "SortOrder" );
@@ -258,15 +261,13 @@ protected List<FileWriteModeType> getWriteModeChoices ()
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "WriteTimeSeriesProperty_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -292,20 +293,20 @@ CommandWarningException, CommandException
     String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
-	String IncludeProperty = parameters.getValue ( "IncludeProperty" );
-	String [] includeProperty = new String[0];
-	if ( (IncludeProperty != null) && !IncludeProperty.equals("") ) {
-	    if ( IncludeProperty.indexOf(",") > 0 ) {
-	        includeProperty = IncludeProperty.split(",");
+	String IncludeProperties = parameters.getValue ( "IncludeProperties" );
+	String [] includeProperties = new String[0];
+	if ( (IncludeProperties != null) && !IncludeProperties.equals("") ) {
+	    if ( IncludeProperties.indexOf(",") > 0 ) {
+	        includeProperties = IncludeProperties.split(",");
 	    }
 	    else {
-	        includeProperty = new String[1];
-	        includeProperty[0] = IncludeProperty.trim();
+	        includeProperties = new String[1];
+	        includeProperties[0] = IncludeProperties.trim();
 	    }
         // Also convert glob-style wildcard * to internal Java wildcard
-	    if ( IncludeProperty.indexOf('*') >= 0 ) {
-	    	for ( int i = 0; i < includeProperty.length; i++ ) {
-	    		includeProperty[i] = includeProperty[i].replace("*", ".*");
+	    if ( IncludeProperties.indexOf('*') >= 0 ) {
+	    	for ( int i = 0; i < includeProperties.length; i++ ) {
+	    		includeProperties[i] = includeProperties[i].replace("*", ".*");
 	    	}
 	    }
 	}
@@ -408,7 +409,7 @@ CommandWarningException, CommandException
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFile) ) );
 	    List<String> problems = new ArrayList<String>();
-		writePropertyFile ( processor, tslist, OutputFile_full, includeProperty, writeMode, fileFormat, sortOrder, problems );
+		writePropertyFile ( processor, tslist, OutputFile_full, includeProperties, writeMode, fileFormat, sortOrder, problems );
 		for ( String problem : problems ) {
 			Message.printWarning ( warning_level, 
 				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, problem );
@@ -457,7 +458,7 @@ public String toString ( PropList parameters )
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
-	String IncludeProperty = parameters.getValue ( "IncludeProperty" );
+	String IncludeProperties = parameters.getValue ( "IncludeProperties" );
 	String WriteMode = parameters.getValue ( "WriteMode" );
 	String FileFormat = parameters.getValue ( "FileFormat" );
 	String SortOrder = parameters.getValue( "SortOrder" );
@@ -486,11 +487,11 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
-	if ( (IncludeProperty != null) && (IncludeProperty.length() > 0) ) {
+	if ( (IncludeProperties != null) && (IncludeProperties.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "IncludeProperty=\"" + IncludeProperty + "\"" );
+		b.append ( "IncludeProperties=\"" + IncludeProperties + "\"" );
 	}
 	if ( (WriteMode != null) && (WriteMode.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -578,7 +579,7 @@ Write the property file.
 @param sortOrder sort order for output: -1=descending, 0=no sort, 1=ascending
 */
 private List<String> writePropertyFile ( CommandProcessor processor, List<TS> tslist, String outputFileFull,
-  String [] includeProperty, FileWriteModeType writeMode, PropertyFileFormatType formatType, int sortOrder, List<String> problems )
+  String [] IncludeProperties, FileWriteModeType writeMode, PropertyFileFormatType formatType, int sortOrder, List<String> problems )
 {
   PrintWriter fout = null;
   try {
@@ -600,11 +601,11 @@ private List<String> writePropertyFile ( CommandProcessor processor, List<TS> ts
 	      	  // Want to output in the order of the properties that were requested, not the order from the processor
 	      	  // Rearrange the full list to make sure the requested properties are at the front
 	      	  int foundCount = 0;
-	      	  for ( int i = 0; i < includeProperty.length; i++ ) {
+	      	  for ( int i = 0; i < IncludeProperties.length; i++ ) {
 	      		  for ( int j = 0; j < propNameList.size(); j++ ) {
-	      			  if ( includeProperty[i].equalsIgnoreCase(propNameList.get(j))) {
+	      			  if ( IncludeProperties[i].equalsIgnoreCase(propNameList.get(j))) {
 	      				  // Move to the front of the list and remove the original
-	      				  propNameList.add(foundCount++,includeProperty[i]);
+	      				  propNameList.add(foundCount++,IncludeProperties[i]);
 	      				  propNameList.remove(j + 1);
 	      			  }
 	      		  }
@@ -622,31 +623,31 @@ private List<String> writePropertyFile ( CommandProcessor processor, List<TS> ts
 	      // If no specific properties were requested, write them all
 	      // TODO SAM 2015-05-05 the list of properties only includes user properties, not built-in properties - need to combine
 	  	  boolean doWrite;
-	  	  boolean [] includePropertyMatched = new boolean[includeProperty.length];
-	  	  for ( int i = 0; i < includePropertyMatched.length; i++ ) {
-	  		  includePropertyMatched[i] = false;
+	  	  boolean [] IncludePropertiesMatched = new boolean[IncludeProperties.length];
+	  	  for ( int i = 0; i < IncludePropertiesMatched.length; i++ ) {
+	  		  IncludePropertiesMatched[i] = false;
 	  	  }
 	      for ( String propName : propNameList ) {
 	          doWrite = false;
-	          if ( includeProperty.length == 0 ) {
+	          if ( IncludeProperties.length == 0 ) {
 	        	  doWrite = true;
 	          }
 	          else {
 	          	  // Loop through the properties to include and see if there is a match
-	          	  for ( int i = 0; i < includeProperty.length; i++ ) {
-	  	              //Message.printStatus(2, "", "Writing property \"" + includeProperty[i] + "\"" );
-	  	              if ( includeProperty[i].indexOf("*") >= 0 ) {
+	          	  for ( int i = 0; i < IncludeProperties.length; i++ ) {
+	  	              //Message.printStatus(2, "", "Writing property \"" + IncludeProperties[i] + "\"" );
+	  	              if ( IncludeProperties[i].indexOf("*") >= 0 ) {
 	  	            	  // Includes wildcards.  Check the user-specified properties
-	            		  if ( propName.matches(includeProperty[i]) ) {
+	            		  if ( propName.matches(IncludeProperties[i]) ) {
 	            			  doWrite = true;
-	            			  includePropertyMatched[i] = true;
+	            			  IncludePropertiesMatched[i] = true;
 	            		  }
 	  	              }
 	  	              else {
 	  		              // Match exactly
-	  	            	  if ( propName.equals(includeProperty[i]) ) {
+	  	            	  if ( propName.equals(IncludeProperties[i]) ) {
 	            			  doWrite = true;
-	            			  includePropertyMatched[i] = true;
+	            			  IncludePropertiesMatched[i] = true;
 	            		  }
 	  	              }
 	          	  }
@@ -660,9 +661,9 @@ private List<String> writePropertyFile ( CommandProcessor processor, List<TS> ts
 	          	  }
 	      	  }
 	      }
-	      for ( int i = 0; i < includePropertyMatched.length; i++ ) {
-	      	  if ( !includePropertyMatched[i] ) {
-	      		  problems.add ( "Unable to match property \"" + includeProperty[i] + "\" to write.");
+	      for ( int i = 0; i < IncludePropertiesMatched.length; i++ ) {
+	      	  if ( !IncludePropertiesMatched[i] ) {
+	      		  problems.add ( "Unable to match property \"" + IncludeProperties[i] + "\" to write.");
 	      	  }
 	      }
       }

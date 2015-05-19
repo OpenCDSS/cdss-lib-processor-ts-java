@@ -65,7 +65,7 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField __IncludeProperty_JTextField = null;
+private JTextField __IncludeProperties_JTextField = null;
 private SimpleJComboBox	__WriteMode_JComboBox = null;
 private SimpleJComboBox __FileFormat_JComboBox = null;
 private SimpleJComboBox __SortOrder_JComboBox = null;
@@ -184,7 +184,7 @@ private void checkInput ()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-	String IncludeProperty = __IncludeProperty_JTextField.getText().trim();
+	String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
 	String WriteMode = __WriteMode_JComboBox.getSelected();
 	String FileFormat = __FileFormat_JComboBox.getSelected();
     String SortOrder = __SortOrder_JComboBox.getSelected();
@@ -203,8 +203,8 @@ private void checkInput ()
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
-	if ( IncludeProperty.length() > 0 ) {
-		parameters.set ( "IncludeProperty", IncludeProperty );
+	if ( IncludeProperties.length() > 0 ) {
+		parameters.set ( "IncludeProperties", IncludeProperties );
 	}
 	if ( WriteMode.length() > 0 ) {
 		parameters.set ( "WriteMode", WriteMode );
@@ -233,7 +233,7 @@ private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected(); 
-    String IncludeProperty = __IncludeProperty_JTextField.getText().trim();
+    String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
     String WriteMode = __WriteMode_JComboBox.getSelected();
     String FileFormat = __FileFormat_JComboBox.getSelected();
@@ -241,7 +241,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-	__command.setCommandParameter ( "IncludeProperty", IncludeProperty );
+	__command.setCommandParameter ( "IncludeProperties", IncludeProperties );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "WriteMode", WriteMode );
 	__command.setCommandParameter ( "FileFormat", FileFormat );
@@ -307,9 +307,9 @@ private void initialize ( JFrame parent, WriteTimeSeriesPropertiesToFile_Command
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Properties to include:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__IncludeProperty_JTextField = new JTextField(20);
-	__IncludeProperty_JTextField.addKeyListener (this);
-	JGUIUtil.addComponent(main_JPanel, __IncludeProperty_JTextField,
+	__IncludeProperties_JTextField = new JTextField(20);
+	__IncludeProperties_JTextField.addKeyListener (this);
+	JGUIUtil.addComponent(main_JPanel, __IncludeProperties_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Required - names of properties to write, separated by commas (default=all)."),
@@ -443,12 +443,12 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WriteTimeSeriesProperty_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
 	String OutputFile = "";
-	String IncludeProperty = "";
+	String IncludeProperties = "";
 	String WriteMode = "";
 	String FileFormat = "";
     String SortOrder = "";
@@ -462,7 +462,7 @@ private void refresh ()
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
 		OutputFile = parameters.getValue ( "OutputFile" );
-		IncludeProperty = parameters.getValue ( "IncludeProperty" );
+		IncludeProperties = parameters.getValue ( "IncludeProperties" );
 		WriteMode = parameters.getValue ( "WriteMode" );
 		FileFormat = parameters.getValue ( "FileFormat" );
 		SortOrder = parameters.getValue("SortOrder");
@@ -513,8 +513,8 @@ private void refresh ()
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
-		if ( IncludeProperty != null ) {
-			__IncludeProperty_JTextField.setText (IncludeProperty);
+		if ( IncludeProperties != null ) {
+			__IncludeProperties_JTextField.setText (IncludeProperties);
 		}
 		if ( WriteMode == null ) {
 			// Select default...
@@ -569,7 +569,7 @@ private void refresh ()
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
-	IncludeProperty = __IncludeProperty_JTextField.getText().trim();
+	IncludeProperties = __IncludeProperties_JTextField.getText().trim();
 	WriteMode = __WriteMode_JComboBox.getSelected();
 	FileFormat = __FileFormat_JComboBox.getSelected();
 	SortOrder = __SortOrder_JComboBox.getSelected();
@@ -578,7 +578,7 @@ private void refresh ()
 	parameters.add ( "TSID=" + TSID );
 	parameters.add ( "EnsembleID=" + EnsembleID );
 	parameters.add ( "OutputFile=" + OutputFile );
-	parameters.add ( "IncludeProperty=" + IncludeProperty );
+	parameters.add ( "IncludeProperties=" + IncludeProperties );
 	parameters.add ( "WriteMode=" + WriteMode );
 	parameters.add ( "FileFormat=" + FileFormat );
 	parameters.add ( "SortOrder=" + SortOrder );

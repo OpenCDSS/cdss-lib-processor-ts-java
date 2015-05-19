@@ -197,7 +197,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(13);
+	List<String> validList = new ArrayList<String>(18);
     validList.add ( "TableID" );
     validList.add ( "IncludeColumns" );
     validList.add ( "ExcludeColumns" );
@@ -207,6 +207,7 @@ throws InvalidCommandParameterException
     validList.add ( "ExcelNamedRange" );
     validList.add ( "ExcelTableName" );
     validList.add ( "ExcelColumnNames" );
+    validList.add ( "ColumnIncludeFilters" );
     validList.add ( "ColumnExcludeFilters" );
     validList.add ( "NumberPrecision" );
     validList.add ( "WriteAllAsText" );

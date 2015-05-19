@@ -19,9 +19,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -63,6 +65,8 @@ private JTextArea __ColumnProperties_JTextArea = null;
 private JTextArea __Properties_JTextArea = null;
 private SimpleJComboBox	__IfNotFound_JComboBox = null;
 private JTextField __DefaultUnits_JTextField = null;
+private JTextField __DefaultOutputStart_JTextField = null;
+private JTextField __DefaultOutputEnd_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __TimeSeriesCountProperty_JTextField = null;
 private JTextField __TimeSeriesIndex1Property_JTextField = null;
@@ -183,6 +187,8 @@ private void checkInput ()
     String InputName = __InputName_JTextField.getText().trim();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
+    String DefaultOutputStart = __DefaultOutputStart_JTextField.getText().trim();
+    String DefaultOutputEnd = __DefaultOutputEnd_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
     String ColumnProperties = __ColumnProperties_JTextArea.getText().trim().replace("\n"," ");
     String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
@@ -236,6 +242,12 @@ private void checkInput ()
     if ( DefaultUnits.length() > 0 ) {
         parameters.set ( "DefaultUnits", DefaultUnits );
     }
+    if ( DefaultOutputStart.length() > 0 ) {
+        parameters.set ( "DefaultOutputStart", DefaultOutputStart );
+    }
+    if ( DefaultOutputEnd.length() > 0 ) {
+        parameters.set ( "DefaultOutputEnd", DefaultOutputEnd );
+    }
     if ( Alias.length() > 0 ) {
         parameters.set ( "Alias", Alias );
     }
@@ -281,6 +293,8 @@ private void commitEdits ()
     String InputName = __InputName_JTextField.getText().trim();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
+    String DefaultOutputStart = __DefaultOutputStart_JTextField.getText().trim();
+    String DefaultOutputEnd = __DefaultOutputEnd_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
     String ColumnProperties = __ColumnProperties_JTextArea.getText().trim().replace("\n"," ");
     String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
@@ -303,6 +317,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "InputName", InputName );
     __command.setCommandParameter ( "IfNotFound", IfNotFound );
     __command.setCommandParameter ( "DefaultUnits", DefaultUnits );
+    __command.setCommandParameter ( "DefaultOutputStart", DefaultOutputStart );
+    __command.setCommandParameter ( "DefaultOutputEnd", DefaultOutputEnd );
     __command.setCommandParameter ( "Alias", Alias );
     __command.setCommandParameter ( "ColumnProperties", ColumnProperties );
     __command.setCommandParameter ( "Properties", Properties );
@@ -337,6 +353,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         "Use the SetInputPeriod() command to specify the period to read.  " +
         "Use specific Read*() commands to test reading time series and troubleshoot problems."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -376,6 +394,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
         "The TSID parts generally can be specified as a constant or be read from a table column."),
         0, ++yTsid, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tsid_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yTsid, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Location type column:" ), 
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -506,8 +526,10 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     __main_JTabbedPane.addTab ( "Time Series Properties", prop_JPanel );
     
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
-        "Properties can be assigned to the time series to facilitate later processing steps and for output."),
+        "Properties can be assigned to the time series from the list table or with data below to facilitate later processing steps and for output."),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Column properties:"),
         0, ++yProp, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -552,6 +574,20 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
         "Some data sources will NOT return a time series if the requested period is outside of available data."),
         0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
+        "Specify the default output period to ensure that the default time series will span a period."),
+        0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
+        "<html>The default output period date/times can be specified using processor ${property} notation.  <b>The following will be supported in the future:</b></html>"),
+        0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
+        "    CurrentToYear, CurrentToMonth, CurrentToDay, CurrentToHour, CurrentToMinute"),
+        0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
+        "    Simple math:  CurrentToDay - 7Day"),
+        0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(ifNotFound_JPanel,new JLabel("If time series not found?:"),
 		0, ++yIfNotFound, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -577,6 +613,26 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     "Optional - units when IfNotFound=" + __command._Default + "."),
     3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default output start:" ), 
+        0, ++yIfNotFound, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DefaultOutputStart_JTextField = new JTextField ( "", 20 );
+    __DefaultOutputStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ifNotFound_JPanel, __DefaultOutputStart_JTextField,
+    1, yIfNotFound, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
+    "Optional - period start when IfNotFound=" + __command._Default + " to initialize time series."),
+    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default output end:" ), 
+        0, ++yIfNotFound, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DefaultOutputEnd_JTextField = new JTextField ( "", 20 );
+    __DefaultOutputEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(ifNotFound_JPanel, __DefaultOutputEnd_JTextField,
+    1, yIfNotFound, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
+    "Optional - period end when IfNotFound=" + __command._Default + " to initialize time series."),
+    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     // Panel for check property
     int yCount = -1;
     JPanel count_JPanel = new JPanel();
@@ -589,6 +645,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(count_JPanel, new JLabel (
         "The count will include time series that are read and defaulted."),
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(count_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series count property:" ), 
         0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -686,7 +744,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String routine = "ReadTimeSeriesList_JDialog.refresh";
+{   String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String LocationTypeColumn = "";
     String LocationType = "";
@@ -705,6 +763,8 @@ private void refresh ()
     String Properties = "";
     String IfNotFound = "";
     String DefaultUnits = "";
+    String DefaultOutputStart = "";
+    String DefaultOutputEnd = "";
     String TimeSeriesCountProperty = "";
     String TimeSeriesIndex1Property = "";
     PropList props = __command.getCommandParameters();
@@ -729,6 +789,8 @@ private void refresh ()
         Properties = props.getValue ( "Properties" );
         IfNotFound = props.getValue ( "IfNotFound" );
         DefaultUnits = props.getValue ( "DefaultUnits" );
+        DefaultOutputStart = props.getValue ( "DefaultOutputStart" );
+        DefaultOutputEnd = props.getValue ( "DefaultOutputEnd" );
         TimeSeriesCountProperty = props.getValue ( "TimeSeriesCountProperty" );
         TimeSeriesIndex1Property = props.getValue ( "TimeSeriesIndex1Property" );
         if ( TableID == null ) {
@@ -821,6 +883,12 @@ private void refresh ()
         if ( DefaultUnits != null ) {
             __DefaultUnits_JTextField.setText ( DefaultUnits );
         }
+        if ( DefaultOutputStart != null ) {
+            __DefaultOutputStart_JTextField.setText ( DefaultOutputStart );
+        }
+        if ( DefaultOutputEnd != null ) {
+            __DefaultOutputEnd_JTextField.setText ( DefaultOutputEnd );
+        }
         if ( TimeSeriesCountProperty != null ) {
             __TimeSeriesCountProperty_JTextField.setText ( TimeSeriesCountProperty );
         }
@@ -847,6 +915,8 @@ private void refresh ()
     Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
     IfNotFound = __IfNotFound_JComboBox.getSelected();
     DefaultUnits = __DefaultUnits_JTextField.getText().trim();
+    DefaultOutputStart = __DefaultOutputStart_JTextField.getText().trim();
+    DefaultOutputEnd = __DefaultOutputEnd_JTextField.getText().trim();
     TimeSeriesCountProperty = __TimeSeriesCountProperty_JTextField.getText().trim();
     TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
@@ -868,6 +938,8 @@ private void refresh ()
     props.add ( "Properties=" + Properties );
     props.add ( "IfNotFound=" + IfNotFound );
     props.add ( "DefaultUnits=" + DefaultUnits );
+    props.add ( "DefaultOutputStart=" + DefaultOutputStart );
+    props.add ( "DefaultOutputEnd=" + DefaultOutputEnd );
     props.add ( "TimeSeriesCountProperty=" + TimeSeriesCountProperty );
     props.add ( "TimeSeriesIndex1Property=" + TimeSeriesIndex1Property );
     __command_JTextArea.setText( __command.toString ( props ) );

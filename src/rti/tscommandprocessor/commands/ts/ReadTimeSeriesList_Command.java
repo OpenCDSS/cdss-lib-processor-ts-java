@@ -34,10 +34,11 @@ import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
+import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
-This class initializes, checks, and runs the RreadTimeSeriesList() command.
+This class initializes, checks, and runs the ReadTimeSeriesList() command.
 */
 public class ReadTimeSeriesList_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
@@ -50,7 +51,7 @@ protected final String _Warn = "Warn";
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discoveryTSList = null;
 
 /**
 Constructor.
@@ -186,7 +187,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(20);
+	List<String> validList = new ArrayList<String>(22);
     validList.add ( "TableID" );
     validList.add ( "LocationTypeColumn" );
     validList.add ( "LocationType" );
@@ -205,6 +206,8 @@ throws InvalidCommandParameterException
     validList.add ( "Properties" );
     validList.add ( "IfNotFound" );
     validList.add ( "DefaultUnits" );
+    validList.add ( "DefaultOutputStart" );
+    validList.add ( "DefaultOutputEnd" );
     validList.add ( "TimeSeriesCountProperty" );
     validList.add ( "TimeSeriesIndex1Property" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -239,7 +242,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discoveryTSList;
 }
 
 /**
@@ -265,10 +268,8 @@ public List getObjectList ( Class c )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -279,10 +280,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -299,7 +298,7 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getClass() + ".runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;
@@ -375,8 +374,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         IfNotFound = _Warn; // default
     }
     String DefaultUnits = parameters.getValue("DefaultUnits");
+    String DefaultOutputStart = parameters.getValue("DefaultOutputStart");
+    String DefaultOutputEnd = parameters.getValue("DefaultOutputEnd");
     String TimeSeriesCountProperty = parameters.getValue ( "TimeSeriesCountProperty" );
     String TimeSeriesIndex1Property = parameters.getValue ( "TimeSeriesIndex1Property" );
+    
+    // Assign the default output period, which accepts properties
+    
+    DateTime DefaultOutputStart_DateTime = null;
+    DateTime DefaultOutputEnd_DateTime = null;
+    if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			DefaultOutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( DefaultOutputStart, "DefaultOutputStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+		}
+	    try {
+			DefaultOutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( DefaultOutputEnd, "DefaultOutputEnd", processor,
+				status, warning_level, command_tag );
+	    }
+	    catch ( InvalidCommandParameterException e ) {
+	    	// Warning will have been added above...
+	    }
+    }
     
     // Get the table to process.
 
@@ -396,7 +418,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
                 Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Report problem to software support." ) );
             }
             PropList bean_PropList = bean.getResultsPropList();
@@ -405,7 +427,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message = "Unable to find table to process using TableID=\"" + TableID + "\".";
                 Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that a table exists with the requested ID." ) );
             }
             else {
@@ -418,7 +440,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message = "Unable to find location type column \"" + LocationTypeColumn + "\" for TableID=\"" + TableID + "\".";
                         Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that a table exists with the column \"" + LocationTypeColumn + "\"." ) );
                     }
                 }
@@ -429,7 +451,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message = "Unable to find location column \"" + LocationColumn + "\" for TableID=\"" + TableID + "\".";
                     Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                    status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that a table exists with the column \"" + LocationColumn + "\"." ) );
                 }
                 if ( (DataSourceColumn != null) && (DataSourceColumn.length() > 0) ) {
@@ -440,7 +462,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message = "Unable to find data source column \"" + DataSourceColumn + "\" for TableID=\"" + TableID + "\".";
                         Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that a table exists with the column \"" + DataSourceColumn + "\"." ) );
                     }
                 }
@@ -452,7 +474,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message = "Unable to find data type column \"" + DataTypeColumn + "\" for TableID=\"" + TableID + "\".";
                         Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that a table exists with the column \"" + DataTypeColumn + "\"." ) );
                     }
                 }
@@ -464,7 +486,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message = "Unable to find datastore column \"" + DataStoreColumn + "\" for TableID=\"" + TableID + "\".";
                         Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that a table exists with the column \"" + DataStoreColumn + "\"." ) );
                     }
                 }
@@ -486,11 +508,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
         boolean readData = true;
         if ( commandPhase == CommandPhaseType.DISCOVERY ){
+        	// TODO SAM 2015-05-17 Not really doing much in discovery mode - not generating time series - too complex
             readData = false;
         }
         else if ( commandPhase == CommandPhaseType.RUN ){
             // TODO SAM 2013-05-17 Need to determine whether to read table even in discovery mode
-            // Otherwise won't be able to generate time series in discovery ode
+            // Otherwise won't be able to generate time series in discovery mode
     
             // Loop through the records in the table and match the identifiers...
         
@@ -502,9 +525,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             int tsize = table.getNumberOfRecords();
             List<String> problems = new ArrayList<String>(); // Use for temporary list of problems - need because multiple data sources
             List<String> suggestions = new ArrayList<String>();
+            boolean defaultTSRead = false; // If a default time series was read
             for ( int i = 0; i < tsize; i++ ) {
                 problems.clear();
                 suggestions.clear();
+                defaultTSRead = false;
                 rec = table.getRecord ( i );
                 // Location type
                 if ( locationTypeColumnNum >= 0 ) {
@@ -569,6 +594,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     if ( iDataSource == (nDataSource - 1) ) {
                         // Only default on the last data source
                         request_params.set ( "IfNotFound", IfNotFound );
+                        if ( DefaultOutputStart_DateTime != null ) {
+                        	request_params.setUsingObject( "DefaultOutputStart", DefaultOutputStart_DateTime );
+                        }
+                        if ( DefaultOutputEnd_DateTime != null ) {
+                        	request_params.setUsingObject( "DefaultOutputEnd", DefaultOutputEnd_DateTime );
+                        }
                     }
                     request_params.setUsingObject ( "ReadData", new Boolean(readData) );
                     CommandProcessorRequestResultsBean bean = null;
@@ -584,6 +615,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         if ( iDataSource == (nDataSource - 1) ) {
                             // Last attempt in a list of data sources
                             problems.add("Time series could not be found using identifier \"" + tsid + "\" (" + e + ")");
+                            Message.printWarning(3,routine,e);
                             suggestions.add("Verify that the identifier information is correct.");
                         }
                         else {
@@ -635,20 +667,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                         continue;
                     }
-                    else if ( IfNotFound.equalsIgnoreCase(_Ignore) ) {
+                    else if ( IfNotFound.equalsIgnoreCase(_Default) ) {
                         // A common problem is that the output period was not set so the time series could not be defaulted
-                        message = "Attempt to use default timee series failed.";
+                        for ( int ip = 0; ip < problems.size(); ++ip ) {
+                            Message.printWarning ( warning_level,
+                                MessageUtil.formatMessageTag( command_tag, ++warning_count ),
+                                routine, problems.get(ip) );
+                            status.addToLog(commandPhase,
+                                new CommandLogRecord( CommandStatusType.FAILURE, problems.get(ip),suggestions.get(ip)));
+                        }
+                        message = "Attempt to use default time series failed for \"" + tsidentString + "\"";
                         Message.printWarning ( warning_level,
                             MessageUtil.formatMessageTag( command_tag, ++warning_count ),
                             routine, message );
                         status.addToLog(commandPhase,
-                            new CommandLogRecord( CommandStatusType.FAILURE, message, "Make sure that OutputStart and OutputEnd are set."));
+                            new CommandLogRecord( CommandStatusType.FAILURE, message,
+                            	"May need to set input period when reading time series or set default output period."));
                         continue;
                     }
                 }
                 // If here have a time series to process further and return
-                if ( (DefaultUnits != null) && (ts.getDataUnits().length() == 0) ) {
-                    // Time series has no units so assign default.
+                if ( defaultTSRead && (DefaultUnits != null) && ts.getDataUnits().isEmpty() ) {
+                    // A default time series was read so assign default units.
                     ts.setDataUnits ( DefaultUnits );
                 }
                 if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
@@ -697,7 +737,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     while ( keys.hasMoreElements() ) {
                         key = (String)keys.nextElement();
                         ts.setProperty( key, TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-                            processor, ts, (String)properties.get(key), status, CommandPhaseType.RUN) );
+                            processor, ts, (String)properties.get(key), status, commandPhase) );
                     }
                 }
                 if ( TimeSeriesIndex1Property != null ) {
@@ -747,7 +787,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                    status.addToLog ( CommandPhaseType.RUN,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
                 }
@@ -772,9 +812,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discoveryTSList = discoveryTSList;
 }
 
 /**
@@ -804,6 +844,8 @@ public String toString ( PropList props )
     String Properties = props.getValue ( "Properties" );
     String IfNotFound = props.getValue ( "IfNotFound" );
     String DefaultUnits = props.getValue ( "DefaultUnits" );
+    String DefaultOutputStart = props.getValue ( "DefaultOutputStart" );
+    String DefaultOutputEnd = props.getValue ( "DefaultOutputEnd" );
     String TimeSeriesCountProperty = props.getValue ( "TimeSeriesCountProperty" );
     String TimeSeriesIndex1Property = props.getValue ( "TimeSeriesIndex1Property" );
 
@@ -913,6 +955,18 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("DefaultUnits=\"" + DefaultUnits + "\"");
+    }
+    if ((DefaultOutputStart != null) && (DefaultOutputStart.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("DefaultOutputStart=\"" + DefaultOutputStart + "\"");
+    }
+    if ((DefaultOutputEnd != null) && (DefaultOutputEnd.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("DefaultOutputEnd=\"" + DefaultOutputEnd + "\"");
     }
     if ((TimeSeriesCountProperty != null) && (TimeSeriesCountProperty.length() > 0)) {
         if (b.length() > 0) {

@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.datevalue;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -8,9 +9,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
-
 import RTi.TS.DateValueTS;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -195,28 +194,29 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (Version != null) && !Version.equals("1.4") && !Version.equals("1.5")) {
+    if ( (Version != null) && !Version.equals("1.4") && !Version.equals("1.5") && !Version.equals("1.6") ) {
         message = "The version \"" + Version + "\" is not recognized.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the version as 1.4 or 1.5 (default)." ) );
+                message, "Specify the version as 1.4, 1.5, or 1.6 (default)." ) );
     }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "Delimiter" );
-	valid_Vector.add ( "Precision" );
-	valid_Vector.add ( "MissingValue" );
-	valid_Vector.add ( "OutputStart" );
-	valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "IrregularInterval" );
-    valid_Vector.add ( "Version" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(12);
+	validList.add ( "OutputFile" );
+	validList.add ( "Delimiter" );
+	validList.add ( "Precision" );
+	validList.add ( "MissingValue" );
+	validList.add ( "IncludeProperties" );
+	validList.add ( "OutputStart" );
+	validList.add ( "OutputEnd" );
+	validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "IrregularInterval" );
+    validList.add ( "Version" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -498,6 +498,15 @@ CommandWarningException, CommandException
     if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
         props.set("MissingValue=" + MissingValue);
     }
+    String IncludeProperties = parameters.getValue ( "IncludeProperties" );
+    String [] includeProperties = new String[0];
+    if ( (IncludeProperties != null) && !IncludeProperties.isEmpty() ) {
+    	includeProperties = IncludeProperties.split(",");
+    	for ( int i = 0; i < includeProperties.length; i++ ) {
+    		includeProperties[i] = includeProperties[i].trim();
+    	}
+    	props.setUsingObject("IncludeProperties",includeProperties);
+    }
     if ( (Version != null) && (Version.length() > 0) ) {
         props.set("Version=" + Version);
     }
@@ -573,6 +582,7 @@ public String toString ( PropList parameters )
 	String Delimiter = parameters.getValue ( "Delimiter" );
 	String Precision = parameters.getValue("Precision");
 	String MissingValue = parameters.getValue("MissingValue");
+	String IncludeProperties = parameters.getValue("IncludeProperties");
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
     String TSList = parameters.getValue ( "TSList" );
@@ -604,6 +614,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "MissingValue=" + MissingValue );
+    }
+    if ( (IncludeProperties != null) && (IncludeProperties.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IncludeProperties=\"" + IncludeProperties + "\"");
     }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

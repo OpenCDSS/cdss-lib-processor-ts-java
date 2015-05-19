@@ -70,6 +70,7 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __MissingValue_JTextField = null;// Missing value for output
+private JTextField __IncludeProperties_JTextField = null;
 private SimpleJComboBox __Version_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -193,6 +194,7 @@ private void checkInput ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String MissingValue = __MissingValue_JTextField.getText().trim();
+    String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
     String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
     String Version = __Version_JComboBox.getSelected();
 
@@ -225,6 +227,9 @@ private void checkInput ()
     if ( MissingValue.length() > 0 ) {
         parameters.set ( "MissingValue", MissingValue );
     }
+    if ( IncludeProperties.length() > 0 ) {
+        parameters.set ( "IncludeProperties", IncludeProperties );
+    }
     if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
         parameters.set ( "IrregularInterval", IrregularInterval );
     }
@@ -256,6 +261,7 @@ private void commitEdits ()
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
+	String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
 	String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
     String Version = __Version_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
@@ -267,6 +273,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
+	__command.setCommandParameter ( "IncludeProperties", IncludeProperties );
 	__command.setCommandParameter ( "IrregularInterval", IrregularInterval );
 	__command.setCommandParameter ( "Version", Version );
 }
@@ -360,6 +367,17 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - value to write for missing data (default=initial missing value)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Properties to write:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeProperties_JTextField = new JTextField ( 20 );
+    __IncludeProperties_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IncludeProperties_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // TODO SAM 2015-05-18 Enable wildcards
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - names of properties to write, separated by commas (default=none)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -407,6 +425,7 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     versionChoices.add("");
     versionChoices.add("1.4");
     versionChoices.add("1.5");
+    versionChoices.add("1.6");
     __Version_JComboBox.setData ( versionChoices );
     __Version_JComboBox.select(0);
     __Version_JComboBox.addItemListener ( this );
@@ -502,6 +521,7 @@ private void refresh ()
 	String Delimiter = "";
 	String Precision = "";
 	String MissingValue = "";
+	String IncludeProperties = "";
 	String OutputStart = "";
 	String OutputEnd = "";
 	String TSList = "";
@@ -519,6 +539,7 @@ private void refresh ()
 	    Delimiter = parameters.getValue("Delimiter");
 	    Precision = parameters.getValue("Precision");
 	    MissingValue = parameters.getValue("MissingValue");
+	    IncludeProperties = parameters.getValue("IncludeProperties");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
 		TSList = parameters.getValue ( "TSList" );
@@ -537,6 +558,9 @@ private void refresh ()
 	    }
         if ( MissingValue != null ) {
             __MissingValue_JTextField.setText ( MissingValue );
+        }
+        if ( IncludeProperties != null ) {
+            __IncludeProperties_JTextField.setText ( IncludeProperties );
         }
 		if ( OutputStart != null ) {
 			__OutputStart_JTextField.setText (OutputStart);
@@ -625,6 +649,7 @@ private void refresh ()
 	Delimiter = __Delimiter_JTextField.getText().trim();
 	Precision = __Precision_JTextField.getText().trim();
 	MissingValue = __MissingValue_JTextField.getText().trim();
+	IncludeProperties = __IncludeProperties_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
 	TSList = __TSList_JComboBox.getSelected();
@@ -640,6 +665,7 @@ private void refresh ()
 	parameters.add ( "Delimiter=" + Delimiter );
 	parameters.add ( "Precision=" + Precision );
 	parameters.add ( "MissingValue=" + MissingValue );
+	parameters.add ( "IncludeProperties=" + IncludeProperties );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	parameters.add ( "IrregularInterval=" + IrregularInterval );

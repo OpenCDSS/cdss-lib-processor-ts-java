@@ -727,6 +727,7 @@ throws FileNotFoundException, IOException
         int rowEnd = area.getLastCell().getRow();
         int colStart = area.getFirstCell().getCol();
         int colEnd = area.getLastCell().getCol();
+        String numberFormat = "%." + numberPrecision + "f"; // Used to format numeric to text to avoid Java exponential notation
         Message.printStatus(2, routine, "Cell range is [" + rowStart + "][" + colStart + "] to [" + rowEnd + "][" + colEnd + "]");
         int cellType;
         int iRowOut = -1, iColOut;
@@ -937,8 +938,8 @@ throws FileNotFoundException, IOException
                                 table.setFieldValue(iRowOut, iColOut, new Double(cellValueDouble), true);
                             }
                             else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
-                                // Double to string
-                                table.setFieldValue(iRowOut, iColOut, "" + cellValueDouble, true);
+                                // Double to string - have to format number because Java will use exponential notation
+                                table.setFieldValue(iRowOut, iColOut, StringUtil.formatString(cellValueDouble,numberFormat), true);
                             }
                             else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_INT ) {
                                 // Double to integer - use an offset to help make sure integer value is correct

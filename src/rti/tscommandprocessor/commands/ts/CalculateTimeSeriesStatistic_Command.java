@@ -200,7 +200,7 @@ throws InvalidCommandParameterException
         }
     }
 
-    if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
+    if ( (AnalysisStart != null) && !AnalysisStart.equals("") && !AnalysisStart.startsWith("${") &&
         !AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
         try {
             DateTime.parse(AnalysisStart);
@@ -212,7 +212,7 @@ throws InvalidCommandParameterException
                 message, "Specify a valid date/time, OutputStart, or output end." ) );
         }
     }
-    if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") &&
+    if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") && !AnalysisEnd.startsWith("${") &&
         !AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
         try {
             DateTime.parse( AnalysisEnd );
@@ -430,90 +430,23 @@ CommandWarningException, CommandException
     // Default of null means to analyze the full period.
     DateTime AnalysisStart_DateTime = null;
     DateTime AnalysisEnd_DateTime = null;
-    
-    try {
-        if ( (AnalysisStart != null) && !AnalysisStart.equals("") ) {
-            PropList request_params = new PropList ( "" );
-            request_params.set ( "DateTime", AnalysisStart );
-            CommandProcessorRequestResultsBean bean = null;
-            try {
-                bean = processor.processRequest( "DateTime", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting AnalysisStart DateTime(DateTime=" + AnalysisStart + ") from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
-                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report the problem to software support." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-    
-            PropList bean_PropList = bean.getResultsPropList();
-            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-            if ( prop_contents == null ) {
-                message = "Null value for AnalysisStart DateTime(DateTime=" +
-                AnalysisStart + ") returned from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {
-                AnalysisStart_DateTime = (DateTime)prop_contents;
-            }
-        }
+    if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+		}
+		try {
+			AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+		}
     }
-    catch ( Exception e ) {
-        message = "AnalysisStart \"" + AnalysisStart + "\" is invalid.";
-        Message.printWarning(warning_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
-        throw new InvalidCommandParameterException ( message );
-    }
-    
-    try {
-        if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") ) {
-            PropList request_params = new PropList ( "" );
-            request_params.set ( "DateTime", AnalysisEnd );
-            CommandProcessorRequestResultsBean bean = null;
-            try {
-                bean = processor.processRequest( "DateTime", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting AnalysisEnd DateTime(DateTime=" + AnalysisEnd + ") from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report the problem to software support." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-    
-            PropList bean_PropList = bean.getResultsPropList();
-            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-            if ( prop_contents == null ) {
-                message = "Null value for AnalysisStart DateTime(DateTime=" +
-                AnalysisStart + "\") returned from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {
-                AnalysisEnd_DateTime = (DateTime)prop_contents;
-            }
-        }
-    }
-    catch ( Exception e ) {
-        message = "AnalysisEnd \"" + AnalysisEnd + "\" is invalid.";
-        Message.printWarning(warning_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
-        throw new InvalidCommandParameterException ( message );
-    }
+
     DateTime AnalysisWindowStart_DateTime = null;
     if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
         try {

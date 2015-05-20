@@ -299,16 +299,29 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         int n = table.getNumberOfRecords();
         output = null;
         String dtString;
-        for ( int i = 0; i < n; i++ ) {
+        for ( int irec = 0; irec < n; irec++ ) {
             try {
                 // Get the date/time...
-                rec = table.getRecord(i);
+                rec = table.getRecord(irec);
                 o = rec.getFieldValue(inputColumnNum);
+                dt = null;
                 if ( o == null ) {
                     output = null;
+                    continue;
+                }
+                // Handle input that is a String or a DateTime
+                if ( o instanceof String ) {
+                	// Try to parse the string into DateTime - handle exception in main loop
+                	dt = DateTime.parse((String)o);
+                	Message.printStatus(2, routine, "Parsing string to DateTime \"" + o + "\"");
+                }
+                else if ( o instanceof DateTime ) {
+                	dt = (DateTime)o;
+                }
+                if ( dt == null ) {
+                	output = null;
                 }
                 else {
-                    dt = (DateTime)o;
                     // First format as a string
                     if ( formatterType == DateTimeFormatterType.C ) {
                         dtString = TimeUtil.formatDateTime(dt, yearType, DateTimeFormat);
@@ -334,7 +347,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 rec.setFieldValue(outputColumnNum, output);
             }
             catch ( Exception e2 ) {
-                problems.add("Error formatting date/time \"" + o + "\" (" + e2 + ").");
+                problems.add("Error formatting table row " + (irec + 1) + " column \"" + InputColumn + "\" date/time \"" + o + "\" (" + e2 + ").");
                 Message.printWarning(3, routine, e2);
             }
         }

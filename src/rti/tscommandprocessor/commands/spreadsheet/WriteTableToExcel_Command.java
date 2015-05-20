@@ -1264,7 +1264,7 @@ throws FileNotFoundException, IOException
             ExcelUtil.setOpenWorkbook(workbookFile,wb);
         }
         else {
-            // Close the workbook and remove from the cache
+            // Write the workbook, close the workbook, and remove from the open workbook cache
             wb.setForceFormulaRecalculation(true); // Will cause Excel to recalculate formulas when it opens
             FileOutputStream fout = new FileOutputStream(workbookFile);
             wb.write(fout);

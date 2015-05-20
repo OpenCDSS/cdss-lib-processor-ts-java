@@ -1900,7 +1900,7 @@ throws Exception
 		return null;
 	}
 
-	// Check for user DateTime instances...
+	// Check for user DateTime instances (legacy InputStart, OutputStart, etc.)...
 
 	DateTime date = (DateTime)__datetime_Hashtable.get ( dtString );
 	if ( date != null ) {
@@ -1908,7 +1908,26 @@ throws Exception
 		return date;
 	}
 	
-	// Check for requested property
+	// TODO SAM 2015-05-17 Need to decide whether to continue supporting or move to ${OutputEnd} notation exclusively
+	// Handle built-in property ${InputStart} etc. below so that nulls don't cause an issue (nulls are OK for full period)
+	// Check for named DateTime instances...
+
+	if ( dtString.equalsIgnoreCase("OutputEnd") || dtString.equalsIgnoreCase("${OutputEnd}") || dtString.equalsIgnoreCase("OutputPeriodEnd") ) {
+		return __OutputEnd_DateTime;
+	}
+	else if(dtString.equalsIgnoreCase("OutputStart") || dtString.equalsIgnoreCase("${OutputStart}") || dtString.equalsIgnoreCase("OutputPeriodStart") ) {
+		return __OutputStart_DateTime;
+	}
+	else if(dtString.equalsIgnoreCase("InputEnd") || dtString.equalsIgnoreCase("${InputEnd}") || dtString.equalsIgnoreCase("QueryEnd") ||
+		dtString.equalsIgnoreCase("QueryPeriodEnd") ) {
+		return __InputEnd_DateTime;
+	}
+	else if(dtString.equalsIgnoreCase("InputStart") || dtString.equalsIgnoreCase("${InputStart}") || dtString.equalsIgnoreCase("QueryStart") ||
+		dtString.equalsIgnoreCase("QueryPeriodStart") ) {
+		return __InputStart_DateTime;
+	}
+	
+	// Check for requested user-defined property
 	if ( dtString.startsWith("${") && dtString.endsWith("}") ) {
 		String propName = dtString.substring(2,dtString.length() - 1);
 		Object o = __ts_processor.getPropContents(propName);
@@ -1923,25 +1942,7 @@ throws Exception
 		}
 	}
 
-	// TODO SAM 2015-05-17 Need to decide whether to continue supporting or move to ${OutputEnd} notation exclusively
-	// Check for named DateTime instances...
-
-	if ( dtString.equalsIgnoreCase("OutputEnd") || dtString.equalsIgnoreCase("OutputPeriodEnd") ) {
-		return __OutputEnd_DateTime;
-	}
-	else if(dtString.equalsIgnoreCase("OutputStart") || dtString.equalsIgnoreCase("OutputPeriodStart") ) {
-		return __OutputStart_DateTime;
-	}
-	else if(dtString.equalsIgnoreCase("InputEnd") || dtString.equalsIgnoreCase("QueryEnd") ||
-		dtString.equalsIgnoreCase("QueryPeriodEnd") ) {
-		return __InputEnd_DateTime;
-	}
-	else if(dtString.equalsIgnoreCase("InputStart") || dtString.equalsIgnoreCase("QueryStart") ||
-		dtString.equalsIgnoreCase("QueryPeriodStart") ) {
-		return __InputStart_DateTime;
-	}
-
-	// Else did not find a date time so try parse the string...
+	// Else did not find a date time so try parse the string (OK to throw an exception)...
 
 	return DateTime.parse ( dtString );
 }

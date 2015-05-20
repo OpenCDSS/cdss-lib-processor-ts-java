@@ -43,10 +43,10 @@ Editor for the ReadDateValue() commands.
 public class ReadDateValue_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
-private SimpleJButton __browse_JButton = null,
-			__path_JButton = null, // Convert between relative and absolute path.
-			__cancel_JButton = null,
-			__ok_JButton = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private ReadDateValue_Command __command = null;
 private String __working_dir = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
@@ -247,16 +247,13 @@ private void initialize(JFrame parent, ReadDateValue_Command command) {
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Read all the time series from a DateValue file, using " +
-        "information in the file to assign the identifier."),
+        "Read all the time series from a DateValue file, using information in the file to assign the identifier."),
         0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Time series in DateValue files may also have an alias assigned; however, use the Alias parameter" +
-        " to assign a new alias."),
+        "Time series in DateValue files may also have an alias assigned; however, use the Alias parameter to assign a new alias."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full path or relative path (relative to the working " +
-		"directory) for a DateValue file to read." ), 
+		"Specify a full path or relative path (relative to the working directory) for a DateValue file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -265,8 +262,7 @@ private void initialize(JFrame parent, ReadDateValue_Command command) {
 	}
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying the input period will limit data that are " +
-		"available for fill commands but can increase performance." ), 
+		"Specifying the input period will limit data that are available for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"DateValue file to read:" ), 
@@ -304,7 +300,7 @@ private void initialize(JFrame parent, ReadDateValue_Command command) {
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - date/time string or ${Property} (default=global input start)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
@@ -313,7 +309,7 @@ private void initialize(JFrame parent, ReadDateValue_Command command) {
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - date/time string or ${Property} (default=global input end)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),

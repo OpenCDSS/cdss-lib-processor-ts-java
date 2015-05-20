@@ -733,14 +733,26 @@ throws InvalidCommandParameterException
         PropList bean_PropList = bean.getResultsPropList();
         Object prop_contents = bean_PropList.getContents ( "DateTime" );
         if ( prop_contents == null ) {
-            message = "Null value for " + parameterName + " DateTime(DateTime=" + dtString + "\") returned from processor.";
-            Message.printWarning(logLevel,
-                MessageUtil.formatMessageTag( commandTag, ++warningCount),
-                routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a valid date/time string, or a recognized internal property such as ${OutputEnd}." ) );
-            throw new InvalidCommandParameterException ( message );
+        	// Have to take special care for built-in properties that are allowed to be null
+        	// See the similar handling in TSEngine.getDateTime()
+        	// Newer code will focus on ${Property} whereas legacy uses the version without ${}
+        	if ( dtString.equalsIgnoreCase("OutputStart") || dtString.equalsIgnoreCase("OutputEnd") ||
+        		dtString.equalsIgnoreCase("${OutputStart}") || dtString.equalsIgnoreCase("${OutputEnd}") ||
+        		dtString.equalsIgnoreCase("InputStart") || dtString.equalsIgnoreCase("InputEnd") ||
+        		dtString.equalsIgnoreCase("${InputStart}") || dtString.equalsIgnoreCase("${InputEnd}") ) {
+        		// OK to return null
+        		return null;
+        	}
+        	else {
+	            message = "Null value for " + parameterName + " DateTime(DateTime=" + dtString + "\") returned from processor.";
+	            Message.printWarning(logLevel,
+	                MessageUtil.formatMessageTag( commandTag, ++warningCount),
+	                routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Specify a valid date/time string, or a recognized internal property such as ${OutputEnd}." ) );
+	            throw new InvalidCommandParameterException ( message );
+        	}
         }
         else {
             dt = (DateTime)prop_contents;

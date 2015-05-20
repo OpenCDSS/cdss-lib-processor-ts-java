@@ -555,13 +555,13 @@ public DataTable readForecastTable ( List<String> stationIdList, List<String> st
                         Message.printWarning(3, routine, "Error setting forecast period for row " + row );
                     }
                     try {
-                        table.setFieldValue(row, publicationDateCol, f.getPublicationDate(), true);
+                        table.setFieldValue(row, publicationDateCol, DateTime.parse(f.getPublicationDate()), true);
                     }
                     catch ( Exception e ) {
                         Message.printWarning(3, routine, "Error setting publication date for row " + row );
                     }
                     try {
-                        table.setFieldValue(row, calculationDateCol, f.getCalculationDate(), true);
+                        table.setFieldValue(row, calculationDateCol, DateTime.parse(f.getCalculationDate()), true);
                     }
                     catch ( Exception e ) {
                         Message.printWarning(3, routine, "Error setting calculation date for row " + row );

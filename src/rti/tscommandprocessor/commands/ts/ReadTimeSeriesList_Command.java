@@ -691,11 +691,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     // A default time series was read so assign default units.
                     ts.setDataUnits ( DefaultUnits );
                 }
-                if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
-                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                        processor, ts, Alias, status, commandPhase);
-                    ts.setAlias ( alias );
-                }
                 if ( columnProperties != null ) {
                     // Set time series properties based on column values
                     LinkedHashMap<String,String> map = columnProperties.getLinkedHashMap();
@@ -743,6 +738,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 if ( TimeSeriesIndex1Property != null ) {
                     // Set a property indicating the position in the list
                     ts.setProperty(TimeSeriesIndex1Property, new Integer((i + 1)) );
+                }
+                // Set the alias - do this after setting the properties because the alias may use the properties
+                if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, commandPhase);
+                    ts.setAlias ( alias );
                 }
                 tslist.add ( ts );
             }

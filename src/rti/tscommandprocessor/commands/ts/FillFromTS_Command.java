@@ -403,11 +403,9 @@ private int recalculateLimits( TS ts, CommandProcessor TSCmdProc,
 /**
 Run the command.
 @param command_number number of command to run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,

@@ -242,20 +242,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__RecalcLimits_JComboBox = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.

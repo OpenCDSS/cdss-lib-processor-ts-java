@@ -19,14 +19,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -37,29 +38,30 @@ import RTi.Util.Message.Message;
 public class FillConstant_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private FillConstant_Command __command = null;// Command to edit
-private JTextArea	__command_JTextArea=null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private FillConstant_Command __command = null;
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField	__ConstantValue_JTextField = null,
-			__FillStart_JTextField, // Text fields for fill period.
-			__FillEnd_JTextField,
-			__FillFlag_JTextField;	// Flag to set for filled data.
-private boolean		__first_time = true;
-private boolean		__error_wait = false;
-private boolean		__ok = false; // Indicates whether OK button has been pressed.
+private JTextField __ConstantValue_JTextField = null;
+private JTextField __FillStart_JTextField = null;
+private JTextField __FillEnd_JTextField = null;
+private JTextField __FillFlag_JTextField = null;
+private JTextField __FillFlagDesc_JTextField = null;
+private boolean __first_time = true;
+private boolean __error_wait = false;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public FillConstant_JDialog ( JFrame parent, Command command )
+public FillConstant_JDialog ( JFrame parent, FillConstant_Command command )
 {   super(parent, true);
     initialize ( parent, command );
 }
@@ -127,6 +129,7 @@ private void checkInput ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+    String FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
 	__error_wait = false;
 
 	if ( TSList.length() > 0 ) {
@@ -150,7 +153,11 @@ private void checkInput ()
 	if ( FillFlag.length() > 0 ) {
 		props.set ( "FillFlag", FillFlag );
 	}
-	try {	// This will warn the user...
+    if ( FillFlagDesc.length() > 0 ) {
+        props.set ( "FillFlagDesc", FillFlagDesc );
+    }
+	try {
+		// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -171,6 +178,7 @@ private void commitEdits ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+	String FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -178,23 +186,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "FillStart", FillStart );
 	__command.setCommandParameter ( "FillEnd", FillEnd );
 	__command.setCommandParameter ( "FillFlag", FillFlag );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSList_JComboBox = null;
-	__TSID_JComboBox = null;
-	__ConstantValue_JTextField = null;
-	__FillStart_JTextField = null;
-	__FillEnd_JTextField = null;
-	__FillFlag_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__ok_JButton = null;
-	super.finalize ();
+	__command.setCommandParameter ( "FillFlagDesc", FillFlagDesc );
 }
 
 /**
@@ -202,10 +194,9 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (FillConstant_Command)command;
+private void initialize ( JFrame parent, FillConstant_Command command )
+{	__command = command;
 
-	try {
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
@@ -218,13 +209,8 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Fill time series data missing values with a constant value." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The time series to process are indicated using the TS list."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If TS list is \"" + TSListType.ALL_MATCHING_TSID + "\", pick a single time series, " +
-		"or enter a wildcard time series identifier pattern."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -232,15 +218,15 @@ private void initialize ( JFrame parent, Command command )
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Constant value:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -281,6 +267,15 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - string to flag filled values."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag description:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillFlagDesc_JTextField = new JTextField ( 15 );
+    __FillFlagDesc_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __FillFlagDesc_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for fill flag."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -309,11 +304,6 @@ private void initialize ( JFrame parent, Command command )
     pack();
     JGUIUtil.center( this );
     super.setVisible( true );
-
-	}
-	catch ( Exception e ) {
-		Message.printWarning ( 3, "fillConstant_JDialog.initialize", e );
-	}
 }
 
 /**
@@ -363,7 +353,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "fillConstant_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -371,8 +361,8 @@ private void refresh ()
 	String FillStart = "";
 	String FillEnd = "";
 	String FillFlag = "";
+    String FillFlagDesc = "";
 	PropList props = __command.getCommandParameters();
-	try {
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command...
@@ -383,6 +373,7 @@ private void refresh ()
 		FillStart = props.getValue("FillStart");
 		FillEnd = props.getValue("FillEnd");
 		FillFlag = props.getValue("FillFlag");
+		FillFlagDesc = props.getValue("FillFlagDesc");
 		if ( TSList == null ) {
 			// Select default...
 			__TSList_JComboBox.select ( 0 );
@@ -448,6 +439,9 @@ private void refresh ()
 		if ( FillFlag != null ) {
 			__FillFlag_JTextField.setText ( FillFlag );
 		}
+        if ( FillFlagDesc != null ) {
+            __FillFlagDesc_JTextField.setText ( FillFlagDesc );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
@@ -457,6 +451,7 @@ private void refresh ()
 	FillStart = __FillStart_JTextField.getText().trim();
 	FillEnd = __FillEnd_JTextField.getText().trim();
 	FillFlag = __FillFlag_JTextField.getText().trim();
+    FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
@@ -465,17 +460,13 @@ private void refresh ()
 	props.add ( "FillStart=" + FillStart );
 	props.add ( "FillEnd=" + FillEnd );
 	props.add ( "FillFlag=" + FillFlag );
+	props.add ( "FillFlagDesc=" + FillFlagDesc );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	}
-	catch ( Exception e ) {
-		Message.printWarning ( 3, routine, e );
-	}
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()
@@ -507,4 +498,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end fillConstant_JDialog
+}

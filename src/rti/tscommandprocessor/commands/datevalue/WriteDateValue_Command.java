@@ -39,6 +39,12 @@ public class WriteDateValue_Command extends AbstractCommand implements Command, 
 {
 
 /**
+Possible values for WriteDataFlagDescriptions parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+
+/**
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
@@ -65,6 +71,7 @@ throws InvalidCommandParameterException
     String Delimiter = parameters.getValue("Delimiter" );
     String MissingValue = parameters.getValue("MissingValue" );
     String Precision = parameters.getValue ( "Precision" );
+    String WriteDataFlagDescriptions = parameters.getValue ( "WriteDataFlagDescriptions" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
@@ -150,8 +157,17 @@ throws InvalidCommandParameterException
                             message, "Specify the missing value as a number." ) );
         }
     }
+    
+    if ( (WriteDataFlagDescriptions != null) && !WriteDataFlagDescriptions.isEmpty() &&
+    	!WriteDataFlagDescriptions.equals(_False) && !WriteDataFlagDescriptions.equals(_True) ) {
+        message = "The WriteDataFlagDescriptions \"" + WriteDataFlagDescriptions + "\" parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the whether to write data flag descriptions using " + _False + " (default) or " + _True + "." ) );
+    }
 
-	if ( (OutputStart != null) && !OutputStart.equals("")) {
+	if ( (OutputStart != null) && !OutputStart.isEmpty() && !OutputStart.startsWith("${") ) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
 				throw new Exception ("bad date");
@@ -161,11 +177,11 @@ throws InvalidCommandParameterException
 			message = "Output start date/time \"" + OutputStart + "\" is not a valid date/time.";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a valid output start date/time." ) );
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify a valid output start date/time." ) );
 		}
 	}
-	if ( (OutputEnd != null) && !OutputEnd.equals("")) {
+	if ( (OutputEnd != null) && !OutputEnd.isEmpty() && !OutputEnd.startsWith("${") ) {
 		try {	DateTime datetime2 = DateTime.parse(OutputEnd);
 			if ( datetime2 == null ) {
 				throw new Exception ("bad date");
@@ -174,9 +190,9 @@ throws InvalidCommandParameterException
 		catch (Exception e) {
 			message = "Output end date/time \"" + OutputEnd + "\" is not a valid date/time.";
 			warning += "\n" + message;
-				status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a valid output end date/time." ) );
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify a valid output end date/time." ) );
 		}
 	}
 
@@ -188,7 +204,7 @@ throws InvalidCommandParameterException
             message = "The irregular time series interval is not valid.";
             warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(
+            	new CommandLogRecord(
                     CommandStatusType.FAILURE, message,
                     "Specify a standard interval (e.g., 6Hour, Day, Month)."));
         }
@@ -203,17 +219,18 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(12);
+	List<String> validList = new ArrayList<String>(13);
+	validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
 	validList.add ( "OutputFile" );
 	validList.add ( "Delimiter" );
 	validList.add ( "Precision" );
 	validList.add ( "MissingValue" );
 	validList.add ( "IncludeProperties" );
+	validList.add ( "WriteDataFlagDescriptions" );
 	validList.add ( "OutputStart" );
 	validList.add ( "OutputEnd" );
-	validList.add ( "TSList" );
-    validList.add ( "TSID" );
-    validList.add ( "EnsembleID" );
     validList.add ( "IrregularInterval" );
     validList.add ( "Version" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -304,7 +321,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "WriteDateValue_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -385,99 +402,30 @@ CommandWarningException, CommandException
 	}
 
 	String OutputStart = parameters.getValue ( "OutputStart" );
-	DateTime OutputStart_DateTime = null;
-	if ( OutputStart != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputStart );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputStart +
-				"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor (can be null)...
-		try {
-		    Object o_OutputStart = processor.getPropContents ( "OutputStart" );
-			if ( o_OutputStart != null ) {
-				OutputStart_DateTime = (DateTime)o_OutputStart;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting OutputStart from processor - not using.";
-			Message.printDebug(10, routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
+	if ( (OutputStart == null) || OutputStart.isEmpty() ) {
+		OutputStart = "${OutputStart}"; // Default global property
 	}
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	DateTime OutputEnd_DateTime = null;
-	if ( OutputEnd != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputEnd );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputEnd +
-			"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputEnd_DateTime = (DateTime)prop_contents;
-		}
+	if ( (OutputEnd == null) || OutputEnd.isEmpty() ) {
+		OutputEnd = "${OutputEnd}"; // Default global property
 	}
-	else {
-	    // Get from the processor...
+	DateTime OutputStart_DateTime = null;
+	DateTime OutputEnd_DateTime = null;
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-		    Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
-			if ( o_OutputEnd != null ) {
-				OutputEnd_DateTime = (DateTime)o_OutputEnd;
-			}
+			OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputEnd from processor - not using.";
-			Message.printDebug(10, routine, message );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+		}
+		try {
+			OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
 		}
 	}
 
@@ -507,6 +455,15 @@ CommandWarningException, CommandException
     	}
     	props.setUsingObject("IncludeProperties",includeProperties);
     }
+    String WriteDataFlagDescriptions = parameters.getValue ( "WriteDataFlagDescriptions" );
+    boolean writeDataFlagDescriptions = false; // default
+    if ( WriteDataFlagDescriptions != null ) {
+    	if ( WriteDataFlagDescriptions.equalsIgnoreCase(_True)) {
+    		writeDataFlagDescriptions = true;
+    	}
+    }
+    // Always set the property so default for command is enforced
+	props.set("WriteDataFlagDescriptions="+writeDataFlagDescriptions);
     if ( (Version != null) && (Version.length() > 0) ) {
         props.set("Version=" + Version);
     }
@@ -578,19 +535,38 @@ public String toString ( PropList parameters )
 {	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
+	String TSList = parameters.getValue ( "TSList" );
+	String TSID = parameters.getValue( "TSID" );
+	String EnsembleID = parameters.getValue( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Delimiter = parameters.getValue ( "Delimiter" );
 	String Precision = parameters.getValue("Precision");
 	String MissingValue = parameters.getValue("MissingValue");
 	String IncludeProperties = parameters.getValue("IncludeProperties");
+	String WriteDataFlagDescriptions = parameters.getValue("WriteDataFlagDescriptions");
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
-    String TSList = parameters.getValue ( "TSList" );
-    String TSID = parameters.getValue( "TSID" );
-    String EnsembleID = parameters.getValue( "EnsembleID" );
     String IrregularInterval = parameters.getValue( "IrregularInterval" );
     String Version = parameters.getValue( "Version" );
 	StringBuffer b = new StringBuffer ();
+	if ( (TSList != null) && (TSList.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSList=" + TSList );
+    }
+    if ( (TSID != null) && (TSID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSID=\"" + TSID + "\"" );
+    }
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -621,6 +597,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "IncludeProperties=\"" + IncludeProperties + "\"");
     }
+    if ( (WriteDataFlagDescriptions != null) && (WriteDataFlagDescriptions.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteDataFlagDescriptions=" + WriteDataFlagDescriptions);
+    }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -633,24 +615,6 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
-    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
     if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

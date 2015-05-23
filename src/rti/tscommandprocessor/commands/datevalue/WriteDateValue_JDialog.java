@@ -61,6 +61,9 @@ private JTextArea __command_JTextArea=null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __Delimiter_JTextField = null;
 private JTextField __Precision_JTextField = null;
+private JTextField __MissingValue_JTextField = null;
+private JTextField __IncludeProperties_JTextField = null;
+private SimpleJComboBox __WriteDataFlagDescriptions_JComboBox = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private SimpleJComboBox __IrregularInterval_JComboBox = null; // Interval used to write irregular time series
@@ -69,12 +72,10 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField __MissingValue_JTextField = null;// Missing value for output
-private JTextField __IncludeProperties_JTextField = null;
 private SimpleJComboBox __Version_JComboBox = null;
-private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
-private boolean __ok = false;		// Has user pressed OK to close the dialog.
+private boolean __ok = false; // Has user pressed OK to close the dialog.
 
 /**
 WriteDateValue_JDialog constructor.
@@ -185,16 +186,17 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
-	String OutputFile = __OutputFile_JTextField.getText().trim();
-	String Delimiter = __Delimiter_JTextField.getText().trim();
-	String Precision = __Precision_JTextField.getText().trim();
-	String OutputStart = __OutputStart_JTextField.getText().trim();
-	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
+	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String Delimiter = __Delimiter_JTextField.getText().trim();
+	String Precision = __Precision_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String WriteDataFlagDescriptions = __WriteDataFlagDescriptions_JComboBox.getSelected();
+	String OutputStart = __OutputStart_JTextField.getText().trim();
+	String OutputEnd = __OutputEnd_JTextField.getText().trim();
     String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
     String Version = __Version_JComboBox.getSelected();
 
@@ -218,18 +220,21 @@ private void checkInput ()
     if (Precision.length() > 0) {
         parameters.set("Precision", Precision);
     }
-	if ( OutputStart.length() > 0 ) {
-		parameters.set ( "OutputStart", OutputStart );
-	}
-	if ( OutputEnd.length() > 0 ) {
-		parameters.set ( "OutputEnd", OutputEnd );
-	}
     if ( MissingValue.length() > 0 ) {
         parameters.set ( "MissingValue", MissingValue );
     }
     if ( IncludeProperties.length() > 0 ) {
         parameters.set ( "IncludeProperties", IncludeProperties );
     }
+    if ( WriteDataFlagDescriptions.length() > 0 ) {
+        parameters.set ( "IncludeProperties", IncludeProperties );
+    }
+	if ( OutputStart.length() > 0 ) {
+		parameters.set ( "WriteDataFlagDescriptions", WriteDataFlagDescriptions );
+	}
+	if ( OutputEnd.length() > 0 ) {
+		parameters.set ( "OutputEnd", OutputEnd );
+	}
     if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
         parameters.set ( "IrregularInterval", IrregularInterval );
     }
@@ -258,10 +263,11 @@ private void commitEdits ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
-	String OutputStart = __OutputStart_JTextField.getText().trim();
-	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+    String WriteDataFlagDescriptions = __WriteDataFlagDescriptions_JComboBox.getSelected();
+	String OutputStart = __OutputStart_JTextField.getText().trim();
+	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
     String Version = __Version_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
@@ -270,10 +276,11 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Delimiter", Delimiter );
 	__command.setCommandParameter ( "Precision", Precision );
-	__command.setCommandParameter ( "OutputStart", OutputStart );
-	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
 	__command.setCommandParameter ( "IncludeProperties", IncludeProperties );
+	__command.setCommandParameter ( "WriteDataFlagDescriptions", WriteDataFlagDescriptions );
+	__command.setCommandParameter ( "OutputStart", OutputStart );
+	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "IrregularInterval", IrregularInterval );
 	__command.setCommandParameter ( "Version", Version );
 }
@@ -307,7 +314,7 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The output filename can be specified using ${Property} notation to utilize global properties."),
+		"The output filename and output start and end can be specified using ${Property} notation to utilize global properties."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Enter date/times to a precision appropriate for output time series."),
@@ -378,6 +385,22 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - names of properties to write, separated by commas (default=none)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write data flag descriptions?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WriteDataFlagDescriptions_JComboBox = new SimpleJComboBox ( false );
+    List<String> flagChoices = new Vector();
+    flagChoices.add("");
+    flagChoices.add(__command._False);
+    flagChoices.add(__command._True);
+    __WriteDataFlagDescriptions_JComboBox.setData ( flagChoices );
+    __WriteDataFlagDescriptions_JComboBox.select(0);
+    __WriteDataFlagDescriptions_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __WriteDataFlagDescriptions_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - write data flag descriptions (default=" + __command._False + ")."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -516,17 +539,18 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WriteDateValue_JDialog.refresh";
+{   String routine = getClass().getSimpleName() + ".refresh";
+    String TSList = "";
+    String TSID = "";
+	String EnsembleID = "";
 	String OutputFile = "";
 	String Delimiter = "";
 	String Precision = "";
 	String MissingValue = "";
 	String IncludeProperties = "";
+	String WriteDataFlagDescriptions = "";
 	String OutputStart = "";
 	String OutputEnd = "";
-	String TSList = "";
-    String TSID = "";
-    String EnsembleID = "";
     String IrregularInterval = "";
     String Version = "";
 	__error_wait = false;
@@ -535,39 +559,19 @@ private void refresh ()
 		__first_time = false;
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
+		TSList = parameters.getValue ( "TSList" );
+        TSID = parameters.getValue ( "TSID" );
+        EnsembleID = parameters.getValue ( "EnsembleID" );
 		OutputFile = parameters.getValue ( "OutputFile" );
 	    Delimiter = parameters.getValue("Delimiter");
 	    Precision = parameters.getValue("Precision");
 	    MissingValue = parameters.getValue("MissingValue");
 	    IncludeProperties = parameters.getValue("IncludeProperties");
+	    WriteDataFlagDescriptions = parameters.getValue("WriteDataFlagDescriptions");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
-		TSList = parameters.getValue ( "TSList" );
-        TSID = parameters.getValue ( "TSID" );
-        EnsembleID = parameters.getValue ( "EnsembleID" );
         IrregularInterval = parameters.getValue ( "IrregularInterval" );
         Version = parameters.getValue ( "Version" );
-		if ( OutputFile != null ) {
-			__OutputFile_JTextField.setText (OutputFile);
-		}
-	    if (Delimiter != null) {
-	         __Delimiter_JTextField.setText(Delimiter);
-	    }
-	    if ( Precision != null ) {
-	        __Precision_JTextField.setText ( Precision );
-	    }
-        if ( MissingValue != null ) {
-            __MissingValue_JTextField.setText ( MissingValue );
-        }
-        if ( IncludeProperties != null ) {
-            __IncludeProperties_JTextField.setText ( IncludeProperties );
-        }
-		if ( OutputStart != null ) {
-			__OutputStart_JTextField.setText (OutputStart);
-		}
-		if ( OutputEnd != null ) {
-			__OutputEnd_JTextField.setText (OutputEnd);
-		}
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -613,6 +617,42 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+		if ( OutputFile != null ) {
+			__OutputFile_JTextField.setText (OutputFile);
+		}
+	    if (Delimiter != null) {
+	         __Delimiter_JTextField.setText(Delimiter);
+	    }
+	    if ( Precision != null ) {
+	        __Precision_JTextField.setText ( Precision );
+	    }
+        if ( MissingValue != null ) {
+            __MissingValue_JTextField.setText ( MissingValue );
+        }
+        if ( IncludeProperties != null ) {
+            __IncludeProperties_JTextField.setText ( IncludeProperties );
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem( __WriteDataFlagDescriptions_JComboBox, WriteDataFlagDescriptions, JGUIUtil.NONE, null, null ) ) {
+            __WriteDataFlagDescriptions_JComboBox.select ( WriteDataFlagDescriptions );
+        }
+        else {
+            // Automatically add to the list after the blank (might be a multiple)...
+            if ( (WriteDataFlagDescriptions != null) && (WriteDataFlagDescriptions.length() > 0) ) {
+                __WriteDataFlagDescriptions_JComboBox.insertItemAt ( WriteDataFlagDescriptions, 1 );
+                // Select...
+                __WriteDataFlagDescriptions_JComboBox.select ( WriteDataFlagDescriptions );
+            }
+            else {
+                // Select the blank...
+                __WriteDataFlagDescriptions_JComboBox.select ( 0 );
+            }
+        }
+		if ( OutputStart != null ) {
+			__OutputStart_JTextField.setText (OutputStart);
+		}
+		if ( OutputEnd != null ) {
+			__OutputEnd_JTextField.setText (OutputEnd);
+		}
         if ( JGUIUtil.isSimpleJComboBoxItem( __IrregularInterval_JComboBox, IrregularInterval, JGUIUtil.NONE, null, null ) ) {
             __IrregularInterval_JComboBox.select ( IrregularInterval );
         }
@@ -645,16 +685,17 @@ private void refresh ()
         }
 	}
 	// Regardless, reset the command from the fields...
+	TSList = __TSList_JComboBox.getSelected();
+    TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Delimiter = __Delimiter_JTextField.getText().trim();
 	Precision = __Precision_JTextField.getText().trim();
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	IncludeProperties = __IncludeProperties_JTextField.getText().trim();
+	WriteDataFlagDescriptions = __WriteDataFlagDescriptions_JComboBox.getSelected();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
-	TSList = __TSList_JComboBox.getSelected();
-    TSID = __TSID_JComboBox.getSelected();
-    EnsembleID = __EnsembleID_JComboBox.getSelected();
     IrregularInterval = __IrregularInterval_JComboBox.getSelected();
     Version = __Version_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
@@ -666,6 +707,7 @@ private void refresh ()
 	parameters.add ( "Precision=" + Precision );
 	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "IncludeProperties=" + IncludeProperties );
+	parameters.add ( "WriteDataFlagDescriptions=" + WriteDataFlagDescriptions );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	parameters.add ( "IrregularInterval=" + IrregularInterval );

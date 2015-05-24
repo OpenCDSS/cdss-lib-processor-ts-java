@@ -21,8 +21,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -33,7 +35,6 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TSUtil;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
@@ -72,6 +73,8 @@ private SimpleJComboBox __IndependentEnsembleID_JComboBox = null;
 private SimpleJComboBox	__TransferHow_JComboBox =null;
 private SimpleJComboBox __HandleMissingHow_JComboBox = null;
 private SimpleJComboBox __SetDataFlags_JComboBox = null;
+private JTextField __SetFlag_JTextField = null;
+private JTextField __SetFlagDesc_JTextField = null;
 private SimpleJComboBox __RecalcLimits_JComboBox = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
@@ -182,6 +185,8 @@ private void checkInput ()
     String TransferHow = __TransferHow_JComboBox.getSelected();
     String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
     String SetDataFlags = __SetDataFlags_JComboBox.getSelected();
+	String SetFlag = __SetFlag_JTextField.getText().trim();
+    String SetFlagDesc = __SetFlagDesc_JTextField.getText().trim();
     String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     __error_wait = false;
 
@@ -217,6 +222,12 @@ private void checkInput ()
     }
     if ( (SetDataFlags != null) && (SetDataFlags.length() > 0) ) {
         props.set ( "SetDataFlags", SetDataFlags );
+    }
+	if ( SetFlag.length() > 0 ) {
+		props.set ( "SetFlag", SetFlag );
+	}
+    if ( SetFlagDesc.length() > 0 ) {
+        props.set ( "SetFlagDesc", SetFlagDesc );
     }
     if ( RecalcLimits.length() > 0 ) {
         props.set( "RecalcLimits", RecalcLimits );
@@ -257,6 +268,8 @@ private void commitEdits ()
     String TransferHow = __TransferHow_JComboBox.getSelected();
     String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
     String SetDataFlags = __SetDataFlags_JComboBox.getSelected();
+	String SetFlag = __SetFlag_JTextField.getText().trim();
+    String SetFlagDesc = __SetFlagDesc_JTextField.getText().trim();
     String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
@@ -269,6 +282,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "TransferHow", TransferHow );
     __command.setCommandParameter ( "HandleMissingHow", HandleMissingHow );
     __command.setCommandParameter ( "SetDataFlags", SetDataFlags );
+    __command.setCommandParameter ( "SetFlag", SetFlag );
+    __command.setCommandParameter ( "SetFlagDesc", SetFlagDesc );
     __command.setCommandParameter ( "RecalcLimits", RecalcLimits );
     if ( __SetWindow_JCheckBox.isSelected() ){
         String SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
@@ -323,6 +338,8 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The set period is for the independent time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel (
@@ -364,7 +381,7 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     __SetStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - set start (default is full period)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - set start, can use ${Property} (default is full period)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set End:"), 
@@ -373,7 +390,7 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     __SetEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - set end (default is full period)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - set end, can use ${Property} (default is full period)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     __SetWindow_JCheckBox = new JCheckBox ( "Set window:", false );
@@ -436,9 +453,28 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     __SetDataFlags_JComboBox.setData ( choices );
     __SetDataFlags_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SetDataFlags_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - should data flags be copied (default=" + __command._True + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set flag:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__SetFlag_JTextField = new JTextField ( 10 );
+	__SetFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SetFlag_JTextField,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - string to flag set values."), 
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set flag description:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetFlagDesc_JTextField = new JTextField ( 15 );
+    __SetFlagDesc_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SetFlagDesc_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for set flag."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
@@ -530,7 +566,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "SetFromTS_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -544,6 +580,8 @@ private void refresh ()
     String SetWindowEnd = "";
     String HandleMissingHow = "";
     String SetDataFlags = "";
+    String SetFlag = "";
+    String SetFlagDesc = "";
     String RecalcLimits = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -562,6 +600,8 @@ private void refresh ()
         TransferHow = props.getValue ( "TransferHow" );
         HandleMissingHow = props.getValue ( "HandleMissingHow" );
         SetDataFlags = props.getValue ( "SetDataFlags" );
+        SetFlag = props.getValue ( "SetFlag" );
+        SetFlagDesc = props.getValue ( "SetFlagDesc" );
         RecalcLimits = props.getValue ( "RecalcLimits" );
         if ( TSList == null ) {
             // Select default...
@@ -667,8 +707,7 @@ private void refresh ()
                 __SetWindowStart_JPanel.setDateTime ( SetWindowStart_DateTime );
             }
             catch ( Exception e ) {
-                Message.printWarning( 1, routine, "SetWindowStart (" + SetWindowStart +
-                        ") is not a valid date/time." );
+                Message.printWarning( 1, routine, "SetWindowStart (" + SetWindowStart + ") is not a valid date/time." );
             }
         }
         if ( (SetWindowEnd != null) && (SetWindowEnd.length() > 0) ) {
@@ -679,8 +718,7 @@ private void refresh ()
                 __SetWindowEnd_JPanel.setDateTime ( SetWindowEnd_DateTime );
             }
             catch ( Exception e ) {
-                Message.printWarning( 1, routine, "SetWindowEnd (" + SetWindowEnd +
-                        ") is not a valid date/time." );
+                Message.printWarning( 1, routine, "SetWindowEnd (" + SetWindowEnd + ") is not a valid date/time." );
             }
         }
         if ( (SetWindowStart != null) && (SetWindowStart.length() != 0) &&
@@ -737,6 +775,12 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( SetFlag != null ) {
+			__SetFlag_JTextField.setText ( SetFlag );
+        }
+        if ( SetFlagDesc != null ) {
+			__SetFlagDesc_JTextField.setText ( SetFlagDesc );
+        }
         if ( RecalcLimits == null ) {
             // Select default...
             __RecalcLimits_JComboBox.select ( 0 );
@@ -767,6 +811,8 @@ private void refresh ()
     TransferHow = __TransferHow_JComboBox.getSelected();
     HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
     SetDataFlags = __SetDataFlags_JComboBox.getSelected();
+    SetFlag = __SetFlag_JTextField.getText().trim();
+    SetFlagDesc = __SetFlagDesc_JTextField.getText().trim();
     RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
@@ -780,6 +826,8 @@ private void refresh ()
     props.add ( "TransferHow=" + TransferHow );
     props.add ( "HandleMissingHow=" + HandleMissingHow );
     props.add ( "SetDataFlags=" + SetDataFlags );
+    props.add ( "SetFlag=" + SetFlag );
+    props.add ( "SetFlagDesc=" + SetFlagDesc );
     props.add ( "RecalcLimits=" + RecalcLimits);
     if ( __SetWindow_JCheckBox.isSelected() ) {
         SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
@@ -792,8 +840,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {   __ok = ok;  // Save to be returned by ok()

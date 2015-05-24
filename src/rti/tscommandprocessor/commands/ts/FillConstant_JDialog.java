@@ -31,7 +31,6 @@ import rti.tscommandprocessor.ui.CommandEditorUtil;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 

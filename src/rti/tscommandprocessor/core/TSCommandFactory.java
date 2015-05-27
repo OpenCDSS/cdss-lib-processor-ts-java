@@ -100,6 +100,7 @@ import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 import rti.tscommandprocessor.commands.spreadsheet.CloseExcelWorkbook_Command;
+import rti.tscommandprocessor.commands.spreadsheet.FormatExcelTable_Command;
 // Spreadsheet commands
 import rti.tscommandprocessor.commands.spreadsheet.NewExcelWorkbook_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadPropertiesFromExcel_Command;
@@ -232,6 +233,7 @@ import rti.tscommandprocessor.commands.ts.SetIncludeMissingTS_Command;
 import rti.tscommandprocessor.commands.ts.SetIgnoreLEZero_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesValuesFromLookupTable_Command;
+import rti.tscommandprocessor.commands.ts.SetTimeSeriesValuesFromTable_Command;
 import rti.tscommandprocessor.commands.ts.SetToMax_Command;
 import rti.tscommandprocessor.commands.ts.SetToMin_Command;
 import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
@@ -578,6 +580,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("FormatDateTimeProperty") ) {
         return new FormatDateTimeProperty_Command ();
     }
+	else if ( commandName.equalsIgnoreCase("FormatExcelTable") ) {
+		return new FormatExcelTable_Command ();
+	}
     else if ( commandName.equalsIgnoreCase("FormatStringProperty") ) {
         return new FormatStringProperty_Command ();
     }
@@ -955,6 +960,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("SetTimeSeriesValuesFromLookupTable") ) {
         return new SetTimeSeriesValuesFromLookupTable_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("SetTimeSeriesValuesFromTable") ) {
+        return new SetTimeSeriesValuesFromTable_Command ();
     }
     else if ( commandName.equalsIgnoreCase("SetMax") || commandName.equalsIgnoreCase("SetToMax") ) {
         // Legacy is "SetMax" so translate on the fly.

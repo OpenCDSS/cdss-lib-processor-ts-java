@@ -411,7 +411,7 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     JGUIUtil.addComponent(analysis_JPanel, __AnalysisStart_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel(
-        "Optional - analysis start date/time (default=full time series period)."),
+        "Optional - analysis start date/time, or ${Property} (default=full time series period)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ), 
@@ -421,7 +421,7 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     JGUIUtil.addComponent(analysis_JPanel, __AnalysisEnd_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(analysis_JPanel, new JLabel(
-        "Optional - analysis end date/time (default=full time series period)."),
+        "Optional - analysis end date/time, or ${Property} (default=full time series period)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __AnalysisWindow_JCheckBox = new JCheckBox ( "Analysis window:", false );

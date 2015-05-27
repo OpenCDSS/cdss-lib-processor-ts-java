@@ -43,7 +43,7 @@ implements Command
 {
     
 /**
-Values for Copy* parameters.
+Values for SortInput parameter.
 */
 protected final String _False = "False";
 protected final String _True = "True";
@@ -347,7 +347,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "Copy_Command.runCommandInternal", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;

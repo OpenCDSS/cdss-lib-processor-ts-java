@@ -993,13 +993,13 @@ public String toString ( PropList props )
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "SetFlag=" + SetFlag );
+        b.append ( "SetFlag=\"" + SetFlag + "\"" );
     }
     if ( (SetFlagDesc != null) && !SetFlagDesc.isEmpty() ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "SetFlagDesc=" + SetFlagDesc );
+        b.append ( "SetFlagDesc=\"" + SetFlagDesc + "\"" );
     }
     if ( ( RecalcLimits != null) && (RecalcLimits.length() > 0) ) {
         if ( b.length() > 0 ) {

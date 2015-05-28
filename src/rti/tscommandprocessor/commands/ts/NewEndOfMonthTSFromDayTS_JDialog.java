@@ -19,14 +19,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -37,19 +38,19 @@ public class NewEndOfMonthTSFromDayTS_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private NewEndOfMonthTSFromDayTS_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox __DayTSID_JComboBox = null;
 private JTextField __Bracket_JTextField = null;
-private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
-private boolean __ok = false;       // Whether OK has been pressed.
+private boolean __ok = false; // Whether OK has been pressed.
 
 /**
-newEndOfMonthTSFromDayTS_JDialog constructor.
+NewEndOfMonthTSFromDayTS_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
@@ -107,21 +108,6 @@ public void removeUpdate ( DocumentEvent e )
 }
 
 // ...End event handlers for DocumentListener
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__cancel_JButton = null;
-	__command = null;
-	__command = null;
-	__DayTSID_JComboBox = null;
-	__Bracket_JTextField = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
 
 /**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
@@ -182,25 +168,27 @@ private void initialize ( JFrame parent, NewEndOfMonthTSFromDayTS_Command comman
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create a new end of month time series from a daily time series."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use the alias to reference the new time series." +
-		"  Only the data interval is changed in output (units, etc. remain)."),
+		"Use the alias to reference the new time series.  Only the data interval is changed in output (units, etc. remain)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The number of days to search in either direction must be non-zero."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying a number of days > 31 may result in a constant pattern in the output."),
+		"Specifying a number of days > 31 may result in a constant pattern in the output if the same value is used repeatedly in a long gap."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Daily time series:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DayTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    __DayTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit, for example to add ${Property}
+    __DayTSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list and or specify with ${Property} notation");
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __DayTSID_JComboBox.setData ( tsids );

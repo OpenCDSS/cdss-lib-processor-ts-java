@@ -6,14 +6,13 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.DayTS;
 import RTi.TS.MonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSUtil_ChangeInterval;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -43,8 +42,7 @@ implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipl
 {
     
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+List of time series read during discovery.  These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
 private List<TS> __discoveryTSList = null;
 
@@ -59,8 +57,7 @@ public NewEndOfMonthTSFromDayTS_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -120,11 +117,11 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "DayTSID" );
-    valid_Vector.add ( "Bracket" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(3);
+    validList.add ( "Alias" );
+    validList.add ( "DayTSID" );
+    validList.add ( "Bracket" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -139,8 +136,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -288,15 +284,14 @@ CommandWarningException, CommandException
 
 /**
 Run the command.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "NewEndOfMonthTSFromDayTS_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -325,8 +320,12 @@ CommandWarningException, CommandException
 
 	TS ts = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+    	// TODO SAM 2015-05-27 Not sure this is necessary since discovery TSID can be set from alias
         // Get the discovery time series list from all time series above this command
         String TSList = "" + TSListType.LAST_MATCHING_TSID;
+    	if ( DayTSID.indexOf("${") >= 0 ) {
+    		DayTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, DayTSID);
+    	}
         List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, DayTSID, null, null );
         if ( (tslist != null) && (tslist.size() > 0) ) {
@@ -334,6 +333,10 @@ CommandWarningException, CommandException
         }
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
+    	// Expand the DayTSID if it contains ${
+    	if ( DayTSID.indexOf("${") >= 0 ) {
+    		DayTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, DayTSID);
+    	}
         try {
             PropList request_params = new PropList ( "" );
 			request_params.set ( "CommandTag", command_tag );
@@ -343,8 +346,7 @@ CommandWarningException, CommandException
 			    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
 			}
 			catch ( Exception e ) {
-				message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + DayTSID +
-				"\") from processor.";
+				message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + DayTSID + "\") from processor.";
 				Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -356,14 +358,13 @@ CommandWarningException, CommandException
 			PropList bean_PropList = bean.getResultsPropList();
 			Object o_TS = bean_PropList.getContents ( "TS");
 			if ( o_TS == null ) {
-				message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + DayTSID +
-				"\") from processor.";
+				message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + DayTSID + "\") from processor.";
 				Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
                 status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 			}
 			else {
 				ts = (TS)o_TS;
@@ -408,20 +409,20 @@ CommandWarningException, CommandException
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
         status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Check the log file - report the problem to software support." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Check the log file - report the problem to software support." ) );
 	}
 	
     // Further process the time series...
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Just want time series headers initialized
-        List<TS> discoveryTSList = new Vector();
+        List<TS> discoveryTSList = new ArrayList<TS>(1);
         discoveryTSList.add ( monthts );
         setDiscoveryTSList ( discoveryTSList );
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
         // This makes sure the period is at least as long as the output period...
-    	List<TS> tslist = new Vector(1);
+    	List<TS> tslist = new ArrayList<TS>(1);
     	tslist.add ( monthts );
         int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
         if ( wc > 0 ) {

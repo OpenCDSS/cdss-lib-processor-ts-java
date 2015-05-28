@@ -16,33 +16,34 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 
 public class SetOutputPeriod_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private JTextField	__OutputStart_JTextField = null,// Dates for period.
-			__OutputEnd_JTextField = null;// Dates for period.
-private SetOutputPeriod_Command __command = null;	// Command to edit.
-private JTextArea	__command_JTextArea = null;
-private boolean		__error_wait = false;	// Is there an error waiting to be cleared up?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK button has been pressed.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private JTextField __OutputStart_JTextField = null;
+private JTextField __OutputEnd_JTextField = null;
+private SetOutputPeriod_Command __command = null;
+private JTextArea __command_JTextArea = null;
+private boolean __error_wait = false; // Is there an error waiting to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 SetOutputPeriod_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetOutputPeriod_JDialog ( JFrame parent, Command command )
+public SetOutputPeriod_JDialog ( JFrame parent, SetOutputPeriod_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -104,26 +105,13 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__OutputStart_JTextField = null;
-	__OutputEnd_JTextField = null;
-	__command_JTextArea = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param title Dialog title.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (SetOutputPeriod_Command)command;
+private void initialize ( JFrame parent, SetOutputPeriod_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 
@@ -135,71 +123,62 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	// Main contents...
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Set the global (default) output period for time series and output products."),
-	    0, y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+	    0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"The time series period after reading typically will be extended to " +
-	"the output period by using the missing value."),
-	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Use a SetOutputPeriod() command to guarantee a longer period when filling/extending data."),
-	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Specify the command at the top of commands when filling a specific period."),
-	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Enter date/times to a " +
-		"precision appropriate for time series being processed.  For example:"),
+		"The time series period after reading typically will be extended to the output period by using the missing value."),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Use a SetOutputPeriod() command to guarantee a longer period when filling/extending data."),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Specify the command at the top of commands when filling a specific period."),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Enter date/times to a precision appropriate for time series being processed.  For example:"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    Year data:   YYYY"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    Month data:   MM/YYYY or YYYY-MM"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    Day data:     MM/DD/YYYY or YYYY-MM-DD"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    Hour data:    MM/DD/YYYY HH or YYYY-MM-DD HH"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    Minute data:  MM/DD/YYYY HH:mm or YYYY-MM-DD HH:mm"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Special values are also recognized (for all precisions):"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    CurrentToYear = the current date to year precision"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    CurrentToMinute = the current date/time to minute " +
-		"precision"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    CurrentToMinute = the current date/time to minute precision"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    CurrentToMinute - 7Day = current date/time minus 7 days"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    CurrentToMinute + 7Day = current date/time plus 7 days"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    ${Property} = processor property as DateTime object or date/time string"),
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"See also the SetInputPeriod() command, which will constrain the period that is read."), 
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output period start:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -234,7 +213,7 @@ private void initialize ( JFrame parent, Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__cancel_JButton = new SimpleJButton("Cancel", this);
@@ -350,5 +329,4 @@ public void windowOpened( WindowEvent evt )
 {
 }
 
-} // end SetOutputPeriod_JDialog
-
+}

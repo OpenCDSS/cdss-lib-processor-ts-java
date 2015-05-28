@@ -59,7 +59,7 @@ private JTextArea __command_JTextArea=null;
 private JTextField __OutputFile_JTextField = null;
 // TODO SAM 2012-07-27 Convert the following from a text field to a property selector/formatter,
 // similar to TSFormatSpecifiersJPanel
-private JTextField __IncludeProperty_JTextField = null;
+private JTextField __IncludeProperties_JTextField = null;
 private SimpleJComboBox	__WriteMode_JComboBox = null;
 private SimpleJComboBox __FileFormat_JComboBox = null;
 private SimpleJComboBox __SortOrder_JComboBox = null;
@@ -152,7 +152,7 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
 	String OutputFile = __OutputFile_JTextField.getText().trim();
-	String IncludeProperty = __IncludeProperty_JTextField.getText().trim();
+	String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
 	String WriteMode = __WriteMode_JComboBox.getSelected();
 	String FileFormat = __FileFormat_JComboBox.getSelected();
     String SortOrder = __SortOrder_JComboBox.getSelected();
@@ -162,8 +162,8 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
-	if ( IncludeProperty.length() > 0 ) {
-		parameters.set ( "IncludeProperty", IncludeProperty );
+	if ( IncludeProperties.length() > 0 ) {
+		parameters.set ( "IncludeProperties", IncludeProperties );
 	}
 	if ( WriteMode.length() > 0 ) {
 		parameters.set ( "WriteMode", WriteMode );
@@ -191,12 +191,12 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String OutputFile = __OutputFile_JTextField.getText().trim();
-    String IncludeProperty = __IncludeProperty_JTextField.getText().trim();
+    String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
     String WriteMode = __WriteMode_JComboBox.getSelected();
     String FileFormat = __FileFormat_JComboBox.getSelected();
     String SortOrder = __SortOrder_JComboBox.getSelected();
     __command.setCommandParameter ( "OutputFile", OutputFile );
-	__command.setCommandParameter ( "IncludeProperty", IncludeProperty );
+	__command.setCommandParameter ( "IncludeProperties", IncludeProperties );
 	__command.setCommandParameter ( "WriteMode", WriteMode );
 	__command.setCommandParameter ( "FileFormat", FileFormat );
     __command.setCommandParameter ( "SortOrder", SortOrder );
@@ -243,11 +243,11 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Property to write:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Properties to write:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__IncludeProperty_JTextField = new JTextField(20);
-	__IncludeProperty_JTextField.addKeyListener (this);
-	JGUIUtil.addComponent(main_JPanel, __IncludeProperty_JTextField,
+	__IncludeProperties_JTextField = new JTextField(20);
+	__IncludeProperties_JTextField.addKeyListener (this);
+	JGUIUtil.addComponent(main_JPanel, __IncludeProperties_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - properties to write, separated by commas, *=wildcard (default=write all)."),
@@ -380,7 +380,7 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
 	String OutputFile = "";
-	String IncludeProperty = "";
+	String IncludeProperties = "";
 	String WriteMode = "";
 	String FileFormat = "";
     String SortOrder = "";
@@ -391,15 +391,15 @@ private void refresh ()
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
 		OutputFile = parameters.getValue ( "OutputFile" );
-		IncludeProperty = parameters.getValue ( "IncludeProperty" );
+		IncludeProperties = parameters.getValue ( "IncludeProperties" );
 		WriteMode = parameters.getValue ( "WriteMode" );
 		FileFormat = parameters.getValue ( "FileFormat" );
 		SortOrder = parameters.getValue("SortOrder");
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
-		if ( IncludeProperty != null ) {
-            __IncludeProperty_JTextField.setText (IncludeProperty);
+		if ( IncludeProperties != null ) {
+            __IncludeProperties_JTextField.setText (IncludeProperties);
         }
 		if ( WriteMode == null ) {
 			// Select default...
@@ -451,13 +451,13 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
-	IncludeProperty = __IncludeProperty_JTextField.getText().trim();
+	IncludeProperties = __IncludeProperties_JTextField.getText().trim();
 	WriteMode = __WriteMode_JComboBox.getSelected();
 	FileFormat = __FileFormat_JComboBox.getSelected();
 	SortOrder = __SortOrder_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
-	parameters.add ( "IncludeProperty=" + IncludeProperty );
+	parameters.add ( "IncludeProperties=" + IncludeProperties );
 	parameters.add ( "WriteMode=" + WriteMode );
 	parameters.add ( "FileFormat=" + FileFormat );
 	parameters.add ( "SortOrder=" + SortOrder );

@@ -19,15 +19,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.io.File;
 import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -238,10 +239,13 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 }
+  	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	 __OutputFile_JTextField = new JTextField ( 50 );
+	 __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
 	 __OutputFile_JTextField.addKeyListener ( this );
      JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -252,6 +256,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __TableID_JComboBox = new SimpleJComboBox ( false ); // Don't allow edits
+     __TableID_JComboBox.setToolTipText("Specify the table ID for statistic output or use ${Property} notation");
      __TableID_JComboBox.setData(tableIDChoices);
      __TableID_JComboBox.addItemListener ( this );
      JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,

@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.table;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -9,7 +10,6 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -62,8 +62,7 @@ public WriteTableToDelimitedFile_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -81,7 +80,7 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-    if ( (TableID == null) || TableID.equals("")) {
+    if ( (TableID == null) || TableID.isEmpty()) {
         message = "The table identifier for the table to write has not been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -89,14 +88,15 @@ throws InvalidCommandParameterException
                 message, "Specify a valid table identifier." ) );
     }
 	
-	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
 		message = "The output file must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify an output file." ) );
 	}
-	else {
+	else if ( !OutputFile.startsWith("${") ) {
+		// Can't check if output file is specified with ${Property}
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
@@ -161,14 +161,14 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "TableID" );
-	valid_Vector.add ( "WriteHeaderComments" );
-	valid_Vector.add ( "AlwaysQuoteStrings" );
-	valid_Vector.add ( "NewlineReplacement" );
-	valid_Vector.add ( "NaNValue" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(6);
+	validList.add ( "OutputFile" );
+	validList.add ( "TableID" );
+	validList.add ( "WriteHeaderComments" );
+	validList.add ( "AlwaysQuoteStrings" );
+	validList.add ( "NewlineReplacement" );
+	validList.add ( "NaNValue" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -221,7 +221,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "WriteTableToDelimitedFile_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -240,7 +240,8 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+	status.clearLog(commandPhase);
 	
 	String OutputFile_full = null;
 
@@ -248,6 +249,12 @@ CommandWarningException, CommandException
     String OutputFile = parameters.getValue ( "OutputFile" );
     OutputFile_full = OutputFile;
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
+    	// In discovery mode want lists of tables to include ${Property}
+    	if ( TableID.indexOf("${") >= 0 ) {
+    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    	}
+    }
     String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
     boolean WriteHeaderComments_boolean = true;
     if ( (WriteHeaderComments != null) && WriteHeaderComments.equalsIgnoreCase(_False) ) {
@@ -315,7 +322,8 @@ CommandWarningException, CommandException
     
 		// Convert to an absolute path...
 		OutputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            	TSCommandProcessorUtil.expandParameterValue(processor, this,OutputFile)) );
 		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
 		warning_count = writeTable ( table, OutputFile_full, WriteHeaderComments_boolean,
 		    AlwaysQuoteStrings_boolean, StringUtil.literalToInternal(newlineReplacement), NaNValue,

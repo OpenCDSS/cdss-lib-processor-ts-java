@@ -358,7 +358,8 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table that is providing the list of time series or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -548,6 +549,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Properties:"),
         0, ++yProp, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Properties_JTextArea = new JTextArea (3,35);
+    __Properties_JTextArea.setToolTipText("Specify time series properties that should be set, can use ${Property} notation");
     __Properties_JTextArea.setLineWrap ( true );
     __Properties_JTextArea.setWrapStyleWord ( true );
     __Properties_JTextArea.setToolTipText("PropertyName1:PropertyValue1,PropertyName2:PropertyValue2");
@@ -578,7 +580,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         "Specify the default output period to ensure that the default time series will span a period."),
         0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
-        "<html>The default output period date/times can be specified using processor ${property} notation.  <b>The following will be supported in the future:</b></html>"),
+        "The default output period date/times can be specified using processor ${property} notation. The following values are also recognized:"),
         0, ++yIfNotFound, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
         "    CurrentToYear, CurrentToMonth, CurrentToDay, CurrentToHour, CurrentToMinute"),
@@ -608,32 +610,34 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     __DefaultUnits_JTextField = new JTextField ( "", 20 );
     __DefaultUnits_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ifNotFound_JPanel, __DefaultUnits_JTextField,
-    1, yIfNotFound, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	1, yIfNotFound, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
-    "Optional - units when IfNotFound=" + __command._Default + "."),
-    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	    "Optional - units when IfNotFound=" + __command._Default + "."),
+	    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default output start:" ), 
         0, ++yIfNotFound, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultOutputStart_JTextField = new JTextField ( "", 20 );
+    __DefaultOutputStart_JTextField.setToolTipText("Specify the default output start using a date/time string or ${Property} notation");
     __DefaultOutputStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ifNotFound_JPanel, __DefaultOutputStart_JTextField,
-    1, yIfNotFound, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	1, yIfNotFound, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
-    "Optional - period start when IfNotFound=" + __command._Default + " to initialize time series."),
-    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	    "Optional - period start when IfNotFound=" + __command._Default + " to initialize time series."),
+	    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel ( "Default output end:" ), 
         0, ++yIfNotFound, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultOutputEnd_JTextField = new JTextField ( "", 20 );
+    __DefaultOutputEnd_JTextField.setToolTipText("Specify the default output end using a date/time string or ${Property} notation");
     __DefaultOutputEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ifNotFound_JPanel, __DefaultOutputEnd_JTextField,
-    1, yIfNotFound, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	1, yIfNotFound, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ifNotFound_JPanel, new JLabel (
-    "Optional - period end when IfNotFound=" + __command._Default + " to initialize time series."),
-    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	    "Optional - period end when IfNotFound=" + __command._Default + " to initialize time series."),
+	    3, yIfNotFound, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for check property
+    // Panel for count properties
     int yCount = -1;
     JPanel count_JPanel = new JPanel();
     count_JPanel.setLayout( new GridBagLayout() );
@@ -651,6 +655,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series count property:" ), 
         0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeSeriesCountProperty_JTextField = new JTextField ( "", 20 );
+    __TimeSeriesCountProperty_JTextField.setToolTipText("Specify time series count property to set, can use ${Property} notation");
     __TimeSeriesCountProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(count_JPanel, __TimeSeriesCountProperty_JTextField,
         1, yCount, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -668,6 +673,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series index property:" ), 
         0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeSeriesIndex1Property_JTextField = new JTextField ( "", 20 );
+    __TimeSeriesIndex1Property_JTextField.setToolTipText("Specify time series index property to set, can use ${Property} notation");
     __TimeSeriesIndex1Property_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(count_JPanel, __TimeSeriesIndex1Property_JTextField,
         1, yCount, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

@@ -65,8 +65,7 @@ public ReadTimeSeriesList_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -93,7 +92,7 @@ throws InvalidCommandParameterException
 	String Interval = parameters.getValue("Interval");
 	String IfNotFound = parameters.getValue("IfNotFound");
     
-    if ( (TableID == null) || (TableID.length() == 0) ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -313,6 +312,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String TableID = parameters.getValue("TableID");
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
+    	// In discovery mode want lists of tables to include ${Property}
+    	if ( TableID.indexOf("${") >= 0 ) {
+    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    	}
+    }
     String LocationTypeColumn = parameters.getValue ( "LocationTypeColumn" );
     String LocationType = parameters.getValue ( "LocationType" );
     String LocationColumn = parameters.getValue ( "LocationColumn" );
@@ -352,6 +357,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String ColumnProperties = parameters.getValue ( "ColumnProperties" );
     StringDictionary columnProperties = new StringDictionary(ColumnProperties,":",",");
     String Properties = parameters.getValue ( "Properties" );
+    if ( (Properties != null) && (Properties.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	Properties = TSCommandProcessorUtil.expandParameterValue(processor, this, Properties);
+	}
     Hashtable properties = null;
     if ( (Properties != null) && (Properties.length() > 0) && (Properties.indexOf(":") > 0) ) {
         properties = new Hashtable();
@@ -377,7 +385,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String DefaultOutputStart = parameters.getValue("DefaultOutputStart");
     String DefaultOutputEnd = parameters.getValue("DefaultOutputEnd");
     String TimeSeriesCountProperty = parameters.getValue ( "TimeSeriesCountProperty" );
+    if ( (TimeSeriesCountProperty != null) && (TimeSeriesCountProperty.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TimeSeriesCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, TimeSeriesCountProperty);
+	}
     String TimeSeriesIndex1Property = parameters.getValue ( "TimeSeriesIndex1Property" );
+    if ( (TimeSeriesIndex1Property != null) && (TimeSeriesIndex1Property.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TimeSeriesIndex1Property = TSCommandProcessorUtil.expandParameterValue(processor, this, TimeSeriesIndex1Property);
+	}
     
     // Assign the default output period, which accepts properties
     
@@ -390,6 +404,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 	    try {
 			DefaultOutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( DefaultOutputEnd, "DefaultOutputEnd", processor,
@@ -397,6 +412,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    }
 	    catch ( InvalidCommandParameterException e ) {
 	    	// Warning will have been added above...
+	    	++warning_count;
 	    }
     }
     

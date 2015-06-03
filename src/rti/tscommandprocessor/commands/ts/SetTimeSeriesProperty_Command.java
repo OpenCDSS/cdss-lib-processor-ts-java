@@ -1,15 +1,13 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
-
 import RTi.TS.TS;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -59,8 +57,7 @@ public SetTimeSeriesProperty_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -78,8 +75,8 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
     
-    if ( (MissingValue != null) && !MissingValue.equals("") && !StringUtil.isDouble(MissingValue) ) {
-        message = "The missing value \"" + MissingValue + "\" is not a number.";
+    if ( (MissingValue != null) && !MissingValue.isEmpty() && !MissingValue.startsWith("${") && !StringUtil.isDouble(MissingValue) ) {
+        message = "The missing value \"" + MissingValue + "\" is not a number."; 
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -150,18 +147,18 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-	valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-	valid_Vector.add ( "Description" );
-    valid_Vector.add ( "Units" );
-    valid_Vector.add ( "MissingValue" );
-	valid_Vector.add ( "Editable" );
-    valid_Vector.add ( "PropertyName" );
-    valid_Vector.add ( "PropertyType" );
-    valid_Vector.add ( "PropertyValue" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(10);
+    validList.add ( "TSList" );
+	validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+	validList.add ( "Description" );
+    validList.add ( "Units" );
+    validList.add ( "MissingValue" );
+	validList.add ( "Editable" );
+    validList.add ( "PropertyName" );
+    validList.add ( "PropertyType" );
+    validList.add ( "PropertyValue" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -174,8 +171,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -193,7 +189,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "SetTimeSeriesProperty_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -208,11 +204,23 @@ CommandWarningException, CommandException
 		TSList = TSListType.ALL_TS.toString();
 	}
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String Description = parameters.getValue ( "Description" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
+    String Description = parameters.getValue ( "Description" ); // Expanded below
     String Units = parameters.getValue ( "Units" );
+	if ( (Units != null) && (Units.indexOf("${") >= 0) ) {
+		Units = TSCommandProcessorUtil.expandParameterValue(processor, this, Units);
+	}
     String MissingValue = parameters.getValue ( "MissingValue" );
-    boolean Editable_boolean = false;   // Default
+	if ( (MissingValue != null) && (MissingValue.indexOf("${") >= 0) ) {
+		MissingValue = TSCommandProcessorUtil.expandParameterValue(processor, this, MissingValue);
+	}
+    boolean Editable_boolean = false; // Default
     String Editable = parameters.getValue ( "Editable" );
     if ( (Editable != null) && Editable.equalsIgnoreCase(_True) ) {
         Editable_boolean = true;
@@ -275,7 +283,8 @@ CommandWarningException, CommandException
         // Now set the data...
         try {
             if ( (Description != null) && (Description.length() > 0) ) {
-                ts.setDescription ( ts.formatLegend ( Description ) );
+                ts.setDescription ( TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+                    processor, ts, Description, status, CommandPhaseType.RUN) );
                 ts.addToGenesis ( "Set description to \"" + ts.getDescription() + "\"" );
             }
             if ( (Units != null) && (Units.length() > 0) ) {

@@ -20,9 +20,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -32,7 +34,6 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -47,9 +48,9 @@ public class SetTimeSeriesProperty_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
 
-private SimpleJButton __cancel_JButton = null; // Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
-private SetTimeSeriesProperty_Command __command = null;// Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SetTimeSeriesProperty_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox	__TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -60,7 +61,7 @@ private SimpleJComboBox __Editable_JComboBox = null;
 private JTabbedPane __props_JTabbedPane = null;
 private TSFormatSpecifiersJPanel __Description_JTextField = null; // Allows expansion of % specifiers
 private JTextField __Units_JTextField = null;
-private JTextField __MissingValue_JTextField = null; // Missing value for output
+private JTextField __MissingValue_JTextField = null;
 private SimpleJComboBox __PropertyType_JComboBox = null;
 private JTextField __PropertyValue_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
@@ -257,26 +258,30 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Set time series properties (metadata)." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Time series identifier information cannot be changed because it is fundamental to locating time series during processing."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel (
@@ -303,7 +308,7 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(builtIn_JPanel, new JLabel("Description:"),
         0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Description_JTextField = new TSFormatSpecifiersJPanel(10);
-    __Description_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __Description_JTextField.getTextField().setToolTipText("Use %L for location, %T for data type, %I for interval, also ${ts:Property} and ${Property}.");
     __Description_JTextField.addKeyListener ( this );
     __Description_JTextField.getDocument().addDocumentListener(this);
     __Description_JTextField.setToolTipText("%L for location, %T for data type.");
@@ -316,6 +321,7 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(builtIn_JPanel, new JLabel ("Data units:"),
         0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Units_JTextField = new JTextField (10);
+    __Units_JTextField.setToolTipText("Specify units or use ${Property} notation");
     __Units_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(builtIn_JPanel, __Units_JTextField,
         1, yBuiltIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -326,6 +332,7 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(builtIn_JPanel, new JLabel ( "Missing value:" ),
         0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MissingValue_JTextField = new JTextField ( "", 20 );
+    __MissingValue_JTextField.setToolTipText("Specify missing value as number, NaN or use ${Property} notation");
     __MissingValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(builtIn_JPanel, __MissingValue_JTextField,
         1, yBuiltIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

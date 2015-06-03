@@ -6,13 +6,12 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_NewStatisticYearTS;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -32,7 +31,6 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
@@ -68,8 +66,7 @@ public NewStatisticYearTS_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -93,14 +90,14 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	if ( (Alias == null) || Alias.equals("") ) {
+	if ( (Alias == null) || Alias.isEmpty() ) {
         message = "The time series alias must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an alias." ) );
 	}
-	if ( (TSID == null) || TSID.equals("") ) {
+	if ( (TSID == null) || TSID.isEmpty() ) {
         message = "The time series identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -236,9 +233,8 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
-        !AnalysisStart.equalsIgnoreCase("OutputStart") &&
-        !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
+    if ( (AnalysisStart != null) && !AnalysisStart.isEmpty() && !AnalysisStart.startsWith("${") &&
+        !AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
         try {
             DateTime.parse(AnalysisStart);
         }
@@ -250,9 +246,8 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         }
     }
-    if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") &&
-        !AnalysisEnd.equalsIgnoreCase("OutputStart") &&
-        !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
+    if ( (AnalysisEnd != null) && !AnalysisEnd.isEmpty() && !AnalysisEnd.startsWith("${") &&
+        !AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
         try {
             DateTime.parse( AnalysisEnd );
         }
@@ -311,21 +306,21 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "NewTSID" );
-    valid_Vector.add ( "Statistic" );
-    valid_Vector.add ( "TestValue" );
-    valid_Vector.add ( "AllowMissingCount" );
-    valid_Vector.add ( "MinimumSampleSize" );
-    valid_Vector.add ( "OutputYearType" );
-    valid_Vector.add ( "AnalysisStart" );
-    valid_Vector.add ( "AnalysisEnd" );
-    valid_Vector.add ( "AnalysisWindowStart" );
-    valid_Vector.add ( "AnalysisWindowEnd" );
-    valid_Vector.add ( "SearchStart" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(13);
+    validList.add ( "Alias" );
+    validList.add ( "TSID" );
+    validList.add ( "NewTSID" );
+    validList.add ( "Statistic" );
+    validList.add ( "TestValue" );
+    validList.add ( "AllowMissingCount" );
+    validList.add ( "MinimumSampleSize" );
+    validList.add ( "OutputYearType" );
+    validList.add ( "AnalysisStart" );
+    validList.add ( "AnalysisEnd" );
+    validList.add ( "AnalysisWindowStart" );
+    validList.add ( "AnalysisWindowEnd" );
+    validList.add ( "SearchStart" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -440,19 +435,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the command in discovery mode.
-@param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-*/
-public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
-    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
-}
-
-/**
 Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
@@ -467,6 +449,19 @@ CommandWarningException, CommandException
 }
 
 /**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
 Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
@@ -475,7 +470,7 @@ Run the command.
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "NewStatisticYearTS.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -491,9 +486,15 @@ CommandWarningException, CommandException
         setDiscoveryTSList ( null );
     }
 
-	String Alias = parameters.getValue ( "Alias" );
+	String Alias = parameters.getValue ( "Alias" ); // Expansion handled below
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
 	String NewTSID = parameters.getValue ( "NewTSID" );
+	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID);
+	}
 	String Statistic = parameters.getValue ( "Statistic" );
 	TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
 	Double TestValue_Double = null; // Default
@@ -526,102 +527,24 @@ CommandWarningException, CommandException
 
 	DateTime AnalysisStart_DateTime = null;
 	DateTime AnalysisEnd_DateTime = null;
-	try {
-		if ( (AnalysisStart != null) && !AnalysisStart.equals("") ) {
-			PropList request_params = new PropList ( "" );
-			request_params.set ( "DateTime", AnalysisStart );
-			CommandProcessorRequestResultsBean bean = null;
-			try { bean =
-				processor.processRequest( "DateTime", request_params);
-			}
-			catch ( Exception e ) {
-				message = "Error requesting AnalysisStart DateTime(DateTime=" +
-				AnalysisStart + ") from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
-				message = "Null value for AnalysisStart DateTime(DateTime=" +
-				AnalysisStart +	") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify the AnalysisStart information." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {
-			    AnalysisStart_DateTime = (DateTime)prop_contents;
-			}
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
+				status, warning_level, command_tag );
 		}
-	}
-	catch ( Exception e ) {
-		message = "AnalysisStart \"" + AnalysisStart + "\" is invalid.";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the AnalysisStart information." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
-	
-	try {
-		if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") ) {
-			PropList request_params = new PropList ( "" );
-			request_params.set ( "DateTime", AnalysisEnd );
-			CommandProcessorRequestResultsBean bean = null;
-			try { bean =
-				processor.processRequest( "DateTime", request_params);
-			}
-			catch ( Exception e ) {
-				message = "Error requesting AnalysisEnd DateTime(DateTime=" +
-				AnalysisEnd + ") from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
-				message = "Null value for AnalysisEnd DateTime(DateTime=" +
-				AnalysisStart +	") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify the AnalysisEnd information." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {	AnalysisEnd_DateTime = (DateTime)prop_contents;
-			}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-	}
-	catch ( Exception e ) {
-		message = "AnalysisEnd \"" + AnalysisEnd + "\" is invalid.";
-		Message.printWarning(warning_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, message );
-        status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the AnalysisEnd information." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
+		try {
+			AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+    }
 		
 	DateTime AnalysisWindowStart_DateTime = null;
 	if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
@@ -760,14 +683,19 @@ CommandWarningException, CommandException
     	        outputYearType, AnalysisStart_DateTime, AnalysisEnd_DateTime,
                 AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SearchStart_DateTime );
     		TS stats_ts = tsu.newStatisticYearTS ( createData );
-    		String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                processor, stats_ts, Alias, status, commandPhase);
-    		stats_ts.setAlias ( alias ); // Do separate because setting the NewTSID might cause the alias set to fail below.
+    		// Set alias separately because setting the NewTSID might cause the alias set to fail below.
+            if ( (Alias != null) && !Alias.equals("") ) {
+                String alias = Alias;
+                if ( commandPhase == CommandPhaseType.RUN ) {
+                	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, stats_ts, Alias, status, commandPhase);
+                }
+                stats_ts.setAlias ( alias );
+            }
     
     		// Update the data to the processor so that appropriate actions are taken...
     	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
     	        // Just want time series headers initialized
-    	        List<TS> discoveryTSList = new Vector();
+    	        List<TS> discoveryTSList = new ArrayList<TS>(1);
     	        discoveryTSList.add ( stats_ts );
     	        setDiscoveryTSList ( discoveryTSList );
     	    }

@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -27,7 +29,6 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSFunctionType;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -252,22 +253,24 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create a new time series, which can be referenced using the alias or TSID."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify period start and end date/times using a precision consistent with the data interval."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "If the start and end for the period are not set, then a SetOutputPeriod() command must be specified " +
-        "before the command."),
+        "If the start and end for the period are not set, then a SetOutputPeriod() command must be specified before the command."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.getTextField().setToolTipText("Specify alias using % format specifiers, ${ts:Property} or ${Property} notation");
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener(this);
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
@@ -278,6 +281,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
+	__NewTSID_JTextArea.setToolTipText("Specify new time series ID, can include ${Property} notation for TSID parts");
 	__NewTSID_JTextArea.setEditable(false); // Force users to use the custom editor
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
@@ -298,6 +302,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/Name:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Description_JTextField = new JTextField ( "", 10 );
+	__Description_JTextField.setToolTipText("Specify description or use ${Property} notation");
 	JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__Description_JTextField.addKeyListener ( this );
@@ -308,6 +313,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Start:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetStart_JTextField = new JTextField ( "", 20 );
+	__SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation");
 	__SetStart_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -318,6 +324,7 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "End:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetEnd_JTextField = new JTextField ( "", 20 );
+	__SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
 	__SetEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -327,7 +334,8 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Units_JTextField = new JTextField ( "", 10 );
+	__Units_JTextField = new JTextField ( "", 20 );
+	__Units_JTextField.setToolTipText("Specify the data units or use ${Property} notation");
 	JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__Units_JTextField.addKeyListener ( this );
@@ -337,7 +345,8 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MissingValue_JTextField = new JTextField ( "", 10 );
+    __MissingValue_JTextField = new JTextField ( "", 20 );
+    __MissingValue_JTextField.setToolTipText("Specify the missing value number, NaN, or use ${Property} notation");
     JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __MissingValue_JTextField.addKeyListener ( this );
@@ -347,7 +356,8 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial value:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InitialValue_JTextField = new JTextField ( "", 10 );
+	__InitialValue_JTextField = new JTextField ( "", 20 );
+	__InitialValue_JTextField.setToolTipText("Specify the initial value, or use ${Property} notation");
 	JGUIUtil.addComponent(main_JPanel, __InitialValue_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__InitialValue_JTextField.addKeyListener ( this );
@@ -357,7 +367,8 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial flag:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InitialFlag_JTextField = new JTextField ( "", 10 );
+    __InitialFlag_JTextField = new JTextField ( "", 20 );
+    __InitialFlag_JTextField.setToolTipText("Specify the initial flag for values, or use ${Property} notation");
     JGUIUtil.addComponent(main_JPanel, __InitialFlag_JTextField,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __InitialFlag_JTextField.addKeyListener ( this );

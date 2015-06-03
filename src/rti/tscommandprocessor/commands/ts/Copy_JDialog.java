@@ -20,17 +20,17 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -202,21 +202,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__TSID_JComboBox = null;
-	__NewTSID_JTextArea = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__ok_JButton = null;
-	__parent_JFrame = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param title Dialog title.
@@ -233,11 +218,11 @@ private void initialize ( JFrame parent, Copy_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Make a copy of a time series, giving the copy an alias." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The copy is exactly the same and can be referenced by its alias in other commands." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -245,10 +230,13 @@ private void initialize ( JFrame parent, Copy_Command command )
 		"Specify new time series identifier (TSID) information for the copy to avoid errors " +
 		"with the copy being mistaken for the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to copy:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
+	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
 	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 		(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	__TSID_JComboBox.setData ( tsids );
@@ -259,6 +247,7 @@ private void initialize ( JFrame parent, Copy_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
+	__NewTSID_JTextArea.setToolTipText("Specify time series identifier, can use ${Property} notation");
     __NewTSID_JTextArea.setEditable(false);
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
@@ -280,6 +269,7 @@ private void initialize ( JFrame parent, Copy_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.getTextField().setToolTipText("Specify time series alias using format specifiers, ${ts:property}, and ${Property} notation");
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,

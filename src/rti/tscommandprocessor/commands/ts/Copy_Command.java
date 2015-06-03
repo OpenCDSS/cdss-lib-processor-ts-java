@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -13,7 +14,6 @@ import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIterator;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -66,8 +66,7 @@ public Copy_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -84,7 +83,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	if ( (Alias == null) || Alias.equals("") ) {
+	if ( (Alias == null) || Alias.isEmpty() ) {
         message = "The time series alias must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -92,7 +91,7 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message,
                 "Provide a time series alias when defining the command."));
 	}
-	if ( (TSID == null) || TSID.equals("") ) {
+	if ( (TSID == null) || TSID.isEmpty() ) {
         message = "The time series identifier for the time series to copy must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -100,7 +99,7 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message,
                 "Provide a time series identifier when defining the command."));
 	}
-    if ( (NewTSID == null) || NewTSID.equals("") ) {
+    if ( (NewTSID == null) || NewTSID.isEmpty() ) {
         message = "The new time series identifier must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -158,13 +157,13 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "NewTSID" );
-    valid_Vector.add ( "CopyDataFlags" );
-    valid_Vector.add ( "CopyHistory" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(5);
+    validList.add ( "Alias" );
+    validList.add ( "TSID" );
+    validList.add ( "NewTSID" );
+    validList.add ( "CopyDataFlags" );
+    validList.add ( "CopyHistory" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -179,8 +178,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -219,15 +217,13 @@ public List getObjectList ( Class c )
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
 @param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "copy_Command.parseCommand", message;
+	String routine = getClass().getSimpleName() + ".parseCommand", message;
 	
     if ( !command.trim().toUpperCase().startsWith("TS") ) {
         // New style syntax using simple parameter=value notation
@@ -364,19 +360,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the command in discovery mode.
-@param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-*/
-public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
-    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
-}
-
-/**
 Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
@@ -391,16 +374,27 @@ CommandWarningException, CommandException
 }
 
 /**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
 Run the command.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "Copy_Command.runCommandInternal", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -413,9 +407,15 @@ CommandWarningException, CommandException
     CommandStatus status = getCommandStatus();
     status.clearLog(commandPhase);
 	
-	String Alias = parameters.getValue ( "Alias" );
+	String Alias = parameters.getValue ( "Alias" ); // Expansion is handled below
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
 	String NewTSID = parameters.getValue ( "NewTSID" );
+	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID);
+	}
 	String CopyDataFlags = parameters.getValue ( "CopyDataFlags" );
 	boolean copyDataFlags = true; // default
 	if ( (CopyDataFlags != null) && CopyDataFlags.equalsIgnoreCase(_False) ) {
@@ -522,11 +522,6 @@ CommandWarningException, CommandException
                 tscopy.addToGenesis("Copied TSID=\"" + ts.getIdentifier() + "\"");
             }
         }
-        if ( (Alias != null) && !Alias.equals("") ) {
-            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                processor, tscopy, Alias, status, commandPhase);
-            tscopy.setAlias ( alias );
-        }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error trying to copy time series \""+ ts.getIdentifier() + "\".";
@@ -540,13 +535,17 @@ CommandWarningException, CommandException
 	}
 
 	try {
-        if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
+		// NewTSID was expanded above
+        if ( (NewTSID != null) && !NewTSID.isEmpty() ) {
 			TSIdent tsident = new TSIdent ( NewTSID );
 			tscopy.setIdentifier ( tsident );
 		}
-        if ( (Alias != null) && !Alias.equals("") ) {
-            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                processor, tscopy, Alias, status, commandPhase);
+        if ( (Alias != null) && !Alias.isEmpty() ) {
+            String alias = Alias;
+            if ( commandPhase == CommandPhaseType.RUN ) {
+            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+            		processor, tscopy, Alias, status, commandPhase);
+            }
             tscopy.setAlias ( alias );
         }
 	}
@@ -565,7 +564,7 @@ CommandWarningException, CommandException
 
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Just want time series headers initialized
-        List<TS> discoveryTSList = new Vector();
+        List<TS> discoveryTSList = new ArrayList<TS>(1);
         discoveryTSList.add ( tscopy );
         setDiscoveryTSList ( discoveryTSList );
     }

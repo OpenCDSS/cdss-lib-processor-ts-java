@@ -66,8 +66,7 @@ public SelectTimeSeries_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -186,7 +185,7 @@ throws InvalidCommandParameterException
                     message, "Select a supported conditiion using the command editor." ) );
             }
         }
-        if ( (PropertyValue == null) || PropertyValue.equals("") ) {
+        if ( (PropertyValue == null) || PropertyValue.isEmpty() ) {
             message = "The property value must be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -296,7 +295,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "SelectTimeSeries_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -315,7 +314,13 @@ CommandWarningException, CommandException
 	    TSList = "" + TSListType.ALL_TS; // Default
 	}
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
 	String TSPosition = parameters.getValue ( "TSPosition" );
 	String DeselectAllFirst = parameters.getValue ( "DeselectAllFirst" );
 	boolean DeselectAllFirst_boolean = false;  // Default
@@ -327,6 +332,9 @@ CommandWarningException, CommandException
         IfNotFound = _Fail; // default
     }
 	String SelectCountProperty = parameters.getValue ( "SelectCountProperty" );
+	if ( (SelectCountProperty != null) && (SelectCountProperty.indexOf("${") >= 0) ) {
+		SelectCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, SelectCountProperty);
+	}
     String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyCriterion = parameters.getValue ( "PropertyCriterion" );
     // TODO SAM 2010-09-21 Need to enable numeric property checks
@@ -335,6 +343,9 @@ CommandWarningException, CommandException
         propertyStringConditionType = InputFilterStringCriterionType.valueOfIgnoreCase(PropertyCriterion);
     }
     String PropertyValue = parameters.getValue ( "PropertyValue" );
+	if ( (PropertyValue != null) && (PropertyValue.indexOf("${") >= 0) ) {
+		PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
+	}
 	
 	// If necessary, get the list of all time series...
 	List<TS> tslistAll = new Vector();

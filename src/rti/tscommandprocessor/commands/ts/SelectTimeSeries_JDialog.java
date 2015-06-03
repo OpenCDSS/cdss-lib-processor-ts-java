@@ -20,15 +20,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.Util.GUI.InputFilterStringCriterionType;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -246,6 +247,8 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Selections can be specified by the methods listed in the following tabs."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	
    	__main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
@@ -297,13 +300,15 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     __TSList_JComboBox.add( TSListType.TSPOSITION.toString());
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yList = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, list_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yList );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yList = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -360,6 +365,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property value:" ), 
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyValue_JTextField = new JTextField ( 20 );
+    __PropertyValue_JTextField.setToolTipText("Specify property value to match or specify with ${Property} notation");
     __PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __PropertyValue_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -417,7 +423,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Select count property:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SelectCountProperty_JTextField = new JTextField ( "", 20 );
-    __SelectCountProperty_JTextField.setToolTipText("The property can be referenced in other commands using ${Property}.");
+    __SelectCountProperty_JTextField.setToolTipText("Specify name of the property to set to the selected count, or specify with ${Property} notation");
     __SelectCountProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SelectCountProperty_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

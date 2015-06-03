@@ -47,8 +47,7 @@ public SetConstant_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -145,7 +144,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Choose a single value or monthly values, but not both." ) );
     }
-	if ( (SetStart != null) && !SetStart.equals("") && !SetStart.equalsIgnoreCase("OutputStart")){
+	if ( (SetStart != null) && !SetStart.isEmpty() && !SetStart.equalsIgnoreCase("OutputStart") && !SetStart.startsWith("${") ){
 		try {	DateTime.parse(SetStart);
 		}
 		catch ( Exception e ) {
@@ -156,7 +155,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (SetEnd != null) && !SetEnd.equals("") && !SetEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (SetEnd != null) && !SetEnd.isEmpty() && !SetEnd.equalsIgnoreCase("OutputEnd") && !SetEnd.startsWith("${")) {
 		try {	DateTime.parse( SetEnd);
 		}
 		catch ( Exception e ) {
@@ -289,15 +288,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number number of command to run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "SetConstant_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -309,6 +307,7 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
     
     CommandStatus status = getCommandStatus();
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
     status.clearLog(CommandPhaseType.RUN);
 
 	String TSList = parameters.getValue ( "TSList" );
@@ -316,7 +315,13 @@ CommandWarningException, CommandException
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
 
 	// Get the time series to process...
 	
@@ -427,98 +432,24 @@ CommandWarningException, CommandException
 	// Figure out the dates to use for the analysis...
 	DateTime SetStart_DateTime = null;
 	DateTime SetEnd_DateTime = null;
-
-	try {
-	if ( SetStart != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", SetStart );
-		bean = null;
+    if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-            bean = processor.processRequest( "DateTime", request_params);
+			SetStart_DateTime = TSCommandProcessorUtil.getDateTime ( SetStart, "SetStart", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-			message = "Error requesting SetStart DateTime(DateTime=" +	SetStart + ") from processor.";
-			Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-			throw new InvalidCommandParameterException ( message );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for SetStart DateTime(DateTime=" + SetStart + "\") returned from processor.";
-			Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
-		else {	SetStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	}
-	catch ( Exception e ) {
-		message = "SetStart \"" + SetStart + "\" is invalid.";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time or OutputStart." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
-	
-	try {
-	if ( SetEnd != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", SetEnd );
-		bean = null;
 		try {
-            bean = processor.processRequest( "DateTime", request_params);
+			SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-			message = "Error requesting SetEnd DateTime(DateTime=" + SetEnd + "\") from processor.";
-			Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-			throw new InvalidCommandParameterException ( message );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for SetEnd DateTime(DateTime=" + SetEnd +	"\") returned from processor.";
-			Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputEnd." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
-		else {	SetEnd_DateTime = (DateTime)prop_contents;
-		}
-	}
-	}
-	catch ( Exception e ) {
-		message = "SetEnd \"" + SetEnd + "\" is invalid.";
-		Message.printWarning(warning_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time or OutputEnd." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
+    }
 
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series)...

@@ -51,8 +51,7 @@ public CopyTable_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -66,7 +65,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (TableID == null) || (TableID.length() == 0) ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -74,7 +73,7 @@ throws InvalidCommandParameterException
                 message, "Specify the table identifier." ) );
     }
     
-    if ( (NewTableID == null) || (NewTableID.length() == 0) ) {
+    if ( (NewTableID == null) || NewTableID.isEmpty() ) {
         message = "The new table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -181,18 +180,18 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommandInternal",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommandInternal",message = "";
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
 
@@ -200,7 +199,13 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
     String NewTableID = parameters.getValue ( "NewTableID" );
+    if ( (NewTableID != null) && !NewTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && NewTableID.indexOf("${") >= 0 ) {
+    	NewTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTableID);
+    }
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
     String [] includeColumns = null;
     if ( (IncludeColumns != null) && !IncludeColumns.equals("") ) {
@@ -229,6 +234,9 @@ CommandWarningException, CommandException
         }
     }
     String ColumnFilters = parameters.getValue ( "ColumnFilters" );
+    if ( (ColumnFilters != null) && !ColumnFilters.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnFilters.indexOf("${") >= 0 ) {
+    	ColumnFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnFilters);
+    }
     Hashtable columnFilters = new Hashtable();
     if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
         // First break map pairs by comma
@@ -242,11 +250,14 @@ CommandWarningException, CommandException
     String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );
     StringDictionary columnExcludeFilters = new StringDictionary(ColumnExcludeFilters,":",",");
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
+    if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() && (commandPhase == CommandPhaseType.RUN) && RowCountProperty.indexOf("${") >= 0 ) {
+    	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
+    }
     
     // Get the table to process.
 
     DataTable table = null;
-    if ( command_phase == CommandPhaseType.RUN ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (TableID != null) && !TableID.equals("") ) {
@@ -290,7 +301,7 @@ CommandWarningException, CommandException
     	// Copy the table...
 
 	    DataTable newTable = null;
-	    if ( command_phase == CommandPhaseType.RUN ) {
+	    if ( commandPhase == CommandPhaseType.RUN ) {
 	        newTable = table.createCopy ( table, NewTableID, includeColumns,
 	            distinctColumns, columnMap, columnFilters, columnExcludeFilters );
             
@@ -306,12 +317,12 @@ CommandWarningException, CommandException
                 Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
             }
         }
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Create an empty table and set the ID
             newTable = new DataTable();
             newTable.setTableID ( NewTableID );
@@ -344,7 +355,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error copying table (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
@@ -356,7 +367,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

@@ -5,14 +5,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -21,7 +22,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
 import java.util.List;
 
 import RTi.Util.GUI.DictionaryJDialog;
@@ -100,8 +100,9 @@ public void actionPerformed(ActionEvent event)
         String [] notes = {
             "Rows in the original table can be included in the copy by filtering on column values.",
             "All specified conditions must be true to include the row.",
-            "Column Name - column name in the original table to filter",
-            "Column Value Filter Pattern - a literal value to match (to include), or a pattern using * as a wildcard"
+            "Column Name - column name in the original table to filter, can include ${Property}",
+            "Column Value Filter Pattern - a literal value to match (to include), or a pattern using * as a wildcard,",
+            "   can include ${Property}"
         };
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
             notes, "Column Name", "Column Value Filter Pattern",10)).response();
@@ -226,21 +227,24 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
-	int yy = 0;
+	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command creates a new table by copying another table."),
-        0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "For example, single column tables can be created from a larger table to use as a list with a template."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -253,6 +257,7 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ("New table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewTableID_JTextField = new JTextField (10);
+    __NewTableID_JTextField.setToolTipText("Specify the new table ID or use ${Property} notation");
     __NewTableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __NewTableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -296,6 +301,7 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column include filters:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnFilters_JTextArea = new JTextArea (3,35);
+    __ColumnFilters_JTextArea.setToolTipText("Specify table column filters or use ${Property} notation");
     __ColumnFilters_JTextArea.setLineWrap ( true );
     __ColumnFilters_JTextArea.setWrapStyleWord ( true );
     __ColumnFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
@@ -324,7 +330,7 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel("Row count property:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RowCountProperty_JTextField = new JTextField ( "", 20 );
-    __RowCountProperty_JTextField.setToolTipText("The property can be referenced in other commands using ${Property}.");
+    __RowCountProperty_JTextField.setToolTipText("Specify the property name for the copied table row count, can use ${Property} notation");
     __RowCountProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __RowCountProperty_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

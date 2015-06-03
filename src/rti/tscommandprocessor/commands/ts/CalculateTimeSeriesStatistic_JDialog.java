@@ -334,12 +334,14 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yInput = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, input_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yInput );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yInput = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -407,6 +409,7 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis start:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
     __AnalysisStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __AnalysisStart_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -417,6 +420,7 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ), 
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
     __AnalysisEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __AnalysisEnd_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -469,7 +473,8 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
 	
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID for output:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID for statistic output or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -482,7 +487,8 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
 	
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table TSID column:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableTSIDColumn_JTextField = new JTextField ( 10 );
+    __TableTSIDColumn_JTextField = new JTextField ( 20 );
+    __TableTSIDColumn_JTextField.setToolTipText("Specify the table TSID column or use ${Property} notation");
     __TableTSIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(table_JPanel, __TableTSIDColumn_JTextField,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -502,7 +508,8 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table statistic column:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableStatisticColumn_JTextField = new JTextField ( 10 );
+    __TableStatisticColumn_JTextField = new JTextField ( 20 );
+    __TableStatisticColumn_JTextField.setToolTipText("Specify the table statistic column or use ${Property} notation");
     __TableStatisticColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(table_JPanel, __TableStatisticColumn_JTextField,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

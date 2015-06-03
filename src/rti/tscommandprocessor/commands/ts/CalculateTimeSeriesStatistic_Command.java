@@ -375,7 +375,13 @@ CommandWarningException, CommandException
         TSList = TSListType.ALL_TS.toString();
     }
     String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String Statistic = parameters.getValue ( "Statistic" );
     String Value1 = parameters.getValue ( "Value1" );
     Double Value1_Double = null;
@@ -392,18 +398,31 @@ CommandWarningException, CommandException
     if ( (Value3 != null) && !Value3.equals("") ) {
         Value3_Double = new Double(Value3);
     }
-    String AnalysisStart = parameters.getValue ( "AnalysisStart" );
+    String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // Property expansion is handled below
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
     String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
     boolean doTable = false;
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() ) {
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
+    	// In discovery mode want lists of tables to include ${Property}
+    	if ( TableID.indexOf("${") >= 0 ) {
+    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    	}
     	doTable = true;
     }
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    if ( (TableTSIDColumn != null) && (TableTSIDColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableTSIDColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDColumn);
+	}
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    if ( (TableTSIDFormat != null) && (TableTSIDFormat.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableTSIDFormat = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDFormat);
+	}
     String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
+    if ( (TableStatisticColumn != null) && (TableStatisticColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableStatisticColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableStatisticColumn);
+	}
     String [] tableStatisticResultsColumn = new String[0];
     if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
         String [] tableStatisticColumnParts = TableStatisticColumn.split(",");
@@ -437,6 +456,7 @@ CommandWarningException, CommandException
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 		try {
 			AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
@@ -444,6 +464,7 @@ CommandWarningException, CommandException
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
     }
 
@@ -853,8 +874,7 @@ Set the property on the time series.
 */
 private void setProperty ( TS ts, String propertyName, TSUtil_CalculateTimeSeriesStatistic tsu )
 {
-	Class c = tsu.getStatisticDataClass();
-    ts.setProperty(propertyName,tsu.getStatisticResult());
+	ts.setProperty(propertyName,tsu.getStatisticResult());
 }
 
 /**

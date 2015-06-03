@@ -61,14 +61,6 @@ For example TC[1:] indicates columns 1 through the total number of columns.
 */
 protected final String _TC = "TC[";
 
-// FIXME SAM 2007-12-19 Need to evaluate this - runtime versions may be different.
-/**
-Private data members shared between the checkCommandParameters() and the 
-runCommand() methods (prevent code duplication parsing input).  
-*/
-private DateTime __InputStart = null;
-private DateTime __InputEnd = null;
-
 /**
 Column names for each time series being processed, from the ColumnNames parameter that
 has been expanded to reflect file column names.
@@ -178,15 +170,14 @@ public TableToTimeSeries_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {
-    String routine = getClass().getName() + ".checkCommandParameters";
+    String routine = getClass().getSimpleName() + ".checkCommandParameters";
 	String warning = "";
     String message;
     
@@ -225,7 +216,7 @@ throws InvalidCommandParameterException
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
 	
-    if ( (TableID == null) || (TableID.length() == 0) ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -519,8 +510,8 @@ throws InvalidCommandParameterException
 
     List<String> locationIDRuntime = new Vector<String>();
     setLocationIDRuntime( locationIDRuntime );
-    if ( ((LocationID == null) || LocationID.equals("")) &&
-        ((LocationColumn == null) || LocationColumn.equals("")) ) {
+    if ( ((LocationID == null) || LocationID.isEmpty()) &&
+        ((LocationColumn == null) || LocationColumn.isEmpty()) ) {
         message = "The location ID column(s) must be specified for multi-column data tables OR " +
             "the location column must be specified for single-column data tables.";
         warning += "\n" + message;
@@ -528,7 +519,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify 1+ location ID column(s) values separated by commas or a single location column." ) );
     }
-    if ( (LocationID != null) && !LocationID.equals("") ) {
+    if ( (LocationID != null) && !LocationID.isEmpty() && !LocationID.startsWith("${") ) {
         // Can have one value that is re-used, or LocationID for each time series
         List<String>tokens = StringUtil.breakStringList(LocationID, ",", 0);
         if ( StringUtil.indexOfIgnoreCase(LocationID,_TC, 0) >= 0 ) {
@@ -574,8 +565,8 @@ throws InvalidCommandParameterException
     }
     setLocationIDRuntime ( locationIDRuntime );
     
-    if ( ((LocationID != null) && !LocationID.equals("")) &&
-        ((LocationColumn != null) && !LocationColumn.equals("")) ) {
+    if ( ((LocationID != null) && !LocationID.isEmpty()) &&
+        ((LocationColumn != null) && !LocationColumn.isEmpty()) ) {
         // Can only specify location one way
         message = "LocationID and LocationColumn cannot both be specified.";
         warning += "\n" + message;
@@ -841,9 +832,11 @@ throws InvalidCommandParameterException
     }
 
 	// InputStart
-	if ((InputStart != null) && !InputStart.equals("")) {
+    DateTime inputStart = null;
+    DateTime inputEnd = null;
+	if ((InputStart != null) && !InputStart.isEmpty() && !InputStart.startsWith("${") ) {
 		try {
-			__InputStart = DateTime.parse(InputStart);
+			inputStart = DateTime.parse(InputStart);
 		} 
 		catch (Exception e) {
             message = "The input start date/time \"" + InputStart + "\" is not valid.";
@@ -855,9 +848,9 @@ throws InvalidCommandParameterException
 	}
 
 	// InputEnd
-	if ((InputEnd != null) && !InputEnd.equals("")) {
+	if ((InputEnd != null) && !InputEnd.isEmpty() && !InputEnd.startsWith("${")) {
 		try {
-			__InputEnd = DateTime.parse(InputEnd);
+			inputEnd = DateTime.parse(InputEnd);
 		} 
 		catch (Exception e) {
             message = "The input end date/time \"" + InputEnd + "\" is not valid.";
@@ -869,9 +862,9 @@ throws InvalidCommandParameterException
 	}
 
 	// Make sure __InputStart precedes __InputEnd
-	if ( __InputStart != null && __InputEnd != null ) {
-		if ( __InputStart.greaterThanOrEqualTo( __InputEnd ) ) {
-            message = InputStart + " (" + __InputStart  + ") should be less than InputEnd (" + __InputEnd + ").";
+	if ( inputStart != null && inputEnd != null ) {
+		if ( inputStart.greaterThanOrEqualTo( inputEnd ) ) {
+            message = InputStart + " (" + InputStart  + ") should be less than InputEnd (" + InputEnd + ").";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -2250,7 +2243,7 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "TableToTimeSeries_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
     int log_level = 3;
 	String command_tag = "" + command_number;
@@ -2265,8 +2258,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String TableID = parameters.getValue("TableID");
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
+    	// In discovery mode want lists of tables to include ${Property}
+    	if ( TableID.indexOf("${") >= 0 ) {
+    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    	}
+    }
 	String LocationType = parameters.getValue("LocationType");
 	String LocationID = parameters.getValue("LocationID");
+	if ( (LocationID != null) && LocationID.indexOf("${") >= 0 && (commandPhase == CommandPhaseType.RUN) ) {
+		LocationID = TSCommandProcessorUtil.expandParameterValue(processor, this, LocationID);
+	}
 	String LocationTypeColumn = parameters.getValue("LocationTypeColumn");
 	String LocationColumn = parameters.getValue("LocationColumn");
 	String DataSourceColumn = parameters.getValue("DataSourceColumn");
@@ -2279,7 +2281,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String TimeColumn = parameters.getValue("TimeColumn");
 	String ValueColumn = parameters.getValue("ValueColumn");
 	String FlagColumn = parameters.getValue("FlagColumn");
-	String Alias = parameters.getValue("Alias");
+	String Alias = parameters.getValue("Alias"); // Expanded below
 	String HandleDuplicatesHow = parameters.getValue("HandleDuplicatesHow");
 	HandleDuplicatesHowType handleDuplicatesHow = HandleDuplicatesHowType.valueOfIgnoreCase(HandleDuplicatesHow);
 	String InputStart = parameters.getValue("InputStart");
@@ -2381,135 +2383,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
-    if ( (InputStart != null) && (InputStart.length() != 0) ) {
-        try {
-            PropList request_params = new PropList ( "" );
-            request_params.set ( "DateTime", InputStart );
-            CommandProcessorRequestResultsBean bean = null;
-            try {
-                bean = processor.processRequest( "DateTime", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-    
-            PropList bean_PropList = bean.getResultsPropList();
-            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-            if ( prop_contents == null ) {
-                message = "Null value for InputStart DateTime(DateTime=" + InputStart + ") returned from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the specified date/time is valid." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {  InputStart_DateTime = (DateTime)prop_contents;
-            }
-        }
-        catch ( Exception e ) {
-            message = "InputStart \"" + InputStart + "\" is invalid.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time for the input start, " +
-                            "or InputStart for the global input start." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-    }
-    else {
-        // Get the global input start from the processor...
-        try {
-            Object o = processor.getPropContents ( "InputStart" );
-            if ( o != null ) {
-                InputStart_DateTime = (DateTime)o;
-            }
-        }
-        catch ( Exception e ) {
-            message = "Error requesting the global InputStart from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-    }
-    
-    if ( (InputEnd != null) && (InputEnd.length() != 0) ) {
-        try {
-            PropList request_params = new PropList ( "" );
-            request_params.set ( "DateTime", InputEnd );
-            CommandProcessorRequestResultsBean bean = null;
-            try {
-                bean = processor.processRequest( "DateTime", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting InputEnd DateTime(DateTime=" + InputEnd + ") from processor.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report problem to software support." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-
-            PropList bean_PropList = bean.getResultsPropList();
-            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-            if ( prop_contents == null ) {
-                message = "Null value for InputEnd DateTime(DateTime=" + InputEnd +  ") returned from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the end date/time is valid." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {  InputEnd_DateTime = (DateTime)prop_contents;
-            }
-        }
-        catch ( Exception e ) {
-            message = "InputEnd \"" + InputEnd + "\" is invalid.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time for the input end, " +
-                            "or InputEnd for the global input start." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-    }
-    else {
-        // Get from the processor...
-        try {
-            Object o = processor.getPropContents ( "InputEnd" );
-            if ( o != null ) {
-                InputEnd_DateTime = (DateTime)o;
-            }
-        }
-        catch ( Exception e ) {
-            message = "Error requesting the global InputEnd from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
-        }
+    if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
     }
 
     List<TS> tslist = null; // List of time series that is read

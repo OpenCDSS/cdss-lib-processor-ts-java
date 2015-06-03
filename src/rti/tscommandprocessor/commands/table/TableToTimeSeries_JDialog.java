@@ -22,9 +22,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -32,9 +34,7 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-
 import RTi.Util.IO.PropList;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
 import RTi.Util.Time.DateTimeFormatterType;
@@ -370,10 +370,13 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         "For example, \"Date,TC[2:]\" defines the first column as \"Date\" and column names " +
         "2+ will be taken from the table." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -456,6 +459,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(multTS_JPanel, new JLabel ("Location ID(s):"),
         0, ++yMult, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationID_JTextField = new JTextField (10);
+    __LocationID_JTextField.setToolTipText("Specify the location ID or use ${Property} notation");
     __LocationID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(multTS_JPanel, __LocationID_JTextField,
         1, yMult, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -603,10 +607,9 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(tsid_JPanel, new JLabel("Alias to assign:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
-    __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __Alias_JTextField.getTextField().setToolTipText("Use %L for location, %T for data type, %I for interval, can use ${ts:property} and ${property}.");
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener(this);
-    __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(tsid_JPanel, __Alias_JTextField,
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
@@ -687,6 +690,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(period_JPanel, new JLabel ("Input start:"), 
         0, ++yPeriod, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(period_JPanel, __InputStart_JTextField,
         1, yPeriod, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -696,6 +700,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(period_JPanel, new JLabel ( "Input end:"), 
         0, ++yPeriod, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(period_JPanel, __InputEnd_JTextField,
         1, yPeriod, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

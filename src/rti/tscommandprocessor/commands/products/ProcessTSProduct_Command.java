@@ -1,20 +1,17 @@
 package rti.tscommandprocessor.commands.products;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
-
 import java.awt.event.WindowListener;
+
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.GRTS.TSProcessor;
 import RTi.GRTS.TSProduct;
 import RTi.GRTS.TSProductAnnotationProvider;
-
 import RTi.TS.TSSupplier;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -23,7 +20,6 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -68,8 +64,7 @@ public ProcessTSProduct_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -88,14 +83,15 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	if ( (TSProductFile == null) || (TSProductFile.length() == 0) ) {
+	if ( (TSProductFile == null) || TSProductFile.isEmpty() ) {
         message = "The TSProduct file must be specified.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a time series product file." ) );
 	}
-	else {
+	else if ( !TSProductFile.startsWith("${") ) {
+		// Can only check when ${Property} is not used
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			// Working directory is available so use it...
@@ -132,7 +128,7 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	if ( (RunMode != null) && !RunMode.equals("") &&
+	if ( (RunMode != null) && !RunMode.isEmpty() &&
 		!RunMode.equalsIgnoreCase(_BatchOnly) &&
 		!RunMode.equalsIgnoreCase(_GUIOnly) &&
 		!RunMode.equalsIgnoreCase(_GUIAndBatch) ) {
@@ -144,7 +140,7 @@ throws InvalidCommandParameterException
                         "Correct the run mode to be blank, " + _BatchOnly + ", " + _GUIOnly + ", or " +
                         _GUIAndBatch + "." ) );
 	}
-	if ( (View != null) && !View.equals("") &&
+	if ( (View != null) && !View.isEmpty() &&
 		!View.equalsIgnoreCase(_True) &&
 		!View.equalsIgnoreCase(_False) ) {
         message = "The View parameter \"" + View + "\" must be " + _True + " or " + _False + ".";
@@ -154,8 +150,8 @@ throws InvalidCommandParameterException
                         message,
                         "Correct the view parameter to be blank, " + _True + ", or " + _False + "." ) );
 	}
-	if (	(View != null) && View.equalsIgnoreCase(_False) &&
-		((OutputFile == null) || (OutputFile.length() == 0)) ) {
+	if ( (View != null) && View.equalsIgnoreCase(_False) &&
+		((OutputFile == null) || OutputFile.isEmpty()) ) {
         message = "The output file must be specified when View=False.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -163,7 +159,7 @@ throws InvalidCommandParameterException
                         message,
                         "Specify an output file for the product." ) );
 	}
-	else if ( (OutputFile != null) && !OutputFile.equals("") ) {
+	else if ( (OutputFile != null) && !OutputFile.isEmpty() && !OutputFile.startsWith("${") ) {
 		String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			// Working directory is available so use it...
@@ -203,7 +199,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-    if ( (VisibleStart != null) && !VisibleStart.equals("")) {
+    if ( (VisibleStart != null) && !VisibleStart.isEmpty() && !VisibleStart.startsWith("${")) {
         try {
             DateTime datetime1 = DateTime.parse(VisibleStart);
             if ( datetime1 == null ) {
@@ -218,7 +214,7 @@ throws InvalidCommandParameterException
                     message, "Specify a valid Visible start date/time." ) );
         }
     }
-    if ( (VisibleEnd != null) && !VisibleEnd.equals("")) {
+    if ( (VisibleEnd != null) && !VisibleEnd.isEmpty() && !VisibleEnd.startsWith("${") ) {
         try {
             DateTime datetime2 = DateTime.parse(VisibleEnd);
             if ( datetime2 == null ) {
@@ -234,15 +230,15 @@ throws InvalidCommandParameterException
         }
     }
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TSProductFile" );
-    valid_Vector.add ( "RunMode" );
-    valid_Vector.add ( "View" );
-    valid_Vector.add ( "OutputFile" );
-    valid_Vector.add ( "DefaultSaveFile" );
-    valid_Vector.add ( "VisibleStart" );
-    valid_Vector.add ( "VisibleEnd" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(7);
+    validList.add ( "TSProductFile" );
+    validList.add ( "RunMode" );
+    validList.add ( "View" );
+    validList.add ( "OutputFile" );
+    validList.add ( "DefaultSaveFile" );
+    validList.add ( "VisibleStart" );
+    validList.add ( "VisibleEnd" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -268,7 +264,7 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-	List list = new Vector();
+	List list = new ArrayList();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -339,22 +335,21 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 /**
 Run the command.
-Time series are taken from the
-available list in memory, if available.  Otherwise the time series are re-read.
+Time series are taken from the available list in memory, if available.  Otherwise the time series are re-read.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "processTSProduct_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    status.clearLog(commandPhase);
 
 	// Check whether the application wants output files to be created...
 	
@@ -409,73 +404,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Now try to process...
 	
     String VisibleStart = parameters.getValue ( "VisibleStart" );
-    DateTime VisibleStart_DateTime = null;
-    PropList request_params = null;
-    CommandProcessorRequestResultsBean bean = null;
-    PropList bean_PropList = null;
-    if ( VisibleStart != null ) {
-        request_params = new PropList ( "" );
-        request_params.set ( "DateTime", VisibleStart );
-        try {
-            bean = processor.processRequest( "DateTime", request_params);
-        }
-        catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + VisibleStart + ") from processor.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
-        }
-        bean_PropList = bean.getResultsPropList();
-        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-        if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + VisibleStart +
-                "\") returned from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
-        }
-        else {
-            VisibleStart_DateTime = (DateTime)prop_contents;
-        }
-    }
     String VisibleEnd = parameters.getValue ( "VisibleEnd" );
+    DateTime VisibleStart_DateTime = null;
     DateTime VisibleEnd_DateTime = null;
-    if ( VisibleEnd != null ) {
-        request_params = new PropList ( "" );
-        request_params.set ( "DateTime", VisibleEnd );
-        try {
-            bean = processor.processRequest( "DateTime", request_params);
-        }
-        catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + VisibleEnd + ") from processor.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
-        }
-        bean_PropList = bean.getResultsPropList();
-        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-        if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + VisibleEnd +
-            "\") returned from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
-        }
-        else {
-            VisibleEnd_DateTime = (DateTime)prop_contents;
-        }
+    if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			VisibleStart_DateTime = TSCommandProcessorUtil.getDateTime ( VisibleStart, "VisibleStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			VisibleEnd_DateTime = TSCommandProcessorUtil.getDateTime ( VisibleEnd, "VisibleEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
     }
 
     String TSProductFile_full = TSProductFile;
@@ -485,7 +433,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		DateTime now = new DateTime ( DateTime.DATE_CURRENT );
 		if ( (OutputFile != null) && !OutputFile.equals("") ) {
             OutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 			overrideProps.set ( "OutputFile", OutputFile_full );
 		}
 		// TODO SAM 2013-01-28 Seems like the misplaced equals sign will cause a problem but
@@ -502,7 +451,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			overrideProps.set ( "PreviewOutput", "True" );
 			if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
 			    String DefaultSaveFile_full =
-			        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),DefaultSaveFile);
+			        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+			        	TSCommandProcessorUtil.expandParameterValue(processor,this,DefaultSaveFile));
 			    overrideProps.set ( "DefaultSaveFile", DefaultSaveFile_full );
 			}
 		}
@@ -514,7 +464,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				p.addTSViewWindowListener (	tsview_window_listener );
 			}
 			p.addTSSupplier ( (TSSupplier)processor );
-            TSProductFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),TSProductFile);
+            TSProductFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            	TSCommandProcessorUtil.expandParameterValue(processor,this,TSProductFile));
 			TSProduct tsp = new TSProduct ( TSProductFile_full, overrideProps );
 			// Specify annotation providers if available...
 			List ap_Vector = null;			

@@ -19,8 +19,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -32,7 +34,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -71,7 +72,7 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ProcessTSProduct_JDialog ( JFrame parent, Command command )
+public ProcessTSProduct_JDialog ( JFrame parent, ProcessTSProduct_Command command )
 {	super ( parent, true );
 	initialize ( parent, command );
 }
@@ -213,31 +214,12 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSProductFile_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	__command = null;
-	__RunMode_JComboBox = null;
-	__View_JComboBox = null;
-	__browse_JButton = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__working_dir = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (ProcessTSProduct_Command)command;
+private void initialize ( JFrame parent, ProcessTSProduct_Command command )
+{	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -250,12 +232,11 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Process a time series product definition file (typically named *.tsp)"+
-		" to create a graph product." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Process a time series product definition file (typically named *.tsp) to create a graph product." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify paths relative to the working directory, or use an absolute path."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -264,10 +245,13 @@ private void initialize ( JFrame parent, Command command )
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"TS product file (TSP):" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSProductFile_JTextField = new JTextField ( 50 );
+	__TSProductFile_JTextField.setToolTipText("Specify the path to the time series product (TSP) file or use ${Property} notation");
 	__TSProductFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TSProductFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -305,6 +289,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (30);
+	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
 	__OutputFile_JTextField.setEditable ( true );
 	JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
@@ -316,6 +301,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default save file:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultSaveFile_JTextField = new JTextField ();
+    __DefaultSaveFile_JTextField.setToolTipText("Specify the path to the output save (used when interactively editing time series) or use ${Property} notation");
     __DefaultSaveFile_JTextField.addKeyListener ( this );
     __DefaultSaveFile_JTextField.setEditable ( true );
     JGUIUtil.addComponent(main_JPanel, __DefaultSaveFile_JTextField,
@@ -327,6 +313,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Visible start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __VisibleStart_JTextField = new JTextField (20);
+    __VisibleStart_JTextField.setToolTipText("Specify the visible period start using a date/time string or ${Property} notation");
     __VisibleStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __VisibleStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -337,6 +324,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Visible end:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __VisibleEnd_JTextField = new JTextField (20);
+    __VisibleEnd_JTextField.setToolTipText("Specify the visible period end using a date/time string or ${Property} notation");
     __VisibleEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __VisibleEnd_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

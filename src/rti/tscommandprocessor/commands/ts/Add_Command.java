@@ -5,12 +5,12 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
@@ -60,8 +60,7 @@ public Add_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -170,17 +169,17 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "AddTSList" );
-    valid_Vector.add ( "AddTSID" );
-    valid_Vector.add ( "AddEnsembleID" );
+    List<String> validList = new ArrayList<String>(7);
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "AddTSList" );
+    validList.add ( "AddTSID" );
+    validList.add ( "AddEnsembleID" );
     //valid_Vector.add ( "SetStart" );
     //valid_Vector.add ( "SetEnd" );
-    valid_Vector.add ( "HandleMissingHow" );
-    valid_Vector.add ( "IfTSListToAddIsEmpty" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    validList.add ( "HandleMissingHow" );
+    validList.add ( "IfTSListToAddIsEmpty" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -365,15 +364,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number number of command to run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "Add_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -403,7 +401,13 @@ CommandWarningException, CommandException
     }
 	// Only one of these will be specified...
     String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String TSList = null;
     if ( (TSID != null) && (TSID.length() > 0) ) {
         TSList = TSListType.ALL_MATCHING_TSID.toString();   // Should only match one?
@@ -519,7 +523,13 @@ CommandWarningException, CommandException
         AddTSList = TSListType.ALL_TS.toString();
     }
     String AddTSID = parameters.getValue ( "AddTSID" );
+	if ( (AddTSID != null) && (AddTSID.indexOf("${") >= 0) ) {
+		AddTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, AddTSID);
+	}
     String AddEnsembleID = parameters.getValue ( "AddEnsembleID" );
+	if ( (AddEnsembleID != null) && (AddEnsembleID.indexOf("${") >= 0) ) {
+		AddEnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, AddEnsembleID);
+	}
     request_params = new PropList ( "" );
     request_params.set ( "TSList", AddTSList );
     request_params.set ( "TSID", AddTSID );

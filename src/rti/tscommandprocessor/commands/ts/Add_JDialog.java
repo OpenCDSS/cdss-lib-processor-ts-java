@@ -23,8 +23,10 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -229,23 +231,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__AddTSList_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__AddSpecifiedTSID_JList = null;
-	__AddSpecifiedTSID_JListModel = null;
-	__HandleMissingHow_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Get the AddSpecifiedTSID parameter from the JList and put into a string.
 @return a String containing the selected specified time series, separated by commas.
 */
@@ -280,22 +265,25 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
    	JGUIUtil.addComponent(main_JPanel,
 		new JLabel ( "Add one or more time series to a time series (or ensemble of time series)." +
 		"  The receiving time series (or ensemble) is modified."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The time series to be added are selected using the AddTSList parameter:"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     y = CommandEditorUtil.addTSListNotesWithSpecifiedTSIDToEditorDialogPanel ( main_JPanel, y );
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Time series to be added to...
     
     JLabel TSID_JLabel = new JLabel ("Time series to receive results:");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel (
@@ -303,6 +291,7 @@ private void initialize ( JFrame parent, Command command )
    
     JLabel EnsembleID_JLabel = new JLabel ("Ensemble to receive results:");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -317,7 +306,8 @@ private void initialize ( JFrame parent, Command command )
     __AddTSList_JComboBox.add(TSListType.SPECIFIED_TSID.toString());
 
     __AddTSID_JLabel = new JLabel ("Add TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __AddTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __AddTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __AddTSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     // Automatically adds "*"
@@ -325,6 +315,7 @@ private void initialize ( JFrame parent, Command command )
     
     __AddEnsembleID_JLabel = new JLabel ("Add EnsembleID (for AddTSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __AddEnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __AddEnsembleID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> AddEnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (

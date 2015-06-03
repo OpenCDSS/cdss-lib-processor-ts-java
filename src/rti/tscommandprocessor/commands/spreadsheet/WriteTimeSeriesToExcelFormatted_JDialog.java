@@ -816,7 +816,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
         1, yCondFormat, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(condFormat_JPanel, new JLabel ("Optional - conditional formatting class breaks."),
         3, yCondFormat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(condFormat_JPanel, new SimpleJButton ("Edit","EditConditionalFormatingClassBreaks",this),
+    JGUIUtil.addComponent(condFormat_JPanel, new SimpleJButton ("Edit","EditConditionalFormattingClassBreaks",this),
         3, ++yCondFormat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 

@@ -356,12 +356,11 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Time series to fill (dependent):" ),
 		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__TSID_JComboBox = new SimpleJComboBox ( true );
-
+    __TSID_JComboBox.setToolTipText("Select a (dependent) time series TSID/alias from the list or specify with ${Property} notation");
 	// Get the time series identifiers from the processor...
 	
 	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 		(TSCommandProcessor)__command.getCommandProcessor(), __command );
-	
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addKeyListener ( this );
 	__TSID_JComboBox.addActionListener ( this );
@@ -371,6 +370,7 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ("Independent time series:"),
 		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__IndependentTSID_JComboBox = new SimpleJComboBox ( true );
+	__IndependentTSID_JComboBox.setToolTipText("Select an independent time series TSID/alias from the list or specify with ${Property} notation");
 	__IndependentTSID_JComboBox.setData ( tsids );
 	__IndependentTSID_JComboBox.addKeyListener ( this );
 	__IndependentTSID_JComboBox.addActionListener ( this );
@@ -445,6 +445,7 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Analysis start:" ),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
     __AnalysisStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainData_JPanel, __AnalysisStart_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
@@ -455,6 +456,7 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     JGUIUtil.addComponent(mainData_JPanel, new JLabel ( "Analysis end:" ), 
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
     __AnalysisEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainData_JPanel, __AnalysisEnd_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
@@ -532,6 +534,7 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     JGUIUtil.addComponent(mainFill_JPanel,new JLabel( "Fill start:"),
         0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __FillStart_JTextField = new JTextField ( "", 10 );
+    __FillStart_JTextField.setToolTipText("Specify the fill start using a date/time string or ${Property} notation");
     __FillStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainFill_JPanel, __FillStart_JTextField,
         1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
@@ -542,6 +545,7 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     JGUIUtil.addComponent(mainFill_JPanel,new JLabel("Fill end:"),
         0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
     __FillEnd_JTextField = new JTextField ( "", 10 );
+    __FillEnd_JTextField.setToolTipText("Specify the fill end using a date/time string or ${Property} notation");
     __FillEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainFill_JPanel, __FillEnd_JTextField,
         1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
@@ -579,7 +583,8 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     
     JGUIUtil.addComponent(mainTable_JPanel, new JLabel ( "Table ID for output:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID for statistic output or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );

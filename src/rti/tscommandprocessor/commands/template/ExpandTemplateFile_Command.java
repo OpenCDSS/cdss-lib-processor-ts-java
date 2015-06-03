@@ -73,8 +73,7 @@ public ExpandTemplateFile_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -97,7 +96,7 @@ throws InvalidCommandParameterException
 	// The existence of the file to remove is not checked during initialization
 	// because files may be created dynamically at runtime.
 	
-    if ( (InputFile != null) && (InputFile.length() != 0) ) {
+    if ( (InputFile != null) && !InputFile.isEmpty() && !InputFile.startsWith("${")) {
         String working_dir = null;
         try { Object o = processor.getPropContents ( "WorkingDir" );
             if ( o != null ) {
@@ -133,7 +132,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that input file and working directory paths are compatible." ) );
         }
-        if ( (InputText != null) && (InputText.length() != 0) ) {
+        if ( (InputText != null) && !InputText.isEmpty() ) {
             message = "The input template file and input text cannot both be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -142,8 +141,8 @@ throws InvalidCommandParameterException
         }
     }
 
-    if ( ((InputFile == null) || (InputFile.length() == 0)) &&
-        ((InputText == null) || (InputText.length() == 0)) ) {
+    if ( ((InputFile == null) || InputFile.isEmpty()) &&
+        ((InputText == null) || InputText.isEmpty()) ) {
         message = "The input template file or text must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -151,8 +150,8 @@ throws InvalidCommandParameterException
                 message, "Specify an input template file or text." ) );
     }
 
-    if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
-        if ( (OutputProperty == null) || (OutputProperty.length() == 0) ) {
+    if ( (OutputFile == null) || OutputFile.isEmpty() ) {
+        if ( (OutputProperty == null) || OutputProperty.isEmpty() ) {
             message = "The output file and/or property must be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -160,7 +159,7 @@ throws InvalidCommandParameterException
                     message, "Specify an output file and/or property." ) );
         }
     }
-    else {
+    else if ( !OutputFile.startsWith("${")){
         String working_dir = null;
         try { Object o = processor.getPropContents ( "WorkingDir" );
             if ( o != null ) {
@@ -202,7 +201,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (UseTables != null) && !UseTables.equals("") &&
+    if ( (UseTables != null) && !UseTables.isEmpty() &&
         !UseTables.equalsIgnoreCase(_True) &&
         !UseTables.equalsIgnoreCase(_False) ) {
         message = "The UseTables parameter \"" + UseTables + "\" must be " + _True + " or " + _False + ".";
@@ -213,7 +212,7 @@ throws InvalidCommandParameterException
                 "Correct the UseTables parameter to be blank, " + _True + ", or " + _False + "." ) );
     }
     
-    if ( (ListInResults != null) && !ListInResults.equals("") &&
+    if ( (ListInResults != null) && !ListInResults.isEmpty() &&
         !ListInResults.equalsIgnoreCase(_True) &&
         !ListInResults.equalsIgnoreCase(_False) ) {
         message = "The ListInResults parameter \"" + ListInResults + "\" must be " + _True + " or " + _False + ".";
@@ -366,7 +365,7 @@ Run the command.
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "ExpandTemplateFile_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -402,7 +401,8 @@ CommandWarningException, CommandException
 	String InputFile_full = null;
 	if ( (InputFile != null) && !InputFile.equals("") ) {
 	    InputFile_full = IOUtil.verifyPathForOS(
-	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile ) );
+	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
         File file = new File ( InputFile_full );
     	if ( !file.exists() ) {
             message = "Template command file \"" + InputFile_full + "\" does not exist.";
@@ -427,7 +427,9 @@ CommandWarningException, CommandException
 	}
     String OutputFile_full = null;
     if ( (OutputFile != null) && !OutputFile.equals("") ) {
-        OutputFile_full = IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile ) );
+        OutputFile_full = IOUtil.verifyPathForOS(
+        	IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        		TSCommandProcessorUtil.expandParameterValue(processor, this,OutputFile)) );
         File file = new File ( OutputFile_full );
         if ( !file.getParentFile().exists() ) {
            message = "Output file parent folder \"" + file.getParentFile() + "\" does not exist.";

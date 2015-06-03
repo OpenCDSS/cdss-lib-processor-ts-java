@@ -20,9 +20,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -32,7 +34,6 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 public class ExpandTemplateFile_JDialog extends JDialog
@@ -291,6 +292,8 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 		"    " + __working_dir),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
@@ -312,6 +315,7 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(in_JPanel, new JLabel ("Template file:" ), 
 		0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
+	__InputFile_JTextField.setToolTipText("Specify the path to the input file or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(in_JPanel, __InputFile_JTextField,
 		1, yIn, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -354,6 +358,7 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(out_JPanel, new JLabel ("Expanded file:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
+    __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
     __OutputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(out_JPanel, __OutputFile_JTextField,
         1, yOut, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

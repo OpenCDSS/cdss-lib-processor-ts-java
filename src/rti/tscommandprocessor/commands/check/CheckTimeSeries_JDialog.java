@@ -20,14 +20,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.TS.TSUtil_CheckTimeSeries;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -38,9 +39,9 @@ import RTi.Util.Message.Message;
 public class CheckTimeSeries_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
-private CheckTimeSeries_Command __command = null;	// Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private CheckTimeSeries_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -52,9 +53,9 @@ private JTextField __Value1_JTextField = null;
 private JTextField __Value2_JTextField = null;
 private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
-private JTextField __ProblemType_JTextField = null;// Field for problem type
+private JTextField __ProblemType_JTextField = null;
 private JTextField __MaxWarnings_JTextField = null;
-private JTextField __Flag_JTextField = null; // Flag to label filled data.
+private JTextField __Flag_JTextField = null;
 private JTextField __FlagDesc_JTextField;
 private SimpleJComboBox __Action_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
@@ -221,24 +222,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSList_JComboBox = null;
-    __TSID_JComboBox = null;
-	__Value1_JTextField = null;
-	__AnalysisStart_JTextField = null;
-	__AnalysisEnd_JTextField = null;
-	__ProblemType_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param title Dialog title.
@@ -254,11 +237,11 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Check time series data values for critical values (see also the CheckTimeSeriesStatistic() command)." ), 
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "A warning will be generated for each case where a value matches the specified condition(s)." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -269,18 +252,22 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
 		"Specify dates with precision appropriate for the data, " +
 		"use blank for all available data, OutputStart, or OutputEnd."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -321,6 +308,7 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
     __AnalysisStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -331,6 +319,7 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
     __AnalysisEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

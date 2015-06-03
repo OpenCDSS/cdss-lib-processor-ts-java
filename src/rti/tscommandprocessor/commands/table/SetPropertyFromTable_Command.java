@@ -85,7 +85,7 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(8);
+	List<String> validList = new ArrayList<String>(6);
     validList.add ( "TableID" );
     validList.add ( "Column" );
     validList.add ( "ColumnIncludeFilters" );
@@ -208,6 +208,7 @@ private List<TableRecord> findTableRecords ( DataTable table,
                 catch ( Exception e ) {
                     errors.add("Error getting table data for [" + irow + "][" +
                     	columnIncludeFiltersNumbers[icol] + "] (" + e + ")." );
+                    filterMatches = false;
                 }
             }
             if ( !filterMatches ) {
@@ -360,9 +361,13 @@ CommandWarningException, CommandException
         String key = null;
         for ( Map.Entry<String,String> entry : map.entrySet() ) {
             key = entry.getKey();
+            // Expand the key and the value (from original key)
             String key2 = TSCommandProcessorUtil.expandParameterValue(processor,this,key);
             map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,map.get(key)));
-            map.remove(key);
+            // Remove the original unexpanded entry if a different key
+            if ( !key.equals(key2) ) {
+            	map.remove(key);
+            }
         }
     }
     String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );
@@ -372,9 +377,13 @@ CommandWarningException, CommandException
         String key = null;
         for ( Map.Entry<String,String> entry : map.entrySet() ) {
             key = entry.getKey();
+            // Expand the key and the value (from original key)
             String key2 = TSCommandProcessorUtil.expandParameterValue(processor,this,key);
             map.put(key2, TSCommandProcessorUtil.expandParameterValue(processor,this,map.get(key)));
-            map.remove(key);
+            // Remove the original unexpanded entry if a different key
+            if ( !key.equals(key2) ) {
+            	map.remove(key);
+            }
         }
     }
     String PropertyName = parameters.getValue ( "PropertyName" );

@@ -6,8 +6,10 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -16,7 +18,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -25,7 +26,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
 import java.io.File;
 
 import RTi.Util.GUI.JFileChooserFactory;
@@ -220,11 +220,11 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
-	int yy = 0;
+	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-	"This command reads a table from a delimited file.  The table can then be used by other commands."),
-	0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		"This command reads a table from a delimited file.  The table can then be used by other commands."),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
 		"Columns in the file should be delimited by commas (default) or other character."),
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -260,13 +260,16 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
 		"The working directory is: " + __working_dir), 
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+	JGUIUtil.addComponent(paragraph, new JSeparator (SwingConstants.HORIZONTAL), 
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JTextField = new JTextField (10);
+    __TableID_JTextField = new JTextField (20);
+    __TableID_JTextField.setToolTipText("Specify the table ID or use ${Property} notation");
     __TableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -276,6 +279,7 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField (35);
+	__InputFile_JTextField.setToolTipText("Specify the path to the file to read or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

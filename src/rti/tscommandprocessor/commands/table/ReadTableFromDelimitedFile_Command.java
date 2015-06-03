@@ -50,8 +50,7 @@ public ReadTableFromDelimitedFile_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -74,7 +73,7 @@ throws InvalidCommandParameterException
 	
 	CommandProcessor processor = getCommandProcessor();
 	
-    if ( (TableID == null) || (TableID.length() == 0) ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -96,14 +95,15 @@ throws InvalidCommandParameterException
                         message, "Report the problem to software support." ) );
 	}
 	
-	if ( (InputFile == null) || (InputFile.length() == 0) ) {
+	if ( (InputFile == null) || InputFile.isEmpty() ) {
         message = "The input file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
 	}
-	else {
+	else if ( InputFile.indexOf("${") < 0 ) {
+		// Can only check if no property in path
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
 			File f = new File ( adjusted_path );
@@ -253,17 +253,17 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "ReadTableFromDelimitedFile_Command.runCommand",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
 
@@ -273,6 +273,9 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+	if ( (TableID != null) && (TableID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+	}
 	String InputFile = parameters.getValue ( "InputFile" );
 	String Delimiter = parameters.getValue ( "Delimiter" );
 	String delimiter = ","; // default
@@ -287,11 +290,12 @@ CommandWarningException, CommandException
 	Message.printStatus( 2, routine, "parameter HeaderLines=\"" + HeaderLines + "\"");
 
 	String InputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
 	if ( !IOUtil.fileExists(InputFile_full) ) {
 		message += "\nThe delimited table file \"" + InputFile_full + "\" does not exist.";
 		++warning_count;
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Verify that the delimited table file exists." ) );
 	}
 
@@ -359,7 +363,7 @@ CommandWarningException, CommandException
 
 	// Now process the file...
 
-    if ( command_phase == CommandPhaseType.RUN ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
     	DataTable table = null;
     	PropList props = new PropList ( "DataTable" );
     	props.set ( "Delimiter", delimiter );
@@ -388,7 +392,7 @@ CommandWarningException, CommandException
     		Message.printWarning ( 3, routine, e );
     		message = "Unexpected error read table from delimited file \"" + InputFile_full + "\" (" + e + ").";
     		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Verify that the file exists and is readable." ) );
     		throw new CommandWarningException ( message );
     	}
@@ -412,19 +416,19 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
         }
     }
-    else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Create an empty table and set the ID
         DataTable table = new DataTable();
         table.setTableID ( TableID );
         setDiscoveryTable ( table );
     }
 
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

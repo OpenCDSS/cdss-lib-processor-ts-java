@@ -93,21 +93,21 @@ throws InvalidCommandParameterException
 		}
 	}
     */
-	if ( (ConstantValue == null) || ConstantValue.equals("") ) {
+	if ( (ConstantValue == null) || ConstantValue.isEmpty() ) {
         message = "The constant value must be specified.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the constant value." ) );
 	}
-	else if ( !StringUtil.isDouble(ConstantValue) ) {
+	else if ( !ConstantValue.startsWith("${") && !StringUtil.isDouble(ConstantValue) ) {
         message = "The constant value " + ConstantValue + " is not a number.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the constant value as a number." ) );
 	}
-	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
+	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart") && !FillStart.startsWith("${") ){
 		try {
             DateTime.parse(FillStart);
 		}
@@ -119,7 +119,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (FillEnd != null) && !FillEnd.isEmpty() && !FillEnd.equalsIgnoreCase("OutputEnd") & !FillEnd.startsWith("${") ) {
 		try {	DateTime.parse( FillEnd);
 		}
 		catch ( Exception e ) {
@@ -268,10 +268,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
+	String ConstantValue = parameters.getValue("ConstantValue");
+	if ( (ConstantValue != null) && (ConstantValue.indexOf("${") >= 0) ) {
+		ConstantValue = TSCommandProcessorUtil.expandParameterValue(processor, this, ConstantValue);
+	}
+	double ConstantValue_double = StringUtil.atod ( ConstantValue );
+	String FillStart = parameters.getValue("FillStart"); // Properties are handled in processor
+	String FillEnd = parameters.getValue("FillEnd"); // Properties are handled in processor
+	String FillFlag = parameters.getValue("FillFlag");
+	if ( (FillFlag != null) && (FillFlag.indexOf("${") >= 0) ) {
+		FillFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, FillFlag);
+	}
+    String FillFlagDesc = parameters.getValue("FillFlagDesc");
+	if ( (FillFlagDesc != null) && (FillFlagDesc.indexOf("${") >= 0) ) {
+		FillFlagDesc = TSCommandProcessorUtil.expandParameterValue(processor, this, FillFlagDesc);
+	}
 
 	// Get the time series to process...
-	
+   
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
@@ -358,18 +379,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 
-	// Constant value...
-
-	String ConstantValue = parameters.getValue("ConstantValue");
-	double ConstantValue_double = StringUtil.atod ( ConstantValue );
-
-	// Fill period...
-
-	String FillStart = parameters.getValue("FillStart");
-	String FillEnd = parameters.getValue("FillEnd");
-	String FillFlag = parameters.getValue("FillFlag");
-    String FillFlagDesc = parameters.getValue("FillFlagDesc");
-
 	// Figure out the dates to use for the analysis...
 	DateTime FillStart_DateTime = null;
 	DateTime FillEnd_DateTime = null;
@@ -381,6 +390,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 		try {
 			FillEnd_DateTime = TSCommandProcessorUtil.getDateTime ( FillEnd, "FillEnd", processor,
@@ -388,6 +398,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 	}
 

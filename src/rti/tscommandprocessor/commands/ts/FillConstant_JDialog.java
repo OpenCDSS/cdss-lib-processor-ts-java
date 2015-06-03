@@ -216,12 +216,14 @@ private void initialize ( JFrame parent, FillConstant_Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -229,7 +231,8 @@ private void initialize ( JFrame parent, FillConstant_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Constant value:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__ConstantValue_JTextField = new JTextField ( 5 );
+	__ConstantValue_JTextField = new JTextField ( 20 );
+	__ConstantValue_JTextField.setToolTipText("Constant numeric value or specify with ${Property} notation");
 	__ConstantValue_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __ConstantValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -239,27 +242,28 @@ private void initialize ( JFrame parent, FillConstant_Command command )
 
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Fill start date/time:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __FillStart_JTextField = new JTextField ( "", 10 );
+    __FillStart_JTextField = new JTextField ( "", 20 );
     __FillStart_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - fill start (default=fill all)."), 
+        "Optional - fill start date/time or ${Property} (default=fill all)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Fill end date/time:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __FillEnd_JTextField = new JTextField ( "", 10 );
+    __FillEnd_JTextField = new JTextField ( "", 20 );
     __FillEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - fill end (default=fill all)."), 
+        "Optional - fill end date/time or ${Property} (default=fill all)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__FillFlag_JTextField = new JTextField ( 10 );
+	__FillFlag_JTextField = new JTextField ( 20 );
+	__FillFlag_JTextField.setToolTipText("Flag for filled values or specify with ${Property} notation");
 	__FillFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -269,7 +273,8 @@ private void initialize ( JFrame parent, FillConstant_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag description:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __FillFlagDesc_JTextField = new JTextField ( 15 );
+    __FillFlagDesc_JTextField = new JTextField ( 20 );
+    __FillFlagDesc_JTextField.setToolTipText("Flag description or specify with ${Property} notation");
     __FillFlagDesc_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillFlagDesc_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

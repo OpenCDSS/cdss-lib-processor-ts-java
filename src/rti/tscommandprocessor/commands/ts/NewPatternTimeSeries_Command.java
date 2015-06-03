@@ -2,17 +2,16 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.IrregularTS;
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_SetDataValuesUsingPattern;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -31,10 +30,8 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.WarningCount;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.DateTimeRange;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
@@ -74,8 +71,7 @@ public NewPatternTimeSeries_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -98,7 +94,7 @@ throws InvalidCommandParameterException
     
     TSIdent tsident = null; // Checked below to verify interval against time
 
-	if ( (Alias == null) || Alias.equals("") ) {
+	if ( (Alias == null) || Alias.isEmpty() ) {
         message = "The time series alias must be specified.";
 		warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -106,7 +102,7 @@ throws InvalidCommandParameterException
 				CommandStatusType.FAILURE, message,
 				"Provide a time series alias when defining the command."));
 	}
-	if ( (NewTSID == null) || NewTSID.equals("") ) {
+	if ( (NewTSID == null) || NewTSID.isEmpty() ) {
         message = "The new time series identifier must be specified to allow definition of the time series.";
 		warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -114,7 +110,8 @@ throws InvalidCommandParameterException
 				CommandStatusType.FAILURE, message,
 				"Provide a new time series identifier when defining the command."));
 	}
-	else {
+	else  { //if ( !NewTSID.startsWith("${") ) {
+		// TODO SAM 2015-06-03 ?Can only check if parameter does not use ${Property}
 		try {
             tsident = TSIdent.parseIdentifier( NewTSID );
 			try { TimeInterval.parseInterval(tsident.getInterval());
@@ -141,7 +138,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	if ( (IrregularInterval != null) && !IrregularInterval.equals("") ) {
+	if ( (IrregularInterval != null) && !IrregularInterval.isEmpty() ) {
     	try {
     	    TimeInterval.parseInterval ( IrregularInterval );
     	}
@@ -155,7 +152,7 @@ throws InvalidCommandParameterException
     	}
 	}
     
-    if ( (PatternValues == null) || PatternValues.equals("") ) {
+    if ( (PatternValues == null) || PatternValues.isEmpty() ) {
         message = "The pattern values must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -164,7 +161,7 @@ throws InvalidCommandParameterException
                 "Provide a list of values to define the pattern."));
     }
 
-	if ( (PatternValues != null) && !PatternValues.equals("") ) {
+	if ( (PatternValues != null) && !PatternValues.isEmpty() ) {
 		// If pattern values are specified, make sure they are a sequence of numbers...
 		// Allow blanks if they want to allow missing to remain
 		List<String> tokens = StringUtil.breakStringList(PatternValues, " ,", 0);
@@ -204,7 +201,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// TODO SAM 2012-04-01 Evaluate whether range should be supported
-    if ( (MissingValue != null) && !MissingValue.equals("") &&
+    if ( (MissingValue != null) && !MissingValue.isEmpty() && !MissingValue.startsWith("${") &&
         !StringUtil.isDouble(MissingValue) && !MissingValue.equalsIgnoreCase("NaN")) {
         message = "The missing value (" + MissingValue+ ") must be a number or NaN.";
         warning += "\n" + message;
@@ -214,9 +211,8 @@ throws InvalidCommandParameterException
             "Specify the missing value as a number or NaN."));
     }
 	
-	if ( (SetStart != null) && !SetStart.equals("") &&
-		!SetStart.equalsIgnoreCase("OutputStart") &&
-		!SetStart.equalsIgnoreCase("OutputEnd") ) {
+	if ( (SetStart != null) && !SetStart.isEmpty() && !SetStart.startsWith("${") &&
+		!SetStart.equalsIgnoreCase("OutputStart") && !SetStart.equalsIgnoreCase("OutputEnd") ) {
 		try {
 		    DateTime dt = DateTime.parse(SetStart);
             if ( (tsident != null) && (tsident.getIntervalBase() != TimeInterval.IRREGULAR) ) {
@@ -241,9 +237,8 @@ throws InvalidCommandParameterException
 					"Specify a date, OutputStart, or OutputEnd."));
 		}
 	}
-	if (	(SetEnd != null) && !SetEnd.equals("") &&
-		!SetEnd.equalsIgnoreCase("OutputStart") &&
-		!SetEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (SetEnd != null) && !SetEnd.isEmpty() && !SetEnd.startsWith("${") &&
+		!SetEnd.equalsIgnoreCase("OutputStart") && !SetEnd.equalsIgnoreCase("OutputEnd") ) {
 		try {
             DateTime dt = DateTime.parse( SetEnd );
             if ( (tsident!= null) && (tsident.getIntervalBase() != TimeInterval.IRREGULAR) ) {
@@ -270,18 +265,18 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "Alias" );
-	valid_Vector.add ( "NewTSID" );
-	valid_Vector.add ( "IrregularInterval" );
-	valid_Vector.add ( "Description" );
-	valid_Vector.add ( "SetStart" );
-	valid_Vector.add ( "SetEnd" );
-	valid_Vector.add ( "Units" );
-	valid_Vector.add ( "MissingValue" );
-	valid_Vector.add ( "PatternValues" );
-	valid_Vector.add ( "PatternFlags" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(10);
+	validList.add ( "Alias" );
+	validList.add ( "NewTSID" );
+	validList.add ( "IrregularInterval" );
+	validList.add ( "Description" );
+	validList.add ( "SetStart" );
+	validList.add ( "SetEnd" );
+	validList.add ( "Units" );
+	validList.add ( "MissingValue" );
+	validList.add ( "PatternValues" );
+	validList.add ( "PatternFlags" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -295,8 +290,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -398,19 +392,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the command in discovery mode.
-@param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-*/
-public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
-    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
-}
-
-/**
 Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
@@ -425,20 +406,32 @@ CommandWarningException, CommandException
 }
 
 /**
-Run the command.
+Run the command in discovery mode.
+@param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "NewPatternTimeSeries.runCommand", message;
-	int warning_count = 0;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
+	int warningCount = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Level for non-user warnings to go to log file.
+	int logLevel = 3;	// Level for non-user warnings to go to log file.
 	
 	// Get and clear the status and clear the run log...
 	
@@ -454,52 +447,95 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
 
-	String Alias = parameters.getValue ( "Alias" );
+	String Alias = parameters.getValue ( "Alias" ); // Expanded below after creating time series
 	String NewTSID = parameters.getValue ( "NewTSID" );
+	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID);
+	}
 	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
 	String Description = parameters.getValue ( "Description" );
+	if ( (Description != null) && (Description.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		Description = TSCommandProcessorUtil.expandParameterValue(processor, this, Description);
+	}
 	String SetStart = parameters.getValue ( "SetStart" );
+	if ( (SetStart == null) || SetStart.isEmpty() ) {
+		SetStart = "${OutputStart}";
+	}
 	String SetEnd = parameters.getValue ( "SetEnd" );
+	if ( (SetEnd == null) || SetEnd.isEmpty() ) {
+		SetEnd = "${OutputEnd}";
+	}
 	String Units = parameters.getValue ( "Units" );
-	String MissingValue = parameters.getValue ( "MissingValue" );
-	Double missingValue = null;
-	if ( (MissingValue != null) && !MissingValue.equals("") ) {
-	    missingValue = Double.parseDouble(MissingValue);
+	if ( (Units != null) && (Units.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		Units = TSCommandProcessorUtil.expandParameterValue(processor, this, Units);
 	}
-
-	if ( SetStart == null ) {
-		SetStart = "";	// Makes for better messages
-	}
-	if ( SetEnd == null ) {
-		SetEnd = "";	// Better messages
-	}
-
-	// Figure out the dates to use for the Set...
-    WarningCount warningCount = new WarningCount();
-    DateTimeRange setStartAndEnd = TSCommandProcessorUtil.getOutputPeriodForCommand (
-        this, commandPhase, "SetStart", SetStart,  "SetEnd", SetEnd,
-        true, // Use global output period from SetOutputPeriod()
-        log_level, command_tag, warning_level, warningCount );
-    warning_count += warningCount.getCount();
-    DateTime SetStart_DateTime = setStartAndEnd.getStart();
-    DateTime SetEnd_DateTime = setStartAndEnd.getEnd();
-    if ( SetStart_DateTime == null ) {
-        message = "SetStart is not set.";
-        Message.printWarning(log_level,
-            MessageUtil.formatMessageTag( command_tag, warningCount.incrementCount()), routine, message );
-        status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the SetStart parameter or use a SetOutputPeriod() command.") );
-        throw new InvalidCommandParameterException ( message );
+    String MissingValue = parameters.getValue ( "MissingValue" );
+    Double missingValue = null;
+    if ( (MissingValue != null) && !MissingValue.isEmpty() ) {
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+			if ( MissingValue.indexOf("${") >= 0 ) {
+				MissingValue = TSCommandProcessorUtil.expandParameterValue(processor, this, MissingValue);
+			}
+			try {
+				// Handles numbers and NaN
+				missingValue = Double.parseDouble(MissingValue);
+			}
+			catch ( Exception e ) {
+				message = "MissingValue (" + MissingValue + ") is invalid.";
+		        Message.printWarning(logLevel,
+		            MessageUtil.formatMessageTag( command_tag, ++warningCount), routine, message );
+		        status.addToLog ( commandPhase,
+		            new CommandLogRecord(CommandStatusType.FAILURE,
+		                message, "Specify the missing value as a number or NaN.") );
+			}
+		}
     }
-    if ( SetEnd_DateTime == null ) {
-        message = "SetEnd is not set.";
-        Message.printWarning(log_level,
-            MessageUtil.formatMessageTag( command_tag, warningCount.incrementCount()), routine, message );
-        status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the SetEnd parameter or use a SetOutputPeriod() command.") );
-        throw new InvalidCommandParameterException ( message );
+
+	DateTime SetStart_DateTime = null;
+	DateTime SetEnd_DateTime = null;
+    if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			SetStart_DateTime = TSCommandProcessorUtil.getDateTime ( SetStart, "SetStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warningCount;
+		}
+		try {
+			SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warningCount;
+		}
+		   // Make sure that dates are not null 
+	    if ( SetStart_DateTime == null ) {
+	        message = "SetStart is not set - cannot allocate time series data array.";
+	        Message.printWarning(logLevel,
+	            MessageUtil.formatMessageTag( command_tag, ++warningCount), routine, message );
+	        status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Specify the SetStart parameter or use a SetOutputPeriod() command.") );
+	    }
+	    if ( SetEnd_DateTime == null ) {
+	        message = "SetEnd is not set - cannot allocate time series data array.";
+	        Message.printWarning(logLevel,
+	            MessageUtil.formatMessageTag( command_tag, ++warningCount), routine, message );
+	        status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Specify the SetEnd parameter or use a SetOutputPeriod() command.") );
+	    }
+    }
+    
+    if ( warningCount > 0 ) {
+        // Input error...
+        message = "Insufficient data to run command.";
+        status.addToLog (commandPhase,
+        new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
+        Message.printWarning(3, routine, message );
+        throw new CommandException ( message );
     }
 
 	// Now process the time series...
@@ -516,7 +552,7 @@ CommandWarningException, CommandException
 		message = "Unable to create an empty new time series using NewTSID=\""+ NewTSID + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
-			command_tag,++warning_count),routine,message );
+			command_tag,++warningCount),routine,message );
 		Message.printWarning(3,routine,e);
 		status.addToLog(commandPhase,
 				new CommandLogRecord(
@@ -546,7 +582,7 @@ CommandWarningException, CommandException
     			message = "Unable to allocate memory for time series.";
     			Message.printWarning ( warning_level,
     			MessageUtil.formatMessageTag(
-    			command_tag,++warning_count),routine,message );
+    			command_tag,++warningCount),routine,message );
     			status.addToLog(commandPhase,
     					new CommandLogRecord(
     					CommandStatusType.FAILURE, message,
@@ -569,7 +605,7 @@ CommandWarningException, CommandException
     		            message = "Irregular time series interval is invalid.";
     		            Message.printWarning ( warning_level,
     		            MessageUtil.formatMessageTag(
-    		            command_tag,++warning_count),routine,message );
+    		            command_tag,++warningCount),routine,message );
     		            status.addToLog(commandPhase,
     		                    new CommandLogRecord(
     		                    CommandStatusType.FAILURE, message,
@@ -599,10 +635,15 @@ CommandWarningException, CommandException
     			    __PatternValues_double, __PatternFlags );
     		}
 		}
+		
+		// Set the alias last so they can benefit from data being set
         
-        if ( (Alias != null) && !Alias.equals("") ) {
-            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                processor, ts, Alias, status, commandPhase);
+        if ( (Alias != null) && !Alias.isEmpty() ) {
+            String alias = Alias;
+            if ( commandPhase == CommandPhaseType.RUN ) {
+            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+            		processor, ts, Alias, status, commandPhase);
+            }
             ts.setAlias ( alias );
         }
 
@@ -620,8 +661,8 @@ CommandWarningException, CommandException
                 message = "Error post-processing new pattern time series.";
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
-                    ++warning_count), routine, message );
-                Message.printWarning(log_level, routine, e);
+                    ++warningCount), routine, message );
+                Message.printWarning(logLevel, routine, e);
                 status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
@@ -637,7 +678,7 @@ CommandWarningException, CommandException
                     message = "Cannot append new time series to results list.  Skipping.";
                     Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(
-                        command_tag, ++warning_count),
+                        command_tag, ++warningCount),
                         routine,message);
                     status.addToLog(commandPhase,
                             new CommandLogRecord(
@@ -648,7 +689,7 @@ CommandWarningException, CommandException
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Set in the discovery list
             if ( ts != null ) {
-                List<TS> tslist = new Vector();
+                List<TS> tslist = new ArrayList<TS>();
                 tslist.add(ts);
                 setDiscoveryTSList(tslist);
             }
@@ -658,7 +699,7 @@ CommandWarningException, CommandException
 		message = "Unexpected error creating a new pattern time series for \""+ NewTSID + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
-			command_tag,++warning_count),routine,message );
+			command_tag,++warningCount),routine,message );
 		Message.printWarning(3,routine,e);
 		status.addToLog(commandPhase,
 				new CommandLogRecord(
@@ -666,11 +707,11 @@ CommandWarningException, CommandException
 				"Report the problem to software support - check log file for details."));
 	}
 
-	if ( warning_count > 0 ) {
-		message = "There were " + warning_count + " warnings processing the command.";
+	if ( warningCount > 0 ) {
+		message = "There were " + warningCount + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
-			command_tag, ++warning_count),
+			command_tag, ++warningCount),
 			routine,message);
 		throw new CommandWarningException ( message );
 	}

@@ -70,8 +70,7 @@ public TimeSeriesToTable_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -127,21 +126,21 @@ throws InvalidCommandParameterException
 		}
 	}
     */
-	if ( (TableID == null) || TableID.equals("") ) {
+	if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The TableID is required but has not been specified.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the TableID." ) );
 	}
-    if ( (DateTimeColumn == null) || (DateTimeColumn.length() == 0) ) {
+    if ( (DateTimeColumn == null) || DateTimeColumn.isEmpty() ) {
         message = "The DateTimeColumn is required but has not been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify DateTimeColumn as table column name." ) );
     }
-    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() != 0) &&
+    if ( (TableTSIDColumn != null) && !TableTSIDColumn.isEmpty() &&
         (ValueColumn != null) && (ValueColumn.indexOf("%") >= 0) ) {
         message = "The TableTSIDColumn has been specified for single-column output but the ValueColumn " +
             "uses format specifiers (a literal is required).";
@@ -150,7 +149,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a literal string for a column name when TableTSIDColumn is specified." ) );
     }
-    if ( (IncludeMissingValues != null) && !IncludeMissingValues.equals("") &&
+    if ( (IncludeMissingValues != null) && !IncludeMissingValues.isEmpty() &&
         !IncludeMissingValues.equalsIgnoreCase(_False) && !IncludeMissingValues.equalsIgnoreCase(_True)) {
         message = "The IncludeMissingValues (" + IncludeMissingValues + ") is invalid.";
         warning += "\n" + message;
@@ -158,14 +157,14 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify as " + _False + " or " + _True + "." ) );   
     }
-    if ( (ValueColumn == null) || (ValueColumn.length() == 0) ) {
+    if ( (ValueColumn == null) || ValueColumn.isEmpty() ) {
         message = "The ValueColumn is required but has not been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify ValueColumn as table column name." ) );
     }
-    if ( (OutputPrecision != null) && (OutputPrecision.length() != 0) ) {
+    if ( (OutputPrecision != null) && !OutputPrecision.isEmpty() ) {
         try {
             Integer.parseInt(OutputPrecision);
         }
@@ -177,7 +176,7 @@ throws InvalidCommandParameterException
                     message, "Specify output precision as an integer (0+)." ) );
         }
     }
-	if ( (OutputStart != null) && !OutputStart.equals("") && !OutputStart.equalsIgnoreCase("OutputStart")){
+	if ( (OutputStart != null) && !OutputStart.isEmpty() && !OutputStart.equalsIgnoreCase("OutputStart") && !OutputStart.startsWith("${") ){
 		try {
             DateTime.parse(OutputStart);
 		}
@@ -189,7 +188,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (OutputEnd != null) && !OutputEnd.equals("") && !OutputEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (OutputEnd != null) && !OutputEnd.isEmpty() && !OutputEnd.equalsIgnoreCase("OutputEnd") && !OutputEnd.startsWith("${") ) {
 		try {
 		    DateTime.parse( OutputEnd);
 		}
@@ -444,7 +443,7 @@ Run the command.
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "TimeSeriesToTable_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -482,6 +481,12 @@ CommandWarningException, CommandException
         IncludeMissingValues_boolean = false;
     }
     String TableID = parameters.getValue("TableID");
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
+    	// In discovery mode want lists of tables to include ${Property}
+    	if ( TableID.indexOf("${") >= 0 ) {
+    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    	}
+    }
     String IfTableNotFound = parameters.getValue("IfTableNotFound");
     if ( (IfTableNotFound == null) || IfTableNotFound.equals("") ) {
         IfTableNotFound = _Warn; // default
@@ -537,7 +542,13 @@ CommandWarningException, CommandException
             TSList = TSListType.ALL_TS.toString();
         }
     	String TSID = parameters.getValue ( "TSID" );
+    	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+    	}
         String EnsembleID = parameters.getValue ( "EnsembleID" );
+    	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+    		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+    	}
     
     	// Get the time series to process...
     	
@@ -638,97 +649,22 @@ CommandWarningException, CommandException
     
     	// Figure out the dates to use for the analysis...
     
-    	try {
-    	if ( OutputStart != null ) {
-    		request_params = new PropList ( "" );
-    		request_params.set ( "DateTime", OutputStart );
-    		bean = null;
-    		try {
-                bean = processor.processRequest( "DateTime", request_params);
-    		}
-    		catch ( Exception e ) {
-    			message = "Error requesting OutputStart DateTime(DateTime=" +	OutputStart + ") from processor.";
-    			Message.printWarning(log_level,
-    			    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-    			throw new InvalidCommandParameterException ( message );
-    		}
-    
-    		bean_PropList = bean.getResultsPropList();
-    		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-    		if ( prop_contents == null ) {
-    			message = "Null value for OutputStart DateTime(DateTime=" + OutputStart + "\") returned from processor.";
-    			Message.printWarning(log_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-    			throw new InvalidCommandParameterException ( message );
-    		}
-    		else {	OutputStart_DateTime = (DateTime)prop_contents;
-    		}
-    	}
-    	}
-    	catch ( Exception e ) {
-    		message = "OutputStart \"" + OutputStart + "\" is invalid.";
-    		Message.printWarning(warning_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputStart." ) );
-    		throw new InvalidCommandParameterException ( message );
-    	}
-    	
-    	try {
-    	if ( OutputEnd != null ) {
-    		request_params = new PropList ( "" );
-    		request_params.set ( "DateTime", OutputEnd );
-    		bean = null;
-    		try {
-                bean = processor.processRequest( "DateTime", request_params);
-    		}
-    		catch ( Exception e ) {
-    			message = "Error requesting OutputEnd DateTime(DateTime=" + OutputEnd + "\") from processor.";
-    			Message.printWarning(log_level,
-    					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    					routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-    			throw new InvalidCommandParameterException ( message );
-    		}
-    
-    		bean_PropList = bean.getResultsPropList();
-    		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-    		if ( prop_contents == null ) {
-    			message = "Null value for OutputEnd DateTime(DateTime=" + OutputEnd +	"\") returned from processor.";
-    			Message.printWarning(log_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify a valid date/time or OutputEnd." ) );
-    			throw new InvalidCommandParameterException ( message );
-    		}
-    		else {	OutputEnd_DateTime = (DateTime)prop_contents;
-    		}
-    	}
-    	}
-    	catch ( Exception e ) {
-    		message = "OutputEnd \"" + OutputEnd + "\" is invalid.";
-    		Message.printWarning(warning_level,
-    			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    			routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputEnd." ) );
-    		throw new InvalidCommandParameterException ( message );
-    	}
+		try {
+			OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
     	
         String OutputWindowStart = parameters.getValue ( "OutputWindowStart" );
         String OutputWindowEnd = parameters.getValue ( "OutputWindowEnd" );

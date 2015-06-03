@@ -473,7 +473,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "SetFromTS_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warningLevel = 2;
 	String command_tag = "" + command_number;
@@ -492,7 +492,13 @@ CommandWarningException, CommandException
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String RecalcLimits = parameters.getValue ( "RecalcLimits" );
     String SetWindowStart = parameters.getValue ( "SetWindowStart" );
     String SetWindowEnd = parameters.getValue ( "SetWindowEnd" );
@@ -607,7 +613,13 @@ CommandWarningException, CommandException
         IndependentTSList = TSListType.ALL_TS.toString();
     }
     String IndependentTSID = parameters.getValue ( "IndependentTSID" );
+	if ( (IndependentTSID != null) && (IndependentTSID.indexOf("${") >= 0) ) {
+		IndependentTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, IndependentTSID);
+	}
     String IndependentEnsembleID = parameters.getValue ( "IndependentEnsembleID" );
+	if ( (IndependentEnsembleID != null) && (IndependentEnsembleID.indexOf("${") >= 0) ) {
+		IndependentEnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, IndependentEnsembleID);
+	}
     request_params = new PropList ( "" );
     request_params.set ( "TSList", IndependentTSList );
     request_params.set ( "TSID", IndependentTSID );
@@ -723,6 +735,7 @@ CommandWarningException, CommandException
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 		try {
 			SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor,
@@ -730,6 +743,7 @@ CommandWarningException, CommandException
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 	}
 	

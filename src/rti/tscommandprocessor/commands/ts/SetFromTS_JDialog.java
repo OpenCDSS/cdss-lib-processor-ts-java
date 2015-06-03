@@ -310,14 +310,13 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	// Main contents...
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Copy data values from the independent time" +
-		" series to replace values in the dependent time series." ), 
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Copy data values from the independent time series to replace values in the dependent time series." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"All data values (by default including missing data) in the set period will be copied."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -346,13 +345,15 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
             this, main_JPanel, new JLabel ("Dependent TS List:"), __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a dependent time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select a dependent ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -364,7 +365,8 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
 
     __IndependentTSID_JLabel = new JLabel (
             "Independent TSID (for Independent TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __IndependentTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __IndependentTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __IndependentTSID_JComboBox.setToolTipText("Select an independent time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __IndependentTSID_JLabel, __IndependentTSID_JComboBox, tsids2, y );
@@ -372,12 +374,14 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     __IndependentEnsembleID_JLabel = new JLabel (
             "Independent EnsembleID (for Independent TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __IndependentEnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __IndependentEnsembleID_JComboBox.setToolTipText("Select an independent ensemble identifier from the list or specify with ${Property} notation");
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __IndependentEnsembleID_JLabel, __IndependentEnsembleID_JComboBox, EnsembleIDs, y );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Set start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetStart_JTextField = new JTextField (20);
+    __SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation");
     __SetStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -387,6 +391,7 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set End:"), 
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetEnd_JTextField = new JTextField (20);
+    __SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
     __SetEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

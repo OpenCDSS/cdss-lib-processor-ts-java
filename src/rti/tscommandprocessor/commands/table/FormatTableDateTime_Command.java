@@ -7,7 +7,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -56,8 +55,7 @@ public FormatTableDateTime_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -75,14 +73,14 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (TableID == null) || TableID.equals("") ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide the identifier for the table to process." ) );
     }
     
-    if ( (InputColumn == null) || InputColumn.equals("") ) {
+    if ( (InputColumn == null) || InputColumn.isEmpty() ) {
         message = "The table input column must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -100,7 +98,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (DateTimeFormat == null) || DateTimeFormat.equals("") ) {
+    if ( (DateTimeFormat == null) || DateTimeFormat.isEmpty() ) {
         message = "The date/time format must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -123,7 +121,7 @@ throws InvalidCommandParameterException
         }
     }
 
-    if ( (OutputColumn == null) || OutputColumn.equals("") ) {
+    if ( (OutputColumn == null) || OutputColumn.isEmpty() ) {
         message = "The output column must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -131,7 +129,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(7);
+    List<String> validList = new ArrayList<String>(8);
     validList.add ( "TableID" );
     validList.add ( "InputColumn" );
     validList.add ( "FormatterType" );
@@ -172,7 +170,7 @@ Method to execute the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   String message, routine = getCommandName() + "_Command.runCommand";
+{   String message, routine = getClass().getSimpleName() + ".runCommand";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
@@ -180,30 +178,48 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    status.clearLog(commandPhase);
     PropList parameters = getCommandParameters();
     
     // Get the input parameters...
     
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
+    	if ( TableID.indexOf("${") >= 0 ) {
+    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    	}
+    }
     String InputColumn = parameters.getValue ( "InputColumn" );
+	if ( (InputColumn != null) && InputColumn.indexOf("${") >= 0 ) {
+		InputColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, InputColumn);
+	}
     String FormatterType = parameters.getValue ( "FormatterType" );
     if ( (FormatterType == null) || FormatterType.equals("") ) {
         FormatterType = "" + DateTimeFormatterType.C;
     }
     DateTimeFormatterType formatterType = DateTimeFormatterType.valueOfIgnoreCase(FormatterType);
     String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
+	if ( (DateTimeFormat != null) && DateTimeFormat.indexOf("${") >= 0 ) {
+		DateTimeFormat = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeFormat);
+	}
     String OutputYearType = parameters.getValue ( "OutputYearType" );
     YearType yearType = null;
     if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
         yearType = YearType.valueOfIgnoreCase(OutputYearType);
     }
     String OutputColumn = parameters.getValue ( "OutputColumn" );
+	if ( (OutputColumn != null) && OutputColumn.indexOf("${") >= 0 ) {
+		OutputColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputColumn);
+	}
     String OutputType = parameters.getValue ( "OutputType" );
     if ( (OutputType == null) || OutputType.equals("") ) {
         OutputType = _String;
     }
     String InsertBeforeColumn = parameters.getValue ( "InsertBeforeColumn" );
+	if ( (InsertBeforeColumn != null) && InsertBeforeColumn.indexOf("${") >= 0 ) {
+		InsertBeforeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, InsertBeforeColumn);
+	}
 
     // Get the table to process.
 
@@ -249,7 +265,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     // Now process...
 
-    List<String> problems = new Vector<String>();
+    List<String> problems = new ArrayList<String>();
     try {
         Object output;
         TableRecord rec;

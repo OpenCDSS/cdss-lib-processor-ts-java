@@ -20,8 +20,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -236,10 +238,13 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
         "    String - if the resulting formatted string should be treated as a literal string" ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID to process or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -252,6 +257,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputColumn_JTextField = new JTextField ( 30 );
+    __InputColumn_JTextField.setToolTipText("Specify the input column name or use ${Property} notation");
     __InputColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -262,6 +268,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(main_JPanel, DateTimeFormat_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel(20,true,true,null,true,true);
+    __DateTimeFormat_JPanel.getTextField().setToolTipText("Specify the date/time format or use ${Property} notation");
     __DateTimeFormat_JPanel.addKeyListener (this);
     __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
     __DateTimeFormat_JPanel.getDocument().addDocumentListener(this); // Respond to changes in text field contents
@@ -285,7 +292,8 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __OutputColumn_JComboBox.setToolTipText("Specify the output column name or use ${Property} notation");
     List<String> outputChoices = new ArrayList<String>();
     outputChoices.add("");
     __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
@@ -315,6 +323,7 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Insert before column:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InsertBeforeColumn_JTextField = new JTextField ( 30 );
+    __InsertBeforeColumn_JTextField.setToolTipText("Specify the column name to insert before or use ${Property} notation");
     __InsertBeforeColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InsertBeforeColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

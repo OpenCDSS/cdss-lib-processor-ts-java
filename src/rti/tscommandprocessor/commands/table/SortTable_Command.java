@@ -56,8 +56,7 @@ public SortTable_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -72,7 +71,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (TableID == null) || (TableID.length() == 0) ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -80,7 +79,7 @@ throws InvalidCommandParameterException
                 message, "Specify the table identifier." ) );
     }
 
-    if ( (SortColumns == null) || (SortColumns.length() == 0) ) {
+    if ( (SortColumns == null) || SortColumns.isEmpty() ) {
         message = "The column to sort must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -179,8 +178,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -190,8 +188,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
 
 	// Make sure there are time series available to operate on...
 	
@@ -199,6 +198,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
+    	// In discovery mode want lists of tables to include ${Property}
+    	if ( TableID.indexOf("${") >= 0 ) {
+    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    	}
+    }
     String SortOrder = parameters.getValue ( "SortOrder" );
     StringDictionary sortOrder = new StringDictionary(SortOrder,":",",");
 	int [] sortOrderArray = new int[sortColumns.length];

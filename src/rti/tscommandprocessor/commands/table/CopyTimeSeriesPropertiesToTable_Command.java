@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.Util.Message.Message;
@@ -64,8 +63,7 @@ public CopyTimeSeriesPropertiesToTable_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -82,7 +80,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
-    if ( (TableID == null) || TableID.equals("") ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -118,17 +116,17 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "PropertyNames" );
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "TableTSIDColumn" );
-    valid_Vector.add ( "TableTSIDFormat" );
-    valid_Vector.add ( "AllowDuplicates" );
-    valid_Vector.add ( "TableOutputColumns" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(9);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "PropertyNames" );
+    validList.add ( "TableID" );
+    validList.add ( "TableTSIDColumn" );
+    validList.add ( "TableTSIDFormat" );
+    validList.add ( "AllowDuplicates" );
+    validList.add ( "TableOutputColumns" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
@@ -167,7 +165,7 @@ public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
     List v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new ArrayList();
         v.add ( table );
     }
     return v;
@@ -232,13 +230,25 @@ CommandWarningException, CommandException
         TSList = TSListType.ALL_TS.toString();
     }
     String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String PropertyNames = parameters.getValue ( "PropertyNames" );
     String [] propertyNames = null;
     if ( (PropertyNames != null) && !PropertyNames.equals("") ) {
         propertyNames = PropertyNames.trim().split(",");
     }
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
+    	// In discovery mode want lists of tables to include ${Property}
+    	if ( TableID.indexOf("${") >= 0 ) {
+    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    	}
+    }
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String AllowDuplicates = parameters.getValue ( "AllowDuplicates" );

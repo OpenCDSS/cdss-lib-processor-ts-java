@@ -694,7 +694,8 @@ processor properties "${Property}", and special strings including:
 <li>	"OutputPeriod"</li>
 </ol>
 If an error occurs, the command log messages and status will be updated.
-Additionally, if the parameter string is invalid an exception will be thrown.
+Additionally, if the parameter string is invalid an exception will be thrown
+(calling code in command can then increment the command's warning count).
 @param dtString date/time string to process.
 @param parameterName name for parameter for messages.
 @param processor command processor from which to retrieve the date.

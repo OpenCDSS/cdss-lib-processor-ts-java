@@ -20,9 +20,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -30,7 +32,6 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.TS.RunningAverageType;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSStatisticType;
@@ -489,12 +490,12 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create running statistic time series, where each new value is a statistic determined from a" +
         " moving window of sample data (e.g., a running average)."), 
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "An AllYears statistic is computed from all values (statistic will be the same every year)."), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -511,18 +512,22 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "An NAllYear running statistic uses the values for the date/time and all previous years."), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -636,6 +641,7 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Analysis start:" ),
         0, ++ySample, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
     __AnalysisStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(sample_JPanel, __AnalysisStart_JTextField,
         1, ySample, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -646,6 +652,7 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Analysis end:" ), 
         0, ++ySample, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
     __AnalysisEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(sample_JPanel, __AnalysisEnd_JTextField,
         1, ySample, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -739,6 +746,7 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(normal_JPanel, new JLabel ( "Normal start:" ),
         0, ++yNormal, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NormalStart_JTextField = new JTextField ( "", 20 );
+    __NormalStart_JTextField.setToolTipText("Specify the normal period start using a date/time string or ${Property} notation");
     __NormalStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(normal_JPanel, __NormalStart_JTextField,
         1, yNormal, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -749,6 +757,7 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(normal_JPanel, new JLabel ( "Normal end:" ), 
         0, ++yNormal, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NormalEnd_JTextField = new JTextField ( "", 20 );
+    __NormalEnd_JTextField.setToolTipText("Specify the normal period end using a date/time string or ${Property} notation");
     __NormalEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(normal_JPanel, __NormalEnd_JTextField,
         1, yNormal, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -788,6 +797,7 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output start:" ),
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField ( "", 20 );
+    __OutputStart_JTextField.setToolTipText("Specify the output period start using a date/time string or ${Property} notation");
     __OutputStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __OutputStart_JTextField,
         1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -798,6 +808,7 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output end:" ), 
         0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputEnd_JTextField = new JTextField ( "", 20 );
+    __OutputEnd_JTextField.setToolTipText("Specify the output period end using a date/time string or ${Property} notation");
     __OutputEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __OutputEnd_JTextField,
         1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

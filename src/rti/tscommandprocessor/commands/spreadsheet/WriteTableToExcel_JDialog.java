@@ -469,7 +469,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     __ColumnIncludeFilters_JTextArea = new JTextArea (3,35);
     __ColumnIncludeFilters_JTextArea.setLineWrap ( true );
     __ColumnIncludeFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnIncludeFilters_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
+    __ColumnIncludeFilters_JTextArea.setToolTipText("TableColumn1:Pattern1,TableColumn2:Pattern2");
     __ColumnIncludeFilters_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(table_JPanel, new JScrollPane(__ColumnIncludeFilters_JTextArea),
         1, yTable, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -483,7 +483,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
     __ColumnExcludeFilters_JTextArea.setLineWrap ( true );
     __ColumnExcludeFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnExcludeFilters_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
+    __ColumnExcludeFilters_JTextArea.setToolTipText("TableColumn1:Pattern1,TableColumn2:Pattern2");
     __ColumnExcludeFilters_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(table_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
         1, yTable, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -639,7 +639,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     __ColumnCellTypes_JTextArea = new JTextArea (3,35);
     __ColumnCellTypes_JTextArea.setLineWrap ( true );
     __ColumnCellTypes_JTextArea.setWrapStyleWord ( true );
-    __ColumnCellTypes_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnCellTypes_JTextArea.setToolTipText("ColumnName1:CellType1,ColumnName2:CellType2");
     __ColumnCellTypes_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(excelFormat_JPanel, new JScrollPane(__ColumnCellTypes_JTextArea),
         1, yExcelFormat, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -654,7 +654,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     __ColumnWidths_JTextArea = new JTextArea (3,35);
     __ColumnWidths_JTextArea.setLineWrap ( true );
     __ColumnWidths_JTextArea.setWrapStyleWord ( true );
-    __ColumnWidths_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnWidths_JTextArea.setToolTipText("ColumnName1:ColumnWidth1,ColumnName2:ColumnWidth2");
     __ColumnWidths_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(excelFormat_JPanel, new JScrollPane(__ColumnWidths_JTextArea),
         1, yExcelFormat, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -668,7 +668,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     __ColumnDecimalPlaces_JTextArea = new JTextArea (3,35);
     __ColumnDecimalPlaces_JTextArea.setLineWrap ( true );
     __ColumnDecimalPlaces_JTextArea.setWrapStyleWord ( true );
-    __ColumnDecimalPlaces_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnDecimalPlaces_JTextArea.setToolTipText("ColumnName1:DecimalPlaces1,ColumnName2:DecimalPlaces2");
     __ColumnDecimalPlaces_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(excelFormat_JPanel, new JScrollPane(__ColumnDecimalPlaces_JTextArea),
         1, yExcelFormat, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

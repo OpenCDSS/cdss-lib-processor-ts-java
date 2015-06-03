@@ -677,6 +677,31 @@ throws IOException
 }
 
 /**
+Determine if the commands are a template.  In this case, applications may disable
+save features.  The special comment "#@template" indicates that the commands are a template.
+@return true if commands are marked as a template, false if not.
+*/
+public boolean areCommandsTemplate ()
+{   // String that indicates a template
+    String templateString = "@TEMPLATE";
+    // Loop through the commands and check comments for the special string
+    int size = size();
+    Command c;
+    String cst, csu;
+    for ( int i = 0; i < size; i++ ) {
+        c = __Command_Vector.get(i);
+        cst = c.toString().trim();
+        if ( cst.startsWith("#") ) {
+	        csu = cst.toUpperCase();
+	        if ( csu.indexOf(templateString) > 0 ) {
+	            return true;
+	        }
+        }
+    }
+    return false;
+}
+
+/**
 Clear the results of processing.  This resets the list of time series, tables, and ensembles to empty.
 Other data still closely coupled with __tsengine are cleared in its processCommands_ResetDataForRun()
 method, which calls this method.

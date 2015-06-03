@@ -5,14 +5,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -21,9 +22,10 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
 import java.util.ArrayList;
 import java.util.List;
+
+
 
 //import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
@@ -181,6 +183,8 @@ private void initialize ( JFrame parent, InsertTableColumn_Command command, List
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The column is initialized with blank (null) values unless an initial value is provided."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -188,6 +192,7 @@ private void initialize ( JFrame parent, InsertTableColumn_Command command, List
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit because sometimes table is not available
+    __TableID_JComboBox.setToolTipText("Specify the table identifier or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -201,6 +206,7 @@ private void initialize ( JFrame parent, InsertTableColumn_Command command, List
     JGUIUtil.addComponent(main_JPanel, new JLabel("Insert column:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InsertColumn_JTextField = new JTextField ( "", 20 );
+    __InsertColumn_JTextField.setToolTipText("Specify the table column to insert or use ${Property} notation");
     __InsertColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InsertColumn_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -210,6 +216,7 @@ private void initialize ( JFrame parent, InsertTableColumn_Command command, List
     JGUIUtil.addComponent(main_JPanel, new JLabel("Column to insert before:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InsertBeforeColumn_JTextField = new JTextField ( "", 20 );
+    __InsertBeforeColumn_JTextField.setToolTipText("Specify the table column to insert before or use ${Property} notation");
     __InsertBeforeColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InsertBeforeColumn_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -239,6 +246,7 @@ private void initialize ( JFrame parent, InsertTableColumn_Command command, List
     JGUIUtil.addComponent(main_JPanel, new JLabel("Initial value:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InitialValue_JTextField = new JTextField ( "", 10 );
+    __InitialValue_JTextField.setToolTipText("Specify the initial column value or use ${Property} notation");
     __InitialValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InitialValue_JTextField,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

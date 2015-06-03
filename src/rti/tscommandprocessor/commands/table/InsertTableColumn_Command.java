@@ -44,8 +44,7 @@ public InsertTableColumn_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -62,14 +61,14 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (TableID == null) || (TableID.length() == 0) ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
     }
-    if ( (InsertColumn == null) || (InsertColumn.length() == 0) ) {
+    if ( (InsertColumn == null) || InsertColumn.isEmpty() ) {
         message = "The column name to insert must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -112,7 +111,7 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(3);
+	List<String> validList = new ArrayList<String>(7);
     validList.add ( "TableID" );
     validList.add ( "InsertColumn" );
     validList.add ( "InsertBeforeColumn" );
@@ -165,13 +164,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && (TableID.indexOf("${") >= 0) ) {
+    	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+	}
     String InsertColumn = parameters.getValue ( "InsertColumn" );
+    if ( (InsertColumn != null) && (InsertColumn.indexOf("${") >= 0) ) {
+    	InsertColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, InsertColumn);
+	}
     String InsertBeforeColumn = parameters.getValue ( "InsertBeforeColumn" );
+    if ( (InsertBeforeColumn != null) && (InsertBeforeColumn.indexOf("${") >= 0) ) {
+    	InsertBeforeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, InsertBeforeColumn);
+	}
     String ColumnType = parameters.getValue ( "ColumnType" );
     if ( (ColumnType == null) || ColumnType.equals("") ) {
         ColumnType = "" + TableColumnType.STRING;
     }
     String InitialValue = parameters.getValue ( "InitialValue" );
+    if ( (InitialValue != null) && (InitialValue.indexOf("${") >= 0) ) {
+    	InitialValue = TSCommandProcessorUtil.expandParameterValue(processor, this, InitialValue);
+	}
     String ColumnWidth = parameters.getValue ( "ColumnWidth" );
     int columnWidth = -1;
     if ( (ColumnWidth != null) && !ColumnWidth.equals("") ) {

@@ -30,19 +30,19 @@ Editor for # comments.
 public class Comment_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private List __command_Vector = null;// Command(s) as Vector of String
-private JTextArea __command_JTextArea = null;// Command as JTextArea
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private List<String> __commandList = null;
+private JTextArea __command_JTextArea = null;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
 Comment editor constructor.
 @param parent JFrame class instantiating this class.
-@param comments Comments to parse (Vector of String)
+@param comments Comments to parse
 */
-public Comment_JDialog ( JFrame parent, List comments )
+public Comment_JDialog ( JFrame parent, List<String> comments )
 {	super(parent, true);
 	initialize ( parent, comments );
 }
@@ -55,7 +55,7 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
-		__command_Vector = null;
+		__commandList = null;
 		response ( 0 );
 	}
 	else if ( o == __ok_JButton ) {
@@ -69,19 +69,19 @@ Convert text area to comments.
 */
 private void checkComments ()
 {	// Reset the command from the fields...
-	__command_Vector = JGUIUtil.toList( __command_JTextArea );
+	__commandList = JGUIUtil.toList( __command_JTextArea );
 	// Make sure there is a # character at the front of each line...
 	int size = 0;
-	if ( __command_Vector != null ) {
-		size = __command_Vector.size();
+	if ( __commandList != null ) {
+		size = __commandList.size();
 	}
 	String s = null;
 	for ( int i = 0; i < size; i++ ) {
-		s = ((String)__command_Vector.get(i)).trim();
+		s = ((String)__commandList.get(i)).trim();
 		if ( !s.startsWith("#") ) {
 			// Replace with a new string that has the comment character...
-			__command_Vector.remove(i);
-			__command_Vector.add(i,("# " + s));
+			__commandList.remove(i);
+			__commandList.add(i,("# " + s));
 		}
 		// Make sure there are no CTRL-M (^M) carriage returns in the string.
 		// If so, remove because the CTRL-N (newline) is enough for other code
@@ -89,22 +89,10 @@ private void checkComments ()
 		if ( s.indexOf("\015") > 0 ) {
 			// Replace with a new string that does not have the carriage returns.
 			String s2 = StringUtil.remove ( s, "\015" );
-			__command_Vector.remove(i);
-			__command_Vector.add(i,s2);
+			__commandList.remove(i);
+			__commandList.add(i,s2);
 		}
 	}
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command_Vector = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -112,27 +100,25 @@ Return the text for the command.
 @return the text for the command or null if there is a problem with the command.
 */
 public List getText ()
-{	if ( __command_Vector == null ) {
+{	if ( __commandList == null ) {
 		// Indicates a cancel...
 		return null;
 	}
 	// Else, OK to process the comments...
 	checkComments ();
-	if (	(__command_Vector == null) ||
-		(__command_Vector.size() == 0) ||
-		((String)__command_Vector.get(0)).equals("") ) {
-		__command_Vector = null;
+	if ( (__commandList == null) || (__commandList.size() == 0) || ((String)__commandList.get(0)).equals("") ) {
+		__commandList = null;
 	}
-	return __command_Vector;
+	return __commandList;
 }
 
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
-@param comments Comments to parse (Vector of String)
+@param comments Comments to parse
 */
-private void initialize ( JFrame parent, List comments )
-{	__command_Vector = comments;
+private void initialize ( JFrame parent, List<String> comments )
+{	__commandList = comments;
 
 	addWindowListener( this );
 
@@ -156,15 +142,14 @@ private void initialize ( JFrame parent, List comments )
 		"Enter one or more comments (leading # will be added automatically if not shown)." ), 
 		0, y, 7, 1, 0, 0, insets2, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "See also the /* and */ commands for multi-line comments, which are useful for commenting out " +
-        "multiple commands." ), 
+        "See also the /* and */ commands for multi-line comments, which are useful for commenting out multiple commands." ), 
         0, ++y, 7, 1, 0, 0, insets2, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JTextArea ref_JTextArea = new JTextArea (2, 80);
     // Add a string buffer with reference positions (similar to UltraEdit Editor)
     //0        10        20
     //12345678901234567890...
-    int n10 = 8; // number to repeat.  Want to make 20 but this causes layout issues.
+    int n10 = 12; // number to repeat.  Want to make 20 but this causes layout issues.
     // TODO SAM 2007-04-22 REVISIT layout for n10=20
     StringBuffer b = new StringBuffer();
     b.append ( StringUtil.formatString(0,"%-9d"));
@@ -241,9 +226,9 @@ private void refresh ()
 		// Fill the text area with the command text.  If a list with
 		// one blank string, don't do the following because it results
 		// in a blank line and the user must back up to edit the blank.
-		if ( (__command_Vector != null) && (__command_Vector.size() > 0) &&
-			(((String)__command_Vector.get(0)).length() > 0)){
-			String text = StringUtil.toString(__command_Vector,	System.getProperty("line.separator") );
+		if ( (__commandList != null) && (__commandList.size() > 0) &&
+			(((String)__commandList.get(0)).length() > 0)){
+			String text = StringUtil.toString(__commandList,	System.getProperty("line.separator") );
 			if ( text.length() > 0 ) {
 				__command_JTextArea.setText ( text );
 			}
@@ -261,17 +246,17 @@ public List response ( int status )
 	dispose();
 	if ( status == 0 ) {
 		// Cancel...
-		__command_Vector = null;
+		__commandList = null;
 		return null;
 	}
 	else {
 	    __ok = true;
 	    refresh();
 		checkComments ();
-		if ( (__command_Vector.size() == 0) || ((String)__command_Vector.get(0)).equals("") ) {
+		if ( (__commandList.size() == 0) || ((String)__commandList.get(0)).equals("") ) {
 			return null;
 		}
-		return __command_Vector;
+		return __commandList;
 	}
 }
 

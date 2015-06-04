@@ -1,12 +1,12 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -48,8 +48,7 @@ public RemoveFile_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -66,14 +65,14 @@ throws InvalidCommandParameterException
 	// The existence of the file to remove is not checked during initialization
 	// because files may be created dynamically at runtime.
 
-	if ( (InputFile == null) || (InputFile.length() == 0) ) {
+	if ( (InputFile == null) || InputFile.isEmpty() ) {
 		message = "The input file (file to remove) must be specified.";
 		warning += "\n" + message;
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the file to remove."));
 	}
-	if ( (IfNotFound != null) && !IfNotFound.equals("") ) {
+	if ( (IfNotFound != null) && !IfNotFound.isEmpty() ) {
 		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn)
 		    && !IfNotFound.equalsIgnoreCase(_Fail) ) {
 			message = "The IfNoutFound parameter \"" + IfNotFound + "\" is invalid.";
@@ -85,10 +84,10 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "InputFile" );
-	valid_Vector.add ( "IfNotFound" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(2);
+	validList.add ( "InputFile" );
+	validList.add ( "IfNotFound" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -145,7 +144,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "RemoveFile_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -163,7 +162,8 @@ CommandWarningException, CommandException
 	}
 
 	String InputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile ) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile) ) );
     File file = new File ( InputFile_full );
 	if ( !file.exists() ) {
         message = "File to remove \"" + InputFile_full + "\" does not exist.";

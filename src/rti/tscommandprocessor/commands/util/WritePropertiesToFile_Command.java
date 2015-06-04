@@ -81,7 +81,7 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
 		message = "The output file: \"" + OutputFile + "\" must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,

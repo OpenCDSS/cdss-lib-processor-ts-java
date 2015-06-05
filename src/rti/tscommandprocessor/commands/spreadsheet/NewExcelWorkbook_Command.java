@@ -84,14 +84,14 @@ throws InvalidCommandParameterException
 	// The existence of the file to append is not checked during initialization
 	// because files may be created dynamically at runtime.
 
-    if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+    if ( (OutputFile == null) || OutputFile.isEmpty() ) {
         message = "The Excel workbook (output file) must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the output file."));
     }
-	if ( (IfFound != null) && !IfFound.equals("") ) {
+	if ( (IfFound != null) && !IfFound.isEmpty() ) {
 		if ( !IfFound.equalsIgnoreCase(_Ignore) && !IfFound.equalsIgnoreCase(_Warn)
 		    && !IfFound.equalsIgnoreCase(_Fail) ) {
 			message = "The IfFound parameter \"" + IfFound + "\" is invalid.";
@@ -103,7 +103,7 @@ throws InvalidCommandParameterException
 		}
 	}
     if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) && 
-        !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.equalsIgnoreCase("") ) {
+        !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.isEmpty() ) {
         message = "KeepOpen is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -111,7 +111,7 @@ throws InvalidCommandParameterException
                 message, "KeepOpen must be specified as " + _False + " (default) or " + _True ) );
     }
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList(4);
+	List<String> validList = new ArrayList<String>(4);
 	validList.add ( "OutputFile" );
 	validList.add ( "Worksheets" );
 	validList.add ( "IfFound" );
@@ -165,7 +165,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -174,7 +174,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+	status.clearLog(commandPhase);
 	
     // Clear the output file
     setOutputFile ( null );
@@ -182,7 +183,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Worksheets = parameters.getValue ( "Worksheets" );
 	String [] worksheets = null;
-	if ( (Worksheets != null) && !Worksheets.equals("") ) {
+	if ( (Worksheets != null) && !Worksheets.isEmpty() ) {
+	    if ( (Worksheets != null) && !Worksheets.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Worksheets.indexOf("${") >= 0 ) {
+	    	Worksheets = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheets);
+	    }
 	    worksheets = Worksheets.trim().split(",");
 	}
 	String IfFound = parameters.getValue ( "IfFound" );
@@ -205,7 +209,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Create the workbook.
 
 	String OutputFile_full = IOUtil.verifyPathForOS(
-	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile ) );
+	    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 	FileOutputStream fout = null;
     Workbook wb = null;
 	try {

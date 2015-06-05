@@ -2,13 +2,12 @@ package rti.tscommandprocessor.commands.table;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -50,8 +49,7 @@ public WriteTableToHTML_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -67,7 +65,7 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-    if ( (TableID == null) || TableID.equals("")) {
+    if ( (TableID == null) || TableID.isEmpty()) {
         message = "The table identifier for the table to write has not been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -75,14 +73,14 @@ throws InvalidCommandParameterException
                 message, "Specify a valid table identifier." ) );
     }
 	
-	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
 		message = "The output file must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify an output file." ) );
 	}
-	else {
+	else if ( !OutputFile.startsWith("${") ){
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
@@ -122,10 +120,10 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "TableID" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(2);
+	validList.add ( "OutputFile" );
+	validList.add ( "TableID" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -138,8 +136,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -151,7 +148,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector();
+	List<File> list = new ArrayList<File>(1);
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -169,14 +166,12 @@ private File getOutputFile ()
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "WriteTableToHTML_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -195,12 +190,16 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+	status.clearLog(commandPhase);
 	
     // Get the table information  
     String OutputFile = parameters.getValue ( "OutputFile" );
     String OutputFile_full = OutputFile;
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
     CommandProcessorRequestResultsBean bean = null;
@@ -243,7 +242,8 @@ CommandWarningException, CommandException
     
 		// Convert to an absolute path...
 		OutputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 		Message.printStatus ( 2, routine, "Writing HTML file \"" + OutputFile_full + "\"" );
 		warning_count = writeTable ( table, OutputFile_full, warning_level, command_tag, warning_count );
 		// Save the output file name...
@@ -304,7 +304,7 @@ Write a table to an HTML file.
 */
 private int writeTable ( DataTable table, String OutputFile, int warning_level, String command_tag, int warning_count )
 throws IOException
-{	String routine = getClass().getName() + ".writeTable";
+{	String routine = getClass().getSimpleName() + ".writeTable";
 	String message;
 
 	// Clear the output file

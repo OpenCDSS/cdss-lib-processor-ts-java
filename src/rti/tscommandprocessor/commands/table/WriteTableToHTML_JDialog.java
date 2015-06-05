@@ -19,15 +19,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.io.File;
 import java.util.List;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -45,15 +46,15 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 	
-private SimpleJButton __browse_JButton = null,
-			__cancel_JButton = null,
-			__ok_JButton = null,
-			__path_JButton = null;	// Convert between relative and absolute paths.
-private WriteTableToHTML_Command __command = null;// Command to edit
-private JTextArea __command_JTextArea=null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
+private WriteTableToHTML_Command __command = null;
+private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
-private String __working_dir = null; // Working directory.
+private String __working_dir = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK.
@@ -178,22 +179,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__browse_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__working_dir = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -210,7 +195,7 @@ private void initialize ( JFrame parent, WriteTableToHTML_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
      JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write a table to an HTML file, which can be specified using a full or " +
@@ -221,10 +206,13 @@ private void initialize ( JFrame parent, WriteTableToHTML_Command command )
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 }
+     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	 __OutputFile_JTextField = new JTextField ( 50 );
+	 __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
 	 __OutputFile_JTextField.addKeyListener ( this );
      JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -234,15 +222,17 @@ private void initialize ( JFrame parent, WriteTableToHTML_Command command )
      
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-     __TableID_JComboBox = new SimpleJComboBox ( false ); // Don't allow edits
+     __TableID_JComboBox = new SimpleJComboBox ( true ); // Allow edits to specify ${Property}
+     __TableID_JComboBox.setToolTipText("Select the table to write or use ${Property} notation");
      List<String> TableIDs = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
          (TSCommandProcessor)__command.getCommandProcessor(), __command );
      __TableID_JComboBox.setData(TableIDs);
      __TableID_JComboBox.addItemListener ( this );
+     __TableID_JComboBox.addKeyListener ( this ); // Because editable text field
      JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - table identifier."),
-     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    	 3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
      
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -321,7 +311,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + "_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + "_JDialog.refresh";
 	String OutputFile = "";
     String TableID = "";
 	__error_wait = false;

@@ -8,7 +8,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -59,8 +58,7 @@ public AppendFile_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -78,21 +76,21 @@ throws InvalidCommandParameterException
 	// The existence of the file to append is not checked during initialization
 	// because files may be created dynamically at runtime.
 
-	if ( (InputFile == null) || (InputFile.length() == 0) ) {
+	if ( (InputFile == null) || InputFile.isEmpty() ) {
 		message = "The input file must be specified.";
 		warning += "\n" + message;
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the input file."));
 	}
-    if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+    if ( (OutputFile == null) || OutputFile.isEmpty() ) {
         message = "The output file must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the output file."));
     }
-	if ( (IfNotFound != null) && !IfNotFound.equals("") ) {
+	if ( (IfNotFound != null) && !IfNotFound.isEmpty() ) {
 		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn)
 		    && !IfNotFound.equalsIgnoreCase(_Fail) ) {
 			message = "The IfNotFound parameter \"" + IfNotFound + "\" is invalid.";
@@ -104,7 +102,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList(5);
+	List<String> validList = new ArrayList(6);
 	validList.add ( "InputFile" );
 	validList.add ( "OutputFile" );
 	validList.add ( "IncludeText" );
@@ -124,8 +122,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -137,7 +134,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new Vector();
+    List<File> list = new ArrayList<File>(1);
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -200,11 +197,12 @@ CommandWarningException, CommandException
 	}
 
 	String InputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile ) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        	TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile) ) );
 	// Expand to a list of files...
 	File f = new File(InputFile_full);
 	String ext = null;
-	List<File> fileList = new Vector();
+	List<File> fileList = new ArrayList<File>();
 	if ( InputFile_full.indexOf("*") < 0 ) {
 	    // Processing a single file
 	    fileList.add(new File(InputFile_full));
@@ -263,7 +261,8 @@ CommandWarningException, CommandException
 	// Process the files.  Each input file is opened to scan the file.  The output file is opened once in append mode.
 
 	String OutputFile_full = IOUtil.verifyPathForOS(
-	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile ) );
+	    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile) ) );
 	PrintWriter fout = null;
 	try {
 	    fout = new PrintWriter ( new FileOutputStream( OutputFile_full, true ) );

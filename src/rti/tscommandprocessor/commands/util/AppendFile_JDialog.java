@@ -283,6 +283,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file(s):" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
+	__InputFile_JTextField.setToolTipText("Specify the input file(s) or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -293,6 +294,7 @@ private void initialize ( JFrame parent, AppendFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file(s):" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
+	__OutputFile_JTextField.setToolTipText("Specify the file(s) to output or use ${Property} notation");
     __OutputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

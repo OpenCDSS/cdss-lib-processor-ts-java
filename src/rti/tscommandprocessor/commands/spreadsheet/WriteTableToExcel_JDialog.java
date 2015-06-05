@@ -436,6 +436,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __TableID_JComboBox.setToolTipText("Select the table to write or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to give user a blank entry to type over
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -520,6 +521,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Output (workbook) file:"),
 		0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (45);
+	__OutputFile_JTextField.setToolTipText("Specify the path to the Excel file or use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(excelOutput_JPanel, __OutputFile_JTextField,
 		1, yExcelOutput, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -530,6 +532,7 @@ private void initialize ( JFrame parent, WriteTableToExcel_Command command, List
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Worksheet:"),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Worksheet_JTextField = new JTextField (30);
+    __Worksheet_JTextField.setToolTipText("Specify the name of the worksheet or use ${Property} notation");
     __Worksheet_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(excelOutput_JPanel, __Worksheet_JTextField,
         1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

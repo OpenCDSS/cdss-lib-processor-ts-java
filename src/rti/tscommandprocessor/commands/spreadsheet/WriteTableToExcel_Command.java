@@ -118,7 +118,7 @@ throws InvalidCommandParameterException
 	
 	CommandProcessor processor = getCommandProcessor();
 	
-    if ( (TableID == null) || (TableID.length() == 0) ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -140,7 +140,7 @@ throws InvalidCommandParameterException
                         message, "Report the problem to software support." ) );
 	}
 
-	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
         message = "The Excel output file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -148,7 +148,7 @@ throws InvalidCommandParameterException
                         message, "Specify an existing Excel output file." ) );
 	}
 	/** TODO SAM 2014-01-12 Evaluate whether to only do this check at run-time
-	else {
+	else if ( !OutputFile.startsWith("${") ) {
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, OutputFile) );
 			File f = new File ( adjusted_path );
@@ -176,7 +176,7 @@ throws InvalidCommandParameterException
 	
     if ( ExcelColumnNames != null &&
         !ExcelColumnNames.equalsIgnoreCase(_FirstRowInRange) && !ExcelColumnNames.equalsIgnoreCase(_None) &&
-        !ExcelColumnNames.equalsIgnoreCase(_RowBeforeRange) && !ExcelColumnNames.equalsIgnoreCase("")) {
+        !ExcelColumnNames.equalsIgnoreCase(_RowBeforeRange) && !ExcelColumnNames.isEmpty()) {
         message = "ExcelColumnNames is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -186,7 +186,7 @@ throws InvalidCommandParameterException
     }
     
     if ( KeepOpen != null && !KeepOpen.equalsIgnoreCase(_True) && 
-        !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.equalsIgnoreCase("") ) {
+        !KeepOpen.equalsIgnoreCase(_False) && !KeepOpen.isEmpty() ) {
         message = "KeepOpen is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -402,7 +402,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException
-{	String routine = "WriteTableToExcel_Command.runCommand",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -420,6 +420,9 @@ throws InvalidCommandParameterException, CommandWarningException
 	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
     String [] includeColumns = null;
     if ( (IncludeColumns != null) && !IncludeColumns.isEmpty() ) {
@@ -440,6 +443,9 @@ throws InvalidCommandParameterException, CommandWarningException
     }
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Worksheet = parameters.getValue ( "Worksheet" );
+    if ( (Worksheet != null) && !Worksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Worksheet.indexOf("${") >= 0 ) {
+    	Worksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheet);
+    }
 	String ExcelAddress = parameters.getValue ( "ExcelAddress" );
 	String ExcelNamedRange = parameters.getValue ( "ExcelNamedRange" );
 	String ExcelTableName = parameters.getValue ( "ExcelTableName" );
@@ -525,7 +531,8 @@ throws InvalidCommandParameterException, CommandWarningException
     }
 
 	String OutputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 	if ( (ExcelUtil.getOpenWorkbook(OutputFile_full) == null) && !IOUtil.fileExists(OutputFile_full) ) {
 		message += "\nThe Excel workbook file \"" + OutputFile_full + "\" is not open from a previous command and does not exist.";
 		++warning_count;

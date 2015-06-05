@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
@@ -46,7 +45,6 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
-import RTi.Util.Table.TableColumnType;
 import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
 
@@ -56,13 +54,6 @@ A useful link is:  http://poi.apache.org/spreadsheet/quick-guide.html
 */
 public class ReadTableFromExcel_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
-
-/**
-Possible values for ExcelColumnNames parameter.
-*/
-protected final String _ColumnN = "ColumnN";
-protected final String _FirstRowInRange = "FirstRowInRange";
-protected final String _RowBeforeRange = "RowBeforeRange";
 
 /**
 Possible values for ReadAllAsText parameter.
@@ -89,98 +80,10 @@ public ReadTableFromExcel_Command ()
 	setCommandName ( "ReadTableFromExcel" );
 }
 
-// TODO SAM 2013-08-12 This can be optimized to not have to check column name and do upper-case conversions
-/**
-@param columnName name of Excel column being checked
-@param cellValue cell value as string, to check
-@param filtersMap map of column 
-@return true if the cell matches the exclude filter and should be excluded
-*/
-private boolean cellMatchesExcludeFilter ( String columnName, String cellValue, Hashtable<String,String> filtersMap )
-{
-    if ( (filtersMap == null) || (filtersMap.size() == 0) ) {
-    	// Include (don't exclude if no filter)
-   		return false;
-    }
-    Enumeration keys = filtersMap.keys();
-    String filterColumn = null;
-    // Compare as upper case to treat as case insensitive
-    String cellValueUpper = null;
-    if ( cellValue != null ) {
-        cellValueUpper = cellValue.toUpperCase();
-    }
-    String columnNameUpper = columnName.toUpperCase();
-    String filterPattern;
-    while ( keys.hasMoreElements() ) {
-        filterColumn = (String)keys.nextElement();
-        filterPattern = filtersMap.get(filterColumn);
-        //Message.printStatus(2,"","Checking column \"" + columnNameUpper + "\" against key \"" + key +
-        //    "\" for cell value \"" + cellValueUpper + "\" and pattern \"" + pattern + "\"" );
-        if ( columnNameUpper.equals(filterColumn) ) {
-        	// Only check the filter if the column matches
-            if ( ((cellValue == null) || (cellValue.length() == 0)) &&
-                ((filterPattern == null) || (filterPattern.length() == 0)) ) {
-                // Matched blank cell and empty pattern
-                return true;
-            }
-            else if ( (cellValueUpper != null) && cellValueUpper.matches(filterPattern) ) {
-            	// Matched non-blank cell
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-/**
-Evaluate whether a cell values matches an include filter
-@param columnName name of Excel column being checked
-@param cellValue cell value as string, to check
-@param filtersMap map of column 
-@return true if the cell matches a filter and the cell should be included
-*/
-private boolean cellMatchesIncludeFilter ( String columnName, String cellValue, Hashtable<String,String> filtersMap )
-{
-    if ( (filtersMap == null) || (filtersMap.size() == 0) ) {
-    	// Include if no filter.
-   		return true;
-    }
-    Enumeration keys = filtersMap.keys();
-    String filterColumn = null;
-    // Compare as upper case to treat as case insensitive
-    String cellValueUpper = null;
-    if ( cellValue != null ) {
-        cellValueUpper = cellValue.toUpperCase();
-    }
-    String columnNameUpper = columnName.toUpperCase();
-    String filterPattern;
-    while ( keys.hasMoreElements() ) {
-        filterColumn = (String)keys.nextElement();
-        filterPattern = filtersMap.get(filterColumn);
-        //Message.printStatus(2,"","Checking column \"" + columnNameUpper + "\" against key \"" + key +
-        //    "\" for cell value \"" + cellValueUpper + "\" and pattern \"" + pattern + "\"" );
-        if ( columnNameUpper.equals(filterColumn) ) {
-        	// Only check the filter if the column matches
-            if ( ((cellValue == null) || (cellValue.length() == 0)) &&
-                ((filterPattern == null) || (filterPattern.length() == 0)) ) {
-                // Matched blank cell and empty pattern
-                return true;
-            }
-            else if ( (cellValueUpper != null) && !cellValueUpper.matches(filterPattern) ) {
-            	// Did not match non-blank cell
-                return false;
-            }
-        }
-    }
-    // Default is to include until cell value does not match above
-    return true;
-}
-
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -204,7 +107,7 @@ throws InvalidCommandParameterException
 	
 	CommandProcessor processor = getCommandProcessor();
 	
-    if ( (TableID == null) || (TableID.length() == 0) ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -226,14 +129,14 @@ throws InvalidCommandParameterException
                         message, "Report the problem to software support." ) );
 	}
 	
-	if ( (InputFile == null) || (InputFile.length() == 0) ) {
+	if ( (InputFile == null) || InputFile.isEmpty() ) {
         message = "The input file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
 	}
-	else {
+	else if ( !InputFile.startsWith("${")){
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
 			File f = new File ( adjusted_path );
@@ -258,14 +161,16 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-    if ( ExcelColumnNames != null && !ExcelColumnNames.equalsIgnoreCase(_ColumnN) && 
-        !ExcelColumnNames.equalsIgnoreCase(_FirstRowInRange) &&
-        !ExcelColumnNames.equalsIgnoreCase(_RowBeforeRange) && !ExcelColumnNames.equalsIgnoreCase("")) {
-        message = "ExcelColumnNames is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "ExcelColumnNames must " + _False + " (default) or " + _True ) );
+    if ( (ExcelColumnNames != null) && !ExcelColumnNames.isEmpty() ) {
+    	ExcelColumnNameRowType t = ExcelColumnNameRowType.valueOfIgnoreCase(ExcelColumnNames);
+    	if ( t == null ) {
+	        message = "ExcelColumnNames is invalid.";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "ExcelColumnNames must " + ExcelColumnNameRowType.COLUMN_N + " (default), " +
+	            	ExcelColumnNameRowType.FIRST_ROW_IN_RANGE + ", or " + ExcelColumnNameRowType.ROW_BEFORE_RANGE) );
+    	}
     }
     
     if ( NumberPrecision != null && !NumberPrecision.equals("") ) {
@@ -337,264 +242,6 @@ throws InvalidCommandParameterException
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
-// TODO SAM 2014-09-25 evaluate whether all values should be checked to determine column type
-/**
-Create table columns from the first valid cell for each column.  This DOES NOT check the types
-for all rows in a column.
-@param table new table that will have columns added
-@param workbook the workbook being read
-@param sheet the worksheet being read
-@param area are being read into table
-@param excelColumnNames indicate how to determine column names from the Excel worksheet
-@param comment if non-null indicates character(s) that indicate comment lines
-@param excelIntegerColumns names of columns that should be treated as integers, or null if none
-@param excelDateTimeColumns names of columns that should be treated as dates, or null if none
-@param precisionForFloats number of digits after decimal for double columns
-@param readAllAsText if True, treat all data as text values
-@param problems list of problems encountered during processing
-@return the names of the output columns or null if cannot create
-*/
-private String [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
-    AreaReference area, String excelColumnNames, String comment,
-    String [] excelIntegerColumns, String [] excelDateTimeColumns, String [] excelTextColumns,
-    int precisionForFloats, boolean readAllAsText, List<String> problems )
-{   String routine = "ReadTableFromExcel_Command.createTableColumns";
-    ExcelToolkit tk = new ExcelToolkit();
-    Row headerRow = null; // Row containing column headings
-    Cell cell;
-    int iRow = area.getFirstCell().getRow();
-    int firstDataRow = iRow; // Default before checking ExcelColumnNames parameter
-    int rowEnd = area.getLastCell().getRow();
-    if ( excelColumnNames.equalsIgnoreCase(_FirstRowInRange) ) {
-        if ( comment == null ) {
-            // Comments are not used so header is first row and first data row is next
-            headerRow = sheet.getRow(iRow);
-            firstDataRow = iRow + 1;
-        }
-        else {
-            // Loop through first column cells.  If string and starts with comment, skip row
-            boolean foundFirstDataRow = false;
-            for ( ; iRow <= rowEnd; iRow++ ) {
-                if ( tk.isRowComment ( sheet, iRow, comment ) ) {
-                    continue;
-                }
-                else {
-                    headerRow = sheet.getRow(iRow);
-                    // Now find the first data row (could have more comments)
-                    for ( ++iRow; iRow <= rowEnd; iRow++ ) {
-                        if ( tk.isRowComment ( sheet, iRow, comment ) ) {
-                            continue;
-                        }
-                        else {
-                            foundFirstDataRow = true;
-                            firstDataRow = iRow;
-                            break;
-                        }
-                    }
-                }
-                if ( foundFirstDataRow ) {
-                    break;
-                }
-            }
-        }
-    }
-    else if ( excelColumnNames.equalsIgnoreCase(_RowBeforeRange) ) {
-        // Loop backwards and skip comments
-        for ( --iRow; iRow >= 0; iRow-- ) {
-            if ( tk.isRowComment ( sheet, iRow, comment ) ) {
-                continue;
-            }
-            else {
-                headerRow = sheet.getRow(iRow);
-                if ( headerRow == null ) {
-                    problems.add ( "Specified ExcelColumnNames=" + _RowBeforeRange +
-                        " but this results in row not on sheet.  Check address range." );
-                    return null;
-                }
-            }
-        }
-    }
-    setFirstDataRow(firstDataRow);
-    Message.printStatus(2, routine, "Determined first data row to be [" + firstDataRow + "]");
-    int colStart = area.getFirstCell().getCol();
-    int colEnd = area.getLastCell().getCol();
-    int columnIndex = -1;
-    // First get the column names
-    String [] columnNames = new String[colEnd - colStart + 1];
-    int cellType;
-    for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
-        ++columnIndex;
-        if ( excelColumnNames.equalsIgnoreCase(_ColumnN) ) {
-            columnNames[columnIndex] = "Column" + (columnIndex + 1);
-        }
-        else {
-            // Column names taken from header row - text value
-            cell = headerRow.getCell(iCol);
-            if ( cell == null ) {
-                // Default...
-                columnNames[columnIndex] = "Column" + (columnIndex + 1);
-            }
-            else {
-                cellType = cell.getCellType();
-                if ( cellType == Cell.CELL_TYPE_FORMULA ) {
-                    // Have to evaluate the formula to get the result, which can be used as the column name
-                    FormulaEvaluator formulaEval = wb.getCreationHelper().createFormulaEvaluator();
-                    columnNames[columnIndex] = formulaEval.evaluate(cell).formatAsString();
-                }
-                else if ( (cellType == Cell.CELL_TYPE_BLANK) || (cellType == Cell.CELL_TYPE_ERROR) ) {
-                    // Default...
-                    columnNames[columnIndex] = "Column" + (columnIndex + 1);
-                }
-                else {
-                    columnNames[columnIndex] = "" + cell;
-                }
-            }
-        }
-    }
-    // Now loop through and determine the column data type from the data row
-    // and add columns to the table
-    columnIndex = -1;
-    //CellStyle style = null;
-    boolean columnTypeSet = false;
-    for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
-        columnTypeSet = false;
-        ++columnIndex;
-        if ( readAllAsText ) {
-            table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
-            continue;
-        }
-        else {
-            // See if the column name matches the user-specified columns for type
-            if ( excelIntegerColumns != null ) {
-                for ( int i = 0; i < excelIntegerColumns.length; i++ ) {
-                    if ( columnNames[columnIndex].equalsIgnoreCase(excelIntegerColumns[i]) ) {
-                        // Treat as an integer
-                        Message.printStatus(2,routine,"Creating requested table column [" + iCol + "]=" + TableColumnType.INT);
-                        table.addField ( new TableField(TableField.DATA_TYPE_INT, columnNames[columnIndex], -1, -1), null );
-                        columnTypeSet = true;
-                        break;
-                    }
-                }
-            }
-            if ( !columnTypeSet && (excelDateTimeColumns != null) ) {
-                for ( int i = 0; i < excelDateTimeColumns.length; i++ ) {
-                    if ( columnNames[columnIndex].equalsIgnoreCase(excelDateTimeColumns[i]) ) {
-                        // Treat as a date
-                        Message.printStatus(2,routine,"Creating requested table column [" + iCol + "]=" + TableColumnType.DateTime);
-                        table.addField ( new TableField(TableField.DATA_TYPE_DATETIME, columnNames[columnIndex], -1, -1), null );
-                        columnTypeSet = true;
-                        break;
-                    }
-                }
-            }
-            if ( !columnTypeSet && (excelTextColumns != null) ) {
-                for ( int i = 0; i < excelTextColumns.length; i++ ) {
-                    if ( columnNames[columnIndex].equalsIgnoreCase(excelTextColumns[i]) ) {
-                        // Treat as a string
-                        Message.printStatus(2,routine,"Creating requested table column [" + iCol + "]=" + TableColumnType.STRING);
-                        table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
-                        columnTypeSet = true;
-                        break;
-                    }
-                }
-            }
-            if ( columnTypeSet ) {
-                continue;
-            }
-            // If not specified by the user...
-            // Look forward to other rows as much as needed to see if there is a non-null value
-            // that can be used to determine the type
-            Row dataRow;
-            Message.printStatus(2,routine,"Checking data to determine colum type for rows " + firstDataRow + " to " + rowEnd );
-            for ( int iRowSearch = firstDataRow; iRowSearch <= rowEnd; iRowSearch++ ) {
-                if ( tk.isRowComment ( sheet, iRowSearch, comment ) ) {
-                    continue;
-                }
-                dataRow = sheet.getRow(iRowSearch);
-                if ( dataRow == null ) {
-                    continue;
-                }
-                cell = dataRow.getCell(iCol);
-                if ( cell == null ) {
-                    continue;
-                }
-                cellType = cell.getCellType();
-                // Check the cell type in order to set the column type for the table
-                // If the cell type is a formula, evaluate the contents to get the type
-                if ( cellType == Cell.CELL_TYPE_FORMULA ) {
-                    Message.printStatus(2,routine,"Table cell [" + iRowSearch + "][" + iCol + "] cell type from Excel is FORMULA.  Evaluating result for type.");
-                    // Have to evaluate the cell and get the value as the result
-                    try {
-                        FormulaEvaluator formulaEval = wb.getCreationHelper().createFormulaEvaluator();
-                        CellValue formulaCellValue = formulaEval.evaluate(cell);
-                        // Reset cellType for following code
-                        cellType = formulaCellValue.getCellType();
-                    }
-                    catch ( Exception e ) {
-                        // Handle as an error in processing below.
-                        problems.add ( "Error evaluating formula for [" + iRowSearch + "][" + iCol + "] \"" +
-                            cell + "\" - checking next row's value for type (" + e + ")");
-                        continue;
-                    }
-                }
-                if ( Message.isDebugOn ) {
-                    Message.printDebug(1, routine, "Evaluating [" + iRowSearch + "][" + iCol + "] cellType=" + cellType +
-                        " to determine column type");
-                }
-                // Now evaluate the cell type (may have come from formula evaluation above)
-                if ( cellType == Cell.CELL_TYPE_STRING ) {
-                    Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is STRING." );
-                    Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.STRING);
-                    table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
-                    columnTypeSet = true;
-                }
-                else if ( cellType == Cell.CELL_TYPE_NUMERIC ) {
-                    Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is NUMERIC");
-                    if (DateUtil.isCellDateFormatted(cell)) {
-                        // TODO SAM 2013-05-12 Evaluate whether to use DATA_TYPE_DATETIME
-                        //table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
-                        Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.DATE);
-                        table.addField ( new TableField(TableField.DATA_TYPE_DATE, columnNames[columnIndex], -1, -1), null );
-                        columnTypeSet = true;
-                    }
-                    else {
-                        // TODO SAM 2013-02-26 Need to figure out the precision from formatting
-                        // For now always set the column to a double with the precision from formatting
-                        // Could default to integer for 0-precision but could guess wrong
-                        //style = cell.getCellStyle();
-                        //short format = style.getDataFormat();
-                        //CellStyle style2 = wb.getCellStyleAt(format);
-                        Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.DOUBLE);
-                        table.addField ( new TableField(TableField.DATA_TYPE_DOUBLE, columnNames[columnIndex], -1, precisionForFloats), null );
-                        columnTypeSet = true;
-                    }
-                }
-                else if ( cellType == Cell.CELL_TYPE_BOOLEAN ) {
-                    Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is BOOLEAN.  Treat as integer 0/1.");
-                    // Use integer for boolean
-                    Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.INT);
-                    table.addField ( new TableField(TableField.DATA_TYPE_INT, columnNames[columnIndex], -1, -1), null );
-                    columnTypeSet = true;
-                }
-                else if ( (cellType == Cell.CELL_TYPE_BLANK) || (cellType == Cell.CELL_TYPE_ERROR) ) {
-                    // Will have to keep evaluating
-                }
-                if ( columnTypeSet ) {
-                    // No need to keep processing additional rows in column.
-                    break;
-                }
-            }
-            if ( !columnTypeSet ){
-                // Default is to treat as a string
-                Message.printStatus(2,routine,"Table column [" + iCol + "] cell type is unknown.  Treating as string.");
-                Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.STRING);
-                table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
-            }
-        }
-    }
-    return columnNames;
-}
-
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
@@ -656,7 +303,7 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 @return a DataTable with the Excel contents
 */
 private DataTable readTableFromExcelFile ( String workbookFile, String sheetName, boolean keepOpen,
-    String excelAddress, String excelNamedRange, String excelTableName, String excelColumnNames,
+    String excelAddress, String excelNamedRange, String excelTableName, ExcelColumnNameRowType excelColumnNames,
     Hashtable columnIncludeFiltersMap, Hashtable columnExcludeFiltersMap,
     String comment,
     String [] excelIntegerColumns, String [] excelDateTimeColumns, String [] excelTextColumns,
@@ -717,8 +364,10 @@ throws FileNotFoundException, IOException
         }
         Message.printStatus(2,routine,"Excel address block to read: " + area );
         // Create the table based on the first row of the area
-        String [] columnNames = createTableColumns ( table, wb, sheet, area, excelColumnNames, comment,
+        Object [] o = tk.createTableColumns ( table, wb, sheet, area, excelColumnNames, comment,
             excelIntegerColumns, excelDateTimeColumns, excelTextColumns, numberPrecision, readAllAsText, problems );
+        String [] columnNames = (String [])o[0];
+        setFirstDataRow((Integer)o[1]);
         int [] tableColumnTypes = table.getFieldDataTypes();
         // Read the data from the area and transfer to the table.
         Row row;
@@ -782,12 +431,12 @@ throws FileNotFoundException, IOException
                         }
                         table.setFieldValue(iRowOut, iColOut, cellValue, true);
                         if ( (tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING) &&
-                            !cellMatchesIncludeFilter(columnNames[iCol - colStart], cellValue, columnIncludeFiltersMap) ) {
+                            !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], cellValue, columnIncludeFiltersMap) ) {
                             // Row was added but will remove at the end after all columns are processed
                             needToSkipRow = true;
                         }
                         if ( (tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING) &&
-                            cellMatchesExcludeFilter(columnNames[iCol - colStart], cellValue, columnExcludeFiltersMap) ) {
+                            tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], cellValue, columnExcludeFiltersMap) ) {
                             // Row was added but will remove at the end after all columns are processed
                             needToSkipRow = true;
                         }
@@ -833,11 +482,11 @@ throws FileNotFoundException, IOException
                             cellValueString = cell.getStringCellValue();
                         }
                         cellValueObject = cellValueString; // For try/catch
-                        if ( !cellMatchesIncludeFilter(columnNames[iCol], cellValueString,columnIncludeFiltersMap) ) {
+                        if ( !tk.cellMatchesIncludeFilter(columnNames[iCol], cellValueString,columnIncludeFiltersMap) ) {
                              // Add the row but will remove at the end after all columns are processed
                              needToSkipRow = true;
                         }
-                        if ( cellMatchesExcludeFilter(columnNames[iCol], cellValueString,columnExcludeFiltersMap) ) {
+                        if ( tk.cellMatchesExcludeFilter(columnNames[iCol], cellValueString,columnExcludeFiltersMap) ) {
                             // Add the row but will remove at the end after all columns are processed
                             needToSkipRow = true;
                         }
@@ -985,11 +634,11 @@ throws FileNotFoundException, IOException
                     }
                     else if ( cellType == Cell.CELL_TYPE_BLANK ) {
                         // Null works for all object types.  If truly a blank string in text cell, use "" as text
-                        if ( !cellMatchesIncludeFilter(columnNames[iColOut],"",columnIncludeFiltersMap) ) {
+                        if ( !tk.cellMatchesIncludeFilter(columnNames[iColOut],"",columnIncludeFiltersMap) ) {
                             // Add the row but will remove at the end after all columns are processed
                             needToSkipRow = true;
                         }
-                        if ( cellMatchesExcludeFilter(columnNames[iColOut],"",columnExcludeFiltersMap) ) {
+                        if ( tk.cellMatchesExcludeFilter(columnNames[iColOut],"",columnExcludeFiltersMap) ) {
                             // Add the row but will remove at the end after all columns are processed
                             needToSkipRow = true;
                         }
@@ -1081,17 +730,17 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "ReadTableFromExcelFile_Command.runCommand",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
 
@@ -1101,14 +750,21 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
 	String InputFile = parameters.getValue ( "InputFile" );
 	String Worksheet = parameters.getValue ( "Worksheet" );
+    if ( (Worksheet != null) && !Worksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Worksheet.indexOf("${") >= 0 ) {
+    	Worksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheet);
+    }
 	String ExcelAddress = parameters.getValue ( "ExcelAddress" );
 	String ExcelNamedRange = parameters.getValue ( "ExcelNamedRange" );
 	String ExcelTableName = parameters.getValue ( "ExcelTableName" );
 	String ExcelColumnNames = parameters.getValue ( "ExcelColumnNames" );
-	if ( (ExcelColumnNames == null) || ExcelColumnNames.equals("") ) {
-	    ExcelColumnNames = _ColumnN; // Default
+	ExcelColumnNameRowType excelColumnNames = ExcelColumnNameRowType.COLUMN_N; // Default
+	if ( (ExcelColumnNames != null) & !ExcelColumnNames.isEmpty() ) {
+	    excelColumnNames = ExcelColumnNameRowType.valueOfIgnoreCase(ExcelColumnNames);  
 	}
     String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
     Hashtable<String,String> columnIncludeFiltersMap = null;
@@ -1195,11 +851,12 @@ CommandWarningException, CommandException
     }
 
 	String InputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        	TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)) );
 	if ( !IOUtil.fileExists(InputFile_full) ) {
 		message += "\nThe Excel workbook file \"" + InputFile_full + "\" does not exist.";
 		++warning_count;
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
             message, "Verify that the Excel workbook file exists." ) );
 	}
 
@@ -1216,9 +873,9 @@ CommandWarningException, CommandException
 	DataTable table = null;
 	List<String> problems = new Vector<String>();
 	try {
-	    if ( command_phase == CommandPhaseType.RUN ) {
+	    if ( commandPhase == CommandPhaseType.RUN ) {
             table = readTableFromExcelFile ( InputFile_full, Worksheet, keepOpen,
-                ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames,
+                ExcelAddress, ExcelNamedRange, ExcelTableName, excelColumnNames,
                 columnIncludeFiltersMap, columnExcludeFiltersMap, comment,
                 excelIntegerColumns, excelDateTimeColumns, excelTextColumns,
                 numberPrecision, readAllAsText, problems );
@@ -1226,7 +883,7 @@ CommandWarningException, CommandException
                 Message.printWarning ( 3, routine, problem );
                 message = "Error reading from Excel: " + problem;
                 Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Check the log file for exceptions." ) );
             }
             // Set the table identifier...
@@ -1236,7 +893,7 @@ CommandWarningException, CommandException
             }
             table.setTableID ( TableID );
 	    }
-	    else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+	    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 	        // Create an empty table.
 	        table = new DataTable();
 	        table.setTableID ( TableID );
@@ -1246,7 +903,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error reading table from Excel workbook file \"" + InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Verify that the file exists and is readable." ) );
 		throw new CommandWarningException ( message );
 	}
@@ -1260,7 +917,7 @@ CommandWarningException, CommandException
     
     // Set the table in the processor...
     
-    if ( command_phase == CommandPhaseType.RUN ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "Table", table );
         try {
@@ -1271,16 +928,16 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
         }
     }
-    else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( table );
     }
 
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

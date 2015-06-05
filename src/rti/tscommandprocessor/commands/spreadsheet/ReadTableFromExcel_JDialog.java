@@ -7,9 +7,11 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -19,7 +21,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -28,7 +29,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
 import java.io.File;
 
 import RTi.Util.GUI.DictionaryJDialog;
@@ -343,10 +343,13 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JTextField = new JTextField (30);
+    __TableID_JTextField.setToolTipText("Select the table to write or use ${Property} notation");
     __TableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -356,6 +359,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input (workbook) file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField (45);
+	__InputFile_JTextField.setToolTipText("Specify the path to the Excel file or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -366,6 +370,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Worksheet:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Worksheet_JTextField = new JTextField (30);
+    __Worksheet_JTextField.setToolTipText("Specify the name of the worksheet or use ${Property} notation");
     __Worksheet_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Worksheet_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -425,15 +430,15 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcelColumnNames_JComboBox = new SimpleJComboBox ( false );
     __ExcelColumnNames_JComboBox.add("");
-    __ExcelColumnNames_JComboBox.add(__command._ColumnN);
-    __ExcelColumnNames_JComboBox.add(__command._FirstRowInRange);
-    __ExcelColumnNames_JComboBox.add(__command._RowBeforeRange);
+    __ExcelColumnNames_JComboBox.add(""+ExcelColumnNameRowType.COLUMN_N);
+    __ExcelColumnNames_JComboBox.add(""+ExcelColumnNameRowType.FIRST_ROW_IN_RANGE);
+    __ExcelColumnNames_JComboBox.add(""+ExcelColumnNameRowType.ROW_BEFORE_RANGE);
     __ExcelColumnNames_JComboBox.select ( 0 );
     __ExcelColumnNames_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ExcelColumnNames_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - how to define column names (default=" +
-        __command._ColumnN + ")."),
+    	ExcelColumnNameRowType.COLUMN_N + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to include rows:"),

@@ -23,15 +23,18 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.PropList;
 
-public class CommentBlockStart_JDialog extends JDialog
+/**
+Editor for Empty command - used for blank lines in the command file.
+*/
+public class Empty_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
-private CommentBlockStart_Command __command = null;
-private JTextArea __command_JTextArea=null;
+private Empty_Command __command = null;
+private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error waiting to be cleared up
-private boolean __first_time = true;
+//private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
@@ -39,7 +42,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public CommentBlockStart_JDialog ( JFrame parent, CommentBlockStart_Command command )
+public Empty_JDialog ( JFrame parent, Empty_Command command )
 {   super(parent, true);
     initialize ( parent, command );
 }
@@ -70,12 +73,7 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {   // Put together a list of parameters to check...
     PropList props = new PropList ( "" );
-    //String Timeout = __Timeout_JTextField.getText().trim();
     __error_wait = false;
-    /*
-    if ( Timeout.length() > 0 ) {
-        props.set ( "Timeout", Timeout );
-    }*/
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -91,8 +89,7 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{   //String Timeout = __Timeout_JTextField.getText().trim();
-    //__command.setCommandParameter ( "Timeout", Timeout );
+{ 
 }
 
 /**
@@ -100,7 +97,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, CommentBlockStart_Command command )
+private void initialize ( JFrame parent, Empty_Command command )
 {	__command = command;
 
 	addWindowListener( this );
@@ -116,14 +113,11 @@ private void initialize ( JFrame parent, CommentBlockStart_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command starts a multi-line comment block, which is useful for commenting out multiple commands."),
+		"This \"Empty\" command is a place-holder for empty lines in command files."),
 		0, y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use the */ command to end the comment block."),
+		"The command does not serve any purpose other than store the empty line."),
 		0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "See also the # command for commenting single lines."),
-        0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -149,7 +143,7 @@ private void initialize ( JFrame parent, CommentBlockStart_Command command )
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-    setTitle ( "Edit " + __command.getCommandName() + " command" );
+    setTitle ( "Edit " + __command.getCommandName() + "() command" );
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
@@ -189,22 +183,8 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	//String Timeout = "";
-    //PropList parameters = null;
-    if ( __first_time ) {
-        __first_time = false;
-        //parameters = __command.getCommandParameters();
-        //Timeout = parameters.getValue ( "Timeout" );
-        /*
-        if ( Timeout != null ) {
-            __Timeout_JTextField.setText ( Timeout );
-        }
-        */
-	}
-	// Regardless, reset the command from the fields...
-    //Timeout = __Timeout_JTextField.getText();
-    PropList props = new PropList ( __command.getCommandName() );
-    //props.add ( "Timeout=" + Timeout );
+{	
+     PropList props = new PropList ( __command.getCommandName() );
     __command_JTextArea.setText( __command.toString(props) );
 }
 

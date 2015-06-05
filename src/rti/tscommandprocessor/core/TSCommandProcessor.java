@@ -3477,8 +3477,7 @@ throws Exception
 
 /**
 Read the command file and initialize new commands.  The initial working directory for the processor will be set
-to the directory of the command file.  The addCommandsFromStringList() method is called on the strings from
-the file.
+to the directory of the command file.  The addCommandsFromStringList() method is called on the strings from the file.
 @param path Path to the command file - this should be an absolute path.
 @param createUnknownCommandIfNotRecognized If true, create a GenericCommand
 if the command is not recognized or has a syntax problem.

@@ -21,14 +21,13 @@ import javax.swing.JTextArea;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 
 public class CommentBlockEnd_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private CommentBlockEnd_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private boolean __error_wait = false; // Is there an error waiting to be cleared up
@@ -40,7 +39,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public CommentBlockEnd_JDialog ( JFrame parent, Command command )
+public CommentBlockEnd_JDialog ( JFrame parent, CommentBlockEnd_Command command )
 {   super(parent, true);
     initialize ( parent, command );
 }
@@ -97,22 +96,12 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (CommentBlockEnd_Command)command;
+private void initialize ( JFrame parent, CommentBlockEnd_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 

@@ -259,6 +259,7 @@ import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.CompareFiles_Command;
 import rti.tscommandprocessor.commands.util.CopyFile_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
+import rti.tscommandprocessor.commands.util.Empty_Command;
 import rti.tscommandprocessor.commands.util.EndFor_Command;
 import rti.tscommandprocessor.commands.util.EndIf_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
@@ -343,7 +344,7 @@ throws UnknownCommandException
 	// Parse out arguments for TS alias = foo() commands to be able to handle nulls here
 
 	String token0 = StringUtil.getToken(commandString,"( =",StringUtil.DELIM_SKIP_BLANKS,0);
-	if ( (token0 != null) && token0.equalsIgnoreCase( "TS") ) {
+    if ( (token0 != null) && token0.equalsIgnoreCase( "TS") ) {
 		// This allows aliases with spaces...
 		commandName = StringUtil.getToken(commandString,"(=",StringUtil.DELIM_SKIP_BLANKS,1);
 		if ( commandName == null ) {
@@ -1132,12 +1133,17 @@ throws UnknownCommandException
     }
     
     // Check for time series identifier
-    // This is the fall through if no command was matched above but the string
-    // matches a TSID pattern
+    // This is the fall through if no command was matched above but the string matches a TSID pattern
     
 	if ( TSCommandProcessorUtil.isTSID(commandString) ) {
 	    return new TSID_Command ();
 	}
+
+	// Check for blank line, which will result in Empty command
+	
+    if ( commandName.equalsIgnoreCase("") ) {
+        return new Empty_Command ();
+    }
 
 	// Did not match a command or TSID...
 
@@ -1145,8 +1151,7 @@ throws UnknownCommandException
 		// Create an unknown command...
 		Command c = new UnknownCommand ();
 		c.setCommandString( commandString );
-        Message.printStatus ( 2, routine, "Creating UnknownCommand for unknown command \"" +
-                commandString + "\"" );
+        Message.printStatus ( 2, routine, "Creating UnknownCommand for unknown command \"" + commandString + "\"" );
 		return c;
 	}
 	else {

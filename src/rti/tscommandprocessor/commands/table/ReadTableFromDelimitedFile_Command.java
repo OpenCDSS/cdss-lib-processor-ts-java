@@ -260,9 +260,22 @@ CommandWarningException, CommandException
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
@@ -270,7 +283,6 @@ CommandWarningException, CommandException
 	// Make sure there are time series available to operate on...
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
 	if ( (TableID != null) && (TableID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {

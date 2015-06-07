@@ -81,7 +81,7 @@ throws InvalidCommandParameterException
                 message, "Specify the new table identifier." ) );
     }
     
-    if ( (TableID != null) && (TableID.length() != 0) && (NewTableID != null) && (NewTableID.length() != 0) &&
+    if ( (TableID != null) && !TableID.isEmpty() && (NewTableID != null) && !NewTableID.isEmpty() &&
         TableID.equalsIgnoreCase(NewTableID) ) {
         message = "The original and new table identifiers are the same.";
         warning += "\n" + message;
@@ -189,14 +189,26 @@ CommandWarningException, CommandException
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
 
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {

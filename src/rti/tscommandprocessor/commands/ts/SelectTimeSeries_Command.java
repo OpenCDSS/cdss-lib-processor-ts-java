@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.GUI.InputFilter;
@@ -302,12 +301,24 @@ CommandWarningException, CommandException
 	int log_level = 3; // Level for non-user messages for log file.
 
 	// Make sure there are time series available to operate on...
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
 	String TSList = parameters.getValue ( "TSList" );
 	if ( (TSList == null) || TSList.equals("") ) {

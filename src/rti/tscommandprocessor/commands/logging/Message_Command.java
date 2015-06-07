@@ -6,12 +6,12 @@ import java.util.List;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -54,16 +54,14 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (ScreenLevel != null) && (ScreenLevel.length() != 0) &&
-            !StringUtil.isInteger(ScreenLevel) ) {
+    if ( (ScreenLevel != null) && !ScreenLevel.isEmpty() && !StringUtil.isInteger(ScreenLevel) ) {
         message = "The screen warning level \"" + ScreenLevel + "\" is not an integer.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Change the screen level to an integer." ) );
     }
-    if ( (LogFileLevel != null) && (LogFileLevel.length() != 0) &&
-            !StringUtil.isInteger(LogFileLevel) ) {
+    if ( (LogFileLevel != null) && !LogFileLevel.isEmpty() && !StringUtil.isInteger(LogFileLevel) ) {
         message = "The log file warning level \"" + LogFileLevel + "\" is not an integer.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -105,7 +103,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
-{	String routine = "Message_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -113,7 +111,20 @@ throws CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	CommandProcessor processor = getCommandProcessor();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	
 	String Message2 = parameters.getValue ( "Message" );
 	String CommandStatus = parameters.getValue ( "CommandStatus" );

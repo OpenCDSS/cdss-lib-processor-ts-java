@@ -2251,9 +2251,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    
     // Get and clear the status and clear the run log...
     
-    CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
-    CommandProcessor processor = getCommandProcessor();
+	CommandProcessor processor = getCommandProcessor();
+	CommandStatus status = getCommandStatus();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();

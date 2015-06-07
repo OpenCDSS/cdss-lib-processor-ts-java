@@ -346,14 +346,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
 	// Check whether the application wants output files to be created...
 	
-	CommandProcessor processor = getCommandProcessor();
     if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
             Message.printStatus ( 2, routine,
             "Skipping \"" + toString() + "\" because output is not being created." );

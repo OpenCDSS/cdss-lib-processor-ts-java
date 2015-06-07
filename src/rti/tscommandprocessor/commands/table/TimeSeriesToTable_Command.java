@@ -12,7 +12,6 @@ import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil_TimeSeriesToTable;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
@@ -455,7 +454,19 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }

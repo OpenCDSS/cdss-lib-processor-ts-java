@@ -11,16 +11,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+
 import javax.swing.JFrame;
 
 import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.SimpleSequence;
 import freemarker.template.Template;
-
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
@@ -375,7 +374,19 @@ CommandWarningException, CommandException
 	
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	
 	String InputFile = parameters.getValue ( "InputFile" );
 	String InputText = parameters.getValue ( "InputText" );

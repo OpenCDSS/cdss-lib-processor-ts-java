@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+
 import javax.swing.JFrame;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -13,7 +14,6 @@ import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -175,7 +175,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
-	status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	
     // Clear the output file
     setOutputFile ( null );

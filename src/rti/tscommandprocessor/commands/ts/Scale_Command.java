@@ -287,13 +287,25 @@ CommandWarningException, CommandException
 	int log_level = 3;  // Level for non-use messages for log file.
 
 	// Make sure there are time series available to operate on...
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
 	String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {

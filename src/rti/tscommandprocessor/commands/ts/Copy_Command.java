@@ -405,7 +405,19 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	
 	String Alias = parameters.getValue ( "Alias" ); // Expansion is handled below
 	String TSID = parameters.getValue ( "TSID" );

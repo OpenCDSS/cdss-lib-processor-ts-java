@@ -11,12 +11,10 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
-
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSLimits;
 import RTi.TS.TSUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -276,7 +274,19 @@ CommandWarningException, CommandException
 	
 	CommandStatus status = getCommandStatus();
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
-	status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );

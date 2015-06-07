@@ -435,8 +435,21 @@ CommandWarningException, CommandException
 	
 	// Get and clear the status and clear the run log...
 	
+	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Initialize the list
         setDiscoveryTSList ( null );
@@ -445,7 +458,6 @@ CommandWarningException, CommandException
 	// Make sure there are time series available to operate on...
 	
 	PropList parameters = getCommandParameters ();
-	CommandProcessor processor = getCommandProcessor();
 
 	String Alias = parameters.getValue ( "Alias" ); // Expanded below after creating time series
 	String NewTSID = parameters.getValue ( "NewTSID" );

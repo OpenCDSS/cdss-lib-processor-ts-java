@@ -10,7 +10,6 @@ import java.util.List;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
@@ -308,7 +307,19 @@ CommandWarningException, CommandException
     
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
 	String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {

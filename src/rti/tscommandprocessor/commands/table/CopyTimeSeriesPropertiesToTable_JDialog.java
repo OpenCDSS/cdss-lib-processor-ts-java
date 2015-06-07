@@ -49,7 +49,7 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField __PropertyNames_JTextField = null;
+private JTextField __IncludeProperties_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers
@@ -155,7 +155,7 @@ private void checkInput ()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String PropertyNames = __PropertyNames_JTextField.getText().trim();
+    String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
@@ -174,8 +174,8 @@ private void checkInput ()
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
-    if ( PropertyNames.length() > 0 ) {
-        parameters.set ( "PropertyNames", PropertyNames );
+    if ( IncludeProperties.length() > 0 ) {
+        parameters.set ( "IncludeProperties", IncludeProperties );
     }
     if ( TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
@@ -214,7 +214,7 @@ private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String PropertyNames = __PropertyNames_JTextField.getText().trim();
+    String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
@@ -223,7 +223,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-    __command.setCommandParameter ( "PropertyNames", PropertyNames );
+    __command.setCommandParameter ( "IncludeProperties", IncludeProperties );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
@@ -291,11 +291,11 @@ private void initialize ( JFrame parent, CopyTimeSeriesPropertiesToTable_Command
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property names:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Properties to include:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __PropertyNames_JTextField = new JTextField ( 10 );
-    __PropertyNames_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __PropertyNames_JTextField,
+    __IncludeProperties_JTextField = new JTextField ( 10 );
+    __IncludeProperties_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IncludeProperties_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - property names to copy (default=all)."), 
@@ -436,7 +436,7 @@ private void refresh ()
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
-    String PropertyNames = "";
+    String IncludeProperties = "";
     String TableID = "";
     String TableTSIDColumn = "";
     String TableTSIDFormat = "";
@@ -450,7 +450,7 @@ private void refresh ()
         TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
-        PropertyNames = props.getValue ( "PropertyNames" );
+        IncludeProperties = props.getValue ( "IncludeProperties" );
         TableID = props.getValue ( "TableID" );
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
@@ -500,8 +500,8 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( PropertyNames != null ) {
-            __PropertyNames_JTextField.setText ( PropertyNames );
+        if ( IncludeProperties != null ) {
+            __IncludeProperties_JTextField.setText ( IncludeProperties );
         }
         if ( TableID == null ) {
             // Select default...
@@ -550,7 +550,7 @@ private void refresh ()
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-    PropertyNames = __PropertyNames_JTextField.getText().trim();
+    IncludeProperties = __IncludeProperties_JTextField.getText().trim();
 	TableID = __TableID_JComboBox.getSelected();
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
@@ -560,7 +560,7 @@ private void refresh ()
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
-    props.add ( "PropertyNames=" + PropertyNames );
+    props.add ( "IncludeProperties=" + IncludeProperties );
     props.add ( "TableID=" + TableID );
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );

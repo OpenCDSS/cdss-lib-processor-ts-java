@@ -26,6 +26,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
@@ -69,7 +70,7 @@ Check the command parameter for valid values, combination, etc.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{   String PropertyNames = parameters.getValue ( "PropertyNames" );
+{   String IncludeProperties = parameters.getValue ( "IncludeProperties" );
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String AllowDuplicates = parameters.getValue ( "AllowDuplicates" );
@@ -94,16 +95,16 @@ throws InvalidCommandParameterException
             message, "Provide a table column name for the TSID." ) );
     }
     
-    if ( (PropertyNames != null) && !PropertyNames.equals("") &&
+    if ( (IncludeProperties != null) && !IncludeProperties.equals("") &&
         (TableOutputColumns != null) && !TableOutputColumns.equals("") ) {
-        String[] propertyNames = PropertyNames.split(",");
+        String[] includeProperties = IncludeProperties.split(",");
         String[] tableOutputColumns = TableOutputColumns.split(",");
-        if ( propertyNames.length != tableOutputColumns.length ) {
-            message = "The number of specified property names (" +
+        if ( includeProperties.length != tableOutputColumns.length ) {
+            message = "The number of include properties (" +
                 ") and the number of specified table output columns (" + ") is different.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the same number of property names as output columns." ) );
+                message, "Specify the same number of include properties names as output columns." ) );
         }
     }
     
@@ -120,7 +121,7 @@ throws InvalidCommandParameterException
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
-    validList.add ( "PropertyNames" );
+    validList.add ( "IncludeProperties" );
     validList.add ( "TableID" );
     validList.add ( "TableTSIDColumn" );
     validList.add ( "TableTSIDFormat" );
@@ -171,13 +172,27 @@ public List getObjectList ( Class c )
     return v;
 }
 
-// Parse command is in the base class
+/**
+Override parent parseCommand() so that parameter name can be changed.
+@param commandString command string to parse
+*/
+public void parseCommand ( String commandString )
+throws InvalidCommandParameterException, InvalidCommandSyntaxException
+{
+	super.parseCommand(commandString);
+	// Now replace "PropertyNames" with "IncludeProperties"
+	PropList params = getCommandParameters();
+	String propVal = params.getValue("PropertyNames");
+	if ( (propVal != null) && !propVal.isEmpty() ) {
+		params.set("IncludeProperties=" + propVal );
+		params.unSet("PropertyNames");
+	}
+}
 
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -249,10 +264,10 @@ CommandWarningException, CommandException
 	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
-    String PropertyNames = parameters.getValue ( "PropertyNames" );
-    String [] propertyNames = null;
-    if ( (PropertyNames != null) && !PropertyNames.equals("") ) {
-        propertyNames = PropertyNames.trim().split(",");
+    String IncludeProperties = parameters.getValue ( "IncludeProperties" );
+    String [] includeProperties = null;
+    if ( (IncludeProperties != null) && !IncludeProperties.equals("") ) {
+        includeProperties = IncludeProperties.trim().split(",");
     }
     String TableID = parameters.getValue ( "TableID" );
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
@@ -431,24 +446,24 @@ CommandWarningException, CommandException
                 ts = (TS)o_ts;
                 
                 // Get the properties to process
-                if ( propertyNames == null ) {
+                if ( IncludeProperties == null ) {
                     // Get all the properties by forming a list of property names from the hashtable
                     HashMap<String, Object> propertyHash = ts.getProperties();
                     ArrayList<String> keyList = new ArrayList<String>(propertyHash.keySet());
                     // Don't sort because original order has meaning
                     //Collections.sort(keyList);
-                    propertyNames = StringUtil.toArray(keyList);
+                    includeProperties = StringUtil.toArray(keyList);
                 }
                 // Set the column names from the time series properties
                 if ( tableOutputColumnNames == null ) {
-                    tableOutputColumnNames = propertyNames;
+                    tableOutputColumnNames = includeProperties;
                 }
                 else {
                     // Check for wildcards
-                    for ( int icolumn = 0; icolumn < propertyNames.length; icolumn++ ) {
+                    for ( int icolumn = 0; icolumn < includeProperties.length; icolumn++ ) {
                         if ( tableOutputColumnNames[icolumn].equals("*") ) {
                             // Output column name is the same as the property name
-                            tableOutputColumnNames[icolumn] = propertyNames[icolumn];
+                            tableOutputColumnNames[icolumn] = includeProperties[icolumn];
                         }
                     }
                 }
@@ -486,8 +501,8 @@ CommandWarningException, CommandException
                         // Create the column in the table - do this before any attempt to match the record based on TSID below
                         // For now don't set any width or precision on the column.
                         // First find the matching property in the time series to determine the property type.
-                        // The order of propertyNames is the same as tableOutputColumnNames.
-                        Object propertyValue = ts.getProperty(propertyNames[i] );
+                        // The order of IncludeProperties is the same as tableOutputColumnNames.
+                        Object propertyValue = ts.getProperty(includeProperties[i] );
                         if ( propertyValue == null ) {
                             // If null just let the property be set by a later record where a non-null value is found.
                             // TODO SAM 2012-09-30 Is it possible to check the type even if null?
@@ -599,11 +614,11 @@ CommandWarningException, CommandException
                 
                 // Loop through the property names...
                 
-                //for ( int icolumn = 0; icolumn < propertyNames.length; icolumn++ ) {
-                //    String propertyName = propertyNames[icolumn];
+                //for ( int icolumn = 0; icolumn < IncludeProperties.length; icolumn++ ) {
+                //    String propertyName = IncludeProperties[icolumn];
                 //    Object propertyValue = ts.getProperty(propertyName);
                 for ( int icolumn = 0; icolumn < tableOutputColumnNames.length; icolumn++ ) {
-                    String propertyName = propertyNames[icolumn];
+                    String propertyName = includeProperties[icolumn];
                     Object propertyValue = ts.getProperty(propertyName);
                     // If the property value is null, just skip setting it - default value for columns is null
                     // TODO SAM 2011-04-27 Should this be a warning?
@@ -705,7 +720,7 @@ public String toString ( PropList parameters )
     String TSList = parameters.getValue( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
-    String PropertyNames = parameters.getValue( "PropertyNames" );
+    String IncludeProperties = parameters.getValue( "IncludeProperties" );
     String TableID = parameters.getValue( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
@@ -732,11 +747,11 @@ public String toString ( PropList parameters )
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-    if ( (PropertyNames != null) && (PropertyNames.length() > 0) ) {
+    if ( (IncludeProperties != null) && (IncludeProperties.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "PropertyNames=\"" + PropertyNames + "\"" );
+        b.append ( "IncludeProperties=\"" + IncludeProperties + "\"" );
     }
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {

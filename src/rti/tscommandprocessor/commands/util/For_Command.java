@@ -148,6 +148,15 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Return the number of iterations fully completed.
+@return the number of iterations fully completed.
+*/
+public int getIterationsCompleted ()
+{
+	return iteratorObjectListIndex + 1;
+}
+
+/**
 Return the current index property value.
 @return the current index property value
 */
@@ -301,7 +310,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException, InvalidCommandParameterException
-{	String routine = "For_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -310,7 +319,8 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	PropList parameters = getCommandParameters();
 	
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+	status.clearLog(commandPhase);
 	
 	String Name = parameters.getValue ( "Name" );
 	String IteratorProperty = parameters.getValue ( "IteratorProperty" );
@@ -326,6 +336,9 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		}
 	}
 	String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
 	//String TableColumn = parameters.getValue ( "TableColumn" );
 	
     // Get the table to process.  This logic is repeated in next() because next() is called first.

@@ -19,9 +19,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -152,11 +154,8 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command is under development.  Nested For() loops are not supported.</b></html>"),
-        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "This command starts a \"for loop\", which repeatedly executes a block of commands while changing the " +
-        "value of an iterator variable each iteration."),
+        "value of an iterator variable for each iteration."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The iterator value is set as a processor property that can be accessed by other commands using " +
@@ -165,6 +164,8 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use an EndFor() command with matching name to indicate the end of the for loop."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "For loop name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -198,6 +199,8 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(list_JPanel, new JLabel (
         "The for loop can iterate over a list of values, separated by commas."),
         0, ++yList, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(list_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yList, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(list_JPanel, new JLabel ( "List:" ), 
         0, ++yList, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -222,10 +225,13 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(table_JPanel, new JLabel (
         "If necessary, copy a subset of values from a table using CopyTable() and other table commands."),
         0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );

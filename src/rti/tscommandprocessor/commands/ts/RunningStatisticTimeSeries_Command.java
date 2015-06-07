@@ -523,15 +523,27 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Warning level for non-user messages.
 
 	// Make sure there are time series available to operate on...
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
     }
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
     
     String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
@@ -834,7 +846,7 @@ CommandWarningException, CommandException
 
 	TS ts = null; // Time series to process
     TS newts = null; // Running statistic time series
-    List<TS> discoveryTSList = new Vector();
+    List<TS> discoveryTSList = new ArrayList<TS>();
 	for ( int its = 0; its < nts; its++ ) {
 	    ts = tslist.get(its);
 		try {
@@ -848,13 +860,6 @@ CommandWarningException, CommandException
 			        minimumSampleSize, distributionType, distParams, ProbabilityUnits, sortOrderType,
 			        NormalStart_DateTime, NormalEnd_DateTime, OutputStart_DateTime, OutputEnd_DateTime );
 			newts = tsu.runningStatistic(createData);
-	        if ( (Alias != null) && !Alias.isEmpty() ) {
-	            String alias = Alias;
-	            if ( commandPhase == CommandPhaseType.RUN ) {
-	            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, newts, Alias, status, commandPhase);
-	            }
-	            newts.setAlias ( alias );
-	        }
 	        // Append problems in the low-level code to command status log
             for ( String problem : tsu.getProblems() ) {
                 Message.printWarning ( warning_level,
@@ -901,8 +906,18 @@ CommandWarningException, CommandException
                         }
                     }
                 }
+            }
+            // Set the alias in discovery and run mode after properties have been set so that it can use them
+	        if ( (Alias != null) && !Alias.isEmpty() ) {
+	            String alias = Alias;
+	            if ( commandPhase == CommandPhaseType.RUN ) {
+	            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, newts, Alias, status, commandPhase);
+	            }
+	            newts.setAlias ( alias );
+	        }
+	        if ( commandPhase == CommandPhaseType.RUN ) {
                 TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, newts );
-            }  
+            }
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error calculating running statistic for time series \"" + ts.getIdentifier() +

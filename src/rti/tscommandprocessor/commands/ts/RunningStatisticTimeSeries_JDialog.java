@@ -564,6 +564,8 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(dist_JPanel, new JLabel (
         "Parameters related to distribution are needed for Plotting Position, Nonexceedance probability, and Exceedance probability statistics."), 
         0, ++yDist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dist_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+        0, ++yDist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(dist_JPanel, new JLabel ("Distribition:"),
         0, ++yDist, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -637,6 +639,8 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(sample_JPanel, new JLabel (
         "Statistic values will be calculated for the analysis period (see also the Normal and Output period)."),
         0, ++ySample, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(sample_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+        0, ++ySample, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Analysis start:" ),
         0, ++ySample, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -742,6 +746,8 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(normal_JPanel, new JLabel (
         "The default normal period is the analysis period (which may itself default to the full output period)."),
         0, ++yNormal, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(normal_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+        0, ++yNormal, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(normal_JPanel, new JLabel ( "Normal start:" ),
         0, ++yNormal, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

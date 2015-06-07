@@ -657,7 +657,6 @@ import java.util.Vector;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import DWR.DMI.HydroBaseDMI.HydroBaseDataStore;
-
 import riverside.datastore.DataStore;
 import riverside.datastore.GenericDatabaseDataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
@@ -679,31 +678,24 @@ import rti.tscommandprocessor.commands.util.If_Command;
 import us.co.state.dwr.hbguest.datastore.ColoradoWaterHBGuestDataStore;
 import us.co.state.dwr.sms.ColoradoWaterSMSAPI;
 import us.co.state.dwr.sms.datastore.ColoradoWaterSMSDataStore;
-
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
-
 import DWR.StateCU.StateCU_BTS;
 import DWR.StateCU.StateCU_CropPatternTS;
 import DWR.StateCU.StateCU_IrrigationPracticeTS;
 import DWR.StateCU.StateCU_TS;
-
 import DWR.StateMod.StateMod_TS;
 import DWR.StateMod.StateMod_BTS;
-
 import RTi.DMI.DMI;
 import RTi.DMI.DatabaseDataStore;
 import RTi.DMI.DIADvisorDMI.DIADvisorDMI;
 import RTi.DMI.NWSRFS_DMI.NWSCardTS;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
-
 import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
 import RTi.DMI.RiversideDB_DMI.RiversideDBDataStore;
-
 import RTi.GRTS.TSProductAnnotationProvider;
 import RTi.GRTS.TSProductDMI;
 import RTi.GRTS.TSViewJFrame;
-
 import RTi.TS.DateValueTS;
 import RTi.TS.IrregularTS;
 import RTi.TS.MexicoCsmnTS;
@@ -723,7 +715,6 @@ import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_ChangeInterval;
 import RTi.TS.UsgsNwisRdbTS;
 import RTi.TS.YearTS;
-
 import RTi.Util.GUI.ReportJFrame;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -1870,6 +1861,24 @@ protected DateTime getAverageStart()
 }
 
 /**
+Get whether commands should clear their run status before running, needed to handle For() commands.
+*/
+private boolean getCommandsShouldClearRunStatus ()
+{
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = __ts_processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    return clearStatus;
+}
+
+/**
 Return the list of data stores known to the TSEngine.
 */
 protected List<DataStore> getDataStoreList()
@@ -2516,6 +2525,7 @@ private int lookupEndForCommandIndex(List<Command> commandList, String forName )
     return -1;
 }
 
+// TODO SAM optimize this so that lookup searches backward from a starting point, for example from EndFor()
 /**
 Lookup the command index for the For() command with requested name
 @param commandList list of commands to check
@@ -2612,11 +2622,11 @@ processing.
 */
 protected void processCommands ( List<Command> commandList, PropList appPropList )
 throws Exception
-{	String message, routine = "TSEngine.processCommands";
+{	String message, routine = getClass().getSimpleName() + ".processCommands";
 	String message_tag = "ProcessCommands"; // Tag used with messages generated in this method.
 	int error_count = 0; // For errors during time series retrieval
 	int update_count = 0; // For warnings about command updates
-	int popup_warning_level = 2;  // For serious warning levels - currently go to log and not popup
+	int popup_warning_level = 2; // For serious warning levels - currently go to log and not popup
 	if ( commandList == null ) {
 		// Process all commands if a subset has not been provided.
 		commandList = __ts_processor.getCommands();
@@ -2720,8 +2730,10 @@ throws Exception
 										// May not occur if "continue" in loop.
 	CommandProfile commandProfile = null; // Profile to track execution time, memory use
 	Command commandPrev = null; // previous command in loop
-	// Initialize the "if" command stack that is in effect
+	// Initialize the If() command stack that is in effect, needed to "and" the if conditions
 	List<If_Command> ifCommandStack = new ArrayList<If_Command>();
+	// Initialize the For() command stack that is in effect, needed to handle command logging
+	List<For_Command> forCommandStack = new ArrayList<For_Command>();
 	boolean ifStackOkToRun = true; // Used in loop to indicate if command in If() blocks is OK to run
 	// Indicate the state of the processor...
 	__ts_processor.setIsRunning ( true );
@@ -2729,18 +2741,33 @@ throws Exception
     StopWatch stopWatch = new StopWatch();
     int runtimeTotal = 0;
     boolean needToInterrupt = false; // Will set to true if need to break out of running (e.g., no for loop end)
-    // Loop through the commands and reset any For() commands to make sure they don't think they are complete
+    // Loop through the commands and reset any For() commands to make sure they don't think they are complete.
+    // Nexted for loops will be handled when processed by resetting when a for loop is totally complete.
     For_Command forCommand = null;
+    CommandStatusProvider statusProvider = null;
     for ( i = 0; i < size; i++ ) {
         command = commandList.get(i);
         if ( command == null ) {
             continue;
         }
-        else if ( command instanceof For_Command ) {
+        statusProvider = null;
+        if ( command instanceof CommandStatusProvider ) {
+        	statusProvider = (CommandStatusProvider)command;
+        }
+        if ( command instanceof For_Command ) {
             forCommand = (For_Command)command;
             forCommand.resetCommand();
         }
+        if ( statusProvider != null ) {
+	        // Clear the log on all the commands
+	        // TODO SAM 2015-06-06 This is needed because it is difficult with For() commands to know when to clear vs. accumulate
+        	// TODO SAM 2015-06-06 Do the other run modes need to be cleared out?
+	        statusProvider.getCommandStatus().clearLog(CommandPhaseType.RUN);
+        }
     }
+    // Indicate that commands should not clear their logs when running - allows For() loop logging to accumulate
+    __ts_processor.setPropContents("CommandsShouldClearRunStatus",new Boolean(false));
+    boolean commandsShouldClearRunStatus = getCommandsShouldClearRunStatus(); // For use below - constant for all processing
     // Run using the command list index because the index is modified below by For() commands
 	for ( i = 0; i < size; i++ ) {
 		// 1-offset comand count for messages
@@ -2782,7 +2809,9 @@ throws Exception
     		// All commands will implement CommandStatusProvider so get it...
     		commandStatus = ((CommandStatusProvider)command).getCommandStatus();
     		// Clear the run status (internally will set to UNKNOWN).
-    		commandStatus.clearLog(CommandPhaseType.RUN);
+    		if ( commandsShouldClearRunStatus ) {
+    			commandStatus.clearLog(CommandPhaseType.RUN);
+    		}
     		commandProfile = command.getCommandProfile(CommandPhaseType.RUN);
     		Message.printStatus ( 1, routine, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     		Message.printStatus ( 1, routine,
@@ -2877,8 +2906,9 @@ throws Exception
     					Message.printDebug ( 1, routine, "Checking the parameters for command \"" + commandString + "\"" );
     				}
     				command.checkCommandParameters ( command.getCommandParameters(), command_tag, 2 );
+    				// TODO SAM 2015-06-06 Seems to be multiple places where status is cleared
     				// Clear the run status for the command...
-    				if ( command instanceof CommandStatusProvider ) {
+    				if ( (command instanceof CommandStatusProvider) && commandsShouldClearRunStatus ) {
     					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.RUN);
     				}
     				// Check to see whether in one or more If() commands and if so evaluate their values to determine
@@ -2890,14 +2920,20 @@ throws Exception
         				}
                         if ( command instanceof For_Command ) {
                             // TODO SAM 2014-06-29 Need a way to check for for loops that cross each other or in/out of if commands
-                            // TODO SAM 2014-06-29 Need a For() loop stack and need to reinitialize all nested For() loops so tha they
+                            // TODO SAM 2014-06-29 Need a For() loop stack and need to reinitialize all nested For() loops so that they
                             // will run through again
                             // Initialize or increment the for loop
                             forCommand = (For_Command)command;
                             boolean okToRunFor;
                             try {
                                 okToRunFor = forCommand.next();
-                                Message.printStatus(2,routine,"okToRunFor="+okToRunFor);
+                                //Message.printStatus(2,routine,"okToRunFor="+okToRunFor);
+                                // If false, the for loop is done.  However, need to handle case where for loop
+                                // may be nexted and need to run again...
+                                // TODO SAM 2015-06-06 Are there any technical issues with this simple reset?
+                                if ( !okToRunFor ) {
+                                	forCommand.resetCommand();
+                                }
                             }
                             catch ( Exception e ) {
                                 // This is serious and can lead to infinite loop so generate an exception and jump to the end of the loop
@@ -2925,7 +2961,10 @@ throws Exception
                             }
                             if ( okToRunFor ) {
                                 // Continue running commands that are after the For() command
-                                // So... run the For() command to set the iterator property and then skip to the next command
+                            	// Add to the for stack - if in any for loops, commands should by default NOT reset their logging
+                            	// so that messages will accumulate and help users troubleshoot errors
+                            	forCommandStack.add(forCommand);
+                                // Run the For() command to set the iterator property and then skip to the next command
                                 command.runCommand ( i_for_message );
                                 continue;
                             }
@@ -2950,9 +2989,19 @@ throws Exception
                         else if ( command instanceof EndFor_Command ) {
                             // Jump to matching For()
                             EndFor_Command efc = (EndFor_Command)command;
+                            try {
+                            	forCommandStack.remove(forCommand);
+                            }
+                            catch ( Exception e ) {
+                            	// TODO SAM 2015-06-05 might need to log as mismatched nested loops
+                            }
                             int forIndex = lookupForCommandIndex(commandList,efc.getName());
                             i = forIndex - 1; // Decrement by one because the main loop will increment
-                            continue;
+                            if ( Message.isDebugOn ) {
+                            	Message.printDebug(1,routine,"At EndFor(Name=\"" + efc.getName() +
+                            		"\") - jumping to command [" + (i + 1) + "] at top of For() loop" );
+                            }
+                            continue; // Goes to the top of the loop to get the command at "i"
                         }
                         else {
                             command.runCommand ( i_for_message );
@@ -2967,8 +3016,7 @@ throws Exception
     	                ifStackOkToRun = evaluateIfStack(ifCommandStack);
     	            }
     	            else if ( command instanceof EndIf_Command ) {
-    	                // Remove from the if command stack (generate a warning if the matching If() is not found in
-    	                // the stack
+    	                // Remove from the if command stack (generate a warning if the matching If() is not found in the stack
     	                EndIf_Command endifCommand = (EndIf_Command)command;
     	                If_Command ifCommand = lookupIfCommand(ifCommandStack,endifCommand.getName());
     	                if ( ifCommand == null ) {

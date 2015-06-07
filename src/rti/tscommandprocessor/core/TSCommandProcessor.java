@@ -165,6 +165,14 @@ during troubleshooting to increase performance.
 private Boolean __CreateOutput_Boolean = new Boolean(true);
 
 /**
+Indicate whether commands should clear their log before running.
+Normally this is true.  However, when using For() commands it is helpful to accumulate
+logging messages in commands within the For() loop.  The command processor sets this value
+and each command must call getShouldCommandsClearLog() to check whether to clear.
+*/
+private Boolean __commandsShouldClearRunStatus = new Boolean(true);
+
+/**
 The list of StringMonthTS, currently only read by ReadPatternFile() and used with FillPattern().
 */
 private List __patternTS_Vector = new Vector();
@@ -749,21 +757,21 @@ public boolean getCancelProcessingRequested ()
 }
 
 /**
-Return the list of commands.
-@return the list of commands.
-*/
-public List<Command> getCommands ()
-{
-	return __Command_Vector;
-}
-
-/**
 Get the name of the command file associated with the processor.
 @return the name of the command file associated with the processor.
 */
 public String getCommandFileName ()
 {
 	return __commandFilename;
+}
+
+/**
+Return the list of commands.
+@return the list of commands.
+*/
+public List<Command> getCommands ()
+{
+	return __Command_Vector;
 }
 
 /**
@@ -1097,6 +1105,9 @@ public Object getPropContents ( String propName ) throws Exception
     else if ( propName.equalsIgnoreCase("CommandFileName") ) {
         return getCommandFileName();
     }
+    else if ( propName.equalsIgnoreCase("CommandsShouldClearRunStatus") ) {
+        return getPropContents_CommandsShouldClearRunStatus();
+    }
 	else if ( propName.equalsIgnoreCase("CreateOutput") ) {
 		return getPropContents_CreateOutput();
 	}
@@ -1221,6 +1232,15 @@ Handle the AverageStart property request.
 private DateTime getPropContents_AverageStart()
 {
     return __tsengine.getAverageStart();
+}
+
+/**
+Handle the CommandsShouldClearRunStatus property request.
+@return Boolean indicating whether run status should be cleared.
+*/
+private Boolean getPropContents_CommandsShouldClearRunStatus()
+{
+	return __commandsShouldClearRunStatus;
 }
 
 /**
@@ -3860,6 +3880,15 @@ public void setCommandFileName ( String filename )
 }
 
 /**
+Set whether commands should clear their run status before running, used to accumulate status with For() commands.
+@param clear true if commands should clear their status before running, false if status should be accumulated.
+*/
+private void setCommandsShouldClearRunStatus ( Boolean clear )
+{
+	__commandsShouldClearRunStatus = clear;
+}
+
+/**
 Indicate output files should be created.
 @param CreateOutput_boolean true if output should be created, false if not.
 */
@@ -3926,7 +3955,7 @@ public void setProp ( Prop prop ) throws Exception
 }
 
 /**
-Set the contents for a named property, required by the CommandProcessor
+Set the contents for a built-in named property, required by the CommandProcessor
 interface.  The following properties are handled.
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
@@ -3949,6 +3978,13 @@ output period at read.
 <tr>
 <td><b>AverageStart</b></td>
 <td>The date/time for the start of averaging period, as a DateTime.
+</td>
+</tr>
+
+<tr>
+<td><b>CommandsShouldClearRunStatus</b></td>
+<td>Boolean indicating whether CommandStatus.clearLog(CommandPhaseType.RUN) should be called before running.
+This was added to handle For() loops in commands since status clear setting is set in the processor.
 </td>
 </tr>
 
@@ -4033,6 +4069,9 @@ public void setPropContents ( String prop, Object contents ) throws Exception
     }
     else if ( prop.equalsIgnoreCase("AverageStart") ) {
         __tsengine.setAverageStart ( (DateTime)contents );
+    }
+    else if ( prop.equalsIgnoreCase("CommandsShouldClearRunStatus") ) {
+        setCommandsShouldClearRunStatus((Boolean)contents);
     }
     else if ( prop.equalsIgnoreCase("DataStore" ) ) {
         __tsengine.setDataStore ( (DataStore)contents, true );

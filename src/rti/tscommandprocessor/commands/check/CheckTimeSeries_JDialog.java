@@ -21,14 +21,18 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSUtil_CheckTimeSeries;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -37,10 +41,11 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 public class CheckTimeSeries_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, WindowListener
+implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private JTabbedPane __main_JTabbedPane = null;
 private CheckTimeSeries_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
@@ -58,6 +63,16 @@ private JTextField __MaxWarnings_JTextField = null;
 private JTextField __Flag_JTextField = null;
 private JTextField __FlagDesc_JTextField;
 private SimpleJComboBox __Action_JComboBox = null;
+private SimpleJComboBox __TableID_JComboBox = null;
+private JTextField __TableTSIDColumn_JTextField = null;
+private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers, to match table TSID column
+private JTextField __TableDateTimeColumn_JTextField = null;
+private JTextField __TableValueColumn_JTextField = null;
+private JTextField __TableFlagColumn_JTextField = null;
+private JTextField __TableCheckTypeColumn_JTextField = null;
+private JTextField __TableCheckMessageColumn_JTextField = null;
+private JTextField __CheckCountProperty_JTextField = null;
+private JTextField __CheckCountTimeSeriesProperty_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -66,10 +81,11 @@ private boolean __ok = false; // Indicates whether OK button has been pressed.
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param tableIDChoices choices for TableID value.
 */
-public CheckTimeSeries_JDialog ( JFrame parent, CheckTimeSeries_Command command )
+public CheckTimeSeries_JDialog ( JFrame parent, CheckTimeSeries_Command command, List<String> tableIDChoices )
 {	super(parent, true);
-	initialize ( parent, command );
+	initialize ( parent, command, tableIDChoices );
 }
 
 /**
@@ -90,6 +106,37 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 }
+
+//Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{   checkGUIState();
+  refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+// ...End event handlers for DocumentListener
 
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
@@ -137,6 +184,16 @@ private void checkInput ()
     String Flag = __Flag_JTextField.getText().trim();
     String FlagDesc = __FlagDesc_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
+    String TableID = __TableID_JComboBox.getSelected();
+    String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    String TableDateTimeColumn = __TableDateTimeColumn_JTextField.getText().trim();
+    String TableValueColumn = __TableValueColumn_JTextField.getText().trim();
+    String TableFlagColumn = __TableFlagColumn_JTextField.getText().trim();
+    String TableCheckTypeColumn = __TableCheckTypeColumn_JTextField.getText().trim();
+    String TableCheckMessageColumn = __TableCheckMessageColumn_JTextField.getText().trim();
+    String CheckCountProperty = __CheckCountProperty_JTextField.getText().trim();
+    String CheckCountTimeSeriesProperty = __CheckCountTimeSeriesProperty_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -178,6 +235,36 @@ private void checkInput ()
     if ( Action.length() > 0 ) {
         parameters.set ( "Action", Action );
     }
+    if ( TableID.length() > 0 ) {
+    	parameters.set ( "TableID", TableID );
+    }
+    if ( TableTSIDColumn.length() > 0 ) {
+    	parameters.set ( "TableTSIDColumn", TableTSIDColumn );
+    }
+    if ( TableTSIDFormat.length() > 0 ) {
+    	parameters.set ( "TableTSIDFormat", TableTSIDFormat );
+    }
+    if ( TableDateTimeColumn.length() > 0 ) {
+    	parameters.set ( "TableDateTimeColumn", TableDateTimeColumn );
+    }
+    if ( TableValueColumn.length() > 0 ) {
+    	parameters.set ( "TableValueColumn", TableValueColumn );
+    }
+    if ( TableFlagColumn.length() > 0 ) {
+    	parameters.set ( "TableFlagColumn", TableFlagColumn );
+    }
+    if ( TableCheckTypeColumn.length() > 0 ) {
+    	parameters.set ( "TableCheckTypeColumn", TableCheckTypeColumn );
+    }
+    if ( TableCheckMessageColumn.length() > 0 ) {
+    	parameters.set ( "TableCheckMessageColumn", TableCheckMessageColumn );
+    }
+    if ( CheckCountProperty.length() > 0 ) {
+        parameters.set ( "CheckCountProperty", CheckCountProperty );
+    }
+    if ( CheckCountTimeSeriesProperty.length() > 0 ) {
+        parameters.set ( "CheckCountTimeSeriesProperty", CheckCountTimeSeriesProperty );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -206,6 +293,16 @@ private void commitEdits ()
 	String Flag = __Flag_JTextField.getText().trim();
 	String FlagDesc = __FlagDesc_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
+    String TableID = __TableID_JComboBox.getSelected();
+    String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    String TableDateTimeColumn = __TableDateTimeColumn_JTextField.getText().trim();
+    String TableValueColumn = __TableValueColumn_JTextField.getText().trim();
+    String TableFlagColumn = __TableFlagColumn_JTextField.getText().trim();
+    String TableCheckTypeColumn = __TableCheckTypeColumn_JTextField.getText().trim();
+    String TableCheckMessageColumn = __TableCheckMessageColumn_JTextField.getText().trim();
+    String CheckCountProperty = __CheckCountProperty_JTextField.getText().trim();
+    String CheckCountTimeSeriesProperty = __CheckCountTimeSeriesProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -219,15 +316,25 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Flag", Flag );
 	__command.setCommandParameter ( "FlagDesc", FlagDesc );
 	__command.setCommandParameter ( "Action", Action );
+    __command.setCommandParameter ( "TableID", TableID );
+    __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
+    __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
+    __command.setCommandParameter ( "TableDateTimeColumn", TableDateTimeColumn );
+    __command.setCommandParameter ( "TableValueColumn", TableValueColumn );
+    __command.setCommandParameter ( "TableFlagColumn", TableFlagColumn );
+    __command.setCommandParameter ( "TableCheckTypeColumn", TableCheckTypeColumn );
+    __command.setCommandParameter ( "TableCheckMessageColumn", TableCheckMessageColumn );
+	__command.setCommandParameter ( "CheckCountProperty", CheckCountProperty );
+	__command.setCommandParameter ( "CheckCountTimeSeriesProperty", CheckCountTimeSeriesProperty );
 }
 
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
-@param title Dialog title.
 @param command The command to edit.
+@param tableIDChoices list of choices for table identifiers
 */
-private void initialize ( JFrame parent, CheckTimeSeries_Command command )
+private void initialize ( JFrame parent, CheckTimeSeries_Command command, List<String> tableIDChoices )
 {	__command = command;
 
 	addWindowListener( this );
@@ -243,130 +350,161 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
 		"Check time series data values for critical values (see also the CheckTimeSeriesStatistic() command)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "A warning will be generated for each case where a value matches the specified condition(s)." ), 
+        "Check results can be saved to a table for output or further processing." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Use the WriteCheckFile() command to save the results of all checks." ), 
+        "Or, use the WriteCheckFile() command to save the results of all checks from command status messages." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify dates with precision appropriate for the data, " +
-		"use blank for all available data, OutputStart, or OutputEnd."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for time series
+    int yts = -1;
+    JPanel ts_JPanel = new JPanel();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Series", ts_JPanel );
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+		"Indicate the time series to check."),
+		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
+    yts = CommandEditorUtil.addTSListToEditorDialogPanel ( this, ts_JPanel, __TSList_JComboBox, yts );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    yts = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yts );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+    yts = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, ts_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yts );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Check criteria:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for check criteria
+    int yCheck = -1;
+    JPanel check_JPanel = new JPanel();
+    check_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Check Criteria and Actions", check_JPanel );
+    
+    JGUIUtil.addComponent(check_JPanel, new JLabel (
+		"Specify criteria to check for and actions to be taken when check criteria are met."),
+		0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel (
+        "A warning will be generated for each case where a value matches the specified condition(s)." ), 
+        0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel (
+		"Specify dates with precision appropriate for the data, " +
+		"use blank for all available data, or ${Property} for processor property."),
+		0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yCheck, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Check criteria:" ), 
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CheckCriteria_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
     List<String> checkCriteriaChoices = TSUtil_CheckTimeSeries.getCheckCriteriaChoicesAsStrings();
     __CheckCriteria_JComboBox.setData ( checkCriteriaChoices );
     __CheckCriteria_JComboBox.addItemListener ( this );
     __CheckCriteria_JComboBox.setMaximumRowCount(checkCriteriaChoices.size());
-    JGUIUtil.addComponent(main_JPanel, __CheckCriteria_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - may require other parameters."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, __CheckCriteria_JComboBox,
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel("Required - may require other parameters."), 
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value1:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Value1:" ), 
+		0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Value1_JTextField = new JTextField ( 10 );
 	__Value1_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Value1_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(check_JPanel, __Value1_JTextField,
+		1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel(
 		"Optional - minimum (or only) value to check."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value2:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Value2:" ), 
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Value2_JTextField = new JTextField ( 10 );
     __Value2_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Value2_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(check_JPanel, __Value2_JTextField,
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel(
         "Optional - maximum value in range, or other input to check."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
     __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
     __AnalysisStart_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(check_JPanel, __AnalysisStart_JTextField,
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel(
         "Optional - analysis start date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
     __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
     __AnalysisEnd_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(check_JPanel, __AnalysisEnd_JTextField,
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel(
         "Optional - analysis end date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Problem type:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Problem type:" ), 
+		0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ProblemType_JTextField = new JTextField ( 10 );
 	__ProblemType_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ProblemType_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(check_JPanel, __ProblemType_JTextField,
+		1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel(
 		"Optional - problem type to use in output (default=check criteria)."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Maximum warnings:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Maximum warnings:" ), 
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MaxWarnings_JTextField = new JTextField ( 10 );
     __MaxWarnings_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __MaxWarnings_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(check_JPanel, __MaxWarnings_JTextField,
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel(
         "Optional - maximum # of warnings/time series (default=no limit)."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel,new JLabel( "Flag:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(check_JPanel,new JLabel( "Flag:"),
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Flag_JTextField = new JTextField ( "", 10 );
     __Flag_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Flag_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - flag to mark detected values."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(check_JPanel, __Flag_JTextField,
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Optional - flag to mark detected values."),
+        3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Flag description:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Flag description:" ), 
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FlagDesc_JTextField = new JTextField ( 15 );
     __FlagDesc_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __FlagDesc_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for flag."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, __FlagDesc_JTextField,
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel( "Optional - description for flag."), 
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Action:" ), 
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Action_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
     List<String> actionChoices = new Vector();
     actionChoices.add("");
@@ -376,11 +514,139 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
     __Action_JComboBox.select(0);
     __Action_JComboBox.addItemListener ( this );
     __Action_JComboBox.setMaximumRowCount(actionChoices.size());
-    JGUIUtil.addComponent(main_JPanel, __Action_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - action for matched values (default=no action)."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, __Action_JComboBox,
+        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel("Optional - action for matched values (default=no action)."), 
+        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for output table
+    int yTable = -1;
+    JPanel table_JPanel = new JPanel();
+    table_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output Table", table_JPanel );
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+		"Check warnings can be written to an output table."),
+		0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+		"The MaxWarnings parameter in the \"Check Criteria and Actions\" tab limits the output rows per time series."),
+		0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID for statistic output or use ${Property} notation");
+    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox.setData ( tableIDChoices );
+    __TableID_JComboBox.addItemListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Optional - table to receive output."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table TSID column:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableTSIDColumn_JTextField = new JTextField ( 10 );
+    __TableTSIDColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __TableTSIDColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required for table - column name to match time series TSID."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel("Format of TSID:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
+    __TableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, ${ts:property} to match time series property.");
+    __TableTSIDFormat_JTextField.addKeyListener ( this );
+    __TableTSIDFormat_JTextField.getDocument().addDocumentListener(this);
+    __TableTSIDFormat_JTextField.getTextField().setToolTipText("%L for location, %T for data type, ${ts:property} to match time series property.");
+    JGUIUtil.addComponent(table_JPanel, __TableTSIDFormat_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Required for table - format time series TSID to match table TSID."),
+        3, yTable, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table date/time column:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableDateTimeColumn_JTextField = new JTextField ( 10 );
+    __TableDateTimeColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __TableDateTimeColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Optional - column name for date/time (default=not output)."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table value column:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableValueColumn_JTextField = new JTextField ( 10 );
+    __TableValueColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __TableValueColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Optional - column name for time series value (default=not output)."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table flag column:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableFlagColumn_JTextField = new JTextField ( 10 );
+    __TableFlagColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __TableFlagColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Optional - column name for time series flag (default=not output)."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table check type column:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableCheckTypeColumn_JTextField = new JTextField ( 10 );
+    __TableCheckTypeColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __TableCheckTypeColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Optional - column name for check type (default=not output)."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table check message column:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableCheckMessageColumn_JTextField = new JTextField ( 10 );
+    __TableCheckMessageColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __TableCheckMessageColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Optional - column name for check message (default=not output)."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for output properties
+    int yProp = -1;
+    JPanel prop_JPanel = new JPanel();
+    prop_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output Properties", prop_JPanel );
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"Specify time series and/or processor property to set to the count of values detected that meet the check criteria."),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Check count processor property:" ), 
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CheckCountProperty_JTextField = new JTextField ( 20 );
+    __CheckCountProperty_JTextField.setToolTipText("Specify processor property to set or use ${Property}, ${ts:Property}, %-specifier notation");
+    __CheckCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(prop_JPanel, __CheckCountProperty_JTextField,
+        1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel(
+        "Optional - name of processor property for check count."), 
+        3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Check count time series property:" ), 
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CheckCountTimeSeriesProperty_JTextField = new JTextField ( 20 );
+    __CheckCountTimeSeriesProperty_JTextField.setToolTipText("Specify time series property to set or use ${Property}, ${ts:Property}, %-specifier notation");
+    __CheckCountTimeSeriesProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(prop_JPanel, __CheckCountTimeSeriesProperty_JTextField,
+        1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel(
+        "Optional - name of time series property for check count."), 
+        3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
@@ -456,7 +722,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "CheckTimeSeries_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -470,6 +736,16 @@ private void refresh ()
 	String Flag = "";
 	String FlagDesc = "";
 	String Action = "";
+	String TableID = "";
+	String TableTSIDColumn = "";
+	String TableTSIDFormat = "";
+	String TableDateTimeColumn = "";
+	String TableValueColumn = "";
+	String TableFlagColumn = "";
+	String TableCheckTypeColumn = "";
+	String TableCheckMessageColumn = "";
+	String CheckCountProperty = "";
+	String CheckCountTimeSeriesProperty = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -487,6 +763,16 @@ private void refresh ()
 		Flag = props.getValue ( "Flag" );
 		FlagDesc = props.getValue ( "FlagDesc" );
 		Action = props.getValue ( "Action" );
+        TableID = props.getValue ( "TableID" );
+        TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
+        TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
+        TableDateTimeColumn = props.getValue ( "TableDateTimeColumn" );
+        TableValueColumn = props.getValue ( "TableValueColumn" );
+        TableFlagColumn = props.getValue ( "TableFlagColumn" );
+        TableCheckTypeColumn = props.getValue ( "TableCheckTypeColumn" );
+        TableCheckMessageColumn = props.getValue ( "TableCheckMessageColumn" );
+		CheckCountProperty = props.getValue ( "CheckCountProperty" );
+		CheckCountTimeSeriesProperty = props.getValue ( "CheckCountTimeSeriesProperty" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -585,6 +871,51 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( TableID == null ) {
+            // Select default...
+            __TableID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TableID_JComboBox,TableID, JGUIUtil.NONE, null, null ) ) {
+                __TableID_JComboBox.select ( TableID );
+            }
+            else {
+            	// OK to add to list since does not need to exist
+            	__TableID_JComboBox.add(TableID);
+            	__TableID_JComboBox.select(TableID);
+                //Message.printWarning ( 1, routine,
+                //"Existing command references an invalid\nTableID value \"" + TableID +
+                //"\".  Select a different value or Cancel.");
+                //__error_wait = true;
+            }
+        }
+        if ( TableTSIDColumn != null ) {
+            __TableTSIDColumn_JTextField.setText ( TableTSIDColumn );
+        }
+        if (TableTSIDFormat != null ) {
+            __TableTSIDFormat_JTextField.setText(TableTSIDFormat.trim());
+        }
+        if ( TableDateTimeColumn != null ) {
+            __TableDateTimeColumn_JTextField.setText ( TableDateTimeColumn );
+        }
+        if ( TableValueColumn != null ) {
+            __TableValueColumn_JTextField.setText ( TableValueColumn );
+        }
+        if ( TableFlagColumn != null ) {
+            __TableFlagColumn_JTextField.setText ( TableFlagColumn );
+        }
+        if ( TableCheckTypeColumn != null ) {
+            __TableCheckTypeColumn_JTextField.setText ( TableCheckTypeColumn );
+        }
+        if ( TableCheckMessageColumn != null ) {
+            __TableCheckMessageColumn_JTextField.setText ( TableCheckMessageColumn );
+        }
+        if ( CheckCountProperty != null ) {
+            __CheckCountProperty_JTextField.setText ( CheckCountProperty );
+        }
+        if ( CheckCountTimeSeriesProperty != null ) {
+            __CheckCountTimeSeriesProperty_JTextField.setText ( CheckCountTimeSeriesProperty );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -600,6 +931,16 @@ private void refresh ()
 	Flag = __Flag_JTextField.getText().trim();
 	FlagDesc = __FlagDesc_JTextField.getText().trim();
 	Action = __Action_JComboBox.getSelected();
+    TableID = __TableID_JComboBox.getSelected();
+    TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    TableDateTimeColumn = __TableDateTimeColumn_JTextField.getText().trim();
+    TableValueColumn = __TableValueColumn_JTextField.getText().trim();
+    TableFlagColumn = __TableFlagColumn_JTextField.getText().trim();
+    TableCheckTypeColumn = __TableCheckTypeColumn_JTextField.getText().trim();
+    TableCheckMessageColumn = __TableCheckMessageColumn_JTextField.getText().trim();
+	CheckCountProperty = __CheckCountProperty_JTextField.getText().trim();
+	CheckCountTimeSeriesProperty = __CheckCountTimeSeriesProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
@@ -615,6 +956,16 @@ private void refresh ()
 	props.add ( "Flag=" + Flag );
 	props.add ( "FlagDesc=" + FlagDesc );
 	props.add ( "Action=" + Action );
+    props.add ( "TableID=" + TableID );
+    props.add ( "TableTSIDColumn=" + TableTSIDColumn );
+    props.add ( "TableTSIDFormat=" + TableTSIDFormat );
+    props.add ( "TableDateTimeColumn=" + TableDateTimeColumn );
+    props.add ( "TableValueColumn=" + TableValueColumn );
+    props.add ( "TableFlagColumn=" + TableFlagColumn );
+    props.add ( "TableCheckTypeColumn=" + TableCheckTypeColumn );
+    props.add ( "TableCheckMessageColumn=" + TableCheckMessageColumn );
+	props.add ( "CheckCountProperty=" + CheckCountProperty );
+	props.add ( "CheckCountTimeSeriesProperty=" + CheckCountTimeSeriesProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

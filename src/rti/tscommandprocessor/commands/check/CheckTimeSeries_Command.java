@@ -2,11 +2,13 @@ package rti.tscommandprocessor.commands.check;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import RTi.TS.CheckType;
 import RTi.TS.TS;
@@ -15,6 +17,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -24,14 +27,18 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 
+// TODO SAM 2015-06-06 Add Tolerance parameter to add buffer for == and Repeat.
+// Add parameter to format message that accepts ${ts:value}, etc.
 /**
 This class initializes, checks, and runs the CheckTimeSeries() command.
 */
-public class CheckTimeSeries_Command extends AbstractCommand implements Command
+public class CheckTimeSeries_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
     
 /**
@@ -39,6 +46,11 @@ Values for Action parameter.
 */
 protected final String _Remove = "Remove";
 protected final String _SetMissing = "SetMissing";
+
+/**
+The table that is created (when not operating on an existing table).
+*/
+private DataTable __table = null;
 
 /**
 Constructor.
@@ -51,8 +63,7 @@ public CheckTimeSeries_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -66,6 +77,9 @@ throws InvalidCommandParameterException
     String Value2 = parameters.getValue ( "Value2" );
     String MaxWarnings = parameters.getValue ( "MaxWarnings" );
     String Action = parameters.getValue ( "Action" );
+    String TableID = parameters.getValue ( "TableID" );
+    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String warning = "";
     String message;
     
@@ -138,7 +152,7 @@ throws InvalidCommandParameterException
                 message, "Specify a valid date/time, OutputStart, or output end." ) );
         }
     }
-    if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") && !AnalysisEnd.startsWith("${") &&
+    if ( (AnalysisEnd != null) && !AnalysisEnd.isEmpty() && !AnalysisEnd.startsWith("${") &&
         !AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
         try {
             DateTime.parse( AnalysisEnd );
@@ -158,7 +172,7 @@ throws InvalidCommandParameterException
             message, "Specify MaxWarnings as an integer." ) );
     }
     
-    if ( (Action != null) && !Action.equals("") &&
+    if ( (Action != null) && !Action.isEmpty() &&
         !Action.equalsIgnoreCase(_Remove) && !Action.equalsIgnoreCase(_SetMissing) ) {
             message = "The action \"" + Action + "\" is invalid.";
             warning += "\n" + message;
@@ -166,8 +180,23 @@ throws InvalidCommandParameterException
                 message, "Specify the action as " + _Remove + " or " + _SetMissing + ".") );
     }
     
+    if ( (TableID != null) && !TableID.isEmpty() ) {
+        if ( (TableTSIDColumn == null) || TableTSIDColumn.equals("") ) {
+            message = "The Table TSID column must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid TSID column." ) );
+        }
+        if ( (TableTSIDFormat == null) || TableTSIDFormat.equals("") ) {
+            message = "The TSID format must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid TSID format." ) );
+        }
+    }
+    
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(13);
+    List<String> validList = new ArrayList<String>(23);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -181,6 +210,16 @@ throws InvalidCommandParameterException
     validList.add ( "Flag" );
     validList.add ( "FlagDesc" );
     validList.add ( "Action" );
+    validList.add ( "TableID" );
+    validList.add ( "TableTSIDColumn" );
+    validList.add ( "TableTSIDFormat" );
+    validList.add ( "TableDateTimeColumn" );
+    validList.add ( "TableValueColumn" );
+    validList.add ( "TableFlagColumn" );
+    validList.add ( "TableCheckTypeColumn" );
+    validList.add ( "TableCheckMessageColumn" );
+    validList.add ( "CheckCountProperty" );
+    validList.add ( "CheckCountTimeSeriesProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -199,20 +238,69 @@ Edit the command.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{   return (new CheckTimeSeries_JDialog ( parent, this )).ok();
+{   List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)getCommandProcessor(), this);
+	return (new CheckTimeSeries_JDialog ( parent, this, tableIDChoices )).ok();
+}
+
+/**
+Return the table that is read by this class when run in discovery mode.
+*/
+private DataTable getDiscoveryTable()
+{
+    return __table;
+}
+
+/**
+Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+*/
+public List getObjectList ( Class c )
+{   DataTable table = getDiscoveryTable();
+    List v = null;
+    if ( (table != null) && (c == table.getClass()) ) {
+        v = new Vector();
+        v.add ( table );
+    }
+    return v;
 }
 
 // Parse command is in the base class
 
 /**
-Method to execute the setIrrigationPracticeTSPumpingMaxUsingWellRights() command.
-@param command_number Number of command in sequence.
-@exception Exception if there is an error processing the command.
+Run the command.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{   String message, routine = getClass().getSimpleName() + ".runCommand";
+{   String message, routine = getClass().getSimpleName() + ".runCommandInternal";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
@@ -220,7 +308,6 @@ CommandWarningException, CommandException
     
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    CommandPhaseType commandPhase = CommandPhaseType.RUN;
     status.clearLog(CommandPhaseType.RUN);
     PropList parameters = getCommandParameters();
     
@@ -231,11 +318,11 @@ CommandWarningException, CommandException
         TSList = TSListType.ALL_TS.toString();
     }
     String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
     String CheckCriteria = parameters.getValue ( "CheckCriteria" );
@@ -264,6 +351,23 @@ CommandWarningException, CommandException
     String Flag = parameters.getValue ( "Flag" );
     String FlagDesc = parameters.getValue ( "FlagDesc" );
     String Action = parameters.getValue ( "Action" );
+    String TableID = parameters.getValue ( "TableID" );
+	if ( (TableID != null) && (TableID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+	}
+    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    String TableDateTimeColumn = parameters.getValue ( "TableDateTimeColumn" );
+    String TableValueColumn = parameters.getValue ( "TableValueColumn" );
+    String TableFlagColumn = parameters.getValue ( "TableFlagColumn" );
+    String TableCheckTypeColumn = parameters.getValue ( "TableCheckTypeColumn" );
+    String TableCheckMessageColumn = parameters.getValue ( "TableCheckMessageColumn" );
+    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    String CheckCountProperty = parameters.getValue ( "CheckCountProperty" );
+    String CheckCountTimeSeriesProperty = parameters.getValue ( "CheckCountTimeSeriesProperty" );
+    
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTable ( null );
+    }
 
     // Figure out the dates to use for the analysis.
     // Default of null means to analyze the full period.
@@ -290,47 +394,57 @@ CommandWarningException, CommandException
     }
 
     // Get the time series to process.  Allow TSID to be a pattern or specific time series...
-
-    PropList request_params = new PropList ( "" );
-    request_params.set ( "TSList", TSList );
-    request_params.set ( "TSID", TSID );
-    request_params.set ( "EnsembleID", EnsembleID );
-    CommandProcessorRequestResultsBean bean = null;
-    try {
-        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
-    }
-    catch ( Exception e ) {
-        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
-        Message.printWarning(log_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Report the problem to software support." ) );
-    }
-    if ( bean == null ) {
-        Message.printStatus ( 2, routine, "Bean is null.");
-    }
-    PropList bean_PropList = bean.getResultsPropList();
-    Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-    List tslist = null;
-    if ( o_TSList == null ) {
-        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
-        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-        Message.printWarning ( log_level, MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
-    }
-    else {
-        tslist = (List)o_TSList;
-        if ( tslist.size() == 0 ) {
-            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
-            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-            Message.printWarning ( log_level, MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
-        }
-    }
     
+    List tslist = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, null );
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+	    PropList request_params = new PropList ( "" );
+	    request_params.set ( "TSList", TSList );
+	    request_params.set ( "TSID", TSID );
+	    request_params.set ( "EnsembleID", EnsembleID );
+	    CommandProcessorRequestResultsBean bean = null;
+	    try {
+	        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+	    }
+	    catch ( Exception e ) {
+	        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+	        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+	        Message.printWarning(log_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report the problem to software support." ) );
+	    }
+	    if ( bean == null ) {
+	        Message.printStatus ( 2, routine, "Bean is null.");
+	    }
+	    PropList bean_PropList = bean.getResultsPropList();
+	    Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+	    if ( o_TSList == null ) {
+	        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+	        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+	        Message.printWarning ( log_level, MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+	            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+	    }
+	    else {
+	        tslist = (List)o_TSList;
+	        if ( tslist.size() == 0 ) {
+	            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+	            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+	            Message.printWarning ( log_level, MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+	                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+	        }
+	    }
+    }
+
+    if ( tslist == null ) {
+    	tslist = new ArrayList<TS>();
+    }
     int nts = tslist.size();
     if ( nts == 0 ) {
         message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
@@ -340,6 +454,33 @@ CommandWarningException, CommandException
         command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+    }
+    
+    // Get the table to process.
+
+    DataTable table = null;
+    boolean doTable = false;
+    if ( (TableID != null) && !TableID.equals("") ) {
+        // Get the table to be used as input
+    	doTable = true;
+    	PropList request_params = new PropList ( "" );
+        request_params.set ( "TableID", TableID );
+        CommandProcessorRequestResultsBean bean = null;
+        try {
+            bean = processor.processRequest( "GetTable", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        }
+        PropList bean_PropList = bean.getResultsPropList();
+        Object o_Table = bean_PropList.getContents ( "Table" );
+        if ( o_Table != null ) {
+            table = (DataTable)o_Table;
+        }
     }
     
     if ( warning_count > 0 ) {
@@ -354,62 +495,124 @@ CommandWarningException, CommandException
     // Now process...
     
     try {
-        TS ts = null;
-        Object o_ts = null;
-        for ( int its = 0; its < nts; its++ ) {
-            // The the time series to process, from the list that was returned above.
-            o_ts = tslist.get(its);
-            if ( o_ts == null ) {
-                message = "Time series to process is null.";
-                Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-                    "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
-                // Go to next time series.
-                continue;
-            }
-            ts = (TS)o_ts;
-            notifyCommandProgressListeners ( its, nts, (float)-1.0, "Checking time series " +
-                ts.getIdentifier().toStringAliasAndTSID() );
-            
-            try {
-                // Do the check...
-                TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, checkCriteria,
-                    AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, ProblemType,
-                    Flag, FlagDesc, Action );
-                check.checkTimeSeries();
-                List<String> problems = check.getProblems();
-                int problemsSize = problems.size();
-                int problemsSizeOutput = problemsSize;
-                if ( (MaxWarnings_int > 0) && (problemsSize > MaxWarnings_int) ) {
-                    // Limit the warnings to the maximum
-                    problemsSizeOutput = MaxWarnings_int;
-                }
-                if ( problemsSizeOutput < problemsSize ) {
-                    message = "Time series had " + problemsSize + " check warnings - only " + problemsSizeOutput + " are listed.";
-                    Message.printWarning ( warning_level,
-                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-                    // No recommendation since it is a user-defined check
-                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
-                }
-                for ( int iprob = 0; iprob < problemsSizeOutput; iprob++ ) {
-                    message = problems.get(iprob);
-                    Message.printWarning ( warning_level,
-                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-                    // No recommendation since it is a user-defined check
-                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
-                }
-            }
-            catch ( Exception e ) {
-                message = "Unexpected error checking time series \""+ ts.getIdentifier() + " (" + e + ").";
-                Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-                Message.printWarning(3,routine,e);
-                status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "See the log file for details - report the problem to software support." ) );
-            }
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        	if ( doTable ) {
+	            if ( table == null ) {
+	                // Did not find table so is being created in this command
+	                // Create an empty table and set the ID
+	                table = new DataTable();
+	                table.setTableID ( TableID );
+	                setDiscoveryTable ( table );
+	            }
+        	}
+        }
+        else if ( commandPhase == CommandPhaseType.RUN ) {
+        	if ( doTable ) {
+	            if ( table == null ) {
+	                // Did not find the table above so create it
+	                table = new DataTable( /*columnList*/ );
+	                table.setTableID ( TableID );
+	                Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
+	                
+	                // Set the table in the processor...
+	                PropList request_params = null;
+	                request_params = new PropList ( "" );
+	                request_params.setUsingObject ( "Table", table );
+	                try {
+	                    processor.processRequest( "SetTable", request_params);
+	                }
+	                catch ( Exception e ) {
+	                    message = "Error requesting SetTable(Table=...) from processor.";
+	                    Message.printWarning(warning_level,
+	                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                            routine, message );
+	                    status.addToLog ( commandPhase,
+	                            new CommandLogRecord(CommandStatusType.FAILURE,
+	                               message, "Report problem to software support." ) );
+	                }
+	            }
+        	}
+	        TS ts = null;
+	        Object o_ts = null;
+	        for ( int its = 0; its < nts; its++ ) {
+	            // The the time series to process, from the list that was returned above.
+	            o_ts = tslist.get(its);
+	            if ( o_ts == null ) {
+	                message = "Time series to process is null.";
+	                Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+	                    "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+	                // Go to next time series.
+	                continue;
+	            }
+	            ts = (TS)o_ts;
+	            notifyCommandProgressListeners ( its, nts, (float)-1.0, "Checking time series " +
+	                ts.getIdentifier().toStringAliasAndTSID() );
+	            
+	            try {
+	                // Do the check...
+	                TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, checkCriteria,
+	                    AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, ProblemType,
+	                    Flag, FlagDesc, Action, table, TableTSIDColumn, TableTSIDFormat, TableDateTimeColumn,
+	                    TableValueColumn, TableFlagColumn, TableCheckTypeColumn, TableCheckMessageColumn );
+	                check.checkTimeSeries();
+	                List<String> problems = check.getProblems();
+	                int problemsSize = problems.size();
+	                int problemsSizeOutput = problemsSize;
+	                if ( (MaxWarnings_int > 0) && (problemsSize > MaxWarnings_int) ) {
+	                    // Limit the warnings to the maximum
+	                    problemsSizeOutput = MaxWarnings_int;
+	                }
+	                if ( problemsSizeOutput < problemsSize ) {
+	                    message = "Time series had " + problemsSize + " check warnings - only " + problemsSizeOutput + " are listed.";
+	                    Message.printWarning ( warning_level,
+	                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+	                    // No recommendation since it is a user-defined check
+	                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+	                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
+	                }
+	                for ( int iprob = 0; iprob < problemsSizeOutput; iprob++ ) {
+	                    message = problems.get(iprob);
+	                    Message.printWarning ( warning_level,
+	                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+	                    // No recommendation since it is a user-defined check
+	                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+	                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
+	                }
+	                int checkCriteriaMetCount = check.getCheckCriteriaMetCount();
+	                if ( (CheckCountProperty != null) && !CheckCountProperty.isEmpty() ) {
+	                	String propName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, CheckCountProperty, status, commandPhase);
+	                	PropList request_params = new PropList ( "" );
+	                    request_params.setUsingObject ( "PropertyName", propName );
+	                    request_params.setUsingObject ( "PropertyValue", new Integer(checkCriteriaMetCount) );
+	                    try {
+	                        processor.processRequest( "SetProperty", request_params);
+	                    }
+	                    catch ( Exception e ) {
+	                        message = "Error requesting SetProperty(Property=\"" + CheckCountProperty + "\") from processor.";
+	                        Message.printWarning(log_level,
+	                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                            routine, message );
+	                        status.addToLog ( CommandPhaseType.RUN,
+	                            new CommandLogRecord(CommandStatusType.FAILURE,
+	                                message, "Report the problem to software support." ) );
+	                    }
+	                }
+	                if ( (CheckCountTimeSeriesProperty != null) && !CheckCountTimeSeriesProperty.isEmpty() ) {
+	                	String propName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, CheckCountTimeSeriesProperty, status, commandPhase);
+	                	ts.setProperty(propName, new Integer(checkCriteriaMetCount));
+	                }
+	            } 
+	            catch ( Exception e ) {
+	                message = "Unexpected error checking time series \""+ ts.getIdentifier() + " (" + e + ").";
+	                Message.printWarning ( warning_level,
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+	                Message.printWarning(3,routine,e);
+	                status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "See the log file for details - report the problem to software support." ) );
+	            }
+	        }
         }
     }
     catch ( Exception e ) {
@@ -430,6 +633,14 @@ CommandWarningException, CommandException
     }
     
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the table that is read by this class in discovery mode.
+*/
+private void setDiscoveryTable ( DataTable table )
+{
+    __table = table;
 }
 
 /**
@@ -455,6 +666,16 @@ public String toString ( PropList parameters )
     String Flag = parameters.getValue( "Flag" );
     String FlagDesc = parameters.getValue( "FlagDesc" );
     String Action = parameters.getValue ( "Action" );
+	String TableID = parameters.getValue ( "TableID" );
+	String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+	String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+	String TableDateTimeColumn = parameters.getValue ( "TableDateTimeColumn" );
+	String TableValueColumn = parameters.getValue ( "TableValueColumn" );
+	String TableFlagColumn = parameters.getValue ( "TableFlagColumn" );
+	String TableCheckTypeColumn = parameters.getValue ( "TableCheckTypeColumn" );
+	String TableCheckMessageColumn = parameters.getValue ( "TableCheckMessageColumn" );
+    String CheckCountProperty = parameters.getValue ( "CheckCountProperty" );
+    String CheckCountTimeSeriesProperty = parameters.getValue ( "CheckCountTimeSeriesProperty" );
         
     StringBuffer b = new StringBuffer ();
 
@@ -535,6 +756,66 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Action=" + Action );
+    }
+    if ( (TableID != null) && (TableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
+    }
+    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
+    }
+    if ( (TableDateTimeColumn != null) && (TableDateTimeColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableDateTimeColumn=\"" + TableDateTimeColumn + "\"" );
+    }
+    if ( (TableValueColumn != null) && (TableValueColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableValueColumn=\"" + TableValueColumn + "\"" );
+    }
+    if ( (TableFlagColumn != null) && (TableFlagColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableFlagColumn=\"" + TableFlagColumn + "\"" );
+    }
+    if ( (TableCheckTypeColumn != null) && (TableCheckTypeColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableCheckTypeColumn=\"" + TableCheckTypeColumn + "\"" );
+    }
+    if ( (TableCheckMessageColumn != null) && (TableCheckMessageColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableCheckMessageColumn=\"" + TableCheckMessageColumn + "\"" );
+    }
+    if ( CheckCountProperty != null && CheckCountProperty.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CheckCountProperty=\"" + CheckCountProperty + "\"");
+    }
+    if ( CheckCountTimeSeriesProperty != null && CheckCountTimeSeriesProperty.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CheckCountTimeSeriesProperty=\"" + CheckCountTimeSeriesProperty + "\"");
     }
     
     return getCommandName() + "(" + b.toString() + ")";

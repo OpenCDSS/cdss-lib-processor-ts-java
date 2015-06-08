@@ -130,6 +130,7 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 // Table commands.
 import rti.tscommandprocessor.commands.table.AppendTable_Command;
 import rti.tscommandprocessor.commands.table.CompareTables_Command;
+import rti.tscommandprocessor.commands.table.CopyPropertiesToTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
 import rti.tscommandprocessor.commands.table.CreateTimeSeriesEventTable_Command;
@@ -459,19 +460,21 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("ConvertDataUnits") ) {
         return new ConvertDataUnits_Command ();
     }
-    // Put CopyEnsemble() before the shorter Copy() command
+	else if ( commandName.equalsIgnoreCase("Copy") ) {
+		return new Copy_Command ();
+	}
     else if ( commandName.equalsIgnoreCase("CopyEnsemble") ) {
         return new CopyEnsemble_Command ();
     }
     else if ( commandName.equalsIgnoreCase("CopyFile") ) {
         return new CopyFile_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("CopyPropertiesToTable") ) {
+        return new CopyPropertiesToTable_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("CopyTable") ) {
         return new CopyTable_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("Copy") ) {
-		return new Copy_Command ();
-	}
     else if ( commandName.equalsIgnoreCase("CopyTimeSeriesPropertiesToTable") ) {
         return new CopyTimeSeriesPropertiesToTable_Command ();
     }

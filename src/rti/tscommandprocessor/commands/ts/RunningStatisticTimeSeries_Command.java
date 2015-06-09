@@ -817,7 +817,7 @@ CommandWarningException, CommandException
     if ( nts == 0 ) {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
-                "\", EnsembleID=\"" + EnsembleID + "\".  May be OK if time series are not yet created.";
+                "\", EnsembleID=\"" + EnsembleID + "\".  May be OK if time series are created at run time.";
             Message.printWarning ( warning_level, MessageUtil.formatMessageTag(
                 command_tag,++warning_count), routine, message );
             status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, message,

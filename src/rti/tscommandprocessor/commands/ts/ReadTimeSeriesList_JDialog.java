@@ -69,6 +69,8 @@ private JTextField __DefaultOutputStart_JTextField = null;
 private JTextField __DefaultOutputEnd_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __TimeSeriesCountProperty_JTextField = null;
+private JTextField __TimeSeriesReadCountProperty_JTextField = null;
+private JTextField __TimeSeriesDefaultCountProperty_JTextField = null;
 private JTextField __TimeSeriesIndex1Property_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -193,6 +195,8 @@ private void checkInput ()
     String ColumnProperties = __ColumnProperties_JTextArea.getText().trim().replace("\n"," ");
     String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
     String TimeSeriesCountProperty = __TimeSeriesCountProperty_JTextField.getText().trim();
+    String TimeSeriesReadCountProperty = __TimeSeriesReadCountProperty_JTextField.getText().trim();
+    String TimeSeriesDefaultCountProperty = __TimeSeriesDefaultCountProperty_JTextField.getText().trim();
     String TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
     
     __error_wait = false;
@@ -260,6 +264,12 @@ private void checkInput ()
     if ( TimeSeriesCountProperty.length() > 0 ) {
         parameters.set ( "TimeSeriesCountProperty", TimeSeriesCountProperty );
     }
+    if ( TimeSeriesReadCountProperty.length() > 0 ) {
+        parameters.set ( "TimeSeriesReadCountProperty", TimeSeriesReadCountProperty );
+    }
+    if ( TimeSeriesDefaultCountProperty.length() > 0 ) {
+        parameters.set ( "TimeSeriesDefaultCountProperty", TimeSeriesDefaultCountProperty );
+    }
     if ( TimeSeriesIndex1Property.length() > 0 ) {
         parameters.set ( "TimeSeriesIndex1Property", TimeSeriesIndex1Property );
     }
@@ -299,6 +309,8 @@ private void commitEdits ()
     String ColumnProperties = __ColumnProperties_JTextArea.getText().trim().replace("\n"," ");
     String Properties = __Properties_JTextArea.getText().trim().replace("\n"," ");
     String TimeSeriesCountProperty = __TimeSeriesCountProperty_JTextField.getText().trim();
+    String TimeSeriesReadCountProperty = __TimeSeriesReadCountProperty_JTextField.getText().trim();
+    String TimeSeriesDefaultCountProperty = __TimeSeriesDefaultCountProperty_JTextField.getText().trim();
     String TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "DataTypeColumn", DataTypeColumn );
@@ -323,6 +335,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "ColumnProperties", ColumnProperties );
     __command.setCommandParameter ( "Properties", Properties );
     __command.setCommandParameter ( "TimeSeriesCountProperty", TimeSeriesCountProperty );
+    __command.setCommandParameter ( "TimeSeriesReadCountProperty", TimeSeriesReadCountProperty );
+    __command.setCommandParameter ( "TimeSeriesDefaultCountProperty", TimeSeriesDefaultCountProperty );
     __command.setCommandParameter ( "TimeSeriesIndex1Property", TimeSeriesIndex1Property );
 }
 
@@ -641,13 +655,13 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     int yCount = -1;
     JPanel count_JPanel = new JPanel();
     count_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Count Property", count_JPanel );
+    __main_JTabbedPane.addTab ( "Count Properties", count_JPanel );
     
     JGUIUtil.addComponent(count_JPanel, new JLabel (
-        "The count of output time series can be assigned to a property for data checks and output."),
+        "Counts of output time series can be assigned to properties for data checks and output."),
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(count_JPanel, new JLabel (
-        "The count will include time series that are read and defaulted."),
+        "The total count is the sum of time series that are read and defaulted."),
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(count_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -663,8 +677,30 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         "Optional - name of property to set to time series total count."),
         3, yCount, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series read count property:" ), 
+        0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeSeriesReadCountProperty_JTextField = new JTextField ( "", 20 );
+    __TimeSeriesReadCountProperty_JTextField.setToolTipText("Specify time series read count property to set, can use ${Property} notation");
+    __TimeSeriesReadCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(count_JPanel, __TimeSeriesReadCountProperty_JTextField,
+        1, yCount, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(count_JPanel, new JLabel (
-        "The index 1+ of time series being read can be set to a property."),
+        "Optional - name of property to set to time series read count."),
+        3, yCount, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(count_JPanel, new JLabel ( "Time series default count property:" ), 
+        0, ++yCount, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeSeriesDefaultCountProperty_JTextField = new JTextField ( "", 20 );
+    __TimeSeriesDefaultCountProperty_JTextField.setToolTipText("Specify time series default count property to set, can use ${Property} notation");
+    __TimeSeriesDefaultCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(count_JPanel, __TimeSeriesDefaultCountProperty_JTextField,
+        1, yCount, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(count_JPanel, new JLabel (
+        "Optional - name of property to set to time series default count."),
+        3, yCount, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(count_JPanel, new JLabel (
+        "The index (1+) of time series being read can be set to a property."),
         0, ++yCount, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(count_JPanel, new JLabel (
         "This is useful for outputting time series sequentially, for example to a table column with the number."),
@@ -772,6 +808,8 @@ private void refresh ()
     String DefaultOutputStart = "";
     String DefaultOutputEnd = "";
     String TimeSeriesCountProperty = "";
+    String TimeSeriesReadCountProperty = "";
+    String TimeSeriesDefaultCountProperty = "";
     String TimeSeriesIndex1Property = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -798,6 +836,8 @@ private void refresh ()
         DefaultOutputStart = props.getValue ( "DefaultOutputStart" );
         DefaultOutputEnd = props.getValue ( "DefaultOutputEnd" );
         TimeSeriesCountProperty = props.getValue ( "TimeSeriesCountProperty" );
+        TimeSeriesReadCountProperty = props.getValue ( "TimeSeriesReadCountProperty" );
+        TimeSeriesDefaultCountProperty = props.getValue ( "TimeSeriesDefaultCountProperty" );
         TimeSeriesIndex1Property = props.getValue ( "TimeSeriesIndex1Property" );
         if ( TableID == null ) {
             // Select default...
@@ -898,6 +938,12 @@ private void refresh ()
         if ( TimeSeriesCountProperty != null ) {
             __TimeSeriesCountProperty_JTextField.setText ( TimeSeriesCountProperty );
         }
+        if ( TimeSeriesReadCountProperty != null ) {
+            __TimeSeriesReadCountProperty_JTextField.setText ( TimeSeriesReadCountProperty );
+        }
+        if ( TimeSeriesDefaultCountProperty != null ) {
+            __TimeSeriesDefaultCountProperty_JTextField.setText ( TimeSeriesDefaultCountProperty );
+        }
         if ( TimeSeriesIndex1Property != null ) {
             __TimeSeriesIndex1Property_JTextField.setText ( TimeSeriesIndex1Property );
         }
@@ -924,6 +970,8 @@ private void refresh ()
     DefaultOutputStart = __DefaultOutputStart_JTextField.getText().trim();
     DefaultOutputEnd = __DefaultOutputEnd_JTextField.getText().trim();
     TimeSeriesCountProperty = __TimeSeriesCountProperty_JTextField.getText().trim();
+    TimeSeriesReadCountProperty = __TimeSeriesReadCountProperty_JTextField.getText().trim();
+    TimeSeriesDefaultCountProperty = __TimeSeriesDefaultCountProperty_JTextField.getText().trim();
     TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
@@ -947,14 +995,15 @@ private void refresh ()
     props.add ( "DefaultOutputStart=" + DefaultOutputStart );
     props.add ( "DefaultOutputEnd=" + DefaultOutputEnd );
     props.add ( "TimeSeriesCountProperty=" + TimeSeriesCountProperty );
+    props.add ( "TimeSeriesReadCountProperty=" + TimeSeriesReadCountProperty );
+    props.add ( "TimeSeriesDefaultCountProperty=" + TimeSeriesDefaultCountProperty );
     props.add ( "TimeSeriesIndex1Property=" + TimeSeriesIndex1Property );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is canceled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {   __ok = ok;  // Save to be returned by ok()

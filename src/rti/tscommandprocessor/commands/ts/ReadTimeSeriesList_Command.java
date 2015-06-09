@@ -186,7 +186,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(22);
+	List<String> validList = new ArrayList<String>(24);
     validList.add ( "TableID" );
     validList.add ( "LocationTypeColumn" );
     validList.add ( "LocationType" );
@@ -208,6 +208,8 @@ throws InvalidCommandParameterException
     validList.add ( "DefaultOutputStart" );
     validList.add ( "DefaultOutputEnd" );
     validList.add ( "TimeSeriesCountProperty" );
+    validList.add ( "TimeSeriesReadCountProperty" );
+    validList.add ( "TimeSeriesDefaultCountProperty" );
     validList.add ( "TimeSeriesIndex1Property" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -400,6 +402,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (TimeSeriesCountProperty != null) && (TimeSeriesCountProperty.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
     	TimeSeriesCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, TimeSeriesCountProperty);
 	}
+    String TimeSeriesReadCountProperty = parameters.getValue ( "TimeSeriesReadCountProperty" );
+    if ( (TimeSeriesReadCountProperty != null) && (TimeSeriesReadCountProperty.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TimeSeriesReadCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, TimeSeriesReadCountProperty);
+	}
+    String TimeSeriesDefaultCountProperty = parameters.getValue ( "TimeSeriesDefaultCountProperty" );
+    if ( (TimeSeriesDefaultCountProperty != null) && (TimeSeriesDefaultCountProperty.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TimeSeriesDefaultCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, TimeSeriesDefaultCountProperty);
+	}
     String TimeSeriesIndex1Property = parameters.getValue ( "TimeSeriesIndex1Property" );
     if ( (TimeSeriesIndex1Property != null) && (TimeSeriesIndex1Property.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
     	TimeSeriesIndex1Property = TSCommandProcessorUtil.expandParameterValue(processor, this, TimeSeriesIndex1Property);
@@ -533,6 +543,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Process the rows in the table and read time series.
     List<TS> tslist = new ArrayList<TS>(); // Keep the list of time series
     String dataSource;
+    int defaultCount = 0; // Count of default time series
 	try {
         boolean readData = true;
         if ( commandPhase == CommandPhaseType.DISCOVERY ){
@@ -673,7 +684,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         break;
                     }
                 }
-                // Now have processed all data sources.  If no time series was found and a default is to be assigned, do it
+                // Now have processed all data sources.  If no time series was found and a default was assigned,
+                // it will have a property set "DefaultTimeSeriesRead=true"
                 if ( ts == null ) {
                     if ( IfNotFound.equalsIgnoreCase(_Ignore) ) {
                         // Just continue, but do add warnings to the log
@@ -713,8 +725,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             	"May need to set input period when reading time series or set default output period."));
                         continue;
                     }
-                }
+                } // End ts == null
                 // If here have a time series to process further and return
+                Object o = ts.getProperty("DefaultTimeSeriesRead");
+                if ( (o != null) && o.toString().equalsIgnoreCase("true") ) {
+                	defaultTSRead = true;
+                	++defaultCount;
+                }
                 if ( defaultTSRead && (DefaultUnits != null) && ts.getDataUnits().isEmpty() ) {
                     // A default time series was read so assign default units.
                     ts.setDataUnits ( DefaultUnits );
@@ -803,8 +820,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                     message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
             }
-            // Set the property indicating the number of rows in the table
-            if ( (TimeSeriesCountProperty != null) && !TimeSeriesCountProperty.equals("") ) {
+            // Set the property indicating the number of time series read
+            if ( (TimeSeriesCountProperty != null) && !TimeSeriesCountProperty.isEmpty() ) {
                 PropList request_params = new PropList ( "" );
                 request_params.setUsingObject ( "PropertyName", TimeSeriesCountProperty );
                 request_params.setUsingObject ( "PropertyValue", new Integer(tslist.size()) );
@@ -821,6 +838,41 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             message, "Report the problem to software support." ) );
                 }
             }
+	        // Set the property indicating the number of time series defaulted
+	        if ( (TimeSeriesDefaultCountProperty != null) && !TimeSeriesDefaultCountProperty.isEmpty() ) {
+	            PropList request_params = new PropList ( "" );
+	            request_params.setUsingObject ( "PropertyName", TimeSeriesDefaultCountProperty );
+	            request_params.setUsingObject ( "PropertyValue", new Integer(defaultCount) );
+	            try {
+	                processor.processRequest( "SetProperty", request_params);
+	            }
+	            catch ( Exception e ) {
+	                message = "Error requesting SetProperty(Property=\"" + TimeSeriesDefaultCountProperty + "\") from processor.";
+	                Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Report the problem to software support." ) );
+	            }
+	        }
+	        if ( (TimeSeriesReadCountProperty != null) && !TimeSeriesReadCountProperty.isEmpty() ) {
+	            PropList request_params = new PropList ( "" );
+	            request_params.setUsingObject ( "PropertyName", TimeSeriesReadCountProperty );
+	            request_params.setUsingObject ( "PropertyValue", new Integer(tslist.size() - defaultCount) );
+	            try {
+	                processor.processRequest( "SetProperty", request_params);
+	            }
+	            catch ( Exception e ) {
+	                message = "Error requesting SetProperty(Property=\"" + TimeSeriesReadCountProperty + "\") from processor.";
+	                Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Report the problem to software support." ) );
+	            }
+	        }
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -876,6 +928,8 @@ public String toString ( PropList props )
     String DefaultOutputStart = props.getValue ( "DefaultOutputStart" );
     String DefaultOutputEnd = props.getValue ( "DefaultOutputEnd" );
     String TimeSeriesCountProperty = props.getValue ( "TimeSeriesCountProperty" );
+    String TimeSeriesReadCountProperty = props.getValue ( "TimeSeriesReadCountProperty" );
+    String TimeSeriesDefaultCountProperty = props.getValue ( "TimeSeriesDefaultCountProperty" );
     String TimeSeriesIndex1Property = props.getValue ( "TimeSeriesIndex1Property" );
 
 	StringBuffer b = new StringBuffer ();
@@ -1002,6 +1056,18 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("TimeSeriesCountProperty=\"" + TimeSeriesCountProperty + "\"");
+    }
+    if ((TimeSeriesReadCountProperty != null) && (TimeSeriesReadCountProperty.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("TimeSeriesReadCountProperty=\"" + TimeSeriesReadCountProperty + "\"");
+    }
+    if ((TimeSeriesDefaultCountProperty != null) && (TimeSeriesDefaultCountProperty.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("TimeSeriesDefaultCountProperty=\"" + TimeSeriesDefaultCountProperty + "\"");
     }
     if ((TimeSeriesIndex1Property != null) && (TimeSeriesIndex1Property.length() > 0)) {
         if (b.length() > 0) {

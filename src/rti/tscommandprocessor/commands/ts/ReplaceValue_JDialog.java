@@ -21,18 +21,18 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
@@ -56,22 +56,23 @@ private JTextField __MaxValue_JTextField = null;
 private JTextField __MatchFlag_JTextField = null;
 private JTextField __NewValue_JTextField = null;
 private SimpleJComboBox __Action_JComboBox = null;
-private JTextField __SetStart_JTextField = null; // First date to reset.
-private JTextField __SetEnd_JTextField = null; // Last date to reset.
+private JTextField __SetStart_JTextField = null;
+private JTextField __SetEnd_JTextField = null;
 private JCheckBox __AnalysisWindow_JCheckBox = null;
-private DateTime_JPanel __AnalysisWindowStart_JPanel = null;  // Fields for analysis window within a year
+private DateTime_JPanel __AnalysisWindowStart_JPanel = null;
 private DateTime_JPanel __AnalysisWindowEnd_JPanel = null;
 private JTextField __SetFlag_JTextField = null;
-private boolean __error_wait = false;	// Is there an error waiting to be cleared up
+private JTextField __SetFlagDesc_JTextField = null;
+private boolean __error_wait = false; // Is there an error waiting to be cleared up
 private boolean __first_time = true;
-private boolean __ok = false;       // Indicates whether OK button has been pressed.
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReplaceValue_JDialog ( JFrame parent, Command command )
+public ReplaceValue_JDialog ( JFrame parent, ReplaceValue_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -152,6 +153,7 @@ private void checkInput ()
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
     String SetFlag = __SetFlag_JTextField.getText().trim();
+    String SetFlagDesc = __SetFlagDesc_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
     
     __error_wait = false;
@@ -199,6 +201,9 @@ private void checkInput ()
     if ( SetFlag.length() > 0 ) {
         parameters.set ( "SetFlag", SetFlag );
     }
+    if ( SetFlagDesc.length() > 0 ) {
+        parameters.set ( "SetFlagDesc", SetFlagDesc );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -225,6 +230,7 @@ private void commitEdits ()
     String SetEnd = __SetEnd_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
     String SetFlag = __SetFlag_JTextField.getText().trim();
+    String SetFlagDesc = __SetFlagDesc_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -242,24 +248,7 @@ private void commitEdits ()
         __command.setCommandParameter ( "AnalysisWindowEnd", AnalysisWindowEnd );
     }
     __command.setCommandParameter ( "SetFlag", SetFlag );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSList_JComboBox = null;
-	__cancel_JButton = null;
-	__SetStart_JTextField = null;
-	__SetEnd_JTextField = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__NewValue_JTextField = null;
-	__MinValue_JTextField = null;
-	__MaxValue_JTextField = null;
-	super.finalize ();
+    __command.setCommandParameter ( "SetFlagDesc", SetFlagDesc );
 }
 
 /**
@@ -267,13 +256,13 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (ReplaceValue_Command)command;
+private void initialize ( JFrame parent, ReplaceValue_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
-    Insets insetsMin = insetsTLBR;	//new Insets(0,2,0,2);
+    Insets insetsMin = insetsTLBR;
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -295,18 +284,22 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify dates with precision appropriate for the data." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -350,7 +343,7 @@ private void initialize ( JFrame parent, Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Action_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
+    __Action_JComboBox = new SimpleJComboBox ( 12, false ); // Do not allow edit
     List<String> actionChoices = new Vector();
     actionChoices.add("");
     actionChoices.add(__command._Remove);
@@ -360,13 +353,14 @@ private void initialize ( JFrame parent, Command command )
     __Action_JComboBox.addItemListener ( this );
     __Action_JComboBox.setMaximumRowCount(actionChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Action_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - action for matched values (default=just replace)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Replacement start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetStart_JTextField = new JTextField (20);
+    __SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation");
     __SetStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -376,6 +370,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replacement end:"), 
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetEnd_JTextField = new JTextField (20);
+    __SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
     __SetEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -412,6 +407,15 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __SetFlag_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - string to mark replaced data."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Set flag description:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetFlagDesc_JTextField = new JTextField ( "", 20 );
+    __SetFlagDesc_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SetFlagDesc_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - description for set flag (default=auto-generated)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -491,7 +495,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String routine = getClass().getName() + ".refresh";
+{   String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -505,6 +509,7 @@ private void refresh ()
     String AnalysisWindowStart = "";
     String AnalysisWindowEnd = "";
     String SetFlag = "";
+    String SetFlagDesc = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -522,6 +527,7 @@ private void refresh ()
         AnalysisWindowStart = props.getValue ( "AnalysisWindowStart" );
         AnalysisWindowEnd = props.getValue ( "AnalysisWindowEnd" );
         SetFlag = props.getValue ( "SetFlag" );
+        SetFlagDesc = props.getValue ( "SetFlagDesc" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -634,6 +640,9 @@ private void refresh ()
         if ( SetFlag != null ) {
             __SetFlag_JTextField.setText ( SetFlag );
         }
+        if ( SetFlagDesc != null ) {
+            __SetFlagDesc_JTextField.setText ( SetFlagDesc );
+        }
     }
     // Regardless, reset the command from the fields...
     checkGUIState();
@@ -648,6 +657,7 @@ private void refresh ()
     SetStart = __SetStart_JTextField.getText().trim();
     SetEnd = __SetEnd_JTextField.getText().trim();
     SetFlag = __SetFlag_JTextField.getText().trim();
+    SetFlagDesc = __SetFlagDesc_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -666,6 +676,7 @@ private void refresh ()
         props.add ( "AnalysisWindowEnd=" + AnalysisWindowEnd );
     }
     props.add ( "SetFlag=" + SetFlag );
+    props.add ( "SetFlagDesc=" + SetFlagDesc );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

@@ -256,19 +256,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the command in discovery mode.
-@param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-*/
-public void runCommandDiscovery ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
-{
-    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
-}
-
-/**
 Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
@@ -283,15 +270,26 @@ CommandWarningException, CommandException
 }
 
 /**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
 Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -302,13 +300,28 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
     }
 	
-	String Alias = parameters.getValue ( "Alias" );
+	String Alias = parameters.getValue ( "Alias" ); // Will be expanded below in run mode
 	String DayTSID = parameters.getValue ( "DayTSID" );
+	if ( (DayTSID != null) && (commandPhase == CommandPhaseType.RUN) && (DayTSID.indexOf("${") >= 0) ) {
+		DayTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, DayTSID);
+	}
 	String Bracket = parameters.getValue ( "Bracket" );
 	Integer bracket = null;
 	if ( (Bracket != null) && !Bracket.equals("") ) {
@@ -323,9 +336,6 @@ CommandWarningException, CommandException
     	// TODO SAM 2015-05-27 Not sure this is necessary since discovery TSID can be set from alias
         // Get the discovery time series list from all time series above this command
         String TSList = "" + TSListType.LAST_MATCHING_TSID;
-    	if ( DayTSID.indexOf("${") >= 0 ) {
-    		DayTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, DayTSID);
-    	}
         List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, DayTSID, null, null );
         if ( (tslist != null) && (tslist.size() > 0) ) {
@@ -333,10 +343,6 @@ CommandWarningException, CommandException
         }
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
-    	// Expand the DayTSID if it contains ${
-    	if ( DayTSID.indexOf("${") >= 0 ) {
-    		DayTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, DayTSID);
-    	}
         try {
             PropList request_params = new PropList ( "" );
 			request_params.set ( "CommandTag", command_tag );
@@ -375,13 +381,23 @@ CommandWarningException, CommandException
     	}
     }
 	if ( ts == null ) {
-		message = "Unable to find daily time series using TSID \"" + DayTSID + "\".";
+		message = "Unable to find daily time series using TSID \"" + DayTSID +
+			"\".  May be OK if time series is created at run time.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
-        status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+		if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+			// Warning
+			status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.WARNING,
+	                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+		}
+		else if ( commandPhase == CommandPhaseType.RUN ) {
+			// Failure
+	        status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+		}
 		throw new CommandWarningException ( message );
 	}
 
@@ -393,12 +409,14 @@ CommandWarningException, CommandException
         createData = false;
     }
 	try {
-	    Message.printStatus ( 2, routine, "Changing interval..." );
 	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval();
 	    monthts = tsu.OLDchangeToMonthTS ( (DayTS)ts, 1, bracket, createData );
-        if ( (Alias != null) && !Alias.equals("") ) {
-            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                processor, monthts, Alias, status, commandPhase);
+        if ( (Alias != null) && !Alias.isEmpty() ) {
+            String alias = Alias;
+            if ( commandPhase == CommandPhaseType.RUN ) {
+            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+            		processor, monthts, Alias, status, commandPhase);
+            }
             monthts.setAlias ( alias );
         }
 	}
@@ -431,8 +449,8 @@ CommandWarningException, CommandException
                 MessageUtil.formatMessageTag(command_tag,
                 ++warning_count), routine, message );
                 status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
             throw new CommandException ( message );
         }
     

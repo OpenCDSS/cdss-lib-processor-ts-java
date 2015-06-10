@@ -95,8 +95,7 @@ public WriteTimeSeriesToExcel_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -203,7 +202,7 @@ throws InvalidCommandParameterException
 	    }
 	}
 	
-	if ( (OutputStart != null) && !OutputStart.equals("")) {
+	if ( (OutputStart != null) && !OutputStart.isEmpty() && !OutputStart.startsWith("${") ) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
 				throw new Exception ("bad date");
@@ -217,7 +216,7 @@ throws InvalidCommandParameterException
 					message, "Specify a valid output start date/time." ) );
 		}
 	}
-	if ( (OutputEnd != null) && !OutputEnd.equals("")) {
+	if ( (OutputEnd != null) && !OutputEnd.isEmpty() && !OutputEnd.startsWith("${") ) {
 		try {	DateTime datetime2 = DateTime.parse(OutputEnd);
 			if ( datetime2 == null ) {
 				throw new Exception ("bad date");

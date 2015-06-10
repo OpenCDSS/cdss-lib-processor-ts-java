@@ -371,7 +371,7 @@ public boolean cellMatchesIncludeFilter ( String columnName, String cellValue, H
 }
 
 /**
-Create a format string for a floating point number.
+Create a cell data format string for a floating point number.
 @param precision number of digits after the decimal, can be 0.
 @return format string for cell
 */

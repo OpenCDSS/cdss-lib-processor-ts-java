@@ -15,6 +15,7 @@ import org.apache.poi.ss.util.AreaReference;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
@@ -53,6 +54,7 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.InvalidTimeIntervalException;
@@ -251,7 +253,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
 	
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(11);
+	List<String> validList = new ArrayList<String>(30);
 	validList.add ( "TSList" );
 	validList.add ( "TSID" );
 	validList.add ( "EnsembleID" );
@@ -280,6 +282,8 @@ throws InvalidCommandParameterException
 	validList.add ( "ColumnComment" );
 	validList.add ( "ValueComment" );
 	validList.add ( "SkipValueCommentIfNoFlag" );
+    validList.add ( "StyleTableID" );
+    validList.add ( "FormatTableID" );
 	
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 	
@@ -299,7 +303,9 @@ Edit the command.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new WriteTimeSeriesToExcel_JDialog ( parent, this )).ok();
+    List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)getCommandProcessor(), this);
+	return (new WriteTimeSeriesToExcel_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 /**
@@ -347,24 +353,35 @@ throws InvalidCommandParameterException, InvalidCommandSyntaxException
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "WriteTimeSeriesToExcel_Command.runCommand",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
     
 	// Check whether the processor wants output files to be created...
 
-	CommandProcessor processor = getCommandProcessor();
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
 			Message.printStatus ( 2, routine,
 			"Skipping \"" + toString() + "\" because output is not being created." );
@@ -379,7 +396,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String MissingValue = parameters.getValue ( "MissingValue" );
     if ( (MissingValue != null) && MissingValue.equals("") ) {
         // Set to null to indicate default internal value should be used
@@ -404,6 +427,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    }
 	}
 	String Worksheet = parameters.getValue ( "Worksheet" );
+	if ( (Worksheet != null) && (Worksheet.indexOf("${") >= 0) ) {
+		Worksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheet);
+	}
 	String ExcelAddress = parameters.getValue ( "ExcelAddress" );
 	String ExcelNamedRange = parameters.getValue ( "ExcelNamedRange" );
 	String ExcelTableName = parameters.getValue ( "ExcelTableName" );
@@ -444,6 +470,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     boolean skipValueCommentIfNoFlag = true;
     if ( (SkipValueCommentIfNoFlag != null) && SkipValueCommentIfNoFlag.equalsIgnoreCase(_False) ) {
     	skipValueCommentIfNoFlag = false;
+    }
+    String StyleTableID = parameters.getValue ( "StyleTableID" );
+    if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
+    	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
+    }
+    String FormatTableID = parameters.getValue ( "FormatTableID" );
+    if ( (FormatTableID != null) && !FormatTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && FormatTableID.indexOf("${") >= 0 ) {
+    	FormatTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, FormatTableID);
     }
     
 	// Get the time series to process...
@@ -489,101 +523,85 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	String OutputStart = parameters.getValue ( "OutputStart" );
-	DateTime OutputStart_DateTime = null;
-	if ( OutputStart != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputStart );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputStart +
-				"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor (can be null)...
-		try {
-		    Object o_OutputStart = processor.getPropContents ( "OutputStart" );
-			if ( o_OutputStart != null ) {
-				OutputStart_DateTime = (DateTime)o_OutputStart;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting OutputStart from processor - not using.";
-			Message.printDebug(10, routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-	}
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	DateTime OutputStart_DateTime = null;
 	DateTime OutputEnd_DateTime = null;
-	if ( OutputEnd != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputEnd );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputEnd +
-			"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputEnd_DateTime = (DateTime)prop_contents;
-		}
+	try {
+		OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
+			status, warning_level, command_tag );
 	}
-	else {
-	    // Get from the processor...
-		try {
-		    Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
-			if ( o_OutputEnd != null ) {
-				OutputEnd_DateTime = (DateTime)o_OutputEnd;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputEnd from processor - not using.";
-			Message.printDebug(10, routine, message );
-		}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
 	}
+	try {
+		OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
+			status, warning_level, command_tag );
+	}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
+	}
+	
+	// Get the style table
+	
+    DataTable styleTable = null;
+    if ( (StyleTableID != null) && !StyleTableID.isEmpty() ) {
+	    request_params = new PropList ( "" );
+	    request_params.set ( "TableID", StyleTableID );
+	    try {
+	        bean = processor.processRequest( "GetTable", request_params);
+	    }
+	    catch ( Exception e ) {
+	        message = "Error requesting GetTable(TableID=\"" + StyleTableID + "\") from processor.";
+	        Message.printWarning(warning_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report problem to software support." ) );
+	    }
+	    bean_PropList = bean.getResultsPropList();
+	    Object o_Table = bean_PropList.getContents ( "Table" );
+	    if ( o_Table == null ) {
+	        message = "Unable to find table to process using TableID=\"" + StyleTableID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Verify that a table exists with the requested ID." ) );
+	    }
+	    else {
+	        styleTable = (DataTable)o_Table;
+	    }
+    }
+	    
+	// Get the format table
+	
+    DataTable formatTable = null;
+    if ( (FormatTableID != null) && !FormatTableID.isEmpty() ) {
+	    request_params = new PropList ( "" );
+	    request_params.set ( "TableID", FormatTableID );
+	    try {
+	        bean = processor.processRequest( "GetTable", request_params);
+	    }
+	    catch ( Exception e ) {
+	        message = "Error requesting GetTable(TableID=\"" + FormatTableID + "\") from processor.";
+	        Message.printWarning(warning_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report problem to software support." ) );
+	    }
+	    bean_PropList = bean.getResultsPropList();
+	    Object o_Table = bean_PropList.getContents ( "Table" );
+	    if ( o_Table == null ) {
+	        message = "Unable to find table to process using TableID=\"" + FormatTableID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Verify that a table exists with the requested ID." ) );
+	    }
+	    else {
+	        formatTable = (DataTable)o_Table;
+	    }
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
@@ -610,6 +628,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		TimeColumn, timeFormatterType, TimeFormat,
         		ValueColumns,
         		Author, ColumnComment, ValueComment, skipValueCommentIfNoFlag,
+        		styleTable, formatTable,
         	    problems, processor, status, commandPhase );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
@@ -683,6 +702,8 @@ public String toString ( PropList props )
 	String ColumnComment = props.getValue ( "ColumnComment" );
 	String ValueComment = props.getValue ( "ValueComment" );
 	String SkipValueCommentIfNoFlag = props.getValue ( "SkipValueCommentIfNoFlag" );
+	String StyleTableID = props.getValue( "StyleTableID" );
+	String FormatTableID = props.getValue( "FormatTableID" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 	    if ( b.length() > 0 ) {
@@ -852,6 +873,18 @@ public String toString ( PropList props )
         }
         b.append ( "SkipValueCommentIfNoFlag=" + SkipValueCommentIfNoFlag );
     }
+    if ( (StyleTableID != null) && (StyleTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
+    }
+    if ( (FormatTableID != null) && (FormatTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FormatTableID=\"" + FormatTableID + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
@@ -897,6 +930,8 @@ Write a time series to the Excel file.
 @param author author to use for comments
 @param columnComment comment to set on columns
 @param valueComment comment to set on value cells
+@param styleTable table containing style data, for formatting
+@param formatTable table containing format data, to relate columns to styles and condition
 @param problems list of problems occurring in method
 @param processor command processor
 @param cs command status, for logging
@@ -910,6 +945,7 @@ private void writeTimeSeries ( List<TS> tslist,
 	String timeColumn, DateTimeFormatterType timeFormatterType, String timeFormat,
 	String valueColumns,
 	String author, String columnComment, String valueComment, boolean skipValueCommentIfNoFlag,
+	DataTable styleTable, DataTable formatTable,
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTimeSeries", message;

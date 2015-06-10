@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,6 +55,7 @@ import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
+import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the WriteTableToExcel() command, using Apache POI.
@@ -197,7 +199,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(18);
+	List<String> validList = new ArrayList<String>(20);
     validList.add ( "TableID" );
     validList.add ( "IncludeColumns" );
     validList.add ( "ExcludeColumns" );
@@ -216,6 +218,8 @@ throws InvalidCommandParameterException
     validList.add ( "ColumnCellTypes" );
     validList.add ( "ColumnWidths" );
     validList.add ( "ColumnDecimalPlaces" );
+    validList.add ( "StyleTableID" );
+    validList.add ( "FormatTableID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -512,8 +516,16 @@ throws InvalidCommandParameterException, CommandWarningException
     StringDictionary columnWidths = new StringDictionary(ColumnWidths,":",",");
     String ColumnDecimalPlaces = parameters.getValue ( "ColumnDecimalPlaces" );
     StringDictionary columnDecimalPlaces = new StringDictionary(ColumnDecimalPlaces,":",",");
+    String StyleTableID = parameters.getValue ( "StyleTableID" );
+    if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
+    	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
+    }
+    String FormatTableID = parameters.getValue ( "FormatTableID" );
+    if ( (FormatTableID != null) && !FormatTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && FormatTableID.indexOf("${") >= 0 ) {
+    	FormatTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, FormatTableID);
+    }
 	
-	// Get the table to process
+	// Get the output table to process
 	
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
@@ -541,6 +553,68 @@ throws InvalidCommandParameterException, CommandWarningException
     else {
         table = (DataTable)o_Table;
     }
+    
+	// Get the style table
+	
+    DataTable styleTable = null;
+    if ( (StyleTableID != null) && !StyleTableID.isEmpty() ) {
+	    request_params = new PropList ( "" );
+	    request_params.set ( "TableID", StyleTableID );
+	    try {
+	        bean = processor.processRequest( "GetTable", request_params);
+	    }
+	    catch ( Exception e ) {
+	        message = "Error requesting GetTable(TableID=\"" + StyleTableID + "\") from processor.";
+	        Message.printWarning(warning_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report problem to software support." ) );
+	    }
+	    bean_PropList = bean.getResultsPropList();
+	    o_Table = bean_PropList.getContents ( "Table" );
+	    if ( o_Table == null ) {
+	        message = "Unable to find table to process using TableID=\"" + StyleTableID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Verify that a table exists with the requested ID." ) );
+	    }
+	    else {
+	        styleTable = (DataTable)o_Table;
+	    }
+    }
+	    
+	// Get the format table
+	
+    DataTable formatTable = null;
+    if ( (FormatTableID != null) && !FormatTableID.isEmpty() ) {
+	    request_params = new PropList ( "" );
+	    request_params.set ( "TableID", FormatTableID );
+	    try {
+	        bean = processor.processRequest( "GetTable", request_params);
+	    }
+	    catch ( Exception e ) {
+	        message = "Error requesting GetTable(TableID=\"" + FormatTableID + "\") from processor.";
+	        Message.printWarning(warning_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report problem to software support." ) );
+	    }
+	    bean_PropList = bean.getResultsPropList();
+	    o_Table = bean_PropList.getContents ( "Table" );
+	    if ( o_Table == null ) {
+	        message = "Unable to find table to process using TableID=\"" + FormatTableID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Verify that a table exists with the requested ID." ) );
+	    }
+	    else {
+	        formatTable = (DataTable)o_Table;
+	    }
+    }
+	    
+    // Get the worksheet to write
 
 	String OutputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
@@ -643,7 +717,8 @@ throws InvalidCommandParameterException, CommandWarningException
         writeTableToExcelFile ( table, includeColumnNumbers, OutputFile_full, Worksheet,
             ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames,
             columnIncludeFilters, columnExcludeFilters,
-            columnNamedRanges, keepOpen, columnCellTypes, columnWidths, columnDecimalPlaces, problems );
+            columnNamedRanges, keepOpen, columnCellTypes, columnWidths, columnDecimalPlaces,
+            styleTable, formatTable, problems );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
             message = "Error writing to Excel: " + problem;
@@ -704,6 +779,8 @@ public String toString ( PropList props )
 	String ColumnCellTypes = props.getValue("ColumnCellTypes");
 	String ColumnWidths = props.getValue("ColumnWidths");
 	String ColumnDecimalPlaces = props.getValue("ColumnDecimalPlaces");
+	String StyleTableID = props.getValue( "StyleTableID" );
+	String FormatTableID = props.getValue( "FormatTableID" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -801,6 +878,18 @@ public String toString ( PropList props )
         }
         b.append ( "ColumnDecimalPlaces=\"" + ColumnDecimalPlaces + "\"");
     }
+    if ( (StyleTableID != null) && (StyleTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
+    }
+    if ( (FormatTableID != null) && (FormatTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FormatTableID=\"" + FormatTableID + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
@@ -822,6 +911,8 @@ columns
 @param columnCellTypes column names and Excel cell types
 @param columnWidths column names and widths (Auto to auto-size, or integer points)
 @param columnDecimalPlaces column names and number of decimal places (used for floating point data)
+@param styleTable table containing style data, for formatting
+@param formatTable table containing format data, to relate columns to styles and condition
 @param problems list of problems encountered during read, for formatted logging in calling code
 */
 private void writeTableToExcelFile ( DataTable table, int [] includeColumnNumbers, String workbookFile, String sheetName,
@@ -829,9 +920,9 @@ private void writeTableToExcelFile ( DataTable table, int [] includeColumnNumber
     StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters,
     Hashtable<String,String> columnNamedRanges, boolean keepOpen,
     StringDictionary columnCellTypes, StringDictionary columnWidths,
-    StringDictionary columnDecimalPlaces, List<String> problems )
+    StringDictionary columnDecimalPlaces, DataTable styleTable, DataTable formatTable, List<String> problems )
 throws FileNotFoundException, IOException
-{   String routine = "WriteTableToExcel_Command.writeTableToExcelFile";
+{   String routine = getClass().getSimpleName() + ".writeTableToExcelFile";
     
     Workbook wb = null;
     InputStream inp = null;
@@ -979,8 +1070,14 @@ throws FileNotFoundException, IOException
         //  2) write column names (if requested)
         //  3) indicate whether to auto-size column or set column specifically
         //  4) set up column styles/formatting for data values
-        DataFormat [] cellFormats = new DataFormat[cols];
-        CellStyle [] cellStyles = new CellStyle[cols];
+        DataFormat [] columnCellFormats = new DataFormat[cols];
+        CellStyle [] columnCellStyles = new CellStyle[cols];
+        // Initialize styles corresponding to styleTable, newer approach to styling.
+        // The styles in this table will be used by default with the above setting style information to the below.
+        TableStyleTableManager styleTable2 = null;
+        if ( styleTable != null ) {
+        	styleTable2 = new TableStyleTableManager(table,includeColumnNumbers,styleTable,formatTable,wb);
+        }
         int tableFieldType;
         int precision;
         int colOut = colOutDataStart;
@@ -1043,8 +1140,8 @@ throws FileNotFoundException, IOException
             // 3. Set the column width
             //    Actually, have to do this after the data have been set so see post-write section below
             // 4. Create the styles for the data values, including number of decimals (precision)
-            cellFormats[col] = wb.createDataFormat();
-            cellStyles[col] = wb.createCellStyle();
+            columnCellFormats[col] = wb.createDataFormat();
+            columnCellStyles[col] = wb.createCellStyle();
             if ( (tableFieldType == TableField.DATA_TYPE_FLOAT) || (tableFieldType == TableField.DATA_TYPE_DOUBLE) ) {
                 precision = table.getFieldPrecision(includeColumnNumbers[col]);
                 String numDec = columnDecimalPlaces.get(tableColumnName);
@@ -1062,10 +1159,24 @@ throws FileNotFoundException, IOException
                         precision = 6;
                     }
                 }
-                cellStyles[col].setDataFormat(cellFormats[col].getFormat(tk.createFormatForFloat(precision)));
+                if ( styleTable2 == null ) {
+                	// Old-style
+                	columnCellStyles[col].setDataFormat(columnCellFormats[col].getFormat(tk.createFormatForFloat(precision)));
+                }
+                else {
+                	// New-style...
+                	styleTable2.setColumnDataFormat(col,tk.createFormatForFloat(precision));
+                }
             }
             else if ( (tableFieldType == TableField.DATA_TYPE_INT) || (tableFieldType == TableField.DATA_TYPE_LONG) ) {
-                cellStyles[col].setDataFormat(cellFormats[col].getFormat("0"));
+            	if ( styleTable2 == null ) {
+            		// Old-style...
+            		columnCellStyles[col].setDataFormat(columnCellFormats[col].getFormat("0"));
+            	}
+            	else {
+            		// New-style...
+                   	styleTable2.setColumnDataFormat(col,"0");
+                }
             }
             // If named ranges are to be written, match the table columns and do it
             if ( columnNamedRanges != null ) {
@@ -1113,7 +1224,7 @@ throws FileNotFoundException, IOException
         String NaNValue = "";
         String cellString;
         int rowOut = rowOutDataStart - 1; // -1 because incremented at the top of the loop below
-        Row wbRowData;
+        Row wbRow;
         for ( int row = 0; (row < rows) && (rowOut <= rowOutDataEnd); row++) {
         	// Check whether the in-memory row should be written
         	if ( !isTableRowIncluded ( table, row,
@@ -1125,17 +1236,17 @@ throws FileNotFoundException, IOException
         	// The above is the only "continue" so increment the Excel row here
         	++rowOut;
             // First try to get an existing row
-            wbRowData = sheet.getRow(rowOut);
+            wbRow = sheet.getRow(rowOut);
             // If it does not exist, create it
-            if ( wbRowData == null ) {
-                wbRowData = sheet.createRow(rowOut);
+            if ( wbRow == null ) {
+                wbRow = sheet.createRow(rowOut);
             }
             colOut = colOutDataStart;
             for ( int col = 0; (col < cols) && (colOut <= colOutDataEnd); col++, colOut++) {
                 // First try to get an existing cell
-                Cell wbCell = wbRowData.getCell(colOut);
+                Cell wbCell = wbRow.getCell(colOut);
                 if ( wbCell == null ) {
-                    wbCell = wbRowData.createCell(colOut);
+                    wbCell = wbRow.createCell(colOut);
                 }
                 try {
                     tableFieldType = table.getFieldDataType(includeColumnNumbers[col]);
@@ -1144,6 +1255,23 @@ throws FileNotFoundException, IOException
                     if ( fieldValue == null ) {
                         cellString = "";
                         wbCell.setCellValue(cellString);
+                        if ( styleTable2 != null ) {
+                        	// New-style...
+                        	if ( (tableFieldType == TableField.DATA_TYPE_DOUBLE) ||
+                        		(tableFieldType == TableField.DATA_TYPE_FLOAT) ) {
+                        		wbCell.setCellStyle(styleTable2.getStyle(col,(Double)null));
+                        	}
+                        	else if ( (tableFieldType == TableField.DATA_TYPE_INT) ||
+                        		(tableFieldType == TableField.DATA_TYPE_LONG) ) {
+                        		wbCell.setCellStyle(styleTable2.getStyle(col,(Long)null));
+                        	}
+                        	else if ( (tableFieldType == TableField.DATA_TYPE_DATETIME) ) {
+                        		wbCell.setCellStyle(styleTable2.getStyle(col,(DateTime)null));
+                        	}
+                        	else if ( (tableFieldType == TableField.DATA_TYPE_STRING) ) {
+                        		wbCell.setCellStyle(styleTable2.getStyle(col,(String)null));
+                        	}
+                        }
                     }
                     else if ( tableFieldType == TableField.DATA_TYPE_FLOAT ) {
                         fieldValueFloat = (Float)fieldValue;
@@ -1165,7 +1293,14 @@ throws FileNotFoundException, IOException
                             }
                             else {
                                 wbCell.setCellValue(fieldValueFloat);
-                                wbCell.setCellStyle(cellStyles[col]);
+                                if ( styleTable2 == null ) {
+                                	// Old-style...
+                                	wbCell.setCellStyle(columnCellStyles[col]);
+                                }
+                                else {
+                                	// New-style...
+                                	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueFloat));
+                                }
                             }
                         }
                     }
@@ -1174,6 +1309,10 @@ throws FileNotFoundException, IOException
                         if ( fieldValueDouble.isNaN() ) {
                             cellString = NaNValue;
                             wbCell.setCellValue(cellString);
+                            if ( styleTable2 != null ) {
+                            	// New-style...
+                            	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueDouble));
+                            }
                         }
                         else {
                             if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
@@ -1189,7 +1328,17 @@ throws FileNotFoundException, IOException
                             }
                             else {
                                 wbCell.setCellValue(fieldValueDouble);
-                                wbCell.setCellStyle(cellStyles[col]);
+                                if ( styleTable2 == null ) {
+                                	// Old-style...
+                                	wbCell.setCellStyle(columnCellStyles[col]);
+                                }
+                                else {
+                                	// New-style...
+                                	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueDouble));
+                                }
+                                //Message.printStatus(2,routine,"After double cell data set, cell style fill foreground color is " + wbCell.getCellStyle().getFillForegroundColor());
+                                //Message.printStatus(2,routine,"After double cell data set, cell style fill background color is " + wbCell.getCellStyle().getFillBackgroundColor());
+                                //Message.printStatus(2,routine,"After double cell data set, cell style fill pattern is " + wbCell.getCellStyle().getFillPattern());
                             }
                         }
                     }
@@ -1201,7 +1350,14 @@ throws FileNotFoundException, IOException
                         }
                         else {
                             wbCell.setCellValue(fieldValueInteger);
-                            wbCell.setCellStyle(cellStyles[col]);
+                            if ( styleTable2 == null ) {
+                            	// Old-style...
+                            	wbCell.setCellStyle(columnCellStyles[col]);
+                            }
+                            else {
+                            	// New-style...
+                            	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueInteger));
+                            }
                         }
                     }
                     else if ( tableFieldType == TableField.DATA_TYPE_LONG ) {
@@ -1212,7 +1368,14 @@ throws FileNotFoundException, IOException
                         }
                         else {
                             wbCell.setCellValue(fieldValueLong);
-                            wbCell.setCellStyle(cellStyles[col]);
+                            if ( styleTable2 == null ) {
+                            	// Old-style...
+                            	wbCell.setCellStyle(columnCellStyles[col]);
+                            }
+                            else {
+                            	// New-style...
+                            	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueLong));
+                            }
                         }
                     }
                     else {
@@ -1220,6 +1383,9 @@ throws FileNotFoundException, IOException
                         cellString = "" + fieldValue;
                         wbCell.setCellValue(cellString);
                     }
+                    //Message.printStatus(2,routine,"After cell data set, cell style fill foreground color is " + wbCell.getCellStyle().getFillForegroundColor());
+                    //Message.printStatus(2,routine,"After cell data set, cell style fill background color is " + wbCell.getCellStyle().getFillBackgroundColor());
+                    //Message.printStatus(2,routine,"After cell data set, cell style fill pattern is " + wbCell.getCellStyle().getFillPattern());
                 }
                 catch ( Exception e ) {
                     // Log but let the output continue

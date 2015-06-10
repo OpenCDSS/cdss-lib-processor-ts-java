@@ -199,7 +199,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputEnd." ) );
 		}
 	}
-    if ( (OutputWindowStart != null) && !OutputWindowStart.equals("") ) {
+    if ( (OutputWindowStart != null) && !OutputWindowStart.isEmpty() && !OutputWindowStart.startsWith("${") ) {
         String outputWindowStart = "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowStart;
         try {
             DateTime.parse( outputWindowStart );
@@ -214,7 +214,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (OutputWindowEnd != null) && !OutputWindowEnd.equals("") ) {
+    if ( (OutputWindowEnd != null) && !OutputWindowEnd.isEmpty() && !OutputWindowEnd.startsWith("${")) {
         String outputWindowEnd = "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowEnd;
         try {
             DateTime.parse( outputWindowEnd );
@@ -492,11 +492,8 @@ CommandWarningException, CommandException
         IncludeMissingValues_boolean = false;
     }
     String TableID = parameters.getValue("TableID");
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
-    	// In discovery mode want lists of tables to include ${Property}
-    	if ( TableID.indexOf("${") >= 0 ) {
-    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
-    	}
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+    	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
     String IfTableNotFound = parameters.getValue("IfTableNotFound");
     if ( (IfTableNotFound == null) || IfTableNotFound.equals("") ) {
@@ -678,8 +675,16 @@ CommandWarningException, CommandException
 		}
     	
         String OutputWindowStart = parameters.getValue ( "OutputWindowStart" );
+        if ( (OutputWindowStart != null) && !OutputWindowStart.isEmpty() &&
+        	(commandPhase == CommandPhaseType.RUN) && OutputWindowStart.indexOf("${") >= 0 ) {
+        	OutputWindowStart = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputWindowStart);
+        }
         String OutputWindowEnd = parameters.getValue ( "OutputWindowEnd" );
-        if ( (OutputWindowStart != null) && (OutputWindowStart.length() > 0) ) {
+        if ( (OutputWindowEnd != null) && !OutputWindowEnd.isEmpty() &&
+            (commandPhase == CommandPhaseType.RUN) && OutputWindowEnd.indexOf("${") >= 0 ) {
+        	OutputWindowEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputWindowEnd);
+        }
+        if ( (OutputWindowStart != null) && !OutputWindowStart.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
             try {
                 // The following works with ISO formats...
                 OutputWindowStart_DateTime =
@@ -694,7 +699,7 @@ CommandWarningException, CommandException
                 throw new InvalidCommandParameterException ( message );
             }
         }
-        if ( (OutputWindowEnd != null) && (OutputWindowEnd.length() > 0) ) {
+        if ( (OutputWindowEnd != null) && !OutputWindowEnd.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
             try {
                 // The following works with ISO formats...
                 OutputWindowEnd_DateTime =

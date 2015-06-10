@@ -76,6 +76,8 @@ private JTextField __OutputEnd_JTextField = null;
 private JCheckBox __OutputWindow_JCheckBox = null;
 private DateTime_JPanel __OutputWindowStart_JPanel = null; // Fields for output window within a year
 private DateTime_JPanel __OutputWindowEnd_JPanel = null;
+private JTextField __OutputWindowStart_JTextField = null; // Used for properties
+private JTextField __OutputWindowEnd_JTextField = null;
 private SimpleJComboBox __IfTableNotFound_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -175,10 +177,14 @@ private void checkGUIState ()
         // Checked so enable the date panels
         __OutputWindowStart_JPanel.setEnabled ( true );
         __OutputWindowEnd_JPanel.setEnabled ( true );
+        __OutputWindowStart_JTextField.setEnabled ( true );
+        __OutputWindowEnd_JTextField.setEnabled ( true );
     }
     else {
         __OutputWindowStart_JPanel.setEnabled ( false );
         __OutputWindowEnd_JPanel.setEnabled ( false );
+        __OutputWindowStart_JTextField.setEnabled ( false );
+        __OutputWindowEnd_JTextField.setEnabled ( false );
     }
 }
 
@@ -250,11 +256,20 @@ private void checkInput ()
     if ( __OutputWindow_JCheckBox.isSelected() ){
         String OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();
         String OutputWindowEnd = __OutputWindowEnd_JPanel.toString(false,true).trim();
-        if ( OutputWindowStart.length() > 0 ) {
+        if ( !OutputWindowStart.isEmpty() ) {
             props.set ( "OutputWindowStart", OutputWindowStart );
         }
-        if ( OutputWindowEnd.length() > 0 ) {
+        if ( !OutputWindowEnd.isEmpty() ) {
             props.set ( "OutputWindowEnd", OutputWindowEnd );
+        }
+        // This will override the above
+        String OutputWindowStart2 = __OutputWindowStart_JTextField.getText().trim();
+        String OutputWindowEnd2 = __OutputWindowEnd_JTextField.getText().trim();
+        if ( !OutputWindowStart2.isEmpty() ) {
+            props.set ( "OutputWindowStart", OutputWindowStart2 );
+        }
+        if ( !OutputWindowEnd2.isEmpty() ) {
+            props.set ( "OutputWindowEnd", OutputWindowEnd2 );
         }
     }
     try {
@@ -305,6 +320,10 @@ private void commitEdits ()
         String OutputWindowEnd = __OutputWindowEnd_JPanel.toString(false,true).trim();
         __command.setCommandParameter ( "OutputWindowStart", OutputWindowStart );
         __command.setCommandParameter ( "OutputWindowEnd", OutputWindowEnd );
+        String OutputWindowStart2 = __OutputWindowStart_JTextField.getText().trim();
+        String OutputWindowEnd2 = __OutputWindowEnd_JTextField.getText().trim();
+        __command.setCommandParameter ( "OutputWindowStart", OutputWindowStart2 );
+        __command.setCommandParameter ( "OutputWindowEnd", OutputWindowEnd2 );
     }
     else {
         __command.setCommandParameter ( "OutputWindowStart", "" );
@@ -510,6 +529,26 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - output window within each year (default=full year)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Output window start ${Property}:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputWindowStart_JTextField = new JTextField ( "", 20 );
+    __OutputWindowStart_JTextField.setToolTipText("Specify the output window start ${Property} - will override the above.");
+    __OutputWindowStart_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __OutputWindowStart_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=full year)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel,new JLabel("Output window end ${Property}:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputWindowEnd_JTextField = new JTextField ( "", 20 );
+    __OutputWindowEnd_JTextField.setToolTipText("Specify the output window end ${Property} - will override the above.");
+    __OutputWindowEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputWindowEnd_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=full year)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if table not found:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -596,7 +635,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "TimeSeriesToTable_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -736,34 +775,44 @@ private void refresh ()
         if ( OutputEnd != null ) {
             __OutputEnd_JTextField.setText ( OutputEnd );
         }
-        if ( (OutputWindowStart != null) && (OutputWindowStart.length() > 0) ) {
-            try {
-                // Add year because it is not part of the parameter value...
-                DateTime OutputWindowStart_DateTime = DateTime.parse (
-                    "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowStart );
-                Message.printStatus(2, routine, "Setting window start to " + OutputWindowStart_DateTime );
-                __OutputWindowStart_JPanel.setDateTime ( OutputWindowStart_DateTime );
-            }
-            catch ( Exception e ) {
-                Message.printWarning( 1, routine, "OutputWindowStart (" + OutputWindowStart +
-                    ") prepended with " + DateTimeWindow.WINDOW_YEAR + " is not a valid date/time." );
-            }
+        if ( (OutputWindowStart != null) && !OutputWindowStart.isEmpty() ) {
+        	if ( OutputWindowStart.indexOf("${") >= 0 ) {
+        		__OutputWindowStart_JTextField.setText ( OutputWindowStart );
+        	}
+        	else {
+	            try {
+	                // Add year because it is not part of the parameter value...
+	                DateTime OutputWindowStart_DateTime = DateTime.parse (
+	                    "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowStart );
+	                Message.printStatus(2, routine, "Setting window start to " + OutputWindowStart_DateTime );
+	                __OutputWindowStart_JPanel.setDateTime ( OutputWindowStart_DateTime );
+	            }
+	            catch ( Exception e ) {
+	                Message.printWarning( 1, routine, "OutputWindowStart (" + OutputWindowStart +
+	                    ") prepended with " + DateTimeWindow.WINDOW_YEAR + " is not a valid date/time." );
+	            }
+        	}
         }
-        if ( (OutputWindowEnd != null) && (OutputWindowEnd.length() > 0) ) {
-            try {
-                // Add year because it is not part of the parameter value...
-                DateTime OutputWindowEnd_DateTime = DateTime.parse (
-                    "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowEnd );
-                Message.printStatus(2, routine, "Setting window end to " + OutputWindowEnd_DateTime );
-                __OutputWindowEnd_JPanel.setDateTime ( OutputWindowEnd_DateTime );
-            }
-            catch ( Exception e ) {
-                Message.printWarning( 1, routine, "OutputWindowEnd (" + OutputWindowEnd +
-                    ") prepended with " + DateTimeWindow.WINDOW_YEAR + " is not a valid date/time." );
-            }
+        if ( (OutputWindowEnd != null) && !OutputWindowEnd.isEmpty() ) {
+        	if ( OutputWindowEnd.indexOf("${") >= 0 ) {
+        		__OutputWindowEnd_JTextField.setText ( OutputWindowEnd );
+        	}
+        	else {
+	            try {
+	                // Add year because it is not part of the parameter value...
+	                DateTime OutputWindowEnd_DateTime = DateTime.parse (
+	                    "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowEnd );
+	                Message.printStatus(2, routine, "Setting window end to " + OutputWindowEnd_DateTime );
+	                __OutputWindowEnd_JPanel.setDateTime ( OutputWindowEnd_DateTime );
+	            }
+	            catch ( Exception e ) {
+	                Message.printWarning( 1, routine, "OutputWindowEnd (" + OutputWindowEnd +
+	                    ") prepended with " + DateTimeWindow.WINDOW_YEAR + " is not a valid date/time." );
+	            }
+        	}
         }
-        if ( ((OutputWindowStart != null) && (OutputWindowStart.length() != 0)) ||
-            ((OutputWindowEnd != null) && (OutputWindowEnd.length() != 0)) ) {
+        if ( ((OutputWindowStart != null) && !OutputWindowStart.isEmpty() ) ||
+            ((OutputWindowEnd != null) && !OutputWindowEnd.isEmpty()) ) {
             __OutputWindow_JCheckBox.setSelected ( true );
         }
         else {
@@ -822,6 +871,14 @@ private void refresh ()
     if ( __OutputWindow_JCheckBox.isSelected() ) {
         OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();
         OutputWindowEnd = __OutputWindowEnd_JPanel.toString(false,true).trim();
+        String OutputWindowStart2 = __OutputWindowStart_JTextField.getText().trim();
+        String OutputWindowEnd2 = __OutputWindowEnd_JTextField.getText().trim();
+        if ( (OutputWindowStart2 != null) && !OutputWindowStart2.isEmpty() ) {
+        	OutputWindowStart = OutputWindowStart2;
+        }
+        if ( (OutputWindowEnd2 != null) && !OutputWindowEnd2.isEmpty() ) {
+        	OutputWindowEnd = OutputWindowEnd2;
+        }
         props.add ( "OutputWindowStart=" + OutputWindowStart );
         props.add ( "OutputWindowEnd=" + OutputWindowEnd );
     }

@@ -5,14 +5,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -21,7 +22,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
 import java.util.List;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -34,9 +34,9 @@ public class NewTable_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private boolean __error_wait = false;	// To track errors
-private boolean __first_time = true;	// Indicate first time display
-private JTextArea __command_JTextArea=null;// For command
+private boolean __error_wait = false; // To track errors
+private boolean __first_time = true; // Indicate first time display
+private JTextArea __command_JTextArea=null;
 private JTextField __TableID_JTextField = null;
 private JTextArea __Columns_JTextArea = null;
 private SimpleJButton __cancel_JButton = null;
@@ -130,16 +130,16 @@ private void initialize ( JFrame parent, NewTable_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
 	getContentPane().add ("North", main_JPanel);
-	int y = 0;
+	int y = -1;
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
-	int yy = 0;
+	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-	"This command creates a new table.  The table can then be used by other commands, for example to store " +
-	"statistics computed from time series."),
-	0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		"This command creates a new table.  The table can then be used by other commands, for example to store " +
+		"statistics computed from time series."),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Columns can be defined here and can also be added later with other commands."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -147,8 +147,8 @@ private void initialize ( JFrame parent, NewTable_Command command )
         "Columns should be defined using syntax:   name,type;name,type"),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel ("Available types are:"),
-    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    List<String> types = TableField.getDataTypeChoices(true);
+	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	    List<String> types = TableField.getDataTypeChoices(true);
     int size = types.size();
     for ( int i = 0; i < size; i++ ) {
         JGUIUtil.addComponent(paragraph, new JLabel ("    " + types.get(i)),
@@ -156,11 +156,14 @@ private void initialize ( JFrame parent, NewTable_Command command )
     }
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JTextField = new JTextField (10);
+    __TableID_JTextField.setToolTipText("Specify the table to create or use ${Property} notation");
     __TableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

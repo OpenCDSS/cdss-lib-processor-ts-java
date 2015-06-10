@@ -4,8 +4,8 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -58,8 +58,7 @@ public NewTable_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -73,7 +72,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (TableID == null) || (TableID.length() == 0) ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -83,7 +82,7 @@ throws InvalidCommandParameterException
 
     __columnNames = null;
     __columnTypes = null;
-	if ( (Columns != null) && (Columns.length() != 0) ) {
+	if ( (Columns != null) && !Columns.isEmpty() ) {
         // Check column definitions (Column name,Type;...)...
 		List<String> v = StringUtil.breakStringList ( Columns, ",;", 0 );
 		if ( v == null ) {
@@ -126,10 +125,10 @@ throws InvalidCommandParameterException
 	}
  
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "Columns" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List validList = new ArrayList<String>(2);
+    validList.add ( "TableID" );
+    validList.add ( "Columns" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -143,8 +142,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -166,7 +164,7 @@ public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
     List v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new ArrayList();
         v.add ( table );
     }
     return v;
@@ -177,8 +175,7 @@ public List getObjectList ( Class c )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -206,26 +203,41 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "NewTable_Command.runCommand",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
 
 	// Make sure there are time series available to operate on...
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
@@ -238,11 +250,11 @@ CommandWarningException, CommandException
 	try {
     	// Create the table...
     
-	    List<TableField> columnList = new Vector();
+	    List<TableField> columnList = new ArrayList<TableField>();
 	    DataTable table = null;
         
-        if ( command_phase == CommandPhaseType.RUN ) {
-            // Create the table with column data
+        if ( commandPhase == CommandPhaseType.RUN ) {
+            // Create the table with column data that was created in checkCommandParameters()
             if ( __columnNames != null ) {
                 for ( int i = 0; i < __columnNames.length; i++ ) {
                     if ( (TableField.lookupDataType(__columnTypes[i]) == TableField.DATA_TYPE_DOUBLE) ||
@@ -271,12 +283,12 @@ CommandWarningException, CommandException
                 Message.printWarning(warning_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                            message, "Report problem to software support." ) );
             }
         }
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Create an empty table and set the ID
             table = new DataTable();
             table.setTableID ( TableID );
@@ -287,7 +299,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error creating new table (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
@@ -299,7 +311,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

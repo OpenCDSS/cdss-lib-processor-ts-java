@@ -90,7 +90,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a time series product file." ) );
 	}
-	else if ( !TSProductFile.startsWith("${") ) {
+	else if ( TSProductFile.indexOf("${") < 0 ) {
 		// Can only check when ${Property} is not used
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
@@ -461,7 +461,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		if ( View.equalsIgnoreCase(_True) ) {
 			overrideProps.set ( "InitialView", "Graph" );
 			overrideProps.set ( "PreviewOutput", "True" );
-			if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
+			if ( (DefaultSaveFile != null) && !DefaultSaveFile.isEmpty() ) {
 			    String DefaultSaveFile_full =
 			        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 			        	TSCommandProcessorUtil.expandParameterValue(processor,this,DefaultSaveFile));

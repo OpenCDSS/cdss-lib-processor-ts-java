@@ -622,6 +622,9 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command, List<S
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
 		"Specify time series and/or processor property to set to the count of values detected that meet the check criteria."),
 		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"The processor property is visible globally whereas the time series property is associated with the specific time series."),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     

@@ -405,6 +405,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 		try {
 			InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
@@ -412,6 +413,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 	}
 	

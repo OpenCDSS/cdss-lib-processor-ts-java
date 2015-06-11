@@ -80,7 +80,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify an output file." ) );
 	}
-	else if ( !OutputFile.startsWith("${") ){
+	else if ( OutputFile.indexOf("${") < 0 ){
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {

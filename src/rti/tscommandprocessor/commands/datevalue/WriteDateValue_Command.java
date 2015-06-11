@@ -60,8 +60,7 @@ public WriteDateValue_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -77,20 +76,20 @@ throws InvalidCommandParameterException
 	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
 	String Version = parameters.getValue ( "Version" );
 	String warning = "";
-	String routine = getCommandName() + ".checkCommandParameters";
+	String routine = getClass().getSimpleName() + ".checkCommandParameters";
 	String message;
 
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
 		message = "The output file: \"" + OutputFile + "\" must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
 			message, "Specify an output file." ) );
 	}
-	else {
+	else if ( OutputFile.indexOf("${") < 0 ) {
         String working_dir = null;
 		try {
 		    Object o = processor.getPropContents ( "WorkingDir" );
@@ -319,8 +318,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -339,7 +337,20 @@ CommandWarningException, CommandException
 	}
 	
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
@@ -347,7 +358,13 @@ CommandWarningException, CommandException
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
     TimeInterval irregularInterval = null;
@@ -411,7 +428,6 @@ CommandWarningException, CommandException
 	}
 	DateTime OutputStart_DateTime = null;
 	DateTime OutputEnd_DateTime = null;
-	CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
 			OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
@@ -419,6 +435,7 @@ CommandWarningException, CommandException
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 		try {
 			OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
@@ -426,6 +443,7 @@ CommandWarningException, CommandException
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 	}
 

@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
@@ -67,12 +67,12 @@ Column names for each time series being processed, from the ColumnNames paramete
 has been expanded to reflect file column names.
 See also __columnNamesRuntime.
 */
-private List<String> __columnNamesRuntime = new Vector();
+private List<String> __columnNamesRuntime = new ArrayList<String>();
 
 /**
 Data types for each time series being processed.
 */
-private List<String> __dataType = new Vector();
+private List<String> __dataType = new ArrayList<String>();
 
 /**
 Date column name, expanded for runtime, consistent with the ColumnNames runtime values.
@@ -103,22 +103,22 @@ private TimeInterval __interval = null;
 /**
 Location ID for each time series being processed, expanded for runtime.
 */
-private List<String> __locationIDRuntime = new Vector();
+private List<String> __locationIDRuntime = new ArrayList<String>();
 
 /**
 Missing value strings that may be present in the file.
 */
-private List<String> __missingValue = new Vector();
+private List<String> __missingValue = new ArrayList<String>();
 
 /**
 Provider for each time series being processed.
 */
-private List<String> __provider = new Vector();
+private List<String> __provider = new ArrayList<String>();
 
 /**
 Scenario for each time series being processed.
 */
-private List<String> __scenario = new Vector();
+private List<String> __scenario = new ArrayList<String>();
 
 /**
 Row ranges to skip (single rows will have same and start value.  Rows are 1+.
@@ -138,17 +138,17 @@ private boolean __treatConsecutiveDelimitersAsOne = false;
 /**
 Data units for each time series being processed.
 */
-private List<String> __units = new Vector();
+private List<String> __units = new ArrayList<String>();
 
 /**
 Column names for data values, for each time series being processed, expanded for runtime.
 */
-private List<String> __valueColumnsRuntime = new Vector();
+private List<String> __valueColumnsRuntime = new ArrayList<String>();
 
 /**
 Column names for data flags, for each time series being processed, expanded for runtime.
 */
-private List<String> __flagColumnsRuntime = new Vector();
+private List<String> __flagColumnsRuntime = new ArrayList<String>();
 
 /**
 Constructor.
@@ -162,15 +162,14 @@ public ReadDelimitedFile_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {
-    String routine = getClass().getName() + ".checkCommandParameters";
+    String routine = getClass().getSimpleName() + ".checkCommandParameters";
 	String warning = "";
     String message;
     
@@ -206,14 +205,14 @@ throws InvalidCommandParameterException
 	String InputEnd = parameters.getValue("InputEnd");
 	
     String InputFile_full = null;
-    if ( (InputFile == null) || (InputFile.length() == 0) ) {
+    if ( (InputFile == null) || InputFile.isEmpty() ) {
         message = "The input file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify an existing input file." ) );
     }
-    else {
+    else if ( InputFile.indexOf("${") < 0 ){
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -303,7 +302,7 @@ throws InvalidCommandParameterException
     
     // Column names need to be processed after the above have been specified
     
-    List<String> columnNames = new Vector();
+    List<String> columnNames = new ArrayList<String>();
     if ( (ColumnNames == null) || (ColumnNames.length() == 0) ) {
         message = "The column names must be specified.";
         warning += "\n" + message;
@@ -316,7 +315,7 @@ throws InvalidCommandParameterException
         columnNames = StringUtil.breakStringList ( ColumnNames, ",", StringUtil.DELIM_ALLOW_STRINGS );
     }
     // If the column names include information from the file, get the column names from the file
-    List<String> columnNamesRuntime = new Vector();
+    List<String> columnNamesRuntime = new ArrayList<String>();
     setColumnNamesRuntime ( columnNamesRuntime );
     if ( (ColumnNames != null) && StringUtil.indexOfIgnoreCase(ColumnNames,_FC, 0) >= 0 ) {
         // Original string used slice notation for column names in file
@@ -393,7 +392,7 @@ throws InvalidCommandParameterException
         if ( StringUtil.indexOfIgnoreCase(DateTimeColumn,_FC, 0) >= 0 ) {
             // Original string used slice notation for column name in file
             try {
-                List<String> dateTimeColumnName = new Vector();
+                List<String> dateTimeColumnName = new ArrayList<String>();
                 dateTimeColumnName.add ( DateTimeColumn ); // Only one
                 dateTimeColumnName = readColumnNamesFromFile(InputFile_full, dateTimeColumnName,
                     StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
@@ -428,7 +427,7 @@ throws InvalidCommandParameterException
         if ( StringUtil.indexOfIgnoreCase(DateColumn,_FC, 0) >= 0 ) {
             // Original string used slice notation for column name in file
             try {
-                List<String> dateColumnName = new Vector();
+                List<String> dateColumnName = new ArrayList<String>();
                 dateColumnName.add ( DateColumn ); // Only one
                 dateColumnName = readColumnNamesFromFile(InputFile_full, dateColumnName,
                     StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
@@ -463,7 +462,7 @@ throws InvalidCommandParameterException
         if ( StringUtil.indexOfIgnoreCase(TimeColumn,_FC, 0) >= 0 ) {
             // Original string used slice notation for column name in file
             try {
-                List<String> timeColumnName = new Vector();
+                List<String> timeColumnName = new ArrayList<String>();
                 timeColumnName.add ( TimeColumn ); // Only one
                 timeColumnName = readColumnNamesFromFile(InputFile_full, timeColumnName,
                     StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
@@ -494,8 +493,8 @@ throws InvalidCommandParameterException
         }
     }
     
-    List<String> valueColumns = new Vector();
-    List<String> valueColumnsRuntime = new Vector();
+    List<String> valueColumns = new ArrayList<String>();
+    List<String> valueColumnsRuntime = new ArrayList<String>();
     setValueColumnsRuntime ( valueColumnsRuntime );
     if ( (ValueColumn == null) || (ValueColumn.length() == 0) ) {
         message = "The value column(s) must be specified.";
@@ -539,8 +538,8 @@ throws InvalidCommandParameterException
         }
     }
     
-    List<String> flagColumns = new Vector();
-    List<String> flagColumnsRuntime = new Vector();
+    List<String> flagColumns = new ArrayList<String>();
+    List<String> flagColumnsRuntime = new ArrayList<String>();
     setFlagColumnsRuntime ( flagColumnsRuntime );
     if ( (FlagColumn != null) && (FlagColumn.length() != 0) ) {
         flagColumns = StringUtil.breakStringList(FlagColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
@@ -586,7 +585,7 @@ throws InvalidCommandParameterException
                 message, "Specify " + valueColumnsRuntime.size() + " flag column names separated by commas." ) );
     }
 
-    List<String> locationIDRuntime = new Vector();
+    List<String> locationIDRuntime = new ArrayList<String>();
     setLocationIDRuntime( locationIDRuntime );
     if ( (LocationID == null) || LocationID.equals("") ) {
         message = "The location ID column(s) must be specified.";
@@ -641,7 +640,7 @@ throws InvalidCommandParameterException
     }
     setLocationIDRuntime ( locationIDRuntime );
 
-    List<String> provider = new Vector();
+    List<String> provider = new ArrayList<String>();
     setProvider ( provider );
     if ( (Provider != null) && !Provider.equals("") ) {
         // Can have one value that is re-used, or Provider for each time series
@@ -677,7 +676,7 @@ throws InvalidCommandParameterException
     }
     setProvider ( provider );
     
-    List<String> dataType = new Vector();
+    List<String> dataType = new ArrayList<String>();
     setDataType ( dataType );
     if ( (DataType == null) || DataType.equals("") ) {
         // Set to the same as the value columns
@@ -737,7 +736,7 @@ throws InvalidCommandParameterException
     }
     setInterval ( interval );
     
-    List<String> scenario = new Vector();
+    List<String> scenario = new ArrayList<String>();
     setScenario ( scenario );
     if ( (Scenario != null) && !Scenario.equals("") ) {
         // Can have one value that is re-used, or Scenario for each time series
@@ -773,7 +772,7 @@ throws InvalidCommandParameterException
     }
     setScenario ( scenario );
     
-    List<String> units = new Vector();
+    List<String> units = new ArrayList<String>();
     setUnits ( units );
     if ( (Units != null) && !Units.equals("") ) {
         // Can have one value that is re-used, or units for each time series
@@ -809,7 +808,7 @@ throws InvalidCommandParameterException
     }
     setUnits ( units );
     
-    setMissingValue ( new Vector() );
+    setMissingValue ( new ArrayList<String>() );
     if ( (MissingValue != null) && !MissingValue.equals("") ) {
         // Can have one or more values that should be interpreted as missing
         List<String>tokens = StringUtil.breakStringList(MissingValue, ",", 0);
@@ -817,7 +816,7 @@ throws InvalidCommandParameterException
     }
 
 	// InputStart
-	if ((InputStart != null) && !InputStart.equals("")) {
+	if ((InputStart != null) && !InputStart.isEmpty() && !InputStart.startsWith("${")) {
 		try {
 			__InputStart = DateTime.parse(InputStart);
 		} 
@@ -831,7 +830,7 @@ throws InvalidCommandParameterException
 	}
 
 	// InputEnd
-	if ((InputEnd != null) && !InputEnd.equals("")) {
+	if ((InputEnd != null) && !InputEnd.isEmpty() && !InputEnd.startsWith("${")) {
 		try {
 			__InputEnd = DateTime.parse(InputEnd);
 		} 
@@ -867,31 +866,31 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "Delimiter" );
-    valid_Vector.add ( "TreatConsecutiveDelimitersAsOne" );
-    valid_Vector.add ( "Comment" );
-    valid_Vector.add ( "SkipRows" );
-    valid_Vector.add ( "SkipRowsAfterComments" );
-    valid_Vector.add ( "ColumnNames" );
-    valid_Vector.add ( "DateTimeColumn" );
-    valid_Vector.add ( "DateTimeFormat" );
-    valid_Vector.add ( "DateColumn" );
-    valid_Vector.add ( "TimeColumn" );
-    valid_Vector.add ( "ValueColumn" );
-    valid_Vector.add ( "FlagColumn" );
-    valid_Vector.add ( "LocationID" );
-    valid_Vector.add ( "Provider" );
-    valid_Vector.add ( "DataType" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "Scenario" );
-    valid_Vector.add ( "Units" );
-    valid_Vector.add ( "MissingValue" );
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(23);
+    validList.add ( "InputFile" );
+    validList.add ( "Delimiter" );
+    validList.add ( "TreatConsecutiveDelimitersAsOne" );
+    validList.add ( "Comment" );
+    validList.add ( "SkipRows" );
+    validList.add ( "SkipRowsAfterComments" );
+    validList.add ( "ColumnNames" );
+    validList.add ( "DateTimeColumn" );
+    validList.add ( "DateTimeFormat" );
+    validList.add ( "DateColumn" );
+    validList.add ( "TimeColumn" );
+    validList.add ( "ValueColumn" );
+    validList.add ( "FlagColumn" );
+    validList.add ( "LocationID" );
+    validList.add ( "Provider" );
+    validList.add ( "DataType" );
+    validList.add ( "Interval" );
+    validList.add ( "Scenario" );
+    validList.add ( "Units" );
+    validList.add ( "MissingValue" );
+    validList.add ( "Alias" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -1263,8 +1262,8 @@ FC[] notation.
 protected List<String> readColumnNamesFromFile ( String inputFileFull, List<String> columnNames0, String delim,
     String commentChar, int[][] skipRows, int skipRowsAfterComments )
 throws IOException
-{   String routine = getClass().getName() + ".readColumnNamesFromFile";
-    List<String> columnNames = new Vector();
+{   String routine = getClass().getSimpleName() + ".readColumnNamesFromFile";
+    List<String> columnNames = new ArrayList<String>();
     BufferedReader in = null;
     Message.printStatus(2, routine, "Getting the column names from file \"" + inputFileFull + "\"" );
     in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
@@ -1409,9 +1408,9 @@ private List<TS> readTimeSeriesList ( String inputFileFull,
     DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, List<String> errorMessages )
 throws IOException
-{   String routine = getClass().getName() + ".readTimeSeriesList";
+{   String routine = getClass().getSimpleName() + ".readTimeSeriesList";
     // Allocate the list
-    List<TS> tslist = new Vector();
+    List<TS> tslist = new ArrayList<TS>();
     // Open the file
     BufferedReader in = null;
     in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
@@ -1950,7 +1949,7 @@ throws IOException, FileNotFoundException
     // FIXME SAM 2008-02-01 Need a way to assemble time series without reading the data, for discovery mode.
     TS[] ts = assembler.assemble();
     // Transfer to a Vector that adheres to the List interface...
-    List tslist = new Vector(ts.length);
+    List tslist = new ArrayList<TS>(ts.length);
     for ( int i = 0; i < ts.length; i++ ) {
         ts[i].setDataUnitsOriginal ( (String)Units_List.get(i) );
         ts[i].setDataUnits ( (String)Units_List.get(i) );
@@ -1992,17 +1991,29 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "ReadDelimitedFile_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
     int log_level = 3;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	    
     // Get and clear the status and clear the run log...
-    
-    CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+
     CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
@@ -2015,140 +2026,34 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String DateTimeFormat = parameters.getValue("DateTimeFormat");
 	String Alias = parameters.getValue("Alias");
 	String InputStart = parameters.getValue("InputStart");
+	if ( (InputStart == null) || InputStart.isEmpty() ) {
+		InputStart = "${InputStart}";
+	}
     String InputEnd = parameters.getValue("InputEnd");
+	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
+		InputEnd = "${InputEnd}";
+	}
     
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
-    if ( (InputStart != null) && (InputStart.length() != 0) ) {
-        try {
-            PropList request_params = new PropList ( "" );
-            request_params.set ( "DateTime", InputStart );
-            CommandProcessorRequestResultsBean bean = null;
-            try {
-                bean = processor.processRequest( "DateTime", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-    
-            PropList bean_PropList = bean.getResultsPropList();
-            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-            if ( prop_contents == null ) {
-                message = "Null value for InputStart DateTime(DateTime=" + InputStart + ") returned from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the specified date/time is valid." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {  InputStart_DateTime = (DateTime)prop_contents;
-            }
-        }
-        catch ( Exception e ) {
-            message = "InputStart \"" + InputStart + "\" is invalid.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time for the input start, " +
-                            "or InputStart for the global input start." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-    }
-    else {
-        // Get the global input start from the processor...
-        try {
-            Object o = processor.getPropContents ( "InputStart" );
-            if ( o != null ) {
-                InputStart_DateTime = (DateTime)o;
-            }
-        }
-        catch ( Exception e ) {
-            message = "Error requesting the global InputStart from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-    }
-    
-    if ( (InputEnd != null) && (InputEnd.length() != 0) ) {
-        try {
-            PropList request_params = new PropList ( "" );
-            request_params.set ( "DateTime", InputEnd );
-            CommandProcessorRequestResultsBean bean = null;
-            try {
-                bean = processor.processRequest( "DateTime", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting InputEnd DateTime(DateTime=" + InputEnd + ") from processor.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report problem to software support." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-
-            PropList bean_PropList = bean.getResultsPropList();
-            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-            if ( prop_contents == null ) {
-                message = "Null value for InputEnd DateTime(DateTime=" + InputEnd +  ") returned from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the end date/time is valid." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {  InputEnd_DateTime = (DateTime)prop_contents;
-            }
-        }
-        catch ( Exception e ) {
-            message = "InputEnd \"" + InputEnd + "\" is invalid.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time for the input end, " +
-                            "or InputEnd for the global input start." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-    }
-    else {
-        // Get from the processor...
-        try {
-            Object o = processor.getPropContents ( "InputEnd" );
-            if ( o != null ) {
-                InputEnd_DateTime = (DateTime)o;
-            }
-        }
-        catch ( Exception e ) {
-            message = "Error requesting the global InputEnd from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
-        }
-    }
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+	}
 
 	// Read the file.
     String InputFile_full = InputFile;
@@ -2163,17 +2068,29 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         
         if ( !IOUtil.fileReadable(InputFile_full) || !IOUtil.fileExists(InputFile_full)) {
-            message = "Delimited file \"" + InputFile_full + "\" is not found or accessible.";
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
-            status.addToLog(commandPhase,
-                new CommandLogRecord( CommandStatusType.FAILURE, message,
-                    "Verify that the file exists and is readable."));
-            throw new CommandException ( message );
+            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+                message = "Input file does not exist:  \"" + InputFile_full + "\".";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Verify that filename is correct and that the file exists - " +
+                        	"may be OK if file is created during processing." ) );
+            }
+            else if ( commandPhase == CommandPhaseType.RUN ) {
+                message = "Input file does not exist:  \"" + InputFile_full + "\".";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that filename is correct and that the file exists." ) );
+            }
         }
         
         // Read everything in the file (one time series or traces).
-        List<String> errorMessages = new Vector();
+        List<String> errorMessages = new ArrayList<String>();
         // TODO SAM 2011-03-11 Evaluate whether this should be more explicit
         // If any parameters refer to the column names, then the column names are expected to be in the file
         boolean readColumnNamesFromFile = false;

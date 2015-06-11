@@ -21,30 +21,30 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
 import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.TimeInterval;
 
+// TODO SAM 2015-06-10 Need to enable properties but some work is done in checkCommmandParameters that complicates things
 /**
 Editor for the ReadDelimitedFile() command.
 */
@@ -375,26 +375,6 @@ private void commitEdits() {
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable {
-	__browse_JButton = null;
-	__path_JButton = null;
-	__cancel_JButton = null;
-	__ok_JButton = null;
-	__command = null;
-	__working_dir = null;
-	__Alias_JTextField = null;
-	//__InputStart_JTextField = null;
-	//__InputEnd_JTextField = null;
-	__InputFile_JTextField = null;
-	__Command_JTextArea = null;
-
-	super.finalize();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -411,7 +391,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Read all the time series from a column-oriented delimited file, using " +
@@ -442,6 +422,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     JTabbedPane main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, main_JTabbedPane,
@@ -459,6 +441,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel (	"Delimited file to read:" ), 
 		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
+	//__InputFile_JTextField.setToolTipText("Specify the path to the input file or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(data_JPanel, __InputFile_JTextField,
 		1, yData, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -692,6 +675,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Input start:"), 
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data2_JPanel, __InputStart_JTextField,
         1, yData2, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -701,6 +685,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel ( "Input end:"), 
         0, ++yData2, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data2_JPanel, __InputEnd_JTextField,
         1, yData2, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

@@ -95,7 +95,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify an output file." ) );
 	}
-	else if ( !OutputFile.startsWith("${") ) {
+	else if ( OutputFile.indexOf("${") < 0 ) {
 		// Can't check if output file is specified with ${Property}
 	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );

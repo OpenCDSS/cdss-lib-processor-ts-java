@@ -95,7 +95,7 @@ throws InvalidCommandParameterException
 	// The existence of the file to remove is not checked during initialization
 	// because files may be created dynamically at runtime.
 	
-    if ( (InputFile != null) && !InputFile.isEmpty() && !InputFile.startsWith("${")) {
+    if ( (InputFile != null) && !InputFile.isEmpty() && (InputFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try { Object o = processor.getPropContents ( "WorkingDir" );
             if ( o != null ) {
@@ -158,7 +158,7 @@ throws InvalidCommandParameterException
                     message, "Specify an output file and/or property." ) );
         }
     }
-    else if ( !OutputFile.startsWith("${")){
+    else if ( OutputFile.indexOf("${") < 0 ){
         String working_dir = null;
         try { Object o = processor.getPropContents ( "WorkingDir" );
             if ( o != null ) {

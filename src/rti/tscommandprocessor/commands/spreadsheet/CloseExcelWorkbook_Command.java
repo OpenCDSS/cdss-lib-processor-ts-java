@@ -79,7 +79,7 @@ throws InvalidCommandParameterException
 	}
 	*/
 
-	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
         message = "The Excel output file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -87,7 +87,7 @@ throws InvalidCommandParameterException
                         message, "Specify an existing Excel output file." ) );
 	}
 	/** TODO SAM 2014-01-12 Evaluate whether to only do this check at run-time
-	else {
+	else if ( !OutputFile.indexOf("${") < 0 ) {
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, OutputFile) );
 			File f = new File ( adjusted_path );
@@ -114,7 +114,7 @@ throws InvalidCommandParameterException
 	*/
 
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(13);
+	List<String> validList = new ArrayList<String>(1);
     validList.add ( "OutputFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
@@ -145,24 +145,37 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException
-{	String routine = "WriteTableToExcel_Command.runCommand",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     
 	// Make sure the output file exists...
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
 	String OutputFile = parameters.getValue ( "OutputFile" );
 
 	String OutputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 	if ( (ExcelUtil.getOpenWorkbook(OutputFile_full) == null) && !IOUtil.fileExists(OutputFile_full) ) {
 		message += "\nThe Excel workbook file \"" + OutputFile_full + "\" is not open from a previous command and does not exist.";
 		++warning_count;

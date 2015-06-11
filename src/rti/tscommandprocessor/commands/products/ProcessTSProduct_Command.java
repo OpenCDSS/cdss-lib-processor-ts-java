@@ -159,7 +159,7 @@ throws InvalidCommandParameterException
                         message,
                         "Specify an output file for the product." ) );
 	}
-	else if ( (OutputFile != null) && !OutputFile.isEmpty() && !OutputFile.startsWith("${") ) {
+	else if ( (OutputFile != null) && !OutputFile.isEmpty() && (OutputFile.indexOf("${") < 0) ) {
 		String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			// Working directory is available so use it...

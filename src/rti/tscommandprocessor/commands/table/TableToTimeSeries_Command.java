@@ -519,7 +519,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify 1+ location ID column(s) values separated by commas or a single location column." ) );
     }
-    if ( (LocationID != null) && !LocationID.isEmpty() && !LocationID.startsWith("${") ) {
+    if ( (LocationID != null) && !LocationID.isEmpty() && (LocationID.indexOf("${") < 0) ) {
         // Can have one value that is re-used, or LocationID for each time series
         List<String>tokens = StringUtil.breakStringList(LocationID, ",", 0);
         if ( StringUtil.indexOfIgnoreCase(LocationID,_TC, 0) >= 0 ) {

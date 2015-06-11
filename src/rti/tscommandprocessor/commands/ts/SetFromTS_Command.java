@@ -127,7 +127,7 @@ throws InvalidCommandParameterException
             independent + "\".\n" + "Correct or Cancel.";
     }
     */
- 	if ( (SetStart != null) && !SetStart.equals("") && !SetStart.equalsIgnoreCase("OutputStart") && !SetStart.startsWith("${")){
+ 	if ( (SetStart != null) && !SetStart.isEmpty() && !SetStart.equalsIgnoreCase("OutputStart") && !SetStart.startsWith("${")){
 		try {	DateTime.parse(SetStart);
 		}
 		catch ( Exception e ) {
@@ -138,7 +138,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (SetEnd != null) && !SetEnd.equals("") && !SetEnd.equalsIgnoreCase("OutputEnd") && !SetEnd.startsWith("${")) {
+	if ( (SetEnd != null) && !SetEnd.isEmpty() && !SetEnd.equalsIgnoreCase("OutputEnd") && !SetEnd.startsWith("${")) {
 		try {	DateTime.parse( SetEnd);
 		}
 		catch ( Exception e ) {

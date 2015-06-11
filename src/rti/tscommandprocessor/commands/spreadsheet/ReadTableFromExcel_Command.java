@@ -136,7 +136,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
 	}
-	else if ( !InputFile.startsWith("${")){
+	else if ( InputFile.indexOf("${") < 0 ){
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
 			File f = new File ( adjusted_path );
@@ -775,7 +775,7 @@ CommandWarningException, CommandException
 	String ExcelTableName = parameters.getValue ( "ExcelTableName" );
 	String ExcelColumnNames = parameters.getValue ( "ExcelColumnNames" );
 	ExcelColumnNameRowType excelColumnNames = ExcelColumnNameRowType.COLUMN_N; // Default
-	if ( (ExcelColumnNames != null) & !ExcelColumnNames.isEmpty() ) {
+	if ( (ExcelColumnNames != null) && !ExcelColumnNames.isEmpty() ) {
 	    excelColumnNames = ExcelColumnNameRowType.valueOfIgnoreCase(ExcelColumnNames);  
 	}
     String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );

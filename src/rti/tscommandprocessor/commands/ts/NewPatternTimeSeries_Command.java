@@ -110,7 +110,7 @@ throws InvalidCommandParameterException
 				CommandStatusType.FAILURE, message,
 				"Provide a new time series identifier when defining the command."));
 	}
-	else  { //if ( !NewTSID.startsWith("${") ) {
+	else { // if ( NewTSID.indexOf("${") < 0 ) {
 		// TODO SAM 2015-06-03 ?Can only check if parameter does not use ${Property}
 		try {
             tsident = TSIdent.parseIdentifier( NewTSID );

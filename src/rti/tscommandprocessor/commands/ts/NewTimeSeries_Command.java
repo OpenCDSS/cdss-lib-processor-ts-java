@@ -94,7 +94,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a new time series identifier." ) );
 	}
-	else { // if ( !NewTSID.startsWith("${") ) {
+	else { // if ( NewTSID.indexOf("${") < 0 ) {
 		// TODO SAM 2015-06-03 ?Can only check if parameter does not use ${Property}
 		try { TSIdent tsident = TSIdent.parseIdentifier( NewTSID );
 			try { TimeInterval.parseInterval(tsident.getInterval());

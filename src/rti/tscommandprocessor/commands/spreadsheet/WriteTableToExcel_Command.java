@@ -150,7 +150,7 @@ throws InvalidCommandParameterException
                         message, "Specify an existing Excel output file." ) );
 	}
 	/** TODO SAM 2014-01-12 Evaluate whether to only do this check at run-time
-	else if ( !OutputFile.startsWith("${") ) {
+	else if ( OutputFile.indexOf("${") < 0 ) {
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, OutputFile) );
 			File f = new File ( adjusted_path );
@@ -425,7 +425,7 @@ throws InvalidCommandParameterException, CommandWarningException
     	// Should not happen
     }
     if ( clearStatus ) {
-		status.clearLog(CommandPhaseType.RUN);
+		status.clearLog(commandPhase);
 	}
     
     // Clear the output file

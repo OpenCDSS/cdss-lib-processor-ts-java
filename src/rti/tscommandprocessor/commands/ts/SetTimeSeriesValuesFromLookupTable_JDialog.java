@@ -20,17 +20,18 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSRegression;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -54,6 +55,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SetTimeSeriesValuesFromLookupTable_Command __command = null;
 private JTextArea __command_JTextArea=null;
+private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox	__InputTSID_JComboBox = null;
 private SimpleJComboBox __OutputTSID_JComboBox = null;
 private SimpleJComboBox __TableID_JComboBox = null;
@@ -73,6 +75,8 @@ private JTextField __SetEnd_JTextField = null;
 private JCheckBox __SetWindow_JCheckBox = null;
 private DateTime_JPanel __SetWindowStart_JPanel = null;
 private DateTime_JPanel __SetWindowEnd_JPanel = null;
+private JTextField __SetWindowStart_JTextField = null; // Used for properties
+private JTextField __SetWindowEnd_JTextField = null;
 // TODO SAM 2012-02-04 Might need flag for values outside the rating
 private boolean	__error_wait = false; // Is there an error to be cleared up?
 private boolean	__first_time = true;
@@ -134,10 +138,14 @@ private void checkGUIState()
         // Checked so enable the date panels
         __SetWindowStart_JPanel.setEnabled ( true );
         __SetWindowEnd_JPanel.setEnabled ( true );
+        __SetWindowStart_JTextField.setEnabled ( true );
+        __SetWindowEnd_JTextField.setEnabled ( true );
     }
     else {
         __SetWindowStart_JPanel.setEnabled ( false );
         __SetWindowEnd_JPanel.setEnabled ( false );
+        __SetWindowStart_JTextField.setEnabled ( false );
+        __SetWindowEnd_JTextField.setEnabled ( false );
     }
 }
 
@@ -237,11 +245,20 @@ private void checkInput ()
     if ( __SetWindow_JCheckBox.isSelected() ){
         String SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
         String SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
-        if ( SetWindowStart.length() > 0 ) {
+        if ( !SetWindowStart.isEmpty() ) {
             props.set ( "SetWindowStart", SetWindowStart );
         }
-        if ( SetWindowEnd.length() > 0 ) {
+        if ( !SetWindowEnd.isEmpty() ) {
             props.set ( "SetWindowEnd", SetWindowEnd );
+        }
+        // This will override the above
+        String SetWindowStart2 = __SetWindowStart_JTextField.getText().trim();
+        String SetWindowEnd2 = __SetWindowEnd_JTextField.getText().trim();
+        if ( !SetWindowStart2.isEmpty() ) {
+            props.set ( "SetWindowStart", SetWindowStart2 );
+        }
+        if ( !SetWindowEnd2.isEmpty() ) {
+            props.set ( "SetWindowEnd", SetWindowEnd2 );
         }
     }
 	try {
@@ -296,6 +313,14 @@ private void commitEdits ()
         String SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
         __command.setCommandParameter ( "SetWindowStart", SetWindowStart );
         __command.setCommandParameter ( "SetWindowEnd", SetWindowEnd );
+        String SetWindowStart2 = __SetWindowStart_JTextField.getText().trim();
+        String SetWindowEnd2 = __SetWindowEnd_JTextField.getText().trim();
+        if ( !SetWindowStart2.isEmpty() ) {
+        	__command.setCommandParameter ( "SetWindowStart", SetWindowStart2 );
+        }
+        if ( !SetWindowEnd2.isEmpty() ) {
+        	__command.setCommandParameter ( "SetWindowEnd", SetWindowEnd2 );
+        }
     }
 }
 
@@ -320,111 +345,144 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromLookupTable_Comm
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Set values in the output time series by using an input time series and lookup table." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>Currently the lookup table must contain data for only one input time series and the effective" +
-        " date is not checked.</b></html>." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Input time series:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for time series parameters
+    int yts = -1;
+    JPanel ts_JPanel = new JPanel();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Series", ts_JPanel );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+		"Select input and output time series.  The output time series period will not be automatically extended." ),
+		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL ), 
+        0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel("Input time series:"),
+		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+	__InputTSID_JComboBox.setToolTipText("Select an input time series TSID/alias from the list or specify with ${Property} notation");
 	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 		(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	__InputTSID_JComboBox.setData ( tsids );
 	__InputTSID_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __InputTSID_JComboBox,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, __InputTSID_JComboBox,
+		1, yts, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Output time series:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel("Output time series:"),
+        0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+    __OutputTSID_JComboBox.setToolTipText("Select an output time series TSID/alias from the list or specify with ${Property} notation");
     __OutputTSID_JComboBox.setData ( tsids );
     __OutputTSID_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutputTSID_JComboBox,
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, __OutputTSID_JComboBox,
+        1, yts, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    // Panel for lookup table parameters
+    int yTable = -1;
+    JPanel table_JPanel = new JPanel();
+    table_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Lookup Table", table_JPanel );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Lookup table ID:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+		"Specify the lookup table and configuration." ),
+		0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "<html><b>Currently the lookup table must contain data for only one input time series and the effective" +
+        " date is not checked.</b></html>." ),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JSeparator (SwingConstants.HORIZONTAL ), 
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Lookup table ID:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the lookup table ID for output or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - lookup table."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, __TableID_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Required - lookup table."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table TSID column:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table TSID column:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableTSIDColumn_JTextField = new JTextField ( 10 );
     __TableTSIDColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __TableTSIDColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Future Feature - column name for input time series TSID."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, __TableTSIDColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Future Feature - column name for input time series TSID."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __TableTSIDColumn_JTextField.setEnabled(false);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Format of TSID:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel("Format of TSID:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
     __TableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __TableTSIDFormat_JTextField.addKeyListener ( this );
     __TableTSIDFormat_JTextField.getDocument().addDocumentListener(this);
     __TableTSIDFormat_JTextField.setToolTipText("%L for location, %T for data type.");
-    JGUIUtil.addComponent(main_JPanel, __TableTSIDFormat_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Future Feature - use %L for location, etc. (default=alias or TSID)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(table_JPanel, __TableTSIDFormat_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Future Feature - use %L for location, etc. (default=alias or TSID)."),
+        3, yTable, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     __TableTSIDFormat_JTextField.setEnabled(false);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Column for input value:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Column for input value:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableValue1Column_JTextField = new JTextField ( "", 20 );
-    JGUIUtil.addComponent(main_JPanel, __TableValue1Column_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, __TableValue1Column_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __TableValue1Column_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Required - column for input time series values."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Sort input?:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Sort input?:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SortInput_JComboBox = new SimpleJComboBox ( false );
     __SortInput_JComboBox.addItem ( "" );
     __SortInput_JComboBox.addItem ( __command._False );
     __SortInput_JComboBox.addItem ( __command._True );
     __SortInput_JComboBox.select ( 0 );
     __SortInput_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SortInput_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, __SortInput_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Optional - sort input table (default=" + __command._False + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Column for output value:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Column for output value:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableValue2Column_JTextField = new JTextField ( "", 20 );
-    JGUIUtil.addComponent(main_JPanel, __TableValue2Column_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, __TableValue2Column_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __TableValue2Column_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Required - column for output time series values."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Column for effective date:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Column for effective date:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __EffectiveDateColumn_JTextField = new JTextField ( "", 10 );
-    JGUIUtil.addComponent(main_JPanel, __EffectiveDateColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, __EffectiveDateColumn_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __EffectiveDateColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Future Feature - column for lookup data effective date."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __EffectiveDateColumn_JTextField.setEnabled(false);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Lookup method:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Lookup method:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LookupMethod_JComboBox = new SimpleJComboBox ( false );
     __LookupMethod_JComboBox.addItem ( "" );
     __LookupMethod_JComboBox.addItem ( "" + LookupMethodType.INTERPOLATE );
@@ -432,14 +490,14 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromLookupTable_Comm
     __LookupMethod_JComboBox.addItem ( "" + LookupMethodType.NEXT_VALUE );
     __LookupMethod_JComboBox.select ( 0 );
     __LookupMethod_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __LookupMethod_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, __LookupMethod_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Optional - how to lookup values (blank=" + LookupMethodType.INTERPOLATE + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Out of range lookup method:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Out of range lookup method:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutOfRangeLookupMethod_JComboBox = new SimpleJComboBox ( false );
     __OutOfRangeLookupMethod_JComboBox.addItem ( "" );
     __OutOfRangeLookupMethod_JComboBox.addItem ( "" + OutOfRangeLookupMethodType.EXTRAPOLATE );
@@ -447,14 +505,14 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromLookupTable_Comm
     __OutOfRangeLookupMethod_JComboBox.addItem ( "" + OutOfRangeLookupMethodType.USE_END_VALUE );
     __OutOfRangeLookupMethod_JComboBox.select ( 0 );
     __OutOfRangeLookupMethod_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutOfRangeLookupMethod_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, __OutOfRangeLookupMethod_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Optional - how to lookup values outside table values (default=" + OutOfRangeLookupMethodType.SET_MISSING  + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Out of range notification:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Out of range notification:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutOfRangeNotification_JComboBox = new SimpleJComboBox ( false );
     __OutOfRangeNotification_JComboBox.addItem ( "" );
     __OutOfRangeNotification_JComboBox.addItem ( "" + __command._Ignore );
@@ -462,61 +520,78 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromLookupTable_Comm
     __OutOfRangeNotification_JComboBox.addItem ( "" + __command._Fail );
     __OutOfRangeNotification_JComboBox.select ( 0 );
     __OutOfRangeNotification_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutOfRangeNotification_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, __OutOfRangeNotification_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Optional - how to notify about out of range values (default=" + __command._Ignore + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Transformation:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Transformation_JComboBox = new SimpleJComboBox ( false );
     __Transformation_JComboBox.addItem ( "" );
     __Transformation_JComboBox.addItem ( "" + DataTransformationType.NONE );
     __Transformation_JComboBox.addItem ( "" + DataTransformationType.LOG );
     __Transformation_JComboBox.select ( 0 );
     __Transformation_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Transformation_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, __Transformation_JComboBox,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Optional - how to transform data if interpolating (blank=" + DataTransformationType.NONE + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value to use when log and <= 0:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Value to use when log and <= 0:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LEZeroLogValue_JTextField = new JTextField ( 10 );
     __LEZeroLogValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __LEZeroLogValue_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(table_JPanel, __LEZeroLogValue_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel(
         "Optional - value to substitute when original is <= 0 and log transform (default=" +
         TSRegression.getDefaultLEZeroLogValue() + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set start:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SetStart_JTextField = new JTextField ( "", 20 );
-    __SetStart_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - set start date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set end:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for period and window parameters
+    int yTime = -1;
+    JPanel time_JPanel = new JPanel();
+    time_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Period and Window", time_JPanel );
+    
+    JGUIUtil.addComponent(time_JPanel, new JLabel (
+        "Specify the period to set data.  The window also can be specified to process only part of each year." ),
+        0, ++yTime, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel (
+        "The window can be specified using the choices, or processor ${Property}." ),
+        0, ++yTime, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JSeparator (SwingConstants.HORIZONTAL ), 
+        0, ++yTime, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Set start:" ),
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetStart_JTextField = new JTextField ( "", 20 );
+    __SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation");
+    __SetStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(time_JPanel, __SetStart_JTextField,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel(
+        "Optional - set start date/time (default=full time series period)."),
+        3, yTime, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Set end:" ), 
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetEnd_JTextField = new JTextField ( "", 20 );
+    __SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
     __SetEnd_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(time_JPanel, __SetEnd_JTextField,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel(
         "Optional - set end date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yTime, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __SetWindow_JCheckBox = new JCheckBox ( "Set window:", false );
     __SetWindow_JCheckBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SetWindow_JCheckBox, 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(time_JPanel, __SetWindow_JCheckBox, 
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     JPanel setWindow_JPanel = new JPanel();
     setWindow_JPanel.setLayout(new GridBagLayout());
     __SetWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.HOUR, null );
@@ -530,11 +605,31 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromLookupTable_Comm
     __SetWindowEnd_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(setWindow_JPanel, __SetWindowEnd_JPanel,
         4, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, setWindow_JPanel,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(time_JPanel, setWindow_JPanel,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel(
         "Optional - set window within input year (default=full year)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        3, yTime, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(time_JPanel,new JLabel( "Set window start ${Property}:"),
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetWindowStart_JTextField = new JTextField ( "", 20 );
+    __SetWindowStart_JTextField.setToolTipText("Specify the output window start ${Property} - will override the above.");
+    __SetWindowStart_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(time_JPanel, __SetWindowStart_JTextField,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Optional (default=full year)."),
+        3, yTime, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(time_JPanel,new JLabel("Set window end ${Property}:"),
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetWindowEnd_JTextField = new JTextField ( "", 20 );
+    __SetWindowEnd_JTextField.setToolTipText("Specify the set window end ${Property} - will override the above.");
+    __SetWindowEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(time_JPanel, __SetWindowEnd_JTextField,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Optional (default=full year)."),
+        3, yTime, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -606,7 +701,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String InputTSID = "";
 	String OutputTSID = "";
     String TableID = "";
@@ -786,31 +881,41 @@ private void refresh ()
         if ( SetEnd != null ) {
             __SetEnd_JTextField.setText ( SetEnd );
         }
-        if ( (SetWindowStart != null) && (SetWindowStart.length() > 0) ) {
-            try {
-                // Add year because it is not part of the parameter value...
-                DateTime SetWindowStart_DateTime = DateTime.parse ( "0000-" + SetWindowStart );
-                Message.printStatus(2, routine, "Setting window start to " + SetWindowStart_DateTime );
-                __SetWindowStart_JPanel.setDateTime ( SetWindowStart_DateTime );
-            }
-            catch ( Exception e ) {
-                Message.printWarning( 1, routine, "SetWindowStart (" + SetWindowStart +
-                        ") is not a valid date/time." );
-            }
+        if ( (SetWindowStart != null) && !SetWindowStart.isEmpty() ) {
+        	if ( SetWindowStart.indexOf("${") >= 0 ) {
+        		__SetWindowStart_JTextField.setText ( SetWindowStart );
+        	}
+        	else {
+	            try {
+	                // Add year because it is not part of the parameter value...
+	                DateTime SetWindowStart_DateTime = DateTime.parse ( "0000-" + SetWindowStart );
+	                Message.printStatus(2, routine, "Setting window start to " + SetWindowStart_DateTime );
+	                __SetWindowStart_JPanel.setDateTime ( SetWindowStart_DateTime );
+	            }
+	            catch ( Exception e ) {
+	                Message.printWarning( 1, routine, "SetWindowStart (" + SetWindowStart +
+	                        ") is not a valid date/time." );
+	            }
+        	}
         }
-        if ( (SetWindowEnd != null) && (SetWindowEnd.length() > 0) ) {
-            try {
-                // Add year because it is not part of the parameter value...
-                DateTime SetWindowEnd_DateTime = DateTime.parse ( "0000-" + SetWindowEnd );
-                Message.printStatus(2, routine, "Setting window end to " + SetWindowEnd_DateTime );
-                __SetWindowEnd_JPanel.setDateTime ( SetWindowEnd_DateTime );
-            }
-            catch ( Exception e ) {
-                Message.printWarning( 1, routine, "SetWindowEnd (" + SetWindowEnd + ") is not a valid date/time." );
-            }
+        if ( (SetWindowEnd != null) && !SetWindowEnd.isEmpty() ) {
+        	if ( SetWindowEnd.indexOf("${") >= 0 ) {
+        		__SetWindowEnd_JTextField.setText ( SetWindowEnd );
+        	}
+        	else {
+	            try {
+	                // Add year because it is not part of the parameter value...
+	                DateTime SetWindowEnd_DateTime = DateTime.parse ( "0000-" + SetWindowEnd );
+	                Message.printStatus(2, routine, "Setting window end to " + SetWindowEnd_DateTime );
+	                __SetWindowEnd_JPanel.setDateTime ( SetWindowEnd_DateTime );
+	            }
+	            catch ( Exception e ) {
+	                Message.printWarning( 1, routine, "SetWindowEnd (" + SetWindowEnd + ") is not a valid date/time." );
+	            }
+        	}
         }
-        if ( (SetWindowStart != null) && (SetWindowStart.length() != 0) &&
-            (SetWindowEnd != null) && (SetWindowEnd.length() != 0)) {
+        if ( (SetWindowStart != null) && !SetWindowStart.isEmpty() &&
+            (SetWindowEnd != null) && !SetWindowEnd.isEmpty() ) {
             __SetWindow_JCheckBox.setSelected ( true );
         }
         else {
@@ -855,6 +960,14 @@ private void refresh ()
     if ( __SetWindow_JCheckBox.isSelected() ) {
         SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
         SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
+        String SetWindowStart2 = __SetWindowStart_JTextField.getText().trim();
+        String SetWindowEnd2 = __SetWindowEnd_JTextField.getText().trim();
+        if ( (SetWindowStart2 != null) && !SetWindowStart2.isEmpty() ) {
+        	SetWindowStart = SetWindowStart2;
+        }
+        if ( (SetWindowEnd2 != null) && !SetWindowEnd2.isEmpty() ) {
+        	SetWindowEnd = SetWindowEnd2;
+        }
         props.add ( "SetWindowStart=" + SetWindowStart );
         props.add ( "SetWindowEnd=" + SetWindowEnd );
     }

@@ -10,7 +10,6 @@ import java.util.List;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil_LookupTimeSeriesFromTable;
-
 import RTi.Util.Math.DataTransformationType;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -101,7 +100,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	if ( (InputTSID == null) || InputTSID.equals("") ) {
+	if ( (InputTSID == null) || InputTSID.isEmpty() ) {
         message = "The time series identifier for the input time series must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -109,7 +108,7 @@ throws InvalidCommandParameterException
             CommandStatusType.FAILURE, message,
             "Provide a time series identifier when defining the command."));
 	}
-    if ( (OutputTSID == null) || OutputTSID.equals("") ) {
+    if ( (OutputTSID == null) || OutputTSID.isEmpty() ) {
         message = "The time series identifier for the output time series must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -117,11 +116,11 @@ throws InvalidCommandParameterException
             CommandStatusType.FAILURE, message,
             "Provide a time series identifier when defining the command."));
     }
-    if ( (TableID == null) || TableID.equals("") ) {
-        message = "The table identifier must be specified.";
+    if ( (TableID == null) || TableID.isEmpty() ) {
+        message = "The lookup table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Provide the identifier for the table to process." ) );
+            message, "Provide the identifier for the lookup table." ) );
     }
     /* Not required
     if ( (TableTSIDColumn == null) || TableTSIDColumn.equals("") ) {
@@ -132,14 +131,14 @@ throws InvalidCommandParameterException
     }
     */
     
-    if ( (TableValue1Column == null) || TableValue1Column.equals("") ) {
+    if ( (TableValue1Column == null) || TableValue1Column.isEmpty() ) {
         message = "The column for the input values must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message,
             "Specify a column for the input values."));
     }
-    if ( (SortInput != null) && SortInput.equals("") &&
+    if ( (SortInput != null) && SortInput.isEmpty() &&
         !SortInput.equalsIgnoreCase(_False) &&
         !SortInput.equalsIgnoreCase(_True) ) {
         message = "The value for SortInput (" + SortInput + ") is invalid.";
@@ -150,14 +149,14 @@ throws InvalidCommandParameterException
             "Specify SortInput as " + _False + " (default), or " + _True + "."));
     }
     
-    if ( (TableValue2Column == null) || TableValue2Column.equals("") ) {
+    if ( (TableValue2Column == null) || TableValue2Column.isEmpty() ) {
         message = "The column for the output values must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message,
             "Specify a column for the output values."));
     }
-    if ( (LookupMethod != null) && LookupMethod.equals("") &&
+    if ( (LookupMethod != null) && !LookupMethod.isEmpty() &&
         !LookupMethod.equalsIgnoreCase(""+LookupMethodType.INTERPOLATE) &&
         !LookupMethod.equalsIgnoreCase(""+LookupMethodType.NEXT_VALUE) &&
         !LookupMethod.equalsIgnoreCase(""+LookupMethodType.PREVIOUS_VALUE)) {
@@ -169,7 +168,7 @@ throws InvalidCommandParameterException
             "Specify LookupMethod as " + LookupMethodType.INTERPOLATE + " (default), " +
             LookupMethodType.NEXT_VALUE + ", or " + LookupMethodType.PREVIOUS_VALUE + "."));
     }
-    if ( (OutOfRangeLookupMethod != null) && OutOfRangeLookupMethod.equals("") &&
+    if ( (OutOfRangeLookupMethod != null) && !OutOfRangeLookupMethod.isEmpty() &&
         !OutOfRangeLookupMethod.equalsIgnoreCase(""+OutOfRangeLookupMethodType.EXTRAPOLATE) &&
         !OutOfRangeLookupMethod.equalsIgnoreCase(""+OutOfRangeLookupMethodType.SET_MISSING) &&
         !OutOfRangeLookupMethod.equalsIgnoreCase(""+OutOfRangeLookupMethodType.USE_END_VALUE)) {
@@ -182,7 +181,7 @@ throws InvalidCommandParameterException
             OutOfRangeLookupMethodType.SET_MISSING + "(default), or " +
             OutOfRangeLookupMethodType.USE_END_VALUE + "."));
     }
-    if ( (OutOfRangeNotification != null) && OutOfRangeNotification.equals("") &&
+    if ( (OutOfRangeNotification != null) && !OutOfRangeNotification.isEmpty() &&
         !OutOfRangeNotification.equalsIgnoreCase(_Ignore) &&
         !OutOfRangeNotification.equalsIgnoreCase(_Warn) &&
         !OutOfRangeNotification.equalsIgnoreCase(_Fail)) {
@@ -207,14 +206,14 @@ throws InvalidCommandParameterException
         }
     }
     // Make sure LEZeroLogValue, if given is a valid double.
-    if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") && !StringUtil.isDouble( LEZeroLogValue ) ) {
+    if ( (LEZeroLogValue != null) && !LEZeroLogValue.isEmpty() && !StringUtil.isDouble( LEZeroLogValue ) ) {
         message = "The <= zero log value (" + LEZeroLogValue + ") is not a number.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the <= log value as a number." ) );
     }
-    if ( (SetStart != null) && !SetStart.equals("") &&
+    if ( (SetStart != null) && !SetStart.isEmpty() && (SetStart.indexOf("${") < 0) &&
         !SetStart.equalsIgnoreCase("OutputStart") && !SetStart.equalsIgnoreCase("OutputEnd") ) {
         try {
             DateTime.parse(SetStart);
@@ -227,7 +226,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         }
     }
-    if ( (SetEnd != null) && !SetEnd.equals("") &&
+    if ( (SetEnd != null) && !SetEnd.equals("") && (SetEnd.indexOf("${") < 0) &&
         !SetEnd.equalsIgnoreCase("OutputStart") && !SetEnd.equalsIgnoreCase("OutputEnd") ) {
         try {
             DateTime.parse( SetEnd );
@@ -240,7 +239,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         }
     }
-    if ( (SetWindowStart != null) && !SetWindowStart.equals("") ) {
+    if ( (SetWindowStart != null) && !SetWindowStart.isEmpty() && (SetWindowStart.indexOf("${") < 0) ) {
         String analysisWindowStart = "" + __SET_WINDOW_YEAR + "-" + SetWindowStart;
         try {
             DateTime.parse( analysisWindowStart );
@@ -255,7 +254,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (SetWindowEnd != null) && !SetWindowEnd.equals("") ) {
+    if ( (SetWindowEnd != null) && !SetWindowEnd.equals("") && (SetWindowEnd.indexOf("${") < 0) ) {
         String setWindowEnd = "" + __SET_WINDOW_YEAR + "-" + SetWindowEnd;
         try {
             DateTime.parse( setWindowEnd );
@@ -359,11 +358,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	String InputTSID = parameters.getValue ( "InputTSID" );
+    if ( (InputTSID != null) && !InputTSID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && InputTSID.indexOf("${") >= 0 ) {
+    	InputTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, InputTSID);
+    }
 	String OutputTSID = parameters.getValue ( "OutputTSID" );
+    if ( (OutputTSID != null) && !OutputTSID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && OutputTSID.indexOf("${") >= 0 ) {
+    	OutputTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputTSID);
+    }
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+    	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
     //String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     //String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TableValue1Column = parameters.getValue ( "TableValue1Column" );
@@ -404,17 +424,36 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String SetStart = parameters.getValue ( "SetStart" );
     String SetEnd = parameters.getValue ( "SetEnd" );
     String SetWindowStart = parameters.getValue ( "SetWindowStart" );
+    if ( (SetWindowStart != null) && !SetWindowStart.isEmpty() &&
+    	(commandPhase == CommandPhaseType.RUN) && SetWindowStart.indexOf("${") >= 0 ) {
+    	SetWindowStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SetWindowStart);
+    }
     String SetWindowEnd = parameters.getValue ( "SetWindowEnd" );
+    if ( (SetWindowEnd != null) && !SetWindowEnd.isEmpty() &&
+    	(commandPhase == CommandPhaseType.RUN) && SetWindowEnd.indexOf("${") >= 0 ) {
+    	SetWindowEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SetWindowEnd);
+    }
 	
     // Get the analysis period
-    WarningCount warningCount = new WarningCount();
-    DateTimeRange SetStartAndEnd = TSCommandProcessorUtil.getOutputPeriodForCommand (
-        this, commandPhase, "SetStart", SetStart, "SetEnd", SetEnd,
-        false,
-        log_level, command_tag, warning_level, warningCount );
-    warning_count += warningCount.getCount();
-    DateTime SetStart_DateTime = SetStartAndEnd.getStart();
-    DateTime SetEnd_DateTime = SetStartAndEnd.getEnd();
+    DateTime SetStart_DateTime = null;
+    DateTime SetEnd_DateTime = null;
+    
+	try {
+		SetStart_DateTime = TSCommandProcessorUtil.getDateTime ( SetStart, "SetStart", processor,
+			status, warning_level, command_tag );
+	}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
+	}
+	try {
+		SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor,
+			status, warning_level, command_tag );
+	}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
+	}
     
     DateTime SetWindowStart_DateTime = null;
     if ( (SetWindowStart != null) && (SetWindowStart.length() > 0) ) {

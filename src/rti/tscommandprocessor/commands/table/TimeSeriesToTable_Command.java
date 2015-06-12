@@ -442,7 +442,7 @@ Run the command.
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;

@@ -322,8 +322,12 @@ private void commitEdits ()
         __command.setCommandParameter ( "OutputWindowEnd", OutputWindowEnd );
         String OutputWindowStart2 = __OutputWindowStart_JTextField.getText().trim();
         String OutputWindowEnd2 = __OutputWindowEnd_JTextField.getText().trim();
-        __command.setCommandParameter ( "OutputWindowStart", OutputWindowStart2 );
-        __command.setCommandParameter ( "OutputWindowEnd", OutputWindowEnd2 );
+        if ( !OutputWindowStart2.isEmpty() ) {
+        	__command.setCommandParameter ( "OutputWindowStart", OutputWindowStart2 );
+        }
+        if ( !OutputWindowEnd2.isEmpty() ) {
+        	__command.setCommandParameter ( "OutputWindowEnd", OutputWindowEnd2 );
+        }
     }
     else {
         __command.setCommandParameter ( "OutputWindowStart", "" );

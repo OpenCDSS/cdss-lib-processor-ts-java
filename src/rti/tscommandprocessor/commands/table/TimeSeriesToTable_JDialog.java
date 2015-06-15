@@ -256,20 +256,27 @@ private void checkInput ()
     if ( __OutputWindow_JCheckBox.isSelected() ){
         String OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();
         String OutputWindowEnd = __OutputWindowEnd_JPanel.toString(false,true).trim();
-        if ( !OutputWindowStart.isEmpty() ) {
-            props.set ( "OutputWindowStart", OutputWindowStart );
+        // 99 is used for month if not specified - don't want that in the parameters
+        if ( OutputWindowStart.startsWith("99") ) {
+            OutputWindowStart = "";
         }
-        if ( !OutputWindowEnd.isEmpty() ) {
-            props.set ( "OutputWindowEnd", OutputWindowEnd );
+        if ( OutputWindowEnd.startsWith("99") ) {
+            OutputWindowEnd = "";
         }
         // This will override the above
         String OutputWindowStart2 = __OutputWindowStart_JTextField.getText().trim();
         String OutputWindowEnd2 = __OutputWindowEnd_JTextField.getText().trim();
         if ( !OutputWindowStart2.isEmpty() ) {
-            props.set ( "OutputWindowStart", OutputWindowStart2 );
+            OutputWindowStart = OutputWindowStart2;
         }
         if ( !OutputWindowEnd2.isEmpty() ) {
-            props.set ( "OutputWindowEnd", OutputWindowEnd2 );
+            OutputWindowEnd = OutputWindowEnd2;
+        }
+        if ( !OutputWindowStart.isEmpty() ) {
+            props.set ( "OutputWindowStart", OutputWindowStart );
+        }
+        if ( OutputWindowEnd.isEmpty() ) {
+            props.set ( "OutputWindowEnd", OutputWindowEnd );
         }
     }
     try {
@@ -318,20 +325,27 @@ private void commitEdits ()
     if ( __OutputWindow_JCheckBox.isSelected() ){
         String OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();
         String OutputWindowEnd = __OutputWindowEnd_JPanel.toString(false,true).trim();
-        __command.setCommandParameter ( "OutputWindowStart", OutputWindowStart );
-        __command.setCommandParameter ( "OutputWindowEnd", OutputWindowEnd );
+        if ( OutputWindowStart.startsWith("99") ) {
+            OutputWindowStart = "";
+        }
+        if ( OutputWindowEnd.startsWith("99") ) {
+            OutputWindowEnd = "";
+        }
         String OutputWindowStart2 = __OutputWindowStart_JTextField.getText().trim();
         String OutputWindowEnd2 = __OutputWindowEnd_JTextField.getText().trim();
         if ( !OutputWindowStart2.isEmpty() ) {
-        	__command.setCommandParameter ( "OutputWindowStart", OutputWindowStart2 );
+        	OutputWindowStart = OutputWindowStart2;
         }
         if ( !OutputWindowEnd2.isEmpty() ) {
-        	__command.setCommandParameter ( "OutputWindowEnd", OutputWindowEnd2 );
+        	OutputWindowEnd = OutputWindowEnd2;
         }
+        __command.setCommandParameter ( "OutputWindowStart", OutputWindowStart );
+        __command.setCommandParameter ( "OutputWindowEnd", OutputWindowEnd );
     }
     else {
-        __command.setCommandParameter ( "OutputWindowStart", "" );
-        __command.setCommandParameter ( "OutputWindowEnd", "" );
+    	// Clear the properties because they may have been set during editing but should not be propagated
+    	__command.getCommandParameters().unSet ( "OutputWindowStart" );
+    	__command.getCommandParameters().unSet ( "OutputWindowEnd" );
     }
 }
 
@@ -578,6 +592,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
 	// Refresh the contents...
     checkGUIState();
 	refresh ();
+	checkGUIState(); // To make sure output window is set up
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -874,7 +889,15 @@ private void refresh ()
     props.add ( "IfTableNotFound=" + IfTableNotFound );
     if ( __OutputWindow_JCheckBox.isSelected() ) {
         OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();
+        if ( OutputWindowStart.startsWith("99") ) {
+        	// 99 is used as placeholder when month is not set... artifact of setting choices to blank during editing
+        	OutputWindowStart = "";
+        }
         OutputWindowEnd = __OutputWindowEnd_JPanel.toString(false,true).trim();
+        if ( OutputWindowEnd.startsWith("99") ) {
+        	// 99 is used as placeholder when month is not set... artifact of setting choices to blank during editing
+        	OutputWindowEnd = "";
+        }
         String OutputWindowStart2 = __OutputWindowStart_JTextField.getText().trim();
         String OutputWindowEnd2 = __OutputWindowEnd_JTextField.getText().trim();
         if ( (OutputWindowStart2 != null) && !OutputWindowStart2.isEmpty() ) {

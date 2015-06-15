@@ -694,9 +694,10 @@ CommandWarningException, CommandException
                 message = "OutputWindowStart \"" + OutputWindowStart +
                     "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
                 Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(
-                command_tag,++warning_count), routine, message );
-                throw new InvalidCommandParameterException ( message );
+                	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the OutputWindowStart parameter is properly formatted." ) );
             }
         }
         if ( (OutputWindowEnd != null) && !OutputWindowEnd.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
@@ -709,9 +710,10 @@ CommandWarningException, CommandException
                 message = "OutputWindowEnd \"" + OutputWindowEnd +
                     "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
                 Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(
-                command_tag,++warning_count), routine, message );
-                throw new InvalidCommandParameterException ( message );
+                	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the OutputWindowEnd parameter is properly formatted." ) );
             }
         }
     	

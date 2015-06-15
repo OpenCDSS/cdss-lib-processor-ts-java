@@ -278,9 +278,8 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "Scale_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -302,7 +301,7 @@ CommandWarningException, CommandException
     	// Should not happen
     }
     if ( clearStatus ) {
-		status.clearLog(CommandPhaseType.RUN);
+		status.clearLog(commandPhase);
 	}
 	
 	PropList parameters = getCommandParameters();

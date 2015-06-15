@@ -354,7 +354,7 @@ command could produce some results).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "WriteTimeSeriesToExcel_Command.runCommand",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand",message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;

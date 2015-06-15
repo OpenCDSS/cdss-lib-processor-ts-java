@@ -197,7 +197,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     __main_JTabbedPane.addTab ( "List", list_JPanel );
     
     JGUIUtil.addComponent(list_JPanel, new JLabel (
-        "The for loop can iterate over a list of values, separated by commas."),
+        "The for loop can iterate over a list of values, separated by commas.  Currently the values are treated as strings."),
         0, ++yList, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yList, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -344,7 +344,7 @@ private void refresh ()
             __List_JTextArea.setText( List );
             __main_JTabbedPane.setSelectedIndex(0);
         }
-        if ( TableID == null ) {
+        if ( (TableID == null) || TableID.isEmpty() ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
         }

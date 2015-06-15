@@ -360,13 +360,15 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     yTs = CommandEditorUtil.addTSListToEditorDialogPanel ( this, ts_JPanel, __TSList_JComboBox, yTs );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTs = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTs );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTs = CommandEditorUtil.addTSIDToEditorDialogPanel (
@@ -387,6 +389,7 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Set start:" ),
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetStart_JTextField = new JTextField ( "", 20 );
+    __SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation");
     __SetStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ts_JPanel, __SetStart_JTextField,
         1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -397,6 +400,7 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Set end:" ), 
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetEnd_JTextField = new JTextField ( "", 20 );
+    __SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
     __SetEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ts_JPanel, __SetEnd_JTextField,
         1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -447,7 +451,8 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table ID:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );

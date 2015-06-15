@@ -25,13 +25,11 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.WarningCount;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.LookupMethodType;
 import RTi.Util.Table.OutOfRangeLookupMethodType;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.DateTimeRange;
 import RTi.Util.Time.DateTimeWindow;
 
 /**
@@ -463,10 +461,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         catch ( Exception e ) {
             message = "SetWindowStart \"" + SetWindowStart + "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-            throw new InvalidCommandParameterException ( message );
+            	Message.printWarning ( warning_level,
+            		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message);
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the SetWindowStart parameter is properly formatted." ) );
         }
     }
     DateTime SetWindowEnd_DateTime = null;
@@ -479,9 +478,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         catch ( Exception e ) {
             message = "SetWindowEnd \"" + SetWindowEnd + "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
             Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-            throw new InvalidCommandParameterException ( message );
+        		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the SetWindowEnd parameter is properly formatted." ) );
         }
     }
 

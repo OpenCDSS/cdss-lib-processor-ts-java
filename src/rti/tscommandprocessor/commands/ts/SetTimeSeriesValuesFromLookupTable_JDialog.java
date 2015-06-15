@@ -245,20 +245,27 @@ private void checkInput ()
     if ( __SetWindow_JCheckBox.isSelected() ){
         String SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
         String SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
-        if ( !SetWindowStart.isEmpty() ) {
-            props.set ( "SetWindowStart", SetWindowStart );
+        // 99 is used for month if not specified - don't want that in the parameters
+        if ( SetWindowStart.startsWith("99") ) {
+            SetWindowStart = "";
         }
-        if ( !SetWindowEnd.isEmpty() ) {
-            props.set ( "SetWindowEnd", SetWindowEnd );
+        if ( SetWindowEnd.startsWith("99") ) {
+            SetWindowEnd = "";
         }
         // This will override the above
         String SetWindowStart2 = __SetWindowStart_JTextField.getText().trim();
         String SetWindowEnd2 = __SetWindowEnd_JTextField.getText().trim();
         if ( !SetWindowStart2.isEmpty() ) {
-            props.set ( "SetWindowStart", SetWindowStart2 );
+            SetWindowStart = SetWindowStart2;
         }
         if ( !SetWindowEnd2.isEmpty() ) {
-            props.set ( "SetWindowEnd", SetWindowEnd2 );
+            SetWindowEnd = SetWindowEnd2;
+        }
+        if ( !SetWindowStart.isEmpty() ) {
+            props.set ( "SetWindowStart", SetWindowStart );
+        }
+        if ( SetWindowEnd.isEmpty() ) {
+            props.set ( "SetWindowEnd", SetWindowEnd );
         }
     }
 	try {
@@ -311,16 +318,27 @@ private void commitEdits ()
     if ( __SetWindow_JCheckBox.isSelected() ){
         String SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
         String SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
-        __command.setCommandParameter ( "SetWindowStart", SetWindowStart );
-        __command.setCommandParameter ( "SetWindowEnd", SetWindowEnd );
+        if ( SetWindowStart.startsWith("99") ) {
+            SetWindowStart = "";
+        }
+        if ( SetWindowEnd.startsWith("99") ) {
+            SetWindowEnd = "";
+        }
         String SetWindowStart2 = __SetWindowStart_JTextField.getText().trim();
         String SetWindowEnd2 = __SetWindowEnd_JTextField.getText().trim();
         if ( !SetWindowStart2.isEmpty() ) {
-        	__command.setCommandParameter ( "SetWindowStart", SetWindowStart2 );
+        	SetWindowStart = SetWindowStart2;
         }
         if ( !SetWindowEnd2.isEmpty() ) {
-        	__command.setCommandParameter ( "SetWindowEnd", SetWindowEnd2 );
+        	SetWindowEnd = SetWindowEnd2;
         }
+        __command.setCommandParameter ( "SetWindowStart", SetWindowStart );
+        __command.setCommandParameter ( "SetWindowEnd", SetWindowEnd );
+    }
+    else {
+    	// Clear the properties because they may have been set during editing but should not be propagated
+    	__command.getCommandParameters().unSet ( "SetWindowStart" );
+    	__command.getCommandParameters().unSet ( "SetWindowEnd" );
     }
 }
 
@@ -594,13 +612,13 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromLookupTable_Comm
         0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     JPanel setWindow_JPanel = new JPanel();
     setWindow_JPanel.setLayout(new GridBagLayout());
-    __SetWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.HOUR, null );
+    __SetWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.MINUTE, null );
     __SetWindowStart_JPanel.addActionListener(this);
     __SetWindowStart_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(setWindow_JPanel, __SetWindowStart_JPanel,
         1, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval
-    __SetWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.HOUR, null );
+    __SetWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.MINUTE, null );
     __SetWindowEnd_JPanel.addActionListener(this);
     __SetWindowEnd_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(setWindow_JPanel, __SetWindowEnd_JPanel,
@@ -642,6 +660,7 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromLookupTable_Comm
 
 	// Refresh the contents...
 	refresh();
+	checkGUIState(); // To make sure the set window is OK
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -959,7 +978,15 @@ private void refresh ()
     props.add ( "SetEnd=" + SetEnd );
     if ( __SetWindow_JCheckBox.isSelected() ) {
         SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
+        if ( SetWindowStart.startsWith("99") ) {
+        	// 99 is used as placeholder when month is not set... artifact of setting choices to blank during editing
+        	SetWindowStart = "";
+        }
         SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
+        if ( SetWindowEnd.startsWith("99") ) {
+        	// 99 is used as placeholder when month is not set... artifact of setting choices to blank during editing
+        	SetWindowEnd = "";
+        }
         String SetWindowStart2 = __SetWindowStart_JTextField.getText().trim();
         String SetWindowEnd2 = __SetWindowEnd_JTextField.getText().trim();
         if ( (SetWindowStart2 != null) && !SetWindowStart2.isEmpty() ) {

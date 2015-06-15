@@ -111,26 +111,26 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (TableID == null) || TableID.equals("") ) {
+    if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide the identifier for the table to process." ) );
     }
-    if ( (TableTSIDColumn == null) || TableTSIDColumn.equals("") ) {
+    if ( (TableTSIDColumn == null) || TableTSIDColumn.isEmpty() ) {
         message = "The table column for TSIDs must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide a table column name for TSIDs." ) );
     }
-    if ( (TableDateTimeColumn == null) || TableDateTimeColumn.equals("") ) {
+    if ( (TableDateTimeColumn == null) || TableDateTimeColumn.isEmpty() ) {
         message = "The table column for date/time must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message,
             "Specify a table column for date/time."));
     }
-    if ( (TableValueColumn == null) || TableValueColumn.equals("") ) {
+    if ( (TableValueColumn == null) || TableValueColumn.isEmpty() ) {
         message = "The table column for data values must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -243,20 +243,41 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String TSIDFormat = parameters.getValue ( "TSIDFormat" );
     String SetStart = parameters.getValue ( "SetStart" );
     String SetEnd = parameters.getValue ( "SetEnd" );
     String SetFlag = parameters.getValue ( "SetFlag" );
     String SetFlagDesc = parameters.getValue ( "SetFlagDesc" );
     String TableID = parameters.getValue ( "TableID" );
+	if ( (TableID != null) && (TableID.indexOf("${") >= 0) ) {
+		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+	}
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableDateTimeColumn = parameters.getValue ( "TableDateTimeColumn" );
     String TableValueColumn = parameters.getValue ( "TableValueColumn" );
@@ -327,6 +348,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 		try {
 			SetEnd_DateTime = TSCommandProcessorUtil.getDateTime ( SetEnd, "SetEnd", processor,
@@ -334,6 +356,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
+			++warning_count;
 		}
 	}
 

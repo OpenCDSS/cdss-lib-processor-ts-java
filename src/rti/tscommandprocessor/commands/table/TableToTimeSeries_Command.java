@@ -40,6 +40,7 @@ import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeParser;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.YearType;
 
 /**
 This class initializes, checks, and runs the TableToTimeSeries() command.
@@ -56,6 +57,12 @@ protected final String _UseLast = "UseLast";
 protected final String _UseLastNonmissing = "UseLastNonmissing";
 
 /**
+Values for BlockLayout parameter.
+*/
+protected final String _Period = "Period";
+protected final String _Year = "Year";
+
+/**
 String that indicates that column names should be taken from the table.
 For example TC[1:] indicates columns 1 through the total number of columns.
 */
@@ -66,12 +73,12 @@ Column names for each time series being processed, from the ColumnNames paramete
 has been expanded to reflect file column names.
 See also __columnNamesRuntime.
 */
-private List<String> __columnNamesRuntime = new Vector<String>();
+private List<String> __columnNamesRuntime = new ArrayList<String>();
 
 /**
 Data types for each time series being processed.
 */
-private List<String> __dataType = new Vector<String>();
+private List<String> __dataType = new ArrayList<String>();
 
 /**
 Date column name, expanded for runtime, consistent with the ColumnNames runtime values.
@@ -89,8 +96,7 @@ Date/time column name, expanded for runtime, consistent with the ColumnNames run
 private String __dateTimeColumnRuntime = null;
 
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
-metadata (TSIdent) filled in.
+List of time series read during discovery.  These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
 private List<TS> __discovery_TS_List = null;
 
@@ -107,32 +113,32 @@ private String __locationColumnRuntime = null;
 /**
 Location Type for each time series being processed, expanded for runtime.
 */
-private List<String> __locationTypeRuntime = new Vector<String>();
+private List<String> __locationTypeRuntime = new ArrayList<String>();
 
 /**
 Location type for each time series being processed.
 */
-private List<String> __locationType = new Vector<String>();
+private List<String> __locationType = new ArrayList<String>();
 
 /**
 Location ID for each time series being processed, expanded for runtime.
 */
-private List<String> __locationIDRuntime = new Vector<String>();
+private List<String> __locationIDRuntime = new ArrayList<String>();
 
 /**
 Missing value strings that may be present in the file.
 */
-private List<String> __missingValue = new Vector<String>();
+private List<String> __missingValue = new ArrayList<String>();
 
 /**
 Data source for each time series being processed.
 */
-private List<String> __dataSource = new Vector<String>();
+private List<String> __dataSource = new ArrayList<String>();
 
 /**
 Scenario for each time series being processed.
 */
-private List<String> __scenario = new Vector<String>();
+private List<String> __scenario = new ArrayList<String>();
 
 /**
 TODO SAM 2012-11-09 Currently not used
@@ -143,17 +149,17 @@ private int[][] __skipRows = null; // Allocated when checking parameters
 /**
 Data units for each time series being processed.
 */
-private List<String> __units = new Vector();
+private List<String> __units = new ArrayList<String>();
 
 /**
 Column names for data values, for each time series being processed, expanded for runtime.
 */
-private List<String> __valueColumnsRuntime = new Vector();
+private List<String> __valueColumnsRuntime = new ArrayList<String>();
 
 /**
 Column names for data flags, for each time series being processed, expanded for runtime.
 */
-private List<String> __flagColumnsRuntime = new Vector();
+private List<String> __flagColumnsRuntime = new ArrayList<String>();
 
 /**
 Constructor.
@@ -213,6 +219,7 @@ throws InvalidCommandParameterException
     String MissingValue = parameters.getValue("MissingValue" );
     String HandleDuplicatesHow = parameters.getValue("HandleDuplicatesHow" );
     String Alias = parameters.getValue("Alias" );
+	String BlockOutputYearType = parameters.getValue ( "BlockOutputYearType" );
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
 	
@@ -830,6 +837,31 @@ throws InvalidCommandParameterException
                 message, "Specify HandleDuplicatesHow as " + _Add + ", " + _UseFirstNonmissing + ", " +
                 " or " + _UseLast + " (default), or " + _UseLastNonmissing + "." ) );
     }
+    
+	YearType outputYearType = null;
+	if ( (BlockOutputYearType != null) && !BlockOutputYearType.isEmpty() ) {
+        try {
+            outputYearType = YearType.valueOfIgnoreCase(BlockOutputYearType);
+        }
+        catch ( Exception e ) {
+        	outputYearType = null;
+        }
+        if ( outputYearType == null ) {
+            message = "The block output year type (" + BlockOutputYearType + ") is invalid.";
+            warning += "\n" + message;
+            StringBuffer b = new StringBuffer();
+            List<YearType> values = YearType.getYearTypeChoices();
+            for ( YearType t : values ) {
+                if ( b.length() > 0 ) {
+                    b.append ( ", " );
+                }
+                b.append ( t.toString() );
+            }
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
+        }
+	}
 
 	// InputStart
     DateTime inputStart = null;
@@ -909,6 +941,10 @@ throws InvalidCommandParameterException
     validList.add ( "MissingValue" );
     validList.add ( "HandleDuplicatesHow" );
     validList.add ( "Alias" );
+	validList.add ( "BlockLayout" );
+	validList.add ( "BlockLayoutColumns" );
+	validList.add ( "BlockLayoutRows" );
+	validList.add ( "BlockOutputYearType" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -1133,6 +1169,41 @@ Return the date/time column name expanded for runtime.
 private String getDateTimeColumnRuntime ()
 {
     return __dateTimeColumnRuntime;
+}
+
+// TODO SAM 2015-06-11 make more robust - for now just keep simple 
+/**
+Return the minimum and maximum date/times from a block layout record.
+@return a DateTime[] array with minimum and maximum date/times for a block layout record, or null if can't be determined.
+@param rec the DataTable record being processed
+@param row the row number (1+) for error messages
+@param dateTimePos the column number for the date/time, or -1 if not used
+@param dateTime if non-null, use the instance for results, rather than creating a new object - this can be
+more efficient when iterating through raw data
+@param errorMessages if not null, add parse messages to the list
+*/
+private DateTime [] getDateTimesFromBlockRecord ( TableRecord rec, int row, int dateTimePos,
+	int layoutRows, int layoutColumns, YearType yearType, List<String> errorMessages )
+throws Exception
+{	DateTime [] dts = new DateTime[2];
+	Object o;
+	if ( layoutRows == TimeInterval.YEAR ) {
+		o = rec.getFieldValue(dateTimePos);
+		if ( o == null ) {
+			return null;
+		}
+		DateTime dt = new DateTime((DateTime)o);
+		// FIXME SAM 2015-06-11 Hard-code water year to calendar year conversion for now
+		dt.addYear(-1);
+		if ( layoutColumns == TimeInterval.MONTH ) {
+			dts[0] = new DateTime(dt,DateTime.PRECISION_MONTH);
+			dts[0].setMonth(10);
+			dts[1] = new DateTime(dt,DateTime.PRECISION_MONTH);
+			dts[1].addYear(1);
+			dts[1].setMonth(9);
+		}
+	}
+	return dts;
 }
 
 /**
@@ -1364,6 +1435,164 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         parameters.set("DataSource",provider);
         parameters.unSet("Provider");
     }
+}
+
+/**
+Read a list of time series from a table in block format.
+@param table table to read from
+@return a list of time series read from the table
+*/
+private List<TS> readTimeSeriesListBlock ( DataTable table,
+	int layoutColumns, int layoutRows, YearType yearType,
+	String dateTimeColumn,
+	List<String> locationIds,
+	boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
+{	String routine = getClass().getSimpleName() + ".readTimeSeriesListBlock";
+	List<TS> tslist = new ArrayList<TS>();
+    // Translate column names to integer values to speed up processing below - these have been expanded for runtime
+    // Any operations on table will fail if in discovery mode
+    int dateTimePos = -1;
+    if ( (dateTimeColumn != null) && !dateTimeColumn.equals("") ) {
+        try {
+            dateTimePos = table.getFieldIndex(dateTimeColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for date/time column \"" + dateTimeColumn + "\"" );
+            }
+        }
+    }
+    // Loop through the table once and get the period from the data.
+    Object o;
+    int nRecords = table.getNumberOfRecords();
+    TableRecord rec = null;
+    DateTime [] dts = null;
+    DateTime dtMinFromTable = null;
+    DateTime dtMaxFromTable = null;
+    if ( readData ) {
+	    for ( int iRec = 0; iRec < nRecords; iRec++ ) {
+	        try {
+	            rec = table.getRecord(iRec);
+	            // Consider whether single field, etc...
+	            dts = getDateTimesFromBlockRecord(rec,(iRec + 1),dateTimePos,layoutRows,layoutColumns,yearType,null);
+	            if ( dts == null ) {
+	                continue;
+	            }
+	            if ( (dtMaxFromTable == null) || dts[1].greaterThan(dtMaxFromTable) ) {
+	                dtMaxFromTable = dts[1];
+	            }
+	            if ( (dtMinFromTable == null) || dts[0].lessThan(dtMinFromTable) ) {
+	                dtMinFromTable = dts[0];
+	            }
+	        }
+	        catch ( Exception e ) {
+	            continue;
+	        }
+	    }
+	    Message.printStatus(2,routine,"Min date/time from table = " + dtMinFromTable +
+	        ", max date/time from table = " + dtMaxFromTable );
+    }
+    // Create time series
+    TS ts = null;
+    if ( locationIds.size() > 0 ) {
+    	for ( String locationId : locationIds ) {
+    		String tsidentstr = locationId + ".NRCS.SWSI.Month";
+		    try {
+		    	TSIdent tsident = new TSIdent(tsidentstr);
+		        ts = TSUtil.newTimeSeries( tsident.toString(), true );
+		        // Set all the information
+		        ts.setIdentifier ( tsident );
+		        ts.setDescription ( tsident.getLocation() + " " + tsident.getType() );
+		        ts.setDataUnits ( "" );//unitsFromTableList.get(its) );
+		        //ts.setDataUnitsOriginal ( unitsFromTableList.get(its) );
+		        ts.setMissing ( Double.NaN );
+		        ts.setInputName ( table.getTableID() );
+		        //if ( inputStartReq != null ) {
+		        //    ts.setDate1(inputStartReq);
+		        // }
+		        //else {
+		            ts.setDate1(dtMinFromTable);
+		        //}
+		        //if ( inputEndReq != null ) {
+		        //    ts.setDate2(inputEndReq);
+		        //}
+		        //else {
+		            ts.setDate2(dtMaxFromTable);
+		        //}
+		        ts.setDate1Original(dtMinFromTable);
+		        ts.setDate2Original(dtMaxFromTable);
+		        tslist.add(ts);
+		    }
+		    catch ( Exception e ) {
+		        // Set the TS to null to match the column positions but won't be able to set data below
+		        ts = null;
+		        errorMessages.add ( "Error initializing time series \"" +
+		            tsidentstr + "\" (" + e + ") - will not read.");
+		        Message.printWarning(3,routine,e);
+		    }
+    	}
+    }
+    // Now read through the table and process records into the time series
+    // FIXME SAM 2015-06-11 need to remove hard-code
+    if ( readData ) {
+	    ts = tslist.get(0);
+	    ts.allocateDataSpace();
+	    DateTime dt = null;
+	    DateTime tableDate = null;
+	    if ( layoutColumns == TimeInterval.MONTH ) {
+	    	dt = new DateTime(DateTime.PRECISION_MONTH);
+	    }
+	    for ( int iRec = 0; iRec < nRecords; iRec++ ) {
+	    	try {
+	    		rec = table.getRecord(iRec);
+	    	}
+	    	catch ( Exception e ) {
+	    		continue;
+	    	}
+	        if ( layoutRows == TimeInterval.YEAR ) {
+	        	if ( layoutColumns == TimeInterval.MONTH ) {
+	        		try {
+	        			o = rec.getFieldValue(dateTimePos);
+	        		}
+	        		catch ( Exception e ) {
+	        			continue;
+	        		}
+	        		if ( o == null ) {
+	        			continue;
+	        		}
+	        		tableDate = (DateTime)o;
+	        		// Transfer the date values to the working date (only year)
+	        		dt.setDate(tableDate); // Also sets precision
+	        		dt.setPrecision(DateTime.PRECISION_MONTH);
+	        		Message.printStatus(2, routine, "Row (" + (iRec + 1) + ") tableDate=" + tableDate + " dt=" + dt );
+	        		for ( int imon = 0; imon < 12; imon++ ) {
+	        			if ( imon == 0 ) {
+	        				// Convert water year to previous calendar year
+	        				dt.addYear(-1);
+	        				dt.setMonth(10);
+	    	        		Message.printStatus(2, routine, "Row (" + (iRec + 1) + " Starting new year " + dt );
+	        			}
+	        			else {
+	        				dt.addMonth(1);
+	        			}
+	        			// Get the value
+	        			try {
+	        				// Date is column 0, Year 1, YearAsDate 2
+	        				o = rec.getFieldValue(imon + 2);
+	        			}
+	        			catch ( Exception e ) {
+	        				continue;
+	        			}
+	        			if ( (o != null) && (o instanceof Double) ) {
+	        				Message.printStatus(2, routine, "Setting " + dt + " to " + o);
+	        				ts.setDataValue(dt, (Double)o );
+	        			}
+	        		}
+	        	}
+	        }
+	    }
+    }
+	return tslist;
 }
 
 /**
@@ -2243,7 +2472,7 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
     int log_level = 3;
 	String command_tag = "" + command_number;
@@ -2270,15 +2499,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String TableID = parameters.getValue("TableID");
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
-    	// In discovery mode want lists of tables to include ${Property}
-    	if ( TableID.indexOf("${") >= 0 ) {
-    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
-    	}
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+    	TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
 	String LocationType = parameters.getValue("LocationType");
 	String LocationID = parameters.getValue("LocationID");
-	if ( (LocationID != null) && LocationID.indexOf("${") >= 0 && (commandPhase == CommandPhaseType.RUN) ) {
+	if ( (LocationID != null) && (LocationID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		LocationID = TSCommandProcessorUtil.expandParameterValue(processor, this, LocationID);
 	}
 	String LocationTypeColumn = parameters.getValue("LocationTypeColumn");
@@ -2296,6 +2522,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String Alias = parameters.getValue("Alias"); // Expanded below
 	String HandleDuplicatesHow = parameters.getValue("HandleDuplicatesHow");
 	HandleDuplicatesHowType handleDuplicatesHow = HandleDuplicatesHowType.valueOfIgnoreCase(HandleDuplicatesHow);
+	String BlockLayout = parameters.getValue("BlockLayout");
+	String BlockLayoutColumns = parameters.getValue("BlockLayoutColumns");
+	String BlockLayoutRows = parameters.getValue("BlockLayoutRows");
+	String BlockOutputYearType = parameters.getValue("BlockOutputYearType");
 	String InputStart = parameters.getValue("InputStart");
     String InputEnd = parameters.getValue("InputEnd");
     
@@ -2310,7 +2540,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     else if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
-        if ( (TableID != null) && !TableID.equals("") ) {
+        if ( (TableID != null) && !TableID.isEmpty() ) {
             // Get the table to be updated
             request_params = new PropList ( "" );
             request_params.set ( "TableID", TableID );
@@ -2426,29 +2656,45 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Read the time series
         // If the location column has been specified then the table is single-column data
         boolean singleColumn = false;
-        if ( (LocationColumn != null) && !LocationColumn.equals("") ) {
+        boolean blockData = false;
+        if ( (LocationColumn != null) && !LocationColumn.isEmpty() ) {
             singleColumn = true;
         }
-        if ( singleColumn ) {
-            tslist = readTimeSeriesListSingle ( table, getDateTimeColumnRuntime(),
-                DateTimeFormat, getDateColumnRuntime(),
-                getTimeColumnRuntime(), ValueColumn, FlagColumn, getSkipRows(),
-                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
-                (getLocationType().size() == 1 ? getLocationType().get(0) : null),
-                (getDataSource().size() == 1 ? getDataSource().get(0) : null),
-                (getDataType().size() == 1 ? getDataType().get(0) : null), getInterval(),
-                (getScenario().size() == 1 ? getScenario().get(0) : null),
-                (getUnits().size() == 1 ? getUnits().get(0) : null), getMissingValue(), handleDuplicatesHow,
-                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
+        if ( (BlockLayout != null) && !BlockLayout.isEmpty() ) {
+        	blockData = true;
+        }
+        if ( blockData ) {
+        	TimeInterval layoutColumns = TimeInterval.parseInterval(BlockLayoutColumns);
+        	TimeInterval layoutRows = TimeInterval.parseInterval(BlockLayoutRows);
+        	YearType yearType = YearType.valueOfIgnoreCase(BlockOutputYearType);
+        	tslist = readTimeSeriesListBlock ( table,
+        		layoutColumns.getBase(), layoutRows.getBase(), yearType,
+        		DateTimeColumn,
+        		getLocationIDRuntime(),
+        		readData, commandPhase, errorMessages );
         }
         else {
-            tslist = readTimeSeriesListMultiple ( table, getDateTimeColumnRuntime(),
-                DateTimeFormat, getDateColumnRuntime(),
-                getTimeColumnRuntime(), getValueColumnsRuntime(), getFlagColumnsRuntime(), getSkipRows(),
-                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
-                getLocationType(), getLocationIDRuntime(), getDataSource(), getDataType(), getInterval(), getScenario(),
-                getUnits(), getMissingValue(), handleDuplicatesHow,
-                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
+        	if ( singleColumn ) {
+	            tslist = readTimeSeriesListSingle ( table, getDateTimeColumnRuntime(),
+	                DateTimeFormat, getDateColumnRuntime(),
+	                getTimeColumnRuntime(), ValueColumn, FlagColumn, getSkipRows(),
+	                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
+	                (getLocationType().size() == 1 ? getLocationType().get(0) : null),
+	                (getDataSource().size() == 1 ? getDataSource().get(0) : null),
+	                (getDataType().size() == 1 ? getDataType().get(0) : null), getInterval(),
+	                (getScenario().size() == 1 ? getScenario().get(0) : null),
+	                (getUnits().size() == 1 ? getUnits().get(0) : null), getMissingValue(), handleDuplicatesHow,
+	                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
+	        }
+	        else {
+	            tslist = readTimeSeriesListMultiple ( table, getDateTimeColumnRuntime(),
+	                DateTimeFormat, getDateColumnRuntime(),
+	                getTimeColumnRuntime(), getValueColumnsRuntime(), getFlagColumnsRuntime(), getSkipRows(),
+	                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
+	                getLocationType(), getLocationIDRuntime(), getDataSource(), getDataType(), getInterval(), getScenario(),
+	                getUnits(), getMissingValue(), handleDuplicatesHow,
+	                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
+	        }
         }
         
 		if ( tslist != null ) {
@@ -2684,6 +2930,10 @@ public String toString ( PropList props )
     String MissingValue = props.getValue("MissingValue" );
     String HandleDuplicatesHow = props.getValue("HandleDuplicatesHow" );
     String Alias = props.getValue("Alias" );
+	String BlockLayout = props.getValue ( "BlockLayout" );
+	String BlockLayoutColumns = props.getValue ( "BlockLayoutColumns" );
+	String BlockLayoutRows = props.getValue ( "BlockLayoutRows" );
+	String BlockOutputYearType = props.getValue ( "BlockOutputYearType" );
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
 
@@ -2825,6 +3075,30 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("Alias=\"" + Alias + "\"");
+    }
+    if ( (BlockLayout != null) && !BlockLayout.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "BlockLayout=" + BlockLayout );
+    }
+    if ( (BlockLayoutColumns != null) && !BlockLayoutColumns.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "BlockLayoutColumns=" + BlockLayoutColumns );
+    }
+    if ( (BlockLayoutRows != null) && !BlockLayoutRows.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "BlockLayoutRows=" + BlockLayoutRows );
+    }
+    if ( (BlockOutputYearType != null) && !BlockOutputYearType.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "BlockOutputYearType=" + BlockOutputYearType );
     }
 	if ((InputStart != null) && (InputStart.length() > 0)) {
 		if (b.length() > 0) {

@@ -39,6 +39,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
 import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.YearType;
 
 /**
 Editor for the TableToTimeSeries() command.
@@ -75,6 +76,10 @@ private JTextField __Scenario_JTextField = null;
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
 private SimpleJComboBox __HandleDuplicatesHow_JComboBox = null;
+private SimpleJComboBox __BlockLayout_JComboBox = null;
+private SimpleJComboBox __BlockLayoutRows_JComboBox = null;
+private SimpleJComboBox __BlockLayoutColumns_JComboBox = null;
+private SimpleJComboBox __BlockOutputYearType_JComboBox = null;
 private JTextField __InputStart_JTextField = null;
 private JTextField __InputEnd_JTextField = null;
 private JTextArea __Command_JTextArea = null;
@@ -187,6 +192,10 @@ private void checkInput () {
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
 	String Alias = __Alias_JTextField.getText().trim();
+	String BlockLayout = __BlockLayout_JComboBox.getSelected();
+	String BlockLayoutColumns = __BlockLayoutColumns_JComboBox.getSelected();
+	String BlockLayoutRows = __BlockLayoutRows_JComboBox.getSelected();
+	String BlockOutputYearType = __BlockOutputYearType_JComboBox.getSelected();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	
@@ -264,6 +273,18 @@ private void checkInput () {
     if (Alias.length() > 0) {
         props.set("Alias", Alias);
     }
+    if ( BlockLayout.length() > 0 ) {
+        props.set ( "BlockLayout", BlockLayout );
+    }
+    if ( BlockLayoutColumns.length() > 0 ) {
+        props.set ( "BlockLayoutColumns", BlockLayoutColumns );
+    }
+    if ( BlockLayoutRows.length() > 0 ) {
+        props.set ( "BlockLayoutRows", BlockLayoutRows );
+    }
+    if ( BlockOutputYearType.length() > 0 ) {
+        props.set ( "BlockOutputYearType", BlockOutputYearType );
+    }
 	if (InputStart.length() > 0 ) {
 		props.set("InputStart", InputStart);
 	}
@@ -310,6 +331,10 @@ private void commitEdits() {
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
     String Alias = __Alias_JTextField.getText().trim();
+	String BlockLayout = __BlockLayout_JComboBox.getSelected();
+	String BlockLayoutColumns = __BlockLayoutColumns_JComboBox.getSelected();
+	String BlockLayoutRows = __BlockLayoutRows_JComboBox.getSelected();
+	String BlockOutputYearType = __BlockOutputYearType_JComboBox.getSelected();
     String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 
@@ -337,6 +362,10 @@ private void commitEdits() {
 	__command.setCommandParameter("MissingValue", MissingValue);
 	__command.setCommandParameter("HandleDuplicatesHow", HandleDuplicatesHow);
 	__command.setCommandParameter("Alias", Alias);
+	__command.setCommandParameter("BlockLayout", BlockLayout);
+	__command.setCommandParameter("BlockLayoutColumns", BlockLayoutColumns);
+	__command.setCommandParameter("BlockLayoutRows", BlockLayoutRows);
+	__command.setCommandParameter("BlockOutputYearType", BlockOutputYearType);
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
 }
@@ -352,6 +381,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(1,2,1,2);
+    Insets insets0 = new Insets(0,0,0,0);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -360,15 +390,15 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Create 1+ time series from a table." +
-        "  The table can contain one column per time series, or a single column for all time series." ), 
+        "  The table can contain one column per time series, a single column for all time series, or a two-dimensional time block." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The column name(s), date/time column, value column(s), and Location ID(s) columns can use the notation " +
         "TC[start:stop] to use column names." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "For example, \"Date,TC[2:]\" defines the first column as \"Date\" and column names " +
-        "2+ will be taken from the table." ), 
+        "For examples: LocationID=\"TC[2:]\" defines the location IDs as column names 2, 3, ... and " +
+        "LocationID=\"TC[1:4]\" indicates column names 1 through 4." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -418,7 +448,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, __DateTimeFormat_JPanel,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - date/time format MM/DD/YYYY, etc. (default=auto-detect)."),
+        "Optional - date/time format if converting string (default=auto-detect)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date column:"),
@@ -449,9 +479,16 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JPanel multTS_JPanel = new JPanel();
     multTS_JPanel.setLayout(new GridBagLayout());
-    __location_JTabbedPane.addTab ( "Multiple Data Value (Number) Columns (only 1 location ID in column)", multTS_JPanel );
+    __location_JTabbedPane.addTab ( "Multiple Data Value Columns (location ID constant for each column)", multTS_JPanel );
     int yMult = -1;
 
+    JGUIUtil.addComponent(multTS_JPanel, new JLabel (
+        "Example table input (first row shown is column headings):" ), 
+        0, ++yMult, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(multTS_JPanel, new JLabel (
+        "<html><pre>| DateTime | ID1_Value1 | ID1_Value2 | ID1_Value2 | ID2_Value1 | ID2_Value2 |<br>" +
+                   "| 2012-01  |        1.0 |       37.5 |      -12.5 |            |       77.3 |</pre></html>" ), 
+        0, ++yMult, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(multTS_JPanel, new JLabel (
         "Because time series values are in multiple columns, the location IDs must be specified " +
         "(may extract from column headings in the future)." ), 
@@ -469,19 +506,23 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
 
     JPanel singleTS_JPanel = new JPanel();
     singleTS_JPanel.setLayout(new GridBagLayout());
-    __location_JTabbedPane.addTab ( "Single Data Value (Number) Column (vertical \"stream\" of location/value data)", singleTS_JPanel );
+    __location_JTabbedPane.addTab ( "Single Data Value Column (\"stream\" of location/value data)", singleTS_JPanel );
     int ySingle = -1;
 
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
-        "Values are expected to be in a single column.  Similarly, important time series properties can be" +
-        " read from columns." ), 
+        "Values are expected to be in a single column, properties can be" +
+        " read from columns (or use \"TSID and Alias\" tab below).  Example table input (first row shown is column headings):" ), 
         0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "<html><pre>| Date     | LocationTypes | LocationIDs | Data Sources | Data Types | Scenarios | Data Units |<br>" +
+                   "| 2012-01  |          Gage |    Station1 |         USGS | Streamflow |    Filled |        cfs |</pre></html>" ), 
+        0, ++ySingle, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location type column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationTypeColumn_JTextField = new JTextField (20);
     __LocationTypeColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(singleTS_JPanel, __LocationTypeColumn_JTextField,
-        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for location type if not provided with LocationType parameter below"),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -491,7 +532,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     __LocationColumn_JTextField = new JTextField (20);
     __LocationColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(singleTS_JPanel, __LocationColumn_JTextField,
-        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - column name for location identifier."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -501,7 +542,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     __DataSourceColumn_JTextField = new JTextField (20);
     __DataSourceColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(singleTS_JPanel, __DataSourceColumn_JTextField,
-        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for data source if not provided with DataSource below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -511,7 +552,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     __DataTypeColumn_JTextField = new JTextField (20);
     __DataTypeColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(singleTS_JPanel, __DataTypeColumn_JTextField,
-        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for data type if not provided with DataType below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -521,7 +562,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     __ScenarioColumn_JTextField = new JTextField (20);
     __ScenarioColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(singleTS_JPanel, __ScenarioColumn_JTextField,
-        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for scenario if not provided as Scenario below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -531,10 +572,35 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     __UnitsColumn_JTextField = new JTextField (20);
     __UnitsColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(singleTS_JPanel, __UnitsColumn_JTextField,
-        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Optional - column name for units, if not provided as Units below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JPanel block_JPanel = new JPanel();
+    block_JPanel.setLayout(new GridBagLayout());
+    __location_JTabbedPane.addTab ( "Block of Values (data matrix)", block_JPanel );
+    int yBlock = -1;
+
+    JGUIUtil.addComponent(block_JPanel, new JLabel (
+        "Values for a single time series are expected to be in a block, for example as shown below.  "
+        + "Configure data mapping using the \"Block Data\" tab below." ), 
+        0, ++yBlock, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(block_JPanel, new JLabel (
+        "For a single time series, use the \"Multiple Data Value Columns\" tab to specify the location ID." ), 
+        0, ++yBlock, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(block_JPanel, new JLabel (
+        "<html><pre>| Year     | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec |<br>" +
+                   "| 2012     | 1.0 | 3.3 | 1.5 | 4.5 | 4.6 | 3.0 | 2.5 |     | 2.3 | 1.0 | 0.5 | 0.4 |</pre></html>" ),
+        0, ++yBlock, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(block_JPanel, new JLabel (
+        "For multiple time series where the ID is in a column, use the \"Single Data Value Column\" tab to specify the location ID." ), 
+        0, ++yBlock, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(block_JPanel, new JLabel (
+        "<html><pre>| Location ID | Year     | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec |<br>" +
+                   "| Station1    | 2012     | 1.0 | 3.3 | 1.5 | 4.5 | 4.6 | 3.0 | 2.5 |     | 2.3 | 1.0 | 0.5 | 0.4 |<br>" +
+    		       "| Station2    | 2012     | 2.0 | 6.3 | 4.5 | 1.5 | 2.6 | 2.0 | 1.5 | 5.6 | 5.3 | 4.0 | 3.5 | 2.4 |</pre></html>" ), 
+        0, ++yBlock, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JTabbedPane main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, main_JTabbedPane,
@@ -549,6 +615,9 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         "These parameters specify properties that are used for the time series identifier (TSID), " +
         "if not specified in the above parameters, and the alias." ), 
         0, ++yTsid, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tsid_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTsid, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Location type(s):"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LocationType_JTextField = new JTextField (10);
@@ -624,6 +693,8 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         "These parameters indicate the columns for time series data and flag values, and allow specifying " +
         "data units and missing value in the table (set to NaN internally)." ), 
         0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Value column(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -682,10 +753,87 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         __command._UseLast + ")."), 
         3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    JPanel blockData_JPanel = new JPanel();
+    blockData_JPanel.setLayout(new GridBagLayout());
+    main_JTabbedPane.addTab ( "Block Data", blockData_JPanel );
+    int yBlockData = -1;
+
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel (
+        "<html><b>These features are under development.</b></html>" ), 
+        0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel (
+        "These parameters indicate the layout of a two-dimentional block of data (see \"Block of Values\" tab above)." ), 
+        0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel (
+        "Specify the first data value column using \"Value column(s)\" under the \"Data\" tab." ), 
+        0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(blockData_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel( "Block layout:"),
+        0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __BlockLayout_JComboBox = new SimpleJComboBox ( false );
+    __BlockLayout_JComboBox.add("");
+    __BlockLayout_JComboBox.add(__command._Period);
+    //__BlockLayout_JComboBox.add(__command._Year); // TODO SAM 2015-03-10 Need to enable
+    __BlockLayout_JComboBox.select ( 0 );
+    __BlockLayout_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(blockData_JPanel, __BlockLayout_JComboBox,
+        1, yBlockData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Optional - indicates table contents use block layout."),
+        3, yBlockData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel( "Block layout columns:"),
+        0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __BlockLayoutColumns_JComboBox = new SimpleJComboBox ( false );
+    __BlockLayoutColumns_JComboBox.add("");
+    //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.YEAR)); // TODO SAM 2015-03-10 Need to enable
+    //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH));
+    __BlockLayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH));
+    __BlockLayoutColumns_JComboBox.select ( 0 );
+    __BlockLayoutColumns_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(blockData_JPanel, __BlockLayoutColumns_JComboBox,
+        1, yBlockData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Required for block layout - time slice of each block column."),
+        3, yBlockData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel( "Block layout rows:"),
+        0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __BlockLayoutRows_JComboBox = new SimpleJComboBox ( false );
+    __BlockLayoutRows_JComboBox.add("");
+    __BlockLayoutRows_JComboBox.add("" + TimeInterval.getName(TimeInterval.YEAR));
+    __BlockLayoutRows_JComboBox.select ( 0 );
+    __BlockLayoutRows_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(blockData_JPanel, __BlockLayoutRows_JComboBox,
+        1, yBlockData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Required for block layout - time slice of each block row."),
+        3, yBlockData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Block output year type:" ), 
+		0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__BlockOutputYearType_JComboBox = new SimpleJComboBox ( false );
+	// Only include types that have been tested for all output.  More specific types may be included in
+	// some commands where local handling is enabled.
+	__BlockOutputYearType_JComboBox.add ( "" );
+	__BlockOutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
+	__BlockOutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
+	__BlockOutputYearType_JComboBox.add ( "" + YearType.WATER );
+	__BlockOutputYearType_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(blockData_JPanel, __BlockOutputYearType_JComboBox,
+		1, yBlockData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel ( "Optional - block output year type (default=" + YearType.CALENDAR + ")."),
+        3, yBlockData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JPanel period_JPanel = new JPanel();
     period_JPanel.setLayout(new GridBagLayout());
     main_JTabbedPane.addTab ( "Period", period_JPanel );
     int yPeriod = -1;
+    
+    JGUIUtil.addComponent(period_JPanel, new JLabel (
+        "These parameters specify the input period to process.  All table data outside of the period are ignored." ), 
+        0, ++yPeriod, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yPeriod, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(period_JPanel, new JLabel ("Input start:"), 
         0, ++yPeriod, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -810,6 +958,10 @@ private void refresh()
     String MissingValue = "";
     String HandleDuplicatesHow = "";
     String Alias = "";
+	String BlockLayout = "";
+	String BlockLayoutColumns = "";
+	String BlockLayoutRows = "";
+	String BlockOutputYearType = "";
     String InputStart = "";
     String InputEnd = "";
 
@@ -844,6 +996,10 @@ private void refresh()
 	    MissingValue = props.getValue("MissingValue");
 	    HandleDuplicatesHow = props.getValue("HandleDuplicatesHow");
 	    Alias = props.getValue("Alias");
+		BlockLayout = props.getValue ( "BlockLayout" );
+		BlockLayoutColumns = props.getValue ( "BlockLayoutColumns" );
+		BlockLayoutRows = props.getValue ( "BlockLayoutRows" );
+		BlockOutputYearType = props.getValue ( "BlockOutputYearType" );
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		// Set the control fields
@@ -978,6 +1134,66 @@ private void refresh()
         if ( Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
+        if ( BlockLayout == null ) {
+            // Select default...
+            __BlockLayout_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __BlockLayout_JComboBox,BlockLayout, JGUIUtil.NONE, null, null ) ) {
+                __BlockLayout_JComboBox.select ( BlockLayout );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nBlockLayout value \"" + BlockLayout +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( BlockLayoutColumns == null ) {
+            // Select default...
+            __BlockLayoutColumns_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __BlockLayoutColumns_JComboBox,BlockLayoutColumns, JGUIUtil.NONE, null, null ) ) {
+                __BlockLayoutColumns_JComboBox.select ( BlockLayoutColumns );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nBlockLayoutColumns value \"" + BlockLayoutColumns +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( BlockLayoutRows == null ) {
+            // Select default...
+            __BlockLayoutRows_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __BlockLayoutRows_JComboBox,BlockLayoutRows, JGUIUtil.NONE, null, null ) ) {
+                __BlockLayoutRows_JComboBox.select ( BlockLayoutRows );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nBlockLayoutRows value \"" + BlockLayoutRows +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( BlockOutputYearType == null ) {
+            // Select default...
+            __BlockOutputYearType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __BlockOutputYearType_JComboBox,BlockOutputYearType, JGUIUtil.NONE, null, null ) ) {
+                __BlockOutputYearType_JComboBox.select ( BlockOutputYearType );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nBlockOutputYearType value \"" + BlockOutputYearType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 		if (InputStart != null) {
 			__InputStart_JTextField.setText(InputStart);
 		}
@@ -1012,6 +1228,10 @@ private void refresh()
     MissingValue = __MissingValue_JTextField.getText().trim();
     HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
     Alias = __Alias_JTextField.getText().trim();
+	BlockLayout = __BlockLayout_JComboBox.getSelected();
+	BlockLayoutColumns = __BlockLayoutColumns_JComboBox.getSelected();
+	BlockLayoutRows = __BlockLayoutRows_JComboBox.getSelected();
+	BlockOutputYearType = __BlockOutputYearType_JComboBox.getSelected();
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
 
@@ -1040,6 +1260,10 @@ private void refresh()
     props.add("MissingValue=" + MissingValue );
     props.add("HandleDuplicatesHow=" + HandleDuplicatesHow );
     props.add("Alias=" + Alias );
+	props.add("BlockLayout=" + BlockLayout );
+	props.add("BlockLayoutColumns=" + BlockLayoutColumns );
+	props.add("BlockLayoutRows=" + BlockLayoutRows );
+	props.add("BlockOutputYearType=" + BlockOutputYearType );
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 	

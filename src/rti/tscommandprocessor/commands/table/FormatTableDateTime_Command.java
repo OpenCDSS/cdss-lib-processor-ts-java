@@ -337,11 +337,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     output = null;
                     continue;
                 }
-                // Handle input that is a String or a DateTime
+                // Handle input that is a String, Integer (year) or a DateTime
                 if ( o instanceof String ) {
                 	// Try to parse the string into DateTime - handle exception in main loop
                 	dt = DateTime.parse((String)o);
                 	Message.printStatus(2, routine, "Parsing string to DateTime \"" + o + "\"");
+                }
+                else if ( o instanceof Integer ) {
+                	dt = new DateTime(DateTime.PRECISION_YEAR);
+                	dt.setYear((Integer)o);
                 }
                 else if ( o instanceof DateTime ) {
                 	dt = (DateTime)o;

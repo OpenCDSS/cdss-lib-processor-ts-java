@@ -22,6 +22,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -54,11 +55,7 @@ implements ActionListener, ItemListener, KeyListener, ListSelectionListener, Win
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SetFromTS_Command __command = null;
-private JTextField __SetStart_JTextField;
-private JTextField __SetEnd_JTextField;
-private JCheckBox __SetWindow_JCheckBox = null;
-private DateTime_JPanel __SetWindowStart_JPanel = null;
-private DateTime_JPanel __SetWindowEnd_JPanel = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -70,6 +67,13 @@ private JLabel __IndependentTSID_JLabel = null;
 private SimpleJComboBox __IndependentTSID_JComboBox = null;
 private JLabel __IndependentEnsembleID_JLabel = null;
 private SimpleJComboBox __IndependentEnsembleID_JComboBox = null;
+private JTextField __SetStart_JTextField;
+private JTextField __SetEnd_JTextField;
+private JCheckBox __SetWindow_JCheckBox = null;
+private DateTime_JPanel __SetWindowStart_JPanel = null;
+private DateTime_JPanel __SetWindowEnd_JPanel = null;
+private JTextField __SetWindowStart_JTextField = null; // Used for properties
+private JTextField __SetWindowEnd_JTextField = null;
 private SimpleJComboBox	__TransferHow_JComboBox =null;
 private SimpleJComboBox __HandleMissingHow_JComboBox = null;
 private SimpleJComboBox __SetDataFlags_JComboBox = null;
@@ -161,10 +165,14 @@ private void checkGUIState ()
         // Checked so enable the date panels
         __SetWindowStart_JPanel.setEnabled ( true );
         __SetWindowEnd_JPanel.setEnabled ( true );
+        __SetWindowStart_JTextField.setEnabled ( true );
+        __SetWindowEnd_JTextField.setEnabled ( true );
     }
     else {
         __SetWindowStart_JPanel.setEnabled ( false );
         __SetWindowEnd_JPanel.setEnabled ( false );
+        __SetWindowStart_JTextField.setEnabled ( false );
+        __SetWindowEnd_JTextField.setEnabled ( false );
     }
 }
 
@@ -235,10 +243,26 @@ private void checkInput ()
     if ( __SetWindow_JCheckBox.isSelected() ){
         String SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
         String SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
-        if ( SetWindowStart.length() > 0 ) {
+        // 99 is used for month if not specified - don't want that in the parameters
+        if ( SetWindowStart.startsWith("99") ) {
+            SetWindowStart = "";
+        }
+        if ( SetWindowEnd.startsWith("99") ) {
+            SetWindowEnd = "";
+        }
+        // This will override the above
+        String SetWindowStart2 = __SetWindowStart_JTextField.getText().trim();
+        String SetWindowEnd2 = __SetWindowEnd_JTextField.getText().trim();
+        if ( !SetWindowStart2.isEmpty() ) {
+            SetWindowStart = SetWindowStart2;
+        }
+        if ( !SetWindowEnd2.isEmpty() ) {
+            SetWindowEnd = SetWindowEnd2;
+        }
+        if ( !SetWindowStart.isEmpty() ) {
             props.set ( "SetWindowStart", SetWindowStart );
         }
-        if ( SetWindowEnd.length() > 0 ) {
+        if ( SetWindowEnd.isEmpty() ) {
             props.set ( "SetWindowEnd", SetWindowEnd );
         }
     }
@@ -288,8 +312,27 @@ private void commitEdits ()
     if ( __SetWindow_JCheckBox.isSelected() ){
         String SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
         String SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
+        if ( SetWindowStart.startsWith("99") ) {
+            SetWindowStart = "";
+        }
+        if ( SetWindowEnd.startsWith("99") ) {
+            SetWindowEnd = "";
+        }
+        String SetWindowStart2 = __SetWindowStart_JTextField.getText().trim();
+        String SetWindowEnd2 = __SetWindowEnd_JTextField.getText().trim();
+        if ( !SetWindowStart2.isEmpty() ) {
+        	SetWindowStart = SetWindowStart2;
+        }
+        if ( !SetWindowEnd2.isEmpty() ) {
+        	SetWindowEnd = SetWindowEnd2;
+        }
         __command.setCommandParameter ( "SetWindowStart", SetWindowStart );
         __command.setCommandParameter ( "SetWindowEnd", SetWindowEnd );
+    }
+    else {
+    	// Clear the properties because they may have been set during editing but should not be propagated
+    	__command.getCommandParameters().unSet ( "SetWindowStart" );
+    	__command.getCommandParameters().unSet ( "SetWindowEnd" );
     }
 }
 
@@ -327,41 +370,41 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
         "If multiple independent time series are specified (e.g., for ensembles)," +
         " the same number of dependent time series must be specified."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use a SetOutputPeriod() command if the dependent time series period will be extended." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify dates with precision appropriate for the data, " +
-		"blank for all available data, OutputStart, or OutputEnd." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The set period is for the independent time series."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for input time series
+    int yts = -1;
+    JPanel ts_JPanel = new JPanel();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time series", ts_JPanel );
 
     __TSList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel (
-            this, main_JPanel, new JLabel ("Dependent TS List:"), __TSList_JComboBox, y );
+    yts = CommandEditorUtil.addTSListToEditorDialogPanel (
+        this, ts_JPanel, new JLabel ("Dependent TS List:"), __TSList_JComboBox, yts );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __TSID_JComboBox.setToolTipText("Select a dependent time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yts = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yts );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select a dependent ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yts = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+            this, this, ts_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yts );
     
     __IndependentTSList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel (
-            this, main_JPanel, new JLabel ("Independent TS List:"), __IndependentTSList_JComboBox, y );
+    yts = CommandEditorUtil.addTSListToEditorDialogPanel (
+            this, ts_JPanel, new JLabel ("Independent TS List:"), __IndependentTSList_JComboBox, yts );
 
     __IndependentTSID_JLabel = new JLabel (
             "Independent TSID (for Independent TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
@@ -369,72 +412,125 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     __IndependentTSID_JComboBox.setToolTipText("Select an independent time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __IndependentTSID_JLabel, __IndependentTSID_JComboBox, tsids2, y );
+    yts = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __IndependentTSID_JLabel, __IndependentTSID_JComboBox, tsids2, yts );
     
     __IndependentEnsembleID_JLabel = new JLabel (
             "Independent EnsembleID (for Independent TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __IndependentEnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __IndependentEnsembleID_JComboBox.setToolTipText("Select an independent ensemble identifier from the list or specify with ${Property} notation");
-    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-            this, this, main_JPanel, __IndependentEnsembleID_JLabel, __IndependentEnsembleID_JComboBox, EnsembleIDs, y );
+    yts = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+            this, this, ts_JPanel, __IndependentEnsembleID_JLabel, __IndependentEnsembleID_JComboBox, EnsembleIDs, yts );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Set start:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for period and window
+    int yTime = -1;
+    JPanel time_JPanel = new JPanel();
+    time_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Period and Window", time_JPanel );
+    
+    JGUIUtil.addComponent(time_JPanel, new JLabel (
+		"Specify date/times with precision appropriate for the data." ),
+		0, ++yTime, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel (
+		"The set period is for the independent time series."),
+		0, ++yTime, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel (
+		"The set window can be specified using the provided choices or with processor ${Property}."),
+		0, ++yTime, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+    	0, ++yTime, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(time_JPanel, new JLabel ("Set start:"), 
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetStart_JTextField = new JTextField (20);
     __SetStart_JTextField.setToolTipText("Specify the set start using a date/time string or ${Property} notation");
     __SetStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - set start, can use ${Property} (default is full period)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(time_JPanel, __SetStart_JTextField,
+        1, yTime, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Optional - set start, can use ${Property} (default is full period)."),
+        3, yTime, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set End:"), 
-        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Set End:"), 
+        0, ++yTime, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetEnd_JTextField = new JTextField (20);
     __SetEnd_JTextField.setToolTipText("Specify the set end using a date/time string or ${Property} notation");
     __SetEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
-        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - set end, can use ${Property} (default is full period)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(time_JPanel, __SetEnd_JTextField,
+        1, yTime, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Optional - set end, can use ${Property} (default is full period)."),
+        3, yTime, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     __SetWindow_JCheckBox = new JCheckBox ( "Set window:", false );
     __SetWindow_JCheckBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SetWindow_JCheckBox, 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(time_JPanel, __SetWindow_JCheckBox, 
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     JPanel setWindow_JPanel = new JPanel();
     setWindow_JPanel.setLayout(new GridBagLayout());
-    __SetWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.HOUR, null );
+    __SetWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.MINUTE, null );
     __SetWindowStart_JPanel.addActionListener(this);
     __SetWindowStart_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(setWindow_JPanel, __SetWindowStart_JPanel,
         1, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval
-    __SetWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.HOUR, null );
+    __SetWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.MINUTE, null );
     __SetWindowEnd_JPanel.addActionListener(this);
     __SetWindowEnd_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(setWindow_JPanel, __SetWindowEnd_JPanel,
         4, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, setWindow_JPanel,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(time_JPanel, setWindow_JPanel,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel(
         "Optional - window within output year to set data (default=full year)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        3, yTime, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(time_JPanel,new JLabel( "Set window start ${Property}:"),
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetWindowStart_JTextField = new JTextField ( "", 20 );
+    __SetWindowStart_JTextField.setToolTipText("Specify the output window start ${Property} - will override the above.");
+    __SetWindowStart_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(time_JPanel, __SetWindowStart_JTextField,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Optional (default=full year)."),
+        3, yTime, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transfer data how:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(time_JPanel,new JLabel("Set window end ${Property}:"),
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetWindowEnd_JTextField = new JTextField ( "", 20 );
+    __SetWindowEnd_JTextField.setToolTipText("Specify the set window end ${Property} - will override the above.");
+    __SetWindowEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(time_JPanel, __SetWindowEnd_JTextField,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Optional (default=full year)."),
+        3, yTime, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    // Panel for set data
+    int ySet = -1;
+    JPanel set_JPanel = new JPanel();
+    set_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Set Control", set_JPanel );
+    
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+		"The following parameters indicate how to set the data."),
+		0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+		"If the data should be treated as original data, the time series limits can be recalculated (can be used for filling later)."),
+		0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+    	0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+	JGUIUtil.addComponent(set_JPanel, new JLabel ( "Transfer data how:" ), 
+		0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TransferHow_JComboBox = new SimpleJComboBox ( false );
 	__TransferHow_JComboBox.addItem ( TSUtil.TRANSFER_BYDATETIME );
 	__TransferHow_JComboBox.addItem ( TSUtil.TRANSFER_SEQUENTIALLY );
 	__TransferHow_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __TransferHow_JComboBox,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(set_JPanel, __TransferHow_JComboBox,
+		1, ySet, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel(
         "Required - how are data values transferred?"), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Handle missing data how?:" ), 
+        0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HandleMissingHow_JComboBox = new SimpleJComboBox ( false );
     __HandleMissingHow_JComboBox.addItem ( "" );
     __HandleMissingHow_JComboBox.addItem ( __command._IgnoreMissing );
@@ -442,14 +538,14 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     __HandleMissingHow_JComboBox.addItem ( __command._SetOnlyMissingValues );
     __HandleMissingHow_JComboBox.select ( 0 );
     __HandleMissingHow_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - missing in independent handled how? (default=" +
-            __command._SetMissing + ")."), 
-            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, __HandleMissingHow_JComboBox,
+        1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel( "Optional - missing in independent handled how? (default=" +
+        __command._SetMissing + ")."), 
+        3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Set data flags?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel("Set data flags?:"),
+        0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetDataFlags_JComboBox = new SimpleJComboBox ( false );
     List<String> choices = new Vector();
     choices.add ("");
@@ -457,44 +553,44 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     choices.add ( __command._True );
     __SetDataFlags_JComboBox.setData ( choices );
     __SetDataFlags_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SetDataFlags_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(set_JPanel, __SetDataFlags_JComboBox,
+        1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel(
         "Optional - should data flags be copied (default=" + __command._True + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set flag:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Set flag:" ), 
+		0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetFlag_JTextField = new JTextField ( 10 );
 	__SetFlag_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SetFlag_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(set_JPanel, __SetFlag_JTextField,
+		1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel(
 		"Optional - string to flag set values."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set flag description:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Set flag description:" ), 
+        0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetFlagDesc_JTextField = new JTextField ( 15 );
     __SetFlagDesc_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SetFlagDesc_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for set flag."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, __SetFlagDesc_JTextField,
+        1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel( "Optional - description for set flag."), 
+        3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Recalculate limits:"), 
+        0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RecalcLimits_JComboBox = new SimpleJComboBox ( false );
     __RecalcLimits_JComboBox.addItem ( "" );
     __RecalcLimits_JComboBox.addItem ( __command._False );
     __RecalcLimits_JComboBox.addItem ( __command._True );
     __RecalcLimits_JComboBox.select ( 0 );
     __RecalcLimits_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,
-    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(set_JPanel, __RecalcLimits_JComboBox,
+        1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel,
         new JLabel( "Optional - recalculate original data limits after set (default=" + __command._False + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -508,6 +604,7 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
 	// Refresh the contents...
     checkGUIState();
 	refresh();
+	checkGUIState(); // To make sure SetWindow components are ok
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -705,29 +802,39 @@ private void refresh ()
 			__SetEnd_JTextField.setText ( SetEnd );
 		}
         if ( (SetWindowStart != null) && (SetWindowStart.length() > 0) ) {
-            try {
-                // Add year because it is not part of the parameter value...
-                DateTime SetWindowStart_DateTime = DateTime.parse ( "0000-" + SetWindowStart );
-                Message.printStatus(2, routine, "Setting window start to " + SetWindowStart_DateTime );
-                __SetWindowStart_JPanel.setDateTime ( SetWindowStart_DateTime );
-            }
-            catch ( Exception e ) {
-                Message.printWarning( 1, routine, "SetWindowStart (" + SetWindowStart + ") is not a valid date/time." );
-            }
+        	if ( SetWindowStart.indexOf("${") >= 0 ) {
+        		__SetWindowStart_JTextField.setText ( SetWindowStart );
+        	}
+        	else {
+	            try {
+	                // Add year because it is not part of the parameter value...
+	                DateTime SetWindowStart_DateTime = DateTime.parse ( "0000-" + SetWindowStart );
+	                Message.printStatus(2, routine, "Setting window start to " + SetWindowStart_DateTime );
+	                __SetWindowStart_JPanel.setDateTime ( SetWindowStart_DateTime );
+	            }
+	            catch ( Exception e ) {
+	                Message.printWarning( 1, routine, "SetWindowStart (" + SetWindowStart + ") is not a valid date/time." );
+	            }
+        	}
         }
         if ( (SetWindowEnd != null) && (SetWindowEnd.length() > 0) ) {
-            try {
-                // Add year because it is not part of the parameter value...
-                DateTime SetWindowEnd_DateTime = DateTime.parse ( "0000-" + SetWindowEnd );
-                Message.printStatus(2, routine, "Setting window end to " + SetWindowEnd_DateTime );
-                __SetWindowEnd_JPanel.setDateTime ( SetWindowEnd_DateTime );
-            }
-            catch ( Exception e ) {
-                Message.printWarning( 1, routine, "SetWindowEnd (" + SetWindowEnd + ") is not a valid date/time." );
-            }
+        	if ( SetWindowEnd.indexOf("${") >= 0 ) {
+        		__SetWindowEnd_JTextField.setText ( SetWindowEnd );
+        	}
+        	else {
+	            try {
+	                // Add year because it is not part of the parameter value...
+	                DateTime SetWindowEnd_DateTime = DateTime.parse ( "0000-" + SetWindowEnd );
+	                Message.printStatus(2, routine, "Setting window end to " + SetWindowEnd_DateTime );
+	                __SetWindowEnd_JPanel.setDateTime ( SetWindowEnd_DateTime );
+	            }
+	            catch ( Exception e ) {
+	                Message.printWarning( 1, routine, "SetWindowEnd (" + SetWindowEnd + ") is not a valid date/time." );
+	            }
+        	}
         }
-        if ( (SetWindowStart != null) && (SetWindowStart.length() != 0) &&
-                (SetWindowEnd != null) && (SetWindowEnd.length() != 0)) {
+        if ( (SetWindowStart != null) && !SetWindowStart.isEmpty() &&
+            (SetWindowEnd != null) && !SetWindowEnd.isEmpty() ) {
             __SetWindow_JCheckBox.setSelected ( true );
         }
         else {
@@ -836,7 +943,23 @@ private void refresh ()
     props.add ( "RecalcLimits=" + RecalcLimits);
     if ( __SetWindow_JCheckBox.isSelected() ) {
         SetWindowStart = __SetWindowStart_JPanel.toString(false,true).trim();
+        if ( SetWindowStart.startsWith("99") ) {
+        	// 99 is used as placeholder when month is not set... artifact of setting choices to blank during editing
+        	SetWindowStart = "";
+        }
         SetWindowEnd = __SetWindowEnd_JPanel.toString(false,true).trim();
+        if ( SetWindowEnd.startsWith("99") ) {
+        	// 99 is used as placeholder when month is not set... artifact of setting choices to blank during editing
+        	SetWindowEnd = "";
+        }
+        String SetWindowStart2 = __SetWindowStart_JTextField.getText().trim();
+        String SetWindowEnd2 = __SetWindowEnd_JTextField.getText().trim();
+        if ( (SetWindowStart2 != null) && !SetWindowStart2.isEmpty() ) {
+        	SetWindowStart = SetWindowStart2;
+        }
+        if ( (SetWindowEnd2 != null) && !SetWindowEnd2.isEmpty() ) {
+        	SetWindowEnd = SetWindowEnd2;
+        }
         props.add ( "SetWindowStart=" + SetWindowStart );
         props.add ( "SetWindowEnd=" + SetWindowEnd );
     }

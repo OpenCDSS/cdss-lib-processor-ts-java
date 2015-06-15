@@ -149,7 +149,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-    if ( (SetWindowStart != null) && !SetWindowStart.equals("") ) {
+    if ( (SetWindowStart != null) && !SetWindowStart.isEmpty() && (SetWindowStart.indexOf("${") < 0) ) {
         String analysisWindowStart = "" + __SET_WINDOW_YEAR + "-" + SetWindowStart;
         try {
             DateTime.parse( analysisWindowStart );
@@ -164,7 +164,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (SetWindowEnd != null) && !SetWindowEnd.equals("") ) {
+    if ( (SetWindowEnd != null) && !SetWindowEnd.equals("") && (SetWindowEnd.indexOf("${") < 0) ) {
         String analysisWindowEnd = "" + __SET_WINDOW_YEAR + "-" + SetWindowEnd;
         try {
             DateTime.parse( analysisWindowEnd );
@@ -470,8 +470,7 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warningLevel = 2;
@@ -485,6 +484,7 @@ CommandWarningException, CommandException
     
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // default
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
     	if ( o != null ) {
@@ -495,7 +495,7 @@ CommandWarningException, CommandException
     	// Should not happen
     }
     if ( clearStatus ) {
-		status.clearLog(CommandPhaseType.RUN);
+		status.clearLog(commandPhase);
 	}
 
 	String TSList = parameters.getValue ( "TSList" );
@@ -512,7 +512,15 @@ CommandWarningException, CommandException
 	}
     String RecalcLimits = parameters.getValue ( "RecalcLimits" );
     String SetWindowStart = parameters.getValue ( "SetWindowStart" );
+    if ( (SetWindowStart != null) && !SetWindowStart.isEmpty() &&
+    	(commandPhase == CommandPhaseType.RUN) && SetWindowStart.indexOf("${") >= 0 ) {
+    	SetWindowStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SetWindowStart);
+    }
     String SetWindowEnd = parameters.getValue ( "SetWindowEnd" );
+    if ( (SetWindowEnd != null) && !SetWindowEnd.isEmpty() &&
+    	(commandPhase == CommandPhaseType.RUN) && SetWindowEnd.indexOf("${") >= 0 ) {
+    	SetWindowEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SetWindowEnd);
+    }
     String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
     if ( (HandleMissingHow == null) || HandleMissingHow.equals("") ) {
         HandleMissingHow = _SetMissing; // Default
@@ -738,7 +746,6 @@ CommandWarningException, CommandException
 	String SetEnd = parameters.getValue("SetEnd");
 	DateTime SetStart_DateTime = null;
 	DateTime SetEnd_DateTime = null;
-	CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
 			SetStart_DateTime = TSCommandProcessorUtil.getDateTime ( SetStart, "SetStart", processor,
@@ -759,7 +766,7 @@ CommandWarningException, CommandException
 	}
 	
     DateTime SetWindowStart_DateTime = null;
-    if ( (SetWindowStart != null) && (SetWindowStart.length() > 0) ) {
+    if ( (SetWindowStart != null) && !SetWindowStart.isEmpty() ) {
         try {
             // The following works with ISO formats...
             SetWindowStart_DateTime = DateTime.parse ( "" + __SET_WINDOW_YEAR + "-" + SetWindowStart );
@@ -767,13 +774,14 @@ CommandWarningException, CommandException
         catch ( Exception e ) {
             message = "SetWindowStart \"" + SetWindowStart + "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
             Message.printWarning ( warningLevel,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-            throw new InvalidCommandParameterException ( message );
+            	MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the SetWindowStart parameter is properly formatted." ) );
         }
     }
     DateTime SetWindowEnd_DateTime = null;
-    if ( (SetWindowEnd != null) && (SetWindowEnd.length() > 0) ) {
+    if ( (SetWindowEnd != null) && !SetWindowEnd.isEmpty() ) {
         try {
             // The following works with ISO formats...
             SetWindowEnd_DateTime = DateTime.parse ( "" + __SET_WINDOW_YEAR + "-" + SetWindowEnd );
@@ -783,7 +791,9 @@ CommandWarningException, CommandException
             Message.printWarning ( warningLevel,
             MessageUtil.formatMessageTag(
             command_tag,++warning_count), routine, message );
-            throw new InvalidCommandParameterException ( message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the SetWindowEnd parameter is properly formatted." ) );
         }
     }
 
@@ -791,8 +801,7 @@ CommandWarningException, CommandException
 		// Input error (e.g., missing time series)...
 		message = "Insufficient data to run command.";
 		Message.printWarning ( warningLevel,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
+			MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
 	}
 
 	// Now process the time series...

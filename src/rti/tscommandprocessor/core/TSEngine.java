@@ -2864,13 +2864,16 @@ throws Exception
                 commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
     			continue;
     		}
-    		else if ( command instanceof Exit_Command ) {
-    			// Exit the processing...
-    			Message.printStatus ( 1, routine, "Exit - stop processing commands." );
-                commandProfile.setEndTime(System.currentTimeMillis());
-                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
-    			break;
-    		}
+    		// TODO SAM 2015-06-13 Old location of Exit_Command but want to handle if Exit() is in If() so move below
+    		// This points out that perhaps If() statements cause a jump to EndIf()?
+    		// - currently traverse all within the If() block and evaluate the stack?
+    		//else if ( command instanceof Exit_Command ) {
+    		//	// Exit the processing...
+    		//	Message.printStatus ( 1, routine, "Exit - stop processing commands." );
+            //    commandProfile.setEndTime(System.currentTimeMillis());
+            //    commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
+    		//	break;
+    		//}
     	
     		// Check for obsolete commands (do this last to minimize the amount of processing through this code)...
     		// Do this at the end because this logic may seldom be hit if valid commands are processed above.  
@@ -2918,7 +2921,14 @@ throws Exception
         				if ( Message.isDebugOn ) {
         					Message.printDebug ( 1, routine, "Running command through new code..." );
         				}
-                        if ( command instanceof For_Command ) {
+        	    		if ( command instanceof Exit_Command ) {
+        	    			// Exit the processing...
+        	    			Message.printStatus ( 1, routine, "Exit - stop processing commands." );
+        	                commandProfile.setEndTime(System.currentTimeMillis());
+        	                commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
+        	    			break;
+        	    		}
+        	    		else if ( command instanceof For_Command ) {
                             // TODO SAM 2014-06-29 Need a way to check for for loops that cross each other or in/out of if commands
                             // TODO SAM 2014-06-29 Need a For() loop stack and need to reinitialize all nested For() loops so that they
                             // will run through again

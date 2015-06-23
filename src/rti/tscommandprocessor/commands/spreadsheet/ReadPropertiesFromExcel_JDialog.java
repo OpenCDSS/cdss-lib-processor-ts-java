@@ -355,7 +355,7 @@ private void initialize ( JFrame parent, ReadPropertiesFromExcel_Command command
     __main_JTabbedPane.addTab ( "Properties", prop_JPanel );
     
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
-        "Property types by default correspond to Excel cell type (Number=Double,Text=String,Date=DateTime)."), 
+        "Property types in TSTool by default correspond to Excel cell type (Excel Number=Double property, Excel Text=String property, Excel Date=DateTime property)."), 
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(prop_JPanel, new JLabel (
    	    "Use the following parameters to explicitly set the property type, in particular to convert number to boolean or integer and strings to date/time."),
@@ -381,7 +381,7 @@ private void initialize ( JFrame parent, ReadPropertiesFromExcel_Command command
         new JLabel ("Optional - properties that are date/times, separated by commas."),
         3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(prop_JPanel, new JLabel ("Excel integer columns:"),
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ("Integer properties:"),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IntegerProperties_JTextField = new JTextField (20);
     __IntegerProperties_JTextField.addKeyListener (this);

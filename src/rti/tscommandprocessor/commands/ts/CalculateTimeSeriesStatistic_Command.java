@@ -352,9 +352,8 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{   String message, routine = getCommandName() + "_Command.runCommand";
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   String message, routine = getClass().getSimpleName() + ".runCommandInternal";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;

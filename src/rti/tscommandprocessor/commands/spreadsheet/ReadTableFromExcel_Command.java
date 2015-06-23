@@ -214,23 +214,25 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(16);
+	List<String> validList = new ArrayList<String>(18);
     validList.add ( "TableID" );
+    validList.add ( "NumberPrecision" );
     validList.add ( "InputFile" );
     validList.add ( "Worksheet" );
     validList.add ( "ExcelAddress" );
     validList.add ( "ExcelNamedRange" );
     validList.add ( "ExcelTableName" );
     validList.add ( "ExcelColumnNames" );
+    validList.add ( "KeepOpen" );
     validList.add ( "ColumnIncludeFilters" );
     validList.add ( "ColumnExcludeFilters" );
     validList.add ( "Comment" );
+    validList.add ( "ExcelDoubleColumns" );
     validList.add ( "ExcelIntegerColumns" );
     validList.add ( "ExcelDateTimeColumns" );
     validList.add ( "ExcelTextColumns" );
-    validList.add ( "NumberPrecision" );
     validList.add ( "ReadAllAsText" );
-    validList.add ( "KeepOpen" );
+    validList.add ( "RowCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -306,7 +308,7 @@ private DataTable readTableFromExcelFile ( String workbookFile, String sheetName
     String excelAddress, String excelNamedRange, String excelTableName, ExcelColumnNameRowType excelColumnNames,
     Hashtable columnIncludeFiltersMap, Hashtable columnExcludeFiltersMap,
     String comment,
-    String [] excelIntegerColumns, String [] excelDateTimeColumns, String [] excelTextColumns,
+    String [] excelDoubleColumns, String [] excelIntegerColumns, String [] excelDateTimeColumns, String [] excelTextColumns,
     int numberPrecision, boolean readAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = "ReadTableFromExcel_Command.readTableFromExcelFile", message;
@@ -365,7 +367,7 @@ throws FileNotFoundException, IOException
         Message.printStatus(2,routine,"Excel address block to read: " + area );
         // Create the table based on the first row of the area
         Object [] o = tk.createTableColumns ( table, wb, sheet, area, excelColumnNames, comment,
-            excelIntegerColumns, excelDateTimeColumns, excelTextColumns, numberPrecision, readAllAsText, problems );
+        	excelDoubleColumns, excelIntegerColumns, excelDateTimeColumns, excelTextColumns, numberPrecision, readAllAsText, problems );
         String [] columnNames = (String [])o[0];
         setFirstDataRow((Integer)o[1]);
         int [] tableColumnTypes = table.getFieldDataTypes();
@@ -733,8 +735,9 @@ Run the command.
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
+	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
 
@@ -819,6 +822,14 @@ CommandWarningException, CommandException
 	if ( (Comment != null) && Comment.length() > 0 ) {
 	    comment = Comment;
 	}
+	String ExcelDoubleColumns = parameters.getValue ( "ExcelDoubleColumns" );
+	String [] excelDoubleColumns = null;
+	if ( (ExcelDoubleColumns != null) && !ExcelDoubleColumns.equals("") ) {
+		excelDoubleColumns = ExcelDoubleColumns.split(",");
+	    for ( int i = 0; i < excelDoubleColumns.length; i++ ) {
+	    	excelDoubleColumns[i] = excelDoubleColumns[i].trim();
+	    }
+	}
 	String ExcelIntegerColumns = parameters.getValue ( "ExcelIntegerColumns" );
 	String [] excelIntegerColumns = null;
 	if ( (ExcelIntegerColumns != null) && !ExcelIntegerColumns.equals("") ) {
@@ -856,6 +867,10 @@ CommandWarningException, CommandException
 	if ( (ReadAllAsText != null) && ReadAllAsText.equalsIgnoreCase("True") ) {
 	    readAllAsText = true;
 	}
+    String RowCountProperty = parameters.getValue ( "RowCountProperty" );
+    if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() && (commandPhase == CommandPhaseType.RUN) && RowCountProperty.indexOf("${") >= 0 ) {
+    	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
+    }
     String KeepOpen = parameters.getValue ( "KeepOpen" );
     boolean keepOpen = false; // default
     if ( (KeepOpen != null) && KeepOpen.equalsIgnoreCase(_True) ) {
@@ -889,7 +904,7 @@ CommandWarningException, CommandException
             table = readTableFromExcelFile ( InputFile_full, Worksheet, keepOpen,
                 ExcelAddress, ExcelNamedRange, ExcelTableName, excelColumnNames,
                 columnIncludeFiltersMap, columnExcludeFiltersMap, comment,
-                excelIntegerColumns, excelDateTimeColumns, excelTextColumns,
+                excelDoubleColumns, excelIntegerColumns, excelDateTimeColumns, excelTextColumns,
                 numberPrecision, readAllAsText, problems );
             for ( String problem: problems ) {
                 Message.printWarning ( 3, routine, problem );
@@ -904,6 +919,25 @@ CommandWarningException, CommandException
                 table = new DataTable();
             }
             table.setTableID ( TableID );
+    	    // Set the property indicating the number of rows in the table
+            if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
+                int rowCount = table.getNumberOfRecords();
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "PropertyName", RowCountProperty );
+                request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+                try {
+                    processor.processRequest( "SetProperty", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+                    Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+                }
+            }
 	    }
 	    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 	        // Create an empty table.
@@ -985,11 +1019,13 @@ public String toString ( PropList props )
 	String ColumnIncludeFilters = props.getValue("ColumnIncludeFilters");
 	String ColumnExcludeFilters = props.getValue("ColumnExcludeFilters");
 	String Comment = props.getValue("Comment");
+	String ExcelDoubleColumns = props.getValue("ExcelDoubleColumns");
 	String ExcelIntegerColumns = props.getValue("ExcelIntegerColumns");
 	String ExcelDateTimeColumns = props.getValue("ExcelDateTimeColumns");
 	String ExcelTextColumns = props.getValue("ExcelTextColumns");
 	String NumberPrecision = props.getValue("NumberPrecision");
 	String ReadAllAsText = props.getValue("ReadAllAsText");
+	String RowCountProperty = props.getValue( "RowCountProperty" );
 	String KeepOpen = props.getValue("KeepOpen");
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
@@ -997,6 +1033,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (NumberPrecision != null) && (NumberPrecision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NumberPrecision=" + NumberPrecision );
     }
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -1034,6 +1076,12 @@ public String toString ( PropList props )
         }
         b.append ( "ExcelColumnNames=" + ExcelColumnNames );
     }
+    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "KeepOpen=" + KeepOpen );
+    }
     if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -1051,6 +1099,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "Comment=\"" + Comment + "\"" );
+    }
+    if ( (ExcelDoubleColumns != null) && (ExcelDoubleColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcelDoubleColumns=\"" + ExcelDoubleColumns + "\"" );
     }
     if ( (ExcelIntegerColumns != null) && (ExcelIntegerColumns.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -1070,23 +1124,17 @@ public String toString ( PropList props )
         }
         b.append ( "ExcelTextColumns=\"" + ExcelTextColumns + "\"" );
     }
-    if ( (NumberPrecision != null) && (NumberPrecision.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "NumberPrecision=" + NumberPrecision );
-    }
     if ( (ReadAllAsText != null) && (ReadAllAsText.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "ReadAllAsText=" + ReadAllAsText );
     }
-    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
+    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "KeepOpen=" + KeepOpen );
+        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

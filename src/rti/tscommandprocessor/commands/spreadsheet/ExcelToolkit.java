@@ -410,7 +410,7 @@ and the second item is the row (0+) in the Excel worksheet for the first data ro
 */
 protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
     AreaReference area, ExcelColumnNameRowType excelColumnNames, String comment,
-    String [] excelIntegerColumns, String [] excelDateTimeColumns, String [] excelTextColumns,
+    String [] excelDoubleColumns, String [] excelIntegerColumns, String [] excelDateTimeColumns, String [] excelTextColumns,
     int precisionForFloats, boolean readAllAsText, List<String> problems )
 {   String routine = getClass().getSimpleName() + ".createTableColumns";
     Row headerRow = null; // Row containing column headings
@@ -517,6 +517,17 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
         }
         else {
             // See if the column name matches the user-specified columns for type
+            if ( excelDoubleColumns != null ) {
+                for ( int i = 0; i < excelDoubleColumns.length; i++ ) {
+                    if ( columnNames[columnIndex].equalsIgnoreCase(excelDoubleColumns[i]) ) {
+                        // Treat as a double
+                        Message.printStatus(2,routine,"Creating requested table column [" + iCol + "]=" + TableColumnType.DOUBLE);
+                        table.addField ( new TableField(TableField.DATA_TYPE_DOUBLE, columnNames[columnIndex], -1, precisionForFloats), null );
+                        columnTypeSet = true;
+                        break;
+                    }
+                }
+            }
             if ( excelIntegerColumns != null ) {
                 for ( int i = 0; i < excelIntegerColumns.length; i++ ) {
                     if ( columnNames[columnIndex].equalsIgnoreCase(excelIntegerColumns[i]) ) {

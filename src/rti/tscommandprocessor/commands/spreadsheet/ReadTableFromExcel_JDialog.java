@@ -56,7 +56,8 @@ private final String __RemoveWorkingDirectoryFromFile = "Remove Working Director
 
 private boolean __error_wait = false; // To track errors
 private boolean __first_time = true;
-private JTextArea __command_JTextArea=null;
+private JTextArea __command_JTextArea = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextField __TableID_JTextField = null;
 private JTextField __InputFile_JTextField = null;
 private JTextField __Worksheet_JTextField = null;
@@ -68,11 +69,13 @@ private JTextField __Comment_JTextField = null;
 private SimpleJComboBox __ExcelColumnNames_JComboBox = null;
 private JTextArea __ColumnIncludeFilters_JTextArea = null;
 private JTextArea __ColumnExcludeFilters_JTextArea = null;
+private JTextField __ExcelDoubleColumns_JTextField = null;
 private JTextField __ExcelIntegerColumns_JTextField = null;
 private JTextField __ExcelDateTimeColumns_JTextField = null;
 private JTextField __ExcelTextColumns_JTextField = null;
 private JTextField __NumberPrecision_JTextField = null;
 private SimpleJComboBox __ReadAllAsText_JComboBox = null;
+private JTextField __RowCountProperty_JTextField = null;
 private SimpleJComboBox __KeepOpen_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
@@ -191,11 +194,13 @@ private void checkInput ()
 	String ExcelColumnNames  = __ExcelColumnNames_JComboBox.getSelected();
 	String ColumnIncludeFilters  = __ColumnIncludeFilters_JTextArea.getText().trim();
 	String ColumnExcludeFilters  = __ColumnExcludeFilters_JTextArea.getText().trim();
+	String ExcelDoubleColumns  = __ExcelDoubleColumns_JTextField.getText().trim();
 	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
 	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
 	String ExcelTextColumns  = __ExcelTextColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	String KeepOpen = __KeepOpen_JComboBox.getSelected();
 	__error_wait = false;
 
@@ -229,6 +234,9 @@ private void checkInput ()
     if (Comment.length() > 0) {
         props.set("Comment", Comment);
     }
+    if ( ExcelDoubleColumns.length() > 0 ) {
+        props.set ( "ExcelDoubleColumns", ExcelDoubleColumns );
+    }
     if ( ExcelIntegerColumns.length() > 0 ) {
         props.set ( "ExcelIntegerColumns", ExcelIntegerColumns );
     }
@@ -246,6 +254,9 @@ private void checkInput ()
     }
     if ( KeepOpen.length() > 0 ) {
         props.set ( "KeepOpen", KeepOpen );
+    }
+    if ( RowCountProperty.length() > 0 ) {
+        props.set ( "RowCountProperty", RowCountProperty );
     }
 	try {
 	    // This will warn the user...
@@ -273,11 +284,13 @@ private void commitEdits ()
 	String ColumnIncludeFilters  = __ColumnIncludeFilters_JTextArea.getText().trim();
 	String ColumnExcludeFilters  = __ColumnExcludeFilters_JTextArea.getText().trim();
 	String Comment = __Comment_JTextField.getText().trim();
+	String ExcelDoubleColumns  = __ExcelDoubleColumns_JTextField.getText().trim();
 	String ExcelIntegerColumns  = __ExcelIntegerColumns_JTextField.getText().trim();
 	String ExcelDateTimeColumns  = __ExcelDateTimeColumns_JTextField.getText().trim();
 	String ExcelTextColumns  = __ExcelTextColumns_JTextField.getText().trim();
 	String NumberPrecision  = __NumberPrecision_JTextField.getText().trim();
 	String ReadAllAsText  = __ReadAllAsText_JComboBox.getSelected();
+    String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     String KeepOpen  = __KeepOpen_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
@@ -289,11 +302,13 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ColumnIncludeFilters", ColumnIncludeFilters );
 	__command.setCommandParameter ( "ColumnExcludeFilters", ColumnExcludeFilters );
 	__command.setCommandParameter ( "Comment", Comment );
+	__command.setCommandParameter ( "ExcelDoubleColumns", ExcelDoubleColumns );
 	__command.setCommandParameter ( "ExcelIntegerColumns", ExcelIntegerColumns );
 	__command.setCommandParameter ( "ExcelDateTimeColumns", ExcelDateTimeColumns );
 	__command.setCommandParameter ( "ExcelTextColumns", ExcelTextColumns );
 	__command.setCommandParameter ( "NumberPrecision", NumberPrecision );
 	__command.setCommandParameter ( "ReadAllAsText", ReadAllAsText );
+	__command.setCommandParameter ( "RowCountProperty", RowCountProperty );
 	__command.setCommandParameter ( "KeepOpen", KeepOpen );
 }
 
@@ -319,76 +334,103 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
 	getContentPane().add ("North", main_JPanel);
 	int y = -1;
 
-	JPanel paragraph = new JPanel();
-	paragraph.setLayout(new GridBagLayout());
-	int yy = -1;
-    
-   	JGUIUtil.addComponent(paragraph, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"This command reads a table from a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx, *.xlsm)."),
-    	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-		"A contiguous block of cells must be specified using one of the address methods below."),
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-		"It is recommended that the location of the files be " +
-		"specified using a path relative to the working directory."),
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
-    JGUIUtil.addComponent(paragraph, new JLabel ( ""),
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
-	if (__working_dir != null) {
-    	JGUIUtil.addComponent(paragraph, new JLabel (
-		"The working directory is: " + __working_dir), 
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
-
-	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, .5, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for table parameters
+    int yTable = -1;
+    JPanel table_JPanel = new JPanel();
+    table_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Table", table_JPanel );
+    
+   	JGUIUtil.addComponent(table_JPanel, new JLabel (
+    	"The Excel worksheet contents will be used to create the new table specified below."),
+    	0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(table_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yTable, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Table ID:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JTextField = new JTextField (30);
     __TableID_JTextField.setToolTipText("Select the table to write or use ${Property} notation");
     __TableID_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the created table."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(table_JPanel, __TableID_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Required - unique identifier for the created table."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Number precision:"),
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NumberPrecision_JTextField = new JTextField (10);
+    __NumberPrecision_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(table_JPanel, __NumberPrecision_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel,
+        new JLabel ("Optional - precision for numbers in table (default=6)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for Excel parameters
+    int yExcel = -1;
+    JPanel excel_JPanel = new JPanel();
+    excel_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Excel", excel_JPanel );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input (workbook) file:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(excel_JPanel, new JLabel (
+		"It is recommended that the location of the Excel file is " +
+		"specified using a path relative to the working directory."),
+		0, ++yExcel, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
+    JGUIUtil.addComponent(excel_JPanel, new JLabel ( ""),
+		0, ++yExcel, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
+	if (__working_dir != null) {
+    	JGUIUtil.addComponent(excel_JPanel, new JLabel (
+		"The working directory is: " + __working_dir), 
+		0, ++yExcel, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	}
+    
+    JGUIUtil.addComponent(excel_JPanel, new JLabel ("Input (workbook) file:"),
+		0, ++yExcel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField (45);
 	__InputFile_JTextField.setToolTipText("Specify the path to the Excel file or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener (this);
-        JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
-		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(excel_JPanel, __InputFile_JTextField,
+		1, yExcel, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ("Browse", this);
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        JGUIUtil.addComponent(excel_JPanel, __browse_JButton,
+		6, yExcel, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Worksheet:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(excel_JPanel, new JLabel ("Worksheet:"),
+        0, ++yExcel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Worksheet_JTextField = new JTextField (30);
     __Worksheet_JTextField.setToolTipText("Specify the name of the worksheet or use ${Property} notation");
     __Worksheet_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Worksheet_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(excel_JPanel, __Worksheet_JTextField,
+        1, yExcel, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excel_JPanel,
         new JLabel ("Required (if not in address) - worksheet name (default=first sheet)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yExcel, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(excel_JPanel, new JLabel (
+		"A contiguous block of cells must be specified using one of the address methods below."),
+		0, ++yExcel, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
         
     __excelSpace_JTabbedPane = new JTabbedPane ();
     __excelSpace_JTabbedPane.setBorder(
         BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
         "Specify the address for a contiguous block of cells the in Excel worksheet" ));
-    JGUIUtil.addComponent(main_JPanel, __excelSpace_JTabbedPane,
-        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excel_JPanel, __excelSpace_JTabbedPane,
+        0, ++yExcel, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JPanel address_JPanel = new JPanel();
     address_JPanel.setLayout(new GridBagLayout());
     __excelSpace_JTabbedPane.addTab ( "by Excel Address", address_JPanel );
     int yAddress = -1;
-        
+    
     JGUIUtil.addComponent(address_JPanel, new JLabel ("Excel address:"),
         0, ++yAddress, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcelAddress_JTextField = new JTextField (10);
@@ -412,22 +454,22 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     JGUIUtil.addComponent(range_JPanel, new JLabel ("Excel named range."),
         3, yRange, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JPanel table_JPanel = new JPanel();
-    table_JPanel.setLayout(new GridBagLayout());
-    __excelSpace_JTabbedPane.addTab ( "by Table Name", table_JPanel );
-    int yTable = -1;
+    JPanel extable_JPanel = new JPanel();
+    extable_JPanel.setLayout(new GridBagLayout());
+    __excelSpace_JTabbedPane.addTab ( "by Table Name", extable_JPanel );
+    int yExTable = -1;
     
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Excel table name:"),
-        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(extable_JPanel, new JLabel ("Excel table name:"),
+        0, ++yExTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcelTableName_JTextField = new JTextField (10);
     __ExcelTableName_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(table_JPanel, __ExcelTableName_JTextField,
-        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(table_JPanel, new JLabel ("Excel table name."),
-        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(extable_JPanel, __ExcelTableName_JTextField,
+        1, yExTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(extable_JPanel, new JLabel ("Excel table name."),
+        3, yExTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Excel column names:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(excel_JPanel, new JLabel( "Excel column names:"),
+        0, ++yExcel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcelColumnNames_JComboBox = new SimpleJComboBox ( false );
     __ExcelColumnNames_JComboBox.add("");
     __ExcelColumnNames_JComboBox.add(""+ExcelColumnNameRowType.COLUMN_N);
@@ -435,105 +477,14 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     __ExcelColumnNames_JComboBox.add(""+ExcelColumnNameRowType.ROW_BEFORE_RANGE);
     __ExcelColumnNames_JComboBox.select ( 0 );
     __ExcelColumnNames_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ExcelColumnNames_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - how to define column names (default=" +
+    JGUIUtil.addComponent(excel_JPanel, __ExcelColumnNames_JComboBox,
+        1, yExcel, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excel_JPanel, new JLabel ( "Optional - how to define column names (default=" +
     	ExcelColumnNameRowType.COLUMN_N + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to include rows:"),
-        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ColumnIncludeFilters_JTextArea = new JTextArea (3,35);
-    __ColumnIncludeFilters_JTextArea.setLineWrap ( true );
-    __ColumnIncludeFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnIncludeFilters_JTextArea.setToolTipText("TableColumn1:DatastoreColumn1,TableColumn2:DataStoreColumn2");
-    __ColumnIncludeFilters_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnIncludeFilters_JTextArea),
-        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - column patterns to include rows (default=include all)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnIncludeFilters",this),
-        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yExcel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filters to exclude rows:"),
-        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
-    __ColumnExcludeFilters_JTextArea.setLineWrap ( true );
-    __ColumnExcludeFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnExcludeFilters_JTextArea.setToolTipText("TableColumn1:DatastoreColumn1,TableColumn2:DataStoreColumn2");
-    __ColumnExcludeFilters_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
-        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - column patterns to exclude rows (default=include all)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
-        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Comment character:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Comment_JTextField = new JTextField (10);
-    __Comment_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Comment_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - string that indicates comment lines (default=none)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Excel integer columns:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcelIntegerColumns_JTextField = new JTextField (20);
-    __ExcelIntegerColumns_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ExcelIntegerColumns_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Optional - columns that are integers, separated by commas."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Excel date/time columns:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcelDateTimeColumns_JTextField = new JTextField (20);
-    __ExcelDateTimeColumns_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ExcelDateTimeColumns_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Optional - columns that are date/times, separated by commas."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Excel text columns:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ExcelTextColumns_JTextField = new JTextField (20);
-    __ExcelTextColumns_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ExcelTextColumns_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Optional - columns that are text, separated by commas."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Number precision:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NumberPrecision_JTextField = new JTextField (10);
-    __NumberPrecision_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __NumberPrecision_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Optional - precision for numbers (default=6)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Read all as text?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ReadAllAsText_JComboBox = new SimpleJComboBox ( false );
-    __ReadAllAsText_JComboBox.add("");
-    __ReadAllAsText_JComboBox.add(__command._False);
-    __ReadAllAsText_JComboBox.add(__command._True);
-    __ReadAllAsText_JComboBox.select ( 0 );
-    __ReadAllAsText_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ReadAllAsText_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - read all cells as text? (default=" + __command._False + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Keep file open?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(excel_JPanel, new JLabel( "Keep file open?:"),
+        0, ++yExcel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __KeepOpen_JComboBox = new SimpleJComboBox ( false );
     __KeepOpen_JComboBox.setPrototypeDisplayValue(__command._False + "MMMM"); // to fix some issues with layout of dynamic components
     __KeepOpen_JComboBox.add("");
@@ -541,11 +492,154 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     __KeepOpen_JComboBox.add(__command._True);
     __KeepOpen_JComboBox.select ( 0 );
     __KeepOpen_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __KeepOpen_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - keep Excel file open? (default=" + __command._False + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excel_JPanel, __KeepOpen_JComboBox,
+        1, yExcel, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(excel_JPanel, new JLabel ( "Optional - keep Excel file open? (default=" + __command._False + ")."),
+        3, yExcel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    // Panel for filter parameters
+    int yFilter = -1;
+    JPanel filter_JPanel = new JPanel();
+    filter_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Excel Filters", filter_JPanel );
+    
+    JGUIUtil.addComponent(filter_JPanel, new JLabel (
+		"Specify the rows to include and exclude by providing filter information below."),
+		0, ++yFilter, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(filter_JPanel, new JLabel (
+		"Comments, if used, must be specified in the first Excel column in the input, which should contain text."),
+		0, ++yFilter, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(filter_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yFilter, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(filter_JPanel, new JLabel ("Column filters to include rows:"),
+        0, ++yFilter, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnIncludeFilters_JTextArea = new JTextArea (3,35);
+    __ColumnIncludeFilters_JTextArea.setLineWrap ( true );
+    __ColumnIncludeFilters_JTextArea.setWrapStyleWord ( true );
+    __ColumnIncludeFilters_JTextArea.setToolTipText("TableColumn1:DatastoreColumn1,TableColumn2:DataStoreColumn2");
+    __ColumnIncludeFilters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(filter_JPanel, new JScrollPane(__ColumnIncludeFilters_JTextArea),
+        1, yFilter, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(filter_JPanel, new JLabel ("Optional - column patterns to include rows (default=include all)."),
+        3, yFilter, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(filter_JPanel, new SimpleJButton ("Edit","EditColumnIncludeFilters",this),
+        3, ++yFilter, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(filter_JPanel, new JLabel ("Column filters to exclude rows:"),
+        0, ++yFilter, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
+    __ColumnExcludeFilters_JTextArea.setLineWrap ( true );
+    __ColumnExcludeFilters_JTextArea.setWrapStyleWord ( true );
+    __ColumnExcludeFilters_JTextArea.setToolTipText("TableColumn1:DatastoreColumn1,TableColumn2:DataStoreColumn2");
+    __ColumnExcludeFilters_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(filter_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
+        1, yFilter, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(filter_JPanel, new JLabel ("Optional - column patterns to exclude rows (default=include all)."),
+        3, yFilter, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(filter_JPanel, new SimpleJButton ("Edit","EditColumnExcludeFilters",this),
+        3, ++yFilter, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(filter_JPanel, new JLabel ("Comment string to ignore rows:"),
+        0, ++yFilter, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Comment_JTextField = new JTextField (10);
+    __Comment_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(filter_JPanel, __Comment_JTextField,
+        1, yFilter, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(filter_JPanel, new JLabel (
+        "Optional - string that indicates comment lines (default=none)."),
+        3, yFilter, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for Excel column type parameters
+    int yType = -1;
+    JPanel type_JPanel = new JPanel();
+    type_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Excel Column Types", type_JPanel );
+    
+    JGUIUtil.addComponent(type_JPanel, new JLabel (
+		"An attempt will be made to determine table column types from Excel data (Number=Double column, Text=String column, Date=DateTime column)."),
+		0, ++yType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(type_JPanel, new JLabel (
+		"However, the following parameters can be specifed to ensure proper handling of data types."),
+		0, ++yType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(type_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yType, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(type_JPanel, new JLabel ("Excel double columns:"),
+        0, ++yType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcelDoubleColumns_JTextField = new JTextField (20);
+    __ExcelDoubleColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(type_JPanel, __ExcelDoubleColumns_JTextField,
+        1, yType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(type_JPanel,
+        new JLabel ("Optional - columns that are double-precision numbers, separated by commas."),
+        3, yType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(type_JPanel, new JLabel ("Excel integer columns:"),
+        0, ++yType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcelIntegerColumns_JTextField = new JTextField (20);
+    __ExcelIntegerColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(type_JPanel, __ExcelIntegerColumns_JTextField,
+        1, yType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(type_JPanel,
+        new JLabel ("Optional - columns that are integers, separated by commas."),
+        3, yType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(type_JPanel, new JLabel ("Excel date/time columns:"),
+        0, ++yType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcelDateTimeColumns_JTextField = new JTextField (20);
+    __ExcelDateTimeColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(type_JPanel, __ExcelDateTimeColumns_JTextField,
+        1, yType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(type_JPanel,
+        new JLabel ("Optional - columns that are date/times, separated by commas."),
+        3, yType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(type_JPanel, new JLabel ("Excel text columns:"),
+        0, ++yType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcelTextColumns_JTextField = new JTextField (20);
+    __ExcelTextColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(type_JPanel, __ExcelTextColumns_JTextField,
+        1, yType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(type_JPanel,
+        new JLabel ("Optional - columns that are text, separated by commas."),
+        3, yType, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(type_JPanel, new JLabel( "Read all as text?:"),
+        0, ++yType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ReadAllAsText_JComboBox = new SimpleJComboBox ( false );
+    __ReadAllAsText_JComboBox.add("");
+    __ReadAllAsText_JComboBox.add(__command._False);
+    __ReadAllAsText_JComboBox.add(__command._True);
+    __ReadAllAsText_JComboBox.select ( 0 );
+    __ReadAllAsText_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(type_JPanel, __ReadAllAsText_JComboBox,
+        1, yType, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(type_JPanel, new JLabel ( "Optional - read all cells as text? (default=" + __command._False + ")."),
+        3, yType, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for Excel column type parameters
+    int yProp = -1;
+    JPanel prop_JPanel = new JPanel();
+    prop_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Properties", prop_JPanel );
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"Use the following parameter to set a processor property for the table row count, which can then be used for error handling."),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel("Row count property:"),
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RowCountProperty_JTextField = new JTextField ( "", 20 );
+    __RowCountProperty_JTextField.setToolTipText("Specify the property name for the copied table row count, can use ${Property} notation");
+    __RowCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(prop_JPanel, __RowCountProperty_JTextField,
+        1, yProp, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Optional - processor property to set as output table row count." ),
+        3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
@@ -625,7 +719,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String InputFile = "";
     String Worksheet = "";
@@ -636,11 +730,13 @@ private void refresh ()
 	String ColumnIncludeFilters = "";
 	String ColumnExcludeFilters = "";
     String Comment = "";
+	String ExcelDoubleColumns = "";
 	String ExcelIntegerColumns = "";
 	String ExcelDateTimeColumns = "";
 	String ExcelTextColumns = "";
 	String NumberPrecision = "";
 	String ReadAllAsText = "";
+    String RowCountProperty = "";
     String KeepOpen = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
@@ -655,11 +751,13 @@ private void refresh ()
 		ColumnIncludeFilters = props.getValue ( "ColumnIncludeFilters" );
 		ColumnExcludeFilters = props.getValue ( "ColumnExcludeFilters" );
 		Comment = props.getValue ( "Comment" );
+		ExcelDoubleColumns = props.getValue ( "ExcelDoubleColumns" );
 		ExcelIntegerColumns = props.getValue ( "ExcelIntegerColumns" );
 		ExcelDateTimeColumns = props.getValue ( "ExcelDateTimeColumns" );
 		ExcelTextColumns = props.getValue ( "ExcelTextColumns" );
 		NumberPrecision = props.getValue ( "NumberPrecision" );
 		ReadAllAsText = props.getValue ( "ReadAllAsText" );
+        RowCountProperty = props.getValue ( "RowCountProperty" );
 		KeepOpen = props.getValue ( "KeepOpen" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
@@ -670,16 +768,16 @@ private void refresh ()
         if ( Worksheet != null ) {
             __Worksheet_JTextField.setText ( Worksheet );
         }
-		if ( ExcelAddress != null ) {
+		if ( (ExcelAddress != null) && !ExcelAddress.isEmpty() ) {
 			__ExcelAddress_JTextField.setText ( ExcelAddress );
 			// Also select the tab to be visible
 			__excelSpace_JTabbedPane.setSelectedIndex(0);
 		}
-		if ( ExcelNamedRange != null ) {
+		if ( (ExcelNamedRange != null) && !ExcelNamedRange.isEmpty() ) {
 			__ExcelNamedRange_JTextField.setText ( ExcelNamedRange );
 			__excelSpace_JTabbedPane.setSelectedIndex(1);
 		}
-        if ( ExcelTableName != null ) {
+        if ( (ExcelTableName != null) && !ExcelTableName.isEmpty() ) {
             __ExcelTableName_JTextField.setText ( ExcelTableName );
             __excelSpace_JTabbedPane.setSelectedIndex(2);
         }
@@ -704,6 +802,9 @@ private void refresh ()
         }
         if ( Comment != null) {
             __Comment_JTextField.setText(Comment);
+        }
+        if ( ExcelDoubleColumns != null ) {
+            __ExcelDoubleColumns_JTextField.setText ( ExcelDoubleColumns );
         }
         if ( ExcelIntegerColumns != null ) {
             __ExcelIntegerColumns_JTextField.setText ( ExcelIntegerColumns );
@@ -730,6 +831,9 @@ private void refresh ()
                     ReadAllAsText + "\".  Select a different choice or Cancel." );
             }
         }
+        if ( RowCountProperty != null ) {
+            __RowCountProperty_JTextField.setText ( RowCountProperty );
+        }
         if ( KeepOpen == null || KeepOpen.equals("") ) {
             // Select a default...
             __KeepOpen_JComboBox.select ( 0 );
@@ -755,11 +859,13 @@ private void refresh ()
 	ColumnIncludeFilters = __ColumnIncludeFilters_JTextArea.getText().trim();
 	ColumnExcludeFilters = __ColumnExcludeFilters_JTextArea.getText().trim();
 	Comment = __Comment_JTextField.getText().trim();
+	ExcelDoubleColumns = __ExcelDoubleColumns_JTextField.getText().trim();
 	ExcelIntegerColumns = __ExcelIntegerColumns_JTextField.getText().trim();
 	ExcelDateTimeColumns = __ExcelDateTimeColumns_JTextField.getText().trim();
 	ExcelTextColumns = __ExcelTextColumns_JTextField.getText().trim();
 	NumberPrecision = __NumberPrecision_JTextField.getText().trim();
 	ReadAllAsText = __ReadAllAsText_JComboBox.getSelected();
+	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	KeepOpen = __KeepOpen_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
@@ -772,11 +878,13 @@ private void refresh ()
 	props.add ( "ColumnIncludeFilters=" + ColumnIncludeFilters );
 	props.add ( "ColumnExcludeFilters=" + ColumnExcludeFilters );
 	props.add ( "Comment=" + Comment );
+	props.add ( "ExcelDoubleColumns=" + ExcelDoubleColumns );
 	props.add ( "ExcelIntegerColumns=" + ExcelIntegerColumns );
 	props.add ( "ExcelDateTimeColumns=" + ExcelDateTimeColumns );
 	props.add ( "ExcelTextColumns=" + ExcelTextColumns );
 	props.add ( "NumberPrecision=" + NumberPrecision );
 	props.add ( "ReadAllAsText=" + ReadAllAsText );
+	props.add ( "RowCountProperty=" + RowCountProperty );
 	props.add ( "KeepOpen=" + KeepOpen );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...

@@ -209,7 +209,7 @@ private void initialize ( JFrame parent, FillConstant_Command command )
 		"Fill time series data missing values with a constant value." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -243,6 +243,7 @@ private void initialize ( JFrame parent, FillConstant_Command command )
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Fill start date/time:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FillStart_JTextField = new JTextField ( "", 20 );
+    __FillStart_JTextField.setToolTipText("Specify the fill start using a date/time string or processor ${Property}");
     __FillStart_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -253,6 +254,7 @@ private void initialize ( JFrame parent, FillConstant_Command command )
     JGUIUtil.addComponent(main_JPanel,new JLabel("Fill end date/time:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FillEnd_JTextField = new JTextField ( "", 20 );
+    __FillEnd_JTextField.setToolTipText("Specify the fill end using a date/time string or processor ${Property}");
     __FillEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

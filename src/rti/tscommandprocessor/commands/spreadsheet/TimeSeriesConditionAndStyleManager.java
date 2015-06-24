@@ -93,22 +93,22 @@ public TimeSeriesConditionAndStyleManager ( List<TS> tslist, DataTable condition
 	this.conditionTable = conditionTable;
 	this.wb = wb;
 	try {
-		this.conditionTableColumnNum = conditionTable.getFieldIndex("Column");
+		this.conditionTableColumnNum = conditionTable.getFieldIndex("TSID");
 	}
 	catch ( Exception e ) {
-		throw new RuntimeException("Format table does not include \"Column\" column (" + e + ")");
+		throw new RuntimeException("Condition table does not include \"TSID\" column (" + e + ")");
 	}
 	try {
 		this.conditionTableConditionNum = conditionTable.getFieldIndex("Condition");
 	}
 	catch ( Exception e ) {
-		throw new RuntimeException("Format table does not include \"Condition\" column (" + e + ")");
+		throw new RuntimeException("Condition table does not include \"Condition\" column (" + e + ")");
 	}
 	try {
 		this.conditionTableStyleIDNum = conditionTable.getFieldIndex("StyleID");
 	}
 	catch ( Exception e ) {
-		throw new RuntimeException("Format table does not include \"StyleID\" column (" + e + ")");
+		throw new RuntimeException("Condition table does not include \"StyleID\" column (" + e + ")");
 	}
 	// Create styles for each time series
 	this.columnStyles = new CellStyle[this.tslist.size()];
@@ -179,7 +179,7 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 			// Return the default column style
 			if ( Message.isDebugOn ) {
 				Message.printDebug(1, routine, "Time series \"" + ts.getIdentifier().toStringAliasAndTSID() +
-					"\" did not match any format table rows - defaulting to time series style");
+					"\" did not match any condition table rows - defaulting to time series style");
 			}
 			return this.columnStyles[its];
 		}

@@ -99,22 +99,23 @@ public TableConditionAndStyleManager ( DataTable dataTable, int [] includeColumn
 	this.conditionTable = conditionTable;
 	this.wb = wb;
 	try {
+		// The "Column" column provides glob-style patterns to match for the conditions.
 		this.conditionTableColumnNum = conditionTable.getFieldIndex("Column");
 	}
 	catch ( Exception e ) {
-		throw new RuntimeException("Format table does not include \"Column\" column (" + e + ")");
+		throw new RuntimeException("Condition table does not include \"Column\" column (" + e + ")");
 	}
 	try {
 		this.conditionTableConditionNum = conditionTable.getFieldIndex("Condition");
 	}
 	catch ( Exception e ) {
-		throw new RuntimeException("Format table does not include \"Condition\" column (" + e + ")");
+		throw new RuntimeException("Condition table does not include \"Condition\" column (" + e + ")");
 	}
 	try {
 		this.conditionTableStyleIDNum = conditionTable.getFieldIndex("StyleID");
 	}
 	catch ( Exception e ) {
-		throw new RuntimeException("Format table does not include \"StyleID\" column (" + e + ")");
+		throw new RuntimeException("Condition table does not include \"StyleID\" column (" + e + ")");
 	}
 	// Create styles for each column in the table
 	this.columnStyles = new CellStyle[this.includeColumnNumbers.length];
@@ -160,6 +161,7 @@ public CellStyle getStyle ( int col, DateTime value )
 		initializeCellStyles();
 	}
 	try {
+		// TODO SAM 2015-06-24 Need to enable specific lookup for date/time columns
 		return getCellStyleForStyleID(col, null); // Fall-through
 	}
 	catch ( Exception e ) {
@@ -181,9 +183,9 @@ public CellStyle getStyle ( int col, Double value )
 	String columnName = this.dataTable.getFieldName(this.includeColumnNumbers[col]);
 	// See if the column name matches any rows in the format table
 	List<TableRecord> matchedRowList = new ArrayList<TableRecord>();
-	for ( int fRow = 0; fRow < this.conditionTable.getNumberOfRecords(); fRow++ ) {
+	for ( int cRow = 0; cRow < this.conditionTable.getNumberOfRecords(); cRow++ ) {
 		try {
-			TableRecord row = this.conditionTable.getRecord(fRow);
+			TableRecord row = this.conditionTable.getRecord(cRow);
 			String column = row.getFieldValueString(this.conditionTableColumnNum);
 			column = column.replace("*", ".*");
 			if ( columnName.matches(column)) {
@@ -202,13 +204,13 @@ public CellStyle getStyle ( int col, Double value )
 			// Return the default column style
 			if ( Message.isDebugOn ) {
 				Message.printDebug(1, routine, "Column name \"" + columnName +
-					"\" did not match any format table rows - defaulting to column style");
+					"\" did not match any condition table rows - defaulting to column style");
 			}
 			return this.columnStyles[col];
 		}
 		else {
 			if ( Message.isDebugOn ) {
-				Message.printDebug(1, routine, "Column name \"" + columnName + "\" matched format row - evaluating conditions");
+				Message.printDebug(1, routine, "Column name \"" + columnName + "\" matched condition row - evaluating conditions");
 			}
 		}
 		boolean doValue = false; // Is formatting based on cell value?
@@ -362,11 +364,13 @@ public CellStyle getStyle ( int col, Long value )
 	if ( !this.cellStylesInitialized ) {
 		initializeCellStyles();
 	}
-	try {
-		return getCellStyleForStyleID(col, null); // Fall-through
+	if ( value == null ) {
+		return getStyle ( col, (Double)null );
 	}
-	catch ( Exception e ) {
-		throw new RuntimeException ( e );
+	else {
+		// Use Double version
+		// TODO SAM 2015-06-24 any issues with precision/roundoff for ==?
+		return getStyle(col, new Double(value));
 	}
 }
 
@@ -380,6 +384,7 @@ public CellStyle getStyle ( int col, String value )
 		initializeCellStyles();
 	}
 	try {
+		// TODO SAM 2015-06-24 Need to enable specific lookup.
 		return getCellStyleForStyleID(col, null); // Fall-through
 	}
 	catch ( Exception e ) {

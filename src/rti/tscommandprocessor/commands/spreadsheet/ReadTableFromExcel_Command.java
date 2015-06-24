@@ -484,11 +484,11 @@ throws FileNotFoundException, IOException
                             cellValueString = cell.getStringCellValue();
                         }
                         cellValueObject = cellValueString; // For try/catch
-                        if ( !tk.cellMatchesIncludeFilter(columnNames[iCol], cellValueString,columnIncludeFiltersMap) ) {
+                        if ( !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], cellValueString,columnIncludeFiltersMap) ) {
                              // Add the row but will remove at the end after all columns are processed
                              needToSkipRow = true;
                         }
-                        if ( tk.cellMatchesExcludeFilter(columnNames[iCol], cellValueString,columnExcludeFiltersMap) ) {
+                        if ( tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], cellValueString,columnExcludeFiltersMap) ) {
                             // Add the row but will remove at the end after all columns are processed
                             needToSkipRow = true;
                         }

@@ -1,22 +1,3 @@
-//------------------------------------------------------------------------------
-// fillHistMonthAverage_Command - handle the fillHistMonthAverage() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-05-17	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					fillRegression().
-// 2005-05-19	SAM, RTi		Move from TSTool package to TS.
-// 2006-03-27	SAM, RTi		Handle the situation where no limits
-//					are available for the time series.
-//					Later comment out change - error should
-//					be getting generated.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
@@ -24,13 +5,12 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.MonthTSLimits;
 import RTi.TS.TSUtil;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -86,38 +66,7 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
-    /* TODO SAM 2010-06-11 Evaluate whether checks are needed
-    if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
-            !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
-            !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
-        if ( TSID != null ) {
-            message = "TSID should only be specified when TSList=" +
-            TSListType.ALL_MATCHING_TSID.toString() + " or " +
-            TSListType.FIRST_MATCHING_TSID.toString() + " or " +
-            TSListType.LAST_MATCHING_TSID.toString() + ".";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Do not specify the TSID parameter." ) );
-        }
-    }
-    
-	if ( TSList == null ) {
-		// Probably legacy command...
-		// TODO SAM 2005-05-17 Need to require TSList when legacy
-		// commands are safely nonexistent...  At that point the
-		// following check can occur in any case.
-		if ( (TSID == null) || (TSID.length() == 0) ) {
-            message = "A TSID must be specified.";
-			warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a TSList parameter value." ) );
-		}
-	}
-	*/
-    
-	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
+	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart") && !FillStart.startsWith("${")){
 		try {	DateTime.parse(FillStart);
 		}
 		catch ( Exception e ) {
@@ -128,7 +77,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") && !FillEnd.startsWith("${")) {
 		try {	DateTime.parse( FillEnd);
 		}
 		catch ( Exception e ) {
@@ -141,15 +90,15 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "FillStart" );
-    valid_Vector.add ( "FillEnd" );
-    valid_Vector.add ( "FillFlag" );
-    valid_Vector.add ( "FillFlagDesc" );
+	List<String> validList = new ArrayList<String>(6);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "FillStart" );
+    validList.add ( "FillEnd" );
+    validList.add ( "FillFlag" );
+    validList.add ( "FillFlagDesc" );
     
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -234,9 +183,8 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -248,13 +196,29 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	String TSList = parameters.getValue ( "TSList" );
 	if ( (TSList == null) || TSList.equals("") ) {
 	    TSList = "" + TSListType.ALL_TS;
 	}
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
 
 	// Get the time series to process...
 	
@@ -345,106 +309,36 @@ CommandWarningException, CommandException
 	String FillStart = parameters.getValue("FillStart");
 	String FillEnd = parameters.getValue("FillEnd");
 	String FillFlag = parameters.getValue("FillFlag");
+	if ( (FillFlag != null) && (FillFlag.indexOf("${") >= 0) ) {
+		FillFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, FillFlag);
+	}
 	String FillFlagDesc = parameters.getValue("FillFlagDesc");
+	if ( (FillFlagDesc != null) && (FillFlagDesc.indexOf("${") >= 0) ) {
+		FillFlagDesc = TSCommandProcessorUtil.expandParameterValue(processor, this, FillFlagDesc);
+	}
 
 	// Figure out the dates to use for the analysis...
 	DateTime FillStart_DateTime = null;
 	DateTime FillEnd_DateTime = null;
 
-	try {
-		if ( FillStart != null ) {
-			request_params = new PropList ( "" );
-			request_params.set ( "DateTime", FillStart );
-			bean = null;
-			try { bean =
-				processor.processRequest( "DateTime", request_params);
-			}
-			catch ( Exception e ) {
-				message = "Error requesting FillStart DateTime(DateTime=" +	FillStart + ") from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-
-			bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
-				message = "Null value for FillStart DateTime(DateTime=" +
-				FillStart +	"\") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the fill start date/time is valid." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {
-			    FillStart_DateTime = (DateTime)prop_contents;
-			}
-		}
-		}
-		catch ( Exception e ) {
-			message = "FillStart \"" + FillStart + "\" is invalid.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputStart." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
-		
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-		if ( FillEnd != null ) {
-			request_params = new PropList ( "" );
-			request_params.set ( "DateTime", FillEnd );
-			bean = null;
-			try { bean =
-				processor.processRequest( "DateTime", request_params);
-			}
-			catch ( Exception e ) {
-				message = "Error requesting FillEnd DateTime(DateTime=" + FillEnd + ") from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-
-			bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
-				message = "Null value for FillStart DateTime(DateTime=" +
-				FillStart +	"\") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {	FillEnd_DateTime = (DateTime)prop_contents;
-			}
+			FillStart_DateTime = TSCommandProcessorUtil.getDateTime ( FillStart, "FillStart", processor,
+				status, warning_level, command_tag );
 		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-		catch ( Exception e ) {
-			message = "FillEnd \"" + FillEnd + "\" is invalid.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputEnd." ) );
-			throw new InvalidCommandParameterException ( message );
+		try {
+			FillEnd_DateTime = TSCommandProcessorUtil.getDateTime ( FillEnd, "FillEnd", processor,
+				status, warning_level, command_tag );
 		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+	}
 	
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series)...
@@ -519,8 +413,7 @@ CommandWarningException, CommandException
                 Message.printStatus ( 2, routine, "Historical averages for time series follow..."+ nl + average_limits );
 				// Now fill the time series...
 				TSUtil.fillConstantByMonth ( ts,
-						FillStart_DateTime,
-						FillEnd_DateTime,
+						FillStart_DateTime, FillEnd_DateTime,
 						average_limits.getMeanArray(),
 						", fill w/ hist mon avg", FillFlag, FillFlagDesc );
 			}
@@ -528,10 +421,8 @@ CommandWarningException, CommandException
 		}
 		catch ( Exception e ) {
 			if ( average_limits == null ) {
-				message = "Unable to fill time series \""+
-					ts.getIdentifierString() +
-					"\" with historical averages (no data" +
-					" limits are available - no data?).";
+				message = "Unable to fill time series \""+ ts.getIdentifierString() +
+					"\" with historical averages (no data limits are available - no data?).";
                 Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(
                         command_tag, ++warning_count),
@@ -565,7 +456,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

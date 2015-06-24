@@ -1,20 +1,3 @@
-// ----------------------------------------------------------------------------
-// fillHistMonthAverage_JDialog - editor for fillHistMonthAverage()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 19 Dec 2000	Steven A. Malers, RTi	Initial version.
-// 2002-04-23	SAM, RTi		Clean up dialog.
-// 2003-12-11	SAM, RTi		Update to Swing.
-// 2005-05-17	SAM, RTi		Update to current Command structure.
-// 2005-05-19	SAM, RTi		Move from TSTool package to TS.
-// 2005-06-02	SAM, RTi		Fix bug where extra blank was being
-//					added to the TSID choice.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
@@ -36,18 +19,18 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -74,7 +57,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public FillHistMonthAverage_JDialog ( JFrame parent, Command command )
+public FillHistMonthAverage_JDialog ( JFrame parent, FillHistMonthAverage_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -184,28 +167,12 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSList_JComboBox = null;
-	__TSID_JComboBox = null;
-	__FillStart_JTextField = null;
-	__FillEnd_JTextField = null;
-	__FillFlag_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (FillHistMonthAverage_Command)command;
+private void initialize ( JFrame parent, FillHistMonthAverage_Command command )
+{	__command = command;
 
 	try {
 	addWindowListener( this );
@@ -215,17 +182,22 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Fill monthly time series with historical monthly averages." ), 
-    	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Historical averages are computed immediately after reading " +
     	"the data and therefore do not include filled values." ), 
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"Some commands that set data include a RecalcLimits parameter that will recalculate the limits." ), 
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Only monthly time series can be processed." ), 
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -233,7 +205,8 @@ private void initialize ( JFrame parent, Command command )
     __TSList_JComboBox.remove("" + TSListType.SPECIFIED_TSID);
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
@@ -241,6 +214,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill start:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillStart_JTextField = new JTextField ( "", 15 );
+    __FillStart_JTextField.setToolTipText("Specify the fill start using a date/time string or processor ${Property}");
 	__FillStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -250,6 +224,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill end:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillEnd_JTextField = new JTextField ( "", 15 );
+    __FillEnd_JTextField.setToolTipText("Specify the fill end using a date/time string or processor ${Property}");
 	__FillEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -258,7 +233,8 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__FillFlag_JTextField = new JTextField ( 5 );
+	__FillFlag_JTextField = new JTextField ( 10 );
+    __FillFlag_JTextField.setToolTipText("Specify a flag for filled values or use processor ${Property} notation");
 	__FillFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -269,6 +245,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag description:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FillFlagDesc_JTextField = new JTextField ( 15 );
+    __FillFlagDesc_JTextField.setToolTipText("Specify a flag description or specify with ${Property} notation");
     __FillFlagDesc_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillFlagDesc_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

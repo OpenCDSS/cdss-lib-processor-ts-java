@@ -6,57 +6,51 @@ import java.util.List;
 
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataFormat;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import RTi.GR.GRColor;
+import RTi.TS.TS;
 import RTi.Util.Message.Message;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
-import RTi.Util.Time.DateTime;
 
 /**
-Manager to handle styling of table cells when written to Excel.
+Manager to handle styling of time series values when written to Excel cells.
 */
-public class TableStyleTableManager
+public class TimeSeriesConditionAndStyleManager
 {
 
 /**
-Data table with data (subset will be output but initialize cell styles for all columns).
+Time series to be output.
 */
-private DataTable dataTable = null;
+private List<TS> tslist = null;
 
-/**
-Column numbers 0+ that will be output.
-*/
-private int [] includeColumnNumbers = null;
-	
 /**
 Data table with style data.
 */
 private DataTable styleTable = null;
 
 /**
-Data table with format data.
+Data table with condition data.
 */
-private DataTable formatTable = null;
+private DataTable conditionTable = null;
 
 /**
-Column number for "Column" column in format table.
+Column number for "Column" column in condition table.
 */
-private int formatTableColumnNum = -1;
+private int conditionTableColumnNum = -1;
 
 /**
-Column number for "Condition" column in format table.
+Column number for "Condition" column in condition table.
 */
-private int formatTableConditionNum = -1;
+private int conditionTableConditionNum = -1;
 
 /**
-Column number for "StyleID" column in format table.
+Column number for "StyleID" column in condition table.
 */
-private int formatTableStyleIDNum = -1;
+private int conditionTableStyleIDNum = -1;
 
 /**
 Excel styles corresponding to defaults for the columns, will be augmented by cell styles.
@@ -92,34 +86,33 @@ private Workbook wb = null;
 /**
 Constructor.
 */
-public TableStyleTableManager ( DataTable dataTable, int [] includeColumnNumbers, DataTable styleTable, DataTable formatTable, Workbook wb )
+public TimeSeriesConditionAndStyleManager ( List<TS> tslist, DataTable conditionTable, DataTable styleTable, Workbook wb )
 {
-	this.dataTable = dataTable;
-	this.includeColumnNumbers = includeColumnNumbers;
+	this.tslist = tslist;
 	this.styleTable = styleTable;
-	this.formatTable = formatTable;
+	this.conditionTable = conditionTable;
 	this.wb = wb;
 	try {
-		this.formatTableColumnNum = formatTable.getFieldIndex("Column");
+		this.conditionTableColumnNum = conditionTable.getFieldIndex("Column");
 	}
 	catch ( Exception e ) {
 		throw new RuntimeException("Format table does not include \"Column\" column (" + e + ")");
 	}
 	try {
-		this.formatTableConditionNum = formatTable.getFieldIndex("Condition");
+		this.conditionTableConditionNum = conditionTable.getFieldIndex("Condition");
 	}
 	catch ( Exception e ) {
 		throw new RuntimeException("Format table does not include \"Condition\" column (" + e + ")");
 	}
 	try {
-		this.formatTableStyleIDNum = formatTable.getFieldIndex("StyleID");
+		this.conditionTableStyleIDNum = conditionTable.getFieldIndex("StyleID");
 	}
 	catch ( Exception e ) {
 		throw new RuntimeException("Format table does not include \"StyleID\" column (" + e + ")");
 	}
-	// Create styles for each column in the table
-	this.columnStyles = new CellStyle[this.includeColumnNumbers.length];
-	this.columnDataFormats = new DataFormat[this.includeColumnNumbers.length];
+	// Create styles for each time series
+	this.columnStyles = new CellStyle[this.tslist.size()];
+	this.columnDataFormats = new DataFormat[this.tslist.size()];
 	for ( int i = 0; i < this.columnStyles.length; i++ ) {
 		// The following creates default styles that can be modified by calls to:
 		// - setColumnDataFormat().
@@ -153,41 +146,24 @@ throws Exception
 
 /**
 Get the style to use for the requested column.
-@param col output column 0+ corresponding to this.includeColumnNumbers
-*/
-public CellStyle getStyle ( int col, DateTime value )
-{
-	if ( !this.cellStylesInitialized ) {
-		initializeCellStyles();
-	}
-	try {
-		return getCellStyleForStyleID(col, null); // Fall-through
-	}
-	catch ( Exception e ) {
-		throw new RuntimeException ( e );
-	}
-}
-
-/**
-Get the style to use for the requested column.
 The format table is used to find rows with matching column.
-@param col output column 0+ corresponding to this.includeColumnNumbers
+@param ts output time series
+@param its output time series 0+
+@param value the data value for the time series
+@param flag the data flag for the time series
 */
-public CellStyle getStyle ( int col, Double value )
-{	String routine = "getStyle(Double)";
+public CellStyle getStyle ( TS ts, int its, double value, String flag )
+{	String routine = "getStyle";
 	if ( !this.cellStylesInitialized ) {
 		initializeCellStyles();
 	}
-	// Look up the column name
-	String columnName = this.dataTable.getFieldName(this.includeColumnNumbers[col]);
 	// See if the column name matches any rows in the format table
 	List<TableRecord> matchedRowList = new ArrayList<TableRecord>();
-	for ( int fRow = 0; fRow < this.formatTable.getNumberOfRecords(); fRow++ ) {
+	for ( int fRow = 0; fRow < this.conditionTable.getNumberOfRecords(); fRow++ ) {
 		try {
-			TableRecord row = this.formatTable.getRecord(fRow);
-			String column = row.getFieldValueString(this.formatTableColumnNum);
-			column = column.replace("*", ".*");
-			if ( columnName.matches(column)) {
+			TableRecord row = this.conditionTable.getRecord(fRow);
+			String column = row.getFieldValueString(this.conditionTableColumnNum);
+			if ( ts.getIdentifier().matches(column)) {
 				// Format table row matches
 				matchedRowList.add(row);
 			}
@@ -202,90 +178,127 @@ public CellStyle getStyle ( int col, Double value )
 		if ( matchedRowList.size() == 0 ) {
 			// Return the default column style
 			if ( Message.isDebugOn ) {
-				Message.printDebug(1, routine, "Column name \"" + columnName +
-					"\" did not match any format table rows - defaulting to column style");
+				Message.printDebug(1, routine, "Time series \"" + ts.getIdentifier().toStringAliasAndTSID() +
+					"\" did not match any format table rows - defaulting to time series style");
 			}
-			return this.columnStyles[col];
+			return this.columnStyles[its];
 		}
 		else {
 			if ( Message.isDebugOn ) {
-				Message.printDebug(1, routine, "Column name \"" + columnName + "\" matched format row - evaluating conditions");
+				Message.printDebug(1, routine, "Time Series \"" + ts.getIdentifier().toStringAliasAndTSID() + "\" matched format row - evaluating conditions");
 			}
 		}
-		boolean doValue = false; // Is formatting based on cell value?
+		boolean doValue = false; // Is formatting based on time series value?
+		boolean doFlag = false; // Is formatting based on time series value?
 		for ( TableRecord row : matchedRowList ) {
-			String cond = row.getFieldValueString(this.formatTableConditionNum);
-			String styleID = row.getFieldValueString(this.formatTableStyleIDNum);
+			doValue = false;
+			doFlag = false;
+			String cond = row.getFieldValueString(this.conditionTableConditionNum);
+			String styleID = row.getFieldValueString(this.conditionTableStyleIDNum);
 			// Evaluate the condition - if true return the cell style for the matching StyleID
+			// The condition consists of Value1 Cond Value2 [AND Value3 Cond Value4] etc
 			// Split the condition
-			String [] parts = cond.split(" ");
-			String sValue1 = parts[0].trim();
-			if ( sValue1.equalsIgnoreCase("${tablecell:value}") ) {
-				doValue = true;
-			}
-			// TODO SAM 2015-05-09 in the future add other cell properties to be check, such as comments/annotations
-			if ( doValue ) {
-				ConditionOperatorType oper = ConditionOperatorType.valueOfIgnoreCase(parts[1].trim());
-				String sValue2 = parts[2].trim();
-				boolean value2Missing = false; // whether checking for missing
-				if ( sValue2.equalsIgnoreCase("missing") || sValue2.equalsIgnoreCase("null")) {
-					value2Missing = true;
+			String [] parts = cond.trim().split(" ");
+			for ( int iPart = 0; iPart < parts.length; iPart++ ) {
+				String sValue1 = parts[iPart].trim();
+				if ( (iPart > 0) && sValue1.equalsIgnoreCase("and") ) {
+					// Continue so that the next clause will be evaluated.
+					// If at any time the entire condition is false, nothing will be returned
+					continue;
 				}
-				double value2 = 0.0;
-				if ( !value2Missing ) {
-					value2 = Double.parseDouble(sValue2);
+				if ( sValue1.equalsIgnoreCase("${tsdata:value}") ) {
+					doValue = true;
 				}
-				if ( Message.isDebugOn ) {
-					Message.printDebug(1,routine,"Checking value \"" + value + "\" operator " + oper + " value2 " + value2 + " value2missing " + value2Missing );
+				if ( sValue1.equalsIgnoreCase("${tsdata:flag}") ) {
+					doFlag = true;
 				}
+				// TODO SAM 2015-05-09 in the future add other cell properties to be check, such as comments/annotations
 				boolean valueMatch = false;
-				if ( oper == ConditionOperatorType.EQUAL_TO ) {
-					if ( value2Missing ) {
-						if ( (value == null) || value.isNaN() ) {
+				if ( doValue ) {
+					boolean valueIsMissing = ts.isDataMissing(value);
+					ConditionOperatorType oper = ConditionOperatorType.valueOfIgnoreCase(parts[++iPart].trim());
+					String sValue2 = parts[++iPart].trim();
+					boolean value2Missing = false; // whether checking for missing
+					if ( sValue2.equalsIgnoreCase("missing") || sValue2.equalsIgnoreCase("null")) {
+						value2Missing = true;
+					}
+					double value2 = 0.0;
+					if ( !value2Missing ) {
+						value2 = Double.parseDouble(sValue2);
+					}
+					if ( Message.isDebugOn ) {
+						Message.printDebug(1,routine,"Checking value \"" + value + "\" operator " + oper + " value2 " + value2 + " value2missing " + value2Missing );
+					}
+					if ( oper == ConditionOperatorType.EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( valueIsMissing ) {
+								valueMatch = true;
+							}
+						}
+						else if ( !valueIsMissing && (value == value2) ) {
 							valueMatch = true;
 						}
 					}
-					else if ( (value != null) && !value.isNaN() && (value == value2) ) {
-						valueMatch = true;
-					}
-				}
-				else if ( oper == ConditionOperatorType.NOT_EQUAL_TO ) {
-					if ( value2Missing ) {
-						if ( (value != null) && !value.isNaN() ) {
+					else if ( oper == ConditionOperatorType.NOT_EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( !valueIsMissing ) {
+								valueMatch = true;
+							}
+						}
+						else if ( !valueIsMissing && (value != value2) ) {
 							valueMatch = true;
 						}
 					}
-					else if ( (value != null) && !value.isNaN() && (value != value2) ) {
-						valueMatch = true;
+					else if ( oper == ConditionOperatorType.LESS_THAN ) {
+						if ( !valueIsMissing && (value < value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.LESS_THAN_OR_EQUAL_TO ) {
+						 if ( !valueIsMissing && (value <= value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.GREATER_THAN ) {
+						if ( !valueIsMissing && (value > value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.GREATER_THAN_OR_EQUAL_TO ) {
+						 if ( !valueIsMissing && (value >= value2) ) {
+							valueMatch = true;
+						}
 					}
 				}
-				else if ( oper == ConditionOperatorType.LESS_THAN ) {
-					if ( (value != null) && (value < value2) ) {
-						valueMatch = true;
+				else if ( doFlag ) {
+					ConditionOperatorType oper = ConditionOperatorType.valueOfIgnoreCase(parts[++iPart].trim());
+					String value2 = parts[++iPart].trim();
+					boolean value2Missing = false; // whether checking for missing
+					if ( value2.equalsIgnoreCase("missing") || value2.equalsIgnoreCase("null")) {
+						value2Missing = true;
+					}
+					if ( Message.isDebugOn ) {
+						Message.printDebug(1,routine,"Checking value \"" + value + "\" operator " + oper + " value2 " + value2 + " value2missing " + value2Missing );
+					}
+					if ( oper == ConditionOperatorType.EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( (flag == null) || flag.isEmpty() ) {
+								valueMatch = true;
+							}
+						}
+						else if ( !(flag == null) && flag.equals(value2) ) {
+							valueMatch = true;
+						}
 					}
 				}
-				else if ( oper == ConditionOperatorType.LESS_THAN_OR_EQUAL_TO ) {
-					 if ( (value != null) && (value <= value2) ) {
-						valueMatch = true;
-					}
-				}
-				else if ( oper == ConditionOperatorType.GREATER_THAN ) {
-					if ( (value != null) && (value > value2) ) {
-						valueMatch = true;
-					}
-				}
-				else if ( oper == ConditionOperatorType.GREATER_THAN_OR_EQUAL_TO ) {
-					 if ( (value != null) && (value >= value2) ) {
-						valueMatch = true;
-					}
-				}
-				if ( valueMatch ) {
+				// Only finish if there are no more clauses to evaluate
+				if ( ((iPart + 1) == parts.length) && valueMatch ) {
 					// The format table row matched for the value
 					// Lookup the style and return 
 					if ( Message.isDebugOn ) {
 						Message.printDebug(1,routine,"Setting cell style for value " + value + " to " + styleID );
 					}
-					CellStyle cs = getCellStyleForStyleID ( col, styleID );
+					CellStyle cs = getCellStyleForStyleID ( its, styleID );
 					//Message.printStatus(2,routine,"Cell style fill foreground color is " + cs.getFillForegroundColor());
                     //Message.printStatus(2,routine,"Cell style fill background color is " + cs.getFillBackgroundColor());
                     //Message.printStatus(2,routine,"Cell style fill pattern is " + cs.getFillPattern());
@@ -302,77 +315,7 @@ public CellStyle getStyle ( int col, Double value )
 		if ( Message.isDebugOn ) {
 			Message.printDebug(1,routine,"Setting cell style for value " + value + " to column default" );
 		}
-		return getCellStyleForStyleID(col, null); // Fall-through
-	}
-	catch ( Exception e ) {
-		throw new RuntimeException ( e );
-	}
-}
-
-/**
-Get the style to use for the requested column.
-@param col output column 0+ corresponding to this.includeColumnNumbers
-*/
-public CellStyle getStyle ( int col, Float value )
-{
-	if ( !this.cellStylesInitialized ) {
-		initializeCellStyles();
-	}
-	// Use the Double version to do the work
-	if ( value == null ) {
-		return getStyle ( col, (Double)null );
-	}
-	else {
-		return getStyle ( col, new Double(value) );
-	}
-}
-
-/**
-Get the style to use for the requested column.
-@param col output column 0+ corresponding to this.includeColumnNumbers
-*/
-public CellStyle getStyle ( int col, Integer value )
-{
-	if ( !this.cellStylesInitialized ) {
-		initializeCellStyles();
-	}
-	// Use the Long version to do the work
-	if ( value == null ) {
-		return getStyle ( col, (Long)null );
-	}
-	else {
-		return getStyle ( col, new Long(value) );
-	}
-}
-
-/**
-Get the style to use for the requested column.
-@param col output column 0+ corresponding to this.includeColumnNumbers
-*/
-public CellStyle getStyle ( int col, Long value )
-{
-	if ( !this.cellStylesInitialized ) {
-		initializeCellStyles();
-	}
-	try {
-		return getCellStyleForStyleID(col, null); // Fall-through
-	}
-	catch ( Exception e ) {
-		throw new RuntimeException ( e );
-	}
-}
-
-/**
-Get the style to use for the requested column.
-@param col output column 0+ corresponding to this.includeColumnNumbers
-*/
-public CellStyle getStyle ( int col, String value )
-{
-	if ( !this.cellStylesInitialized ) {
-		initializeCellStyles();
-	}
-	try {
-		return getCellStyleForStyleID(col, null); // Fall-through
+		return getCellStyleForStyleID(its, null); // Fall-through
 	}
 	catch ( Exception e ) {
 		throw new RuntimeException ( e );
@@ -409,7 +352,7 @@ private void initializeCellStyles ()
 	}
 	String key;
 	for ( int iColStyle = 0; iColStyle < this.columnStyles.length; iColStyle++ ) {
-		key = "" + this.includeColumnNumbers[iColStyle];
+		key = "" + iColStyle;
 		this.cellStyleHash.put(key, this.columnStyles[iColStyle]);
 		//Message.printStatus(2, routine, "Initialized column cell style \"" + key + "\"");
 		// Next, loop through the styles in the style table and add for each column
@@ -455,7 +398,7 @@ private void initializeCellStyles ()
 					Message.printDebug(1,routine,"No fill foreground for style \"" + styleID + "\"");
 				}
 			}
-			key = "" + this.includeColumnNumbers[iColStyle] + "-" + styleID.toUpperCase();
+			key = "" + iColStyle + "-" + styleID.toUpperCase();
 			this.cellStyleHash.put(key, cs);
 			if ( Message.isDebugOn ) {
 				Message.printDebug(1, routine, "Initialized cell style \"" + key + "\"");

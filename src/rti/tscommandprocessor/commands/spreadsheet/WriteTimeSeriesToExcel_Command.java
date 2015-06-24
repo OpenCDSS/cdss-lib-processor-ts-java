@@ -281,8 +281,8 @@ throws InvalidCommandParameterException
 	validList.add ( "ColumnComment" );
 	validList.add ( "ValueComment" );
 	validList.add ( "SkipValueCommentIfNoFlag" );
+    validList.add ( "ConditionTableID" );
     validList.add ( "StyleTableID" );
-    validList.add ( "FormatTableID" );
 	
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 	
@@ -470,13 +470,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (SkipValueCommentIfNoFlag != null) && SkipValueCommentIfNoFlag.equalsIgnoreCase(_False) ) {
     	skipValueCommentIfNoFlag = false;
     }
+    String ConditionTableID = parameters.getValue ( "ConditionTableID" );
+    if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ConditionTableID.indexOf("${") >= 0 ) {
+    	ConditionTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, ConditionTableID);
+    }
     String StyleTableID = parameters.getValue ( "StyleTableID" );
     if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
     	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
-    }
-    String FormatTableID = parameters.getValue ( "FormatTableID" );
-    if ( (FormatTableID != null) && !FormatTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && FormatTableID.indexOf("${") >= 0 ) {
-    	FormatTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, FormatTableID);
     }
     
 	// Get the time series to process...
@@ -572,17 +572,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    }
     }
 	    
-	// Get the format table
+	// Get the condition table
 	
-    DataTable formatTable = null;
-    if ( (FormatTableID != null) && !FormatTableID.isEmpty() ) {
+    DataTable conditionTable = null;
+    if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() ) {
 	    request_params = new PropList ( "" );
-	    request_params.set ( "TableID", FormatTableID );
+	    request_params.set ( "TableID", ConditionTableID );
 	    try {
 	        bean = processor.processRequest( "GetTable", request_params);
 	    }
 	    catch ( Exception e ) {
-	        message = "Error requesting GetTable(TableID=\"" + FormatTableID + "\") from processor.";
+	        message = "Error requesting GetTable(TableID=\"" + ConditionTableID + "\") from processor.";
 	        Message.printWarning(warning_level,
 	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
 	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -591,14 +591,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    bean_PropList = bean.getResultsPropList();
 	    Object o_Table = bean_PropList.getContents ( "Table" );
 	    if ( o_Table == null ) {
-	        message = "Unable to find table to process using TableID=\"" + FormatTableID + "\".";
+	        message = "Unable to find table to process using TableID=\"" + ConditionTableID + "\".";
 	        Message.printWarning ( warning_level,
 	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
 	            message, "Verify that a table exists with the requested ID." ) );
 	    }
 	    else {
-	        formatTable = (DataTable)o_Table;
+	        conditionTable = (DataTable)o_Table;
 	    }
     }
 
@@ -612,7 +612,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	// Now process the time series...
 
-	List<String> problems = new Vector<String>();
+	List<String> problems = new ArrayList<String>();
 	String OutputFile_full = null;
 	try {
         OutputFile_full = IOUtil.verifyPathForOS(
@@ -627,7 +627,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		TimeColumn, timeFormatterType, TimeFormat,
         		ValueColumns,
         		Author, ColumnComment, ValueComment, skipValueCommentIfNoFlag,
-        		styleTable, formatTable,
+        		conditionTable, styleTable,
         	    problems, processor, status, commandPhase );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
@@ -701,8 +701,8 @@ public String toString ( PropList props )
 	String ColumnComment = props.getValue ( "ColumnComment" );
 	String ValueComment = props.getValue ( "ValueComment" );
 	String SkipValueCommentIfNoFlag = props.getValue ( "SkipValueCommentIfNoFlag" );
+	String ConditionTableID = props.getValue( "ConditionTableID" );
 	String StyleTableID = props.getValue( "StyleTableID" );
-	String FormatTableID = props.getValue( "FormatTableID" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 	    if ( b.length() > 0 ) {
@@ -872,17 +872,17 @@ public String toString ( PropList props )
         }
         b.append ( "SkipValueCommentIfNoFlag=" + SkipValueCommentIfNoFlag );
     }
+    if ( (ConditionTableID != null) && (ConditionTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ConditionTableID=\"" + ConditionTableID + "\"" );
+    }
     if ( (StyleTableID != null) && (StyleTableID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
-    }
-    if ( (FormatTableID != null) && (FormatTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FormatTableID=\"" + FormatTableID + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }
@@ -929,8 +929,8 @@ Write a time series to the Excel file.
 @param author author to use for comments
 @param columnComment comment to set on columns
 @param valueComment comment to set on value cells
+@param conditionTable table containing format data, to relate columns to styles and condition
 @param styleTable table containing style data, for formatting
-@param formatTable table containing format data, to relate columns to styles and condition
 @param problems list of problems occurring in method
 @param processor command processor
 @param cs command status, for logging
@@ -944,7 +944,7 @@ private void writeTimeSeries ( List<TS> tslist,
 	String timeColumn, DateTimeFormatterType timeFormatterType, String timeFormat,
 	String valueColumns,
 	String author, String columnComment, String valueComment, boolean skipValueCommentIfNoFlag,
-	DataTable styleTable, DataTable formatTable,
+	DataTable conditionTable, DataTable styleTable, 
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTimeSeries", message;
@@ -1173,6 +1173,12 @@ throws FileNotFoundException, IOException
         DataFormat cellFormatHeader = wb.createDataFormat();
         CellStyle [] cellStyles = new CellStyle[cols];
         CellStyle cellStyleHeader = wb.createCellStyle();
+        // Initialize styles corresponding to styleTable, newer approach to styling.
+        // The styles in this table will be used by default with the above setting style information to the below.
+        TimeSeriesConditionAndStyleManager styleTable2 = null;
+        if ( styleTable != null ) {
+        	styleTable2 = new TimeSeriesConditionAndStyleManager(tslist,conditionTable,styleTable,wb);
+        }
         int [] cellTypes = new int[cols];
         int cellTypeHeader = Cell.CELL_TYPE_STRING;
         int col = 0;
@@ -1240,6 +1246,7 @@ throws FileNotFoundException, IOException
         // Output the data rows
         // Loop through date/time corresponding to each row in the output file
         double value;
+        String flag;
         String dateTimeString = "", dateString = "", timeString = "";
         int row = rowOutStart;
         boolean doValueComment = false;
@@ -1317,6 +1324,7 @@ throws FileNotFoundException, IOException
                 tsdata = ts.getDataPoint(date, tsdata);
                 // First expand the line to replace time series properties
                 value = tsdata.getDataValue();
+                flag = tsdata.getDataFlag();
             	try {
 	                if ( ts.isDataMissing(value) ) {
 	                	if ( missingValueBlank ) {
@@ -1331,15 +1339,22 @@ throws FileNotFoundException, IOException
 	                    	// Set the cell value to the numerical missing value
 	                		cell = tk.setCellValue(sheet,row,col,ts.getMissing(),cellStyles[col]);
 	                	}
+                        if ( styleTable2 != null ) {
+                        	// New-style...
+                        	cell.setCellStyle(styleTable2.getStyle(ts,its,value,flag));
+                        }
 	                }
 	                else {
 	                    // Not missing so set to the numerical value
 	                	cell = tk.setCellValue(sheet,row,col,value,cellStyles[col]);
+                        if ( styleTable2 != null ) {
+                        	// New-style...
+                        	cell.setCellStyle(styleTable2.getStyle(ts,its,value,flag));
+                        }
 	                }
 	                if ( doValueComment ) {
                 		// Create the comment and set
                 		// Brute force expand other properties
-	                	String flag = tsdata.getDataFlag();
 	                	if ( flag == null ) {
 	                		flag = "";
 	                	}

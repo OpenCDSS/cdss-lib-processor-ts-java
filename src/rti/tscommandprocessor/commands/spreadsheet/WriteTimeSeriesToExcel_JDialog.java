@@ -95,7 +95,7 @@ private TSFormatSpecifiersJPanel __ColumnComment_JTextField = null;
 private TSFormatSpecifiersJPanel __ValueComment_JTextField = null;
 private SimpleJComboBox __SkipValueCommentIfNoFlag_JComboBox = null;
 private SimpleJComboBox __StyleTableID_JComboBox = null;
-private SimpleJComboBox __FormatTableID_JComboBox = null;
+private SimpleJComboBox __ConditionTableID_JComboBox = null;
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
@@ -282,7 +282,7 @@ private void checkInput ()
 	String ValueComment = __ValueComment_JTextField.getText().trim();
 	String SkipValueCommentIfNoFlag = __SkipValueCommentIfNoFlag_JComboBox.getSelected();
 	String StyleTableID = __StyleTableID_JComboBox.getSelected();
-	String FormatTableID = __FormatTableID_JComboBox.getSelected();
+	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -372,8 +372,8 @@ private void checkInput ()
     if ( StyleTableID.length() > 0 ) {
         props.set ( "StyleTableID", StyleTableID );
     }
-    if ( FormatTableID.length() > 0 ) {
-        props.set ( "FormatTableID", FormatTableID );
+    if ( ConditionTableID.length() > 0 ) {
+        props.set ( "ConditionTableID", ConditionTableID );
     }
 	try {
 	    // This will warn the user...
@@ -420,7 +420,7 @@ private void commitEdits ()
 	String ValueComment = __ValueComment_JTextField.getText().trim();
 	String SkipValueCommentIfNoFlag = __SkipValueCommentIfNoFlag_JComboBox.getSelected();
 	String StyleTableID = __StyleTableID_JComboBox.getSelected();
-	String FormatTableID = __FormatTableID_JComboBox.getSelected();
+	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -450,7 +450,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ValueComment", ValueComment );
 	__command.setCommandParameter ( "SkipValueCommentIfNoFlag", SkipValueCommentIfNoFlag );
 	__command.setCommandParameter ( "StyleTableID", StyleTableID );
-	__command.setCommandParameter ( "FormatTableID", FormatTableID );
+	__command.setCommandParameter ( "ConditionTableID", ConditionTableID );
 }
 
 /**
@@ -484,9 +484,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
 		"Time series are written as a sequence of columns, for simple data transfer of large amounts of data."),
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-		"See the WriteTimeSeriesToExcelFormatted() command for additional functionality for controlling the format of the Excel output."),
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -862,43 +859,45 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     __main_JTabbedPane.addTab ( "Style Formatting", style_JPanel );
 
     JGUIUtil.addComponent(style_JPanel, new JLabel (
-        "<html><b>These features are under development and when enabled will be similar to the WriteTableToExcel() command features</b></html>."),
-        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(style_JPanel, new JLabel (
         "The following parameters control how Excel cells are formatted, using a general style formatting approach."),
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(style_JPanel, new JLabel (
-        "Style-based formatting requires as input a style table and a format table that indicates how to use styles for various conditions."),
+        "Style-based formatting requires as input a condition table to indicate how to evaluate cell contents for style formatting."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "A style table indicates the style properties to format a cell, such as the fill foreground color."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Refer to the command documentation for details."),
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(style_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
    	    0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Condition table ID:" ), 
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ConditionTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __ConditionTableID_JComboBox.setToolTipText("Select the condition table or use ${Property} notation");
+    tableIDChoices.add(0,""); // Add blank to give user a blank entry to type over
+    __ConditionTableID_JComboBox.setData ( tableIDChoices );
+    __ConditionTableID_JComboBox.addItemListener ( this );
+    __ConditionTableID_JComboBox.addKeyListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(style_JPanel, __ConditionTableID_JComboBox,
+        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - conditions to determine styles."), 
+        3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(style_JPanel, new JLabel ( "Style table ID:" ), 
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StyleTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
     __StyleTableID_JComboBox.setToolTipText("Select the style table or use ${Property} notation");
-    // Add a blank
-    tableIDChoices.add(0,"");
     __StyleTableID_JComboBox.setData ( tableIDChoices );
     __StyleTableID_JComboBox.addItemListener ( this );
     __StyleTableID_JComboBox.addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(style_JPanel, __StyleTableID_JComboBox,
-        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - style definitions."), 
-        3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	
-    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Format table ID:" ), 
-        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __FormatTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
-    __FormatTableID_JComboBox.setToolTipText("Select the format table or use ${Property} notation");
-    __FormatTableID_JComboBox.setData ( tableIDChoices );
-    __FormatTableID_JComboBox.addItemListener ( this );
-    __FormatTableID_JComboBox.addKeyListener ( this );
-    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(style_JPanel, __FormatTableID_JComboBox,
-        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - format definitions."), 
         3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -1012,7 +1011,7 @@ private void refresh ()
 	String ValueComment = "";
 	String SkipValueCommentIfNoFlag = "";
 	String StyleTableID = "";
-	String FormatTableID = "";
+	String ConditionTableID = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -1045,7 +1044,7 @@ private void refresh ()
 		ValueComment = props.getValue ( "ValueComment" );
 		SkipValueCommentIfNoFlag = props.getValue ( "SkipValueCommentIfNoFlag" );
 		StyleTableID = props.getValue ( "StyleTableID" );
-		FormatTableID = props.getValue ( "FormatTableID" );
+		ConditionTableID = props.getValue ( "ConditionTableID" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -1236,9 +1235,24 @@ private void refresh ()
                     SkipValueCommentIfNoFlag + "\".  Select a different choice or Cancel." );
             }
         }
+        if ( ConditionTableID == null ) {
+            // Select default...
+        	__ConditionTableID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ConditionTableID_JComboBox,ConditionTableID, JGUIUtil.NONE, null, null ) ) {
+                __ConditionTableID_JComboBox.select ( ConditionTableID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nConditionTableID value \"" + ConditionTableID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( StyleTableID == null ) {
             // Select default...
-            __StyleTableID_JComboBox.select ( 0 );
+        	__StyleTableID_JComboBox.select ( 0 );
         }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __StyleTableID_JComboBox,StyleTableID, JGUIUtil.NONE, null, null ) ) {
@@ -1247,21 +1261,6 @@ private void refresh ()
             else {
                 Message.printWarning ( 1, routine,
                 "Existing command references an invalid\nStyleTableID value \"" + StyleTableID +
-                "\".  Select a different value or Cancel.");
-                __error_wait = true;
-            }
-        }
-        if ( FormatTableID == null ) {
-            // Select default...
-            __FormatTableID_JComboBox.select ( 0 );
-        }
-        else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __FormatTableID_JComboBox,FormatTableID, JGUIUtil.NONE, null, null ) ) {
-                __FormatTableID_JComboBox.select ( FormatTableID );
-            }
-            else {
-                Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nFormatTableID value \"" + FormatTableID +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
@@ -1297,7 +1296,7 @@ private void refresh ()
 	ValueComment = __ValueComment_JTextField.getText().trim();
 	SkipValueCommentIfNoFlag = __SkipValueCommentIfNoFlag_JComboBox.getSelected();
 	StyleTableID = __StyleTableID_JComboBox.getSelected();
-	FormatTableID = __FormatTableID_JComboBox.getSelected();
+	ConditionTableID = __ConditionTableID_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -1328,7 +1327,7 @@ private void refresh ()
 	props.add ( "ValueComment=" + ValueComment );
 	props.add ( "SkipValueCommentIfNoFlag=" + SkipValueCommentIfNoFlag );
 	props.add ( "StyleTableID=" + StyleTableID );
-	props.add ( "FormatTableID=" + FormatTableID );
+	props.add ( "ConditionTableID=" + ConditionTableID );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

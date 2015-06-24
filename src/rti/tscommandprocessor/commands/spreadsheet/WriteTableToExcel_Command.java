@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -218,8 +217,8 @@ throws InvalidCommandParameterException
     validList.add ( "ColumnCellTypes" );
     validList.add ( "ColumnWidths" );
     validList.add ( "ColumnDecimalPlaces" );
+    validList.add ( "ConditionTableID" );
     validList.add ( "StyleTableID" );
-    validList.add ( "FormatTableID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -516,13 +515,13 @@ throws InvalidCommandParameterException, CommandWarningException
     StringDictionary columnWidths = new StringDictionary(ColumnWidths,":",",");
     String ColumnDecimalPlaces = parameters.getValue ( "ColumnDecimalPlaces" );
     StringDictionary columnDecimalPlaces = new StringDictionary(ColumnDecimalPlaces,":",",");
+    String ConditionTableID = parameters.getValue ( "ConditionTableID" );
+    if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ConditionTableID.indexOf("${") >= 0 ) {
+    	ConditionTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, ConditionTableID);
+    }
     String StyleTableID = parameters.getValue ( "StyleTableID" );
     if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
     	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
-    }
-    String FormatTableID = parameters.getValue ( "FormatTableID" );
-    if ( (FormatTableID != null) && !FormatTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && FormatTableID.indexOf("${") >= 0 ) {
-    	FormatTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, FormatTableID);
     }
 	
 	// Get the output table to process
@@ -584,17 +583,17 @@ throws InvalidCommandParameterException, CommandWarningException
 	    }
     }
 	    
-	// Get the format table
+	// Get the condition table
 	
-    DataTable formatTable = null;
-    if ( (FormatTableID != null) && !FormatTableID.isEmpty() ) {
+    DataTable conditionTable = null;
+    if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() ) {
 	    request_params = new PropList ( "" );
-	    request_params.set ( "TableID", FormatTableID );
+	    request_params.set ( "TableID", ConditionTableID );
 	    try {
 	        bean = processor.processRequest( "GetTable", request_params);
 	    }
 	    catch ( Exception e ) {
-	        message = "Error requesting GetTable(TableID=\"" + FormatTableID + "\") from processor.";
+	        message = "Error requesting GetTable(TableID=\"" + ConditionTableID + "\") from processor.";
 	        Message.printWarning(warning_level,
 	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
 	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -603,14 +602,14 @@ throws InvalidCommandParameterException, CommandWarningException
 	    bean_PropList = bean.getResultsPropList();
 	    o_Table = bean_PropList.getContents ( "Table" );
 	    if ( o_Table == null ) {
-	        message = "Unable to find table to process using TableID=\"" + FormatTableID + "\".";
+	        message = "Unable to find table to process using TableID=\"" + ConditionTableID + "\".";
 	        Message.printWarning ( warning_level,
 	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
 	            message, "Verify that a table exists with the requested ID." ) );
 	    }
 	    else {
-	        formatTable = (DataTable)o_Table;
+	        conditionTable = (DataTable)o_Table;
 	    }
     }
 	    
@@ -718,7 +717,7 @@ throws InvalidCommandParameterException, CommandWarningException
             ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames,
             columnIncludeFilters, columnExcludeFilters,
             columnNamedRanges, keepOpen, columnCellTypes, columnWidths, columnDecimalPlaces,
-            styleTable, formatTable, problems );
+            conditionTable, styleTable, problems );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
             message = "Error writing to Excel: " + problem;
@@ -779,8 +778,8 @@ public String toString ( PropList props )
 	String ColumnCellTypes = props.getValue("ColumnCellTypes");
 	String ColumnWidths = props.getValue("ColumnWidths");
 	String ColumnDecimalPlaces = props.getValue("ColumnDecimalPlaces");
+	String ConditionTableID = props.getValue( "ConditionTableID" );
 	String StyleTableID = props.getValue( "StyleTableID" );
-	String FormatTableID = props.getValue( "FormatTableID" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -878,17 +877,17 @@ public String toString ( PropList props )
         }
         b.append ( "ColumnDecimalPlaces=\"" + ColumnDecimalPlaces + "\"");
     }
+    if ( (ConditionTableID != null) && (ConditionTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ConditionTableID=\"" + ConditionTableID + "\"" );
+    }
     if ( (StyleTableID != null) && (StyleTableID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
-    }
-    if ( (FormatTableID != null) && (FormatTableID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FormatTableID=\"" + FormatTableID + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }
@@ -911,8 +910,8 @@ columns
 @param columnCellTypes column names and Excel cell types
 @param columnWidths column names and widths (Auto to auto-size, or integer points)
 @param columnDecimalPlaces column names and number of decimal places (used for floating point data)
+@param conditionTable table containing condition data, to relate columns to styles and condition
 @param styleTable table containing style data, for formatting
-@param formatTable table containing format data, to relate columns to styles and condition
 @param problems list of problems encountered during read, for formatted logging in calling code
 */
 private void writeTableToExcelFile ( DataTable table, int [] includeColumnNumbers, String workbookFile, String sheetName,
@@ -920,7 +919,7 @@ private void writeTableToExcelFile ( DataTable table, int [] includeColumnNumber
     StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters,
     Hashtable<String,String> columnNamedRanges, boolean keepOpen,
     StringDictionary columnCellTypes, StringDictionary columnWidths,
-    StringDictionary columnDecimalPlaces, DataTable styleTable, DataTable formatTable, List<String> problems )
+    StringDictionary columnDecimalPlaces, DataTable conditionTable, DataTable styleTable, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTableToExcelFile";
     
@@ -1074,9 +1073,9 @@ throws FileNotFoundException, IOException
         CellStyle [] columnCellStyles = new CellStyle[cols];
         // Initialize styles corresponding to styleTable, newer approach to styling.
         // The styles in this table will be used by default with the above setting style information to the below.
-        TableStyleTableManager styleTable2 = null;
+        TableConditionAndStyleManager styleTable2 = null;
         if ( styleTable != null ) {
-        	styleTable2 = new TableStyleTableManager(table,includeColumnNumbers,styleTable,formatTable,wb);
+        	styleTable2 = new TableConditionAndStyleManager(table,includeColumnNumbers,conditionTable,styleTable,wb);
         }
         int tableFieldType;
         int precision;

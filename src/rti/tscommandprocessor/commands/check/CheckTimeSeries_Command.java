@@ -40,6 +40,12 @@ This class initializes, checks, and runs the CheckTimeSeries() command.
 */
 public class CheckTimeSeries_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
+
+/**
+Analysis window year, since users do not supply this information.
+This allows for leap year in case the analysis window start or end is on Feb 29.
+*/
+private final int __ANALYSIS_WINDOW_YEAR = 2000;
     
 /**
 Values for Action parameter.
@@ -73,6 +79,8 @@ throws InvalidCommandParameterException
     String CheckCriteria = parameters.getValue ( "CheckCriteria" );
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+    String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
+    String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
     String Value1 = parameters.getValue ( "Value1" );
     String Value2 = parameters.getValue ( "Value2" );
     String MaxWarnings = parameters.getValue ( "MaxWarnings" );
@@ -140,6 +148,21 @@ throws InvalidCommandParameterException
         }
     }
 
+    if ( (MaxWarnings != null) && !StringUtil.isInteger(MaxWarnings) ) {
+        message = "MaxWarnings (" + MaxWarnings + ") is not an integer.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify MaxWarnings as an integer." ) );
+    }
+    
+    if ( (Action != null) && !Action.isEmpty() &&
+        !Action.equalsIgnoreCase(_Remove) && !Action.equalsIgnoreCase(_SetMissing) ) {
+            message = "The action \"" + Action + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the action as " + _Remove + " or " + _SetMissing + ".") );
+    }
+
     if ( (AnalysisStart != null) && !AnalysisStart.isEmpty() && !AnalysisStart.startsWith("${") &&
         !AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
         try {
@@ -164,20 +187,35 @@ throws InvalidCommandParameterException
                 message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         }
     }
-    
-    if ( (MaxWarnings != null) && !StringUtil.isInteger(MaxWarnings) ) {
-        message = "MaxWarnings (" + MaxWarnings + ") is not an integer.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify MaxWarnings as an integer." ) );
+
+    if ( (AnalysisWindowStart != null) && !AnalysisWindowStart.isEmpty() ) {
+        String analysisWindowStart = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart;
+        try {
+            DateTime.parse( analysisWindowStart );
+        }
+        catch ( Exception e ) {
+            message = "The analysis window start \"" + AnalysisWindowStart + "\" (prepended with " +
+            __ANALYSIS_WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
     }
     
-    if ( (Action != null) && !Action.isEmpty() &&
-        !Action.equalsIgnoreCase(_Remove) && !Action.equalsIgnoreCase(_SetMissing) ) {
-            message = "The action \"" + Action + "\" is invalid.";
+    if ( (AnalysisWindowEnd != null) && !AnalysisWindowEnd.isEmpty() ) {
+        String analysisWindowEnd = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd;
+        try {
+            DateTime.parse( analysisWindowEnd );
+        }
+        catch ( Exception e ) {
+            message = "The analysis window end \"" + AnalysisWindowEnd + "\" (prepended with " +
+            __ANALYSIS_WINDOW_YEAR + ") is not a valid date/time.";
             warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the action as " + _Remove + " or " + _SetMissing + ".") );
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
     }
     
     if ( (TableID != null) && !TableID.isEmpty() ) {
@@ -196,20 +234,22 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(23);
+    List<String> validList = new ArrayList<String>(25);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
     validList.add ( "CheckCriteria" );
     validList.add ( "Value1" );
     validList.add ( "Value2" );
-    validList.add ( "AnalysisStart" );
-    validList.add ( "AnalysisEnd" );
     validList.add ( "ProblemType" );
     validList.add ( "MaxWarnings" );
     validList.add ( "Flag" );
     validList.add ( "FlagDesc" );
     validList.add ( "Action" );
+    validList.add ( "AnalysisStart" );
+    validList.add ( "AnalysisEnd" );
+    validList.add ( "AnalysisWindowStart" );
+    validList.add ( "AnalysisWindowEnd" );
     validList.add ( "TableID" );
     validList.add ( "TableTSIDColumn" );
     validList.add ( "TableTSIDFormat" );
@@ -351,6 +391,8 @@ CommandWarningException, CommandException
     }
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+    String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
+    String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
     String ProblemType = parameters.getValue ( "ProblemType" );
     if ( (ProblemType ==null) || ProblemType.equals("") ) {
         ProblemType = CheckCriteria; // Default
@@ -506,6 +548,39 @@ CommandWarningException, CommandException
     
     // Now process...
     
+    DateTime AnalysisWindowStart_DateTime = null;
+    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
+        try {
+            // The following works with ISO formats...
+            AnalysisWindowStart_DateTime =
+                DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart );
+        }
+        catch ( Exception e ) {
+            message = "AnalysisWindowStart \"" + AnalysisWindowStart +
+                "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
+    DateTime AnalysisWindowEnd_DateTime = null;
+    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
+        try {
+            // The following works with ISO formats...
+            AnalysisWindowEnd_DateTime =
+                DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd );
+        }
+        catch ( Exception e ) {
+            message = "AnalysisWindowEnd \"" + AnalysisWindowEnd +
+                "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
+    
     try {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         	if ( doTable ) {
@@ -565,7 +640,9 @@ CommandWarningException, CommandException
 	            try {
 	                // Do the check...
 	                TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, checkCriteria,
-	                    AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, ProblemType,
+	                    AnalysisStart_DateTime, AnalysisEnd_DateTime,
+	                    AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime,
+	                    Value1_Double, Value2_Double, ProblemType,
 	                    Flag, FlagDesc, Action, table, TableTSIDColumn, TableTSIDFormat, TableDateTimeColumn,
 	                    TableValueColumn, TableFlagColumn, TableCheckTypeColumn, TableCheckMessageColumn );
 	                check.checkTimeSeries();
@@ -671,13 +748,15 @@ public String toString ( PropList parameters )
     String CheckCriteria = parameters.getValue( "CheckCriteria" );
     String Value1 = parameters.getValue( "Value1" );
     String Value2 = parameters.getValue( "Value2" );
-    String AnalysisStart = parameters.getValue( "AnalysisStart" );
-    String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
     String ProblemType = parameters.getValue( "ProblemType" );
     String MaxWarnings = parameters.getValue( "MaxWarnings" );
     String Flag = parameters.getValue( "Flag" );
     String FlagDesc = parameters.getValue( "FlagDesc" );
     String Action = parameters.getValue ( "Action" );
+    String AnalysisStart = parameters.getValue( "AnalysisStart" );
+    String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
+    String AnalysisWindowStart = parameters.getValue( "AnalysisWindowStart" );
+    String AnalysisWindowEnd = parameters.getValue( "AnalysisWindowEnd" );
 	String TableID = parameters.getValue ( "TableID" );
 	String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
 	String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
@@ -727,18 +806,6 @@ public String toString ( PropList parameters )
         }
         b.append ( "Value2=" + Value2 );
     }
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
-    }
-    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
-    }
     if ( (ProblemType != null) && (ProblemType.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -768,6 +835,30 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Action=" + Action );
+    }
+    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
+    }
+    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
+    }
+    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisWindowStart=\"" + AnalysisWindowStart + "\"" );
+    }
+    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
     }
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {

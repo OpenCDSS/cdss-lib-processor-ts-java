@@ -15,6 +15,7 @@ import java.awt.Insets;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -39,6 +40,9 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTime_JPanel;
+import RTi.Util.Time.TimeInterval;
 
 public class CheckTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
@@ -56,13 +60,16 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __CheckCriteria_JComboBox = null;
 private JTextField __Value1_JTextField = null;
 private JTextField __Value2_JTextField = null;
-private JTextField __AnalysisStart_JTextField = null;
-private JTextField __AnalysisEnd_JTextField = null;
 private JTextField __ProblemType_JTextField = null;
 private JTextField __MaxWarnings_JTextField = null;
 private JTextField __Flag_JTextField = null;
 private JTextField __FlagDesc_JTextField;
 private SimpleJComboBox __Action_JComboBox = null;
+private JTextField __AnalysisStart_JTextField = null;
+private JTextField __AnalysisEnd_JTextField = null;
+private JCheckBox __AnalysisWindow_JCheckBox = null;
+private DateTime_JPanel __AnalysisWindowStart_JPanel = null; // Fields for analysis window within a year
+private DateTime_JPanel __AnalysisWindowEnd_JPanel = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers, to match table TSID column
@@ -104,6 +111,10 @@ public void actionPerformed( ActionEvent event )
 		if ( !__error_wait ) {
 			response ( true );
 		}
+	}
+	else {
+        checkGUIState();
+        refresh ();
 	}
 }
 
@@ -162,6 +173,16 @@ private void checkGUIState ()
         __EnsembleID_JComboBox.setEnabled(false);
         __EnsembleID_JLabel.setEnabled ( false );
     }
+    
+    if ( __AnalysisWindow_JCheckBox.isSelected() ) {
+        // Checked so enable the date panels
+        __AnalysisWindowStart_JPanel.setEnabled ( true );
+        __AnalysisWindowEnd_JPanel.setEnabled ( true );
+    }
+    else {
+        __AnalysisWindowStart_JPanel.setEnabled ( false );
+        __AnalysisWindowEnd_JPanel.setEnabled ( false );
+    }
 }
 
 /**
@@ -177,13 +198,13 @@ private void checkInput ()
     String CheckCriteria = __CheckCriteria_JComboBox.getSelected();
 	String Value1 = __Value1_JTextField.getText().trim();
 	String Value2 = __Value2_JTextField.getText().trim();
-	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
-	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String ProblemType = __ProblemType_JTextField.getText().trim();
 	String MaxWarnings = __MaxWarnings_JTextField.getText().trim();
     String Flag = __Flag_JTextField.getText().trim();
     String FlagDesc = __FlagDesc_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
+	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
@@ -214,12 +235,6 @@ private void checkInput ()
     if ( Value2.length() > 0 ) {
         parameters.set ( "Value2", Value2 );
     }
-	if ( AnalysisStart.length() > 0 ) {
-		parameters.set ( "AnalysisStart", AnalysisStart );
-	}
-	if ( AnalysisEnd.length() > 0 ) {
-		parameters.set ( "AnalysisEnd", AnalysisEnd );
-	}
 	if ( ProblemType.length() > 0 ) {
 		parameters.set ( "ProblemType", ProblemType );
 	}
@@ -234,6 +249,22 @@ private void checkInput ()
     }
     if ( Action.length() > 0 ) {
         parameters.set ( "Action", Action );
+    }
+	if ( AnalysisStart.length() > 0 ) {
+		parameters.set ( "AnalysisStart", AnalysisStart );
+	}
+	if ( AnalysisEnd.length() > 0 ) {
+		parameters.set ( "AnalysisEnd", AnalysisEnd );
+	}
+    if ( __AnalysisWindow_JCheckBox.isSelected() ){
+        String AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
+        String AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        if ( AnalysisWindowStart.length() > 0 ) {
+            parameters.set ( "AnalysisWindowStart", AnalysisWindowStart );
+        }
+        if ( AnalysisWindowEnd.length() > 0 ) {
+            parameters.set ( "AnalysisWindowEnd", AnalysisWindowEnd );
+        }
     }
     if ( TableID.length() > 0 ) {
     	parameters.set ( "TableID", TableID );
@@ -286,13 +317,13 @@ private void commitEdits ()
     String CheckCriteria = __CheckCriteria_JComboBox.getSelected();
 	String Value1 = __Value1_JTextField.getText().trim();
 	String Value2 = __Value2_JTextField.getText().trim();
-	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
-	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String ProblemType = __ProblemType_JTextField.getText().trim();
 	String MaxWarnings = __MaxWarnings_JTextField.getText().trim();
 	String Flag = __Flag_JTextField.getText().trim();
 	String FlagDesc = __FlagDesc_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
+	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
@@ -309,13 +340,19 @@ private void commitEdits ()
     __command.setCommandParameter ( "CheckCriteria", CheckCriteria );
 	__command.setCommandParameter ( "Value1", Value1 );
 	__command.setCommandParameter ( "Value2", Value2 );
-	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
-	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "ProblemType", ProblemType );
 	__command.setCommandParameter ( "MaxWarnings", MaxWarnings );
 	__command.setCommandParameter ( "Flag", Flag );
 	__command.setCommandParameter ( "FlagDesc", FlagDesc );
 	__command.setCommandParameter ( "Action", Action );
+	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
+	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
+    if ( __AnalysisWindow_JCheckBox.isSelected() ){
+        String AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
+        String AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        __command.setCommandParameter ( "AnalysisWindowStart", AnalysisWindowStart );
+        __command.setCommandParameter ( "AnalysisWindowEnd", AnalysisWindowEnd );
+    }
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
@@ -443,28 +480,6 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command, List<S
         "Optional - maximum value in range, or other input to check."), 
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Analysis start:" ),
-        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __AnalysisStart_JTextField = new JTextField ( "", 20 );
-    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
-    __AnalysisStart_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(check_JPanel, __AnalysisStart_JTextField,
-        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(check_JPanel, new JLabel(
-        "Optional - analysis start date/time (default=full time series period)."),
-        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Analysis end:" ), 
-        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __AnalysisEnd_JTextField = new JTextField ( "", 20 );
-    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
-    __AnalysisEnd_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(check_JPanel, __AnalysisEnd_JTextField,
-        1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(check_JPanel, new JLabel(
-        "Optional - analysis end date/time (default=full time series period)."),
-        3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
     JGUIUtil.addComponent(check_JPanel, new JLabel ( "Problem type:" ), 
 		0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ProblemType_JTextField = new JTextField ( 10 );
@@ -518,6 +533,65 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command, List<S
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel("Optional - action for matched values (default=no action)."), 
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for analysis period and window table
+    int yTime = -1;
+    JPanel time_JPanel = new JPanel();
+    time_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Analysis Period and Window", time_JPanel );
+    
+    JGUIUtil.addComponent(time_JPanel, new JLabel (
+		"Use the following parameters to constrain checks to a period and window within each year."),
+		0, ++yTime, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yTime, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
+    __AnalysisStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(time_JPanel, __AnalysisStart_JTextField,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel(
+        "Optional - analysis start date/time (default=full time series period)."),
+        3, yTime, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(time_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
+    __AnalysisEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(time_JPanel, __AnalysisEnd_JTextField,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel(
+        "Optional - analysis end date/time (default=full time series period)."),
+        3, yTime, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    __AnalysisWindow_JCheckBox = new JCheckBox ( "Analysis window:", false );
+    __AnalysisWindow_JCheckBox.addActionListener ( this );
+    JGUIUtil.addComponent(time_JPanel, __AnalysisWindow_JCheckBox, 
+        0, ++yTime, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JPanel analysisWindow_JPanel = new JPanel();
+    analysisWindow_JPanel.setLayout(new GridBagLayout());
+    __AnalysisWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.HOUR, null );
+    __AnalysisWindowStart_JPanel.addActionListener(this);
+    __AnalysisWindowStart_JPanel.addKeyListener ( this );
+    JGUIUtil.addComponent(analysisWindow_JPanel, __AnalysisWindowStart_JPanel,
+        1, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval
+    __AnalysisWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.HOUR, null );
+    __AnalysisWindowEnd_JPanel.addActionListener(this);
+    __AnalysisWindowEnd_JPanel.addKeyListener ( this );
+    JGUIUtil.addComponent(analysisWindow_JPanel, __AnalysisWindowEnd_JPanel,
+        4, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, analysisWindow_JPanel,
+        1, yTime, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel(
+        "Optional - analysis window within input year (default=full year)."),
+        3, yTime, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(time_JPanel, new JLabel(""),
+        3, yTime, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Panel for output table
     int yTable = -1;
@@ -732,13 +806,15 @@ private void refresh ()
     String CheckCriteria = "";
 	String Value1 = "";
 	String Value2 = "";
-	String AnalysisStart = "";
-	String AnalysisEnd = "";
 	String ProblemType = "";
 	String MaxWarnings = "";
 	String Flag = "";
 	String FlagDesc = "";
 	String Action = "";
+	String AnalysisStart = "";
+	String AnalysisEnd = "";
+    String AnalysisWindowStart = "";
+    String AnalysisWindowEnd = "";
 	String TableID = "";
 	String TableTSIDColumn = "";
 	String TableTSIDFormat = "";
@@ -759,13 +835,15 @@ private void refresh ()
         CheckCriteria = props.getValue ( "CheckCriteria" );
 		Value1 = props.getValue ( "Value1" );
 		Value2 = props.getValue ( "Value2" );
-		AnalysisStart = props.getValue ( "AnalysisStart" );
-		AnalysisEnd = props.getValue ( "AnalysisEnd" );
 		ProblemType = props.getValue ( "ProblemType" );
 		MaxWarnings = props.getValue ( "MaxWarnings" );
 		Flag = props.getValue ( "Flag" );
 		FlagDesc = props.getValue ( "FlagDesc" );
 		Action = props.getValue ( "Action" );
+		AnalysisStart = props.getValue ( "AnalysisStart" );
+		AnalysisEnd = props.getValue ( "AnalysisEnd" );
+        AnalysisWindowStart = props.getValue ( "AnalysisWindowStart" );
+        AnalysisWindowEnd = props.getValue ( "AnalysisWindowEnd" );
         TableID = props.getValue ( "TableID" );
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
@@ -841,12 +919,6 @@ private void refresh ()
         if ( Value2 != null ) {
             __Value2_JTextField.setText ( Value2 );
         }
-		if ( AnalysisStart != null ) {
-			__AnalysisStart_JTextField.setText( AnalysisStart );
-		}
-		if ( AnalysisEnd != null ) {
-			__AnalysisEnd_JTextField.setText ( AnalysisEnd );
-		}
 		if ( ProblemType != null ) {
 			__ProblemType_JTextField.setText ( ProblemType );
 		}
@@ -873,6 +945,43 @@ private void refresh ()
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
+        }
+		if ( AnalysisStart != null ) {
+			__AnalysisStart_JTextField.setText( AnalysisStart );
+		}
+		if ( AnalysisEnd != null ) {
+			__AnalysisEnd_JTextField.setText ( AnalysisEnd );
+		}
+        if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
+            try {
+                // Add year because it is not part of the parameter value...
+                DateTime AnalysisWindowStart_DateTime = DateTime.parse ( "0000-" + AnalysisWindowStart );
+                Message.printStatus(2, routine, "Setting window start to " + AnalysisWindowStart_DateTime );
+                __AnalysisWindowStart_JPanel.setDateTime ( AnalysisWindowStart_DateTime );
+            }
+            catch ( Exception e ) {
+                Message.printWarning( 1, routine, "AnalysisWindowStart (" + AnalysisWindowStart +
+                        ") is not a valid date/time." );
+            }
+        }
+        if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
+            try {
+                // Add year because it is not part of the parameter value...
+                DateTime AnalysisWindowEnd_DateTime = DateTime.parse ( "0000-" + AnalysisWindowEnd );
+                Message.printStatus(2, routine, "Setting window end to " + AnalysisWindowEnd_DateTime );
+                __AnalysisWindowEnd_JPanel.setDateTime ( AnalysisWindowEnd_DateTime );
+            }
+            catch ( Exception e ) {
+                Message.printWarning( 1, routine, "AnalysisWindowEnd (" + AnalysisWindowEnd +
+                        ") is not a valid date/time." );
+            }
+        }
+        if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() != 0) &&
+            (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() != 0)) {
+            __AnalysisWindow_JCheckBox.setSelected ( true );
+        }
+        else {
+            __AnalysisWindow_JCheckBox.setSelected ( false );
         }
         if ( TableID == null ) {
             // Select default...
@@ -921,19 +1030,20 @@ private void refresh ()
         }
 	}
 	// Regardless, reset the command from the fields...
+	checkGUIState();
     TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     CheckCriteria = __CheckCriteria_JComboBox.getSelected();
     Value2 = __Value2_JTextField.getText().trim();
 	Value1 = __Value1_JTextField.getText().trim();
-	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
-	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	ProblemType = __ProblemType_JTextField.getText().trim();
 	MaxWarnings = __MaxWarnings_JTextField.getText().trim();
 	Flag = __Flag_JTextField.getText().trim();
 	FlagDesc = __FlagDesc_JTextField.getText().trim();
 	Action = __Action_JComboBox.getSelected();
+	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
@@ -952,13 +1062,19 @@ private void refresh ()
     props.set ( "CheckCriteria", CheckCriteria );
     props.add ( "Value1=" + Value1 );
     props.add ( "Value2=" + Value2 );
-	props.add ( "AnalysisStart=" + AnalysisStart );
-	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "ProblemType=" + ProblemType );
 	props.add ( "MaxWarnings=" + MaxWarnings );
 	props.add ( "Flag=" + Flag );
 	props.add ( "FlagDesc=" + FlagDesc );
 	props.add ( "Action=" + Action );
+	props.add ( "AnalysisStart=" + AnalysisStart );
+	props.add ( "AnalysisEnd=" + AnalysisEnd );
+    if ( __AnalysisWindow_JCheckBox.isSelected() ) {
+        AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
+        AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        props.add ( "AnalysisWindowStart=" + AnalysisWindowStart );
+        props.add ( "AnalysisWindowEnd=" + AnalysisWindowEnd );
+    }
     props.add ( "TableID=" + TableID );
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );

@@ -224,7 +224,7 @@ throws InvalidCommandParameterException
                 message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         }
     }
-    if ( (AnalysisWindowStart != null) && !AnalysisWindowStart.equals("") ) {
+    if ( (AnalysisWindowStart != null) && !AnalysisWindowStart.isEmpty() ) {
         String analysisWindowStart = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart;
         try {
             DateTime.parse( analysisWindowStart );
@@ -239,7 +239,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (AnalysisWindowEnd != null) && !AnalysisWindowEnd.equals("") ) {
+    if ( (AnalysisWindowEnd != null) && !AnalysisWindowEnd.isEmpty() ) {
         String analysisWindowEnd = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd;
         try {
             DateTime.parse( analysisWindowEnd );

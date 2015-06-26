@@ -5,12 +5,11 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
@@ -58,8 +57,7 @@ public AdjustExtremes_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -79,7 +77,6 @@ throws InvalidCommandParameterException
     }
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
-	//String FillFlag = parameters.getValue ( "SetFlag" );
 	String warning = "";
     String message;
     
@@ -154,7 +151,7 @@ throws InvalidCommandParameterException
                 message, "Specify the maximum intervals as an integer." ) );
     }
 
-	if ( (AnalysisStart != null) && !AnalysisStart.equals("") && !AnalysisStart.equalsIgnoreCase("OutputStart")){
+	if ( (AnalysisStart != null) && !AnalysisStart.equals("") && !AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.startsWith("${") ){
 		try {	DateTime.parse(AnalysisStart);
 		}
 		catch ( Exception e ) {
@@ -165,7 +162,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time." ) );
 		}
 	}
-	if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") && !AnalysisEnd.startsWith("${") ) {
 		try {	DateTime.parse( AnalysisEnd);
 		}
 		catch ( Exception e ) {
@@ -176,29 +173,21 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time." ) );
 		}
 	}
-    /*
-	if ( (FillFlag != null) && (FillFlag.length() != 1) ) {
-        message = "The fill flag must be 1 character long.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a 1-character fill flag or blank to not use a flag." ) );
-	}
-    */
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "AdjustMethod" );
-    valid_Vector.add ( "ExtremeToAdjust" );
-    valid_Vector.add ( "ExtremeValue" );
-    valid_Vector.add ( "MaxIntervals" );
-    valid_Vector.add ( "AnalysisStart" );
-    valid_Vector.add ( "AnalysisEnd" );
-    //valid_Vector.add ( "FillFlag" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(11);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "AdjustMethod" );
+    validList.add ( "ExtremeToAdjust" );
+    validList.add ( "ExtremeValue" );
+    validList.add ( "MaxIntervals" );
+    validList.add ( "AnalysisStart" );
+    validList.add ( "AnalysisEnd" );
+    validList.add ( "SetFlag" );
+    validList.add ( "SetFlagDesc" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -317,16 +306,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number number of command to run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could  not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "AdjustExtremes_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -338,14 +324,33 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
 
 	// Get the time series to process...
 	
@@ -460,103 +465,36 @@ CommandWarningException, CommandException
 
 	String AnalysisStart = parameters.getValue("AnalysisStart");
 	String AnalysisEnd = parameters.getValue("AnalysisEnd");
-	//String FillFlag = parameters.getValue("SetFlag");
+	String SetFlag = parameters.getValue("SetFlag");
+	if ( (SetFlag != null) && (SetFlag.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		SetFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, SetFlag);
+	}
+	String SetFlagDesc = parameters.getValue("SetFlagDesc");
+	if ( (SetFlagDesc != null) && (SetFlagDesc.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		SetFlagDesc = TSCommandProcessorUtil.expandParameterValue(processor, this, SetFlagDesc);
+	}
 
 	// Figure out the dates to use for the analysis...
 	DateTime AnalysisStart_DateTime = null;
 	DateTime AnalysisEnd_DateTime = null;
-
-	try {
-	if ( AnalysisStart != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", AnalysisStart );
-		bean = null;
+    if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-            bean = processor.processRequest( "DateTime", request_params);
+			AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-			message = "Error requesting AnalysisStart DateTime(DateTime=" +	AnalysisStart + ") from processor.";
-			Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-			throw new InvalidCommandParameterException ( message );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for AnalysisStart DateTime(DateTime=" + AnalysisStart + "\") returned from processor.";
-			Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
-		else {	AnalysisStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	}
-	catch ( Exception e ) {
-		message = "AnalysisStart \"" + AnalysisStart + "\" is invalid.";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time or OutputStart." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
-	
-	try {
-	if ( AnalysisEnd != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", AnalysisEnd );
-		bean = null;
 		try {
-            bean = processor.processRequest( "DateTime", request_params);
+			AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-			message = "Error requesting AnalysisEnd DateTime(DateTime=" + AnalysisEnd + "\") from processor.";
-			Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-			throw new InvalidCommandParameterException ( message );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for AnalysisEnd DateTime(DateTime=" + AnalysisEnd +	"\") returned from processor.";
-			Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputEnd." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
-		else {	AnalysisEnd_DateTime = (DateTime)prop_contents;
-		}
-	}
-	}
-	catch ( Exception e ) {
-		message = "AnalysisEnd \"" + AnalysisEnd + "\" is invalid.";
-		Message.printWarning(warning_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time or OutputEnd." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
+    }
 
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series)...
@@ -567,13 +505,6 @@ CommandWarningException, CommandException
 	}
 
 	// Now process the time series...
-
-    /*
-	PropList props = new PropList ( "AdjustExtremes" );
-	if ( FillFlag != null ) {
-		props.set ( "FillFlag", FillFlag );
-	}
-    */
 
 	TS ts = null;
 	for ( int its = 0; its < nts; its++ ) {
@@ -625,7 +556,7 @@ CommandWarningException, CommandException
 		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Adjusting extremes for " +
 		        ts.getIdentifier().toStringAliasAndTSID() );
 		    TSUtil.adjustExtremes ( ts, AdjustMethod, ExtremeToAdjust, ExtremeValue_double,
-	            MaxIntervals_int, AnalysisStart_DateTime, AnalysisEnd_DateTime );
+	            MaxIntervals_int, AnalysisStart_DateTime, AnalysisEnd_DateTime, SetFlag, SetFlagDesc );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error adjusting extremes for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -666,7 +597,8 @@ public String toString ( PropList props )
     String MaxIntervals = props.getValue( "MaxIntervals" );
 	String AnalysisStart = props.getValue("AnalysisStart");
 	String AnalysisEnd = props.getValue("AnalysisEnd");
-	//String FillFlag = props.getValue("FillFlag");
+	String SetFlag = props.getValue("SetFlag");
+	String SetFlagDesc = props.getValue("SetFlagDesc");
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -722,13 +654,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
 	}
-    /*
-	if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
+	if ( (SetFlag != null) && (SetFlag.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "FillFlag=\"" + FillFlag + "\"" );
-	}*/
+		b.append ( "SetFlag=\"" + SetFlag + "\"" );
+	}
+	if ( (SetFlagDesc != null) && (SetFlagDesc.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "SetFlagDesc=\"" + SetFlagDesc + "\"" );
+	}
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

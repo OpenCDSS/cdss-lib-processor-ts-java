@@ -27,6 +27,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
@@ -539,13 +540,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 }
 
 /**
-Set the time series values from the table.
+Set the time series values from the table, for a single time series.
 */
 private void setTimeSeriesFromTable (
     TS ts, String TSIDFormat, DateTime SetStart_DateTime, DateTime SetEnd_DateTime, String setFlag, String setFlagDesc,
     DataTable table, int tableTSIDColumn, int tableDateTimeColumn, int tableValueColumn,
     int tableSetFlagColumn, int tableSetFlagDescColumn, int SortOrder, List<String> problems )
-{	boolean doSetFlag = false;
+{	String routine = getClass().getSimpleName() + ".setTimeSeriesFromTable";
+	boolean doSetFlag = false;
 	if ( (setFlag != null) && !setFlag.isEmpty() ) {
 		doSetFlag = true;
 		if ( (setFlagDesc == null) || setFlagDesc.isEmpty() ) {
@@ -579,6 +581,7 @@ private void setTimeSeriesFromTable (
     String tsid = ts.formatLegend(TSIDFormat);
     columnValues.add(tsid);
     List<TableRecord> matchedRows = null;
+    // Get the rows out of the data data that match the TSID
     try {
     	matchedRows = table.getRecords(columnNumbers, columnValues);
     }
@@ -587,135 +590,144 @@ private void setTimeSeriesFromTable (
     	problems.add ("Error matching table rows for TSID \"" + tsid + "\" (" + e + ").");
     	return;
     }
-    // TODO SAM 2015-05-26 Need to sort the rows by date/time
+    Message.printStatus(2,routine,"Matched " + matchedRows.size() + " rows from data table using TSID \"" + tsid + "\"" );
+    // TODO SAM 2015-05-26 Is there a need to sort the rows by date/time?
     if ( matchedRows.size() > 0 ) {
-    	// Iterate through the time series - works for irregular and regular
-	    TSIterator tsi = null;
-	    try {
-	    	tsi = ts.iterator(setStart,setEnd);
-	    }
-	    catch ( Exception e ) {
-	    	problems.add ("Error initializing iterator for time series (" + e + ").");
-	    	return;
-	    }
-	    TSData tsdata = null;
 	    Object o;
-	    DateTime tableDateTime;
-	    DateTime dt;
-	    double tableValue;
+	    DateTime tableDateTime = null;
+	    double tableValue = ts.getMissing();
 	    String tableSetFlag;
 	    String tableSetFlagDesc;
 	    boolean setFlagDescIsSet = false; // helps control setting metadata once
-	    while ( true ) {
-	    	tsdata = tsi.next();
-	    	if ( tsdata == null ) {
-	    		break;
-	    	}
-	    	dt = tsdata.getDate();
-	    	// Loop through the table rows and try to match the date/time
-	    	for ( TableRecord rec : matchedRows ) {
-	    		try {
-	    			o = rec.getFieldValue(tableDateTimeColumn);
-	    		}
-	    		catch ( Exception e ) {
-	    			problems.add ( "Error getting date/time column value - ignoring row (" + e + ")" );
-	    			continue;
-	    		}
-	    		if ( o instanceof DateTime ) {
-	    			tableDateTime = (DateTime)o;
-	    			// Compare from the TS date/time to control precision of the comparison
-	    			if ( dt.equals(tableDateTime) ) {
-	    				// Have a match - set the data and be done for this date/time
-	    				try {
-	    					o = rec.getFieldValue(tableValueColumn);
-	    				}
-	    				catch ( Exception e ) {
-	    					problems.add("Error getting value from table (" + e + ")" );
-	    					continue;
-	    				}
-	    				// Casts should work OK below
-	    				if ( o == null ) {
-	    					tableValue = ts.getMissing();
-	    				}
-	    				else if ( o instanceof Double ) {
-	    					tableValue = (Double)o;
-	    				}
-	    				else if ( o instanceof Float ) {
-	    					tableValue = (Float)o;
-	    				}
-	    				else if ( o instanceof Integer ) {
-	    					tableValue = (Integer)o;
-	    				}
-	    				else if ( o instanceof Long ) {
-	    					tableValue = (Long)o;
-	    				}
-	    				else {
-	    					problems.add("Don't know how to convert table value column type to double precision number.");
-	    					continue;
-	    				}
-	    				if ( tableSetFlagColumn >= 0 ) {
-	    					// Set the flag based on table data
-	    					try {
-		    					o = rec.getFieldValue(tableSetFlagColumn);
-		    				}
-		    				catch ( Exception e ) {
-		    					problems.add("Error getting set flag from table (" + e + ")" );
-		    					continue;
-		    				}
-	    					tableSetFlag = "";
-	    					if ( o != null ) {
-	    						tableSetFlag = (String)o;
-	    					}
-	    					ts.setDataValue(dt, tableValue, tableSetFlag, -1);
-	    					tableSetFlagDesc = "";
-	    					if ( tableSetFlagDescColumn >= 0 ) {
-		    					try {
-			    					o = rec.getFieldValue(tableSetFlagDescColumn);
-			    				}
-			    				catch ( Exception e ) {
-			    					problems.add("Error getting set flag description from table (" + e + ")" );
-			    					continue;
-			    				}
-		    					if ( o != null ) {
-		    						tableSetFlagDesc = (String)o;
-		    					}
-		    					if ( (tableSetFlagDesc != null) && !tableSetFlagDesc.isEmpty() ) {
-			    					// Need to set the flag description but if already in the list, reset
-			    					List<TSDataFlagMetadata> metaList = ts.getDataFlagMetadataList();
-			    					boolean found = false;
-			    					int i = -1;
-			    					for ( TSDataFlagMetadata meta : metaList ) {
-			    						++i;
-			    						if ( meta.equals(tableSetFlag) ) {
-			    							metaList.set(i, new TSDataFlagMetadata(tableSetFlag, tableSetFlagDesc));
-			    							found = true;
-			    							break;
-			    						}
-			    					}
-			    					if ( !found ) {
-			    						ts.addDataFlagMetadata(new TSDataFlagMetadata(tableSetFlag, tableSetFlagDesc));
-			    					}
-		    					}
-	    					}
-	    				}
-	    				else if ( doSetFlag ) {
-	    					// Have a flag based on command parameters
-	    					ts.setDataValue(dt, tableValue, setFlag, -1);
-	    					if ( !setFlagDescIsSet && (setFlagDesc != null) && !setFlagDesc.isEmpty() ) {
-	    						ts.addDataFlagMetadata(new TSDataFlagMetadata(setFlag, setFlagDesc));
-	    						setFlagDescIsSet = true;
-	    					}
-	    				}
-	    				else {
-	    					// Just set the data value
-	    					ts.setDataValue(dt, tableValue);
-	    				}
-	    				break;
-	    			}
-	    		}
-	    	}
-	    }
-    }
+    	// Loop through the table rows set the value.  If a regular time series, the value will set if in the period.
+    	// If irregular the time series will match and reset, or be added.
+    	for ( TableRecord rec : matchedRows ) {
+    		try {
+    			o = rec.getFieldValue(tableDateTimeColumn);
+    		}
+    		catch ( Exception e ) {
+    			problems.add ( "Error getting date/time column value - ignoring row (" + e + ")" );
+    			continue;
+    		}
+    		if ( o instanceof DateTime ) {
+    			// Use the date/time as is
+    			tableDateTime = (DateTime)o;
+    		}
+    		else if ( o instanceof String ) {
+    			// Parse the date/time string
+    			try {
+    				tableDateTime = DateTime.parse((String)o);
+    			}
+    			catch ( Exception e ) {
+    				problems.add ( "Error parsing string date/time \"" + o + "\" - ignoring row (" + e + ")" );
+    			}
+    		}
+    		// Ignore the value if not in the set period
+    		if ( tableDateTime.lessThan(setStart) || tableDateTime.greaterThan(setEnd) ) {
+    			continue;
+    		}
+    		// TODO SAM 2015-06-25 Add SetWindow at some point
+			try {
+				o = rec.getFieldValue(tableValueColumn);
+			}
+			catch ( Exception e ) {
+				problems.add("Error getting value from table matching TSID \"" + tsid + "\" and date/time " +
+					tableDateTime + " - ignoring (" + e + ")" );
+				continue;
+			}
+			// Casts should work OK below
+			if ( o == null ) {
+				tableValue = ts.getMissing();
+			}
+			else if ( o instanceof Double ) {
+				tableValue = (Double)o;
+			}
+			else if ( o instanceof Float ) {
+				tableValue = (Float)o;
+			}
+			else if ( o instanceof Integer ) {
+				tableValue = (Integer)o;
+			}
+			else if ( o instanceof Long ) {
+				tableValue = (Long)o;
+			}
+			else if ( o instanceof String ) {
+				String s = (String)o;
+				if ( s.isEmpty() || s.equalsIgnoreCase("NaN")) {
+					tableValue = ts.getMissing();
+				}
+				else if ( StringUtil.isDouble(s) ) {
+					tableValue = Double.parseDouble(s);
+				}
+				else {
+					problems.add("Don't know how to convert table value column type to double precision number.");
+				}
+			}
+			else {
+				problems.add("Don't know how to convert table value for TSID=\"" + tsid + "\" date=" +
+					tableDateTime + " value=\"" + o + "\" to number for data value.");
+				continue;
+			}
+			if ( tableSetFlagColumn >= 0 ) {
+				// Set the flag based on table data
+				try {
+					o = rec.getFieldValue(tableSetFlagColumn);
+				}
+				catch ( Exception e ) {
+					problems.add("Error getting set flag from table (" + e + ")" );
+					continue;
+				}
+				tableSetFlag = "";
+				if ( o != null ) {
+					tableSetFlag = (String)o;
+				}
+				ts.setDataValue(tableDateTime, tableValue, tableSetFlag, -1);
+				tableSetFlagDesc = "";
+				if ( tableSetFlagDescColumn >= 0 ) {
+					try {
+    					o = rec.getFieldValue(tableSetFlagDescColumn);
+    				}
+    				catch ( Exception e ) {
+    					problems.add("Error getting set flag description from table (" + e + ")" );
+    					continue;
+    				}
+					if ( o != null ) {
+						tableSetFlagDesc = (String)o;
+					}
+					if ( (tableSetFlagDesc != null) && !tableSetFlagDesc.isEmpty() ) {
+    					// Need to set the flag description but if already in the list, reset
+    					List<TSDataFlagMetadata> metaList = ts.getDataFlagMetadataList();
+    					boolean found = false;
+    					int i = -1;
+    					for ( TSDataFlagMetadata meta : metaList ) {
+    						++i;
+    						if ( meta.equals(tableSetFlag) ) {
+    							metaList.set(i, new TSDataFlagMetadata(tableSetFlag, tableSetFlagDesc));
+    							found = true;
+    							break;
+    						}
+    					}
+    					if ( !found ) {
+    						ts.addDataFlagMetadata(new TSDataFlagMetadata(tableSetFlag, tableSetFlagDesc));
+    					}
+					}
+				}
+			}
+			else if ( doSetFlag ) {
+				// Have a flag based on command parameters
+				ts.setDataValue(tableDateTime, tableValue, setFlag, -1);
+				if ( !setFlagDescIsSet && (setFlagDesc != null) && !setFlagDesc.isEmpty() ) {
+					ts.addDataFlagMetadata(new TSDataFlagMetadata(setFlag, setFlagDesc));
+					setFlagDescIsSet = true;
+				}
+			}
+			else {
+				// Just set the data value
+				ts.setDataValue(tableDateTime, tableValue);
+			}
+			break;
+		}
+	}
 }
 
 /**

@@ -7,9 +7,11 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -47,7 +49,7 @@ import RTi.Util.Time.YearType;
 /**
 Editor for the WriteTimeSeriesToExcelFormatted command.
 */
-public class WriteTimeSeriesToExcelFormatted_JDialog extends JDialog
+public class WriteTimeSeriesToExcelBlock_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
@@ -90,19 +92,20 @@ private JTextArea __RowStatistics_JTextArea = null;
 private JTextArea __ColumnStatisticFormulas_JTextArea = null;
 private JTextArea __RowStatisticFormulas_JTextArea = null;
 
-private JTextArea __ConditionalFormattingClassBreaks_JTextArea = null;
-
 private JTextArea __DataFlagCellColor_JTextArea = null;
 private JTextArea __DataFlagCellOutlineColor_JTextArea = null;
 private JTextArea __DataFlagCellIcon_JTextArea = null;
 private JTextArea __DataFlagCellComment_JTextArea = null;
+
+private SimpleJComboBox __StyleTableID_JComboBox = null;
+private SimpleJComboBox __ConditionTableID_JComboBox = null;
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private String __working_dir = null;	
-private WriteTimeSeriesToExcelFormatted_Command __command = null;
+private WriteTimeSeriesToExcelBlock_Command __command = null;
 private boolean __ok = false;
 //private JFrame __parent = null;
 
@@ -112,9 +115,9 @@ Command dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public WriteTimeSeriesToExcelFormatted_JDialog ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command command )
+public WriteTimeSeriesToExcelBlock_JDialog ( JFrame parent, WriteTimeSeriesToExcelBlock_Command command, List<String> tableIDChoices )
 {	super(parent, true);
-	initialize ( parent, command );
+	initialize ( parent, command, tableIDChoices );
 }
 
 /**
@@ -204,6 +207,8 @@ private void checkInput ()
 	String LayoutColumns = __LayoutColumns_JComboBox.getSelected();
 	String LayoutRows = __LayoutRows_JComboBox.getSelected();
 	String OutputYearType = __OutputYearType_JComboBox.getSelected();
+	String StyleTableID = __StyleTableID_JComboBox.getSelected();
+	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -260,6 +265,12 @@ private void checkInput ()
     if ( OutputYearType.length() > 0 ) {
         props.set ( "OutputYearType", OutputYearType );
     }
+    if ( StyleTableID.length() > 0 ) {
+        props.set ( "StyleTableID", StyleTableID );
+    }
+    if ( ConditionTableID.length() > 0 ) {
+        props.set ( "ConditionTableID", ConditionTableID );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -294,6 +305,8 @@ private void commitEdits ()
 	String LayoutColumns = __LayoutColumns_JComboBox.getSelected();
 	String LayoutRows = __LayoutRows_JComboBox.getSelected();
 	String OutputYearType = __OutputYearType_JComboBox.getSelected();
+	String StyleTableID = __StyleTableID_JComboBox.getSelected();
+	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -312,6 +325,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "LayoutColumns", LayoutColumns );
 	__command.setCommandParameter ( "LayoutRows", LayoutRows );
 	__command.setCommandParameter ( "OutputYearType", OutputYearType );
+	__command.setCommandParameter ( "StyleTableID", StyleTableID );
+	__command.setCommandParameter ( "ConditionTableID", ConditionTableID );
 }
 
 /**
@@ -319,7 +334,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit and possibly run.
 */
-private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command command )
+private void initialize ( JFrame parent, WriteTimeSeriesToExcelBlock_Command command, List<String> tableIDChoices )
 {	__command = command;
     //__parent = parent;
 	CommandProcessor processor = __command.getCommandProcessor();
@@ -345,14 +360,16 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
     	+ "be processed and parameter support is limited until features are enabled.</b></html>"),
     	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
-    	"This command writes a list of time series to a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx), with user-controlled formatting."),
+    	"This command writes a list of time series to a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx), in blocks of rows and columns."),
     	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-		"See the WriteTimeSeriesToExcel() command to output multiple time series with limited formatting."),
+		"See the WriteTimeSeriesToExcel() command to output multiple time series as columns of data."),
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
@@ -365,23 +382,27 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
     __main_JTabbedPane.addTab ( "Time Series to Write", ts_JPanel );
     
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
-		"Specify the time series to output.  Each time series will be positioned as per the Excel Output tab."),
+		"Specify the time series to output.  Each time series will be positioned in the worksheet as per the \"Excel Output\" and \"Layout\" tabs."),
 		0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
 		"<html><b>Currently only the first time series is processed.</b></html>"),
 		0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(ts_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yTs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     __TSList_JComboBox = new SimpleJComboBox(false);
     yTs = CommandEditorUtil.addTSListToEditorDialogPanel ( this, ts_JPanel, __TSList_JComboBox, ++yTs );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTs = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTs );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTs = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -411,6 +432,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
     JGUIUtil.addComponent(ts_JPanel, new JLabel ("Output start:"), 
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField (20);
+    __OutputStart_JTextField.setToolTipText("Specify the output start using a date/time string or ${Property} notation");
     __OutputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __OutputStart_JTextField,
         1, yTs, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -421,6 +443,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Output end:"), 
         0, ++yTs, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputEnd_JTextField = new JTextField (20);
+    __OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or ${Property} notation");
     __OutputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __OutputEnd_JTextField,
         1, yTs, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -452,10 +475,13 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
 		"The working directory is: " + __working_dir), 
 		0, ++yExcelOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+	JGUIUtil.addComponent(excelOutput_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yExcelOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Output (workbook) file:"),
 		0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (45);
+	__OutputFile_JTextField.setToolTipText("Specify the Excel workbook file or use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(excelOutput_JPanel, __OutputFile_JTextField,
 		1, yExcelOutput, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -480,6 +506,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ("Worksheet:"),
         0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Worksheet_JTextField = new JTextField (30);
+    __Worksheet_JTextField.setToolTipText("Specify the Excel worksheet name or use ${Property} notation");
     __Worksheet_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(excelOutput_JPanel, __Worksheet_JTextField,
         1, yExcelOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -555,14 +582,16 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
     __main_JTabbedPane.addTab ( "Layout", layout_JPanel );
     
     JGUIUtil.addComponent(layout_JPanel, new JLabel (
-		"Each time series is formatted by specifying a layout block (chunk of data) and then the layout of that block of data by columns and rows."),
+		"Each time series is formatted by specifying a layout block (chunk of data) and then the layout within that block of data by columns and rows."),
 		0, ++yLayout, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(layout_JPanel, new JLabel (
-		"<html><b>Initial functionality has been implemented to generate raster graphs for daily and monthly data using conditional formatting.</b></html>"),
+		"See the \"Style Formatting\" tab for features to format cells based on time series data values and flags."),
 		0, ++yLayout, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(layout_JPanel, new JLabel (
-		"<html><b>February 29 of non-leap years in daily and smaller interval time series is set to blank.</b></html>"),
+		"<html><b>February 29 of non-leap years in daily and smaller interval time series is set to blank (more options will be added later).</b></html>"),
 		0, ++yLayout, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(layout_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yLayout, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(layout_JPanel, new JLabel( "Layout block:"),
         0, ++yLayout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -580,7 +609,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
         0, ++yLayout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LayoutColumns_JComboBox = new SimpleJComboBox ( false );
     //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.YEAR)); // TODO SAM 2015-03-10 Need to enable
-    //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH));
+    __LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH));
     __LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.DAY));
     __LayoutColumns_JComboBox.select ( 0 );
     __LayoutColumns_JComboBox.addItemListener ( this );
@@ -660,6 +689,8 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
     JGUIUtil.addComponent(stats_JPanel, new JLabel (
 		"The block of data can optionally also have statistics on the right-most columns or bottom-most rows."),
 		0, ++yStats, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(stats_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yStats, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(stats_JPanel, new JLabel ("Column statistics:"),
         0, ++yStats, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -732,6 +763,8 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
     JGUIUtil.addComponent(dataFlag_JPanel, new JLabel (
 		"Options are to set the cell color, set the cell border, display an icon, and/or set a comment."),
 		0, ++yDataFlag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(dataFlag_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yDataFlag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(dataFlag_JPanel, new JLabel ("Data flag cell color:"),
         0, ++yDataFlag, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -789,36 +822,54 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelFormatted_Command
     JGUIUtil.addComponent(dataFlag_JPanel, new SimpleJButton ("Edit","EditDataFlagCellComment",this),
         3, ++yDataFlag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for conditional formatting
-    int yCondFormat = 0;
-    JPanel condFormat_JPanel = new JPanel();
-    condFormat_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Conditional Formatting", condFormat_JPanel );
+    // Panel for style formatting 
+    int yStyle = -1;
+    JPanel style_JPanel = new JPanel();
+    style_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Style Formatting", style_JPanel );
 
-    JGUIUtil.addComponent(condFormat_JPanel, new JLabel (
-		"<html><b>Conditional formatting currently defaults to cutoffs at value of 5 and 500 with red/yellow/green color-coding."),
-		0, ++yCondFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(condFormat_JPanel, new JLabel (
-		"Conditional formatting allows cell values to dictate how the cell should be formatted."),
-		0, ++yCondFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(condFormat_JPanel, new JLabel (
-		"Currently only cell color can be set by specifying numerical classes."),
-		0, ++yCondFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "The following parameters control how Excel cells are formatted, using a general style formatting approach."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Style-based formatting requires as input a condition table to indicate how to evaluate cell contents for style formatting."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "A style table indicates the style properties to format a cell, such as the fill foreground color."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Refer to the command documentation for details."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(style_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+   	    0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Condition table ID:" ), 
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ConditionTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __ConditionTableID_JComboBox.setToolTipText("Select the condition table or use ${Property} notation");
+    tableIDChoices.add(0,""); // Add blank to give user a blank entry to type over
+    __ConditionTableID_JComboBox.setData ( tableIDChoices );
+    __ConditionTableID_JComboBox.addItemListener ( this );
+    __ConditionTableID_JComboBox.addKeyListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(style_JPanel, __ConditionTableID_JComboBox,
+        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - conditions to determine styles."), 
+        3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(condFormat_JPanel, new JLabel ("Conditional formatting class breaks:"),
-        0, ++yCondFormat, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ConditionalFormattingClassBreaks_JTextArea = new JTextArea (3,35);
-    __ConditionalFormattingClassBreaks_JTextArea.setLineWrap ( true );
-    __ConditionalFormattingClassBreaks_JTextArea.setWrapStyleWord ( true );
-    __ConditionalFormattingClassBreaks_JTextArea.setToolTipText("Criteria1:Value1:Color1,Criteria2:Value2:Color2,...");
-    __ConditionalFormattingClassBreaks_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(condFormat_JPanel, new JScrollPane(__ConditionalFormattingClassBreaks_JTextArea),
-        1, yCondFormat, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(condFormat_JPanel, new JLabel ("Optional - conditional formatting class breaks."),
-        3, yCondFormat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(condFormat_JPanel, new SimpleJButton ("Edit","EditConditionalFormattingClassBreaks",this),
-        3, ++yCondFormat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Style table ID:" ), 
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StyleTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __StyleTableID_JComboBox.setToolTipText("Select the style table or use ${Property} notation");
+    __StyleTableID_JComboBox.setData ( tableIDChoices );
+    __StyleTableID_JComboBox.addItemListener ( this );
+    __StyleTableID_JComboBox.addKeyListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(style_JPanel, __StyleTableID_JComboBox,
+        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - style definitions."), 
+        3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
@@ -898,7 +949,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -917,6 +968,8 @@ private void refresh ()
 	String LayoutColumns = "";
 	String LayoutRows = "";
 	String OutputYearType = "";
+	String StyleTableID = "";
+	String ConditionTableID = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -938,6 +991,8 @@ private void refresh ()
 		LayoutColumns = props.getValue ( "LayoutColumns" );
 		LayoutRows = props.getValue ( "LayoutRows" );
         OutputYearType = props.getValue ( "OutputYearType" );
+		StyleTableID = props.getValue ( "StyleTableID" );
+		ConditionTableID = props.getValue ( "ConditionTableID" );
 
         if ( TSList == null ) {
             // Select default...
@@ -1103,6 +1158,36 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( ConditionTableID == null ) {
+            // Select default...
+        	__ConditionTableID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ConditionTableID_JComboBox,ConditionTableID, JGUIUtil.NONE, null, null ) ) {
+                __ConditionTableID_JComboBox.select ( ConditionTableID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nConditionTableID value \"" + ConditionTableID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( StyleTableID == null ) {
+            // Select default...
+        	__StyleTableID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __StyleTableID_JComboBox,StyleTableID, JGUIUtil.NONE, null, null ) ) {
+                __StyleTableID_JComboBox.select ( StyleTableID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nStyleTableID value \"" + StyleTableID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
@@ -1123,6 +1208,8 @@ private void refresh ()
 	LayoutColumns = __LayoutColumns_JComboBox.getSelected();
 	LayoutRows = __LayoutRows_JComboBox.getSelected();
 	OutputYearType = __OutputYearType_JComboBox.getSelected();
+	StyleTableID = __StyleTableID_JComboBox.getSelected();
+	ConditionTableID = __ConditionTableID_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -1142,6 +1229,8 @@ private void refresh ()
 	props.add ( "LayoutColumns=" + LayoutColumns );
 	props.add ( "LayoutRows=" + LayoutRows );
 	props.add ( "OutputYearType=" + OutputYearType );
+	props.add ( "StyleTableID=" + StyleTableID );
+	props.add ( "ConditionTableID=" + ConditionTableID );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

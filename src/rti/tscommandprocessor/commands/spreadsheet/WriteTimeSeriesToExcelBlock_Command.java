@@ -22,6 +22,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
@@ -59,6 +60,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.DateTimeRange;
@@ -68,10 +70,10 @@ import RTi.Util.Time.TimeUtil;
 import RTi.Util.Time.YearType;
 
 /**
-This class initializes, checks, and runs the WriteTimeSeriesToExcelFormatted() command, using Apache POI.
+This class initializes, checks, and runs the WriteTimeSeriesToExcelBlock() command, using Apache POI.
 A useful link is:  http://poi.apache.org/spreadsheet/quick-guide.html
 */
-public class WriteTimeSeriesToExcelFormatted_Command extends AbstractCommand implements Command, FileGenerator
+public class WriteTimeSeriesToExcelBlock_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -99,16 +101,15 @@ protected final String _Year = "Year";
 /**
 Constructor.
 */
-public WriteTimeSeriesToExcelFormatted_Command ()
+public WriteTimeSeriesToExcelBlock_Command ()
 {	super();
-	setCommandName ( "WriteTimeSeriesToExcelFormatted" );
+	setCommandName ( "WriteTimeSeriesToExcelBlock" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -158,7 +159,7 @@ throws InvalidCommandParameterException
 	            new CommandLogRecord(CommandStatusType.FAILURE,
 	                    message, "Specify an existing Excel output file." ) );
 	}
-	else {
+	else if ( OutputFile.indexOf("${") < 0 ) {
 	    try {
 	        String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, OutputFile) );
 			File f = new File ( adjusted_path );
@@ -215,7 +216,7 @@ throws InvalidCommandParameterException
 	    }
 	}
 	
-	if ( (OutputStart != null) && !OutputStart.equals("")) {
+	if ( (OutputStart != null) && !OutputStart.isEmpty() && !OutputStart.startsWith("${")) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
 				throw new Exception ("bad date");
@@ -229,7 +230,7 @@ throws InvalidCommandParameterException
 					message, "Specify a valid output start date/time." ) );
 		}
 	}
-	if ( (OutputEnd != null) && !OutputEnd.equals("")) {
+	if ( (OutputEnd != null) && !OutputEnd.equals("") && !OutputEnd.startsWith("${")) {
 		try {	DateTime datetime2 = DateTime.parse(OutputEnd);
 			if ( datetime2 == null ) {
 				throw new Exception ("bad date");
@@ -281,7 +282,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
 	
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(11);
+	List<String> validList = new ArrayList<String>(20);
 	validList.add ( "TSList" );
 	validList.add ( "TSID" );
 	validList.add ( "EnsembleID" );
@@ -300,6 +301,8 @@ throws InvalidCommandParameterException
 	validList.add ( "LayoutColumns" );
 	validList.add ( "LayoutRows" );
 	validList.add ( "OutputYearType" );
+    validList.add ( "ConditionTableID" );
+    validList.add ( "StyleTableID" );
 	// TODO SAM 2015-03-10 need to add others for data flags, statistics, etc.
 	
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
@@ -320,7 +323,9 @@ Edit the command.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new WriteTimeSeriesToExcelFormatted_JDialog ( parent, this )).ok();
+    List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)getCommandProcessor(), this);
+	return (new WriteTimeSeriesToExcelBlock_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 /**
@@ -348,8 +353,7 @@ private File getOutputFile ()
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -358,14 +362,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     
 	// Check whether the processor wants output files to be created...
 
-	CommandProcessor processor = getCommandProcessor();
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
 			Message.printStatus ( 2, routine,
 			"Skipping \"" + toString() + "\" because output is not being created." );
@@ -380,7 +396,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String MissingValue = parameters.getValue ( "MissingValue" );
     if ( (MissingValue != null) && MissingValue.equals("") ) {
         // Set to null to indicate default internal value should be used
@@ -405,6 +427,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    }
 	}
 	String Worksheet = parameters.getValue ( "Worksheet" );
+	if ( (Worksheet != null) && (Worksheet.indexOf("${") >= 0) ) {
+		Worksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheet);
+	}
 	String ExcelAddress = parameters.getValue ( "ExcelAddress" );
 	String ExcelNamedRange = parameters.getValue ( "ExcelNamedRange" );
 	String ExcelTableName = parameters.getValue ( "ExcelTableName" );
@@ -444,6 +469,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String ValueColumns = parameters.getValue ( "ValueColumns" );
     if ( (ValueColumns == null) || ValueColumns.equals("") ) {
         ValueColumns = "%L_%T";
+    }
+    String LayoutBlock = parameters.getValue ( "LayoutBlock" );
+    String LayoutRows = parameters.getValue ( "LayoutRows" );
+    String LayoutColumns = parameters.getValue ( "LayoutColumns" );
+    TimeInterval layoutColumns = null;
+    try {
+    	layoutColumns = TimeInterval.parseInterval(LayoutColumns);
+    }
+    catch ( Exception e ) {
+    	layoutColumns = null;
+    }
+    String ConditionTableID = parameters.getValue ( "ConditionTableID" );
+    if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ConditionTableID.indexOf("${") >= 0 ) {
+    	ConditionTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, ConditionTableID);
+    }
+    String StyleTableID = parameters.getValue ( "StyleTableID" );
+    if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
+    	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
     }
     
 	// Get the time series to process...
@@ -497,101 +540,91 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	String OutputStart = parameters.getValue ( "OutputStart" );
-	DateTime OutputStart_DateTime = null;
-	if ( OutputStart != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputStart );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputStart +
-				"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor (can be null)...
-		try {
-		    Object o_OutputStart = processor.getPropContents ( "OutputStart" );
-			if ( o_OutputStart != null ) {
-				OutputStart_DateTime = (DateTime)o_OutputStart;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting OutputStart from processor - not using.";
-			Message.printDebug(10, routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
+	if ( (OutputStart == null) || OutputStart.isEmpty() ) {
+		OutputStart = "${OutputStart}";
 	}
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	if ( (OutputEnd == null) || OutputEnd.isEmpty() ) {
+		OutputEnd = "${OutputEnd}";
+	}
+	DateTime OutputStart_DateTime = null;
 	DateTime OutputEnd_DateTime = null;
-	if ( OutputEnd != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputEnd );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputEnd +
-			"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputEnd_DateTime = (DateTime)prop_contents;
-		}
+	try {
+		OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
+			status, warning_level, command_tag );
 	}
-	else {
-	    // Get from the processor...
-		try {
-		    Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
-			if ( o_OutputEnd != null ) {
-				OutputEnd_DateTime = (DateTime)o_OutputEnd;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputEnd from processor - not using.";
-			Message.printDebug(10, routine, message );
-		}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
 	}
+	try {
+		OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
+			status, warning_level, command_tag );
+	}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
+	}
+	
+	// Get the style table
+	
+    DataTable styleTable = null;
+    if ( (StyleTableID != null) && !StyleTableID.isEmpty() ) {
+	    request_params = new PropList ( "" );
+	    request_params.set ( "TableID", StyleTableID );
+	    try {
+	        bean = processor.processRequest( "GetTable", request_params);
+	    }
+	    catch ( Exception e ) {
+	        message = "Error requesting GetTable(TableID=\"" + StyleTableID + "\") from processor.";
+	        Message.printWarning(warning_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report problem to software support." ) );
+	    }
+	    bean_PropList = bean.getResultsPropList();
+	    Object o_Table = bean_PropList.getContents ( "Table" );
+	    if ( o_Table == null ) {
+	        message = "Unable to find table to process using TableID=\"" + StyleTableID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Verify that a table exists with the requested ID." ) );
+	    }
+	    else {
+	        styleTable = (DataTable)o_Table;
+	    }
+    }
+	    
+	// Get the condition table
+	
+    DataTable conditionTable = null;
+    if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() ) {
+	    request_params = new PropList ( "" );
+	    request_params.set ( "TableID", ConditionTableID );
+	    try {
+	        bean = processor.processRequest( "GetTable", request_params);
+	    }
+	    catch ( Exception e ) {
+	        message = "Error requesting GetTable(TableID=\"" + ConditionTableID + "\") from processor.";
+	        Message.printWarning(warning_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report problem to software support." ) );
+	    }
+	    bean_PropList = bean.getResultsPropList();
+	    Object o_Table = bean_PropList.getContents ( "Table" );
+	    if ( o_Table == null ) {
+	        message = "Unable to find table to process using TableID=\"" + ConditionTableID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Verify that a table exists with the requested ID." ) );
+	    }
+	    else {
+	        conditionTable = (DataTable)o_Table;
+	    }
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
@@ -618,6 +651,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		DateColumn, dateFormatterType, DateFormat,
         		TimeColumn, timeFormatterType, TimeFormat,
         		ValueColumns,
+        		LayoutBlock, layoutColumns, LayoutRows,
+        		conditionTable, styleTable,
         	    problems, processor, status, commandPhase );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
@@ -681,6 +716,8 @@ public String toString ( PropList props )
 	String LayoutColumns = props.getValue ( "LayoutColumns" );
 	String LayoutRows = props.getValue ( "LayoutRows" );
 	String OutputYearType = props.getValue ( "OutputYearType" );
+	String ConditionTableID = props.getValue( "ConditionTableID" );
+	String StyleTableID = props.getValue( "StyleTableID" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 	    if ( b.length() > 0 ) {
@@ -790,6 +827,18 @@ public String toString ( PropList props )
         }
         b.append ( "OutputYearType=" + OutputYearType );
     }
+    if ( (ConditionTableID != null) && (ConditionTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ConditionTableID=\"" + ConditionTableID + "\"" );
+    }
+    if ( (StyleTableID != null) && (StyleTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
@@ -845,6 +894,8 @@ private void writeTimeSeries ( List<TS> tslist,
 	String dateColumn, DateTimeFormatterType dateFormatterType, String dateFormat,
 	String timeColumn, DateTimeFormatterType timeFormatterType, String timeFormat,
 	String valueColumns,
+	String layoutBlock, TimeInterval layoutColumns, String layoutRows,
+	DataTable conditionTable, DataTable styleTable,
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTimeSeries", message;
@@ -961,7 +1012,13 @@ throws FileNotFoundException, IOException
         for ( int its = 0; its < tslist.size(); its++ ) {
             if ( precision == null ) {
             	// Get the precision from the data units
-            	DataUnits units = DataUnits.lookupUnits(tslist.get(its).getDataUnits());
+            	DataUnits units = null;
+            	try {
+            		units = DataUnits.lookupUnits(tslist.get(its).getDataUnits());
+            	}
+            	catch ( Exception e ) {
+            		// Units not handled
+            	}
             	if ( units != null ) {
             		tsPrecision[its] = units.getOutputPrecision();
             	}
@@ -1070,6 +1127,12 @@ throws FileNotFoundException, IOException
         DataFormat cellFormatHeader = wb.createDataFormat();
         CellStyle [] cellStyles = new CellStyle[cols];
         CellStyle cellStyleHeader = wb.createCellStyle();
+        // Initialize styles corresponding to styleTable, newer approach to styling.
+        // The styles in this table will be used by default with the above setting style information to the below.
+        TimeSeriesConditionAndStyleManager styleManager = null;
+        if ( (conditionTable != null) && (styleTable != null) ) {
+        	styleManager = new TimeSeriesConditionAndStyleManager(tslist,conditionTable,styleTable,wb);
+        }
         int [] cellTypes = new int[cols];
         int cellTypeHeader = Cell.CELL_TYPE_STRING;
         int col = 0;
@@ -1123,7 +1186,9 @@ throws FileNotFoundException, IOException
         }
         // Output the data rows
         for ( its = 0; its < tslist.size(); its++ ) {
-        	writeTimeSeriesPeriod ( sheet, tslist.get(its), outputStart, outputEnd, outputYearType, tk );
+        	writeTimeSeriesPeriod ( sheet, tslist.get(its), outputStart, outputEnd, outputYearType, tk,
+        		layoutBlock, layoutColumns, layoutRows,
+        		styleManager );
         }
         if ( 1 == 2 ) {
         // Loop through date/time corresponding to each row in the output file
@@ -1282,7 +1347,10 @@ Write a time series to Excel using a block for the entire period.
 @param outputYearType output year type
 @param tk Excel toolkit object
 */
-private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, DateTime outputEnd, YearType outputYearType, ExcelToolkit tk )
+private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, DateTime outputEnd, YearType outputYearType,
+	ExcelToolkit tk,
+	String layoutBlock, TimeInterval layoutColumns, String layoutRows,
+	TimeSeriesConditionAndStyleManager styleManager )
 {	String routine = getClass().getSimpleName() + ".writeTimeSeriesPeriod";
 	DateTimeRange outputRange = TimeUtil.determineOutputYearTypeRange(outputStart, outputEnd, outputYearType);
 	int yearStart = outputRange.getStart().getYear() - outputYearType.getStartYearOffset();
@@ -1300,7 +1368,9 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 	int rowOutMax = 0;
 	int rowOutMin = 1;
 	// The loop is in years that match the output year type
+	Message.printStatus(2,routine,"Writing time series block");
 	for ( int year = yearEnd; year >= yearStart; year-- ) {
+		Message.printStatus(2,routine,"Processing year " + year );
 		++row;
 		if ( row > rowOutMax ) {
 			rowOutMax = row;
@@ -1314,7 +1384,10 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 		dateInYearLast.setMonth(outputYearType.getEndMonth());
 		dateInYearLast.setDay(TimeUtil.numDaysInMonth(outputYearType.getEndMonth(), year));
 		tk.setCellValue(sheet,row,col,"" + dateInYearLast.getYear());
-		for ( ; dateInYear.lessThanOrEqualTo(dateInYearLast); dateInYear.addDay(1) ) {
+		String flag;
+		Cell cell;
+		int intervalBase = layoutColumns.getBase();
+		for ( ; dateInYear.lessThanOrEqualTo(dateInYearLast); dateInYear.addInterval(intervalBase,1) ) {
 			++col;
 			if ( col > colOutMax ) {
 				colOutMax = col;
@@ -1322,11 +1395,12 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 			tsdata = ts.getDataPoint(dateInYear, tsdata);
 			// First expand the line to replace time series properties
 			value = tsdata.getDataValue();
+			flag = tsdata.getDataFlag();
 			try {
 				if ( ts.isDataMissing(value) ) {
 					if ( missingValueBlank ) {
 						// Set the cell value to blank
-						tk.setCellBlank(sheet,row,col);
+						cell = tk.setCellBlank(sheet,row,col);
 					}
 					/*
 					else if ( missingValueStrings[its] != null ) {
@@ -1336,18 +1410,33 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 					*/
 					else {
 						// Set the cell value to the numerical missing value
-						tk.setCellValue(sheet,row,col,ts.getMissing(),null);//cellStyles[col]);
+						cell = tk.setCellValue(sheet,row,col,ts.getMissing(),null);//cellStyles[col]);
 					}
+                    if ( styleManager != null ) {
+                    	// New-style...
+                    	int its = 0;
+                    	if ( styleManager != null ) {
+                    		cell.setCellStyle(styleManager.getStyle(ts,its,value,flag));
+                    	}
+                    }
 				}
 				else {
 					// Not missing so set to the numerical value
-					tk.setCellValue(sheet,row,col,value,null);//cellStyles[col]);
+					cell = tk.setCellValue(sheet,row,col,value,null);//cellStyles[col]);
+					int its =  0;
+					if ( styleManager != null ) {
+						cell.setCellStyle(styleManager.getStyle(ts,its,value,flag));
+					}
 				}
 				if ( (dateInYear.getMonth() == 2) && !dateInYear.isLeapYear() && (dateInYear.getDay() == 28)) {
 					// Not a leap year but to make grid line up need to insert an extra cell for Feb 29
 					// TODO SAM 2015-03-10 Need to handle style
 					++col;
-					tk.setCellBlank(sheet, row, col);
+					cell = tk.setCellBlank(sheet, row, col);
+					int its = 0;
+					if ( styleManager != null ) {
+						//cell.setCellStyle(styleManager.getStyle(ts,its,value,flag));
+					}
 				}
 				// Set the row height here
 				// TODO SAM 2015-03-10 need to allow width and height to be set with a parameter
@@ -1358,15 +1447,19 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 			}
 			catch ( Exception e ) {
 				// Log but let the output continue
-				Message.printWarning(3, routine, "Unexpected error writing date at Excel row [" + row + "][" + col + "] (" + e + ")." );
+				Message.printWarning(3, routine, "Unexpected error writing data at Excel row [" + row + "][" + col + "] (" + e + ")." );
+				Message.printWarning(3, routine, e );
 			}
 		}
 	}
     // Now do post-data set operations
     // Set the column width
     // TODO SAM 2015-02-17 Need to enable a parameter control width similar to WriteTableToExcel
+	String width = "80"; // Works for daily
+	if ( layoutColumns.getBase() == TimeInterval.MONTH ) {
+		width = "960";
+	}
     for ( col = 1; col <= colOutMax; col++ ) {
-    	String width = "80";
         if ( width != null ) {
             // Set the column width
             if ( width.equalsIgnoreCase("Auto") ) {
@@ -1387,7 +1480,7 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
         }
     }
     // Set conditional formatting
-    SheetConditionalFormatting cf = sheet.getSheetConditionalFormatting();
+    //SAM SheetConditionalFormatting cf = sheet.getSheetConditionalFormatting();
     // Hard coded for now:
     // < 5
     // >= 5 <= 10
@@ -1424,6 +1517,7 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
     PatternFormatting pf7 = cfRules[1].createPatternFormatting();
     pf7.setFillBackgroundColor(IndexedColors.BLUE.index);
     */
+    /*
     ConditionalFormattingRule [] cfRules = new ConditionalFormattingRule[3];
     cfRules[0] = cf.createConditionalFormattingRule(ComparisonOperator.LT, "5");
     PatternFormatting pf0 = cfRules[0].createPatternFormatting();
@@ -1438,6 +1532,7 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
     	new CellRangeAddress(1,rowOutMax,1,colOutMax)
     };
     cf.addConditionalFormatting(regions, cfRules);
+    */
 }
 
 }

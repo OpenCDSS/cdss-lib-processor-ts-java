@@ -110,7 +110,7 @@ import rti.tscommandprocessor.commands.spreadsheet.SetExcelCell_Command;
 import rti.tscommandprocessor.commands.spreadsheet.SetExcelWorksheetViewProperties_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTableCellsToExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTableToExcel_Command;
-import rti.tscommandprocessor.commands.spreadsheet.WriteTimeSeriesToExcelFormatted_Command;
+import rti.tscommandprocessor.commands.spreadsheet.WriteTimeSeriesToExcelBlock_Command;
 import rti.tscommandprocessor.commands.spreadsheet.WriteTimeSeriesToExcel_Command;
 
 // StateCU commands.
@@ -1122,8 +1122,8 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToExcel") ) {
         return new WriteTimeSeriesToExcel_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToExcelFormatted") ) {
-        return new WriteTimeSeriesToExcelFormatted_Command ();
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToExcelBlock") ) {
+        return new WriteTimeSeriesToExcelBlock_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToJson") ) {
         return new WriteTimeSeriesToJson_Command ();

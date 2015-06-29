@@ -100,7 +100,6 @@ import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 import rti.tscommandprocessor.commands.spreadsheet.CloseExcelWorkbook_Command;
-import rti.tscommandprocessor.commands.spreadsheet.FormatExcelTable_Command;
 // Spreadsheet commands
 import rti.tscommandprocessor.commands.spreadsheet.NewExcelWorkbook_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadPropertiesFromExcel_Command;
@@ -584,9 +583,6 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("FormatDateTimeProperty") ) {
         return new FormatDateTimeProperty_Command ();
     }
-	else if ( commandName.equalsIgnoreCase("FormatExcelTable") ) {
-		return new FormatExcelTable_Command ();
-	}
     else if ( commandName.equalsIgnoreCase("FormatStringProperty") ) {
         return new FormatStringProperty_Command ();
     }

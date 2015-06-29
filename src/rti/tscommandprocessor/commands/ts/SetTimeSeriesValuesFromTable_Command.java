@@ -10,9 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import RTi.TS.TS;
-import RTi.TS.TSData;
 import RTi.TS.TSDataFlagMetadata;
-import RTi.TS.TSIterator;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -592,13 +590,13 @@ private void setTimeSeriesFromTable (
     }
     Message.printStatus(2,routine,"Matched " + matchedRows.size() + " rows from data table using TSID \"" + tsid + "\"" );
     // TODO SAM 2015-05-26 Is there a need to sort the rows by date/time?
+    int setCount = 0;
     if ( matchedRows.size() > 0 ) {
 	    Object o;
 	    DateTime tableDateTime = null;
 	    double tableValue = ts.getMissing();
-	    String tableSetFlag;
 	    String tableSetFlagDesc;
-	    boolean setFlagDescIsSet = false; // helps control setting metadata once
+	    String setFlag2 = null; // Flag that is actually set, may come from table or parameter
     	// Loop through the table rows set the value.  If a regular time series, the value will set if in the period.
     	// If irregular the time series will match and reset, or be added.
     	for ( TableRecord rec : matchedRows ) {
@@ -668,8 +666,10 @@ private void setTimeSeriesFromTable (
 					tableDateTime + " value=\"" + o + "\" to number for data value.");
 				continue;
 			}
+			// Get the set flag and description
+			setFlag2 = setFlag;
 			if ( tableSetFlagColumn >= 0 ) {
-				// Set the flag based on table data
+				// Set the flag based on table data (not flag supplied as command parameter)
 				try {
 					o = rec.getFieldValue(tableSetFlagColumn);
 				}
@@ -677,56 +677,58 @@ private void setTimeSeriesFromTable (
 					problems.add("Error getting set flag from table (" + e + ")" );
 					continue;
 				}
-				tableSetFlag = "";
 				if ( o != null ) {
-					tableSetFlag = (String)o;
-				}
-				ts.setDataValue(tableDateTime, tableValue, tableSetFlag, -1);
-				tableSetFlagDesc = "";
-				if ( tableSetFlagDescColumn >= 0 ) {
-					try {
-    					o = rec.getFieldValue(tableSetFlagDescColumn);
-    				}
-    				catch ( Exception e ) {
-    					problems.add("Error getting set flag description from table (" + e + ")" );
-    					continue;
-    				}
-					if ( o != null ) {
-						tableSetFlagDesc = (String)o;
-					}
-					if ( (tableSetFlagDesc != null) && !tableSetFlagDesc.isEmpty() ) {
-    					// Need to set the flag description but if already in the list, reset
-    					List<TSDataFlagMetadata> metaList = ts.getDataFlagMetadataList();
-    					boolean found = false;
-    					int i = -1;
-    					for ( TSDataFlagMetadata meta : metaList ) {
-    						++i;
-    						if ( meta.equals(tableSetFlag) ) {
-    							metaList.set(i, new TSDataFlagMetadata(tableSetFlag, tableSetFlagDesc));
-    							found = true;
-    							break;
-    						}
-    					}
-    					if ( !found ) {
-    						ts.addDataFlagMetadata(new TSDataFlagMetadata(tableSetFlag, tableSetFlagDesc));
-    					}
-					}
+					setFlag2 = (String)o;
 				}
 			}
-			else if ( doSetFlag ) {
-				// Have a flag based on command parameters
-				ts.setDataValue(tableDateTime, tableValue, setFlag, -1);
-				if ( !setFlagDescIsSet && (setFlagDesc != null) && !setFlagDesc.isEmpty() ) {
-					ts.addDataFlagMetadata(new TSDataFlagMetadata(setFlag, setFlagDesc));
-					setFlagDescIsSet = true;
+			tableSetFlagDesc = null;
+			if ( tableSetFlagDescColumn >= 0 ) {
+				try {
+					o = rec.getFieldValue(tableSetFlagDescColumn);
+				}
+				catch ( Exception e ) {
+					problems.add("Error getting set flag description from table (" + e + ")" );
+					continue;
+				}
+				if ( o != null ) {
+					tableSetFlagDesc = (String)o;
 				}
 			}
-			else {
+			// Now actually reset the value
+			if ( (setFlag2 == null) || setFlag2.isEmpty() ) {
 				// Just set the data value
 				ts.setDataValue(tableDateTime, tableValue);
+				++setCount;
 			}
-			break;
+			else {
+				// Set the value and flag
+				ts.setDataValue(tableDateTime, tableValue, setFlag2, -1);
+				++setCount;
+			}
+			// Set the flag description metadata - if from the table check every value
+			if ( (tableSetFlagDesc != null) && !tableSetFlagDesc.isEmpty() ) {
+				// Need to set the flag description but if already in the list, reset
+				List<TSDataFlagMetadata> metaList = ts.getDataFlagMetadataList();
+				boolean found = false;
+				int i = -1;
+				for ( TSDataFlagMetadata meta : metaList ) {
+					++i;
+					if ( meta.equals(setFlag) ) {
+						metaList.set(i, new TSDataFlagMetadata(setFlag2, tableSetFlagDesc));
+						found = true;
+						break;
+					}
+				}
+				if ( !found ) {
+					ts.addDataFlagMetadata(new TSDataFlagMetadata(setFlag2, tableSetFlagDesc));
+				}
+			}
 		}
+	}
+	// Only set the flag description globally if something has been set
+	if ( doSetFlag && (setCount > 0) ) {
+		// Have a flag based on command parameters
+		ts.addDataFlagMetadata(new TSDataFlagMetadata(setFlag, setFlagDesc));
 	}
 }
 

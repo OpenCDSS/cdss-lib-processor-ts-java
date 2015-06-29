@@ -5,13 +5,12 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSLimits;
 import RTi.TS.TSUtil;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
@@ -111,7 +110,7 @@ throws InvalidCommandParameterException
             independent + "\".\n" + "Correct or Cancel.";
     }
     */
- 	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
+ 	if ( (FillStart != null) && !FillStart.isEmpty() && !FillStart.equalsIgnoreCase("OutputStart") && (FillStart.indexOf("${") < 0) ){
 		try {	DateTime.parse(FillStart);
 		}
 		catch ( Exception e ) {
@@ -122,7 +121,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") && (FillEnd.indexOf("${") < 0)) {
 		try {	DateTime.parse( FillEnd);
 		}
 		catch ( Exception e ) {
@@ -157,20 +156,20 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "IndependentTSList" );
-    valid_Vector.add ( "IndependentTSID" );
-    valid_Vector.add ( "IndependentEnsembleID" );
-    valid_Vector.add ( "FillStart" );
-    valid_Vector.add ( "FillEnd" );
-    valid_Vector.add ( "FillFlag" );
-    valid_Vector.add ( "FillFlagDesc" );
+    List<String> validList = new ArrayList<String>(11);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "IndependentTSList" );
+    validList.add ( "IndependentTSID" );
+    validList.add ( "IndependentEnsembleID" );
+    validList.add ( "FillStart" );
+    validList.add ( "FillEnd" );
+    validList.add ( "FillFlag" );
+    validList.add ( "FillFlagDesc" );
     //valid_Vector.add ( "TransferHow" );
-    valid_Vector.add ( "RecalcLimits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    validList.add ( "RecalcLimits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -255,16 +254,13 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = getClass().getName() + ".parseCommand", message;
+	String routine = getClass().getSimpleName() + ".parseCommand", message;
 
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()")) {
         // Current syntax...
@@ -408,9 +404,8 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warningLevel = 2;
 	String command_tag = "" + command_number;
@@ -420,18 +415,36 @@ CommandWarningException, CommandException
 	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
-    
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
 	String TSList = parameters.getValue ( "TSList" );
     if ( (TSList == null) || TSList.equals("") ) {
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String RecalcLimits = parameters.getValue ( "RecalcLimits" );
-    boolean RecalcLimits_boolean = false;   // Default
+    boolean RecalcLimits_boolean = false; // Default
     if ( (RecalcLimits != null) && RecalcLimits.equalsIgnoreCase("true") ) {
         RecalcLimits_boolean = true;
     }
@@ -533,7 +546,13 @@ CommandWarningException, CommandException
         IndependentTSList = TSListType.ALL_TS.toString();
     }
     String IndependentTSID = parameters.getValue ( "IndependentTSID" );
+	if ( (IndependentTSID != null) && (IndependentTSID.indexOf("${") >= 0) ) {
+		IndependentTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, IndependentTSID);
+	}
     String IndependentEnsembleID = parameters.getValue ( "IndependentEnsembleID" );
+	if ( (IndependentEnsembleID != null) && (IndependentEnsembleID.indexOf("${") >= 0) ) {
+		IndependentEnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, IndependentEnsembleID);
+	}
     request_params = new PropList ( "" );
     request_params.set ( "TSList", IndependentTSList );
     request_params.set ( "TSID", IndependentTSID );
@@ -640,102 +659,35 @@ CommandWarningException, CommandException
 	String FillStart = parameters.getValue("FillStart");
 	String FillEnd = parameters.getValue("FillEnd");
     String FillFlag = parameters.getValue("FillFlag");
+	if ( (FillFlag != null) && (FillFlag.indexOf("${") >= 0) ) {
+		FillFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, FillFlag);
+	}
     String FillFlagDesc = parameters.getValue("FillFlagDesc");
+	if ( (FillFlagDesc != null) && (FillFlagDesc.indexOf("${") >= 0) ) {
+		FillFlagDesc = TSCommandProcessorUtil.expandParameterValue(processor, this, FillFlagDesc);
+	}
 
 	// Figure out the dates to use for the analysis...
 	DateTime FillStart_DateTime = null;
 	DateTime FillEnd_DateTime = null;
 
-	try {
-	if ( FillStart != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", FillStart );
-		bean = null;
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-            bean = processor.processRequest( "DateTime", request_params);
+			FillStart_DateTime = TSCommandProcessorUtil.getDateTime ( FillStart, "FillStart", processor,
+				status, warningLevel, command_tag );
 		}
-		catch ( Exception e ) {
-			message = "Error requesting FillStart DateTime(DateTime=" +	FillStart + ") from processor.";
-			Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-			throw new InvalidCommandParameterException ( message );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for FillStart DateTime(DateTime=" + FillStart + "\") returned from processor.";
-			Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
-		else {	FillStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	}
-	catch ( Exception e ) {
-		message = "FillStart \"" + FillStart + "\" is invalid.";
-		Message.printWarning(warningLevel,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time or OutputStart." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
-	
-	try {
-	if ( FillEnd != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", FillEnd );
-		bean = null;
 		try {
-            bean = processor.processRequest( "DateTime", request_params);
+			FillEnd_DateTime = TSCommandProcessorUtil.getDateTime ( FillEnd, "FillEnd", processor,
+				status, warningLevel, command_tag );
 		}
-		catch ( Exception e ) {
-			message = "Error requesting FillEnd DateTime(DateTime=" + FillEnd + "\") from processor.";
-			Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-			throw new InvalidCommandParameterException ( message );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for FillEnd DateTime(DateTime=" + FillEnd +	"\") returned from processor.";
-			Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputEnd." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
-		else {	FillEnd_DateTime = (DateTime)prop_contents;
-		}
-	}
-	}
-	catch ( Exception e ) {
-		message = "FillEnd \"" + FillEnd + "\" is invalid.";
-		Message.printWarning(warningLevel,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time or OutputEnd." ) );
-		throw new InvalidCommandParameterException ( message );
 	}
 
 	if ( warning_count > 0 ) {

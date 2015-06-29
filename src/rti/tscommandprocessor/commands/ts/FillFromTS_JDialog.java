@@ -20,8 +20,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -46,7 +48,7 @@ implements ActionListener, ItemListener, KeyListener, ListSelectionListener, Win
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private FillFromTS_Command __command = null;
-private JTextArea __command_JTextArea=null;
+private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -258,7 +260,7 @@ private void initialize ( JFrame parent, FillFromTS_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	// Main contents...
 
@@ -277,22 +279,25 @@ private void initialize ( JFrame parent, FillFromTS_Command command )
 		"Use a SetOutputPeriod() command if the dependent time series period will be extended." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify dates with precision appropriate for the data, " +
-		"use blank for all available data, OutputStart, or OutputEnd." ),
+		"Specify fill start and end dates with precision appropriate for the data." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
      __TSList_JComboBox = new SimpleJComboBox(false);
      y = CommandEditorUtil.addTSListToEditorDialogPanel (
              this, main_JPanel, new JLabel ("Dependent TS List:"), __TSList_JComboBox, y );
 
      __TSID_JLabel = new JLabel ("TSID (for TSList=*MatchingTSID):");
-     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
      List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
              (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
      
      __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
      __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
      List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
              (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -301,10 +306,9 @@ private void initialize ( JFrame parent, FillFromTS_Command command )
      __IndependentTSList_JComboBox = new SimpleJComboBox(false);
      y = CommandEditorUtil.addTSListToEditorDialogPanel (
              this, main_JPanel, new JLabel ("Independent TS List:"), __IndependentTSList_JComboBox, y );
-
-     __IndependentTSID_JLabel = new JLabel (
-             "Independent TSID (for Independent TSList=*MatchingTSID):");
+     __IndependentTSID_JLabel = new JLabel ("Independent TSID (for Independent TSList=*MatchingTSID):");
      __IndependentTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+     __IndependentTSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
      List<String> tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
          (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __IndependentTSID_JLabel, __IndependentTSID_JComboBox, tsids2, y );
@@ -312,12 +316,14 @@ private void initialize ( JFrame parent, FillFromTS_Command command )
      __IndependentEnsembleID_JLabel = new JLabel (
              "Independent EnsembleID (for Independent TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
      __IndependentEnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+     __IndependentEnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
      y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
              this, this, main_JPanel, __IndependentEnsembleID_JLabel, __IndependentEnsembleID_JComboBox, EnsembleIDs, y );
 
      JGUIUtil.addComponent(main_JPanel,new JLabel( "Fill start date/time:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __FillStart_JTextField = new JTextField ( "", 10 );
+     __FillStart_JTextField.setToolTipText("Specify the fill start using a date/time string or processor ${Property}");
      __FillStart_JTextField.addKeyListener ( this );
          JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -327,6 +333,7 @@ private void initialize ( JFrame parent, FillFromTS_Command command )
      JGUIUtil.addComponent(main_JPanel,new JLabel("Fill end date/time:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __FillEnd_JTextField = new JTextField ( "", 10 );
+     __FillEnd_JTextField.setToolTipText("Specify the fill end using a date/time string or processor ${Property}");
      __FillEnd_JTextField.addKeyListener ( this );
      JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -335,7 +342,8 @@ private void initialize ( JFrame parent, FillFromTS_Command command )
      
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-     __FillFlag_JTextField = new JTextField ( 5 );
+     __FillFlag_JTextField = new JTextField ( 15 );
+     __FillFlag_JTextField.setToolTipText("Flag for filled values or specify with ${Property} notation");
      __FillFlag_JTextField.addKeyListener ( this );
      JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -346,6 +354,7 @@ private void initialize ( JFrame parent, FillFromTS_Command command )
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag description:" ), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __FillFlagDesc_JTextField = new JTextField ( 15 );
+     __FillFlagDesc_JTextField.setToolTipText("Flag description or specify with ${Property} notation");
      __FillFlagDesc_JTextField.addKeyListener ( this );
      JGUIUtil.addComponent(main_JPanel, __FillFlagDesc_JTextField,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

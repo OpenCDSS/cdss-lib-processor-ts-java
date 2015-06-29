@@ -261,6 +261,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
     
     CommandStatus status = getCommandStatus();
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
     Boolean clearStatus = new Boolean(true); // default
     try {
     	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
@@ -272,7 +273,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	// Should not happen
     }
     if ( clearStatus ) {
-		status.clearLog(CommandPhaseType.RUN);
+		status.clearLog(commandPhase);
 	}
 
 	String TSList = parameters.getValue ( "TSList" );
@@ -394,7 +395,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Figure out the dates to use for the analysis...
 	DateTime FillStart_DateTime = null;
 	DateTime FillEnd_DateTime = null;
-	CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
 			FillStart_DateTime = TSCommandProcessorUtil.getDateTime ( FillStart, "FillStart", processor,

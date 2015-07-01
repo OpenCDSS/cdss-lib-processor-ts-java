@@ -594,7 +594,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
                    "| 2012     | 1.0 | 3.3 | 1.5 | 4.5 | 4.6 | 3.0 | 2.5 |     | 2.3 | 1.0 | 0.5 | 0.4 |</pre></html>" ),
         0, ++yBlock, 7, 1, 0, 0, insets0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(block_JPanel, new JLabel (
-        "For multiple time series where the ID is in a column, use the \"Single Data Value Column\" tab to specify the location ID." ), 
+        "For multiple time series where the ID is in a column, use the \"Single Data Value Column\" tab to specify the location ID column." ), 
         0, ++yBlock, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(block_JPanel, new JLabel (
         "<html><pre>| Location ID | Year     | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec |<br>" +
@@ -759,13 +759,13 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     int yBlockData = -1;
 
     JGUIUtil.addComponent(blockData_JPanel, new JLabel (
-        "<html><b>These features are under development.</b></html>" ), 
-        0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(blockData_JPanel, new JLabel (
         "These parameters indicate the layout of a two-dimentional block of data (see \"Block of Values\" tab above)." ), 
         0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(blockData_JPanel, new JLabel (
-        "Specify the first data value column using \"Value column(s)\" under the \"Data\" tab." ), 
+        "Specify the first data value column using \"Value column(s)\" under the \"Data\" tab.  The year type will be used to adjust dates." ),
+        0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(blockData_JPanel, new JLabel (
+        "Specify columns to use for metadata or supply constant values." ), 
         0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(blockData_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yBlockData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

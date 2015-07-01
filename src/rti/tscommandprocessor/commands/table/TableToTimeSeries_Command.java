@@ -1438,14 +1438,19 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Read a list of time series from a table in block format.
+Read a list of time series from a table in block format.  Blocks for either a single location ID
+can be specified (use locationID), or, multiple locations (use locationColumn).
 @param table table to read from
 @return a list of time series read from the table
 */
 private List<TS> readTimeSeriesListBlock ( DataTable table,
 	int layoutColumns, int layoutRows, YearType yearType,
 	String dateTimeColumn,
-	List<String> locationIds,
+	// The following are when parameters provide the values
+	String locationType, String locationID, String dataSource, String dataType, TimeInterval interval, String scenario, String units, String missing,
+	// The following are when columns provide the values
+	String locationTypeColumn, String locationColumn, String dataSourceColumn,
+    String dataTypeColumn, String scenarioColumn, String unitsColumn, String valueColumn,
 	boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
 {	String routine = getClass().getSimpleName() + ".readTimeSeriesListBlock";
 	List<TS> tslist = new ArrayList<TS>();
@@ -1462,17 +1467,113 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
             }
         }
     }
-    // Loop through the table once and get the period from the data.
+    int locationTypePos = -1;
+    int locationPos = -1;
+    int dataSourcePos = -1;
+    int dataTypePos = -1;
+    int scenarioPos = -1;
+    int unitsPos = -1;
+    int valuePos = -1;
+    // Determine column positions for metadata columns
+    if ( (locationTypeColumn != null) && !locationTypeColumn.equals("") ) {
+        try {
+            locationTypePos = table.getFieldIndex(locationTypeColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for location type column \"" + locationTypeColumn + "\"" );
+            }
+        }
+    }
+    if ( (locationColumn != null) && !locationColumn.equals("") ) {
+        try {
+            locationPos = table.getFieldIndex(locationColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for location column \"" + locationColumn + "\"" );
+            }
+        }
+    }
+    if ( (dataSourceColumn != null) && !dataSourceColumn.equals("") ) {
+        try {
+            dataSourcePos = table.getFieldIndex(dataSourceColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for data source column \"" + dataSourceColumn + "\"" );
+            }
+        }
+    }
+    if ( (dataTypeColumn != null) && !dataTypeColumn.equals("") ) {
+        try {
+            dataTypePos = table.getFieldIndex(dataTypeColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for data type column \"" + dataTypeColumn + "\"" );
+            }
+        }
+    }
+    if ( (scenarioColumn != null) && !scenarioColumn.equals("") ) {
+        try {
+            scenarioPos = table.getFieldIndex(scenarioColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for scenario column \"" + scenarioColumn + "\"" );
+            }
+        }
+    }
+    if ( (unitsColumn != null) && !unitsColumn.equals("") ) {
+        try {
+            unitsPos = table.getFieldIndex(unitsColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for units column \"" + unitsColumn + "\"" );
+            }
+        }
+    }
+    if ( (valueColumn != null) && !valueColumn.isEmpty() ) {
+        try {
+            valuePos = table.getFieldIndex(valueColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for value column \"" + valueColumn + "\"" );
+            }
+        }
+    }
+    if ( errorMessages.size() > 0 ) {
+        // Don't continue if there are errors
+        return tslist;
+    }
+    // Loop through the table once and get the period from the data and if necessary the time series identifiers.
     Object o;
     int nRecords = table.getNumberOfRecords();
     TableRecord rec = null;
     DateTime [] dts = null;
     DateTime dtMinFromTable = null;
     DateTime dtMaxFromTable = null;
-    if ( readData ) {
-	    for ( int iRec = 0; iRec < nRecords; iRec++ ) {
-	        try {
-	            rec = table.getRecord(iRec);
+	// Use a hashmap for a unique list of time series identifiers from the table to facilitate lookups
+    String tsidFromTable = null;
+    LinkedHashMap<String,String> tsidsFromTable = new LinkedHashMap<String,String>();
+    // Need to determine the TSID to allocate the time series whether reading data or not
+    // Only need to loop through the table if reading data or TSIDs come from table columns
+    if ( locationPos < 0 ) {
+    	// Only reading a single time series
+    	String tsidentstr = locationID + "." + dataSource + "." + dataType + "." + interval;
+    	if ( (locationType != null) && !locationType.isEmpty() ) {
+    		tsidentstr = locationType + ":" + tsidentstr;
+    	}
+    	tsidsFromTable.put(tsidentstr, tsidentstr);
+    }
+	// Need to get TSIDs from the table and also date/time range for metadata
+    for ( int iRec = 0; iRec < nRecords; iRec++ ) {
+        try {
+            rec = table.getRecord(iRec);
+            if ( readData ) {
 	            // Consider whether single field, etc...
 	            dts = getDateTimesFromBlockRecord(rec,(iRec + 1),dateTimePos,layoutRows,layoutColumns,yearType,null);
 	            if ( dts == null ) {
@@ -1484,28 +1585,71 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
 	            if ( (dtMinFromTable == null) || dts[0].lessThan(dtMinFromTable) ) {
 	                dtMinFromTable = dts[0];
 	            }
+            }
+            if ( locationPos >= 0 ) {
+	            // Determine the location identifier from the data.
+	            try {
+	                tsidFromTable = formatTSIDFromTableRecord ( rec, locationTypePos, locationPos, dataSourcePos,
+	                    dataTypePos, interval, scenarioPos, locationType, dataSource, dataType, scenario );
+	            }
+	            catch ( Exception e ) {
+	                // Should not happen
+	                continue;
+	            }
+	            if ( tsidFromTable == null ) {
+	                // No location in record
+	                continue;
+	            }
+	            // Add to the hashtable if not found...
+	            if ( tsidsFromTable.get(tsidFromTable) == null ) {
+	                tsidsFromTable.put(tsidFromTable.toString(), tsidFromTable.toString());
+	            }
 	        }
-	        catch ( Exception e ) {
-	            continue;
-	        }
-	    }
-	    Message.printStatus(2,routine,"Min date/time from table = " + dtMinFromTable +
-	        ", max date/time from table = " + dtMaxFromTable );
+        }
+        catch ( Exception e ) {
+            continue;
+        }
     }
+    Message.printStatus(2,routine,"Min date/time from table = " + dtMinFromTable +
+        ", max date/time from table = " + dtMaxFromTable );
     // Create time series
     TS ts = null;
-    if ( locationIds.size() > 0 ) {
-    	for ( String locationId : locationIds ) {
-    		String tsidentstr = locationId + ".NRCS.SWSI.Month";
+    int its = -1;
+    Message.printStatus(2,routine,"Have " + tsidsFromTable.size() + " location IDs to read from block.");
+    String tsidentstr = null;
+    its = -1; // Used to iterate through units, parallel to TSID hashmap
+    TSIdent tsident = null;
+    for ( Map.Entry<String,String> tsid: tsidsFromTable.entrySet() ) {
+        tsidentstr = tsid.getKey();
+        //Message.printStatus(2, routine, "Creating time series for TSID=\"" + tsidentstr + "\", units=\"" +
+        //    unitsFromTableList.get(its) + "\"" );
+        try {
+            tsident = new TSIdent( tsidentstr );
+        }
+        catch ( Exception e ) {
+            tsident = null;
+            errorMessages.add ( "Error initializing time series \"" + tsidentstr + "\" (" + e + ") - will not read.");
+            Message.printWarning(3, routine, e);
+        }
+        if ( tsident != null ) {
 		    try {
-		    	TSIdent tsident = new TSIdent(tsidentstr);
 		        ts = TSUtil.newTimeSeries( tsident.toString(), true );
 		        // Set all the information
 		        ts.setIdentifier ( tsident );
 		        ts.setDescription ( tsident.getLocation() + " " + tsident.getType() );
 		        ts.setDataUnits ( "" );//unitsFromTableList.get(its) );
 		        //ts.setDataUnitsOriginal ( unitsFromTableList.get(its) );
-		        ts.setMissing ( Double.NaN );
+		        if ( (missing != null) && !missing.isEmpty() ) {
+		        	if ( missing.equalsIgnoreCase("nan") ) {
+		        		ts.setMissing ( Double.NaN );
+		        	}
+		        	else {
+		        		ts.setMissing ( Double.parseDouble(missing) );
+		        	}
+		        }
+		        else {
+		        	ts.setMissing ( Double.NaN );
+		        }
 		        ts.setInputName ( table.getTableID() );
 		        //if ( inputStartReq != null ) {
 		        //    ts.setDate1(inputStartReq);
@@ -1521,6 +1665,9 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
 		        //}
 		        ts.setDate1Original(dtMinFromTable);
 		        ts.setDate2Original(dtMaxFromTable);
+		        if ( readData ) {
+		        	ts.allocateDataSpace();
+		        }
 		        tslist.add(ts);
 		    }
 		    catch ( Exception e ) {
@@ -1533,21 +1680,54 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
     	}
     }
     // Now read through the table and process records into the time series
-    // FIXME SAM 2015-06-11 need to remove hard-code
+    // This is similar to single column reading but with optimization where possible to read a single time series
     if ( readData ) {
-	    ts = tslist.get(0);
-	    ts.allocateDataSpace();
+        // Process the data records.
+        // Create an ordered hash map to simplify lookup of time series based on the TSID information
+        LinkedHashMap<String,TS> tsHash = new LinkedHashMap<String,TS>();
+        its = -1;
+        for ( Map.Entry<String,String> tsid: tsidsFromTable.entrySet() ) {
+            ++its;
+            tsidentstr = tsid.getKey();
+            ts = tslist.get(its);
+            tsHash.put(tsidentstr,ts);
+        }
 	    DateTime dt = null;
 	    DateTime tableDate = null;
 	    if ( layoutColumns == TimeInterval.MONTH ) {
 	    	dt = new DateTime(DateTime.PRECISION_MONTH);
 	    }
+	    String tsidFromTablePrev = "";
 	    for ( int iRec = 0; iRec < nRecords; iRec++ ) {
 	    	try {
 	    		rec = table.getRecord(iRec);
 	    	}
 	    	catch ( Exception e ) {
 	    		continue;
+	    	}
+	    	// Figure out the time series that is being processed
+	    	if ( locationPos < 0 ) {
+	    		// Use the single time series
+	    		ts = tslist.get(0);
+	    	}
+	    	else {
+	    		// Need to figure out the time series identifier based on the record
+	            // Get the TSID string for the table record, used to look up the time series
+	            try {
+	                tsidFromTable = formatTSIDFromTableRecord ( rec, locationTypePos, locationPos, dataSourcePos,
+	                    dataTypePos, interval, scenarioPos, locationType, dataSource, dataType, scenario );
+	            }
+	            catch ( Exception e ) {
+	                // Should not happen - don't process the table record
+	                continue;
+	            }
+	            // Get the time series to process, may be the same as for the previous record, in which
+	            // case a hash table lookup is not needed.
+	            if ( !tsidFromTable.equals(tsidFromTablePrev) ) {
+	                ts = tsHash.get(tsidFromTable);
+	            }
+	            // Else, record is for the same time series that is was modified for previous record
+	            tsidFromTablePrev = tsidFromTable;
 	    	}
 	        if ( layoutRows == TimeInterval.YEAR ) {
 	        	if ( layoutColumns == TimeInterval.MONTH ) {
@@ -1562,29 +1742,29 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
 	        		}
 	        		tableDate = (DateTime)o;
 	        		// Transfer the date values to the working date (only year)
-	        		dt.setDate(tableDate); // Also sets precision
+	        		dt.setDate(tableDate); // Also sets precision but need to override below since date is only year
 	        		dt.setPrecision(DateTime.PRECISION_MONTH);
-	        		Message.printStatus(2, routine, "Row (" + (iRec + 1) + ") tableDate=" + tableDate + " dt=" + dt );
+	        		//Message.printStatus(2, routine, "Row (" + (iRec + 1) + ") tableDate=" + tableDate + " dt=" + dt );
 	        		for ( int imon = 0; imon < 12; imon++ ) {
 	        			if ( imon == 0 ) {
 	        				// Convert water year to previous calendar year
-	        				dt.addYear(-1);
-	        				dt.setMonth(10);
-	    	        		Message.printStatus(2, routine, "Row (" + (iRec + 1) + " Starting new year " + dt );
+	        				dt.addYear(yearType.getStartYearOffset());
+	        				dt.setMonth(yearType.getStartMonth());
+	    	        		//Message.printStatus(2, routine, "Row (" + (iRec + 1) + " Starting new year " + dt );
 	        			}
 	        			else {
 	        				dt.addMonth(1);
 	        			}
-	        			// Get the value
+	        			// Get the value, starting with the column for the data values
 	        			try {
 	        				// Date is column 0, Year 1, YearAsDate 2
-	        				o = rec.getFieldValue(imon + 2);
+	        				o = rec.getFieldValue(valuePos + imon);
 	        			}
 	        			catch ( Exception e ) {
 	        				continue;
 	        			}
 	        			if ( (o != null) && (o instanceof Double) ) {
-	        				Message.printStatus(2, routine, "Setting " + dt + " to " + o);
+	        				//Message.printStatus(2, routine, "Setting " + dt + " to " + o);
 	        				ts.setDataValue(dt, (Double)o );
 	        			}
 	        		}
@@ -2670,7 +2850,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	tslist = readTimeSeriesListBlock ( table,
         		layoutColumns.getBase(), layoutRows.getBase(), yearType,
         		DateTimeColumn,
-        		getLocationIDRuntime(),
+        		// Metadata provided as values...
+        		(getLocationType().size() == 1 ? getLocationType().get(0) : null),
+        		(getLocationIDRuntime().size() == 1 ? getLocationIDRuntime().get(0) : null),
+                (getDataSource().size() == 1 ? getDataSource().get(0) : null),
+                (getDataType().size() == 1 ? getDataType().get(0) : null),
+                getInterval(),
+                (getScenario().size() == 1 ? getScenario().get(0) : null),
+                (getUnits().size() == 1 ? getUnits().get(0) : null),
+                (getMissingValue().size() == 1 ? getMissingValue().get(0) : null),
+        		// Metadata provided in columns  
+        		LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
+        		(getValueColumnsRuntime().size() == 1 ? getValueColumnsRuntime().get(0) : null),
         		readData, commandPhase, errorMessages );
         }
         else {

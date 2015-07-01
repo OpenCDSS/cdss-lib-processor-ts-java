@@ -25,8 +25,10 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -39,7 +41,6 @@ import java.util.Vector;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
@@ -51,21 +52,21 @@ public class Subtract_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, MouseListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private Subtract_Command __command = null; // Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private Subtract_Command __command = null;
 private JTextArea __command_JTextArea=null;
-private SimpleJComboBox	__TSID_JComboBox = null;    // To receive 
-private SimpleJComboBox __EnsembleID_JComboBox = null;  // To receive
-private SimpleJComboBox	__SubtractTSList_JComboBox = null; // To supply time series to subtract...
+private SimpleJComboBox	__TSID_JComboBox = null; 
+private SimpleJComboBox __EnsembleID_JComboBox = null;
+private SimpleJComboBox	__SubtractTSList_JComboBox = null;
 private JLabel __SubtractTSID_JLabel = null;
 private SimpleJComboBox __SubtractTSID_JComboBox = null;
 private JLabel __SubtractEnsembleID_JLabel = null;
 private SimpleJComboBox __SubtractEnsembleID_JComboBox = null;
 private JLabel __SubtractSpecifiedTSID_JLabel = null;
 private DefaultListModel __SubtractSpecifiedTSID_JListModel = null;
-private JList __SubtractSpecifiedTSID_JList= null;
-private SimpleJComboBox	__HandleMissingHow_JComboBox = null; // Indicates how to handle missing data.
+private JList __SubtractSpecifiedTSID_JList = null;
+private SimpleJComboBox	__HandleMissingHow_JComboBox = null;
 private boolean	__error_wait = false;
 private boolean	__first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -75,7 +76,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public Subtract_JDialog ( JFrame parent, Command command )
+public Subtract_JDialog ( JFrame parent, Subtract_Command command )
 {   super(parent, true);
     initialize ( parent, command );
 }
@@ -222,23 +223,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__SubtractTSList_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__SubtractSpecifiedTSID_JList = null;
-	__SubtractSpecifiedTSID_JListModel = null;
-	__HandleMissingHow_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Get the SubtractSpecifiedTSID parameter from the JList and put into a string.
 @return a String containing the selected specified time series, separated by commas.
 */
@@ -263,8 +247,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{   __command = (Subtract_Command)command;
+private void initialize ( JFrame parent, Subtract_Command command )
+{   __command = command;
 
 	addWindowListener( this );
 
@@ -273,12 +257,12 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
    	JGUIUtil.addComponent(main_JPanel,
 		new JLabel ( "Subtract one or more time series from a time series (or ensemble of time series)." +
 		"  The receiving time series (or ensemble) is modified."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time series to be subtracted are selected using the TS list parameter:"),
@@ -295,11 +279,14 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"  " + TSListType.SPECIFIED_TSID + " - subtract time series selected from the list below"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Time series to be subtracted to...
     
     JLabel TSID_JLabel = new JLabel ("Time series to receive results:");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel (
@@ -307,6 +294,7 @@ private void initialize ( JFrame parent, Command command )
    
    JLabel EnsembleID_JLabel = new JLabel ("Ensemble to receive results:");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -321,7 +309,8 @@ private void initialize ( JFrame parent, Command command )
     __SubtractTSList_JComboBox.add(TSListType.SPECIFIED_TSID.toString());
 
     __SubtractTSID_JLabel = new JLabel ("Subtract TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __SubtractTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __SubtractTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __SubtractTSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     // Automatically adds "*"
@@ -329,6 +318,7 @@ private void initialize ( JFrame parent, Command command )
     
     __SubtractEnsembleID_JLabel = new JLabel ("Add EnsembleID (for SubtractTSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __SubtractEnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __SubtractEnsembleID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List SubtractEnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (

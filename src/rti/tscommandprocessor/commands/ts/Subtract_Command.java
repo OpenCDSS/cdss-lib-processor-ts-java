@@ -5,12 +5,11 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
@@ -53,8 +52,7 @@ public Subtract_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -152,16 +150,16 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "SubtractTSList" );
-    valid_Vector.add ( "SubtractTSID" );
-    valid_Vector.add ( "SubtractEnsembleID" );
+    List<String> validList = new ArrayList<String>(6);
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "SubtractTSList" );
+    validList.add ( "SubtractTSID" );
+    validList.add ( "SubtractEnsembleID" );
     //valid_Vector.add ( "SetStart" );
     //valid_Vector.add ( "SetEnd" );
-    valid_Vector.add ( "HandleMissingHow" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    validList.add ( "HandleMissingHow" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -342,16 +340,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number number of command to run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "Subtract_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -363,14 +358,32 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
 	// Get the time series to process.  This should be a single matching time series or ensemble time series.
 	
 	PropList request_params = new PropList ( "" );
 	// Only one of these will be specified...
     String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String TSList = null;
     if ( (TSID != null) && (TSID.length() > 0) ) {
         TSList = TSListType.ALL_MATCHING_TSID.toString();   // Should only match one?
@@ -488,7 +501,13 @@ CommandWarningException, CommandException
         SubtractTSList = TSListType.ALL_TS.toString();
     }
     String SubtractTSID = parameters.getValue ( "SubtractTSID" );
+	if ( (SubtractTSID != null) && (SubtractTSID.indexOf("${") >= 0) ) {
+		SubtractTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, SubtractTSID);
+	}
     String SubtractEnsembleID = parameters.getValue ( "SubtractEnsembleID" );
+	if ( (SubtractEnsembleID != null) && (SubtractEnsembleID.indexOf("${") >= 0) ) {
+		SubtractEnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, SubtractEnsembleID);
+	}
     request_params = new PropList ( "" );
     request_params.set ( "TSList", SubtractTSList );
     request_params.set ( "TSID", SubtractTSID );
@@ -662,7 +681,7 @@ CommandWarningException, CommandException
 		// Get the specific time series to subtract depending on the input parameters...
         
         TS tstosubtract = null;  // Single time series to subtract
-        List tstosubtract_list = new Vector(); // List of time series to subtract
+        List<TS> tstosubtract_list = new ArrayList<TS>(); // List of time series to subtract
         if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
             // Processing a single time series.  Subtract all the time series from it
             // Reuse the same independent time series for all transfers...

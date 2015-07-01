@@ -881,10 +881,21 @@ CommandWarningException, CommandException
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
         	TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)) );
 	if ( !IOUtil.fileExists(InputFile_full) ) {
-		message += "\nThe Excel workbook file \"" + InputFile_full + "\" does not exist.";
-		++warning_count;
-        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
-            message, "Verify that the Excel workbook file exists." ) );
+		if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+			if ( InputFile_full.indexOf("${") < 0 ) {
+				// File does not exist because it may be created during run - ${Property} is ok regardless
+				// Do not increment the warning counter because the discovery table will not be set up below
+				message += "\nThe Excel workbook file \"" + InputFile_full + "\" does not exist.";
+		        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+		            message, "Verify that the Excel workbook file exists.  May be OK if created during processing." ) );
+			}
+		}
+		else {
+			message += "\nThe Excel workbook file \"" + InputFile_full + "\" does not exist.";
+			++warning_count;
+	        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+	            message, "Verify that the Excel workbook file exists." ) );
+		}
 	}
 
 	if ( warning_count > 0 ) {
@@ -933,7 +944,7 @@ CommandWarningException, CommandException
                     Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                    status.addToLog ( CommandPhaseType.RUN,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
                 }
@@ -943,6 +954,7 @@ CommandWarningException, CommandException
 	        // Create an empty table.
 	        table = new DataTable();
 	        table.setTableID ( TableID );
+	        setDiscoveryTable(table);
 	    }
 	}
 	catch ( Exception e ) {
@@ -978,9 +990,6 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
         }
-    }
-    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        setDiscoveryTable ( table );
     }
 
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);

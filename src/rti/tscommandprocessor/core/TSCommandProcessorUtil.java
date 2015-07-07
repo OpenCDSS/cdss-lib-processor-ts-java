@@ -501,7 +501,14 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
                         try {
                             bean = processor.processRequest( "GetProperty", request_params);
                         }
+                        /* TODO SAM 2015-07-05 Need to evaluate whether error should be absorbed and ${property} remain unexpanded, as javadoc'ed
+                        catch ( UnrecognizedRequestException e ) {
+                        	// Property is not set - OK
+                        	processorError = true;
+                        }
+                        */
                         catch ( Exception e ) {
+                        	// Unexpected exception
                             if ( status != null ) {
                                 String message = "Error requesting GetProperty(Property=\"" + propname + "\") from processor.";
                                 Message.printWarning ( 3,routine, message );

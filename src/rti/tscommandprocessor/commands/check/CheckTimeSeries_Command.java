@@ -54,9 +54,9 @@ protected final String _Remove = "Remove";
 protected final String _SetMissing = "SetMissing";
 
 /**
-The table that is created (when not operating on an existing table).
+The table that is created for discovery mode.
 */
-private DataTable __table = null;
+private DataTable __discoveryTable = null;
 
 /**
 Constructor.
@@ -288,7 +288,7 @@ Return the table that is read by this class when run in discovery mode.
 */
 private DataTable getDiscoveryTable()
 {
-    return __table;
+    return __discoveryTable;
 }
 
 /**
@@ -501,13 +501,15 @@ CommandWarningException, CommandException
     }
     int nts = tslist.size();
     if ( nts == 0 ) {
-        message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
-            "\", EnsembleID=\"" + EnsembleID + "\".";
-        Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+	        message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
+	            "\", EnsembleID=\"" + EnsembleID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag(
+	        command_tag,++warning_count), routine, message );
+	        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message,
+	            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+    	}
     }
     
     // Get the table to process.
@@ -729,7 +731,7 @@ Set the table that is read by this class in discovery mode.
 */
 private void setDiscoveryTable ( DataTable table )
 {
-    __table = table;
+    __discoveryTable = table;
 }
 
 /**

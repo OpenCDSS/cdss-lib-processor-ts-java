@@ -8,12 +8,12 @@ import rti.tscommandprocessor.core.TSListType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIterator;
+import RTi.TS.TSUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -495,21 +495,64 @@ CommandWarningException, CommandException
     	}
     }
 	if ( ts == null ) {
-		message = "Unable to find time series to copy using TSID \"" + TSID + "\".";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-        status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-		throw new CommandWarningException ( message );
+		if ( commandPhase == CommandPhaseType.RUN ) {
+			message = "Unable to find time series to copy using TSID \"" + TSID + "\".";
+			Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(
+			command_tag,++warning_count), routine, message );
+	        status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+			throw new CommandWarningException ( message );
+		}
+	}
+	
+	if ( warning_count > 0 ) {
+		message = "There were " + warning_count + " warnings for command parameters.";
+		Message.printWarning ( 2,
+		MessageUtil.formatMessageTag(command_tag, ++warning_count),
+		routine,message);
+		throw new InvalidCommandParameterException ( message );
 	}
 
 	// Now process the time series...
 
 	TS tscopy = null;
 	try {
-        tscopy = (TS)ts.clone();
+		if ( ts == null ) {
+			// This happens in discovery mode, especially in complex dynamic processes when using ${Property} notation
+			if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+			    // Create the time series...
+				try {
+					tscopy = TSUtil.newTimeSeries ( NewTSID, true );
+					if ( tscopy == null ) {
+			            message = "Null time series returned when trying to create with NewTSID=\"" + NewTSID + "\"";
+			            Message.printWarning ( warning_level,
+			                    MessageUtil.formatMessageTag(
+			                    command_tag,++warning_count),routine,message );
+			            status.addToLog ( commandPhase,
+		                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Verify the NewTSID - contact software support if necessary." ) );
+						throw new Exception ( "Null time series." );
+					}
+				}
+				catch ( Exception e ) {
+					message = "Unexpected error creating the new time series using NewTSID=\""+	NewTSID + "\".";
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag(
+						command_tag,++warning_count),routine,message );
+					Message.printWarning(3,routine,e);
+			        status.addToLog ( commandPhase,
+		                new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Verify the NewTSID - contact software support if necessary." ) );
+					throw new CommandException ( message );
+				}
+			}
+		}
+		else {
+			// Should work in runtime
+			tscopy = (TS)ts.clone();
+		}
         if ( commandPhase == CommandPhaseType.RUN ) {
             if ( !copyDataFlags ) {
                 // Clear out the data flags in the copy
@@ -524,7 +567,7 @@ CommandWarningException, CommandException
             }
             if ( !copyHistory ) {
                 // Clear out the history
-                tscopy.setGenesis(new Vector());
+                tscopy.setGenesis(new ArrayList<String>());
             }
             // Add a new message to the genesis
             if ( ts.getAlias().length() > 0 ) {
@@ -577,7 +620,9 @@ CommandWarningException, CommandException
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Just want time series headers initialized
         List<TS> discoveryTSList = new ArrayList<TS>(1);
-        discoveryTSList.add ( tscopy );
+        if ( tscopy != null ) {
+        	discoveryTSList.add ( tscopy );
+        }
         setDiscoveryTSList ( discoveryTSList );
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {

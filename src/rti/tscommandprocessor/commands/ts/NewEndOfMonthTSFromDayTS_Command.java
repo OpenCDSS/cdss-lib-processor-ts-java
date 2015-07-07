@@ -383,17 +383,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( ts == null ) {
 		message = "Unable to find daily time series using TSID \"" + DayTSID +
 			"\".  May be OK if time series is created at run time.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
 		if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 			// Warning
+			if ( DayTSID.indexOf("${") < 0 ) {
+				// Only warn if properties are not used
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+			}
 			status.addToLog ( commandPhase,
 	            new CommandLogRecord(CommandStatusType.WARNING,
 	                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 		}
 		else if ( commandPhase == CommandPhaseType.RUN ) {
 			// Failure
+			Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
 	        status.addToLog ( commandPhase,
 	            new CommandLogRecord(CommandStatusType.FAILURE,
 	                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );

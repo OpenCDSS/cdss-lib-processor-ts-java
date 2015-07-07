@@ -221,6 +221,13 @@ private void checkInput ()
     if ( __AnalysisWindow_JCheckBox.isSelected() ){
         String AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
         String AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        // 99 is used for month if not specified - don't want that in the parameters
+        if ( AnalysisWindowStart.startsWith("99") ) {
+        	AnalysisWindowStart = "";
+        }
+        if ( AnalysisWindowEnd.startsWith("99") ) {
+        	AnalysisWindowEnd = "";
+        }
         if ( AnalysisWindowStart.length() > 0 ) {
             parameters.set ( "AnalysisWindowStart", AnalysisWindowStart );
         }
@@ -284,8 +291,19 @@ private void commitEdits ()
     if ( __AnalysisWindow_JCheckBox.isSelected() ){
         String AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
         String AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        if ( AnalysisWindowStart.startsWith("99") ) {
+        	AnalysisWindowStart = "";
+        }
+        if ( AnalysisWindowEnd.startsWith("99") ) {
+        	AnalysisWindowEnd = "";
+        }
         __command.setCommandParameter ( "AnalysisWindowStart", AnalysisWindowStart );
         __command.setCommandParameter ( "AnalysisWindowEnd", AnalysisWindowEnd );
+    }
+    else {
+    	// Clear the properties because they may have been set during editing but should not be propagated
+    	__command.getCommandParameters().unSet ( "AnalysisWindowStart" );
+    	__command.getCommandParameters().unSet ( "AnalysisWindowEnd" );
     }
 	__command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
@@ -828,6 +846,15 @@ private void refresh ()
     if ( __AnalysisWindow_JCheckBox.isSelected() ) {
         AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
         AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        if ( AnalysisWindowStart.startsWith("99") ) {
+        	// 99 is used as placeholder when month is not set... artifact of setting choices to blank during editing
+        	AnalysisWindowStart = "";
+        }
+        AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        if ( AnalysisWindowEnd.startsWith("99") ) {
+        	// 99 is used as placeholder when month is not set... artifact of setting choices to blank during editing
+        	AnalysisWindowEnd = "";
+        }
         props.add ( "AnalysisWindowStart=" + AnalysisWindowStart );
         props.add ( "AnalysisWindowEnd=" + AnalysisWindowEnd );
     }

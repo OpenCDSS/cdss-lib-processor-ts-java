@@ -514,8 +514,7 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -816,12 +815,15 @@ CommandWarningException, CommandException
     int nts = tslist.size();
     if ( nts == 0 ) {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
-                "\", EnsembleID=\"" + EnsembleID + "\".  May be OK if time series are created at run time.";
-            Message.printWarning ( warning_level, MessageUtil.formatMessageTag(
-                command_tag,++warning_count), routine, message );
-            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, message,
-                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        	if ( TSID.indexOf("${") < 0 ) {
+        		// Only show if properties are not used
+	            message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
+	                "\", EnsembleID=\"" + EnsembleID + "\".  May be OK if time series are created at run time.";
+	            Message.printWarning ( warning_level, MessageUtil.formatMessageTag(
+	                command_tag,++warning_count), routine, message );
+	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, message,
+	                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        	}
         }
         else {
             message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +

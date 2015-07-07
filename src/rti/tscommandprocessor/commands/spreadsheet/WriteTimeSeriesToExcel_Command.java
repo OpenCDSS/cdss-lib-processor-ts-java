@@ -110,7 +110,11 @@ throws InvalidCommandParameterException
 	String ExcelNamedRange = parameters.getValue ( "ExcelNamedRange" );
 	String ExcelTableName = parameters.getValue ( "ExcelTableName" );
 	String KeepOpen = parameters.getValue ( "KeepOpen" );
+	String ColumnCommentWidth = parameters.getValue ( "ColumnCommentWidth" );
+	String ColumnCommentHeight = parameters.getValue ( "ColumnCommentHeight" );
 	String SkipValueCommentIfNoFlag = parameters.getValue ( "SkipValueCommentIfNoFlag" );
+	String CommentWidth = parameters.getValue ( "CommentWidth" );
+	String CommentHeight = parameters.getValue ( "CommentHeight" );
 	String warning = "";
 	String message;
 	
@@ -249,10 +253,42 @@ throws InvalidCommandParameterException
 	            message, "SkipValueCommentIfNoFlag must be " + _False + " or " + _True + " (default)") );
 	}
 	
+    if ( (ColumnCommentWidth != null) && !ColumnCommentWidth.isEmpty() && !StringUtil.isInteger(ColumnCommentWidth) ) {
+        message = "Column comment width (" + ColumnCommentWidth + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify column comment width as the number of columns." ) );
+    }
+    
+    if ( (ColumnCommentHeight != null) && !ColumnCommentHeight.isEmpty() && !StringUtil.isInteger(ColumnCommentHeight) ) {
+        message = "Column comment height (" + ColumnCommentHeight + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify column comment height as the number of rows." ) );
+    }
+	
+    if ( (CommentWidth != null) && !CommentWidth.isEmpty() && !StringUtil.isInteger(CommentWidth) ) {
+        message = "Comment width (" + CommentWidth + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify comment width as the number of columns." ) );
+    }
+    
+    if ( (CommentHeight != null) && !CommentHeight.isEmpty() && !StringUtil.isInteger(CommentHeight) ) {
+        message = "Comment height (" + CommentHeight + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify comment height as the number of rows." ) );
+    }
+	
 	// TODO SAM 2005-11-18 Check the format.
 	
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(30);
+	List<String> validList = new ArrayList<String>(34);
 	validList.add ( "TSList" );
 	validList.add ( "TSID" );
 	validList.add ( "EnsembleID" );
@@ -279,8 +315,14 @@ throws InvalidCommandParameterException
 	validList.add ( "ValueColumns" );
 	validList.add ( "Author" );
 	validList.add ( "ColumnComment" );
+    validList.add ( "ColumnCommentWidth" );
+    validList.add ( "ColumnCommentHeight" );
 	validList.add ( "ValueComment" );
 	validList.add ( "SkipValueCommentIfNoFlag" );
+    validList.add ( "CommentWidth" );
+    validList.add ( "CommentHeight" );
+    validList.add ( "ColumnConditionTableID" );
+    validList.add ( "ColumnStyleTableID" );
     validList.add ( "ConditionTableID" );
     validList.add ( "StyleTableID" );
 	
@@ -464,11 +506,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String Author = parameters.getValue ( "Author" );
     String ColumnComment = parameters.getValue ( "ColumnComment" );
+    String ColumnCommentWidth = parameters.getValue ( "ColumnCommentWidth" );
+    String ColumnCommentHeight = parameters.getValue ( "ColumnCommentHeight" );
     String ValueComment = parameters.getValue ( "ValueComment" );
     String SkipValueCommentIfNoFlag = parameters.getValue ( "SkipValueCommentIfNoFlag" );
+    String CommentWidth = parameters.getValue ( "CommentWidth" );
+    String CommentHeight = parameters.getValue ( "CommentHeight" );
     boolean skipValueCommentIfNoFlag = true;
     if ( (SkipValueCommentIfNoFlag != null) && SkipValueCommentIfNoFlag.equalsIgnoreCase(_False) ) {
     	skipValueCommentIfNoFlag = false;
+    }
+    String ColumnConditionTableID = parameters.getValue ( "ColumnConditionTableID" );
+    if ( (ColumnConditionTableID != null) && !ColumnConditionTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnConditionTableID.indexOf("${") >= 0 ) {
+    	ColumnConditionTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnConditionTableID);
+    }
+    String ColumnStyleTableID = parameters.getValue ( "ColumnStyleTableID" );
+    if ( (ColumnStyleTableID != null) && !ColumnStyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnStyleTableID.indexOf("${") >= 0 ) {
+    	ColumnStyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnStyleTableID);
     }
     String ConditionTableID = parameters.getValue ( "ConditionTableID" );
     if ( (ConditionTableID != null) && !ConditionTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ConditionTableID.indexOf("${") >= 0 ) {
@@ -541,6 +595,66 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// Warning will have been added above...
 		++warning_count;
 	}
+	
+	// Get the column style table
+	
+    DataTable columnStyleTable = null;
+    if ( (ColumnStyleTableID != null) && !ColumnStyleTableID.isEmpty() ) {
+	    request_params = new PropList ( "" );
+	    request_params.set ( "TableID", ColumnStyleTableID );
+	    try {
+	        bean = processor.processRequest( "GetTable", request_params);
+	    }
+	    catch ( Exception e ) {
+	        message = "Error requesting GetTable(TableID=\"" + ColumnStyleTableID + "\") from processor.";
+	        Message.printWarning(warning_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report problem to software support." ) );
+	    }
+	    bean_PropList = bean.getResultsPropList();
+	    Object o_Table = bean_PropList.getContents ( "Table" );
+	    if ( o_Table == null ) {
+	        message = "Unable to find table to process using TableID=\"" + ColumnStyleTableID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Verify that a table exists with the requested ID." ) );
+	    }
+	    else {
+	        columnStyleTable = (DataTable)o_Table;
+	    }
+    }
+
+	// Get the column condition table
+	
+    DataTable columnConditionTable = null;
+    if ( (ColumnConditionTableID != null) && !ColumnConditionTableID.isEmpty() ) {
+	    request_params = new PropList ( "" );
+	    request_params.set ( "TableID", ColumnConditionTableID );
+	    try {
+	        bean = processor.processRequest( "GetTable", request_params);
+	    }
+	    catch ( Exception e ) {
+	        message = "Error requesting GetTable(TableID=\"" + ColumnConditionTableID + "\") from processor.";
+	        Message.printWarning(warning_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report problem to software support." ) );
+	    }
+	    bean_PropList = bean.getResultsPropList();
+	    Object o_Table = bean_PropList.getContents ( "Table" );
+	    if ( o_Table == null ) {
+	        message = "Unable to find table to process using TableID=\"" + ColumnConditionTableID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Verify that a table exists with the requested ID." ) );
+	    }
+	    else {
+	        columnConditionTable = (DataTable)o_Table;
+	    }
+    }
 	
 	// Get the style table
 	
@@ -626,8 +740,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		DateColumn, dateFormatterType, DateFormat,
         		TimeColumn, timeFormatterType, TimeFormat,
         		ValueColumns,
-        		Author, ColumnComment, ValueComment, skipValueCommentIfNoFlag,
-        		conditionTable, styleTable,
+        		Author, ColumnComment, ColumnCommentWidth, ColumnCommentHeight,
+        		ValueComment, skipValueCommentIfNoFlag, CommentWidth, CommentHeight,
+        		columnConditionTable, columnStyleTable, conditionTable, styleTable,
         	    problems, processor, status, commandPhase );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
@@ -699,8 +814,14 @@ public String toString ( PropList props )
 	String ValueColumns = props.getValue ( "ValueColumns" );
 	String Author = props.getValue ( "Author" );
 	String ColumnComment = props.getValue ( "ColumnComment" );
+	String ColumnCommentWidth = props.getValue("ColumnCommentWidth");
+	String ColumnCommentHeight = props.getValue("ColumnCommentHeight");
 	String ValueComment = props.getValue ( "ValueComment" );
 	String SkipValueCommentIfNoFlag = props.getValue ( "SkipValueCommentIfNoFlag" );
+	String CommentWidth = props.getValue("CommentWidth");
+	String CommentHeight = props.getValue("CommentHeight");
+	String ColumnConditionTableID = props.getValue( "ColumnConditionTableID" );
+	String ColumnStyleTableID = props.getValue( "ColumnStyleTableID" );
 	String ConditionTableID = props.getValue( "ConditionTableID" );
 	String StyleTableID = props.getValue( "StyleTableID" );
 	StringBuffer b = new StringBuffer ();
@@ -866,11 +987,47 @@ public String toString ( PropList props )
         }
         b.append ( "ValueComment=\"" + ValueComment + "\"" );
     }
+    if ( (ColumnCommentWidth != null) && (ColumnCommentWidth.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnCommentWidth=\"" + ColumnCommentWidth + "\"");
+    }
+    if ( (ColumnCommentHeight != null) && (ColumnCommentHeight.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnCommentHeight=\"" + ColumnCommentHeight + "\"");
+    }
     if ( (SkipValueCommentIfNoFlag != null) && !SkipValueCommentIfNoFlag.isEmpty() ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "SkipValueCommentIfNoFlag=" + SkipValueCommentIfNoFlag );
+    }
+    if ( (CommentWidth != null) && (CommentWidth.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CommentWidth=\"" + CommentWidth + "\"");
+    }
+    if ( (CommentHeight != null) && (CommentHeight.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CommentHeight=\"" + CommentHeight + "\"");
+    }
+    if ( (ColumnConditionTableID != null) && (ColumnConditionTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnConditionTableID=\"" + ColumnConditionTableID + "\"" );
+    }
+    if ( (ColumnStyleTableID != null) && (ColumnStyleTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnStyleTableID=\"" + ColumnStyleTableID + "\"" );
     }
     if ( (ConditionTableID != null) && (ConditionTableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -943,8 +1100,9 @@ private void writeTimeSeries ( List<TS> tslist,
 	String dateColumn, DateTimeFormatterType dateFormatterType, String dateFormat,
 	String timeColumn, DateTimeFormatterType timeFormatterType, String timeFormat,
 	String valueColumns,
-	String author, String columnComment, String valueComment, boolean skipValueCommentIfNoFlag,
-	DataTable conditionTable, DataTable styleTable, 
+	String author, String columnComment, String columnCommentWidth, String columnCommentHeight,
+	String valueComment, boolean skipValueCommentIfNoFlag, String commentWidth, String commentHeight,
+	DataTable columnConditionTable, DataTable columnStyleTable, DataTable conditionTable, DataTable styleTable, 
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTimeSeries", message;
@@ -1105,6 +1263,23 @@ throws FileNotFoundException, IOException
         	// Use a blank cell
         	missingValueBlank = true;
         }
+        // Comment width and height
+    	int columnCommentWidthInt = -1;
+    	int columnCommentHeightInt = -1;
+    	if ( StringUtil.isInteger(columnCommentWidth) ) {
+    		columnCommentWidthInt = Integer.parseInt(columnCommentWidth);
+    	}
+    	if ( StringUtil.isInteger(columnCommentHeight) ) {
+    		columnCommentHeightInt = Integer.parseInt(columnCommentHeight);
+    	}
+    	int commentWidthInt = -1;
+    	int commentHeightInt = -1;
+    	if ( StringUtil.isInteger(commentWidth) ) {
+    		commentWidthInt = Integer.parseInt(commentWidth);
+    	}
+    	if ( StringUtil.isInteger(commentHeight) ) {
+    		commentHeightInt = Integer.parseInt(commentHeight);
+    	}
         int its = -1;
         for ( TS ts : tslist ) {
             ++its;
@@ -1175,6 +1350,10 @@ throws FileNotFoundException, IOException
         CellStyle cellStyleHeader = wb.createCellStyle();
         // Initialize styles corresponding to styleTable, newer approach to styling.
         // The styles in this table will be used by default with the above setting style information to the below.
+        TimeSeriesConditionAndStyleManager columnStyleTable2 = null;
+        if ( columnStyleTable != null ) {
+        	columnStyleTable2 = new TimeSeriesConditionAndStyleManager(tslist,columnConditionTable,columnStyleTable,wb);
+        }
         TimeSeriesConditionAndStyleManager styleTable2 = null;
         if ( styleTable != null ) {
         	styleTable2 = new TimeSeriesConditionAndStyleManager(tslist,conditionTable,styleTable,wb);
@@ -1213,6 +1392,7 @@ throws FileNotFoundException, IOException
             cellTypes[col] = Cell.CELL_TYPE_NUMERIC;
             columnNames.add(ts.formatExtendedLegend(valueColumns));
         }
+        // Write the column names - but output column comments after data because need more rows to position comments
         int rowOutColumnNames = rowOutStart;
         int colOut = colOutStart - 1;
         for ( String columnName: columnNames ) {
@@ -1229,19 +1409,6 @@ throws FileNotFoundException, IOException
                     colOut + "] (" + e + ")." );
                 Message.printWarning(3, routine, e);
             }
-        }
-        if ( (columnComment != null) && !columnComment.isEmpty() ) {
-	        its = -1;
-	        for ( TS ts : tslist ) {
-	            // Iterate through data in the time series and output each value according to the format.
-	            ++its;
-	            col = colOutStart + numDateTimeCol + its;
-        		// Create the comment and set
-        		String comment = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-                    processor, ts, columnComment, cs, commandPhase );
-        		Cell cell = sheet.getRow(rowOutStart).getCell(col);
-        		tk.setCellComment(wb, sheet, cell, comment, author, 1, 3);
-        	}
         }
         // Output the data rows
         // Loop through date/time corresponding to each row in the output file
@@ -1364,7 +1531,7 @@ throws FileNotFoundException, IOException
 		                	// Then expand for the processor and time series properties
 	                		comment = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
 	                            processor, ts, comment, cs, commandPhase );
-	                		tk.setCellComment(wb, sheet, cell, comment, author, 1, 3);
+	                		tk.setCellComment(wb, sheet, cell, comment, author, commentWidthInt, commentHeightInt);
 	                	}
 	                }
             	}
@@ -1372,6 +1539,26 @@ throws FileNotFoundException, IOException
                     // Log but let the output continue
                     Message.printWarning(3, routine, "Unexpected error writing date at Excel row [" + row + "][" + col + "] (" + e + ")." );
                 }
+            }
+        }
+        // Output column headings AFTER outputting data because comments are anchored to rows and columns
+        // that might extend below the initial column heading row.
+        its = -1;
+        for ( TS ts : tslist ) {
+            // Iterate through data in the time series and output each value according to the format.
+            ++its;
+            col = colOutStart + numDateTimeCol + its;
+    		Cell cell = sheet.getRow(rowOutStart).getCell(col);
+            if ( (columnComment != null) && !columnComment.isEmpty() ) {
+            	// Create the column comment and set
+            	String comment = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
+            		processor, ts, columnComment, cs, commandPhase );
+        		tk.setCellComment(wb, sheet, cell, comment, author, columnCommentWidthInt, columnCommentHeightInt);
+            }
+            if ( columnStyleTable2 != null ) {
+            	// Can set the style independent of the column comment
+            	// New-style - data value and flag are not used
+            	cell.setCellStyle(columnStyleTable2.getStyle(ts,its,0.0,null));
             }
         }
         // Now do post-data set operations

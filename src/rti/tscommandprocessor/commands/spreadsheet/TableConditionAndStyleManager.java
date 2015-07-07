@@ -287,6 +287,10 @@ public CellStyle getStyle ( int col, Double value )
 							valueMatch = true;
 						}
 					}
+					if ( !valueMatch ) {
+						// Can break out of condition
+						break;
+					}
 					// Only finish if there are no more clauses to evaluate
 					if ( ((iPart + 1) == parts.length) && valueMatch ) {
 						// The format table row matched for the value

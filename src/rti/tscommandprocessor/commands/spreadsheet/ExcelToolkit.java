@@ -2050,7 +2050,7 @@ Set a comment string.  The comment will be displayed near the cell.
 @param wb the workbook being updated
 @param sheet the worksheet being updated
 @param cell the cell for which to set the comment
-@param widthColumns the width of the displayed comment box, as column width
+@param widthColumns the width of the displayed comment box, as column width (if -1 the default is 6)
 @param heightRows the height of the displayed comment box, as row height (if -1 set the height to the number of lines in the comment + author)
 */
 public void setCellComment ( Workbook wb, Sheet sheet, Cell cell, String commentString, String author, int widthColumns, int heightRows )
@@ -2106,6 +2106,7 @@ public void setCellComment ( Workbook wb, Sheet sheet, Cell cell, String comment
     if ( author != null ) {
     	comment.setAuthor(author);
     }
+    Message.printStatus(2, "", "Setting comment at anchor col1=" + anchorCol1 + " col2=" + anchorCol2 + " row1=" + anchorRow1 + " row2=" + anchorRow2 );
 
     // Assign the comment to the cell - if already set, remove it because it can corrupt the file (fixed in POI 3.11)
     //Comment comment2 = cell.getCellComment();

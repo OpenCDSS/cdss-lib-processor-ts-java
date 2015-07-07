@@ -92,8 +92,14 @@ private DateTimeFormatterSpecifiersJPanel __TimeFormat_JPanel = null;
 private TSFormatSpecifiersJPanel __ValueColumns_JTextField = null;
 private JTextField __Author_JTextField = null;
 private TSFormatSpecifiersJPanel __ColumnComment_JTextField = null;
+private JTextField __ColumnCommentWidth_JTextField = null;
+private JTextField __ColumnCommentHeight_JTextField = null;
 private TSFormatSpecifiersJPanel __ValueComment_JTextField = null;
 private SimpleJComboBox __SkipValueCommentIfNoFlag_JComboBox = null;
+private JTextField __CommentWidth_JTextField = null;
+private JTextField __CommentHeight_JTextField = null;
+private SimpleJComboBox __ColumnStyleTableID_JComboBox = null;
+private SimpleJComboBox __ColumnConditionTableID_JComboBox = null;
 private SimpleJComboBox __StyleTableID_JComboBox = null;
 private SimpleJComboBox __ConditionTableID_JComboBox = null;
 
@@ -279,8 +285,14 @@ private void checkInput ()
 	String ValueColumns = __ValueColumns_JTextField.getText().trim();
 	String Author = __Author_JTextField.getText().trim();
 	String ColumnComment = __ColumnComment_JTextField.getText().trim();
+	String ColumnCommentWidth = __CommentWidth_JTextField.getText().trim();
+	String ColumnCommentHeight = __CommentHeight_JTextField.getText().trim();
 	String ValueComment = __ValueComment_JTextField.getText().trim();
 	String SkipValueCommentIfNoFlag = __SkipValueCommentIfNoFlag_JComboBox.getSelected();
+	String CommentWidth = __CommentWidth_JTextField.getText().trim();
+	String CommentHeight = __CommentHeight_JTextField.getText().trim();
+	String ColumnStyleTableID = __ColumnStyleTableID_JComboBox.getSelected();
+	String ColumnConditionTableID = __ColumnConditionTableID_JComboBox.getSelected();
 	String StyleTableID = __StyleTableID_JComboBox.getSelected();
 	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
 	__error_wait = false;
@@ -363,11 +375,29 @@ private void checkInput ()
     if  ( ColumnComment.length() > 0 ) {
     	props.set("ColumnComment", ColumnComment);
     }
+    if ( ColumnCommentWidth.length() > 0 ) {
+        props.set ( "ColumnCommentWidth", ColumnCommentWidth );
+    }
+    if ( ColumnCommentHeight.length() > 0 ) {
+        props.set ( "ColumnCommentHeight", ColumnCommentHeight );
+    }
     if  ( ValueComment.length() > 0 ) {
     	props.set("ValueComment", ValueComment);
     }
     if  ( SkipValueCommentIfNoFlag.length() > 0 ) {
     	props.set("SkipValueCommentIfNoFlag", SkipValueCommentIfNoFlag);
+    }
+    if ( CommentWidth.length() > 0 ) {
+        props.set ( "CommentWidth", CommentWidth );
+    }
+    if ( CommentHeight.length() > 0 ) {
+        props.set ( "CommentHeight", CommentHeight );
+    }
+    if ( ColumnStyleTableID.length() > 0 ) {
+        props.set ( "ColumnStyleTableID", ColumnStyleTableID );
+    }
+    if ( ColumnConditionTableID.length() > 0 ) {
+        props.set ( "ColumnConditionTableID", ColumnConditionTableID );
     }
     if ( StyleTableID.length() > 0 ) {
         props.set ( "StyleTableID", StyleTableID );
@@ -417,8 +447,14 @@ private void commitEdits ()
 	String ValueColumns = __ValueColumns_JTextField.getText().trim();
 	String Author = __Author_JTextField.getText().trim();
 	String ColumnComment = __ColumnComment_JTextField.getText().trim();
+	String ColumnCommentWidth = __ColumnCommentWidth_JTextField.getText().trim();
+	String ColumnCommentHeight = __ColumnCommentHeight_JTextField.getText().trim();
 	String ValueComment = __ValueComment_JTextField.getText().trim();
 	String SkipValueCommentIfNoFlag = __SkipValueCommentIfNoFlag_JComboBox.getSelected();
+	String CommentWidth = __CommentWidth_JTextField.getText().trim();
+	String CommentHeight = __CommentHeight_JTextField.getText().trim();
+	String ColumnStyleTableID = __ColumnStyleTableID_JComboBox.getSelected();
+	String ColumnConditionTableID = __ColumnConditionTableID_JComboBox.getSelected();
 	String StyleTableID = __StyleTableID_JComboBox.getSelected();
 	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
@@ -447,8 +483,14 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ValueColumns", ValueColumns );
 	__command.setCommandParameter ( "Author", Author );
 	__command.setCommandParameter ( "ColumnComment", ColumnComment );
+	__command.setCommandParameter ( "ColumnCommentWidth", ColumnCommentWidth );
+	__command.setCommandParameter ( "ColumnCommentHeight", ColumnCommentHeight );
 	__command.setCommandParameter ( "ValueComment", ValueComment );
 	__command.setCommandParameter ( "SkipValueCommentIfNoFlag", SkipValueCommentIfNoFlag );
+	__command.setCommandParameter ( "CommentWidth", CommentWidth );
+	__command.setCommandParameter ( "CommentHeight", CommentHeight );
+	__command.setCommandParameter ( "ColumnStyleTableID", ColumnStyleTableID );
+	__command.setCommandParameter ( "ColumnConditionTableID", ColumnConditionTableID );
 	__command.setCommandParameter ( "StyleTableID", StyleTableID );
 	__command.setCommandParameter ( "ConditionTableID", ConditionTableID );
 }
@@ -776,34 +818,16 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     int yComments = -1;
     JPanel comment_JPanel = new JPanel();
     comment_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Cell Comments", comment_JPanel );
+    __main_JTabbedPane.addTab ( "Column and Cell Comments", comment_JPanel );
     
     JGUIUtil.addComponent(comment_JPanel, new JLabel (
-		"Comments can be added to column headings and data cells."),
+		"Comments can be added to column headings and data value cells."),
 		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(comment_JPanel, new JLabel (
 		"Warning:  Using many comments can significantly increase the size of the Excel file."),
 		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(comment_JPanel, new JLabel (
-		"For column headings, format the comment using the following specifiers:"),
+    JGUIUtil.addComponent(comment_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(comment_JPanel, new JLabel (
-		"   %L for location, %T for data type, %I for interval, etc. (using the format choices)"),
-		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(comment_JPanel, new JLabel (
-		"   ${ts:property} for time series property"),
-		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(comment_JPanel, new JLabel (
-		"   ${property} for processor property"),
-		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(comment_JPanel, new JLabel (
-		"For data cells, format the comment using the specifiers indicated above and additionally:"),
-		0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(comment_JPanel, new JLabel (
-    	"   ${tsdata:datetime}, ${tsdata:value}, or ${tsdata:flag}"),
-    	0, ++yComments, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(comment_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-		0, ++yComments, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(comment_JPanel, new JLabel("Author:"),
         0, ++yComments, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -814,55 +838,200 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         1, yComments, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(comment_JPanel, new JLabel ("Optional - author for comments (default=none)."),
         3, yComments, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JTabbedPane __comments_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(comment_JPanel, __comments_JTabbedPane,
+        0, ++yComments, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(comment_JPanel, new JLabel("Column comment:"),
-        0, ++yComments, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for column comments
+    int yColComment = -1;
+    JPanel colComment_JPanel = new JPanel();
+    colComment_JPanel.setLayout( new GridBagLayout() );
+    __comments_JTabbedPane.addTab ( "Column Heading Comments", colComment_JPanel );
+
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel (
+		"For column headings, format the comment using the following specifiers:"),
+		0, ++yColComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel (
+		"   %L for location, %T for data type, %I for interval, etc. (using the format choices)"),
+		0, ++yColComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel (
+		"   ${ts:property} for time series property"),
+		0, ++yColComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel (
+		"   ${property} for processor property"),
+		0, ++yColComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colComment_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yColComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel("Column comment:"),
+        0, ++yColComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnComment_JTextField = new TSFormatSpecifiersJPanel(30);
     __ColumnComment_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, etc., " +
     	"${ts:property} for time series property, ${property} for processor property.");
     __ColumnComment_JTextField.addKeyListener ( this );
     __ColumnComment_JTextField.getDocument().addDocumentListener(this);
-    JGUIUtil.addComponent(comment_JPanel, __ColumnComment_JTextField,
-        1, yComments, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(comment_JPanel, new JLabel ("Optional - %L for location, ${ts:property} for property, etc."),
-        3, yComments, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(colComment_JPanel, __ColumnComment_JTextField,
+        1, yColComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel ("Optional - see above for formatting options."),
+        3, yColComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(comment_JPanel, new JLabel("Value comment:"),
-        0, ++yComments, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel("Column comment width (columns):"),
+        0, ++yColComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnCommentWidth_JTextField = new JTextField(10);
+    __ColumnCommentWidth_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(colComment_JPanel, __ColumnCommentWidth_JTextField,
+        1, yColComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel ("Optional - comment width in columns (default=6)."),
+        3, yColComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel("Column comment height (rows):"),
+        0, ++yColComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnCommentHeight_JTextField = new JTextField(10);
+    __ColumnCommentHeight_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(colComment_JPanel, __ColumnCommentHeight_JTextField,
+        1, yColComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colComment_JPanel, new JLabel ("Optional - number of rows for comment (default=lines of comment)."),
+        3, yColComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for cell value comments
+    int yValComment = -1;
+    JPanel valComment_JPanel = new JPanel();
+    valComment_JPanel.setLayout( new GridBagLayout() );
+    __comments_JTabbedPane.addTab ( "Value Comments", valComment_JPanel );
+    
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel (
+		"For data cells, format the comment using the following specifiers:"),
+		0, ++yValComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel (
+		"   %L for location, %T for data type, %I for interval, etc. (using the format choices)"),
+		0, ++yValComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel (
+		"   ${ts:property} for time series property"),
+		0, ++yValComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel (
+		"   ${property} for processor property"),
+		0, ++yValComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel (
+    	"   ${tsdata:datetime} - for date/time associated with data value"),
+    	0, ++yValComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel (
+    	"   ${tsdata:value} - for data value"),
+    	0, ++yValComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel (
+    	"   ${tsdata:flag} - for flag associated with data value"),
+    	0, ++yValComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(valComment_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yValComment, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel("Value comment:"),
+        0, ++yValComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueComment_JTextField = new TSFormatSpecifiersJPanel(30);
     __ValueComment_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, etc., " +
     	"${ts:property} for time series property, ${property} for processor property.");
     __ValueComment_JTextField.addKeyListener ( this );
     __ValueComment_JTextField.getDocument().addDocumentListener(this);
-    JGUIUtil.addComponent(comment_JPanel, __ValueComment_JTextField,
-        1, yComments, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(comment_JPanel, new JLabel ("Optional - %L for location, ${ts:property} for property, etc."),
-        3, yComments, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(valComment_JPanel, __ValueComment_JTextField,
+        1, yValComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel ("Optional - see above for formatting options."),
+        3, yValComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(comment_JPanel, new JLabel( "Skip value comment if no flag?:"),
-        0, ++yComments, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel( "Skip value comment if no flag?:"),
+        0, ++yValComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SkipValueCommentIfNoFlag_JComboBox = new SimpleJComboBox ( false );
     __SkipValueCommentIfNoFlag_JComboBox.add("");
     __SkipValueCommentIfNoFlag_JComboBox.add(__command._False);
     __SkipValueCommentIfNoFlag_JComboBox.add(__command._True);
     __SkipValueCommentIfNoFlag_JComboBox.select ( 0 );
     __SkipValueCommentIfNoFlag_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(comment_JPanel, __SkipValueCommentIfNoFlag_JComboBox,
-        1, yComments, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(comment_JPanel, new JLabel ( "Optional - skip comment if no flag? (default=" + __command._True + ")."),
-        3, yComments, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, __SkipValueCommentIfNoFlag_JComboBox,
+        1, yValComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel ( "Optional - skip comment if no flag? (default=" + __command._True + ")."),
+        3, yValComment, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Panel for style formatting 
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel("Comment width (columns):"),
+        0, ++yValComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CommentWidth_JTextField = new JTextField(10);
+    __CommentWidth_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(valComment_JPanel, __CommentWidth_JTextField,
+        1, yValComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel ("Optional - comment width in columns (default=6)."),
+        3, yValComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel("Comment height (rows):"),
+        0, ++yValComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CommentHeight_JTextField = new JTextField(10);
+    __CommentHeight_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(valComment_JPanel, __CommentHeight_JTextField,
+        1, yValComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(valComment_JPanel, new JLabel ("Optional - number of rows for comment (default=lines of comment)."),
+        3, yValComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for column style formatting 
+    int yColStyle = -1;
+    JPanel colStyle_JPanel = new JPanel();
+    colStyle_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Column Style Formatting", colStyle_JPanel );
+
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel (
+        "The following parameters control how Excel column heading cells are formatted, using a general style formatting approach."),
+        0, ++yColStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel (
+        "Style-based formatting requires as input a condition table to indicate how to evaluate column heading contents for style formatting."),
+        0, ++yColStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel (
+        "The condition table can use ${ts:property} notation to evaluate time series properties."),
+        0, ++yColStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel (
+        "A style table indicates the style properties to format a cell, such as the fill foreground color."),
+        0, ++yColStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel (
+        "Refer to the command documentation for details."),
+        0, ++yColStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(colStyle_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+   	    0, ++yColStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel ( "Column condition table ID:" ), 
+        0, ++yColStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnConditionTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __ColumnConditionTableID_JComboBox.setToolTipText("Select the condition table or use ${Property} notation");
+    tableIDChoices.add(0,""); // Add blank to give user a blank entry to type over
+    __ColumnConditionTableID_JComboBox.setData ( tableIDChoices );
+    __ColumnConditionTableID_JComboBox.addItemListener ( this );
+    __ColumnConditionTableID_JComboBox.addKeyListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(colStyle_JPanel, __ColumnConditionTableID_JComboBox,
+        1, yColStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel( "Required when using styles - conditions to determine styles."), 
+        3, yColStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel ( "Column style table ID:" ), 
+        0, ++yColStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnStyleTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
+    __ColumnStyleTableID_JComboBox.setToolTipText("Select the style table or use ${Property} notation");
+    __ColumnStyleTableID_JComboBox.setData ( tableIDChoices );
+    __ColumnStyleTableID_JComboBox.addItemListener ( this );
+    __ColumnStyleTableID_JComboBox.addKeyListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(colStyle_JPanel, __ColumnStyleTableID_JComboBox,
+        1, yColStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(colStyle_JPanel, new JLabel( "Required when using styles - style definitions."), 
+        3, yColStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for cell style formatting 
     int yStyle = -1;
     JPanel style_JPanel = new JPanel();
     style_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Style Formatting", style_JPanel );
+    __main_JTabbedPane.addTab ( "Cell Style Formatting", style_JPanel );
 
     JGUIUtil.addComponent(style_JPanel, new JLabel (
-        "The following parameters control how Excel cells are formatted, using a general style formatting approach."),
+        "The following parameters control how Excel data value cells are formatted, using a general style formatting approach."),
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(style_JPanel, new JLabel (
-        "Style-based formatting requires as input a condition table to indicate how to evaluate cell contents for style formatting."),
+        "Style-based formatting requires as input a condition table to indicate how to evaluate data value cell contents for style formatting."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "The condition table can use ${ts:property}, ${tsdata:value}, and ${tsdata:flag} notation to evaluate time series properties and data values."),
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(style_JPanel, new JLabel (
         "A style table indicates the style properties to format a cell, such as the fill foreground color."),
@@ -877,7 +1046,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ConditionTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit since table may not be available
     __ConditionTableID_JComboBox.setToolTipText("Select the condition table or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to give user a blank entry to type over
     __ConditionTableID_JComboBox.setData ( tableIDChoices );
     __ConditionTableID_JComboBox.addItemListener ( this );
     __ConditionTableID_JComboBox.addKeyListener ( this );
@@ -1008,8 +1176,14 @@ private void refresh ()
 	String ValueColumns = "";
 	String Author = "";
 	String ColumnComment = "";
+	String ColumnCommentWidth = "";
+	String ColumnCommentHeight = "";
 	String ValueComment = "";
 	String SkipValueCommentIfNoFlag = "";
+	String CommentWidth = "";
+	String CommentHeight = "";
+	String ColumnStyleTableID = "";
+	String ColumnConditionTableID = "";
 	String StyleTableID = "";
 	String ConditionTableID = "";
 	PropList props = __command.getCommandParameters();
@@ -1041,8 +1215,14 @@ private void refresh ()
 		ValueColumns = props.getValue ( "ValueColumns" );
 		Author = props.getValue ( "Author" );
 		ColumnComment = props.getValue ( "ColumnComment" );
+		ColumnCommentWidth = props.getValue ( "ColumnCommentWidth" );
+		ColumnCommentHeight = props.getValue ( "ColumnCommentHeight" );
 		ValueComment = props.getValue ( "ValueComment" );
 		SkipValueCommentIfNoFlag = props.getValue ( "SkipValueCommentIfNoFlag" );
+		CommentWidth = props.getValue ( "CommentWidth" );
+		CommentHeight = props.getValue ( "CommentHeight" );
+		ColumnStyleTableID = props.getValue ( "ColumnStyleTableID" );
+		ColumnConditionTableID = props.getValue ( "ColumnConditionTableID" );
 		StyleTableID = props.getValue ( "StyleTableID" );
 		ConditionTableID = props.getValue ( "ConditionTableID" );
         if ( TSList == null ) {
@@ -1222,6 +1402,12 @@ private void refresh ()
         if (ValueComment!= null) {
             __ValueComment_JTextField.setText(ValueComment);
         }
+        if ( ColumnCommentWidth != null ) {
+            __ColumnCommentWidth_JTextField.setText ( ColumnCommentWidth );
+        }
+        if ( ColumnCommentHeight != null ) {
+            __ColumnCommentHeight_JTextField.setText ( ColumnCommentHeight );
+        }
         if ( SkipValueCommentIfNoFlag == null || SkipValueCommentIfNoFlag.equals("") ) {
             // Select a default...
             __SkipValueCommentIfNoFlag_JComboBox.select ( 0 );
@@ -1233,6 +1419,42 @@ private void refresh ()
             else {
                 Message.printWarning ( 1, routine, "Existing command references an invalid\nSkipValueCommentIfNoFlag \"" +
                     SkipValueCommentIfNoFlag + "\".  Select a different choice or Cancel." );
+            }
+        }
+        if ( CommentWidth != null ) {
+            __CommentWidth_JTextField.setText ( CommentWidth );
+        }
+        if ( CommentHeight != null ) {
+            __CommentHeight_JTextField.setText ( CommentHeight );
+        }
+        if ( ColumnConditionTableID == null ) {
+            // Select default...
+        	__ColumnConditionTableID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ColumnConditionTableID_JComboBox,ColumnConditionTableID, JGUIUtil.NONE, null, null ) ) {
+                __ColumnConditionTableID_JComboBox.select ( ColumnConditionTableID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nColumnConditionTableID value \"" + ColumnConditionTableID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( ColumnStyleTableID == null ) {
+            // Select default...
+        	__ColumnStyleTableID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ColumnStyleTableID_JComboBox,ColumnStyleTableID, JGUIUtil.NONE, null, null ) ) {
+                __ColumnStyleTableID_JComboBox.select ( ColumnStyleTableID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nColumnStyleTableID value \"" + ColumnStyleTableID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
             }
         }
         if ( ConditionTableID == null ) {
@@ -1293,8 +1515,14 @@ private void refresh ()
 	ValueColumns = __ValueColumns_JTextField.getText().trim();
 	Author = __Author_JTextField.getText().trim();
 	ColumnComment = __ColumnComment_JTextField.getText().trim();
+	ColumnCommentWidth = __ColumnCommentWidth_JTextField.getText().trim();
+	ColumnCommentHeight = __ColumnCommentHeight_JTextField.getText().trim();
 	ValueComment = __ValueComment_JTextField.getText().trim();
 	SkipValueCommentIfNoFlag = __SkipValueCommentIfNoFlag_JComboBox.getSelected();
+	CommentWidth = __CommentWidth_JTextField.getText().trim();
+	CommentHeight = __CommentHeight_JTextField.getText().trim();
+	ColumnStyleTableID = __ColumnStyleTableID_JComboBox.getSelected();
+	ColumnConditionTableID = __ColumnConditionTableID_JComboBox.getSelected();
 	StyleTableID = __StyleTableID_JComboBox.getSelected();
 	ConditionTableID = __ConditionTableID_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
@@ -1324,8 +1552,14 @@ private void refresh ()
 	props.add ( "ValueColumns=" + ValueColumns );
 	props.add ( "Author=" + Author );
 	props.add ( "ColumnComment=" + ColumnComment );
+	props.add ( "ColumnCommentWidth=" + ColumnCommentWidth );
+	props.add ( "ColumnCommentHeight=" + ColumnCommentHeight );
 	props.add ( "ValueComment=" + ValueComment );
 	props.add ( "SkipValueCommentIfNoFlag=" + SkipValueCommentIfNoFlag );
+	props.add ( "CommentWidth=" + CommentWidth );
+	props.add ( "CommentHeight=" + CommentHeight );
+	props.add ( "ColumnStyleTableID=" + ColumnStyleTableID );
+	props.add ( "ColumnConditionTableID=" + ColumnConditionTableID );
 	props.add ( "StyleTableID=" + StyleTableID );
 	props.add ( "ConditionTableID=" + ConditionTableID );
 	__command_JTextArea.setText( __command.toString ( props ) );

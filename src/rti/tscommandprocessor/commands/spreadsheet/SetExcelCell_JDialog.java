@@ -724,8 +724,7 @@ private void initialize ( JFrame parent, SetExcelCell_Command command, List<Stri
     __CommentWidth_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(excelComment_JPanel, __CommentWidth_JTextField,
         1, yExcelComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(excelComment_JPanel, new JLabel ("Optional - comment width or " + __command._Auto +
-    	" (default=" + __command._Auto + ")."),
+    JGUIUtil.addComponent(excelComment_JPanel, new JLabel ("Optional - comment width in columns (default=6)."),
         3, yExcelComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(excelComment_JPanel, new JLabel("Comment height (rows):"),
@@ -734,8 +733,7 @@ private void initialize ( JFrame parent, SetExcelCell_Command command, List<Stri
     __CommentHeight_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(excelComment_JPanel, __CommentHeight_JTextField,
         1, yExcelComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(excelComment_JPanel, new JLabel ("Optional - comment height or " + __command._Auto +
-    	" (default=" + __command._Auto + ")."),
+    JGUIUtil.addComponent(excelComment_JPanel, new JLabel ("Optional - number of rows for comment (default=lines of comment)."),
         3, yExcelComment, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     // Panel for Excel formatting 

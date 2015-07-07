@@ -13,6 +13,7 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 import RTi.GR.GRColor;
 import RTi.TS.TS;
 import RTi.Util.Message.Message;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 
@@ -188,11 +189,13 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 				Message.printDebug(1, routine, "Time Series \"" + ts.getIdentifier().toStringAliasAndTSID() + "\" matched format row - evaluating conditions");
 			}
 		}
-		boolean doValue = false; // Is formatting based on time series value?
-		boolean doFlag = false; // Is formatting based on time series value?
+		boolean doValue = false; // Is formatting based on time series value ${tsdata:value}?
+		boolean doFlag = false; // Is formatting based on time series flag ${tsdata:flag}?
+		boolean doProperty = false; // Is formatting based on time series property ${ts:property}?
 		for ( TableRecord row : matchedRowList ) {
 			doValue = false;
 			doFlag = false;
+			doProperty = false;
 			String cond = row.getFieldValueString(this.conditionTableConditionNum);
 			String styleID = row.getFieldValueString(this.conditionTableStyleIDNum);
 			// Evaluate the condition - if true return the cell style for the matching StyleID
@@ -201,16 +204,20 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 			String [] parts = cond.trim().split(" ");
 			for ( int iPart = 0; iPart < parts.length; iPart++ ) {
 				String sValue1 = parts[iPart].trim();
+				String sValue1Upper = sValue1.toUpperCase();
 				if ( (iPart > 0) && sValue1.equalsIgnoreCase("and") ) {
 					// Continue so that the next clause will be evaluated.
 					// If at any time the entire condition is false, nothing will be returned
 					continue;
 				}
-				if ( sValue1.equalsIgnoreCase("${tsdata:value}") ) {
+				if ( sValue1Upper.equals("${TSDATA:VALUE}") ) {
 					doValue = true;
 				}
-				if ( sValue1.equalsIgnoreCase("${tsdata:flag}") ) {
+				else if ( sValue1Upper.equals("${TSDATA:FLAG}") ) {
 					doFlag = true;
+				}
+				else if ( sValue1Upper.startsWith("${TS:") ) {
+					doProperty = true;
 				}
 				// TODO SAM 2015-05-09 in the future add other cell properties to be check, such as comments/annotations
 				boolean valueMatch = false;
@@ -290,6 +297,202 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 							valueMatch = true;
 						}
 					}
+					else if ( oper == ConditionOperatorType.NOT_EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( (flag != null) && !flag.isEmpty() ) {
+								valueMatch = true;
+							}
+						}
+						else if ( !(flag == null) && !flag.equals(value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.CONTAINS ) {
+						if ( value2Missing ) {
+							if ( (flag == null) || flag.isEmpty() ) {
+								valueMatch = true;
+							}
+						}
+						else if ( !(flag == null) && (flag.indexOf(value2) >= 0) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.STARTS_WITH ) {
+						if ( value2Missing ) {
+							if ( (flag == null) || flag.isEmpty() ) {
+								valueMatch = true;
+							}
+						}
+						else if ( !(flag == null) && (flag.startsWith(value2,0)) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.ENDS_WITH ) {
+						if ( value2Missing ) {
+							if ( (flag == null) || flag.isEmpty() ) {
+								valueMatch = true;
+							}
+						}
+						else if ( !(flag == null) && (flag.endsWith(value2)) ) {
+							valueMatch = true;
+						}
+					}
+				}
+				else if ( doProperty ) {
+					// Get the property from the time series and also determine type-casted value for comparisons
+					String tspropertyName = sValue1.substring(5,sValue1.length()-1);
+					Object tsproperty = ts.getProperty(tspropertyName);
+					String stsproperty = "" + tsproperty;
+					Integer itsproperty = null;
+					Double dtsproperty = null;
+					if ( tsproperty != null ) {
+						if ( tsproperty instanceof Double ) {
+							dtsproperty = (Double)tsproperty;
+							stsproperty = "" + StringUtil.formatString(dtsproperty, "%.6f");
+							if ( Message.isDebugOn ) {
+								Message.printDebug(1,routine,"Checking Double ${ts:property} \"" + tspropertyName + "\" = " + dtsproperty );
+							}
+						}
+						else if ( tsproperty instanceof Integer ) {
+							itsproperty = (Integer)tsproperty;
+							stsproperty = "" + itsproperty;
+						}
+						else if ( tsproperty instanceof String ) {
+							stsproperty = (String)tsproperty;
+						}
+						else {
+							throw new RuntimeException ( "${ts:property} condition only handles String, Double, and Integer properties" );
+						}
+					}
+					ConditionOperatorType oper = ConditionOperatorType.valueOfIgnoreCase(parts[++iPart].trim());
+					String svalue2 = parts[++iPart].trim();
+					Double dvalue2 = null;
+					Integer ivalue2 = null;
+					if ( StringUtil.isInteger(svalue2) ) {
+						ivalue2 = Integer.parseInt(svalue2);
+					}
+					if ( StringUtil.isDouble(svalue2) ) {
+						dvalue2 = Double.parseDouble(svalue2);
+					}
+					boolean value2Missing = false; // whether checking for missing
+					if ( svalue2.equalsIgnoreCase("missing") || svalue2.equalsIgnoreCase("null")) {
+						value2Missing = true;
+					}
+					if ( Message.isDebugOn ) {
+						Message.printDebug(1,routine,"Checking property \"" + tspropertyName + "\" dtsproperty=" + dtsproperty +
+							" itsproperty=" + itsproperty + " stsproperty=\"" + stsproperty +
+							oper + " dvalue2=" + dvalue2 + " ivalue2=" + ivalue2 + " svalue2=\"" + svalue2 + "\" value2missing " + value2Missing );
+					}
+					if ( oper == ConditionOperatorType.EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( (tsproperty == null) || stsproperty.isEmpty() ) {
+								valueMatch = true;
+							}
+						}
+						else {
+							if ( (dtsproperty != null) && (dtsproperty == dvalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (itsproperty != null) && (itsproperty == ivalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (stsproperty != null) && stsproperty.equals(svalue2) ) {
+								valueMatch = true;
+							}
+						}
+					}
+					else if ( oper == ConditionOperatorType.NOT_EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( (tsproperty != null) && !stsproperty.isEmpty() ) {
+								valueMatch = true;
+							}
+						}
+						else {
+							if ( (dtsproperty != null) && (dtsproperty != dvalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (itsproperty != null) && (itsproperty != ivalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (stsproperty != null) && !stsproperty.equals(svalue2) ) {
+								valueMatch = true;
+							}
+						}
+					}
+					else if ( oper == ConditionOperatorType.LESS_THAN ) {
+						if ( (tsproperty != null) && !stsproperty.isEmpty() ) {
+							if ( (dtsproperty != null) && (dtsproperty < dvalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (itsproperty != null) && (itsproperty < ivalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (stsproperty != null) && (stsproperty.compareTo(svalue2) < 0) ) {
+								valueMatch = true;
+							}
+						}
+					}
+					else if ( oper == ConditionOperatorType.LESS_THAN_OR_EQUAL_TO ) {
+						if ( (tsproperty != null) && !stsproperty.isEmpty() ) {
+							if ( (dtsproperty != null) && (dtsproperty <= dvalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (itsproperty != null) && (itsproperty <= ivalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (stsproperty != null) && (stsproperty.compareTo(svalue2) <= 0) || (stsproperty.compareTo(svalue2) == 0)) {
+								valueMatch = true;
+							}
+						}
+					}
+					else if ( oper == ConditionOperatorType.GREATER_THAN ) {
+						if ( (tsproperty != null) && !stsproperty.isEmpty() ) {
+							if ( (dtsproperty != null) && (dtsproperty > dvalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (itsproperty != null) && (itsproperty > ivalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (stsproperty != null) && (stsproperty.compareTo(svalue2) > 0) ) {
+								valueMatch = true;
+							}
+						}
+					}
+					else if ( oper == ConditionOperatorType.GREATER_THAN_OR_EQUAL_TO ) {
+						if ( (tsproperty != null) && !stsproperty.isEmpty() ) {
+							if ( (dtsproperty != null) && (dtsproperty >= dvalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (itsproperty != null) && (itsproperty >= ivalue2) ) {
+								valueMatch = true;
+							}
+							else if ( (stsproperty != null) && (stsproperty.compareTo(svalue2) >= 0) || (stsproperty.compareTo(svalue2) == 0)) {
+								valueMatch = true;
+							}
+						}
+					}
+					if ( oper == ConditionOperatorType.CONTAINS ) {
+						if ( !(stsproperty == null) && (stsproperty.indexOf(svalue2) >= 0) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.STARTS_WITH ) {
+						if ( !(stsproperty == null) && (stsproperty.startsWith(svalue2,0)) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.ENDS_WITH ) {
+						if ( !(stsproperty == null) && (stsproperty.endsWith(svalue2)) ) {
+							valueMatch = true;
+						}
+					}
+				}
+				if ( !valueMatch ) {
+					// Can break out of condition
+					if ( Message.isDebugOn ) {
+						Message.printDebug(1,routine,"Condition clause [" + iPart + "] did not match so not setting style." );
+					}
+					break;
 				}
 				// Only finish if there are no more clauses to evaluate
 				if ( ((iPart + 1) == parts.length) && valueMatch ) {

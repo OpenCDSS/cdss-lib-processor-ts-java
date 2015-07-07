@@ -511,37 +511,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	
-	__command       = null;
-	
-	__Alias_JTextField		  = null;
-	__TSID_JComboBox		  = null;
-	__NewInterval_JComboBox 	  = null;
-	__OldTimeScale_JComboBox 	  = null;
-	__AllowMissingCount_JTextField    = null;
-	/* TODO SAM 2005-02-18 may enable later
-	__AllowMissingPercent_JTextField  = null; */
-	__NewTimeScale_JComboBox 	  = null;
-	__NewDataType_JTextField 	  = null;
-	__Tolerance_JTextField 	  = null;
-	__HandleEndpointsHow_JComboBox = null;
-	__OutputFillMethod_JComboBox 	  = null;
-	__HandleMissingInputHow_JComboBox = null;
-	__Command_JTextArea		  = null;
-	__Command_JScrollPane		  = null;
-	
-	// Command Buttons
-	__cancel_JButton  = null;
-	__ok_JButton      = null;
-	
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Vector of String containing the command.
@@ -566,8 +535,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		"Create new time series by changing the data interval of each input time series."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The output time series will have an identifier that is the same as the input, but with the new" +
-        " interval."),
+        "The output time series will have an identifier that is the same as the input, but with the new interval."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If the input is an ensemble, then a new ensemble can be created for output."),
@@ -598,7 +566,8 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     yTslist = CommandEditorUtil.addTSListToEditorDialogPanel ( this, tslist_JPanel, __TSList_JComboBox, yTslist );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=*TSID:");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTslist = CommandEditorUtil.addTSIDToEditorDialogPanel (
@@ -606,6 +575,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTslist = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (

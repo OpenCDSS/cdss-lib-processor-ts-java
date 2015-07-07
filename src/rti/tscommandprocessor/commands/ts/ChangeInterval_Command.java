@@ -27,6 +27,7 @@
 // ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -35,7 +36,6 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
-
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSLimits;
@@ -45,7 +45,6 @@ import RTi.TS.TSUtil_ChangeInterval;
 import RTi.TS.TSUtil_ChangeInterval_HandleEndpointsHowType;
 import RTi.TS.TSUtil_ChangeInterval_HandleMissingInputHowType;
 import RTi.TS.TSUtil_ChangeInterval_OutputFillMethodType;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
@@ -484,28 +483,28 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "NewEnsembleID" );
-    valid_Vector.add ( "NewEnsembleName" );
-    valid_Vector.add ( "NewInterval" );
-    valid_Vector.add ( "OldTimeScale" );
-    valid_Vector.add ( "NewTimeScale" );
-    valid_Vector.add ( "Statistic" );
-    valid_Vector.add ( "OutputYearType" );
-    valid_Vector.add ( "NewDataType" );
-    valid_Vector.add ( "NewUnits" );
-    valid_Vector.add ( "Tolerance" );
-    valid_Vector.add ( "HandleEndpointsHow" );
-    valid_Vector.add ( "AllowMissingCount" );
-    valid_Vector.add ( "AllowMissingConsecutive" );
-    valid_Vector.add ( "OutputFillMethod" );
-    valid_Vector.add ( "HandleMissingInputHow" );
-    valid_Vector.add ( "RecalcLimits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(20);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "Alias" );
+    validList.add ( "NewEnsembleID" );
+    validList.add ( "NewEnsembleName" );
+    validList.add ( "NewInterval" );
+    validList.add ( "OldTimeScale" );
+    validList.add ( "NewTimeScale" );
+    validList.add ( "Statistic" );
+    validList.add ( "OutputYearType" );
+    validList.add ( "NewDataType" );
+    validList.add ( "NewUnits" );
+    validList.add ( "Tolerance" );
+    validList.add ( "HandleEndpointsHow" );
+    validList.add ( "AllowMissingCount" );
+    validList.add ( "AllowMissingConsecutive" );
+    validList.add ( "OutputFillMethod" );
+    validList.add ( "HandleMissingInputHow" );
+    validList.add ( "RecalcLimits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -521,8 +520,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	
@@ -753,16 +751,14 @@ CommandWarningException, CommandException
 
 /**
 Run the command.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {
-	String routine = getCommandName() + ".runCommand";
+	String routine = getClass().getSimpleName() + ".runCommandInternal";
 	String message = "";
 	int warning_count = 0;
 	int warning_level = 2;
@@ -770,12 +766,24 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Warning message level for non-user messages
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
         setDiscoveryEnsemble ( null );
     }
-    TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
 	
 	PropList parameters = getCommandParameters();
     String TSList = parameters.getValue ( "TSList" );
@@ -783,7 +791,13 @@ CommandWarningException, CommandException
         TSList = "" + TSListType.ALL_TS;
     }
     String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String Alias = parameters.getValue ( "Alias" );
     String NewEnsembleID = parameters.getValue( "NewEnsembleID" );
     String NewEnsembleName = parameters.getValue( "NewEnsembleName" );

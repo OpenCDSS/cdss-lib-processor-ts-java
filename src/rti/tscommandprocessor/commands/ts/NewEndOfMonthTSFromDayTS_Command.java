@@ -331,7 +331,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...
 
-	TS ts = null;
+	TS dayts = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
     	// TODO SAM 2015-05-27 Not sure this is necessary since discovery TSID can be set from alias
         // Get the discovery time series list from all time series above this command
@@ -339,7 +339,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
             (TSCommandProcessor)processor, this, TSList, DayTSID, null, null );
         if ( (tslist != null) && (tslist.size() > 0) ) {
-            ts = tslist.get(0);
+            dayts = tslist.get(0);
         }
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
@@ -373,14 +373,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 			}
 			else {
-				ts = (TS)o_TS;
+				dayts = (TS)o_TS;
 			}
     	}
     	catch ( Exception e ) {
-    		ts = null;
+    		dayts = null;
     	}
     }
-	if ( ts == null ) {
+	if ( dayts == null ) {
 		message = "Unable to find daily time series using TSID \"" + DayTSID +
 			"\".  May be OK if time series is created at run time.";
 		if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -414,7 +414,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 	try {
 	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval();
-	    monthts = tsu.OLDchangeToMonthTS ( (DayTS)ts, 1, bracket, createData );
+	    monthts = tsu.newEndOfMonthTSFromDayTS ( (DayTS)dayts, 1, bracket, createData );
         if ( (Alias != null) && !Alias.isEmpty() ) {
             String alias = Alias;
             if ( commandPhase == CommandPhaseType.RUN ) {
@@ -425,7 +425,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error processing daily time series \"" + ts.getIdentifier() + "\" (" + e + ").";
+		message = "Unexpected error processing daily time series \"" + dayts.getIdentifier() + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );

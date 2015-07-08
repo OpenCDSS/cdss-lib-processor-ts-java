@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.StringBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
@@ -1589,22 +1590,25 @@ impacted by this parameter.
 */
 protected static List<String> getTSIdentifiersFromCommands ( List<Command> commands, boolean include_input, boolean sort )
 {	if ( commands == null ) {
-		return new Vector<String>();
+		return new ArrayList<String>();
 	}
-	List<String> tsidsFromCommands = new Vector (); // The String TSID or alias
-	List<TS> tsFromCommands = new Vector(); // The ts for available TS, used to store each TSIdent
+	List<String> tsidsFromCommands = new ArrayList<String>(); // The String TSID or alias
+	List<TS> tsFromCommands = new ArrayList<TS>(); // The ts for available TS, used to store each TSIdent
 	int size = commands.size();
 	String commandString = null;
 	List<String> tokens = null;
 	boolean in_comment = false;
 	Object command_o = null; // Command as object
 	String commandName; // Command name
+	Command command; // Command as Command instance
 	for ( int i = 0; i < size; i++ ) {
 		command_o = commands.get(i);
+		command = null;
 		commandName = ""; // Only care about instances of Free() commands below
 		if ( command_o instanceof Command ) {
 			commandString = command_o.toString().trim();
-			commandName = ((Command)command_o).getCommandName();
+			command = (Command)command_o;
+			commandName = command.getCommandName();
 		}
 		else if ( command_o instanceof String ) {
 			commandString = ((String)command_o).trim();
@@ -1633,6 +1637,14 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
                 TS ts;
                 for ( int its = 0; its < tssize; its++ ) {
                     ts = list.get(its);
+                    if ( ts == null ) {
+                    	// This should not happen and is symptomatic of a command not fully handling a
+                    	// time series in discovery mode, more of an issue with ${property} use in parameters.
+                    	// Log a message so the issue can be tracked down
+                    	String routine = "TSCommandProcessorUtil.getTSIdentifiersFromCommands";
+                    	Message.printWarning(3, routine, "Null time series in discovery mode - need to check code for command to improve handling: " + commandString);
+                    	continue;
+                    }
                     if ( !ts.getAlias().equals("") ) {
                         // Use the alias if it is available.
                         tsidsFromCommands.add( ts.getAlias() );

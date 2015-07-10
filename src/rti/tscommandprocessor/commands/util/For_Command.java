@@ -181,7 +181,9 @@ If the increment will go past the end, return false.
 */
 public boolean next ()
 {   String routine = getClass().getSimpleName() + ".next", message;
-    Message.printStatus(2, routine, "forInitialized=" + this.forInitialized);
+	if ( Message.isDebugOn ) {
+		Message.printDebug(1, routine, "forInitialized=" + this.forInitialized);
+	}
   	if ( !this.forInitialized ) {
     	// Initialize the loop
   		String List = getCommandParameters().getValue ( "List" );
@@ -202,7 +204,9 @@ public boolean next ()
 	            this.iteratorObjectList = this.list;
 	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
 	            this.forInitialized = true;
-	            Message.printStatus(2, routine, "Initialized iterator object to: " + this.iteratorObject );
+	            if ( Message.isDebugOn ) {
+	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
+	            }
 	            return true;
 	        }
 	        catch ( Exception e ) {
@@ -266,7 +270,9 @@ public boolean next ()
 	            this.iteratorObjectList = this.table.getFieldValues(columnName);
 	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
 	            this.forInitialized = true;
-	            Message.printStatus(2, routine, "Initialized iterator object to: " + this.iteratorObject );
+	            if ( Message.isDebugOn ) {
+	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
+	            }
 	            return true;
 	        }
 	        catch ( Exception e ) {
@@ -281,13 +287,17 @@ public boolean next ()
         // Increment the property
         if ( this.iteratorObjectListIndex >= (this.iteratorObjectList.size() - 1) ) {
             // Done iterating
-            Message.printStatus(2, routine, "Done iterating on list." );
+        	if ( Message.isDebugOn ) {
+        		Message.printDebug(1, routine, "Done iterating on list." );
+        	}
             return false;
         }
         else {
             ++this.iteratorObjectListIndex;
             this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
-            Message.printStatus(2, routine, "Iterator object set to: " + this.iteratorObject );
+        	if ( Message.isDebugOn ) {
+        		Message.printDebug(1, routine, "Iterator object set to: " + this.iteratorObject );
+        	}
             return true;
         }
     }
@@ -389,8 +399,10 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
         request_params.setUsingObject ( "PropertyName", IteratorProperty );
         request_params.setUsingObject ( "PropertyValue", this.iteratorObject );
         try {
-            Message.printStatus(2,routine,"For loop \"" + Name + "\" iteration [" + this.iteratorObjectListIndex + "] iterator=" +
-                this.iteratorObject );
+        	if ( Message.isDebugOn ) {
+	            Message.printDebug(1,routine,"For loop \"" + Name + "\" iteration [" + this.iteratorObjectListIndex + "] iterator=" +
+	                this.iteratorObject );
+        	}
             processor.processRequest( "SetProperty", request_params);
         }
         catch ( Exception e ) {

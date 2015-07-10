@@ -936,11 +936,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( nts == 0 ) {
         message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
             "\", EnsembleID=\"" + EnsembleID + "\".";
-        Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message,
-            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        	// Error is OK, especially with dynamic content
+        }
+        else {
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag(
+	        command_tag,++warning_count), routine, message );
+	        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message,
+	            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        }
     }
 	
     if ( warning_count > 0 ) {

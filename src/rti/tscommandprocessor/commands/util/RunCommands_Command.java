@@ -1,8 +1,8 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -21,7 +21,6 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-
 import RTi.TS.TS;
 import rti.tscommandprocessor.core.TSCommandFileRunner;
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -103,7 +102,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an input file." ) );
 	}
-	else {
+	else if ( InputFile.indexOf("${") < 0 ) {
 	    String working_dir = null;
 	
 		try {
@@ -183,12 +182,12 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "ExpectedStatus" );
-    valid_Vector.add ( "ShareProperties" );
-    valid_Vector.add ( "ShareDataStores" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(4);
+	validList.add ( "InputFile" );
+    validList.add ( "ExpectedStatus" );
+    validList.add ( "ShareProperties" );
+    validList.add ( "ShareDataStores" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -216,16 +215,27 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "RunCommands_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	PropList parameters = getCommandParameters();
 
 	String InputFile = parameters.getValue ( "InputFile" );
@@ -255,10 +265,11 @@ CommandWarningException, CommandException
 	
 	// Get the working directory from the processor that is running the commands.
 
-	String WorkingDir = TSCommandProcessorUtil.getWorkingDir(processor);
 	String InputFile_full = null;
 	try {
-        InputFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath ( WorkingDir, InputFile) );
+		InputFile_full = IOUtil.verifyPathForOS(
+	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile) ) );
 		Message.printStatus ( 2, routine,
 		"Processing commands from file \"" + InputFile_full + "\" using command file runner.");
 		
@@ -308,7 +319,9 @@ CommandWarningException, CommandException
                     // This should generally be used only when running a test that we expect to fail (e.g., run
                     // obsolete command or testing handling of errors).
                     status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.SUCCESS,
-                        "Severity is max of commands file that was run (may not be a problem) - matches expected so considered Success.",
+                    	"Severity for RunCommands (" + maxSeverity +
+                    	") is max of commands in command file that was run - matches expected (" +
+                    	ExpectedStatus + ") so RunCommands status=Success.",
                         "Additional status messages are omitted to allow test to be success - " +
                         "refer to log file if warning/failure."));
                     // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
@@ -319,9 +332,10 @@ CommandWarningException, CommandException
     		    }
     		    else {
     		        // User has specified an expected status and it does NOT match the actual status so this is a failure.
-                    status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(
-                        CommandStatusType.SUCCESS,
-                        "Severity is max of commands file that was run (may not be a problem) - does not match expected so considered Failure.",
+                    status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.SUCCESS,
+                        "Severity for RunCommands (" + maxSeverity +
+                        ") is max of commands in command file that was run - does not match expected (" +
+                        ExpectedStatus + ") so RunCommands status=Failure.",
                         "Check the command to confirm the expected status."));
                     // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
                     // have a successful status that shows in the displays.
@@ -332,9 +346,11 @@ CommandWarningException, CommandException
             }
             else {
                 status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(maxSeverity,
-    				"Severity is max of commands file that was run (may not be a problem).",
-    				"See additional status messages and refer to log file if warning/failure."));
+    				"Severity for RunCommands (" + maxSeverity + ") is max of commands in command file that was run.",
+    				"Status messages from commands that were run are appended to RunCommand status messages."));
                 // Append the log records from the command file that was run.
+                // The status contains lists of CommandLogRecord for each run mode.
+                // For RunCommands() the log messages should be associated with the originating command, not this RunCommand command
                 CommandStatusUtil.appendLogRecords ( status, (List)runner.getProcessor().getCommands() );
                 if ( maxSeverity.greaterThanOrEqualTo(CommandStatusType.WARNING)) {
                     testPassFail = __FAIL;

@@ -321,7 +321,7 @@ public String toString ( PropList props )
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "SortOrder=" + SortOrder );
+        b.append ( "SortOrder=\"" + SortOrder + "\"");
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -49,21 +49,21 @@ public boolean isCommandFileEnabled ()
         C = command.toString().toUpperCase();
         pos = C.indexOf("@ENABLED");
         if ( pos >= 0 ) {
-            Message.printStatus(2, "", "Detected tag: " + C);
+            //Message.printStatus(2, "", "Detected tag: " + C);
             // Check the token following @enabled
             if ( C.length() > (pos + 8) ) {
                 // Have trailing characters
                 String [] parts = C.substring(pos).split(" ");
                 if ( parts.length > 1 ) {
                     if ( parts[1].trim().equals("FALSE") ) {
-                        Message.printStatus(2, "", "Detected false");
+                        //Message.printStatus(2, "", "Detected false");
                         return false;
                     }
                 }
             }
         }
     }
-    Message.printStatus(2, "", "Did not detect false");
+    //Message.printStatus(2, "", "Did not detect false");
     return true;
 }
 

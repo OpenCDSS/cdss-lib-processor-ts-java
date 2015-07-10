@@ -431,7 +431,7 @@ specified because it would be set to the location of the command file if the com
 public void addCommandsFromStringList ( List<String> commandStrings, boolean createUnknownCommandIfNotRecognized,
     boolean append, boolean runDiscoveryOnLoad, File initialWorkingDir )
 throws IOException
-{   String routine = getClass().getName() + ".initializeCommandsFromStringList";
+{   String routine = getClass().getSimpleName() + ".initializeCommandsFromStringList";
     // Set the working directory because this may be used by other commands.
     if ( initialWorkingDir != null ) {
         setInitialWorkingDir ( initialWorkingDir.getCanonicalPath() );
@@ -2520,7 +2520,7 @@ throws Exception
     }
     catch ( Exception e ) {
         // This is a software problem.
-        String routine = getClass().getName() + ".processRequest_GetOutputPeriodForCommand";
+        String routine = getClass().getSimpleName() + ".processRequest_GetOutputPeriodForCommand";
         Message.printWarning(2, routine, "Error getting output period for command (" + e + ")." );
         Message.printWarning(3, routine, e);
     }
@@ -2805,7 +2805,7 @@ throws Exception
 	}
 	catch ( Exception e ) {
 		// This is a software problem.
-		String routine = getClass().getName() + ".processRequest_GetWorkingDirForCommand";
+		String routine = getClass().getSimpleName() + ".processRequest_GetWorkingDirForCommand";
 		Message.printWarning(2, routine, "Error getting working directory for command." );
 		Message.printWarning(2, routine, e);
 	}
@@ -3545,7 +3545,7 @@ Run discovery on the command. This will, for example, make available a list of t
 to be requested with the ObjectListProvider.getObjectList() method.
 */
 private void readCommandFile_RunDiscoveryOnCommand ( Command command_read )
-{   String routine = getClass().getName() + ".readCommandFile_RunDiscoveryOnCommand";
+{   String routine = getClass().getSimpleName() + ".readCommandFile_RunDiscoveryOnCommand";
     // Run the discovery...
     if ( Message.isDebugOn ) {
         Message.printStatus(2, routine, "Running discovery mode on command:  \"" + command_read + "\"" );
@@ -3738,7 +3738,7 @@ Reset the workflow global properties to defaults, necessary when a command proce
 */
 private void resetWorkflowProperties ()
 throws Exception
-{   String routine = getClass().getName() + ".resetWorkflowProperties";
+{   String routine = getClass().getSimpleName() + ".resetWorkflowProperties";
     Message.printStatus(2, routine, "Resetting workflow properties." );
     
     // First clear user-defined properties.
@@ -3923,7 +3923,7 @@ Also set the current working directory by calling setWorkingDir() with the same 
 @param InitialWorkingDir The current working directory.
 */
 public void setInitialWorkingDir ( String InitialWorkingDir )
-{   String routine = getClass().getName() + ".setInitialWorkingDir";
+{   String routine = getClass().getSimpleName() + ".setInitialWorkingDir";
     Message.printStatus(2, routine, "Setting the initial working directory to \"" + InitialWorkingDir + "\"" );
 	__InitialWorkingDir_String = InitialWorkingDir;
 	// Also set the working directory...

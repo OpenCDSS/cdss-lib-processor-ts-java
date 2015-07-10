@@ -2813,9 +2813,9 @@ throws Exception
     			commandStatus.clearLog(CommandPhaseType.RUN);
     		}
     		commandProfile = command.getCommandProfile(CommandPhaseType.RUN);
-    		Message.printStatus ( 1, routine, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    		Message.printStatus ( 1, routine,
-    			"Start processing command " + (i + 1) + " of " + size + ": \"" + commandString + "\" " );
+    		// Don't use routine in messages... keep log messages shorter
+    		Message.printStatus ( 2, "", "--->>>>");
+    		Message.printStatus ( 2, "", "Start processing command " + (i + 1) + " of " + size + ": \"" + commandString + "\" " );
             stopWatch.clear();
             stopWatch.start();
             commandProfile.setStartTime(System.currentTimeMillis());
@@ -3219,7 +3219,8 @@ throws Exception
             "Done processing command \"" + commandString + "\" (" +  (i + 1) + " of " + size + " commands, " +
             StringUtil.formatString(commandProfile.getRunTime(),"%d") + " ms runtime)" );
 		runtimeTotal += commandProfile.getRunTime();
-        Message.printStatus ( 2, routine, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" );
+		// Don't use routine... keep message smaller
+        Message.printStatus ( 2, "", "----<<<<" );
 	}
 	// If necessary, do a final notify for the last command...
 	if ( !prev_command_complete_notified ) {
@@ -5489,8 +5490,9 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
     if ( dataStore == null ) {
         return;
     }
-
-    Message.printStatus(2, routine, "Setting data store \"" + dataStore.getName() + "\"" );
+    if ( Message.isDebugOn ) {
+    	Message.printDebug(1, routine, "Setting datastore \"" + dataStore.getName() + "\"" );
+    }
     for ( DataStore ds : __dataStoreList ) {
         if ( ds.getName().equalsIgnoreCase(dataStore.getName())){
             // The input name of the current instance matches that of the instance in the list.

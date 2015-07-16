@@ -632,7 +632,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    bean_PropList = bean.getResultsPropList();
 	    Object o_Table = bean_PropList.getContents ( "Table" );
 	    if ( o_Table == null ) {
-	        message = "Unable to find table to process using TableID=\"" + ColumnStyleTableID + "\".";
+	        message = "Unable to find column heading style table to process using TableID=\"" + ColumnStyleTableID + "\".";
 	        Message.printWarning ( warning_level,
 	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -662,7 +662,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    bean_PropList = bean.getResultsPropList();
 	    Object o_Table = bean_PropList.getContents ( "Table" );
 	    if ( o_Table == null ) {
-	        message = "Unable to find table to process using TableID=\"" + ColumnConditionTableID + "\".";
+	        message = "Unable to column heading condition table to process using TableID=\"" + ColumnConditionTableID + "\".";
 	        Message.printWarning ( warning_level,
 	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -692,7 +692,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    bean_PropList = bean.getResultsPropList();
 	    Object o_Table = bean_PropList.getContents ( "Table" );
 	    if ( o_Table == null ) {
-	        message = "Unable to find table to process using TableID=\"" + StyleTableID + "\".";
+	        message = "Unable to find data cell style table to process using TableID=\"" + StyleTableID + "\".";
 	        Message.printWarning ( warning_level,
 	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -722,7 +722,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    bean_PropList = bean.getResultsPropList();
 	    Object o_Table = bean_PropList.getContents ( "Table" );
 	    if ( o_Table == null ) {
-	        message = "Unable to find table to process using TableID=\"" + ConditionTableID + "\".";
+	        message = "Unable to find data value condition table to process using TableID=\"" + ConditionTableID + "\".";
 	        Message.printWarning ( warning_level,
 	        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,

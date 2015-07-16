@@ -889,7 +889,11 @@ public String lookupExcelCellType(int cellType)
 }
 
 /**
-Return an Area object given and address.
+Return an Area object given worksheet and address.
+@param wb workbook
+@param sheet worksheet
+@param address Excel address in format A1 or A1:B2, or a named range.
+TODO SAM 2015-07-11 Need to support R1C1 notation.
 */
 public AreaReference parseAreaReferenceFromAddress ( Workbook wb, Sheet sheet, String address )
 {
@@ -2106,7 +2110,7 @@ public void setCellComment ( Workbook wb, Sheet sheet, Cell cell, String comment
     if ( author != null ) {
     	comment.setAuthor(author);
     }
-    Message.printStatus(2, "", "Setting comment at anchor col1=" + anchorCol1 + " col2=" + anchorCol2 + " row1=" + anchorRow1 + " row2=" + anchorRow2 );
+    //Message.printStatus(2, "", "Setting comment at anchor col1=" + anchorCol1 + " col2=" + anchorCol2 + " row1=" + anchorRow1 + " row2=" + anchorRow2 );
 
     // Assign the comment to the cell - if already set, remove it because it can corrupt the file (fixed in POI 3.11)
     //Comment comment2 = cell.getCellComment();

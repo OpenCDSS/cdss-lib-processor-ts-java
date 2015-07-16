@@ -13,6 +13,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.AreaReference;
 import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.ss.util.WorkbookUtil;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -54,6 +55,7 @@ import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
+import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -85,6 +87,14 @@ protected final String _Auto = "Auto";
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
+
+/**
+Maximum row and column written.
+*/
+private int outputMinRow = 0;
+private int outputMinColumn = 0;
+private int outputMaxRow = 0;
+private int outputMaxColumn = 0;
 
 /**
 Constructor.
@@ -198,7 +208,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(20);
+	List<String> validList = new ArrayList<String>(22);
     validList.add ( "TableID" );
     validList.add ( "IncludeColumns" );
     validList.add ( "ExcludeColumns" );
@@ -219,6 +229,8 @@ throws InvalidCommandParameterException
     validList.add ( "ColumnDecimalPlaces" );
     validList.add ( "ConditionTableID" );
     validList.add ( "StyleTableID" );
+    validList.add ( "LegendWorksheet" );
+    validList.add ( "LegendAddress" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -523,6 +535,12 @@ throws InvalidCommandParameterException, CommandWarningException
     if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
     	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
     }
+    // Don't expand because ${Property} is expected to be internal
+    String LegendAddress = parameters.getValue ( "LegendAddress" );
+    String LegendWorksheet = parameters.getValue ( "LegendWorksheet" );
+    if ( (LegendWorksheet != null) && !LegendWorksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && LegendWorksheet.indexOf("${") >= 0 ) {
+    	LegendWorksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, LegendWorksheet);
+    }
 	
 	// Get the output table to process
 	
@@ -717,7 +735,8 @@ throws InvalidCommandParameterException, CommandWarningException
             ExcelAddress, ExcelNamedRange, ExcelTableName, ExcelColumnNames,
             columnIncludeFilters, columnExcludeFilters,
             columnNamedRanges, keepOpen, columnCellTypes, columnWidths, columnDecimalPlaces,
-            conditionTable, styleTable, problems );
+            conditionTable, styleTable, LegendWorksheet, LegendAddress,
+            problems );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
             message = "Error writing to Excel: " + problem;
@@ -780,6 +799,8 @@ public String toString ( PropList props )
 	String ColumnDecimalPlaces = props.getValue("ColumnDecimalPlaces");
 	String ConditionTableID = props.getValue( "ConditionTableID" );
 	String StyleTableID = props.getValue( "StyleTableID" );
+	String LegendWorksheet = props.getValue( "LegendWorksheet" );
+	String LegendAddress = props.getValue( "LegendAddress" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -889,7 +910,98 @@ public String toString ( PropList props )
         }
         b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
     }
+    if ( (LegendWorksheet != null) && (LegendWorksheet.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LegendWorksheet=\"" + LegendWorksheet + "\"" );
+    }
+    if ( (LegendAddress != null) && (LegendAddress.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LegendAddress=\"" + LegendAddress + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
+}
+
+/**
+TODO SAM 2015-07-10 - move this to generic location if reused between classes
+Write the legend to the Excel worksheet.
+@param sheet the worksheet being written
+@param styleManager the style manager containing conditions and styles
+@param legendAddress the address to use for the legend position (upper left is used)
+*/
+private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TableConditionAndStyleManager styleManager,
+	String legendWorksheet, String legendAddress,
+	List<String> problems )
+{
+	// If the legend worksheet does not exist create it.
+    Sheet sheet = reqSheet;
+    boolean sheetGiven = false;
+    if ( (legendWorksheet != null) && !legendWorksheet.isEmpty() ) {
+    	sheet = wb.getSheet(legendWorksheet);
+    	sheetGiven = true;
+	    if ( sheet == null ) {
+	        // Create the worksheet
+	    	String sheetNameSafe = WorkbookUtil.createSafeSheetName(legendWorksheet);
+	    	sheet = wb.createSheet(sheetNameSafe);
+	    }
+    }
+	// Parse the legend address
+    int rowOut = 0;
+    int colOut = 0;
+    if ( sheetGiven ) {
+    	// Parse the address that is given - for now don't accept named range
+    	AreaReference area = tk.getAreaReference ( wb, sheet, legendAddress, null, null );
+        if ( area == null ) {
+            problems.add ( "Unable to get worksheet area reference from address information (empty worksheet?)." );
+        }
+        else {
+            colOut = area.getFirstCell().getCol();
+            rowOut = area.getFirstCell().getRow();
+        }
+    }
+    else {
+    	 // For now hard-code to the right of the block
+		if ( (this.outputMaxRow < 0) || (this.outputMinColumn < 0) ) {
+			return;
+		}
+		rowOut = this.outputMinRow;
+		colOut = this.outputMaxColumn + 1;
+		// Write the legend - only write legend information that is actually used
+    }
+	Cell cell;
+    // Write legend header
+    cell = tk.setCellValue(sheet,rowOut,colOut,"Color Legend");
+	// Loop through the conditions
+	DataTable ct = styleManager.getConditionTable();
+	TableRecord rec = null;
+	for ( int i = 0; i < ct.getNumberOfRecords(); i++ ) {
+		++rowOut;
+		try {
+			// Write the condition string
+			// TODO SAM 2015-07-11 evaluate how to make presentation-friendly
+			rec = ct.getRecord(i);
+			cell = tk.setCellValue(sheet,rowOut,colOut,styleManager.getConditionString(i));
+			// Write a cell with the format - blank string to force column size
+			cell = tk.setCellValue(sheet,rowOut,(colOut + 1),"     ");
+        	if ( styleManager != null ) {
+        		// Get the cell style for the style ID.
+        		// Use time series position 0 since styles are initialized for the single time series
+        		int its = 0;
+        		cell.setCellStyle(styleManager.getCellStyleForStyleID(its,styleManager.getStyleIDForCondition(i)));
+        	}
+		}
+		catch ( Exception e ) {
+			continue;
+		}
+	}
+	// If the sheet was given, auto-size the column (don't do by default because raster plot by definition uses narrow columns)
+	if ( sheetGiven ) {
+		sheet.autoSizeColumn(colOut);
+		sheet.setColumnWidth(colOut+1,256*4);
+	}
 }
 
 /**
@@ -919,7 +1031,9 @@ private void writeTableToExcelFile ( DataTable table, int [] includeColumnNumber
     StringDictionary columnIncludeFilters, StringDictionary columnExcludeFilters,
     Hashtable<String,String> columnNamedRanges, boolean keepOpen,
     StringDictionary columnCellTypes, StringDictionary columnWidths,
-    StringDictionary columnDecimalPlaces, DataTable conditionTable, DataTable styleTable, List<String> problems )
+    StringDictionary columnDecimalPlaces,
+    DataTable conditionTable, DataTable styleTable, String legendWorksheet, String legendAddress,
+    List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTableToExcelFile";
     
@@ -1073,9 +1187,9 @@ throws FileNotFoundException, IOException
         CellStyle [] columnCellStyles = new CellStyle[cols];
         // Initialize styles corresponding to styleTable, newer approach to styling.
         // The styles in this table will be used by default with the above setting style information to the below.
-        TableConditionAndStyleManager styleTable2 = null;
+        TableConditionAndStyleManager styleManager = null;
         if ( styleTable != null ) {
-        	styleTable2 = new TableConditionAndStyleManager(table,includeColumnNumbers,conditionTable,styleTable,wb);
+        	styleManager = new TableConditionAndStyleManager(table,includeColumnNumbers,conditionTable,styleTable,wb);
         }
         int tableFieldType;
         int precision;
@@ -1158,23 +1272,23 @@ throws FileNotFoundException, IOException
                         precision = 6;
                     }
                 }
-                if ( styleTable2 == null ) {
+                if ( styleManager == null ) {
                 	// Old-style
                 	columnCellStyles[col].setDataFormat(columnCellFormats[col].getFormat(tk.createFormatForFloat(precision)));
                 }
                 else {
                 	// New-style...
-                	styleTable2.setColumnDataFormat(col,tk.createFormatForFloat(precision));
+                	styleManager.setColumnDataFormat(col,tk.createFormatForFloat(precision));
                 }
             }
             else if ( (tableFieldType == TableField.DATA_TYPE_INT) || (tableFieldType == TableField.DATA_TYPE_LONG) ) {
-            	if ( styleTable2 == null ) {
+            	if ( styleManager == null ) {
             		// Old-style...
             		columnCellStyles[col].setDataFormat(columnCellFormats[col].getFormat("0"));
             	}
             	else {
             		// New-style...
-                   	styleTable2.setColumnDataFormat(col,"0");
+                   	styleManager.setColumnDataFormat(col,"0");
                 }
             }
             // If named ranges are to be written, match the table columns and do it
@@ -1223,6 +1337,10 @@ throws FileNotFoundException, IOException
         String NaNValue = "";
         String cellString;
         int rowOut = rowOutDataStart - 1; // -1 because incremented at the top of the loop below
+        this.outputMinRow = rowOut;
+        this.outputMaxRow = rowOutDataEnd;
+        this.outputMinColumn = colOut;
+        this.outputMaxColumn = colOutDataEnd;
         Row wbRow;
         for ( int row = 0; (row < rows) && (rowOut <= rowOutDataEnd); row++) {
         	// Check whether the in-memory row should be written
@@ -1254,21 +1372,21 @@ throws FileNotFoundException, IOException
                     if ( fieldValue == null ) {
                         cellString = "";
                         wbCell.setCellValue(cellString);
-                        if ( styleTable2 != null ) {
+                        if ( styleManager != null ) {
                         	// New-style...
                         	if ( (tableFieldType == TableField.DATA_TYPE_DOUBLE) ||
                         		(tableFieldType == TableField.DATA_TYPE_FLOAT) ) {
-                        		wbCell.setCellStyle(styleTable2.getStyle(col,(Double)null));
+                        		wbCell.setCellStyle(styleManager.getStyle(col,(Double)null));
                         	}
                         	else if ( (tableFieldType == TableField.DATA_TYPE_INT) ||
                         		(tableFieldType == TableField.DATA_TYPE_LONG) ) {
-                        		wbCell.setCellStyle(styleTable2.getStyle(col,(Long)null));
+                        		wbCell.setCellStyle(styleManager.getStyle(col,(Long)null));
                         	}
                         	else if ( (tableFieldType == TableField.DATA_TYPE_DATETIME) ) {
-                        		wbCell.setCellStyle(styleTable2.getStyle(col,(DateTime)null));
+                        		wbCell.setCellStyle(styleManager.getStyle(col,(DateTime)null));
                         	}
                         	else if ( (tableFieldType == TableField.DATA_TYPE_STRING) ) {
-                        		wbCell.setCellStyle(styleTable2.getStyle(col,(String)null));
+                        		wbCell.setCellStyle(styleManager.getStyle(col,(String)null));
                         	}
                         }
                     }
@@ -1292,13 +1410,13 @@ throws FileNotFoundException, IOException
                             }
                             else {
                                 wbCell.setCellValue(fieldValueFloat);
-                                if ( styleTable2 == null ) {
+                                if ( styleManager == null ) {
                                 	// Old-style...
                                 	wbCell.setCellStyle(columnCellStyles[col]);
                                 }
                                 else {
                                 	// New-style...
-                                	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueFloat));
+                                	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueFloat));
                                 }
                             }
                         }
@@ -1308,9 +1426,9 @@ throws FileNotFoundException, IOException
                         if ( fieldValueDouble.isNaN() ) {
                             cellString = NaNValue;
                             wbCell.setCellValue(cellString);
-                            if ( styleTable2 != null ) {
+                            if ( styleManager != null ) {
                             	// New-style...
-                            	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueDouble));
+                            	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueDouble));
                             }
                         }
                         else {
@@ -1327,13 +1445,13 @@ throws FileNotFoundException, IOException
                             }
                             else {
                                 wbCell.setCellValue(fieldValueDouble);
-                                if ( styleTable2 == null ) {
+                                if ( styleManager == null ) {
                                 	// Old-style...
                                 	wbCell.setCellStyle(columnCellStyles[col]);
                                 }
                                 else {
                                 	// New-style...
-                                	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueDouble));
+                                	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueDouble));
                                 }
                                 //Message.printStatus(2,routine,"After double cell data set, cell style fill foreground color is " + wbCell.getCellStyle().getFillForegroundColor());
                                 //Message.printStatus(2,routine,"After double cell data set, cell style fill background color is " + wbCell.getCellStyle().getFillBackgroundColor());
@@ -1349,13 +1467,13 @@ throws FileNotFoundException, IOException
                         }
                         else {
                             wbCell.setCellValue(fieldValueInteger);
-                            if ( styleTable2 == null ) {
+                            if ( styleManager == null ) {
                             	// Old-style...
                             	wbCell.setCellStyle(columnCellStyles[col]);
                             }
                             else {
                             	// New-style...
-                            	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueInteger));
+                            	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueInteger));
                             }
                         }
                     }
@@ -1367,13 +1485,13 @@ throws FileNotFoundException, IOException
                         }
                         else {
                             wbCell.setCellValue(fieldValueLong);
-                            if ( styleTable2 == null ) {
+                            if ( styleManager == null ) {
                             	// Old-style...
                             	wbCell.setCellStyle(columnCellStyles[col]);
                             }
                             else {
                             	// New-style...
-                            	wbCell.setCellStyle(styleTable2.getStyle(col,fieldValueLong));
+                            	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueLong));
                             }
                         }
                     }
@@ -1435,6 +1553,10 @@ throws FileNotFoundException, IOException
                     }
                 }
             }
+        }
+        // Write the legend
+        if ( (legendAddress != null) && !legendAddress.isEmpty() ) {
+        	writeLegend ( tk, wb, sheet, styleManager, legendWorksheet, legendAddress, problems );
         }
     }
     catch ( Exception e ) {

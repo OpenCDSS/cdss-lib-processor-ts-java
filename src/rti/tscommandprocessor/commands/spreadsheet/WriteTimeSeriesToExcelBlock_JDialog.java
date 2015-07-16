@@ -92,13 +92,19 @@ private JTextArea __RowStatistics_JTextArea = null;
 private JTextArea __ColumnStatisticFormulas_JTextArea = null;
 private JTextArea __RowStatisticFormulas_JTextArea = null;
 
-private JTextArea __DataFlagCellColor_JTextArea = null;
-private JTextArea __DataFlagCellOutlineColor_JTextArea = null;
-private JTextArea __DataFlagCellIcon_JTextArea = null;
-private JTextArea __DataFlagCellComment_JTextArea = null;
+private JTextArea __ValueComment_JTextArea = null;
 
 private SimpleJComboBox __StyleTableID_JComboBox = null;
 private SimpleJComboBox __ConditionTableID_JComboBox = null;
+private JTextField __BlockMinColumnProperty_JTextField = null;
+private JTextField __BlockMinRowProperty_JTextField = null;
+private JTextField __BlockMaxColumnProperty_JTextField = null;
+private JTextField __BlockMaxRowProperty_JTextField = null;
+private JTextField __LegendWorksheet_JTextField = null;
+private JTextField __LegendAddress_JTextField = null;
+//TODO SAM 2015-07-11 Enable notes that allow processor and time series properties
+//private JTextField __NotesAddress_JTextField = null;
+//private JTextField __Notes_JTextField = null;
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
@@ -207,8 +213,15 @@ private void checkInput ()
 	String LayoutColumns = __LayoutColumns_JComboBox.getSelected();
 	String LayoutRows = __LayoutRows_JComboBox.getSelected();
 	String OutputYearType = __OutputYearType_JComboBox.getSelected();
+	String BlockMinColumnProperty = __BlockMinColumnProperty_JTextField.getText().trim();
+	String BlockMinRowProperty = __BlockMinRowProperty_JTextField.getText().trim();
+	String BlockMaxColumnProperty = __BlockMaxColumnProperty_JTextField.getText().trim();
+	String BlockMaxRowProperty = __BlockMaxRowProperty_JTextField.getText().trim();
+	
 	String StyleTableID = __StyleTableID_JComboBox.getSelected();
 	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
+	String LegendWorksheet = __LegendWorksheet_JTextField.getText().trim();
+	String LegendAddress = __LegendAddress_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -265,11 +278,29 @@ private void checkInput ()
     if ( OutputYearType.length() > 0 ) {
         props.set ( "OutputYearType", OutputYearType );
     }
+    if ( BlockMinColumnProperty.length() > 0 ) {
+        props.set ( "BlockMinColumnProperty", BlockMinColumnProperty );
+    }
+    if ( BlockMinRowProperty.length() > 0 ) {
+        props.set ( "BlockMinRowProperty", BlockMinRowProperty );
+    }
+    if ( BlockMaxColumnProperty.length() > 0 ) {
+        props.set ( "BlockMaxColumnProperty", BlockMaxColumnProperty );
+    }
+    if ( BlockMaxRowProperty.length() > 0 ) {
+        props.set ( "BlockMaxRowProperty", BlockMaxRowProperty );
+    }
     if ( StyleTableID.length() > 0 ) {
         props.set ( "StyleTableID", StyleTableID );
     }
     if ( ConditionTableID.length() > 0 ) {
         props.set ( "ConditionTableID", ConditionTableID );
+    }
+    if ( LegendWorksheet.length() > 0 ) {
+        props.set ( "LegendWorksheet", LegendWorksheet );
+    }
+    if ( LegendAddress.length() > 0 ) {
+        props.set ( "LegendAddress", LegendAddress );
     }
 	try {
 	    // This will warn the user...
@@ -305,8 +336,14 @@ private void commitEdits ()
 	String LayoutColumns = __LayoutColumns_JComboBox.getSelected();
 	String LayoutRows = __LayoutRows_JComboBox.getSelected();
 	String OutputYearType = __OutputYearType_JComboBox.getSelected();
+	String BlockMinColumnProperty = __BlockMinColumnProperty_JTextField.getText().trim();
+	String BlockMinRowProperty = __BlockMinRowProperty_JTextField.getText().trim();
+	String BlockMaxColumnProperty = __BlockMaxColumnProperty_JTextField.getText().trim();
+	String BlockMaxRowProperty = __BlockMaxRowProperty_JTextField.getText().trim();
 	String StyleTableID = __StyleTableID_JComboBox.getSelected();
 	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
+	String LegendWorksheet = __LegendWorksheet_JTextField.getText().trim();
+	String LegendAddress = __LegendAddress_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -325,8 +362,14 @@ private void commitEdits ()
 	__command.setCommandParameter ( "LayoutColumns", LayoutColumns );
 	__command.setCommandParameter ( "LayoutRows", LayoutRows );
 	__command.setCommandParameter ( "OutputYearType", OutputYearType );
+	__command.setCommandParameter ( "BlockMinColumnProperty", BlockMinColumnProperty );
+	__command.setCommandParameter ( "BlockMinRowProperty", BlockMinRowProperty );
+	__command.setCommandParameter ( "BlockMaxColumnProperty", BlockMaxColumnProperty );
+	__command.setCommandParameter ( "BlockMaxRowProperty", BlockMaxRowProperty );
 	__command.setCommandParameter ( "StyleTableID", StyleTableID );
 	__command.setCommandParameter ( "ConditionTableID", ConditionTableID );
+	__command.setCommandParameter ( "LegendWorksheet", LegendWorksheet );
+	__command.setCommandParameter ( "LegendAddress", LegendAddress );
 }
 
 /**
@@ -441,7 +484,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelBlock_Command com
         3, yTs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Output end:"), 
-        0, ++yTs, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputEnd_JTextField = new JTextField (20);
     __OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or ${Property} notation");
     __OutputEnd_JTextField.addKeyListener (this);
@@ -647,35 +690,82 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelBlock_Command com
     JGUIUtil.addComponent(layout_JPanel, new JLabel ( "Optional - output year type (default=" + YearType.CALENDAR + ")."),
         3, yLayout, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(layout_JPanel, new JLabel ("Column labels:"),
-        0, ++yLayout, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(layout_JPanel, new JLabel ( "Block minimum column property:"), 
+        0, ++yLayout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __BlockMinColumnProperty_JTextField = new JTextField (20);
+    __BlockMinColumnProperty_JTextField.setToolTipText("Integer property will be set when command runs - use to position legend, etc.");
+    __BlockMinColumnProperty_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(layout_JPanel, __BlockMinColumnProperty_JTextField,
+        1, yLayout, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(layout_JPanel, new JLabel (
+        "Optional - minimum output column (default=no property set)."),
+        3, yLayout, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(layout_JPanel, new JLabel ( "Block minimum row property:"), 
+        0, ++yLayout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __BlockMinRowProperty_JTextField = new JTextField (20);
+    __BlockMinRowProperty_JTextField.setToolTipText("Integer property will be set when command runs - use to position legend, etc.");
+    __BlockMinRowProperty_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(layout_JPanel, __BlockMinRowProperty_JTextField,
+        1, yLayout, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(layout_JPanel, new JLabel (
+        "Optional - minimum output row (default=no property set)."),
+        3, yLayout, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(layout_JPanel, new JLabel ( "Block maximum column property:"), 
+        0, ++yLayout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __BlockMaxColumnProperty_JTextField = new JTextField (20);
+    __BlockMaxColumnProperty_JTextField.setToolTipText("Integer property will be set when command runs - use to position legend, etc.");
+    __BlockMaxColumnProperty_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(layout_JPanel, __BlockMaxColumnProperty_JTextField,
+        1, yLayout, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(layout_JPanel, new JLabel (
+        "Optional - maximum output column (default=no property set)."),
+        3, yLayout, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(layout_JPanel, new JLabel ( "Block maximum row property:"), 
+        0, ++yLayout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __BlockMaxRowProperty_JTextField = new JTextField (20);
+    __BlockMaxRowProperty_JTextField.setToolTipText("Integer property will be set when command runs - use to position legend, etc.");
+    __BlockMaxRowProperty_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(layout_JPanel, __BlockMaxRowProperty_JTextField,
+        1, yLayout, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(layout_JPanel, new JLabel (
+        "Optional - maximum output row (default=no property set)."),
+        3, yLayout, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    //TODO SAM 2015-07-10 Evaluate enabling - for now default
+    //JGUIUtil.addComponent(layout_JPanel, new JLabel ("Column labels:"),
+    //    0, ++yLayout, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnLabels_JTextArea = new JTextArea (3,35);
     __ColumnLabels_JTextArea.setEnabled(false); // TODO SAM 2015-03-10 need to enable
     __ColumnLabels_JTextArea.setLineWrap ( true );
     __ColumnLabels_JTextArea.setWrapStyleWord ( true );
     __ColumnLabels_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
     __ColumnLabels_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(layout_JPanel, new JScrollPane(__ColumnLabels_JTextArea),
-        1, yLayout, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(layout_JPanel, new JLabel ("Optional - format for column labels."),
-        3, yLayout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(layout_JPanel, new SimpleJButton ("Edit","EditLayoutColumnLabels",this),
-        3, ++yLayout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    __ColumnLabels_JTextArea.setVisible(false);
+    //JGUIUtil.addComponent(layout_JPanel, new JScrollPane(__ColumnLabels_JTextArea),
+    //    1, yLayout, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    //JGUIUtil.addComponent(layout_JPanel, new JLabel ("Optional - format for column labels."),
+    //    3, yLayout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    //JGUIUtil.addComponent(layout_JPanel, new SimpleJButton ("Edit","EditLayoutColumnLabels",this),
+    //    3, ++yLayout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(layout_JPanel, new JLabel ("Row labels:"),
-        0, ++yLayout, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    //JGUIUtil.addComponent(layout_JPanel, new JLabel ("Row labels:"),
+    //    0, ++yLayout, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RowLabels_JTextArea = new JTextArea (3,35);
     __RowLabels_JTextArea.setEnabled(false); // TODO SAM 2015-03-10 need to enable
     __RowLabels_JTextArea.setLineWrap ( true );
     __RowLabels_JTextArea.setWrapStyleWord ( true );
     __RowLabels_JTextArea.setToolTipText("TableColumn:DatastoreColumn,TableColumn:DataStoreColumn");
     __RowLabels_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(layout_JPanel, new JScrollPane(__RowLabels_JTextArea),
-        1, yLayout, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(layout_JPanel, new JLabel ("Optional - format for row labels."),
-        3, yLayout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(layout_JPanel, new SimpleJButton ("Edit","EditLayoutRowLabels",this),
-        3, ++yLayout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    __RowLabels_JTextArea.setVisible(false);
+    //JGUIUtil.addComponent(layout_JPanel, new JScrollPane(__RowLabels_JTextArea),
+    //    1, yLayout, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    //JGUIUtil.addComponent(layout_JPanel, new JLabel ("Optional - format for row labels."),
+    //    3, yLayout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    //JGUIUtil.addComponent(layout_JPanel, new SimpleJButton ("Edit","EditLayoutRowLabels",this),
+    //    3, ++yLayout, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Panel for statistics
     int yStats = 0;
@@ -749,78 +839,36 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelBlock_Command com
         3, ++yStats, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Panel for Data Flags
-    int yDataFlag = 0;
-    JPanel dataFlag_JPanel = new JPanel();
-    dataFlag_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Data Flags", dataFlag_JPanel );
+    int yComment = 0;
+    JPanel comment_JPanel = new JPanel();
+    comment_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Cell Comments", comment_JPanel );
 
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel (
-		"<html><b>Cell formatting based on data flags currently is not enabled.</b></html>"),
-		0, ++yDataFlag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel (
-		"Data flags associated with time series values can be used to \"decorate\" the worksheet cells."),
-		0, ++yDataFlag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel (
-		"Options are to set the cell color, set the cell border, display an icon, and/or set a comment."),
-		0, ++yDataFlag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(dataFlag_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-		0, ++yDataFlag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"<html><b>Cell comment formatting based on time series values, data flags, and properties currently is not enabled.</b></html>"),
+		0, ++yComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"In the future features may be enabled similar to the WriteTimeSeriesToExcel() command."),
+		0, ++yComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel (
+		"Use the \"Cell Style Formatting\" tab to format cells based on a condition evaluation."),
+		0, ++yComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(comment_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yComment, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel ("Data flag cell color:"),
-        0, ++yDataFlag, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataFlagCellColor_JTextArea = new JTextArea (3,35);
-    __DataFlagCellColor_JTextArea.setLineWrap ( true );
-    __DataFlagCellColor_JTextArea.setWrapStyleWord ( true );
-    __DataFlagCellColor_JTextArea.setToolTipText("Flag1Pattern:Color1,Flag2Pattern:Color2...");
-    __DataFlagCellColor_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JScrollPane(__DataFlagCellColor_JTextArea),
-        1, yDataFlag, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel ("Optional - cell color for data flag."),
-        3, yDataFlag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(dataFlag_JPanel, new SimpleJButton ("Edit","EditDataFlagCellColor",this),
-        3, ++yDataFlag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel ("Data flag cell outline color:"),
-        0, ++yDataFlag, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataFlagCellOutlineColor_JTextArea = new JTextArea (3,35);
-    __DataFlagCellOutlineColor_JTextArea.setLineWrap ( true );
-    __DataFlagCellOutlineColor_JTextArea.setWrapStyleWord ( true );
-    __DataFlagCellOutlineColor_JTextArea.setToolTipText("Flag1Pattern:OutlineColor1,Flag2Pattern:OutlineColor2...");
-    __DataFlagCellOutlineColor_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JScrollPane(__DataFlagCellOutlineColor_JTextArea),
-        1, yDataFlag, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel ("Optional - cell outline color for data flag."),
-        3, yDataFlag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(dataFlag_JPanel, new SimpleJButton ("Edit","EditDataFlagCellOutlineColor",this),
-        3, ++yDataFlag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel ("Data flag cell icon:"),
-        0, ++yDataFlag, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataFlagCellIcon_JTextArea = new JTextArea (3,35);
-    __DataFlagCellIcon_JTextArea.setLineWrap ( true );
-    __DataFlagCellIcon_JTextArea.setWrapStyleWord ( true );
-    __DataFlagCellIcon_JTextArea.setToolTipText("Flag1Pattern:OutlineColor1,Flag2Pattern:OutlineColor2...");
-    __DataFlagCellIcon_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JScrollPane(__DataFlagCellIcon_JTextArea),
-        1, yDataFlag, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel ("Optional - cell icon for data flag."),
-        3, yDataFlag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(dataFlag_JPanel, new SimpleJButton ("Edit","EditDataFlagCellIcon",this),
-        3, ++yDataFlag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel ("Data flag cell comment:"),
-        0, ++yDataFlag, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataFlagCellComment_JTextArea = new JTextArea (3,35);
-    __DataFlagCellComment_JTextArea.setLineWrap ( true );
-    __DataFlagCellComment_JTextArea.setWrapStyleWord ( true );
-    __DataFlagCellComment_JTextArea.setToolTipText("Flag1Pattern:Comment1,Flag2Pattern:Comment2...");
-    __DataFlagCellComment_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JScrollPane(__DataFlagCellComment_JTextArea),
-        1, yDataFlag, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(dataFlag_JPanel, new JLabel ("Optional - cell comment for data flag."),
-        3, yDataFlag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(dataFlag_JPanel, new SimpleJButton ("Edit","EditDataFlagCellComment",this),
-        3, ++yDataFlag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(comment_JPanel, new JLabel ("Data flag cell comment:"),
+        0, ++yComment, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ValueComment_JTextArea = new JTextArea (3,35);
+    __ValueComment_JTextArea.setLineWrap ( true );
+    __ValueComment_JTextArea.setWrapStyleWord ( true );
+    __ValueComment_JTextArea.setToolTipText("Flag1Pattern:Comment1,Flag2Pattern:Comment2...");
+    __ValueComment_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(comment_JPanel, new JScrollPane(__ValueComment_JTextArea),
+        1, yComment, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(comment_JPanel, new JLabel ("Optional - cell comment for data flag."),
+        3, yComment, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(comment_JPanel, new SimpleJButton ("Edit","EditDataFlagCellComment",this),
+        3, ++yComment, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Panel for style formatting 
     int yStyle = -1;
@@ -839,6 +887,9 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelBlock_Command com
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(style_JPanel, new JLabel (
         "Refer to the command documentation for details."),
+        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "The position for the legend can be specified using A1 address, named range, or R[${Property}+N]C[${Property}+N], where N is an offset of the property value."),
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(style_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
    	    0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -869,6 +920,28 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelBlock_Command com
         1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - style definitions."), 
         3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Legend worksheet:"), 
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LegendWorksheet_JTextField = new JTextField (40);
+    __LegendWorksheet_JTextField.setToolTipText("Name of worksheet for legend or use ${Property}.");
+    __LegendWorksheet_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(style_JPanel, __LegendWorksheet_JTextField,
+        1, yStyle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Optional - worksheet for legend (default=same as for time series)."),
+        3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Legend address:"), 
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LegendAddress_JTextField = new JTextField (40);
+    __LegendAddress_JTextField.setToolTipText("Address of upper-left cell for legend.  Use R[${Property}+1]C[${Property}+1] to position relative to data block.");
+    __LegendAddress_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(style_JPanel, __LegendAddress_JTextField,
+        1, yStyle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Optional - upper-left address for legend (default=no legend)."),
+        3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -968,8 +1041,14 @@ private void refresh ()
 	String LayoutColumns = "";
 	String LayoutRows = "";
 	String OutputYearType = "";
+	String BlockMinColumnProperty = "";
+	String BlockMinRowProperty = "";
+	String BlockMaxColumnProperty = "";
+	String BlockMaxRowProperty = "";
 	String StyleTableID = "";
 	String ConditionTableID = "";
+	String LegendWorksheet = "";
+	String LegendAddress = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -991,8 +1070,14 @@ private void refresh ()
 		LayoutColumns = props.getValue ( "LayoutColumns" );
 		LayoutRows = props.getValue ( "LayoutRows" );
         OutputYearType = props.getValue ( "OutputYearType" );
+        BlockMinColumnProperty = props.getValue ( "BlockMinColumnProperty" );
+        BlockMinRowProperty = props.getValue ( "BlockMinRowProperty" );
+        BlockMaxColumnProperty = props.getValue ( "BlockMaxColumnProperty" );
+        BlockMaxRowProperty = props.getValue ( "BlockMaxRowProperty" );
 		StyleTableID = props.getValue ( "StyleTableID" );
 		ConditionTableID = props.getValue ( "ConditionTableID" );
+		LegendWorksheet = props.getValue ( "LegendWorksheet" );
+		LegendAddress = props.getValue ( "LegendAddress" );
 
         if ( TSList == null ) {
             // Select default...
@@ -1158,6 +1243,18 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+		if ( BlockMinColumnProperty != null ) {
+			__BlockMinColumnProperty_JTextField.setText ( BlockMinColumnProperty );
+		}
+		if ( BlockMinRowProperty != null ) {
+			__BlockMinRowProperty_JTextField.setText ( BlockMinRowProperty );
+		}
+		if ( BlockMaxColumnProperty != null ) {
+			__BlockMaxColumnProperty_JTextField.setText ( BlockMaxColumnProperty );
+		}
+		if ( BlockMaxRowProperty != null ) {
+			__BlockMaxRowProperty_JTextField.setText ( BlockMaxRowProperty );
+		}
         if ( ConditionTableID == null ) {
             // Select default...
         	__ConditionTableID_JComboBox.select ( 0 );
@@ -1188,6 +1285,12 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+		if ( LegendWorksheet != null ) {
+			__LegendWorksheet_JTextField.setText ( LegendWorksheet );
+		}
+		if ( LegendAddress != null ) {
+			__LegendAddress_JTextField.setText ( LegendAddress );
+		}
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
@@ -1208,8 +1311,14 @@ private void refresh ()
 	LayoutColumns = __LayoutColumns_JComboBox.getSelected();
 	LayoutRows = __LayoutRows_JComboBox.getSelected();
 	OutputYearType = __OutputYearType_JComboBox.getSelected();
+	BlockMinColumnProperty = __BlockMinColumnProperty_JTextField.getText().trim();
+	BlockMinRowProperty = __BlockMinRowProperty_JTextField.getText().trim();
+	BlockMaxColumnProperty = __BlockMaxColumnProperty_JTextField.getText().trim();
+	BlockMaxRowProperty = __BlockMaxRowProperty_JTextField.getText().trim();
 	StyleTableID = __StyleTableID_JComboBox.getSelected();
 	ConditionTableID = __ConditionTableID_JComboBox.getSelected();
+	LegendWorksheet = __LegendWorksheet_JTextField.getText().trim();
+	LegendAddress = __LegendAddress_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -1229,8 +1338,14 @@ private void refresh ()
 	props.add ( "LayoutColumns=" + LayoutColumns );
 	props.add ( "LayoutRows=" + LayoutRows );
 	props.add ( "OutputYearType=" + OutputYearType );
+	props.add ( "BlockMinColumnProperty=" + BlockMinColumnProperty );
+	props.add ( "BlockMinRowProperty=" + BlockMinRowProperty );
+	props.add ( "BlockMaxColumnProperty=" + BlockMaxColumnProperty );
+	props.add ( "BlockMaxRowProperty=" + BlockMaxRowProperty );
 	props.add ( "StyleTableID=" + StyleTableID );
 	props.add ( "ConditionTableID=" + ConditionTableID );
+	props.add ( "LegendWorksheet=" + LegendWorksheet );
+	props.add ( "LegendAddress=" + LegendAddress );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

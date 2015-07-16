@@ -102,6 +102,8 @@ private SimpleJComboBox __ColumnStyleTableID_JComboBox = null;
 private SimpleJComboBox __ColumnConditionTableID_JComboBox = null;
 private SimpleJComboBox __StyleTableID_JComboBox = null;
 private SimpleJComboBox __ConditionTableID_JComboBox = null;
+private JTextField __LegendWorksheet_JTextField = null;
+private JTextField __LegendAddress_JTextField = null;
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
@@ -295,6 +297,8 @@ private void checkInput ()
 	String ColumnConditionTableID = __ColumnConditionTableID_JComboBox.getSelected();
 	String StyleTableID = __StyleTableID_JComboBox.getSelected();
 	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
+	String LegendWorksheet = __LegendWorksheet_JTextField.getText().trim();
+	String LegendAddress = __LegendAddress_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -405,6 +409,12 @@ private void checkInput ()
     if ( ConditionTableID.length() > 0 ) {
         props.set ( "ConditionTableID", ConditionTableID );
     }
+    if ( LegendWorksheet.length() > 0 ) {
+        props.set ( "LegendWorksheet", LegendWorksheet );
+    }
+    if ( LegendAddress.length() > 0 ) {
+        props.set ( "LegendAddress", LegendAddress );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -457,6 +467,8 @@ private void commitEdits ()
 	String ColumnConditionTableID = __ColumnConditionTableID_JComboBox.getSelected();
 	String StyleTableID = __StyleTableID_JComboBox.getSelected();
 	String ConditionTableID = __ConditionTableID_JComboBox.getSelected();
+	String LegendWorksheet = __LegendWorksheet_JTextField.getText().trim();
+	String LegendAddress = __LegendAddress_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -493,6 +505,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ColumnConditionTableID", ColumnConditionTableID );
 	__command.setCommandParameter ( "StyleTableID", StyleTableID );
 	__command.setCommandParameter ( "ConditionTableID", ConditionTableID );
+	__command.setCommandParameter ( "LegendWorksheet", LegendWorksheet );
+	__command.setCommandParameter ( "LegendAddress", LegendAddress );
 }
 
 /**
@@ -1068,6 +1082,28 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(style_JPanel, new JLabel( "Required when using styles - style definitions."), 
         3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Legend worksheet:"), 
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LegendWorksheet_JTextField = new JTextField (40);
+    __LegendWorksheet_JTextField.setToolTipText("Name of worksheet for legend or use ${Property}.");
+    __LegendWorksheet_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(style_JPanel, __LegendWorksheet_JTextField,
+        1, yStyle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Optional - worksheet for legend (default=same as for time series)."),
+        3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Legend address:"), 
+        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LegendAddress_JTextField = new JTextField (40);
+    __LegendAddress_JTextField.setToolTipText("Address of upper-left cell for legend.  Use R[${Property}+1]C[${Property}+1] to position relative to data block.");
+    __LegendAddress_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(style_JPanel, __LegendAddress_JTextField,
+        1, yStyle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JLabel (
+        "Optional - upper-left address for legend (default=no legend)."),
+        3, yStyle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
@@ -1186,6 +1222,8 @@ private void refresh ()
 	String ColumnConditionTableID = "";
 	String StyleTableID = "";
 	String ConditionTableID = "";
+	String LegendWorksheet = "";
+	String LegendAddress = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -1225,6 +1263,8 @@ private void refresh ()
 		ColumnConditionTableID = props.getValue ( "ColumnConditionTableID" );
 		StyleTableID = props.getValue ( "StyleTableID" );
 		ConditionTableID = props.getValue ( "ConditionTableID" );
+		LegendWorksheet = props.getValue ( "LegendWorksheet" );
+		LegendAddress = props.getValue ( "LegendAddress" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -1487,6 +1527,12 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+		if ( LegendWorksheet != null ) {
+			__LegendWorksheet_JTextField.setText ( LegendWorksheet );
+		}
+		if ( LegendAddress != null ) {
+			__LegendAddress_JTextField.setText ( LegendAddress );
+		}
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
@@ -1525,6 +1571,8 @@ private void refresh ()
 	ColumnConditionTableID = __ColumnConditionTableID_JComboBox.getSelected();
 	StyleTableID = __StyleTableID_JComboBox.getSelected();
 	ConditionTableID = __ConditionTableID_JComboBox.getSelected();
+	LegendWorksheet = __LegendWorksheet_JTextField.getText().trim();
+	LegendAddress = __LegendAddress_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -1562,6 +1610,8 @@ private void refresh ()
 	props.add ( "ColumnConditionTableID=" + ColumnConditionTableID );
 	props.add ( "StyleTableID=" + StyleTableID );
 	props.add ( "ConditionTableID=" + ConditionTableID );
+	props.add ( "LegendWorksheet=" + LegendWorksheet );
+	props.add ( "LegendAddress=" + LegendAddress );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

@@ -55,6 +55,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.InvalidTimeIntervalException;
@@ -83,6 +84,14 @@ protected final String _True = "True";
 Values for MissingValue parameter.
 */
 protected final String _Blank = "Blank";
+
+/**
+Maximum row and column written.
+*/
+private int outputMinRow = 0;
+private int outputMinColumn = 0;
+private int outputMaxRow = 0;
+private int outputMaxColumn = 0;
 
 /**
 Constructor.
@@ -288,7 +297,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
 	
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(34);
+	List<String> validList = new ArrayList<String>(36);
 	validList.add ( "TSList" );
 	validList.add ( "TSID" );
 	validList.add ( "EnsembleID" );
@@ -325,6 +334,8 @@ throws InvalidCommandParameterException
     validList.add ( "ColumnStyleTableID" );
     validList.add ( "ConditionTableID" );
     validList.add ( "StyleTableID" );
+    validList.add ( "LegendWorksheet" );
+    validList.add ( "LegendAddress" );
 	
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 	
@@ -531,6 +542,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String StyleTableID = parameters.getValue ( "StyleTableID" );
     if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
     	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
+    }
+    // Don't expand because ${Property} is expected to be internal
+    String LegendAddress = parameters.getValue ( "LegendAddress" );
+    String LegendWorksheet = parameters.getValue ( "LegendWorksheet" );
+    if ( (LegendWorksheet != null) && !LegendWorksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && LegendWorksheet.indexOf("${") >= 0 ) {
+    	LegendWorksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, LegendWorksheet);
     }
     
 	// Get the time series to process...
@@ -742,7 +759,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		ValueColumns,
         		Author, ColumnComment, ColumnCommentWidth, ColumnCommentHeight,
         		ValueComment, skipValueCommentIfNoFlag, CommentWidth, CommentHeight,
-        		columnConditionTable, columnStyleTable, conditionTable, styleTable,
+        		columnConditionTable, columnStyleTable,
+        		conditionTable, styleTable, LegendWorksheet, LegendAddress,
         	    problems, processor, status, commandPhase );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
@@ -824,6 +842,8 @@ public String toString ( PropList props )
 	String ColumnStyleTableID = props.getValue( "ColumnStyleTableID" );
 	String ConditionTableID = props.getValue( "ConditionTableID" );
 	String StyleTableID = props.getValue( "StyleTableID" );
+	String LegendWorksheet = props.getValue( "LegendWorksheet" );
+	String LegendAddress = props.getValue( "LegendAddress" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 	    if ( b.length() > 0 ) {
@@ -1041,7 +1061,98 @@ public String toString ( PropList props )
         }
         b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
     }
+    if ( (LegendWorksheet != null) && (LegendWorksheet.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LegendWorksheet=\"" + LegendWorksheet + "\"" );
+    }
+    if ( (LegendAddress != null) && (LegendAddress.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LegendAddress=\"" + LegendAddress + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
+}
+
+/**
+TODO SAM 2015-07-10 - move this to generic location if reused between classes
+Write the legend to the Excel worksheet.
+@param sheet the worksheet being written
+@param styleManager the style manager containing conditions and styles
+@param legendAddress the address to use for the legend position (upper left is used)
+*/
+private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TimeSeriesConditionAndStyleManager styleManager,
+	String legendWorksheet, String legendAddress,
+	List<String> problems )
+{
+	// If the legend worksheet does not exist create it.
+    Sheet sheet = reqSheet;
+    boolean sheetGiven = false;
+    if ( (legendWorksheet != null) && !legendWorksheet.isEmpty() ) {
+    	sheet = wb.getSheet(legendWorksheet);
+    	sheetGiven = true;
+	    if ( sheet == null ) {
+	        // Create the worksheet
+	    	String sheetNameSafe = WorkbookUtil.createSafeSheetName(legendWorksheet);
+	    	sheet = wb.createSheet(sheetNameSafe);
+	    }
+    }
+	// Parse the legend address
+    int rowOut = 0;
+    int colOut = 0;
+    if ( sheetGiven ) {
+    	// Parse the address that is given - for now don't accept named range
+    	AreaReference area = tk.getAreaReference ( wb, sheet, legendAddress, null, null );
+        if ( area == null ) {
+            problems.add ( "Unable to get worksheet area reference from address information (empty worksheet?)." );
+        }
+        else {
+            colOut = area.getFirstCell().getCol();
+            rowOut = area.getFirstCell().getRow();
+        }
+    }
+    else {
+    	 // For now hard-code to the right of the block
+		if ( (this.outputMaxRow < 0) || (this.outputMinColumn < 0) ) {
+			return;
+		}
+		rowOut = this.outputMinRow;
+		colOut = this.outputMaxColumn + 1;
+		// Write the legend - only write legend information that is actually used
+    }
+	Cell cell;
+    // Write legend header
+    cell = tk.setCellValue(sheet,rowOut,colOut,"Color Legend");
+	// Loop through the conditions
+	DataTable ct = styleManager.getConditionTable();
+	TableRecord rec = null;
+	for ( int i = 0; i < ct.getNumberOfRecords(); i++ ) {
+		++rowOut;
+		try {
+			// Write the condition string
+			// TODO SAM 2015-07-11 evaluate how to make presentation-friendly
+			rec = ct.getRecord(i);
+			cell = tk.setCellValue(sheet,rowOut,colOut,styleManager.getConditionString(i));
+			// Write a cell with the format - blank string to force column size
+			cell = tk.setCellValue(sheet,rowOut,(colOut + 1),"     ");
+        	if ( styleManager != null ) {
+        		// Get the cell style for the style ID.
+        		// Use time series position 0 since styles are initialized for the single time series
+        		int its = 0;
+        		cell.setCellStyle(styleManager.getCellStyleForStyleID(its,styleManager.getStyleIDForCondition(i)));
+        	}
+		}
+		catch ( Exception e ) {
+			continue;
+		}
+	}
+	// If the sheet was given, auto-size the column (don't do by default because raster plot by definition uses narrow columns)
+	if ( sheetGiven ) {
+		sheet.autoSizeColumn(colOut);
+		sheet.setColumnWidth(colOut+1,256*4);
+	}
 }
 
 /**
@@ -1102,7 +1213,8 @@ private void writeTimeSeries ( List<TS> tslist,
 	String valueColumns,
 	String author, String columnComment, String columnCommentWidth, String columnCommentHeight,
 	String valueComment, boolean skipValueCommentIfNoFlag, String commentWidth, String commentHeight,
-	DataTable columnConditionTable, DataTable columnStyleTable, DataTable conditionTable, DataTable styleTable, 
+	DataTable columnConditionTable, DataTable columnStyleTable,
+	DataTable conditionTable, DataTable styleTable, String legendWorksheet, String legendAddress,
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTimeSeries", message;
@@ -1350,13 +1462,13 @@ throws FileNotFoundException, IOException
         CellStyle cellStyleHeader = wb.createCellStyle();
         // Initialize styles corresponding to styleTable, newer approach to styling.
         // The styles in this table will be used by default with the above setting style information to the below.
-        TimeSeriesConditionAndStyleManager columnStyleTable2 = null;
+        TimeSeriesConditionAndStyleManager columnStyleManager = null;
         if ( columnStyleTable != null ) {
-        	columnStyleTable2 = new TimeSeriesConditionAndStyleManager(tslist,columnConditionTable,columnStyleTable,wb);
+        	columnStyleManager = new TimeSeriesConditionAndStyleManager(tslist,columnConditionTable,columnStyleTable,wb);
         }
-        TimeSeriesConditionAndStyleManager styleTable2 = null;
+        TimeSeriesConditionAndStyleManager styleManager = null;
         if ( styleTable != null ) {
-        	styleTable2 = new TimeSeriesConditionAndStyleManager(tslist,conditionTable,styleTable,wb);
+        	styleManager = new TimeSeriesConditionAndStyleManager(tslist,conditionTable,styleTable,wb);
         }
         int [] cellTypes = new int[cols];
         int cellTypeHeader = Cell.CELL_TYPE_STRING;
@@ -1506,17 +1618,17 @@ throws FileNotFoundException, IOException
 	                    	// Set the cell value to the numerical missing value
 	                		cell = tk.setCellValue(sheet,row,col,ts.getMissing(),cellStyles[col]);
 	                	}
-                        if ( styleTable2 != null ) {
+                        if ( styleManager != null ) {
                         	// New-style...
-                        	cell.setCellStyle(styleTable2.getStyle(ts,its,value,flag));
+                        	cell.setCellStyle(styleManager.getStyle(ts,its,value,flag));
                         }
 	                }
 	                else {
 	                    // Not missing so set to the numerical value
 	                	cell = tk.setCellValue(sheet,row,col,value,cellStyles[col]);
-                        if ( styleTable2 != null ) {
+                        if ( styleManager != null ) {
                         	// New-style...
-                        	cell.setCellStyle(styleTable2.getStyle(ts,its,value,flag));
+                        	cell.setCellStyle(styleManager.getStyle(ts,its,value,flag));
                         }
 	                }
 	                if ( doValueComment ) {
@@ -1555,10 +1667,10 @@ throws FileNotFoundException, IOException
             		processor, ts, columnComment, cs, commandPhase );
         		tk.setCellComment(wb, sheet, cell, comment, author, columnCommentWidthInt, columnCommentHeightInt);
             }
-            if ( columnStyleTable2 != null ) {
+            if ( columnStyleManager != null ) {
             	// Can set the style independent of the column comment
             	// New-style - data value and flag are not used
-            	cell.setCellStyle(columnStyleTable2.getStyle(ts,its,0.0,null));
+            	cell.setCellStyle(columnStyleManager.getStyle(ts,its,0.0,null));
             }
         }
         // Now do post-data set operations
@@ -1585,6 +1697,10 @@ throws FileNotFoundException, IOException
                     }
                 }
             }
+        }
+        // Write the legend
+        if ( (legendAddress != null) && !legendAddress.isEmpty() && (styleManager != null) ) {
+        	writeLegend ( tk, wb, sheet, styleManager, legendWorksheet, legendAddress, problems );
         }
     }
     catch ( Exception e ) {

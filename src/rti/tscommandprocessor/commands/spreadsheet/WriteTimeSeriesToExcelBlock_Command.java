@@ -6,19 +6,13 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.ComparisonOperator;
-import org.apache.poi.ss.usermodel.ConditionalFormattingRule;
 //import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataFormat;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.PatternFormatting;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.SheetConditionalFormatting;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.AreaReference;
-import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -61,6 +55,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.DateTimeRange;
@@ -97,6 +92,14 @@ Values for LayoutBlock parameter.
 */
 protected final String _Period = "Period";
 protected final String _Year = "Year";
+
+/**
+Values to use with output properties.
+*/
+private int blockMinColumn = -1;
+private int blockMinRow = -1;
+private int blockMaxColumn = -1;
+private int blockMaxRow = -1;
 
 /**
 Constructor.
@@ -282,7 +285,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
 	
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(20);
+	List<String> validList = new ArrayList<String>(26);
 	validList.add ( "TSList" );
 	validList.add ( "TSID" );
 	validList.add ( "EnsembleID" );
@@ -301,9 +304,15 @@ throws InvalidCommandParameterException
 	validList.add ( "LayoutColumns" );
 	validList.add ( "LayoutRows" );
 	validList.add ( "OutputYearType" );
+	validList.add ( "BlockMinColumnProperty" );
+	validList.add ( "BlockMinRowProperty" );
+	validList.add ( "BlockMaxColumnProperty" );
+	validList.add ( "BlockMaxRowProperty" );
     validList.add ( "ConditionTableID" );
     validList.add ( "StyleTableID" );
-	// TODO SAM 2015-03-10 need to add others for data flags, statistics, etc.
+    validList.add ( "LegendWorksheet" );
+    validList.add ( "LegendAddress" );
+	// TODO SAM 2015-03-10 need to add others for comments, statistics, etc.
 	
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 	
@@ -360,6 +369,7 @@ public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand",message = "";
 	int warning_level = 2;
+	int logLevel = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
 
@@ -443,6 +453,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (OutputYearType != null) && !OutputYearType.isEmpty() ) {
 		outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
 	}
+	String BlockMinColumnProperty = parameters.getValue ( "BlockMinColumnProperty" );
+	String BlockMinRowProperty = parameters.getValue ( "BlockMinRowProperty" );
+	String BlockMaxColumnProperty = parameters.getValue ( "BlockMaxColumnProperty" );
+	String BlockMaxRowProperty = parameters.getValue ( "BlockMaxRowProperty" );
 	
 	// TODO SAM 2015-03-10 Need to rework the following
 	String DateTimeColumn = parameters.getValue ( "DateTimeColumn" );
@@ -487,6 +501,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String StyleTableID = parameters.getValue ( "StyleTableID" );
     if ( (StyleTableID != null) && !StyleTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StyleTableID.indexOf("${") >= 0 ) {
     	StyleTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleTableID);
+    }
+    // Don't expand because ${Property} is expected to be internal
+    String LegendAddress = parameters.getValue ( "LegendAddress" );
+    String LegendWorksheet = parameters.getValue ( "LegendWorksheet" );
+    if ( (LegendWorksheet != null) && !LegendWorksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && LegendWorksheet.indexOf("${") >= 0 ) {
+    	LegendWorksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, LegendWorksheet);
     }
     
 	// Get the time series to process...
@@ -646,13 +666,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         writeTimeSeries ( tslist,
         		precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime,
         		OutputFile_full, append, Worksheet, ExcelAddress, ExcelNamedRange, ExcelTableName, keepOpen,
-        		outputYearType,
         		DateTimeColumn, dateTimeFormatterType, DateTimeFormat,
         		DateColumn, dateFormatterType, DateFormat,
         		TimeColumn, timeFormatterType, TimeFormat,
         		ValueColumns,
-        		LayoutBlock, layoutColumns, LayoutRows,
-        		conditionTable, styleTable,
+        		LayoutBlock, layoutColumns, LayoutRows, outputYearType,
+        		conditionTable, styleTable, LegendWorksheet, LegendAddress,
         	    problems, processor, status, commandPhase );
         for ( String problem: problems ) {
             Message.printWarning ( 3, routine, problem );
@@ -663,6 +682,75 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         // Set the table identifier...
         setOutputFile(new File(OutputFile_full));
+        // Set the properties indicating the dimension of output
+        if ( (BlockMinColumnProperty != null) && !BlockMinColumnProperty.equals("") ) {
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", BlockMinColumnProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(this.blockMinColumn) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + BlockMinColumnProperty + "\") from processor.";
+                Message.printWarning(logLevel,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
+        if ( (BlockMinRowProperty != null) && !BlockMinRowProperty.equals("") ) {
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", BlockMinRowProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(this.blockMinRow) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + BlockMinRowProperty + "\") from processor.";
+                Message.printWarning(logLevel,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
+        if ( (BlockMaxColumnProperty != null) && !BlockMaxColumnProperty.equals("") ) {
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", BlockMaxColumnProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(this.blockMaxColumn) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + BlockMaxColumnProperty + "\") from processor.";
+                Message.printWarning(logLevel,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
+        if ( (BlockMaxRowProperty != null) && !BlockMaxRowProperty.equals("") ) {
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", BlockMaxRowProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(this.blockMaxRow) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + BlockMaxRowProperty + "\") from processor.";
+                Message.printWarning(logLevel,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -716,8 +804,14 @@ public String toString ( PropList props )
 	String LayoutColumns = props.getValue ( "LayoutColumns" );
 	String LayoutRows = props.getValue ( "LayoutRows" );
 	String OutputYearType = props.getValue ( "OutputYearType" );
+	String BlockMinColumnProperty = props.getValue ( "BlockMinColumnProperty" );
+	String BlockMinRowProperty = props.getValue ( "BlockMinRowProperty" );
+	String BlockMaxColumnProperty = props.getValue ( "BlockMaxColumnProperty" );
+	String BlockMaxRowProperty = props.getValue ( "BlockMaxRowProperty" );
 	String ConditionTableID = props.getValue( "ConditionTableID" );
 	String StyleTableID = props.getValue( "StyleTableID" );
+	String LegendWorksheet = props.getValue( "LegendWorksheet" );
+	String LegendAddress = props.getValue( "LegendAddress" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 	    if ( b.length() > 0 ) {
@@ -827,6 +921,30 @@ public String toString ( PropList props )
         }
         b.append ( "OutputYearType=" + OutputYearType );
     }
+    if ( (BlockMinColumnProperty != null) && !BlockMinColumnProperty.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "BlockMinColumnProperty=\"" + BlockMinColumnProperty + "\"" );
+    }
+    if ( (BlockMinRowProperty != null) && !BlockMinRowProperty.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "BlockMinRowProperty=\"" + BlockMinRowProperty + "\"" );
+    }
+    if ( (BlockMaxColumnProperty != null) && !BlockMaxColumnProperty.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "BlockMaxColumnProperty=\"" + BlockMaxColumnProperty + "\"" );
+    }
+    if ( (BlockMaxRowProperty != null) && !BlockMaxRowProperty.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "BlockMaxRowProperty=\"" + BlockMaxRowProperty + "\"" );
+    }
     if ( (ConditionTableID != null) && (ConditionTableID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -838,6 +956,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "StyleTableID=\"" + StyleTableID + "\"" );
+    }
+    if ( (LegendWorksheet != null) && (LegendWorksheet.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LegendWorksheet=\"" + LegendWorksheet + "\"" );
+    }
+    if ( (LegendAddress != null) && (LegendAddress.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LegendAddress=\"" + LegendAddress + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }
@@ -869,6 +999,85 @@ throws FileNotFoundException, IOException
 */
 
 /**
+TODO SAM 2015-07-10 - move this to generic location if reused between classes
+Write the legend to the Excel worksheet.
+@param sheet the worksheet being written
+@param styleManager the style manager containing conditions and styles
+@param legendAddress the address to use for the legend position (upper left is used)
+*/
+private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TimeSeriesConditionAndStyleManager styleManager,
+	String legendWorksheet, String legendAddress,
+	List<String> problems )
+{
+	// If the legend worksheet does not exist create it.
+    Sheet sheet = reqSheet;
+    boolean sheetGiven = false;
+    if ( (legendWorksheet != null) && !legendWorksheet.isEmpty() ) {
+    	sheet = wb.getSheet(legendWorksheet);
+    	sheetGiven = true;
+	    if ( sheet == null ) {
+	        // Create the worksheet
+	    	String sheetNameSafe = WorkbookUtil.createSafeSheetName(legendWorksheet);
+	    	sheet = wb.createSheet(sheetNameSafe);
+	    }
+    }
+	// Parse the legend address
+    int rowOut = 0;
+    int colOut = 0;
+    if ( sheetGiven ) {
+    	// Parse the address that is given - for now don't accept named range
+    	AreaReference area = tk.getAreaReference ( wb, sheet, legendAddress, null, null );
+        if ( area == null ) {
+            problems.add ( "Unable to get worksheet area reference from address information (empty worksheet?)." );
+        }
+        else {
+            colOut = area.getFirstCell().getCol();
+            rowOut = area.getFirstCell().getRow();
+        }
+    }
+    else {
+    	 // For now hard-code to the right of the block
+		if ( (this.blockMaxRow < 0) || (this.blockMinColumn < 0) ) {
+			return;
+		}
+		rowOut = this.blockMinRow;
+		colOut = this.blockMaxColumn + 1;
+		// Write the legend - only write legend information that is actually used
+    }
+	Cell cell;
+    // Write legend header
+    cell = tk.setCellValue(sheet,rowOut,colOut,"Color Legend");
+	// Loop through the conditions
+	DataTable ct = styleManager.getConditionTable();
+	TableRecord rec = null;
+	for ( int i = 0; i < ct.getNumberOfRecords(); i++ ) {
+		++rowOut;
+		try {
+			// Write the condition string
+			// TODO SAM 2015-07-11 evaluate how to make presentation-friendly
+			rec = ct.getRecord(i);
+			cell = tk.setCellValue(sheet,rowOut,colOut,styleManager.getConditionString(i));
+			// Write a cell with the format - blank string to force column size
+			cell = tk.setCellValue(sheet,rowOut,(colOut + 1),"     ");
+        	if ( styleManager != null ) {
+        		// Get the cell style for the style ID.
+        		// Use time series position 0 since styles are initialized for the single time series
+        		int its = 0;
+        		cell.setCellStyle(styleManager.getCellStyleForStyleID(its,styleManager.getStyleIDForCondition(i)));
+        	}
+		}
+		catch ( Exception e ) {
+			continue;
+		}
+	}
+	// If the sheet was given, auto-size the column (don't do by default because raster plot by definition uses narrow columns)
+	if ( sheetGiven ) {
+		sheet.autoSizeColumn(colOut);
+		sheet.setColumnWidth(colOut+1,256*4);
+	}
+}
+
+/**
 Write a time series to the Excel file.
 @param tslist list of time series to write
 @param precision precision for output value (default is from data units, or 4)
@@ -889,13 +1098,12 @@ Write a time series to the Excel file.
 private void writeTimeSeries ( List<TS> tslist,
 	Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
 	String workbookFile, boolean append, String sheetName, String excelAddress, String excelNamedRange, String excelTableName, boolean keepOpen,
-	YearType outputYearType,
 	String dateTimeColumn, DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat,
 	String dateColumn, DateTimeFormatterType dateFormatterType, String dateFormat,
 	String timeColumn, DateTimeFormatterType timeFormatterType, String timeFormat,
 	String valueColumns,
-	String layoutBlock, TimeInterval layoutColumns, String layoutRows,
-	DataTable conditionTable, DataTable styleTable,
+	String layoutBlock, TimeInterval layoutColumns, String layoutRows, YearType outputYearType,
+	DataTable conditionTable, DataTable styleTable, String legendWorksheet, String legendAddress,
     List<String> problems, CommandProcessor processor, CommandStatus cs, CommandPhaseType commandPhase )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTimeSeries", message;
@@ -1056,6 +1264,10 @@ throws FileNotFoundException, IOException
         	missingValueBlank = true;
         }
         int its = -1;
+        int blockMinColumn = Integer.MAX_VALUE;
+        int blockMinRow = Integer.MAX_VALUE;
+        int blockMaxColumn = Integer.MIN_VALUE;
+        int blockMaxRow = Integer.MIN_VALUE;
         for ( TS ts : tslist ) {
             ++its;
             if ( its == 1 ) {
@@ -1169,8 +1381,17 @@ throws FileNotFoundException, IOException
         }
         int rowOutColumnNames = rowOutStart;
         int colOut = colOutStart - 1;
+        int rcCol = 0; // Excel R1C1 notation column
+        int rcRow = 0; // Excel R1C1 notation row
         for ( String columnName: columnNames ) {
         	++colOut;
+        	rcCol = colOut + 1;
+        	if ( rcCol < blockMinColumn ) {
+        		blockMinColumn = rcCol;
+        	}
+        	if ( rcRow > blockMaxColumn ) {
+        		blockMaxColumn = rcCol;
+        	}
             // 2. Write the column names
             // First try to get an existing cell for the heading
             // First try to get an existing row
@@ -1186,9 +1407,10 @@ throws FileNotFoundException, IOException
         }
         // Output the data rows
         for ( its = 0; its < tslist.size(); its++ ) {
-        	writeTimeSeriesPeriod ( sheet, tslist.get(its), outputStart, outputEnd, outputYearType, tk,
+        	writeTimeSeriesPeriod ( wb, sheet, tslist.get(its), outputStart, outputEnd, outputYearType, tk,
         		layoutBlock, layoutColumns, layoutRows,
-        		styleManager );
+        		styleManager, legendWorksheet, legendAddress,
+        		problems );
         }
         if ( 1 == 2 ) {
         // Loop through date/time corresponding to each row in the output file
@@ -1347,35 +1569,51 @@ Write a time series to Excel using a block for the entire period.
 @param outputYearType output year type
 @param tk Excel toolkit object
 */
-private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, DateTime outputEnd, YearType outputYearType,
+private void writeTimeSeriesPeriod ( Workbook wb, Sheet sheet, TS ts, DateTime outputStart, DateTime outputEnd, YearType outputYearType,
 	ExcelToolkit tk,
 	String layoutBlock, TimeInterval layoutColumns, String layoutRows,
-	TimeSeriesConditionAndStyleManager styleManager )
+	TimeSeriesConditionAndStyleManager styleManager, String legendWorksheet, String legendAddress,
+	List<String> problems )
 {	String routine = getClass().getSimpleName() + ".writeTimeSeriesPeriod";
 	DateTimeRange outputRange = TimeUtil.determineOutputYearTypeRange(outputStart, outputEnd, outputYearType);
 	int yearStart = outputRange.getStart().getYear() - outputYearType.getStartYearOffset();
 	int yearEnd = outputEnd.getYear();
-	int yearDelta = -1;
 	DateTime dateInYear = new DateTime();
 	dateInYear.setMonth(1);
 	dateInYear.setDay(1);
 	TSData tsdata = new TSData();
 	double value;
 	boolean missingValueBlank = true;
-	int row = 0, col = 0;
-	int colOutMax = 0;
-	int colOutMin = 1;
-	int rowOutMax = 0;
-	int rowOutMin = 1;
+	int rowOut = 0; // Output row in Excel, 0+
+	int colOut = 0; // Output column in Excel, 0+
+	int colOutMax = 0; // Used to set column widths for data values
+    int blockMinColumn = Integer.MAX_VALUE; // These are used to help with legend positioning
+    int blockMinRow = Integer.MAX_VALUE;
+    int blockMaxColumn = Integer.MIN_VALUE;
+    int blockMaxRow = Integer.MIN_VALUE;
+    int rcCol = 0; // Excel R1C1 notation column
+    int rcRow = 0; // Excel R1C1 notation row
 	// The loop is in years that match the output year type
 	Message.printStatus(2,routine,"Writing time series block");
 	for ( int year = yearEnd; year >= yearStart; year-- ) {
 		Message.printStatus(2,routine,"Processing year " + year );
-		++row;
-		if ( row > rowOutMax ) {
-			rowOutMax = row;
-		}
-		col = 0;
+		++rowOut;
+    	rcRow = rowOut + 1;
+    	if ( rcRow < blockMinRow ) {
+    		blockMinRow = rcRow;
+    	}
+    	if ( rcRow > blockMaxRow ) {
+    		blockMaxRow = rcRow;
+    	}
+    	// First write the date in column 0
+		colOut = 0;
+    	rcCol = colOut + 1;
+    	if ( rcCol < blockMinColumn ) {
+    		blockMinColumn = rcCol;
+    	}
+    	if ( rcCol > blockMaxColumn ) {
+    		blockMaxColumn = rcCol;
+    	}
 		dateInYear.setYear(year); // TODO SAM 2015-03-10 make sure input is properly lined up with output year type
 		dateInYear.setMonth(outputYearType.getStartMonth());
 		dateInYear.setDay(1);
@@ -1383,15 +1621,23 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 		dateInYearLast.setYear(dateInYearLast.getYear() - outputYearType.getStartYearOffset());
 		dateInYearLast.setMonth(outputYearType.getEndMonth());
 		dateInYearLast.setDay(TimeUtil.numDaysInMonth(outputYearType.getEndMonth(), year));
-		tk.setCellValue(sheet,row,col,"" + dateInYearLast.getYear());
+		tk.setCellValue(sheet,rowOut,colOut,"" + dateInYearLast.getYear());
 		String flag;
 		Cell cell;
 		int intervalBase = layoutColumns.getBase();
+		// Write the data values in the row, incrementing the date/time appropriately
 		for ( ; dateInYear.lessThanOrEqualTo(dateInYearLast); dateInYear.addInterval(intervalBase,1) ) {
-			++col;
-			if ( col > colOutMax ) {
-				colOutMax = col;
+			++colOut;
+			if ( colOut > colOutMax ) {
+				colOutMax = colOut;
 			}
+        	rcCol = colOut + 1;
+        	if ( rcCol < blockMinColumn ) {
+        		blockMinColumn = rcCol;
+        	}
+        	if ( rcCol > blockMaxColumn ) {
+        		blockMaxColumn = rcCol;
+        	}
 			tsdata = ts.getDataPoint(dateInYear, tsdata);
 			// First expand the line to replace time series properties
 			value = tsdata.getDataValue();
@@ -1400,7 +1646,7 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 				if ( ts.isDataMissing(value) ) {
 					if ( missingValueBlank ) {
 						// Set the cell value to blank
-						cell = tk.setCellBlank(sheet,row,col);
+						cell = tk.setCellBlank(sheet,rowOut,colOut);
 					}
 					/*
 					else if ( missingValueStrings[its] != null ) {
@@ -1410,7 +1656,7 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 					*/
 					else {
 						// Set the cell value to the numerical missing value
-						cell = tk.setCellValue(sheet,row,col,ts.getMissing(),null);//cellStyles[col]);
+						cell = tk.setCellValue(sheet,rowOut,colOut,ts.getMissing(),null);//cellStyles[col]);
 					}
                     if ( styleManager != null ) {
                     	// New-style...
@@ -1422,7 +1668,7 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 				}
 				else {
 					// Not missing so set to the numerical value
-					cell = tk.setCellValue(sheet,row,col,value,null);//cellStyles[col]);
+					cell = tk.setCellValue(sheet,rowOut,colOut,value,null);//cellStyles[col]);
 					int its =  0;
 					if ( styleManager != null ) {
 						cell.setCellStyle(styleManager.getStyle(ts,its,value,flag));
@@ -1431,8 +1677,8 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 				if ( (dateInYear.getMonth() == 2) && !dateInYear.isLeapYear() && (dateInYear.getDay() == 28)) {
 					// Not a leap year but to make grid line up need to insert an extra cell for Feb 29
 					// TODO SAM 2015-03-10 Need to handle style
-					++col;
-					cell = tk.setCellBlank(sheet, row, col);
+					++colOut;
+					cell = tk.setCellBlank(sheet, rowOut, colOut);
 					int its = 0;
 					if ( styleManager != null ) {
 						//cell.setCellStyle(styleManager.getStyle(ts,its,value,flag));
@@ -1440,14 +1686,14 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 				}
 				// Set the row height here
 				// TODO SAM 2015-03-10 need to allow width and height to be set with a parameter
-				if ( col == 1 ) { 
-					Row sheetRow = sheet.getRow(row);
+				if ( colOut == 1 ) { 
+					Row sheetRow = sheet.getRow(rowOut);
 					sheetRow.setHeight((short)100);
 				}
 			}
 			catch ( Exception e ) {
 				// Log but let the output continue
-				Message.printWarning(3, routine, "Unexpected error writing data at Excel row [" + row + "][" + col + "] (" + e + ")." );
+				Message.printWarning(3, routine, "Unexpected error writing data at Excel row [" + rowOut + "][" + colOut + "] (" + e + ")." );
 				Message.printWarning(3, routine, e );
 			}
 		}
@@ -1459,19 +1705,19 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
 	if ( layoutColumns.getBase() == TimeInterval.MONTH ) {
 		width = "960";
 	}
-    for ( col = 1; col <= colOutMax; col++ ) {
+    for ( colOut = 1; colOut <= colOutMax; colOut++ ) {
         if ( width != null ) {
             // Set the column width
             if ( width.equalsIgnoreCase("Auto") ) {
-                sheet.autoSizeColumn(col);
-                Message.printStatus(2,routine,"Setting column [" + col + "] width to auto.");
+                sheet.autoSizeColumn(colOut);
+                Message.printStatus(2,routine,"Setting column [" + colOut + "] width to auto.");
             }
             else {
                 // Set the column width to 1/256 of character width, max of 256*256 since 256 is max characters shown
                 try {
                     int w = Integer.parseInt(width.trim());
-                    sheet.setColumnWidth(col, w);
-                    Message.printStatus(2,routine,"Setting column [" + col + "] width to " + w + ".");
+                    sheet.setColumnWidth(colOut, w);
+                    Message.printStatus(2,routine,"Setting column [" + colOut + "] width to " + w + ".");
                 }
                 catch ( NumberFormatException e ) {
                     //problems.add ( "Column \"" + tableColumnName + "\" width \"" + width + "\" is not an integer." );
@@ -1479,60 +1725,15 @@ private void writeTimeSeriesPeriod ( Sheet sheet, TS ts, DateTime outputStart, D
             }
         }
     }
-    // Set conditional formatting
-    //SAM SheetConditionalFormatting cf = sheet.getSheetConditionalFormatting();
-    // Hard coded for now:
-    // < 5
-    // >= 5 <= 10
-    // >= 10 <= 50
-    // >= 50 <= 100
-    // >= 100 <= 500
-    // >= 500 <= 1000
-    // >= 1000 <= 5000
-    // > 5000
-    /*
-    ConditionalFormattingRule [] cfRules = new ConditionalFormattingRule[8];
-    cfRules[0] = cf.createConditionalFormattingRule(ComparisonOperator.LT, "5");
-    PatternFormatting pf0 = cfRules[0].createPatternFormatting();
-    pf0.setFillBackgroundColor(IndexedColors.RED.index);
-    cfRules[1] = cf.createConditionalFormattingRule(ComparisonOperator.BETWEEN, "5", "10.0");
-    PatternFormatting pf1 = cfRules[1].createPatternFormatting();
-    pf1.setFillBackgroundColor(IndexedColors.ORANGE.index);
-    cfRules[2] = cf.createConditionalFormattingRule(ComparisonOperator.BETWEEN, "10.0", "50.0");
-    PatternFormatting pf2 = cfRules[1].createPatternFormatting();
-    pf2.setFillBackgroundColor(IndexedColors.YELLOW.index);
-    cfRules[3] = cf.createConditionalFormattingRule(ComparisonOperator.BETWEEN, "50.0", "100.0");
-    PatternFormatting pf3 = cfRules[1].createPatternFormatting();
-    pf3.setFillBackgroundColor(IndexedColors.BRIGHT_GREEN.index);
-    cfRules[4] = cf.createConditionalFormattingRule(ComparisonOperator.BETWEEN, "100.0", "500.0");
-    PatternFormatting pf4 = cfRules[1].createPatternFormatting();
-    pf4.setFillBackgroundColor(IndexedColors.GREEN.index);
-    cfRules[5] = cf.createConditionalFormattingRule(ComparisonOperator.BETWEEN, "500.0", "1000.0");
-    PatternFormatting pf5 = cfRules[1].createPatternFormatting();
-    pf5.setFillBackgroundColor(IndexedColors.AQUA.index);
-    cfRules[6] = cf.createConditionalFormattingRule(ComparisonOperator.BETWEEN, "1000.0", "5000.0");
-    PatternFormatting pf6 = cfRules[1].createPatternFormatting();
-    pf6.setFillBackgroundColor(IndexedColors.CORNFLOWER_BLUE.index);
-    cfRules[7] = cf.createConditionalFormattingRule(ComparisonOperator.GT, "5000.0");
-    PatternFormatting pf7 = cfRules[1].createPatternFormatting();
-    pf7.setFillBackgroundColor(IndexedColors.BLUE.index);
-    */
-    /*
-    ConditionalFormattingRule [] cfRules = new ConditionalFormattingRule[3];
-    cfRules[0] = cf.createConditionalFormattingRule(ComparisonOperator.LT, "5");
-    PatternFormatting pf0 = cfRules[0].createPatternFormatting();
-    pf0.setFillBackgroundColor(IndexedColors.RED.index);
-    cfRules[1] = cf.createConditionalFormattingRule(ComparisonOperator.BETWEEN, "5", "500.0");
-    PatternFormatting pf1 = cfRules[1].createPatternFormatting();
-    pf1.setFillBackgroundColor(IndexedColors.YELLOW.index);
-    cfRules[2] = cf.createConditionalFormattingRule(ComparisonOperator.GT, "500.0");
-    PatternFormatting pf2 = cfRules[2].createPatternFormatting();
-    pf2.setFillBackgroundColor(IndexedColors.BRIGHT_GREEN.index);
-    CellRangeAddress [] regions = {
-    	new CellRangeAddress(1,rowOutMax,1,colOutMax)
-    };
-    cf.addConditionalFormatting(regions, cfRules);
-    */
+    // Set values used to position legend
+    this.blockMinColumn = blockMinColumn;
+    this.blockMinRow = blockMinRow;
+    this.blockMaxColumn = blockMaxColumn;
+    this.blockMaxRow = blockMaxRow;
+    // Write the legend
+    if ( (legendAddress != null) && !legendAddress.isEmpty() ) {
+    	writeLegend ( tk, wb, sheet, styleManager, legendWorksheet, legendAddress, problems );
+    }
 }
 
 }

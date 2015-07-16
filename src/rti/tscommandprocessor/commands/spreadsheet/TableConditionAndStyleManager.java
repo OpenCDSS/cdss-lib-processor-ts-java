@@ -136,7 +136,7 @@ Return the CellStyle to use for the specified StyleID.
 @param col output column (0+)
 @param styleID style ID to look up
 */
-private CellStyle getCellStyleForStyleID ( int col, String styleID )
+public CellStyle getCellStyleForStyleID ( int col, String styleID )
 throws Exception
 {
 	List<String> columnNames = new ArrayList<String>(1);
@@ -149,6 +149,30 @@ throws Exception
 	else {
 		return this.cellStyleHash.get("" + col + "-" + styleID.toUpperCase() );
 	}
+}
+
+/**
+TODO SAM 2015-07-11 In future may have condition object.
+Return the condition string for a row in the condition table.
+*/
+public String getConditionString (int irec)
+{
+	String c = "";
+	try {
+		c = (String)this.conditionTable.getFieldValue(irec, this.conditionTableConditionNum);
+	}
+	catch ( Exception e ) {
+		// Swallow for now
+	}
+	return c;
+}
+
+/**
+Return the condition table used with the manager.
+*/
+public DataTable getConditionTable ()
+{
+	return this.conditionTable;
 }
 
 /**
@@ -394,6 +418,22 @@ public CellStyle getStyle ( int col, String value )
 	catch ( Exception e ) {
 		throw new RuntimeException ( e );
 	}
+}
+
+/**
+TODO SAM 2015-07-11 In future may have condition object.
+Return the style ID for a row in the condition table.
+*/
+public String getStyleIDForCondition (int irec)
+{
+	String s = "";
+	try {
+		s = (String)this.conditionTable.getFieldValue(irec, this.conditionTableStyleIDNum);
+	}
+	catch ( Exception e ) {
+		// Swallow for now
+	}
+	return s;
 }
 
 /**

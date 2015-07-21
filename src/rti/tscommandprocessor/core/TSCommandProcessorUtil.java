@@ -1402,9 +1402,9 @@ The getTableID() method on the DataTable is then returned.
 */
 protected static List<String> getTableIdentifiersFromCommands ( List<Command> commands, boolean sort )
 {   if ( commands == null ) {
-        return new Vector();
+        return new ArrayList<String>();
     }
-    List<String> tableIDList = new Vector<String> ( 10, 10 );
+    List<String> tableIDList = new ArrayList<String> ( 10 );
     int size = commands.size();
     boolean in_comment = false;
     Command command = null;
@@ -1435,8 +1435,18 @@ protected static List<String> getTableIdentifiersFromCommands ( List<Command> co
                 for ( int its = 0; its < tablesize; its++ ) {
                     table = list.get(its);
                     id = table.getTableID();
-                    if ( (id != null) && !id.equals("") ) {
-                        tableIDList.add( id );
+                    if ( (id != null) && !id.isEmpty() ) {
+                    	// Don't add if already in the list
+                    	boolean found = false;
+                    	for ( String tableID : tableIDList ) {
+                    		if ( id.equalsIgnoreCase(tableID) ) {
+                    			found = true;
+                    			break;
+                    		}
+                    	}
+                    	if ( !found ) {
+                    		tableIDList.add( id );
+                    	}
                     }
                 }
             }
@@ -1468,7 +1478,7 @@ Return the table identifiers for commands before a specific command
 in the TSCommandProcessor.  This is used, for example, to provide a list of identifiers to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
-@return a list of String containing the table identifiers, or an empty Vector.
+@return a list of String containing the table identifiers, or an empty list.
 */
 public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
 {   String routine = "TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand";
@@ -1479,7 +1489,7 @@ public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSComma
     }
     if ( pos < 0 ) {
         // Just return a blank list...
-        return new Vector();
+        return new ArrayList<String>();
     }
     // Find the commands above the position...
     List<Command> commands = getCommandsBeforeIndex ( processor, pos );

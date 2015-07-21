@@ -917,6 +917,7 @@ Read the table from an Excel worksheet and transfer to a row in the given table.
 The column and matching cells are specified by the columnMap parameter.
 @param workbookFile the name of the workbook file (*.xls or *.xlsx)
 @param sheetName the name of the sheet in the workbook
+@param keepOpen if true, keep the workbook open in read mode, if false, close without writing when done reading
 @param nameCellMap a map indicating names for cells and matching cell addresses (named range or A1 notation) to read.
 @param booleanProperties names of properties that should be created as Boolean
 @param dateTimeProperties names of properties that should be created as DateTime
@@ -935,7 +936,10 @@ throws FileNotFoundException, IOException
     InputStream inp = null;
     try {
         // See if an open workbook by the same name exists
-        wb = ExcelUtil.getOpenWorkbook(workbookFile);
+        WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
+        if ( wbMeta != null ) {
+        	wb = wbMeta.getWorkbook();
+        }
         if ( wb == null ) {
             try {
                 inp = new FileInputStream(workbookFile);
@@ -1215,7 +1219,7 @@ throws FileNotFoundException, IOException
         // If keeping open skip because it will be written by a later command.
         if ( keepOpen ) {
             // Save the open workbook for other commands to use
-            ExcelUtil.setOpenWorkbook(workbookFile,wb);
+            ExcelUtil.setOpenWorkbook(workbookFile,"r",wb);
         }
         else {
             // Close the workbook and remove from the cache
@@ -1231,15 +1235,14 @@ throws FileNotFoundException, IOException
 /**
 Read the table from an Excel worksheet and transfer to a row in the given table.
 The column and matching cells are specified by the columnMap parameter.
-@param table existing table to be appended to, or null to create a new table
 @param workbookFile the name of the workbook file (*.xls or *.xlsx)
 @param sheetName the name of the sheet in the workbook
+@param keepOpen if true, keep the sheet open after reading in read mode, if false, close the sheet without writing.
 @param columnCellMap a map indicating table column names and matching cells (named range or A1 notation) to read.  One row will
 be added to the table.
-@param excelIntegerCells cell addresses that should be treated as integers, or null if none
-@param excelDateTimeCells cell addresses that should be treated as date/times, or null if none
-@param numberPrecision digits after decimal for floating point numbers (can't yet determine from Excel)
-@param readAllAsText if True, treat all data as text values
+@param table existing table to be read
+@param columnIncludeFiltersMap filters to include rows by matching column values
+@param ifTableRowNotFound if "append" append a new row to the table, "ignore" - ignore, "warn", or "fail"
 @param problems list of problems encountered during read, for formatted logging in calling code
 @return a DataTable with the Excel contents. If an output table is provided, it is returned.
 Currently a new table cannot be created.
@@ -1259,7 +1262,10 @@ throws FileNotFoundException, IOException
     InputStream inp = null;
     try {
         // See if an open workbook by the same name exists
-        wb = ExcelUtil.getOpenWorkbook(workbookFile);
+        WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
+        if ( wbMeta != null ) {
+        	wb = wbMeta.getWorkbook();
+        }
         if ( wb == null ) {
             try {
                 inp = new FileInputStream(workbookFile);
@@ -1740,7 +1746,7 @@ throws FileNotFoundException, IOException
         // If keeping open skip because it will be written by a later command.
         if ( keepOpen ) {
             // Save the open workbook for other commands to use
-            ExcelUtil.setOpenWorkbook(workbookFile,wb);
+            ExcelUtil.setOpenWorkbook(workbookFile,"r",wb);
         }
         else {
             // Close the workbook and remove from the cache
@@ -2205,7 +2211,7 @@ Write a list of values to table cells in an Excel worksheet.
 @param columnIncludeFiltersMap a map indicating patters for column values, to exclude rows
 @param columnCellMap a map indicating cell address and contents to write
 @param cellFormatExcel if true, retain the Excel cell formats, if false set formatting to match table column types
-@param keepOpen if true, keep the Excel file open, if false close after processing
+@param keepOpen if true, keep the Excel file open with "w" mode, if false close after processing
 @param problems list of problems encountered during read, for formatted logging in calling code
 */
 public void writeTableCells ( DataTable table, String workbookFile, String sheetName,
@@ -2218,7 +2224,10 @@ throws FileNotFoundException, IOException
     InputStream inp = null;
     try {
         // See if an open workbook by the same name exists
-        wb = ExcelUtil.getOpenWorkbook(workbookFile);
+        WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
+        if ( wbMeta != null ) {
+        	wb = wbMeta.getWorkbook();
+        }
         if ( wb == null ) {
             // Workbook is not open in memory so Open the file
             try {
@@ -2572,7 +2581,7 @@ throws FileNotFoundException, IOException
         // Now write the workbook and close.  If keeping open skip because it will be written by a later command.
         if ( keepOpen ) {
             // Save the open workbook for other commands to use
-            ExcelUtil.setOpenWorkbook(workbookFile,wb);
+            ExcelUtil.setOpenWorkbook(workbookFile,"w",wb);
         }
         else {
             // Close the workbook and remove from the cache

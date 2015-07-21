@@ -323,7 +323,10 @@ throws FileNotFoundException, IOException
     InputStream inp = null;
     try {
         // See if an open workbook by the same name exists
-        wb = ExcelUtil.getOpenWorkbook(workbookFile);
+        WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
+        if ( wbMeta != null ) {
+        	wb = wbMeta.getWorkbook();
+        }
         if ( wb == null ) {
             try {
                 inp = new FileInputStream(workbookFile);
@@ -688,7 +691,7 @@ throws FileNotFoundException, IOException
         // If keeping open skip because it will be written by a later command.
         if ( keepOpen ) {
             // Save the open workbook for other commands to use
-            ExcelUtil.setOpenWorkbook(workbookFile,wb);
+            ExcelUtil.setOpenWorkbook(workbookFile,"r",wb);
         }
         else {
             if ( inp != null ) {

@@ -102,6 +102,7 @@ import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 import rti.tscommandprocessor.commands.spreadsheet.CloseExcelWorkbook_Command;
 // Spreadsheet commands
 import rti.tscommandprocessor.commands.spreadsheet.NewExcelWorkbook_Command;
+import rti.tscommandprocessor.commands.spreadsheet.ReadExcelWorkbook_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadPropertiesFromExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableCellsFromExcel_Command;
 import rti.tscommandprocessor.commands.spreadsheet.ReadTableFromExcel_Command;
@@ -731,6 +732,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadDelimitedFile") ) {
         return new ReadDelimitedFile_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadExcelWorkbook") ) {
+        return new ReadExcelWorkbook_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadHecDss") ) {
         return new ReadHecDss_Command ();

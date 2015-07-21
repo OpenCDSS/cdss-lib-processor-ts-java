@@ -1225,7 +1225,10 @@ throws FileNotFoundException, IOException
     	// Create toolkit instance for useful Excel methods
     	ExcelToolkit tk = new ExcelToolkit();
         // See if an open workbook by the same name exists
-        wb = ExcelUtil.getOpenWorkbook(workbookFile);
+        WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
+        if ( wbMeta != null ) {
+        	wb = wbMeta.getWorkbook();
+        }
         if ( wb == null ) {
             // Workbook is not open in memory so Open the file
         	if ( append ) {
@@ -1711,7 +1714,7 @@ throws FileNotFoundException, IOException
         // Now write the workbook and close.  If keeping open skip because it will be written by a later command.
         if ( keepOpen ) {
             // Save the open workbook for other commands to use
-            ExcelUtil.setOpenWorkbook(workbookFile,wb);
+            ExcelUtil.setOpenWorkbook(workbookFile,"w",wb);
         }
         else {
             // Close the workbook and remove from the cache

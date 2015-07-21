@@ -272,7 +272,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             if ( keepOpen ) {
                 // Save the open workbook for other commands to use
-                ExcelUtil.setOpenWorkbook(OutputFile_full,wb);
+                ExcelUtil.setOpenWorkbook(OutputFile_full,"w",wb);
             }
             else {
                 // Write the workbook and close

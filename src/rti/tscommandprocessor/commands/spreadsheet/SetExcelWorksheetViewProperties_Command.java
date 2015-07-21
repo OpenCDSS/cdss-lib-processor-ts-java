@@ -182,7 +182,12 @@ CommandWarningException, CommandException
 	// Now process the file...
 
 	try {
-	    Workbook wb = ExcelUtil.getOpenWorkbook(OutputFile_full);
+        // See if an open workbook by the same name exists
+		Workbook wb = null;
+        WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(OutputFile_full);
+        if ( wbMeta != null ) {
+        	wb = wbMeta.getWorkbook();
+        }
         if ( wb == null ) {
         	// This is an error because this command operates on an open workbook
             message = "The Excel workbook \"" + OutputFile_full + "\" is not open - need to keep open in previous command.";

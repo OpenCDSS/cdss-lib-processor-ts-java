@@ -466,7 +466,7 @@ Set cell values in an Excel worksheet using Excel address block or row/column ma
 @param excelAddress Excel address range (e.g., A1:D10 or $A1:$D10 or variant)
 @param excelNamedRange a named range
 @param excelTableName a table name
-@param keepOpen if True, the Excel workbook will be kept open and not written
+@param keepOpen if True, the Excel workbook will be kept open in write mode and not written
 @param includeColumns an array of Excel column names to include in the set
 @param excludeColumns an array of Excel column names to exclude in the set
 @param rows an array of row numbers (0+) to set
@@ -497,7 +497,10 @@ throws FileNotFoundException, IOException
     	// Create a toolkit for utility functions.
     	ExcelToolkit tk = new ExcelToolkit();
         // See if an open workbook by the same name exists
-        wb = ExcelUtil.getOpenWorkbook(workbookFile);
+        WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
+        if ( wbMeta != null ) {
+        	wb = wbMeta.getWorkbook();
+        }
         if ( wb == null ) {
             // Workbook is not open in memory so Open the file
             try {
@@ -656,7 +659,7 @@ throws FileNotFoundException, IOException
         // Now write the workbook and close.  If keeping open skip because it will be written by a later command.
         if ( keepOpen ) {
             // Save the open workbook for other commands to use
-            ExcelUtil.setOpenWorkbook(workbookFile,wb);
+            ExcelUtil.setOpenWorkbook(workbookFile,"w",wb);
         }
         else {
             // Close the workbook and remove from the cache

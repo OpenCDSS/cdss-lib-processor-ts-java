@@ -255,7 +255,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(16);
+    List<String> validList = new ArrayList<String>(17);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -271,6 +271,7 @@ throws InvalidCommandParameterException
     validList.add ( "TableTSIDColumn" );
     validList.add ( "TableTSIDFormat" );
     validList.add ( "TableStatisticColumn" );
+    validList.add ( "TableStatisticDateTimeColumn" );
     validList.add ( "TimeSeriesProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
@@ -415,12 +416,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
     boolean doTable = false;
     String TableID = parameters.getValue ( "TableID" );
-    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
-    	// In discovery mode want lists of tables to include ${Property}
-    	if ( TableID.indexOf("${") >= 0 ) {
+    if ( (TableID != null) && !TableID.isEmpty() ) {
+    	doTable = true;
+    	if ( (commandPhase == CommandPhaseType.RUN) && (TableID.indexOf("${") >= 0) ) {
+    		// In discovery mode want lists of tables to include ${Property}
     		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     	}
-    	doTable = true;
     }
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     if ( (TableTSIDColumn != null) && (TableTSIDColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
@@ -430,6 +431,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (TableTSIDFormat != null) && (TableTSIDFormat.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
     	TableTSIDFormat = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDFormat);
 	}
+    // TODO SAM 2015-07-16 it is not clear how multiple statistic columns are used.
+    // Seems like only the first is used and 2nd, 3rd, etc. are not needed?
+    // TODO SAM 2015-07-16 This is expanded here and then below for each time series - maybe only expand below?
     String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
     if ( (TableStatisticColumn != null) && (TableStatisticColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
     	TableStatisticColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableStatisticColumn);
@@ -454,6 +458,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     int [] statisticColumnNum = new int[tableStatisticResultsColumn.length]; // Integer columns for performance
+    String tableStatisticDateTimeColumn = parameters.getValue ( "TableStatisticDateTimeColumn" );
+    // TODO SAM 2015-07-16 This is expanded here and then below for each time series - maybe only expand below?
+    if ( (tableStatisticDateTimeColumn != null) && (tableStatisticDateTimeColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	tableStatisticDateTimeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, tableStatisticDateTimeColumn);
+	}
+    int statisticDateTimeColumnNum = -1;
     String TimeSeriesProperty = parameters.getValue ( "TimeSeriesProperty" );
 
     // Figure out the dates to use for the analysis.
@@ -583,7 +593,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( doTable ) {
 	    PropList request_params = null;
 	    CommandProcessorRequestResultsBean bean = null;
-	    if ( (TableID != null) && !TableID.equals("") ) {
+	    if ( (TableID != null) && !TableID.isEmpty() ) {
 	        // Get the table to be updated/created
 	        request_params = new PropList ( "" );
 	        request_params.set ( "TableID", TableID );
@@ -625,6 +635,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                // Create an empty table and set the ID
 	                table = new DataTable();
 	                table.setTableID ( TableID );
+	                // Only set discovery if creating here because if table was found a previous
+	                // command supplies in discovery mode
 	                setDiscoveryTable ( table );
 	            }
         	}
@@ -693,7 +705,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                for ( int i = 0; i < tableStatisticResultsColumn.length; i++ ) {
 	                    statisticColumnNum[i] = -1;
 	                }
-	                if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
+	                if ( (TableStatisticColumn != null) && !TableStatisticColumn.isEmpty() ) {
 	                    String [] tableStatisticColumnParts = TableStatisticColumn.split(",");
 	                    if ( Statistic.equalsIgnoreCase("" + TSStatisticType.TREND_OLS) ) {
 	                        // Output will consist of multiple statistics corresponding to parameter-assigned column + suffix
@@ -710,11 +722,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                    }
 	                    else {
 	                        // Output will consist of single statistic corresponding to parameter-assigned column
-	                        // Some statistics like "Last" also have the date
 	                        tableStatisticResultsColumn = new String[tableStatisticColumnParts.length];
 	                        for ( int i = 0; i < tableStatisticColumnParts.length; i++ ) {
 	                            tableStatisticResultsColumn[i] = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
 	                                processor, ts, tableStatisticColumnParts[i], status, commandPhase);
+	                        }
+	                        // Some statistics like "Last" and "Max" also have the date
+	                        if ( (tableStatisticDateTimeColumn != null) && !tableStatisticDateTimeColumn.isEmpty() ) {
+	                        	tableStatisticDateTimeColumn = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+		                            processor, ts, tableStatisticDateTimeColumn, status, commandPhase);
 	                        }
 	                    }
 	                }
@@ -736,17 +752,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     // (via statistic column name)
                     if ( doTable ) {
                     	// Table will have been found or created above
-                        if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
+                        if ( (TableStatisticColumn != null) && !TableStatisticColumn.isEmpty() ) {
                             // See if a matching row exists using the specified TSID column...
                             String tsid = null;
-                            if ( (TableTSIDFormat != null) && !TableTSIDFormat.equals("") ) {
+                            if ( (TableTSIDFormat != null) && !TableTSIDFormat.isEmpty() ) {
                                 // Format the TSID using the specified format
                                 tsid = ts.formatLegend ( TableTSIDFormat );
                             }
                             else {
                                 // Use the alias if available and then the TSID
                                 tsid = ts.getAlias();
-                                if ( (tsid == null) || tsid.equals("") ) {
+                                if ( (tsid == null) || tsid.isEmpty() ) {
                                     tsid = ts.getIdentifierString();
                                 }
                             }
@@ -819,10 +835,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                     }
                                     //Message.printStatus(2, routine, "Added column \"" + tableStatisticResultsColumn[iStat] +
                                     //    "\" to table in position " + statisticColumnNum[iStat] + " statistic count [" + iStat + "]" );
+                                    // Also add a column for date/time if necessary
+                                    if ( (tableStatisticDateTimeColumn != null) && !tableStatisticDateTimeColumn.isEmpty() &&
+                                    	(statisticDateTimeColumnNum < 0) && tsu.getStatisticResultHasDateTime() ) {
+                                    	statisticDateTimeColumnNum = table.addField(new TableField(TableField.DATA_TYPE_DATETIME,tableStatisticDateTimeColumn,-1,-1), null );
+                                    	Message.printStatus(2, routine, "Added column \"" + tableStatisticDateTimeColumn +
+                                            "\" to table in position " + statisticDateTimeColumnNum );
+                                    }
                                 }
                                 // Set the value in the table column...
                                 if ( statisticColumnNum.length == 1 ) {
                                     rec.setFieldValue(statisticColumnNum[iStat], tsu.getStatisticResult());
+                                    if ( (statisticDateTimeColumnNum >= 0) && tsu.getStatisticResultHasDateTime() ) {
+                                    	rec.setFieldValue(statisticDateTimeColumnNum, tsu.getStatisticResultDateTime());
+                                    }
                                 }
                                 else {
                                     // A statistic with multiple results
@@ -919,6 +945,7 @@ public String toString ( PropList parameters )
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
+    String TableStatisticDateTimeColumn = parameters.getValue ( "TableStatisticDateTimeColumn" );
     String TimeSeriesProperty = parameters.getValue ( "TimeSeriesProperty" );
         
     StringBuffer b = new StringBuffer ();
@@ -1018,6 +1045,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TableStatisticColumn=\"" + TableStatisticColumn + "\"" );
+    }
+    if ( (TableStatisticDateTimeColumn != null) && !TableStatisticDateTimeColumn.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableStatisticDateTimeColumn=\"" + TableStatisticDateTimeColumn + "\"" );
     }
     if ( (TimeSeriesProperty != null) && (TimeSeriesProperty.length() > 0) ) {
         if ( b.length() > 0 ) {

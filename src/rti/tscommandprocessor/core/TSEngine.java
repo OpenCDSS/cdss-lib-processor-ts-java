@@ -699,7 +699,6 @@ import RTi.GRTS.TSProductDMI;
 import RTi.GRTS.TSViewJFrame;
 import RTi.TS.DateValueTS;
 import RTi.TS.IrregularTS;
-import RTi.TS.MexicoCsmnTS;
 import RTi.TS.ModsimTS;
 import RTi.TS.MonthTS;
 import RTi.TS.MonthTSLimits;
@@ -4782,19 +4781,6 @@ throws Exception
 		catch ( Exception e ) {
 			Message.printWarning ( 3, routine, "Error from HydroBaseDMI.readTimeSeries (" + e + ")." );
 			Message.printWarning ( 3, routine, e );
-			ts = null;
-		}
-	}
-	else if ((inputType != null) && inputType.equalsIgnoreCase("MexicoCSMN") ) {
-		// New style TSID~input_type~input_name for MexicoCSMN...
-		// Pass the front TSID as the first argument and the input_name file as the second...
-		try {
-            ts = MexicoCsmnTS.readTimeSeries ( tsidentString2,
-				inputNameFull, readStart, readEnd, units, readData );
-		}
-		catch ( Exception te ) {
-		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from MexicoCSMN file (" + te + ")." );
-            Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}

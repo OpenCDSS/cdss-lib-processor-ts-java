@@ -58,4 +58,14 @@ public Workbook getWorkbook ()
 	return this.wb;
 }
 
+/**
+Set the read/write mode for the workbook, "r" for reading and "w" for writing.
+Typically this is set as "r" when opening for reading and "w" when opening/creating for writing.
+However, this method can be called to set to "w" (for example) when the worksheet is modified after an initial read.
+*/
+public void setMode ( String mode )
+{
+	this.mode = mode;
+}
+
 }

@@ -266,19 +266,33 @@ throws InvalidCommandParameterException, CommandWarningException
         }
         if ( wb != null ) {
             // Workbook is open in memory so close the workbook and remove from the cache
-
 	    	String outputFileFull = OutputFile_full; // Default is to (re)write original file
 	    	if ( (NewOutputFile != null) && !NewOutputFile.isEmpty() ) {
+	    		// Set the output file to the new file provided by NewOutputFile
 	    		outputFileFull = IOUtil.verifyPathForOS(
 	    	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
 	    	        	TSCommandProcessorUtil.expandParameterValue(processor,this,NewOutputFile)) );
 	    	}
 	    	boolean doWrite = false;
-	    	if ( (WriteFile != null) && WriteFile.equalsIgnoreCase("true") ) {
-	    		doWrite = true;
+	    	if ( (WriteFile != null) && !WriteFile.isEmpty() ) {
+	    		// Use the specified value
+	    		if ( WriteFile.equalsIgnoreCase("true") ) {
+	    			doWrite = true;
+	    		}
+	    		else if ( WriteFile.equalsIgnoreCase("false") ) {
+	    			doWrite = false;
+	    		}
 	    	}
 	    	else {
 	    		// Determine default depending on how the workbook was originally created or opened
+	    		if ( wbMeta.getMode().equalsIgnoreCase("w") ) {
+	    			// Excel file was opened to write or has been written to so default is to write on close
+	    			doWrite = true;
+	    		}
+	    		else {
+	    			// Excel file was opened to read and has not been written to so default is to not write on close
+	    			doWrite = false;
+	    		}
 	    	}
 	    	if ( doWrite ) {
 	    		if ( recalcLimits ) {

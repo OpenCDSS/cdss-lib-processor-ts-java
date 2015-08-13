@@ -11,11 +11,9 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
-
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSIterator;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -95,13 +93,13 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
 		message = "The output file must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
 			message, "Specify an output file." ) );
 	}
-	else {
+	else if ( OutputFile.indexOf("${") < 0 ) {
         String working_dir = null;
 		try {
 		    Object o = processor.getPropContents ( "WorkingDir" );
@@ -165,7 +163,7 @@ throws InvalidCommandParameterException
             message, "Specify an output line format OR format file." ) );
     }
     
-    if ( (OutputLineFormatFile != null) && (OutputLineFormatFile.length() > 0) ) {
+    if ( (OutputLineFormatFile != null) && !OutputLineFormatFile.isEmpty() && (OutputLineFormatFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -273,25 +271,27 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "Append" );
-    valid_Vector.add ( "OutputFileHeader" );
-    valid_Vector.add ( "OutputLineFormat" );
-    valid_Vector.add ( "OutputLineFormatFile" );
-    valid_Vector.add ( "DateTimeFormatterType" );
-    valid_Vector.add ( "DateTimeFormat" );
-	valid_Vector.add ( "OutputFileFooter" );
-	valid_Vector.add ( "Precision" );
-	valid_Vector.add ( "MissingValue" );
-	valid_Vector.add ( "OutputStart" );
-	valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "NonMissingOutputCount" );
+	List<String> validList = new ArrayList<String>(18);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+	validList.add ( "OutputFile" );
+	validList.add ( "Append" );
+    validList.add ( "OutputFileHeader" );
+    validList.add ( "OutputFileHeaderFile" );
+    validList.add ( "OutputLineFormat" );
+    validList.add ( "OutputLineFormatFile" );
+    validList.add ( "DateTimeFormatterType" );
+    validList.add ( "DateTimeFormat" );
+	validList.add ( "OutputFileFooter" );
+	validList.add ( "OutputFileFooterFile" );
+	validList.add ( "Precision" );
+	validList.add ( "MissingValue" );
+	validList.add ( "OutputStart" );
+	validList.add ( "OutputEnd" );
+	validList.add ( "NonMissingOutputCount" );
 
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -340,7 +340,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "WriteDataStream_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -358,7 +358,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
@@ -366,18 +379,34 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Append = parameters.getValue ( "Append" );
 	boolean append = false; // Default
 	if ( (Append != null) && Append.equalsIgnoreCase("True") ) {
 	    append = true;
 	}
+	List<String> outputFileHeader = new ArrayList<String>();
 	String OutputFileHeader = parameters.getValue ( "OutputFileHeader" );
+	if ( OutputFileHeader != null ) {
+		if ( OutputFileHeader.indexOf("${") >= 0 ) {
+			OutputFileHeader = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFileHeader);
+		}
+		if ( !OutputFileHeader.isEmpty() ) {
+			outputFileHeader.add(OutputFileHeader);
+		}
+	}
+	String OutputFileHeaderFile = parameters.getValue ( "OutputFileHeaderFile" ); // Will be added below
 	String OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
-	if ( (OutputLineFormat == null) || (OutputLineFormat.length() == 0) ) {
+	if ( (OutputLineFormat == null) || OutputLineFormat.isEmpty() ) {
 	    // FIXME SAM 2013-08-10 Need to figure out how to merge TS and label formats or use ${ts:...}
-	    OutputLineFormat = "${tsdata:datetime} %{tsdata:value}";
+	    OutputLineFormat = "${tsdata:datetime} ${tsdata:value}";
 	}
 	String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
     String DateTimeFormatterType0 = parameters.getValue ( "DateTimeFormatterType" );
@@ -386,7 +415,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     DateTimeFormatterType dateTimeFormatterType = DateTimeFormatterType.valueOfIgnoreCase(DateTimeFormatterType0);
     String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
+    List<String> outputFileFooter = new ArrayList<String>();
 	String OutputFileFooter = parameters.getValue ( "OutputFileFooter" );
+	if ( OutputFileFooter != null ) {
+		if ( OutputFileFooter.indexOf("${") >= 0 ) {
+			OutputFileFooter = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFileFooter);
+		}
+		if ( !OutputFileFooter.isEmpty() ) {
+			outputFileFooter.add(OutputFileFooter);
+		}
+	}
+	String OutputFileFooterFile = parameters.getValue ( "OutputFileFooterFile" ); // Handled below
     String Precision = parameters.getValue ( "Precision" );
     Integer precision = null;
     if ( (Precision != null) && (Precision.length() > 0) ) {
@@ -442,99 +481,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	String OutputStart = parameters.getValue ( "OutputStart" );
-	DateTime OutputStart_DateTime = null;
-	if ( OutputStart != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputStart );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputStart +
-				"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor (can be null)...
-		try {
-		    Object o_OutputStart = processor.getPropContents ( "OutputStart" );
-			if ( o_OutputStart != null ) {
-				OutputStart_DateTime = (DateTime)o_OutputStart;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting OutputStart from processor - not using.";
-			Message.printDebug(10, routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-	}
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	DateTime OutputStart_DateTime = null;
 	DateTime OutputEnd_DateTime = null;
-	if ( OutputEnd != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputEnd );
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-		    bean = processor.processRequest( "DateTime", request_params);
+			OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputEnd +
-			"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputEnd_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor...
 		try {
-		    Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
-			if ( o_OutputEnd != null ) {
-				OutputEnd_DateTime = (DateTime)o_OutputEnd;
-			}
+			OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputEnd from processor - not using.";
-			Message.printDebug(10, routine, message );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
 	}
 
@@ -565,9 +530,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
         Message.printStatus ( 2, routine, "Writing DataStream file \"" + OutputFile_full + "\"" );
-        List<String> problems = new Vector<String>();
+        List<String> problems = new ArrayList<String>();
         String outputLineFormat = OutputLineFormat;
-        if ( (OutputLineFormatFile != null) && !OutputLineFormatFile.equals("") ) {
+        if ( (OutputLineFormatFile != null) && !OutputLineFormatFile.isEmpty() ) {
             // Read the format from the file
             String formatFileFull = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
@@ -587,9 +552,53 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Expand the format here to deal with processor properties, leaving only time series properties
         // This improves performance a bit
         outputLineFormat = TSCommandProcessorUtil.expandParameterValue(processor,this,outputLineFormat);
+        // Get the header from the header file if specified
+        if ( (OutputFileHeaderFile != null) && !OutputFileHeaderFile.isEmpty() ) {
+            // Read the header from the file
+            String headerFileFull = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFileHeaderFile)));
+            if ( !IOUtil.fileReadable(headerFileFull) || !IOUtil.fileExists(headerFileFull)) {
+                message = "Header file \"" + headerFileFull + "\" is not found or accessible.";
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord( CommandStatusType.FAILURE, message,
+                        "Verify that the file exists and is readable."));
+                throw new CommandException ( message );
+            }
+            // This will override the text property
+            outputFileHeader = IOUtil.fileToStringList(headerFileFull);
+            for ( int i = 0; i < outputFileHeader.size(); i++ ) {
+            	String s = TSCommandProcessorUtil.expandParameterValue(processor,this,outputFileHeader.get(i));
+            	outputFileHeader.set(i,s);
+            }
+        }
+        // Get the header from the header file if specified
+        if ( (OutputFileFooterFile != null) && !OutputFileFooterFile.isEmpty() ) {
+            // Read the footer from the file
+            String footerFileFull = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFileFooterFile)));
+            if ( !IOUtil.fileReadable(footerFileFull) || !IOUtil.fileExists(footerFileFull)) {
+                message = "Footer file \"" + footerFileFull + "\" is not found or accessible.";
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord( CommandStatusType.FAILURE, message,
+                        "Verify that the file exists and is readable."));
+                throw new CommandException ( message );
+            }
+            // This will override the text property
+            outputFileFooter = IOUtil.fileToStringList(footerFileFull);
+            for ( int i = 0; i < outputFileFooter.size(); i++ ) {
+            	String s = TSCommandProcessorUtil.expandParameterValue(processor,this,outputFileFooter.get(i));
+            	outputFileFooter.set(i,s);
+            }
+        }
         // Now write the data records and expand the output line format dynamically for each time series and data value
-        writeTimeSeries ( tslist, OutputFile_full, append, OutputFileHeader, outputLineFormat, dateTimeFormatterType, DateTimeFormat,
-            OutputFileFooter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime, nonMissingOutputCount,
+        writeTimeSeries ( tslist, OutputFile_full, append, outputFileHeader, outputLineFormat, dateTimeFormatterType, DateTimeFormat,
+            outputFileFooter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime, nonMissingOutputCount,
             problems, processor, status, CommandPhaseType.RUN );
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));
@@ -630,11 +639,13 @@ public String toString ( PropList parameters )
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Append = parameters.getValue ( "Append" );
 	String OutputFileHeader = parameters.getValue ( "OutputFileHeader" );
+	String OutputFileHeaderFile = parameters.getValue ( "OutputFileHeaderFile" );
 	String OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
 	String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
 	String DateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
 	String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
 	String OutputFileFooter = parameters.getValue ( "OutputFileFooter" );
+	String OutputFileFooterFile = parameters.getValue ( "OutputFileFooterFile" );
 	String Precision = parameters.getValue("Precision");
 	String MissingValue = parameters.getValue("MissingValue");
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -677,6 +688,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputFileHeader=\"" + OutputFileHeader + "\"" );
     }
+    if ( (OutputFileHeaderFile != null) && (OutputFileHeaderFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputFileHeaderFile=\"" + OutputFileHeaderFile + "\"" );
+    }
     if ( (OutputLineFormat != null) && (OutputLineFormat.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -706,6 +723,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "OutputFileFooter=\"" + OutputFileFooter + "\"" );
+    }
+    if ( (OutputFileFooterFile != null) && (OutputFileFooterFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputFileFooterFile=\"" + OutputFileFooterFile + "\"" );
     }
     if ( (Precision != null) && (Precision.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -758,8 +781,8 @@ data point labeling
 @param nonMissingOutputCount number of values to output.  If negative, count the values from the end.
 */
 private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean append,
-    String outputFileHeader, String outputLineFormat, DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat,
-    String outputFileFooter, Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
+    List<String> outputFileHeader, String outputLineFormat, DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat,
+    List<String> outputFileFooter, Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
     Integer nonMissingOutputCount,
     List<String> problems, CommandProcessor processor, CommandStatus status, CommandPhaseType commandPhase )
 {   String message;
@@ -767,8 +790,10 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
     try {
         // Open the file...
         fout = new PrintWriter ( new FileOutputStream ( outputFile, append ) );
-        if ( (outputFileHeader != null) && (outputFileHeader.length() > 0) ) {
-            fout.println ( outputFileHeader );
+        for ( String s : outputFileHeader ) {
+	        if ( (s != null) && !s.isEmpty() ) {
+	            fout.println ( s );
+	        }
         }
         if ( tslist == null ) {
             return;
@@ -871,8 +896,11 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
                 }
             }
         }
-        if ( (outputFileFooter != null) && (outputFileFooter.length() > 0) ) {
-            fout.println ( outputFileFooter );
+        // Write the footer
+        for ( String s : outputFileFooter ) {
+	        if ( (s != null) && !s.isEmpty() ) {
+	            fout.println ( s );
+	        }
         }
     }
     catch ( Exception e ) {

@@ -19,8 +19,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -32,7 +35,6 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -52,27 +54,32 @@ public class WriteTimeSeriesToDataStream_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
 
-private final String __AddWorkingDirectory_Output = "Add Working Directory (Output File)";
-private final String __RemoveWorkingDirectory_Output = "Remove Working Directory (Output File)";
-private final String __AddWorkingDirectory_Format = "Add Working Directory (Format File)";
-private final String __RemoveWorkingDirectory_Format = "Remove Working Directory (Format File)";
+private final String __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __browseOutput_JButton = null;
+private SimpleJButton __browseHeader_JButton = null;
 private SimpleJButton __browseFormat_JButton = null;
+private SimpleJButton __browseFooter_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __pathOutput_JButton = null;
+private SimpleJButton __pathHeader_JButton = null;
 private SimpleJButton __pathFormat_JButton = null;
+private SimpleJButton __pathFooter_JButton = null;
 private WriteTimeSeriesToDataStream_Command __command = null;
 private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __Append_JComboBox = null;
 private JTextArea __OutputFileHeader_JTextArea = null;
+private JTextField __OutputFileHeaderFile_JTextField = null;
 private JTextArea __OutputLineFormat_JTextArea = null;
 private JTextField __OutputLineFormatFile_JTextField = null;
 private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private JTextArea __OutputFileFooter_JTextArea = null;
+private JTextField __OutputFileFooterFile_JTextField = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
@@ -116,7 +123,7 @@ public void actionPerformed( ActionEvent event )
 		fc.setDialogTitle("Select Data Stream Time Series File to Write");
 		SimpleFileFilter sff = new SimpleFileFilter("txt", "Data Stream Text Time Series File");
 		fc.addChoosableFileFilter(sff);
-		sff = new SimpleFileFilter("xml", "Data Strem XML Time Series File");
+		sff = new SimpleFileFilter("xml", "Data Stream XML Time Series File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -135,6 +142,37 @@ public void actionPerformed( ActionEvent event )
 			}
 		}
 	}
+	else if ( o == __browseHeader_JButton ) {
+        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+        JFileChooser fc = null;
+        if ( last_directory_selected != null ) {
+            fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+        }
+        else {
+            fc = JFileChooserFactory.createJFileChooser( __working_dir );
+        }
+        fc.setDialogTitle("Select Header File");
+        SimpleFileFilter sff = new SimpleFileFilter("txt", "Header File (text)");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("xml", "Header File (XML)");
+        fc.addChoosableFileFilter(sff);
+        
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String directory = fc.getSelectedFile().getParent();
+            String filename = fc.getSelectedFile().getName(); 
+            String path = fc.getSelectedFile().getPath(); 
+    
+            if (filename == null || filename.equals("")) {
+                return;
+            }
+    
+            if (path != null) {
+                __OutputFileHeaderFile_JTextField.setText(path );
+                JGUIUtil.setLastFileDialogDirectory(directory );
+                refresh();
+            }
+        }
+    }
 	else if ( o == __browseFormat_JButton ) {
         String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
         JFileChooser fc = null;
@@ -150,7 +188,7 @@ public void actionPerformed( ActionEvent event )
         sff = new SimpleFileFilter("xml", "Data Line Format File (XML)");
         fc.addChoosableFileFilter(sff);
         
-        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             String directory = fc.getSelectedFile().getParent();
             String filename = fc.getSelectedFile().getName(); 
             String path = fc.getSelectedFile().getPath(); 
@@ -161,6 +199,37 @@ public void actionPerformed( ActionEvent event )
     
             if (path != null) {
                 __OutputLineFormatFile_JTextField.setText(path );
+                JGUIUtil.setLastFileDialogDirectory(directory );
+                refresh();
+            }
+        }
+    }
+	else if ( o == __browseFooter_JButton ) {
+        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+        JFileChooser fc = null;
+        if ( last_directory_selected != null ) {
+            fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+        }
+        else {
+            fc = JFileChooserFactory.createJFileChooser( __working_dir );
+        }
+        fc.setDialogTitle("Select Footer File");
+        SimpleFileFilter sff = new SimpleFileFilter("txt", "Footer File (text)");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("xml", "Footer File (XML)");
+        fc.addChoosableFileFilter(sff);
+        
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String directory = fc.getSelectedFile().getParent();
+            String filename = fc.getSelectedFile().getName(); 
+            String path = fc.getSelectedFile().getPath(); 
+    
+            if (filename == null || filename.equals("")) {
+                return;
+            }
+    
+            if (path != null) {
+                __OutputFileFooterFile_JTextField.setText(path );
                 JGUIUtil.setLastFileDialogDirectory(directory );
                 refresh();
             }
@@ -177,11 +246,11 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __pathOutput_JButton ) {
-		if ( __pathOutput_JButton.getText().equals(__AddWorkingDirectory_Output) ) {
+		if ( __pathOutput_JButton.getText().equals(__AddWorkingDirectory) ) {
 			__OutputFile_JTextField.setText (
 			IOUtil.toAbsolutePath(__working_dir, __OutputFile_JTextField.getText() ) );
 		}
-		else if ( __pathOutput_JButton.getText().equals(__RemoveWorkingDirectory_Output) ) {
+		else if ( __pathOutput_JButton.getText().equals(__RemoveWorkingDirectory) ) {
 			try {
 			    __OutputFile_JTextField.setText (
 				IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
@@ -192,12 +261,28 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+	else if ( o == __pathHeader_JButton ) {
+		if ( __pathHeader_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__OutputFileHeaderFile_JTextField.setText (
+			IOUtil.toAbsolutePath(__working_dir, __OutputFileHeaderFile_JTextField.getText() ) );
+		}
+		else if ( __pathHeader_JButton.getText().equals(__RemoveWorkingDirectory) ) {
+			try {
+				__OutputFileHeaderFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __OutputFileHeaderFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1, "WriteTimeSeriesToDataStream", "Error converting file to relative path." );
+			}
+		}
+		refresh ();
+	}
     else if ( o == __pathFormat_JButton ) {
-        if ( __pathFormat_JButton.getText().equals(__AddWorkingDirectory_Format) ) {
+        if ( __pathFormat_JButton.getText().equals(__AddWorkingDirectory) ) {
             __OutputLineFormatFile_JTextField.setText (
             IOUtil.toAbsolutePath(__working_dir, __OutputLineFormatFile_JTextField.getText() ) );
         }
-        else if ( __pathFormat_JButton.getText().equals(__RemoveWorkingDirectory_Format) ) {
+        else if ( __pathFormat_JButton.getText().equals(__RemoveWorkingDirectory) ) {
             try {
                 __OutputLineFormatFile_JTextField.setText (
                 IOUtil.toRelativePath ( __working_dir, __OutputLineFormatFile_JTextField.getText() ) );
@@ -208,6 +293,22 @@ public void actionPerformed( ActionEvent event )
         }
         refresh ();
     }
+	else if ( o == __pathFooter_JButton ) {
+		if ( __pathFooter_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__OutputFileFooterFile_JTextField.setText (
+			IOUtil.toAbsolutePath(__working_dir, __OutputFileFooterFile_JTextField.getText() ) );
+		}
+		else if ( __pathFooter_JButton.getText().equals(__RemoveWorkingDirectory) ) {
+			try {
+				__OutputFileFooterFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __OutputFileFooterFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1, "WriteTimeSeriesToDataStream", "Error converting file to relative path." );
+			}
+		}
+		refresh ();
+	}
 }
 
 //Start event handlers for DocumentListener...
@@ -280,11 +381,13 @@ private void checkInput ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
 	String OutputFileHeader = __OutputFileHeader_JTextArea.getText().trim();
+	String OutputFileHeaderFile = __OutputFileHeaderFile_JTextField.getText().trim();
 	String OutputLineFormat = __OutputLineFormat_JTextArea.getText().trim();
 	String OutputLineFormatFile = __OutputLineFormatFile_JTextField.getText().trim();
     String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	String OutputFileFooter = __OutputFileFooter_JTextArea.getText().trim();
+	String OutputFileFooterFile = __OutputFileFooterFile_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -311,6 +414,9 @@ private void checkInput ()
     if ( OutputFileHeader.length() > 0 ) {
         parameters.set ( "OutputFileHeader", OutputFileHeader );
     }
+    if ( OutputFileHeaderFile.length() > 0 ) {
+        parameters.set ( "OutputFileHeaderFile", OutputFileHeaderFile );
+    }
     if ( OutputLineFormat.length() > 0 ) {
         parameters.set ( "OutputLineFormat", OutputLineFormat );
     }
@@ -325,6 +431,9 @@ private void checkInput ()
     }
     if ( OutputFileFooter.length() > 0 ) {
         parameters.set ( "OutputFileFooter", OutputFileFooter );
+    }
+    if ( OutputFileFooterFile.length() > 0 ) {
+        parameters.set ( "OutputFileFooterFile", OutputFileFooterFile );
     }
     if (Precision.length() > 0) {
         parameters.set("Precision", Precision);
@@ -363,11 +472,13 @@ private void commitEdits ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
 	String OutputFileHeader = __OutputFileHeader_JTextArea.getText().trim();
+	String OutputFileHeaderFile = __OutputFileHeaderFile_JTextField.getText().trim();
 	String OutputLineFormat = __OutputLineFormat_JTextArea.getText().trim();
 	String OutputLineFormatFile = __OutputLineFormatFile_JTextField.getText().trim();
     String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	String OutputFileFooter = __OutputFileFooter_JTextArea.getText().trim();
+	String OutputFileFooterFile = __OutputFileFooterFile_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
@@ -378,12 +489,18 @@ private void commitEdits ()
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Append", Append );
+	OutputFileHeader.replace("\n", "\\n");
+	OutputFileHeader.replace("\r", "");
 	__command.setCommandParameter ( "OutputFileHeader", OutputFileHeader );
+	__command.setCommandParameter ( "OutputFileHeaderFile", OutputFileHeaderFile );
 	__command.setCommandParameter ( "OutputLineFormat", OutputLineFormat );
 	__command.setCommandParameter ( "OutputLineFormatFile", OutputLineFormatFile );
 	__command.setCommandParameter ( "DateTimeFormatterType", DateTimeFormatterType );
 	__command.setCommandParameter ( "DateTimeFormat", DateTimeFormat );
 	__command.setCommandParameter ( "OutputFileFooter", OutputFileFooter );
+	OutputFileFooter.replace("\n", "\\n");
+	OutputFileFooter.replace("\r", "");
+	__command.setCommandParameter ( "OutputFileFooterFile", OutputFileFooterFile );
 	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
@@ -412,48 +529,105 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a data stream format file," +
-		" which consists of a simple header, a \"stream\" of time series value data records, and a simple footer." ),
+		" which consists of an optional header, a \"stream\" of time series value data records, and an optional footer." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The output filename can be specified using ${Property} notation to utilize global properties."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Specify output period date/times to a precision appropriate for time series."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for time series
+    int yTS = 0;
+    JPanel ts_JPanel = new JPanel();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Series", ts_JPanel );
     
     __TSList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
+    yTS = CommandEditorUtil.addTSListToEditorDialogPanel ( this, ts_JPanel, __TSList_JComboBox, yTS );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    yTS = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTS );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+    yTS = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, ts_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yTS );
+    
+    // Panel for output period
+    // TODO SAM 2015-08-03 add output window at some point
+    int yPeriod = -1;
+    JPanel period_JPanel = new JPanel();
+    period_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output Period", period_JPanel );
+    
+    JGUIUtil.addComponent(period_JPanel, new JLabel (
+        "Specify output period date/times to a precision appropriate for time series."),
+		0, ++yPeriod, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yPeriod, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(period_JPanel, new JLabel ("Output start:"), 
+		0, ++yPeriod, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__OutputStart_JTextField = new JTextField (10);
+	__OutputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(period_JPanel, __OutputStart_JTextField,
+		1, yPeriod, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JLabel (
+		"Optional - override the global output start (default=write all data)."),
+		3, yPeriod, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data stream file to write:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(period_JPanel, new JLabel ( "Output end:"), 
+		0, ++yPeriod, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__OutputEnd_JTextField = new JTextField (10);
+	__OutputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(period_JPanel, __OutputEnd_JTextField,
+		1, yPeriod, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(period_JPanel, new JLabel (
+		"Optional - override the global output end (default=write all data)."),
+		3, yPeriod, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for output file
+    int yFile = -1;
+    JPanel file_JPanel = new JPanel();
+    file_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output File", file_JPanel );
+
+    JGUIUtil.addComponent(file_JPanel, new JLabel (
+		"The output filename can be specified using ${Property} notation to utilize global properties."),
+		0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	if ( __working_dir != null ) {
+        JGUIUtil.addComponent(file_JPanel, new JLabel (
+		"The working directory is: " + __working_dir ), 
+		0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	}
+    JGUIUtil.addComponent(file_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(file_JPanel, new JLabel ( "Data stream file to write:" ), 
+		0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 45 );
 	__OutputFile_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
-		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(file_JPanel, __OutputFile_JTextField,
+		1, yFile, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browseOutput_JButton = new SimpleJButton ( "Browse", this );
-    JGUIUtil.addComponent(main_JPanel, __browseOutput_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    JGUIUtil.addComponent(file_JPanel, __browseOutput_JButton,
+		6, yFile, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathOutput_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
+	    JGUIUtil.addComponent(file_JPanel, __pathOutput_JButton,
+            3, ++yFile, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	}
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Append to file?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(file_JPanel, new JLabel ("Append to file?:"),
+        0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     List<String> Append_Vector = new Vector<String>();
     Append_Vector.add ( "" );
     Append_Vector.add ( __command._False );
@@ -461,123 +635,203 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     __Append_JComboBox = new SimpleJComboBox(false);
     __Append_JComboBox.setData ( Append_Vector );
     __Append_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(file_JPanel, __Append_JComboBox,
+        1, yFile, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(file_JPanel, new JLabel (
         "Optional - whether to append to output file (default=" + __command._False + ")."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yFile, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for header
+    int yHeader = -1;
+    JPanel header_JPanel = new JPanel();
+    header_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Header", header_JPanel );
+    
+    JGUIUtil.addComponent(header_JPanel, new JLabel (
+        "Header content can be added to the top of the file."),
+		0, ++yHeader, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(header_JPanel, new JLabel (
+        "Use ${Property} notation to include processor properties in the header."),
+		0, ++yHeader, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(header_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yHeader, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file header:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(header_JPanel, new JLabel ("Output file header (text):"),
+        0, ++yHeader, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFileHeader_JTextArea = new JTextArea (3,35);
     __OutputFileHeader_JTextArea.setLineWrap ( true );
     __OutputFileHeader_JTextArea.setWrapStyleWord ( true );
     __OutputFileHeader_JTextArea.setToolTipText("Will be inserted at top of file");
     __OutputFileHeader_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__OutputFileHeader_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - content to add at top of output file."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(header_JPanel, new JScrollPane(__OutputFileHeader_JTextArea),
+        1, yHeader, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(header_JPanel, new JLabel ("Optional - content to add at top of output file."),
+        3, yHeader, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data line format:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(header_JPanel, new JLabel ( "OR output file header (file):" ), 
+        0, ++yHeader, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputFileHeaderFile_JTextField = new JTextField ( 45 );
+    __OutputFileHeaderFile_JTextField.setToolTipText("Specify a file that provides the header.");
+    __OutputFileHeaderFile_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(header_JPanel, __OutputFileHeaderFile_JTextField,
+        1, yHeader, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __browseHeader_JButton = new SimpleJButton ( "Browse", this );
+    JGUIUtil.addComponent(header_JPanel, __browseHeader_JButton,
+        6, yHeader, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+	    __pathHeader_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
+	    JGUIUtil.addComponent(header_JPanel, __pathHeader_JButton,
+            3, ++yHeader, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	}
+    
+    // Panel for time series data
+    int yData = -1;
+    JPanel data_JPanel = new JPanel();
+    data_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Data", data_JPanel );
+    
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "The data line format can contain literal text (commas, text, etc.) and the following:"),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "   ${Property} - processor property"),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "   ${ts:Property} - time series property"),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "   %L, etc. - built-in time series properties (%L is location ID)"),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "   ${tsdata:datetime} - date/time for data value, will be formatted using the date/time format specified below"),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "   ${tsdata:value} - data value, formatted to precision specified below"),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "   ${tsdata:flag} - data flag"),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(data_JPanel, new JLabel ("Data line format:"),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputLineFormat_JTextArea = new JTextArea (3,35);
     __OutputLineFormat_JTextArea.setLineWrap ( true );
     __OutputLineFormat_JTextArea.setWrapStyleWord ( true );
     __OutputLineFormat_JTextArea.setToolTipText(
     	"Format used for each output line, including % TS specifiers, ${property}, ${ts:property}, ${tsdata:datetime}, ${tsdata:value}, ${tsdata:flag}.");
     __OutputLineFormat_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__OutputLineFormat_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required (if format file not specified) - format for each data line."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(data_JPanel, new JScrollPane(__OutputLineFormat_JTextArea),
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ("Required (if format file not specified) - format for each data line."),
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "OR data line format file:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "OR data line format file:" ), 
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputLineFormatFile_JTextField = new JTextField ( 45 );
     __OutputLineFormatFile_JTextField.setToolTipText("Specify a file that provides a template for the output line.");
     __OutputLineFormatFile_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutputLineFormatFile_JTextField,
-        1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, __OutputLineFormatFile_JTextField,
+        1, yData, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     __browseFormat_JButton = new SimpleJButton ( "Browse", this );
-    JGUIUtil.addComponent(main_JPanel, __browseFormat_JButton,
-        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    JGUIUtil.addComponent(data_JPanel, __browseFormat_JButton,
+        6, yData, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+	    __pathFormat_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
+	    JGUIUtil.addComponent(data_JPanel, __pathFormat_JButton,
+            3, ++yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	}
     
     // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
     // is supported by the panel
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time format:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Date/time format:" ), 
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel ( 20, true, true, null, true, false );
     __DateTimeFormat_JPanel.addKeyListener ( this );
     __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
     __DateTimeFormat_JPanel.getDocument().addDocumentListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __DateTimeFormat_JPanel,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - format string for data date/time formatter."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, __DateTimeFormat_JPanel,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel( "Required - format string for data date/time formatter."), 
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file footer:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Output precision:" ),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Precision_JTextField = new JTextField ( "", 10 );
+    __Precision_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(data_JPanel, __Precision_JTextField,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Optional - digits after decimal (default=4)."),
+        3, yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Missing value:" ),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MissingValue_JTextField = new JTextField ( "", 10 );
+    __MissingValue_JTextField.setToolTipText("Specify Blank to output a blank.");
+    __MissingValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(data_JPanel, __MissingValue_JTextField,
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "Optional - value to write for missing data (default=initial missing value)."),
+        3, yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(data_JPanel, new JLabel ( "Non-missing output count:"), 
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NonMissingOutputCount_JTextField = new JTextField (10);
+    __NonMissingOutputCount_JTextField.setToolTipText ( "Useful to output last value.  Specify a negative number to output values at end.");
+    __NonMissingOutputCount_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(data_JPanel, __NonMissingOutputCount_JTextField,
+        1, yData, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "Optional - property to set for number of non-missing values output."),
+        3, yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for footer
+    int yFooter = -1;
+    JPanel footer_JPanel = new JPanel();
+    footer_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Footer", footer_JPanel );
+    
+    JGUIUtil.addComponent(footer_JPanel, new JLabel (
+        "Footer content can be added to the bottom of the file."),
+		0, ++yFooter, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(footer_JPanel, new JLabel (
+        "Use ${Property} notation to include processor properties in the footer."),
+		0, ++yFooter, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(footer_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yFooter, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(footer_JPanel, new JLabel ("Output file footer:"),
+        0, ++yFooter, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFileFooter_JTextArea = new JTextArea (3,35);
     __OutputFileFooter_JTextArea.setLineWrap ( true );
     __OutputFileFooter_JTextArea.setWrapStyleWord ( true );
     __OutputFileFooter_JTextArea.setToolTipText("Will be inserted at top of file");
     __OutputFileFooter_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__OutputFileFooter_JTextArea),
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - content to add at bottom of output file."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(footer_JPanel, new JScrollPane(__OutputFileFooter_JTextArea),
+        1, yFooter, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(footer_JPanel, new JLabel ("Optional - content to add at bottom of output file."),
+        3, yFooter, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output precision:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Precision_JTextField = new JTextField ( "", 10 );
-    __Precision_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - digits after decimal (default=4)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MissingValue_JTextField = new JTextField ( "", 10 );
-    __MissingValue_JTextField.setToolTipText("Specify Blank to output a blank.");
-    __MissingValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - value to write for missing data (default=initial missing value)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputStart_JTextField = new JTextField (10);
-	__OutputStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
-		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - override the global output start (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputEnd_JTextField = new JTextField (10);
-	__OutputEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - override the global output end (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Non-missing output count:"), 
-        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NonMissingOutputCount_JTextField = new JTextField (10);
-    __NonMissingOutputCount_JTextField.setToolTipText ( "Useful to output last value.  Specify a negative number to output values at end.");
-    __NonMissingOutputCount_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __NonMissingOutputCount_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - number of non-missing values to output (default=write all data)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(footer_JPanel, new JLabel ( "OR output file footer (file):" ), 
+        0, ++yFooter, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputFileFooterFile_JTextField = new JTextField ( 45 );
+    __OutputFileFooterFile_JTextField.setToolTipText("Specify a file that provides the header.");
+    __OutputFileFooterFile_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(footer_JPanel, __OutputFileFooterFile_JTextField,
+        1, yFooter, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __browseFooter_JButton = new SimpleJButton ( "Browse", this );
+    JGUIUtil.addComponent(footer_JPanel, __browseFooter_JButton,
+        6, yFooter, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+	    __pathFooter_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
+	    JGUIUtil.addComponent(footer_JPanel, __pathFooter_JButton,
+            3, ++yFooter, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	}
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -594,13 +848,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
-		__pathOutput_JButton = new SimpleJButton( __RemoveWorkingDirectory_Output, __RemoveWorkingDirectory_Output, this);
-		button_JPanel.add ( __pathOutput_JButton );
-       __pathFormat_JButton = new SimpleJButton( __RemoveWorkingDirectory_Format, __RemoveWorkingDirectory_Format, this);
-        button_JPanel.add ( __pathFormat_JButton );
-	}
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
 	__ok_JButton = new SimpleJButton("OK", "OK", this);
@@ -662,15 +909,17 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WriteTimeSeriesToDataStream_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String OutputFile = "";
 	String Append = "";
 	String OutputFileHeader = "";
+	String OutputFileHeaderFile = "";
 	String OutputLineFormat = "";
 	String OutputLineFormatFile = "";
     String dateTimeFormatterType = "";
     String DateTimeFormat = "";
 	String OutputFileFooter = "";
+	String OutputFileFooterFile = "";
 	String Precision = "";
 	String MissingValue = "";
 	String OutputStart = "";
@@ -691,11 +940,13 @@ private void refresh ()
 		OutputFile = parameters.getValue ( "OutputFile" );
 		Append = parameters.getValue ( "Append" );
 		OutputFileHeader = parameters.getValue ( "OutputFileHeader" );
+		OutputFileHeaderFile = parameters.getValue ( "OutputFileHeaderFile" );
 		OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
 		dateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
         DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
 		OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
 		OutputFileFooter = parameters.getValue ( "OutputFileFooter" );
+		OutputFileFooterFile = parameters.getValue ( "OutputFileFooterFile" );
 	    Precision = parameters.getValue("Precision");
 	    MissingValue = parameters.getValue("MissingValue");
 		OutputStart = parameters.getValue ( "OutputStart" );
@@ -764,7 +1015,12 @@ private void refresh ()
             }
         }
 	    if (OutputFileHeader != null) {
+	    	// Replace \n in file with actual newline
+	    	OutputFileHeader.replace("\\n","\n");
 	         __OutputFileHeader_JTextArea.setText(OutputFileHeader);
+	    }
+	    if (OutputFileHeaderFile != null) {
+	         __OutputFileHeaderFile_JTextField.setText(OutputFileHeaderFile);
 	    }
         if (OutputLineFormat != null) {
             __OutputLineFormat_JTextArea.setText(OutputLineFormat);
@@ -791,8 +1047,12 @@ private void refresh ()
             __DateTimeFormat_JPanel.setText ( DateTimeFormat );
         }
         if (OutputFileFooter != null) {
+        	OutputFileFooter.replace("\\n","\n");
              __OutputFileFooter_JTextArea.setText(OutputFileFooter);
         }
+	    if (OutputFileFooterFile != null) {
+	         __OutputFileFooterFile_JTextField.setText(OutputFileFooterFile);
+	    }
 	    if ( Precision != null ) {
 	        __Precision_JTextField.setText ( Precision );
 	    }
@@ -816,11 +1076,13 @@ private void refresh ()
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Append = __Append_JComboBox.getSelected();
 	OutputFileHeader = __OutputFileHeader_JTextArea.getText().trim();
+	OutputFileHeaderFile = __OutputFileHeaderFile_JTextField.getText().trim();
 	OutputLineFormat = __OutputLineFormat_JTextArea.getText().trim();
 	OutputLineFormatFile = __OutputLineFormatFile_JTextField.getText().trim();
     dateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	OutputFileFooter = __OutputFileFooter_JTextArea.getText().trim();
+	OutputFileFooterFile = __OutputFileFooterFile_JTextField.getText().trim();
 	Precision = __Precision_JTextField.getText().trim();
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
@@ -833,11 +1095,13 @@ private void refresh ()
 	parameters.add ( "OutputFile=" + OutputFile );
 	parameters.add ( "Append=" + Append );
 	parameters.add ( "OutputFileHeader=" + OutputFileHeader );
+	parameters.add ( "OutputFileHeaderFile=" + OutputFileHeaderFile );
 	parameters.add ( "OutputLineFormat=" + OutputLineFormat );
 	parameters.add ( "OutputLineFormatFile=" + OutputLineFormatFile );
 	parameters.add ( "DateTimeFormatterType=" + dateTimeFormatterType );
 	parameters.add ( "DateTimeFormat=" + DateTimeFormat );
 	parameters.add ( "OutputFileFooter=" + OutputFileFooter );
+	parameters.add ( "OutputFileFooterFile=" + OutputFileFooterFile );
 	parameters.add ( "Precision=" + Precision );
 	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "OutputStart=" + OutputStart );
@@ -853,12 +1117,27 @@ private void refresh ()
 		__pathOutput_JButton.setEnabled ( true );
 		File f = new File ( OutputFile );
 		if ( f.isAbsolute() ) {
-			__pathOutput_JButton.setText ( __RemoveWorkingDirectory_Output );
+			__pathOutput_JButton.setText ( __RemoveWorkingDirectory );
 		}
 		else {
-            __pathOutput_JButton.setText ( __AddWorkingDirectory_Output );
+            __pathOutput_JButton.setText ( __AddWorkingDirectory );
 		}
 	}
+    if ( (OutputFileHeaderFile == null) || OutputFileHeaderFile.isEmpty() ) {
+        if ( __pathHeader_JButton != null ) {
+            __pathHeader_JButton.setEnabled ( false );
+        }
+    }
+    if ( __pathHeader_JButton != null ) {
+        __pathHeader_JButton.setEnabled ( true );
+        File f = new File ( OutputFileHeaderFile );
+        if ( f.isAbsolute() ) {
+            __pathHeader_JButton.setText ( __RemoveWorkingDirectory );
+        }
+        else {
+            __pathHeader_JButton.setText ( __AddWorkingDirectory );
+        }
+    }
     if ( (OutputLineFormatFile == null) || (OutputLineFormatFile.length() == 0) ) {
         if ( __pathFormat_JButton != null ) {
             __pathFormat_JButton.setEnabled ( false );
@@ -868,10 +1147,25 @@ private void refresh ()
         __pathFormat_JButton.setEnabled ( true );
         File f = new File ( OutputLineFormatFile );
         if ( f.isAbsolute() ) {
-            __pathFormat_JButton.setText ( __RemoveWorkingDirectory_Format );
+            __pathFormat_JButton.setText ( __RemoveWorkingDirectory );
         }
         else {
-            __pathFormat_JButton.setText ( __AddWorkingDirectory_Format );
+            __pathFormat_JButton.setText ( __AddWorkingDirectory );
+        }
+    }
+    if ( (OutputFileFooterFile == null) || (OutputFileFooterFile.length() == 0) ) {
+        if ( __pathFooter_JButton != null ) {
+            __pathFooter_JButton.setEnabled ( false );
+        }
+    }
+    if ( __pathFooter_JButton != null ) {
+        __pathFooter_JButton.setEnabled ( true );
+        File f = new File ( OutputFileFooterFile );
+        if ( f.isAbsolute() ) {
+            __pathFooter_JButton.setText ( __RemoveWorkingDirectory );
+        }
+        else {
+            __pathFooter_JButton.setText ( __AddWorkingDirectory );
         }
     }
 }

@@ -28,5 +28,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-cdss-java"/>
 	<classpathentry kind="lib" path="lib/apache-commons-net/commons-net-3.3.jar"/>
 	<classpathentry kind="lib" path="lib/PostgreSQL_JDBC/postgresql-9.3-1102.jdbc4.jar"/>
+	<classpathentry kind="lib" path="lib/MySQL_JDBC/mysql-connector-java-5.1.36-bin.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

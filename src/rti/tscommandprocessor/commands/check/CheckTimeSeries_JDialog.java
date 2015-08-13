@@ -75,6 +75,7 @@ private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers, to match table TSID column
 private JTextField __TableDateTimeColumn_JTextField = null;
 private JTextField __TableValueColumn_JTextField = null;
+private JTextField __TableValuePrecision_JTextField = null;
 private JTextField __TableFlagColumn_JTextField = null;
 private JTextField __TableCheckTypeColumn_JTextField = null;
 private JTextField __TableCheckMessageColumn_JTextField = null;
@@ -210,6 +211,7 @@ private void checkInput ()
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String TableDateTimeColumn = __TableDateTimeColumn_JTextField.getText().trim();
     String TableValueColumn = __TableValueColumn_JTextField.getText().trim();
+    String TableValuePrecision = __TableValuePrecision_JTextField.getText().trim();
     String TableFlagColumn = __TableFlagColumn_JTextField.getText().trim();
     String TableCheckTypeColumn = __TableCheckTypeColumn_JTextField.getText().trim();
     String TableCheckMessageColumn = __TableCheckMessageColumn_JTextField.getText().trim();
@@ -281,6 +283,9 @@ private void checkInput ()
     if ( TableValueColumn.length() > 0 ) {
     	parameters.set ( "TableValueColumn", TableValueColumn );
     }
+    if ( !TableValuePrecision.isEmpty() ) {
+    	parameters.set ( "TableValuePrecision", TableValuePrecision );
+    }
     if ( TableFlagColumn.length() > 0 ) {
     	parameters.set ( "TableFlagColumn", TableFlagColumn );
     }
@@ -329,6 +334,7 @@ private void commitEdits ()
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String TableDateTimeColumn = __TableDateTimeColumn_JTextField.getText().trim();
     String TableValueColumn = __TableValueColumn_JTextField.getText().trim();
+    String TableValuePrecision = __TableValuePrecision_JTextField.getText().trim();
     String TableFlagColumn = __TableFlagColumn_JTextField.getText().trim();
     String TableCheckTypeColumn = __TableCheckTypeColumn_JTextField.getText().trim();
     String TableCheckMessageColumn = __TableCheckMessageColumn_JTextField.getText().trim();
@@ -358,6 +364,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "TableDateTimeColumn", TableDateTimeColumn );
     __command.setCommandParameter ( "TableValueColumn", TableValueColumn );
+    __command.setCommandParameter ( "TableValuePrecision", TableValuePrecision );
     __command.setCommandParameter ( "TableFlagColumn", TableFlagColumn );
     __command.setCommandParameter ( "TableCheckTypeColumn", TableCheckTypeColumn );
     __command.setCommandParameter ( "TableCheckMessageColumn", TableCheckMessageColumn );
@@ -659,6 +666,15 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command, List<S
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel( "Optional - column name for time series value (default=not output)."), 
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table value precision:" ), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableValuePrecision_JTextField = new JTextField ( 10 );
+    __TableValuePrecision_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __TableValuePrecision_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel( "Optional - precision for value (default=4 digits)."), 
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Table flag column:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -820,6 +836,7 @@ private void refresh ()
 	String TableTSIDFormat = "";
 	String TableDateTimeColumn = "";
 	String TableValueColumn = "";
+	String TableValuePrecision = "";
 	String TableFlagColumn = "";
 	String TableCheckTypeColumn = "";
 	String TableCheckMessageColumn = "";
@@ -849,6 +866,7 @@ private void refresh ()
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
         TableDateTimeColumn = props.getValue ( "TableDateTimeColumn" );
         TableValueColumn = props.getValue ( "TableValueColumn" );
+        TableValuePrecision = props.getValue ( "TableValuePrecision" );
         TableFlagColumn = props.getValue ( "TableFlagColumn" );
         TableCheckTypeColumn = props.getValue ( "TableCheckTypeColumn" );
         TableCheckMessageColumn = props.getValue ( "TableCheckMessageColumn" );
@@ -1013,6 +1031,9 @@ private void refresh ()
         if ( TableValueColumn != null ) {
             __TableValueColumn_JTextField.setText ( TableValueColumn );
         }
+        if ( TableValuePrecision != null ) {
+            __TableValuePrecision_JTextField.setText ( TableValuePrecision );
+        }
         if ( TableFlagColumn != null ) {
             __TableFlagColumn_JTextField.setText ( TableFlagColumn );
         }
@@ -1049,6 +1070,7 @@ private void refresh ()
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     TableDateTimeColumn = __TableDateTimeColumn_JTextField.getText().trim();
     TableValueColumn = __TableValueColumn_JTextField.getText().trim();
+    TableValuePrecision = __TableValuePrecision_JTextField.getText().trim();
     TableFlagColumn = __TableFlagColumn_JTextField.getText().trim();
     TableCheckTypeColumn = __TableCheckTypeColumn_JTextField.getText().trim();
     TableCheckMessageColumn = __TableCheckMessageColumn_JTextField.getText().trim();
@@ -1080,6 +1102,7 @@ private void refresh ()
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "TableDateTimeColumn=" + TableDateTimeColumn );
     props.add ( "TableValueColumn=" + TableValueColumn );
+    props.add ( "TableValuePrecision=" + TableValuePrecision );
     props.add ( "TableFlagColumn=" + TableFlagColumn );
     props.add ( "TableCheckTypeColumn=" + TableCheckTypeColumn );
     props.add ( "TableCheckMessageColumn=" + TableCheckMessageColumn );

@@ -88,6 +88,7 @@ throws InvalidCommandParameterException
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    String TableValuePrecision = parameters.getValue ( "TableValuePrecision" );
     String warning = "";
     String message;
     
@@ -231,10 +232,16 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a valid TSID format." ) );
         }
+        if ( (TableValuePrecision != null) && !TableValuePrecision.equals("") && !StringUtil.isInteger(TableValuePrecision) ) {
+            message = "The table value precision (" + TableValuePrecision + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the precision as an integer." ) );
+        }
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(25);
+    List<String> validList = new ArrayList<String>(26);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -255,6 +262,7 @@ throws InvalidCommandParameterException
     validList.add ( "TableTSIDFormat" );
     validList.add ( "TableDateTimeColumn" );
     validList.add ( "TableValueColumn" );
+    validList.add ( "TableValuePrecision" );
     validList.add ( "TableFlagColumn" );
     validList.add ( "TableCheckTypeColumn" );
     validList.add ( "TableCheckMessageColumn" );
@@ -412,6 +420,11 @@ CommandWarningException, CommandException
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableDateTimeColumn = parameters.getValue ( "TableDateTimeColumn" );
     String TableValueColumn = parameters.getValue ( "TableValueColumn" );
+    String TableValuePrecision = parameters.getValue ( "TableValuePrecision" );
+    int tableValuePrecision = 4; // Default
+    if ( (TableValuePrecision != null) && !TableValuePrecision.isEmpty() ) {
+    	tableValuePrecision = Integer.parseInt(TableValuePrecision);
+    }
     String TableFlagColumn = parameters.getValue ( "TableFlagColumn" );
     String TableCheckTypeColumn = parameters.getValue ( "TableCheckTypeColumn" );
     String TableCheckMessageColumn = parameters.getValue ( "TableCheckMessageColumn" );
@@ -646,7 +659,7 @@ CommandWarningException, CommandException
 	                    AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime,
 	                    Value1_Double, Value2_Double, ProblemType,
 	                    Flag, FlagDesc, Action, table, TableTSIDColumn, TableTSIDFormat, TableDateTimeColumn,
-	                    TableValueColumn, TableFlagColumn, TableCheckTypeColumn, TableCheckMessageColumn );
+	                    TableValueColumn, tableValuePrecision, TableFlagColumn, TableCheckTypeColumn, TableCheckMessageColumn );
 	                check.checkTimeSeries();
 	                List<String> problems = check.getProblems();
 	                int problemsSize = problems.size();
@@ -764,6 +777,7 @@ public String toString ( PropList parameters )
 	String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
 	String TableDateTimeColumn = parameters.getValue ( "TableDateTimeColumn" );
 	String TableValueColumn = parameters.getValue ( "TableValueColumn" );
+	String TableValuePrecision = parameters.getValue ( "TableValuePrecision" );
 	String TableFlagColumn = parameters.getValue ( "TableFlagColumn" );
 	String TableCheckTypeColumn = parameters.getValue ( "TableCheckTypeColumn" );
 	String TableCheckMessageColumn = parameters.getValue ( "TableCheckMessageColumn" );
@@ -891,6 +905,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TableValueColumn=\"" + TableValueColumn + "\"" );
+    }
+    if ( (TableValuePrecision != null) && (TableValuePrecision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableValuePrecision=" + TableValuePrecision );
     }
     if ( (TableFlagColumn != null) && (TableFlagColumn.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -189,6 +189,7 @@ throws InvalidCommandParameterException
 	List<String> validList = new ArrayList<String>(3);
     validList.add ( "DataStore" );
     validList.add ( "ReferenceTables" );
+    validList.add ( "ExcludeTables" );
     validList.add ( "OutputFile" );
     validList.add ( "ERDiagramLayoutTableID" );
     validList.add ( "ERDiagramLayoutTableNameColumn" );
@@ -268,14 +269,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String ReferenceTables = parameters.getValue ( "ReferenceTables" );
     String [] referenceTables = null;
     List<String> referenceTablesList = new ArrayList<String>();
-    if ( (ReferenceTables != null) && !ReferenceTables.equals("") ) {
+    if ( (ReferenceTables != null) && !ReferenceTables.isEmpty() ) {
     	referenceTables = ReferenceTables.split(",");
         for ( int i = 0; i < referenceTables.length; i++ ) {
         	referenceTablesList.add(referenceTables[i]);
         }
     }
-    // TODO SAM 2015-05-10 Enable exclude tables
-    List<String> excludeTables = null;
+    String ExcludeTables = parameters.getValue ( "ExcludeTables" );
+    String [] excludeTables = null;
+    List<String> excludeTablesList = new ArrayList<String>();
+    if ( (ExcludeTables != null) && !ExcludeTables.isEmpty() ) {
+    	excludeTables = ExcludeTables.split(",");
+        for ( int i = 0; i < excludeTables.length; i++ ) {
+        	excludeTablesList.add(excludeTables[i]);
+        }
+    }
     String OutputFile = parameters.getValue("OutputFile");
     String ERDiagramLayoutTableID = parameters.getValue("ERDiagramLayoutTableID");
     String ERDiagramLayoutTableNameColumn = parameters.getValue("ERDiagramLayoutTableNameColumn");
@@ -353,7 +361,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         OutputFile_full = IOUtil.enforceFileExtension(OutputFile_full, "html");
         // Create the data dictionary.
         DataDictionary dd = new DataDictionary();
-        dd.createHTMLDataDictionary(dmi, OutputFile_full, referenceTablesList, excludeTables);
+        dd.createHTMLDataDictionary(dmi, OutputFile_full, referenceTablesList, excludeTablesList);
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));
         
@@ -414,6 +422,7 @@ public String toString ( PropList props )
 	}
 	String DataStore = props.getValue( "DataStore" );
 	String ReferenceTables = props.getValue( "ReferenceTables" );
+	String ExcludeTables = props.getValue( "ExcludeTables" );
 	String OutputFile = props.getValue( "OutputFile" );
 	String ERDiagramLayoutTableID = props.getValue( "ERDiagramLayoutTableID" );
 	String ERDiagramLayoutTableNameColumn = props.getValue( "ERDiagramLayoutTableNameColumn" );
@@ -434,6 +443,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "ReferenceTables=\"" + ReferenceTables + "\"" );
+    }
+    if ( (ExcludeTables != null) && (ExcludeTables.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcludeTables=\"" + ExcludeTables + "\"" );
     }
     if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
         if ( b.length() > 0 ) {

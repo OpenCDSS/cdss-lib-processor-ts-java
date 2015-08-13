@@ -6,9 +6,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -65,6 +67,7 @@ private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __ReferenceTables_JTextField = null;
+private JTextField __ExcludeTables_JTextField = null;
 private SimpleJComboBox __ERDiagramLayoutTableID_JComboBox = null;
 private JTextField __ERDiagramLayoutTableNameColumn_JTextField = null;
 private JTextField __ERDiagramLayoutTableXColumn_JTextField = null;
@@ -192,6 +195,7 @@ private void checkInput ()
         props.set ( "DataStore", "" );
     }
     String ReferenceTables = __ReferenceTables_JTextField.getText().trim();
+    String ExcludeTables = __ExcludeTables_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String ERDiagramLayoutTableID = __ERDiagramLayoutTableID_JComboBox.getSelected();
 	String ERDiagramLayoutTableNameColumn = __ERDiagramLayoutTableXColumn_JTextField.getText().trim();
@@ -204,6 +208,9 @@ private void checkInput ()
 
     if ( ReferenceTables.length() > 0 ) {
         props.set ( "ReferenceTables", ReferenceTables );
+    }
+    if ( !ExcludeTables.isEmpty() ) {
+        props.set ( "ExcludeTables", ExcludeTables );
     }
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
@@ -247,6 +254,7 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
     String ReferenceTables = __ReferenceTables_JTextField.getText().trim();
+    String ExcludeTables = __ExcludeTables_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
 	String ERDiagramLayoutTableID = __ERDiagramLayoutTableID_JComboBox.getSelected();
 	String ERDiagramLayoutTableNameColumn = __ERDiagramLayoutTableNameColumn_JTextField.getText().trim();
@@ -257,6 +265,7 @@ private void commitEdits ()
     String ViewERDiagram = __ViewERDiagram_JComboBox.getSelected();
     __command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "ReferenceTables", ReferenceTables );
+	__command.setCommandParameter ( "ExcludeTables", ExcludeTables );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "ERDiagramLayoutTableID", ERDiagramLayoutTableID );
 	__command.setCommandParameter ( "ERDiagramLayoutTableNameColumn", ERDiagramLayoutTableNameColumn );
@@ -313,7 +322,7 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
 	getContentPane().add ("North", main_JPanel);
-	int y = 0;
+	int y = -1;
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
@@ -333,7 +342,9 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     // List available data stores of the correct type
     
@@ -356,19 +367,43 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - datastore of interest."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Reference tables:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ReferenceTables_JTextField = new JTextField (10);
-    __ReferenceTables_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ReferenceTables_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of reference tables (default=none)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     
+
+    // Panel for tables
+    int yTable = -1;
+    JPanel table_JPanel = new JPanel();
+    table_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Tables", table_JPanel );
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "Reference tables will by output in their entirety in the data dictionary."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "Tables that are excluded below won't be included in the data dictionary."),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Reference tables:"), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ReferenceTables_JTextField = new JTextField (10);
+    __ReferenceTables_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __ReferenceTables_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - names of reference tables (default=none)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Exclude tables:"), 
+        0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeTables_JTextField = new JTextField (20);
+    __ExcludeTables_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(table_JPanel, __ExcludeTables_JTextField,
+        1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - tables to exclude, *=wildcard (default=include all)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
     // Panel for data dictionary
     int yDict = -1;
     JPanel dict_JPanel = new JPanel();
@@ -574,10 +609,11 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 try{
     String DataStore = "";
     String ReferenceTables = "";
+    String ExcludeTables = "";
     String OutputFile = "";
     String ERDiagramLayoutTableID = "";
     String ERDiagramLayoutTableNameColumn = "";
@@ -591,6 +627,7 @@ try{
 		__first_time = false;
 		DataStore = props.getValue ( "DataStore" );
 		ReferenceTables = props.getValue ( "ReferenceTables" );
+		ExcludeTables = props.getValue ( "ExcludeTables" );
 		OutputFile = props.getValue ( "OutputFile" );
 		ERDiagramLayoutTableID = props.getValue ( "ERDiagramLayoutTableID" );
 		ERDiagramLayoutTableXColumn = props.getValue ( "ERDiagramLayoutTableXColumn" );
@@ -616,10 +653,13 @@ try{
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        if ( (ReferenceTables != null) && !ReferenceTables.equals("") ) {
+        if ( (ReferenceTables != null) && !ReferenceTables.isEmpty() ) {
             __ReferenceTables_JTextField.setText ( ReferenceTables );
         }
-        if ( (OutputFile != null) && !OutputFile.equals("") ) {
+        if ( (ExcludeTables != null) && !ExcludeTables.isEmpty() ) {
+            __ExcludeTables_JTextField.setText ( ExcludeTables );
+        }
+        if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
             __OutputFile_JTextField.setText(OutputFile);
         }
         if ( ERDiagramLayoutTableID == null ) {
@@ -702,6 +742,7 @@ try{
         DataStore = "";
     }
 	ReferenceTables = __ReferenceTables_JTextField.getText().trim();
+	ExcludeTables = __ExcludeTables_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	ERDiagramLayoutTableID = __ERDiagramLayoutTableID_JComboBox.getSelected();
 	ERDiagramLayoutTableNameColumn = __ERDiagramLayoutTableNameColumn_JTextField.getText().trim();
@@ -713,6 +754,7 @@ try{
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "DataStore=" + DataStore );
 	props.add ( "ReferenceTables=" + ReferenceTables );
+	props.add ( "ExcludeTables=" + ExcludeTables );
 	props.add ( "OutputFile=" + OutputFile);
 	props.add ( "ERDiagramLayoutTableID=" + ERDiagramLayoutTableID);
 	props.add ( "ERDiagramLayoutTableNameColumn=" + ERDiagramLayoutTableNameColumn);

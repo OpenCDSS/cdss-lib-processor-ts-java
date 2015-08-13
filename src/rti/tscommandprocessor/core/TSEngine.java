@@ -664,6 +664,8 @@ import rti.tscommandprocessor.commands.nrcs.awdb.NrcsAwdbDataStore;
 import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDB_DMI;
+import rti.tscommandprocessor.commands.reclamationpisces.ReclamationPiscesDMI;
+import rti.tscommandprocessor.commands.reclamationpisces.ReclamationPiscesDataStore;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisDailyDataStore;
 import rti.tscommandprocessor.commands.usgs.nwis.groundwater.UsgsNwisGroundwaterDataStore;
 import rti.tscommandprocessor.commands.usgs.nwis.instantaneous.UsgsNwisInstantaneousDataStore;
@@ -4906,6 +4908,28 @@ throws Exception
             catch ( Exception te ) {
                 Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
                     "\" from ReclamationHDB database (" + te + ")." );
+                Message.printWarning ( 3, routine, te );
+                ts = null;
+            }
+        }
+    }
+	else if ((dataStore != null) && (dataStore instanceof ReclamationPiscesDataStore) ) {
+        // Check the connection in case the connection timed out.
+    	ReclamationPiscesDataStore ds = (ReclamationPiscesDataStore)dataStore;
+    	ds.checkDatabaseConnection();
+        ReclamationPiscesDMI dmi = (ReclamationPiscesDMI)ds.getDMI();
+        if ( (dmi == null) || !dmi.isOpen() ) {
+            Message.printWarning ( 3, routine, "Unable to get open ReclamationPisces connection for " +
+            "datastore name \"" + inputName +  "\".  Unable to read time series." );
+            ts = null;
+        }
+        else {
+            try {
+                ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+            }
+            catch ( Exception te ) {
+                Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+                    "\" from ReclamationPisces database (" + te + ")." );
                 Message.printWarning ( 3, routine, te );
                 ts = null;
             }

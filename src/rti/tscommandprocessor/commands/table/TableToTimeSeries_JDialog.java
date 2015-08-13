@@ -933,7 +933,7 @@ public boolean ok() {
 Refresh the command from the other text field contents.
 */
 private void refresh()
-{   String routine = getClass().getName() + ".refresh", message;
+{   String routine = getClass().getSimpleName() + ".refresh", message;
     String TableID = "";
     //String SkipRows = "";
     String DateColumn = "";
@@ -1098,7 +1098,8 @@ private void refresh()
             __Interval_JComboBox.select ( 0 );
         } 
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
+        	// Select case-independent
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Interval_JComboBox, Interval, JGUIUtil.NONE, null, -1, null, true ) ) {
                 __Interval_JComboBox.select ( Interval );
             }
             else {

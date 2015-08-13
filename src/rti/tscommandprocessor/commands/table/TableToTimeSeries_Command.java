@@ -1238,12 +1238,15 @@ private DateTime getDateTimeFromRecord ( TableRecord rec, int row, int dateTimeP
             return null;
         }
         else if ( dateTimeObject instanceof DateTime ) {
+        	// Can return the DateTime object as is
             return (DateTime)dateTimeObject;
         }
         else if ( dateTimeObject instanceof Date ) {
+        	// Construct a DateTime object from the raw Date
             return new DateTime((Date)dateTimeObject);
         }
         else {
+        	// Parse the string to a DateTime (parsing done below).
             dateTimeString = "" + dateTimeObject; // Could be integer year
         }
     }
@@ -2548,7 +2551,10 @@ throws IOException
                 }
             }
             // Set the value and flag in the time series
-            if ( (flag != null) && !flag.equals("") ) {
+            if ( Message.isDebugOn ) {
+            	Message.printDebug(1, routine, "Setting time series from table for date/time=" + dt + " val=" + value + " flag=\"" + flag + "\"");
+            }
+            if ( (flag != null) && !flag.isEmpty() ) {
                 if ( handleDuplicatesHow == HandleDuplicatesHowType.USE_LAST ) {
                     // Set to the last value even if missing
                     ts.setDataValue(dt, value, flag, -1);

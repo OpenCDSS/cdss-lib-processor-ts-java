@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -52,7 +53,7 @@ private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextArea __NewTSID_JTextArea=null;
 private SimpleJButton __edit_JButton = null;
 private SimpleJButton __clear_JButton = null;
-private SimpleJComboBox __IrregularInterval_JComboBox=null; // Interval used to initialize irregular time series
+private SimpleJComboBox __IrregularInterval_JComboBox = null; // Interval used to initialize irregular time series
 private JTextField __Description_JTextField = null;
 private JTextField __SetStart_JTextField = null;
 private JTextField __SetEnd_JTextField = null;
@@ -161,7 +162,7 @@ private void checkUIState()
         __IrregularInterval_JComboBox.setEnabled(true);
     }
     else {
-        __IrregularInterval_JComboBox.setEnabled(false);  
+        __IrregularInterval_JComboBox.setEnabled(false);
     }
 }
 
@@ -317,8 +318,10 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
+    boolean padZeroes = true;
+    boolean includeIrregular = false;
     List interval_Vector = TimeInterval.getTimeIntervalChoices(
-        TimeInterval.MINUTE, TimeInterval.YEAR, false, 1, true);
+        TimeInterval.MINUTE, TimeInterval.YEAR, padZeroes, 1, includeIrregular);
     // Add a blank
     interval_Vector.add(0,"");
     __IrregularInterval_JComboBox.setData ( interval_Vector );
@@ -487,8 +490,8 @@ private void refresh ()
 	String NewTSID = "";
 	String IrregularInterval = "";
 	String Description = "";
-	String SetStart = "*";
-	String SetEnd = "*";
+	String SetStart = "";
+	String SetEnd = "";
 	String Units = "";
 	String MissingValue = "";
 	String PatternValues = "";
@@ -512,12 +515,12 @@ private void refresh ()
 		if ( NewTSID != null ) {
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
-        if ( JGUIUtil.isSimpleJComboBoxItem( __IrregularInterval_JComboBox, IrregularInterval, JGUIUtil.NONE, null, null ) ) {
+        if ( JGUIUtil.isSimpleJComboBoxItem( __IrregularInterval_JComboBox, IrregularInterval, JGUIUtil.NONE, null, -1, null, true ) ) {
             __IrregularInterval_JComboBox.select ( IrregularInterval );
         }
         else {
             // Automatically add to the list after the blank (might be a multiple)...
-            if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
+            if ( (IrregularInterval != null) && !IrregularInterval.isEmpty() ) {
                 __IrregularInterval_JComboBox.insertItemAt ( IrregularInterval, 1 );
                 // Select...
                 __IrregularInterval_JComboBox.select ( IrregularInterval );

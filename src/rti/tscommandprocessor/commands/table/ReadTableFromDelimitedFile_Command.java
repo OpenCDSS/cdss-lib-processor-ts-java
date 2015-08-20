@@ -169,13 +169,14 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List validList = new ArrayList<String>(6);
+	List validList = new ArrayList<String>(7);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
     validList.add ( "Delimiter" );
     validList.add ( "SkipLines" );
     validList.add ( "SkipColumns" );
     validList.add ( "HeaderLines" );
+    validList.add ( "DateTimeColumns" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -300,6 +301,7 @@ CommandWarningException, CommandException
 	String HeaderLines = parameters.getValue ( "HeaderLines" );
 	Message.printStatus( 2, routine, "parameter SkipLines=\"" + SkipLines + "\"");
 	Message.printStatus( 2, routine, "parameter HeaderLines=\"" + HeaderLines + "\"");
+	String DateTimeColumns = parameters.getValue ( "DateTimeColumns" );
 
 	String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
@@ -383,11 +385,14 @@ CommandWarningException, CommandException
     	props.set ( "TrimInput=True" ); // Trim strings before parsing.
     	props.set ( "TrimStrings=True" ); // Trim strings after parsing
     	//props.set ( "ColumnDataTypes=Auto" ); // Automatically determine column data types
-    	if ( (SkipLines != null) && (SkipLines.length() > 0) ) {
+    	if ( (SkipLines != null) && !SkipLines.isEmpty() ) {
     	    props.set ( "SkipLines=" + StringUtil.convertNumberSequenceToZeroOffset(SkipLines) );
     	}
-        if ( (HeaderLines != null) && (HeaderLines.length() > 0) ) {
+        if ( (HeaderLines != null) && !HeaderLines.isEmpty() ) {
             props.set ( "HeaderLines=" + StringUtil.convertNumberSequenceToZeroOffset(HeaderLines) );
+        }
+        if ( (DateTimeColumns != null) && !DateTimeColumns.isEmpty() ) {
+            props.set ( "DateTimeColumns=" + DateTimeColumns);
         }
         Message.printStatus( 2, routine, "parameter zero index SkipLines=\"" + props.getValue("SkipLines") + "\"");
         Message.printStatus( 2, routine, "parameter zero index HeaderLines=\"" + props.getValue("HeaderLines") + "\"");
@@ -464,6 +469,7 @@ public String toString ( PropList props )
 	String SkipLines = props.getValue("SkipLines");
 	String SkipColumns = props.getValue("SkipColumns");
 	String HeaderLines = props.getValue("HeaderLines");
+	String DateTimeColumns = props.getValue("DateTimeColumns");
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -500,6 +506,12 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "HeaderLines=\"" + HeaderLines + "\"" );
+	}
+	if ( (DateTimeColumns != null) && (DateTimeColumns.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "DateTimeColumns=\"" + DateTimeColumns + "\"" );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

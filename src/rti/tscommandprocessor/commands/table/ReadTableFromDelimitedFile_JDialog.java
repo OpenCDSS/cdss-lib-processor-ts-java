@@ -46,9 +46,9 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private final String __AddWorkingDirectoryToFile = "Add Working Directory To File";
 private final String __RemoveWorkingDirectoryFromFile = "Remove Working Directory From File";
 
-private boolean __error_wait = false;	// To track errors
-private boolean __first_time = true;	// Indicate first time display
-private JTextArea __command_JTextArea=null;// For command
+private boolean __error_wait = false;
+private boolean __first_time = true;
+private JTextArea __command_JTextArea=null;
 private JTextField  __TableID_JTextField = null;
 private JTextField __InputFile_JTextField = null;
 private JTextField __Delimiter_JTextField = null;
@@ -56,6 +56,7 @@ private JTextField __SkipLines_JTextField = null;
 // FIXME SAM 2008-01-27 Enable later
 //private JTextField __SkipColumns_JTextField = null;
 private JTextField __HeaderLines_JTextField = null;
+private JTextField __DateTimeColumns_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
@@ -147,6 +148,7 @@ private void checkInput ()
 	String SkipLines = __SkipLines_JTextField.getText().trim();
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
+	String DateTimeColumns  = __DateTimeColumns_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -167,6 +169,9 @@ private void checkInput ()
 	if ( HeaderLines.length() > 0 ) {
 		props.set ( "HeaderLines", HeaderLines );
 	}
+    if ( DateTimeColumns.length() > 0 ) {
+        props.set ( "DateTimeColumns", DateTimeColumns );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -189,12 +194,14 @@ private void commitEdits ()
 	String SkipLines = __SkipLines_JTextField.getText().trim();
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
+	String DateTimeColumns  = __DateTimeColumns_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "Delimiter", Delimiter );
 	__command.setCommandParameter ( "SkipLines", SkipLines );
 	//__command.setCommandParameter ( "SkipColumns", SkipColumns );
 	__command.setCommandParameter ( "HeaderLines", HeaderLines );
+	__command.setCommandParameter ( "DateTimeColumns", DateTimeColumns );
 }
 
 /**
@@ -209,14 +216,14 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
 
 	addWindowListener(this);
 
-    Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(1,2,1,2);
 
 	// Main panel...
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
 	getContentPane().add ("North", main_JPanel);
-	int y = 0;
+	int y = -1;
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
@@ -252,19 +259,17 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
     JGUIUtil.addComponent(paragraph, new JLabel (
 		"It is recommended that the location of the files be " +
 		"specified using a path relative to the working directory."),
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
-    JGUIUtil.addComponent(paragraph, new JLabel ( ""),
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);			
 	if (__working_dir != null) {
     	JGUIUtil.addComponent(paragraph, new JLabel (
 		"The working directory is: " + __working_dir), 
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-	JGUIUtil.addComponent(paragraph, new JSeparator (SwingConstants.HORIZONTAL), 
-		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -329,6 +334,16 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
    	    new JLabel ( "Optional - specify line number 1+ (default=first row if double quoted)." ),
 		//"Specify as a range (e.g., \"5-7\")."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+   	
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time columns:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateTimeColumns_JTextField = new JTextField (20);
+    __DateTimeColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __DateTimeColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ("Optional - columns that are date/times, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -415,6 +430,7 @@ private void refresh ()
 	String SkipLines = "";
 	//String SkipColumns = "";
 	String HeaderLines = "";
+	String DateTimeColumns = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -424,6 +440,7 @@ private void refresh ()
 		SkipLines = props.getValue ( "SkipLines" );
 		//SkipColumns = props.getValue ( "SkipColumns" );
 		HeaderLines = props.getValue ( "HeaderLines" );
+		DateTimeColumns = props.getValue ( "DateTimeColumns" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
         }
@@ -442,6 +459,9 @@ private void refresh ()
 		if ( HeaderLines != null ) {
 			__HeaderLines_JTextField.setText ( HeaderLines );
 		}
+        if ( DateTimeColumns != null ) {
+            __DateTimeColumns_JTextField.setText ( DateTimeColumns );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TableID = __TableID_JTextField.getText().trim();
@@ -450,6 +470,7 @@ private void refresh ()
 	SkipLines = __SkipLines_JTextField.getText().trim();
 	//SkipColumns = __SkipColumns_JTextField.getText().trim();
 	HeaderLines = __HeaderLines_JTextField.getText().trim();
+	DateTimeColumns = __DateTimeColumns_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
@@ -457,6 +478,7 @@ private void refresh ()
 	props.add ( "SkipLines=" + SkipLines );
 	//props.add ( "SkipColumns=" + SkipColumns );
 	props.add ( "HeaderLines=" + HeaderLines );
+	props.add ( "DateTimeColumns=" + DateTimeColumns );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

@@ -20,7 +20,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -194,10 +196,13 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Future enhancements may provide filters to limit processing.  Currently all rows are processed." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );

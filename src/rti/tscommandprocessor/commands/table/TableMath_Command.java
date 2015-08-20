@@ -5,8 +5,8 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -213,14 +213,14 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "Input1" );
-    valid_Vector.add ( "Operator" );
-    valid_Vector.add ( "Input2" );
-    valid_Vector.add ( "Output" );
-    valid_Vector.add ( "NonValue" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(6);
+    validList.add ( "TableID" );
+    validList.add ( "Input1" );
+    validList.add ( "Operator" );
+    validList.add ( "Input2" );
+    validList.add ( "Output" );
+    validList.add ( "NonValue" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
@@ -254,7 +254,7 @@ Method to execute the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{   String message, routine = getCommandName() + "_Command.runCommand";
+{   String message, routine = getClass().getSimpleName() + ".runCommand";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
@@ -262,12 +262,28 @@ CommandWarningException, CommandException
     
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     PropList parameters = getCommandParameters();
     
     // Get the input parameters...
     
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
     String Input1 = parameters.getValue ( "Input1" );
     String Operator = parameters.getValue ( "Operator" );
     DataTableMathOperatorType operator = DataTableMathOperatorType.valueOfIgnoreCase(Operator);
@@ -325,7 +341,7 @@ CommandWarningException, CommandException
     
     // Now process...
 
-    List<String> problems = new Vector();
+    List<String> problems = new ArrayList<String>();
     try {
         DataTableMath dtm = new DataTableMath ( table );
         dtm.math ( Input1, operator, Input2, Output, NonValue_Double, problems );

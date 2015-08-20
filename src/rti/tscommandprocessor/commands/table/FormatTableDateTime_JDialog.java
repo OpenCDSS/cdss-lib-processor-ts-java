@@ -218,7 +218,10 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
 	int y = -1;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Format the contents of a date/time (or string that can be parsed into a date/time) input column to create values in the output column." ), 
+		"Format the contents of a date/time input column to create values in the output column." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The input column must have a type of Date, DateTime, or a string that can be parsed to a date/time." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The output type can be set to:" ), 

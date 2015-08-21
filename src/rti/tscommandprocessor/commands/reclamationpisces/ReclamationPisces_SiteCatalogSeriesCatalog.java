@@ -3,8 +3,10 @@ package rti.tscommandprocessor.commands.reclamationpisces;
 import RTi.DMI.DMIUtil;
 import RTi.Util.Time.TimeInterval;
 
+// In the future it may or may not make sense to add classes for one or both of the
+// individual tables and then extend this class from one of those classes.
 /**
-Hold data from the Reclamation Pisces database that is a join of SiteCatalog and SeriesCatalog.
+Hold data from the Reclamation Pisces database that is a join of sitecatalog and seriescatalog tables.
 */
 public class ReclamationPisces_SiteCatalogSeriesCatalog
 {
@@ -27,6 +29,7 @@ private String tz_offset = "";
 private String active_flag = "";
 private String type = "";
 private String responsibility = "";
+private String agency_region = "";
 
 // From "seriescatalog" table
 
@@ -46,6 +49,7 @@ private String connectionstring = "";
 private String expression = "";
 private String notes = "";
 private int enabled = DMIUtil.MISSING_INT;
+private String server = "";
 
 /**
 Constructor.
@@ -57,6 +61,11 @@ public ReclamationPisces_SiteCatalogSeriesCatalog ()
 public String getActiveFlag ()
 {
 	return this.active_flag;
+}
+
+public String getAgencyRegion ()
+{
+	return this.agency_region;
 }
 
 public String getConnectionString ()
@@ -154,6 +163,11 @@ public String getResponsibility ()
 	return this.responsibility;
 }
 
+public String getServer ()
+{
+	return this.server;
+}
+
 public String getSiteID ()
 {
 	return this.siteid;
@@ -204,7 +218,7 @@ Get the time series identifier string corresponding to this instance, without th
 */
 public String getTSID ()
 {
-    return getSiteID().replace('.','?') + "." + getProvider().replace('.','?') + "." +
+    return getSiteID().replace('.','?') + "." + getServer().replace('.','?') + "." +
         getParameter().replace('.', '?') + "." + getTimeIntervalForTSID();
 }
 
@@ -233,6 +247,11 @@ public void setActiveFlag ( String active_flag )
     this.active_flag = active_flag;
 }
 
+public void setAgencyRegion ( String agency_region )
+{
+    this.agency_region = agency_region;
+}
+
 public void setConnectionString ( String connectionstring )
 {
     this.connectionstring = connectionstring;
@@ -248,14 +267,14 @@ public void setElevation ( double elevation )
     this.elevation = elevation;
 }
 
-public void setEnabled ( int enabled )
-{
-    this.enabled = enabled;
-}
-
 public void setElevationMethod ( String elevation_method )
 {
     this.elevation_method = elevation_method;
+}
+
+public void setEnabled ( int enabled )
+{
+    this.enabled = enabled;
 }
 
 public void setExpression ( String expression )
@@ -328,6 +347,11 @@ public void setResponsibility ( String responsibility )
     this.responsibility = responsibility;
 }
 
+public void setServer ( String server )
+{
+    this.server = server;
+}
+
 public void setSiteID ( String siteid )
 {
     this.siteid = siteid;
@@ -338,11 +362,6 @@ public void setSortOrder ( int sortorder )
     this.sortorder = sortorder;
 }
 
-public void setTimeInterval ( String timeinterval )
-{
-    this.timeinterval = timeinterval;
-}
-
 public void setState ( String state )
 {
     this.state = state;
@@ -351,6 +370,11 @@ public void setState ( String state )
 public void setTableName ( String tablename )
 {
     this.tablename = tablename;
+}
+
+public void setTimeInterval ( String timeinterval )
+{
+    this.timeinterval = timeinterval;
 }
 
 public void setTimeZone ( String timezone )

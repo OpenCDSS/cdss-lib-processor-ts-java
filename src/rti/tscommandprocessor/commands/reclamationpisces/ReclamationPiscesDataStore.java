@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Vector;
 
 import RTi.DMI.AbstractDatabaseDataStore;
 import RTi.DMI.DMI;
@@ -13,6 +14,7 @@ import RTi.DMI.DMIUtil;
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
+import RTi.Util.GUI.InputFilter;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
@@ -28,7 +30,7 @@ public class ReclamationPiscesDataStore extends AbstractDatabaseDataStore
 /**
 List of unique parameters from series.catalog.
 */
-private List<String> parameterList = null;
+private List<ReclamationPisces_Ref_Parameter> parameterList = null;
     
 /**
 Construct a data store given a DMI instance, which is assumed to be open.
@@ -94,49 +96,49 @@ public boolean checkDatabaseConnection ()
 Return the list of data intervals valid for a data type.
 */
 public List<String> getDataIntervalStringsForDataType(String dataType)
-{	// TODO SAM 2015-08-06 need to do a database query and not hard code
-	List<String> intervals = new ArrayList<String>();
-	intervals.add(TimeInterval.getName(TimeInterval.DAY,0));
-	return intervals;
+{	// Get the intervals given the data type - will return "Daily", "Monthly", etc.
+	if ( dataType.equals("*") ) {
+		// Get intervals for all data types
+		dataType = null;
+	}
+	List<String> intervals = readDistinctTimeIntervalList(dataType);
+	// Do some extra work to sort and convert to generic representation
+	List <String> intervals2 = new ArrayList<String>();
+	for ( String i : intervals ) {
+		if ( i.equalsIgnoreCase("Hourly") ) {
+			intervals2.add(TimeInterval.getName(TimeInterval.HOUR, 0));
+			break;
+		}
+	}
+	for ( String i : intervals ) {
+		if ( i.equalsIgnoreCase("Daily") ) {
+			intervals2.add(TimeInterval.getName(TimeInterval.DAY, 0));
+			break;
+		}
+	}
+	for ( String i : intervals ) {
+		if ( i.equalsIgnoreCase("Monthly") ) {
+			intervals2.add(TimeInterval.getName(TimeInterval.MONTH, 0));
+			break;
+		}
+	}
+	for ( String i : intervals ) {
+		if ( i.equalsIgnoreCase("Yearly") ) {
+			intervals2.add(TimeInterval.getName(TimeInterval.YEAR, 0));
+			break;
+		}
+	}
+	return intervals2;
 }
 
 /**
 Return the HDB data type list (global data initialized when database connection is opened).
 @return the list of data types 
 */
-public List<String> getParameterList ()
-{	String routine = getClass().getSimpleName() + ".getParameterList";
-	if ( this.parameterList == null ) {
+public List<ReclamationPisces_Ref_Parameter> getParameterList ()
+{	if ( this.parameterList == null ) {
 		// Read the unique parameters and save for future access
-		ReclamationPiscesDMI dmi = (ReclamationPiscesDMI)getDMI();
-		ResultSet rs = null;
-		List<String> parameterList = new ArrayList<String>();
-		try {
-			rs = dmi.dmiSelect("SELECT distinct parameter from seriescatalog WHERE parameter <> '' order by parameter");
-			String s;
-			while ( rs.next() ) {
-				s = rs.getString ( 1 );
-				if ( !rs.wasNull() ) {
-					parameterList.add ( s.trim() );
-				}
-			}
-			this.parameterList = parameterList;
-		}
-	    catch (Exception e) {
-	        Message.printWarning(3, routine, "Error getting distinct seriescatalog.parameter from Pisces database \"" +
-	            dmi.getDatabaseName() + "\" (" + e + ")." );
-	        Message.printWarning(3, routine, e );
-	    }
-	    finally {
-	        if ( rs != null ) {
-	            try {
-	            	rs.close();
-	            }
-	            catch ( Exception e ) {
-	            	// OK to absorb
-	            }
-	        }
-	    }
+		this.parameterList = readRefParameterList();
 	}
     return this.parameterList;
 }
@@ -188,16 +190,166 @@ public String getTSIDIntervalFromPiscesInterval(String interval)
 }
 
 /**
+Create a list of where clauses give an InputFilter_JPanel.  The InputFilter
+instances that are managed by the InputFilter_JPanel must have been defined with
+the database table and field names in the internal (non-label) data.
+@return a list of where clauses, each of which can be added to a DMI statement.
+@param dmi The DMI instance being used, which may be checked for specific formatting.
+@param panel The InputFilter_JPanel instance to be converted.  If null, an empty list will be returned.
+*/
+private List<String> getWhereClausesFromInputFilter ( DMI dmi, InputFilter_JPanel panel ) 
+{
+    // Loop through each filter group.  There will be one where clause per filter group.
+
+    if (panel == null) {
+        return new Vector();
+    }
+
+    int nfg = panel.getNumFilterGroups ();
+    InputFilter filter;
+    List<String> where_clauses = new Vector();
+    String where_clause=""; // A where clause that is being formed.
+    for ( int ifg = 0; ifg < nfg; ifg++ ) {
+        filter = panel.getInputFilter ( ifg );  
+        where_clause = DMIUtil.getWhereClauseFromInputFilter(dmi, filter,panel.getOperator(ifg), true);
+        if (where_clause != null) {
+            where_clauses.add(where_clause);
+        }
+    }
+    return where_clauses;
+}
+
+/**
+Create a where string given an InputFilter_JPanel.  The InputFilter
+instances that are managed by the InputFilter_JPanel must have been defined with
+the database table and field names in the internal (non-label) data.
+@return a list of where clauses as a string, each of which can be added to a DMI statement.
+@param dmi The DMI instance being used, which may be checked for specific formatting.
+@param panel The InputFilter_JPanel instance to be converted.  If null, an empty list will be returned.
+@param tableName the name of the table for which to get where clauses.  This will be the leading XXXX. of
+the matching strings.
+@param useAnd if true, then "and" is used instead of "where" in the where strings.  The former can be used
+with "join on" SQL syntax.
+@param addNewline if true, add a newline if the string is non-blank - this simply helps with formatting of
+the big SQL, so that logging has reasonable line breaks
+*/
+private String getWhereClauseStringFromInputFilter ( DMI dmi, InputFilter_JPanel panel, String tableName,
+   boolean addNewline )
+{
+    List<String> whereClauses = getWhereClausesFromInputFilter ( dmi, panel );
+    StringBuffer whereString = new StringBuffer();
+    String tableNameDot = (tableName + ".").toUpperCase();
+    for ( String whereClause : whereClauses ) {
+        // TODO SAM 2011-09-30 If the new code works then remove the following old code
+        //if ( !whereClause.toUpperCase().startsWith(tableNameDot) ) {
+        //Message.printStatus(2, "", "Checking where clause \"" + whereClause + "\" against \"" + tableNameDot + "\"" );
+        if ( whereClause.toUpperCase().indexOf(tableNameDot) < 0 ) {
+            // Not for the requested table so don't include the where clause
+            continue;
+        }
+        if ( (whereString.length() > 0)  ) {
+            // Need to concatenate
+            whereString.append ( " and ");
+        }
+        whereString.append ( "(" + whereClause + ")");
+    }
+    if ( addNewline && (whereString.length() > 0) ) {
+        whereString.append("\n");
+    }
+    return whereString.toString();
+}
+
+/**
+Read distinct time intervals from a join of sitecatalog and view_seriescatalog
+(ensures that only records with time series are checked).
+@return list of time intervals (e.g., "Daily").
+*/
+public List<String> readDistinctTimeIntervalList ( String parameter )
+{	String routine = getClass().getSimpleName() + ".readDistinctTimeIntervalList";
+	List<String> iList = new ArrayList<String>();
+	ReclamationPiscesDMI dmi = (ReclamationPiscesDMI)this.getDMI();
+	ResultSet rs = null;
+	try {
+		StringBuilder where = new StringBuilder("WHERE (sitecatalog.siteid <> '') and (view_series.tablename <> ''");
+		if ( (parameter != null) && !parameter.isEmpty() ) {
+			where.append( " AND view_seriescatalog.parameter = '" + parameter + "'" );
+		}
+		rs = dmi.dmiSelect("SELECT distinct view_seriescatalog.timeinterval from view_seriescatalog "
+			+ "INNER JOIN sitecatalog ON sitecatalog.siteid=view_seriescatalog.siteid " + where );
+		// Convert to objects
+		String s;
+		while ( rs.next() ) {
+			s = rs.getString ( 1 );
+			if ( !rs.wasNull() ) {
+				iList.add(s);
+			}
+		}
+	}
+    catch (Exception e) {
+        Message.printWarning(3, routine, "Error reading ref_parameter from Pisces database \"" +
+            dmi.getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            try {
+            	rs.close();
+            }
+            catch ( Exception e ) {
+            	// OK to absorb
+            }
+        }
+    }
+	return iList;
+}
+
+/**
+Read the ref_parameter table, useful for creating a list of parameters for choices.
+@return list of parameter objects
+*/
+public List<ReclamationPisces_Ref_Parameter> readRefParameterList ()
+{	String routine = getClass().getSimpleName() + ".readRefParameterList";
+	List<ReclamationPisces_Ref_Parameter> pList = new ArrayList<ReclamationPisces_Ref_Parameter>();
+	ReclamationPiscesDMI dmi = (ReclamationPiscesDMI)this.getDMI();
+	// Get the query parameters from the input filter...
+	//List<String> realModelType = ifp.getInput("Real, Model, Ensemble Data", null, true, null);
+	// Read all the data so values can be set as time series properties
+	ResultSet rs = null;
+	try {
+		rs = dmi.dmiSelect("SELECT ref_parameter.id, ref_parameter.description "
+			+ "FROM ref_parameter ORDER BY ref_parameter.id");
+		// Convert to objects
+		pList = toRefParameterList ( rs );
+	}
+    catch (Exception e) {
+        Message.printWarning(3, routine, "Error reading ref_parameter from Pisces database \"" +
+            dmi.getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            try {
+            	rs.close();
+            }
+            catch ( Exception e ) {
+            	// OK to absorb
+            }
+        }
+    }
+	return pList;
+}
+
+/**
 Read site/series metadata from join of sitecatalog and seriescatalog tables, useful for listing time series.
 @param siteID if not null, use to filter the query, used for individual time series reads (location ID).
-@param responsibility if not null, use to filter the query, used for individual time series reads (data source).
+@param server if not null, use to filter the query, used for individual time series reads (data source).
 @param parameter if not null and not "*", use to filter the query, used for all time series reads (data type).
 @param interval if not null and not "*", use to filter the query, used for all time series reads (interval).
-@param panel filter panel used to filter the query for catalog values.
+@param ifp filter panel used to filter the query for catalog values.
 @return list of catalog objects
 */
 public List<ReclamationPisces_SiteCatalogSeriesCatalog> readSiteCatalogSeriesCatalogList (
-	String siteID, String responsibility, String parameter, String interval, InputFilter_JPanel panel )
+	String siteID, String server, String parameter, String interval, InputFilter_JPanel ifp )
 {	String routine = getClass().getSimpleName() + ".readSiteCatalogSeriesCatalogList";
 	List<ReclamationPisces_SiteCatalogSeriesCatalog> metaList = new ArrayList<ReclamationPisces_SiteCatalogSeriesCatalog>();
 	ReclamationPiscesDMI dmi = (ReclamationPiscesDMI)this.getDMI();
@@ -208,49 +360,54 @@ public List<ReclamationPisces_SiteCatalogSeriesCatalog> readSiteCatalogSeriesCat
 	try {
 		// Create a where clause - some from direct specification and also handle input filter if non-null
 		StringBuilder whereClause = new StringBuilder();
+		// Always prohibit empty site ID (artifact of processing bad data?)
+		whereClause.append (" WHERE ((sitecatalog.siteid <> '') AND (view_seriescatalog.tablename <> '')" );
 		if ( (siteID != null) && !siteID.isEmpty() ) {
-			if ( whereClause.length() > 0 ) {
-				whereClause.append(" AND ");
-			}
-			whereClause.append ( "sitecatalog.siteid = '" + siteID + "'" );
+			whereClause.append ( " AND (sitecatalog.siteid = '" + siteID + "')" );
 		}
-		if ( (responsibility != null) && !responsibility.isEmpty() ) {
-			if ( whereClause.length() > 0 ) {
-				whereClause.append(" AND ");
-			}
-			whereClause.append ( "sitecatalog.responsibility = '" + responsibility + "'" );
+		if ( (server != null) && !server.isEmpty() ) {
+			whereClause.append ( " AND (view_seriescatalog.server = '" + server + "')" );
 		}
 		if ( (parameter != null) && !parameter.isEmpty() && !parameter.equals("*") ) {
-			if ( whereClause.length() > 0 ) {
-				whereClause.append(" AND ");
-			}
-			whereClause.append ( "seriescatalog.parameter = '" + parameter + "'" );
+			whereClause.append ( " AND (view_seriescatalog.parameter = '" + parameter + "')" );
 		}
 		if ( (interval != null) && !interval.isEmpty() && !interval.equals("*") ) {
-			if ( whereClause.length() > 0 ) {
-				whereClause.append(" AND ");
-			}
-			whereClause.append ( "seriescatalog.timeinterval = '" + getPiscesIntervalFromTSIDInterval(interval) + "'" );
+			whereClause.append ( " AND (view_seriescatalog.timeinterval = '" + getPiscesIntervalFromTSIDInterval(interval) + "')" );
 		}
-		if ( whereClause.length() > 0 ) {
-			whereClause.insert(0, " WHERE ");
-		}
-		rs = dmi.dmiSelect("SELECT sitecatalog.siteid, sitecatalog.description, "
+		// Process the where clauses by extracting input filter where clauses that reference specific tables.
+	    // Include where clauses for specific tables.  Do this rather than in bulk to make sure that
+	    // inappropriate filters are not applied (e.g., model filters when only real data are queried)
+	    List<String> whereClauses = new ArrayList<String>();
+	    // First include general where clauses
+	    //whereClauses.add ( dataTypeWhereString );
+	    if ( ifp != null ) {
+		    whereClauses.add ( getWhereClauseStringFromInputFilter ( dmi, ifp, "sitecatalog", true ) );
+		    whereClauses.add ( getWhereClauseStringFromInputFilter ( dmi, ifp, "view_seriescatalog", true ) );
+		    for ( String where : whereClauses ) {
+		    	if ( !where.isEmpty() ) {
+		            whereClause.append ( " and " );
+		            whereClause.append ( "(" + where + ")" );
+		    	}
+		    }
+	    }
+		whereClause.append ( ")" );
+		String sql = "SELECT sitecatalog.siteid, sitecatalog.description, "
 			+ "sitecatalog.state, sitecatalog.latitude, sitecatalog.longitude, sitecatalog.elevation, sitecatalog.timezone, sitecatalog.install, "
 			+ "sitecatalog.horizontal_datum, sitecatalog.vertical_datum, sitecatalog.vertical_accuracy, sitecatalog.elevation_method, "
-			+ "sitecatalog.tz_offset, sitecatalog.active_flag, sitecatalog.type, sitecatalog.responsibility, "
-			+ "seriescatalog.id, seriescatalog.parentid, seriescatalog.isfolder, seriescatalog.sortorder, seriescatalog.iconname, "
-			+ "seriescatalog.name, seriescatalog.units, seriescatalog.timeinterval, seriescatalog.parameter, "
-			+ "seriescatalog.tablename, seriescatalog.provider, seriescatalog.connectionstring, seriescatalog.expression, "
-			+ "seriescatalog.notes, seriescatalog.enabled "
+			+ "sitecatalog.tz_offset, sitecatalog.active_flag, sitecatalog.type, sitecatalog.responsibility, sitecatalog.agency_region, "
+			+ "view_seriescatalog.id, view_seriescatalog.parentid, view_seriescatalog.isfolder, view_seriescatalog.sortorder, view_seriescatalog.iconname, "
+			+ "view_seriescatalog.name, view_seriescatalog.units, view_seriescatalog.timeinterval, view_seriescatalog.parameter, "
+			+ "view_seriescatalog.tablename, view_seriescatalog.provider, view_seriescatalog.connectionstring, view_seriescatalog.expression, "
+			+ "view_seriescatalog.notes, view_seriescatalog.enabled, view_seriescatalog.server "
 			+ "FROM sitecatalog "
-			+ "INNER JOIN seriescatalog ON sitecatalog.siteid=seriescatalog.siteid " + whereClause + " ORDER BY sitecatalog.siteid");
-		Message.printStatus(2,routine,"SQL:" + dmi.getLastSQLString());
+			+ "INNER JOIN view_seriescatalog ON sitecatalog.siteid=view_seriescatalog.siteid " + whereClause + " ORDER BY sitecatalog.siteid";
+		Message.printStatus(2,routine,"SQL:" + sql);
+		rs = dmi.dmiSelect(sql);
 		// Convert to objects
 		metaList = toSiteCatalogSeriesCatalogList ( rs );
 	}
     catch (Exception e) {
-        Message.printWarning(3, routine, "Error getting sitecatalog+seriescatalog data from Pisces database \"" +
+        Message.printWarning(3, routine, "Error reading sitecatalog+view_seriescatalog data from Pisces database \"" +
             dmi.getDatabaseName() + "\" (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
@@ -270,14 +427,14 @@ public List<ReclamationPisces_SiteCatalogSeriesCatalog> readSiteCatalogSeriesCat
 /**
 Read a time series from the ReclamationPisces database using the string time series identifier.
 @param tsidentString time series identifier string.
-@param readStart the starting date/time to read.
-@param readEnd the ending date/time to read.
+@param readStartReq the requested starting date/time to read or null to read all
+@param readEnd the requested ending date/time to read or null to read all
 @param readData if true, read the data; if false, only read the time series metadata.
 @return the time series
 */
-public TS readTimeSeries ( String tsidentString, DateTime readStart, DateTime readEnd, boolean readData )
+public TS readTimeSeries ( String tsidentString, DateTime readStartReq, DateTime readEndReq, boolean readData )
 throws Exception
-{   String routine = getClass().getSimpleName() + "readTimeSeries";
+{   String routine = getClass().getSimpleName() + ".readTimeSeries";
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString );
 
     if ( (tsident.getIntervalBase() != TimeInterval.HOUR) && (tsident.getIntervalBase() != TimeInterval.DAY)
@@ -288,10 +445,10 @@ throws Exception
     }
     // Read time series metadata
     String siteID = tsident.getLocation();
-    String responsible = tsident.getSource();
+    String server = tsident.getSource();
     String parameter = tsident.getType();
     String interval = getPiscesIntervalFromTSIDInterval(tsident.getInterval());
-    List<ReclamationPisces_SiteCatalogSeriesCatalog>tsMetadataList = readSiteCatalogSeriesCatalogList (siteID, responsible, parameter, interval, null );
+    List<ReclamationPisces_SiteCatalogSeriesCatalog>tsMetadataList = readSiteCatalogSeriesCatalogList (siteID, server, parameter, interval, null );
     if ( tsMetadataList.size() != 1 ) {
         throw new InvalidParameterException ( "Time series identifier \"" + tsidentString +
             "\" matches " + tsMetadataList.size() + " time series - should match exactly one but have " + tsMetadataList.size() + "." );
@@ -304,6 +461,7 @@ throws Exception
     // Set additional time series properties from the metadata
     ReclamationPisces_SiteCatalogSeriesCatalog tsMetadata = tsMetadataList.get(0);
     ts.setDataUnitsOriginal(tsMetadata.getUnits());
+    ts.setDescription(tsMetadata.getDescription());
     ts.setDataUnits(tsMetadata.getUnits());
     // Now read the data - inline processing of the data table resultset to improve performance...
     if ( readData ) {
@@ -317,7 +475,9 @@ throws Exception
 		Date dt = null;
 		DateTime dbStart = null;
 		DateTime dbEnd = null;
-    	rs = dmi.dmiSelect ( "SELECT MIN(" + tableName + ".datetime) FROM " + tableName );
+		String sql0 = "SELECT MIN(" + tableName + ".datetime) FROM " + tableName;
+		//Message.printStatus(2, routine, "SQL: " + sql0);
+    	rs = dmi.dmiSelect ( sql0 );
     	try {
     		while ( rs.next() ) {
     			dt = rs.getTimestamp( 1 );
@@ -366,15 +526,15 @@ throws Exception
 	        }
 	    }
     	// Next read the data records and transfer
-    	if ( readStart != null ) {
-    		ts.setDate1(readStart);
+    	if ( readStartReq != null ) {
+    		ts.setDate1(readStartReq);
     	}
     	else {
     		ts.setDate1(dbStart);
     	}
     	ts.setDate1Original(dbStart);
-    	if ( readEnd != null ) {
-    		ts.setDate2(readEnd);
+    	if ( readEndReq != null ) {
+    		ts.setDate2(readEndReq);
     	}
     	else {
     		ts.setDate2(dbEnd);
@@ -382,10 +542,23 @@ throws Exception
     	ts.setDate2Original(dbEnd);
     	ts.allocateDataSpace();
     	try {
+    		StringBuilder where = new StringBuilder("");
+    		if ( readStartReq != null ) {
+    			where.append ( tableName + ".datetime >= " + DMIUtil.formatDateTime(dmi, readStartReq) );
+    		}
+    		if ( readEndReq != null ) {
+    			if ( where.length() > 0 ) {
+    				where.append ( " AND ");
+    			}
+    			where.append ( tableName + ".datetime <= " + DMIUtil.formatDateTime(dmi, readEndReq) );
+    		}
+    		if ( where.length() > 0 ) {
+    			where.insert(0, " WHERE ");
+    		}
     		String sql = "SELECT " + tableName + ".datetime, " + tableName + ".value, "
-        		+ tableName + ".flag FROM " + tableName + " ORDER BY " + tableName + ".datetime";
+        		+ tableName + ".flag FROM " + tableName + where + " ORDER BY " + tableName + ".datetime";
     		rs = dmi.dmiSelect(sql);
-    		Message.printStatus(2,routine,"SQL: "+sql);
+    		//Message.printStatus(2,routine,"readStartReq=" + readStartReq + " readEndReq=" + readEndReq + " SQL: "+sql);
     		double value;
     		String flag;
     		double missing = ts.getMissing();
@@ -448,6 +621,7 @@ private void setTimeSeriesProperties ( TS ts, ReclamationPisces_SiteCatalogSerie
     ts.setProperty("siteid", tsm.getSiteID() );
     ts.setProperty("description", tsm.getDescription() );
     ts.setProperty("state", tsm.getState() );
+    ts.setProperty("agency_region", tsm.getAgencyRegion() );
     ts.setProperty("latitude", DMIUtil.isMissing(tsm.getLatitude()) ? null : new Double(tsm.getLatitude()) );
     ts.setProperty("longitude", DMIUtil.isMissing(tsm.getLongitude()) ? null : new Double(tsm.getLongitude()) );
     ts.setProperty("elevation", DMIUtil.isMissing(tsm.getElevation()) ? null : new Double(tsm.getElevation()) );
@@ -478,11 +652,40 @@ private void setTimeSeriesProperties ( TS ts, ReclamationPisces_SiteCatalogSerie
     ts.setProperty("expression", tsm.getExpression() );
     ts.setProperty("notes", tsm.getNotes() );
     ts.setProperty("enabled", DMIUtil.isMissing(tsm.getEnabled()) ? null : new Integer(tsm.getEnabled()) );
+    ts.setProperty("server", tsm.getServer() );
 }
 
 /**
-Convert a ResultSet to a Vector of RiversideDB_MeasLocType
-@param rs ResultSet from a MeasLocType table query.
+Convert a ResultSet to a list of Reclamation_Ref_Parameter.
+@param rs ResultSet from a ref_parameter table query.
+@throws Exception if an error occurs
+*/
+private List<ReclamationPisces_Ref_Parameter> toRefParameterList ( ResultSet rs )
+throws SQLException
+{
+	List<ReclamationPisces_Ref_Parameter> v = new ArrayList<ReclamationPisces_Ref_Parameter>();
+	int index = 1;
+	String s;
+	ReclamationPisces_Ref_Parameter data = null;
+	while ( rs.next() ) {
+		data = new ReclamationPisces_Ref_Parameter();
+		index = 1;
+		s = rs.getString ( index++ );
+		if ( !rs.wasNull() ) {
+			data.setID ( s.trim() );
+		}
+		s = rs.getString ( index++ );
+		if ( !rs.wasNull() ) {
+			data.setDescription ( s.trim() );
+		}
+		v.add(data);
+	}
+	return v;
+}
+
+/**
+Convert a ResultSet to a list of ReclamationPisces_SiteCatalogSeriesCatalog
+@param rs ResultSet from a sitecatalog and view_seriescatalog query.
 @throws Exception if an error occurs
 */
 private List<ReclamationPisces_SiteCatalogSeriesCatalog> toSiteCatalogSeriesCatalogList ( ResultSet rs )
@@ -561,6 +764,10 @@ throws SQLException
 		if ( !rs.wasNull() ) {
 			data.setResponsibility ( s.trim() );
 		}
+		s = rs.getString ( index++ );
+		if ( !rs.wasNull() ) {
+			data.setAgencyRegion ( s.trim() );
+		}
 		i = rs.getInt ( index++ );
 		if ( !rs.wasNull() ) {
 			data.setID ( i );
@@ -620,6 +827,10 @@ throws SQLException
 		i = rs.getInt ( index++ );
 		if ( !rs.wasNull() ) {
 			data.setEnabled ( i );
+		}
+		s = rs.getString ( index++ );
+		if ( !rs.wasNull() ) {
+			data.setServer ( s.trim() );
 		}
 		v.add(data);
 	}

@@ -2391,21 +2391,6 @@ private boolean haveAveragingPeriod ()
 }
 
 /**
-Indicate whether the input period has been specified.
-@return true if the input period has been specified (and we can use its
-dates without fear of nulls or zero years).
-*/
-private boolean haveInputPeriod ()
-{	if ( (__InputStart_DateTime == null) || (__InputEnd_DateTime == null) ) {
-		return false;
-	}
-	if ( (__InputStart_DateTime.getYear() == 0) || (__InputEnd_DateTime.getYear() == 0) ){
-		return false;
-	}
-	return true;
-}
-
-/**
 Indicate whether the output period has been specified.
 @return true if the output period has been specified (and we can use its
 dates without fear of nulls or zero years).
@@ -4452,9 +4437,12 @@ throws Exception
 
 	DateTime inputStart = null;	// Default is to read all data
 	DateTime inputEnd = null;
-	if ( haveInputPeriod() ) {
-		// Use the query period...
+	if ( (__InputStart_DateTime != null) && (__InputStart_DateTime.getYear() != 0) ) {
+		// Use the query start...
 		inputStart = __InputStart_DateTime;
+	}
+	if ( (__InputEnd_DateTime != null) && (__InputEnd_DateTime.getYear() != 0) ) {
+		// Use the query start...
 		inputEnd = __InputEnd_DateTime;
 	}
 

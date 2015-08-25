@@ -53,6 +53,7 @@ import rti.tscommandprocessor.commands.hecdss.WriteHecDss_Command;
 import rti.tscommandprocessor.commands.hydrobase.FillUsingDiversionComments_Command;
 import rti.tscommandprocessor.commands.hydrobase.OpenHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrobase.ReadHydroBase_Command;
+import rti.tscommandprocessor.commands.hydrojson.WriteTimeSeriesToHydroJSON_Command;
 import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
 
 // Logging commands.
@@ -1124,6 +1125,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToExcelBlock") ) {
         return new WriteTimeSeriesToExcelBlock_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToHydroJSON") ) {
+        return new WriteTimeSeriesToHydroJSON_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToJson") ) {
         return new WriteTimeSeriesToJson_Command ();

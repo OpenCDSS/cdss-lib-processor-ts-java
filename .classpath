@@ -15,7 +15,6 @@
 	<classpathentry kind="lib" path="lib/heclib/rma.jar"/>
 	<classpathentry kind="lib" path="lib/freemarker/freemarker.jar"/>
 	<classpathentry kind="lib" path="lib/Oracle_JDBC/ojdbc6.jar"/>
-	<classpathentry kind="lib" path="lib/gson/gson-2.2.1.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/poi-3.9-20121203.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/commons-codec-1.5.jar"/>
 	<classpathentry kind="lib" path="lib/apache-poi/commons-logging-1.1.jar"/>
@@ -29,5 +28,6 @@
 	<classpathentry kind="lib" path="lib/apache-commons-net/commons-net-3.3.jar"/>
 	<classpathentry kind="lib" path="lib/PostgreSQL_JDBC/postgresql-9.3-1102.jdbc4.jar"/>
 	<classpathentry kind="lib" path="lib/MySQL_JDBC/mysql-connector-java-5.1.36-bin.jar"/>
+	<classpathentry kind="lib" path="lib/gson/gson-2.3.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

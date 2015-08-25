@@ -389,7 +389,7 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     // TODO SAM 2015-05-18 Enable wildcards
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - names of properties to write, separated by commas (default=none)."),
+        "Optional - names of properties to write, separated by commas, *=wildcard (default=none)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write data flag descriptions?:" ), 

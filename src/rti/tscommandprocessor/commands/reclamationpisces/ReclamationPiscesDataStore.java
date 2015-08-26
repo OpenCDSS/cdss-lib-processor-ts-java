@@ -93,18 +93,25 @@ public boolean checkDatabaseConnection ()
 }
 
 /**
-Return the list of data intervals valid for a data type.
+Return the list of data intervals valid for a parameter (data type).
+@param parameter Pisces parameter or null to check all parameters.
+@return a list of strings for intervals ("Daily", "Monthly", etc.
 */
-public List<String> getDataIntervalStringsForDataType(String dataType)
-{	// Get the intervals given the data type - will return "Daily", "Monthly", etc.
-	if ( dataType.equals("*") ) {
-		// Get intervals for all data types
-		dataType = null;
-	}
-	List<String> intervals = readDistinctTimeIntervalList(dataType);
-	// Do some extra work to sort and convert to generic representation
+public List<String> getDataIntervalStringsForParameter(String parameter)
+{
 	List <String> intervals2 = new ArrayList<String>();
+	if ( parameter.equals("*") ) {
+		// Get intervals for all data types, no need to filter
+		parameter = null;
+	}
+	// Always add wildcard
+	intervals2.add("*");
+	// The following returns "Hourly", "Daily", "Monthly", "Yearly"
+	List<String> intervals = readDistinctTimeIntervalList(parameter);
+	//Message.printStatus(2,"","Read " + intervals.size() + " intervals for parameter " + parameter );
+	// Do some extra work to sort and convert to generic representation ("Hour", "Day", "Month", "Year")
 	for ( String i : intervals ) {
+		//Message.printStatus(2,"","Interval: " + i );
 		if ( i.equalsIgnoreCase("Hourly") ) {
 			intervals2.add(TimeInterval.getName(TimeInterval.HOUR, 0));
 			break;
@@ -270,12 +277,14 @@ public List<String> readDistinctTimeIntervalList ( String parameter )
 	ReclamationPiscesDMI dmi = (ReclamationPiscesDMI)this.getDMI();
 	ResultSet rs = null;
 	try {
-		StringBuilder where = new StringBuilder("WHERE (sitecatalog.siteid <> '') and (view_series.tablename <> ''");
+		StringBuilder where = new StringBuilder("WHERE (sitecatalog.siteid <> '') and (view_seriescatalog.tablename <> '')");
 		if ( (parameter != null) && !parameter.isEmpty() ) {
-			where.append( " AND view_seriescatalog.parameter = '" + parameter + "'" );
+			where.append( " AND (view_seriescatalog.parameter = '" + parameter + "')" );
 		}
-		rs = dmi.dmiSelect("SELECT distinct view_seriescatalog.timeinterval from view_seriescatalog "
-			+ "INNER JOIN sitecatalog ON sitecatalog.siteid=view_seriescatalog.siteid " + where );
+		String sql = "SELECT distinct view_seriescatalog.timeinterval from view_seriescatalog "
+				+ "INNER JOIN sitecatalog ON sitecatalog.siteid=view_seriescatalog.siteid " + where;
+		//Message.printStatus(2,"","SQL:  " + sql);
+		rs = dmi.dmiSelect(sql );
 		// Convert to objects
 		String s;
 		while ( rs.next() ) {
@@ -286,7 +295,7 @@ public List<String> readDistinctTimeIntervalList ( String parameter )
 		}
 	}
     catch (Exception e) {
-        Message.printWarning(3, routine, "Error reading ref_parameter from Pisces database \"" +
+        Message.printWarning(3, routine, "Error reading intervals from from Pisces database \"" +
             dmi.getDatabaseName() + "\" (" + e + ")." );
         Message.printWarning(3, routine, e );
     }

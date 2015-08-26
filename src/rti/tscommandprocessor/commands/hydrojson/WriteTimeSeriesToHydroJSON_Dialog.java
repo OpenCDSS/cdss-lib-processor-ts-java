@@ -458,8 +458,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToHydroJSON_Command comm
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "Specify time series to output and how time series properties should be mapped to HydroJSON elements."),
 		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "Enter date/times to a precision appropriate for output time series."),
 		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -777,17 +775,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToHydroJSON_Command comm
     JGUIUtil.addComponent(station_JPanel, new JLabel (
         "Optional - location type (default=blank)."),
         3, yStation, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(station_JPanel, new JLabel (
-        "Specify the HydroJSON output file as a full path or relative to the working directory."),
-		0, ++yStation, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
-    JGUIUtil.addComponent(station_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-		0, ++yStation, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Panel for output file
     int yFile = -1;

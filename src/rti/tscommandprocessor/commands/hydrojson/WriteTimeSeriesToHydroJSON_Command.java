@@ -907,7 +907,10 @@ private void writeTimeSeriesList01 ( PrintWriter fout, List<TS> tslist, Integer 
 					hstation.setLocationType(locationType);
 				}
 				HydroJSONTimeSeries hts = new HydroJSONTimeSeries();
-				String htsid = ts.getIdentifierString();
+				String htsid = ts.getAlias(); // Use alias if available
+				if ( (htsid == null) || htsid.isEmpty() ) {
+					htsid = ts.getIdentifierString(); // Otherwise use TSID
+				}
 				if ( (tIdentifier != null) && !tIdentifier.isEmpty() ) {
 					htsid = TSCommandProcessorUtil.expandTimeSeriesMetadataString (
 						processor, ts, tIdentifier, status, CommandPhaseType.RUN);

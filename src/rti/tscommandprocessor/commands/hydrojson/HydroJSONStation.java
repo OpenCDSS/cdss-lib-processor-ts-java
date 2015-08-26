@@ -9,7 +9,7 @@ Station definition for HydroJSON format.
 public class HydroJSONStation
 {
 
-// List these in the order of the specification example
+// List these in the order of the specification example, with spellings that match the specification.
 /**
 Name of station.
 */
@@ -63,7 +63,7 @@ private String location_type = "";
 /**
 List of time series for the station.
 */
-private List<HydroJSONTimeSeries> timeSeriesList = new ArrayList<HydroJSONTimeSeries>();
+private List<HydroJSONTimeSeries> timeseries = new ArrayList<HydroJSONTimeSeries>();
 
 /**
 Constructor.
@@ -158,7 +158,7 @@ Return the time series list.
 */
 public List<HydroJSONTimeSeries> getTimeSeriesList()
 {
-	return this.timeSeriesList;
+	return this.timeseries;
 }
 
 /**
@@ -206,7 +206,7 @@ Set the time series list.
 */
 public void setTimeSeriesList ( List<HydroJSONTimeSeries> timeSeriesList )
 {
-	this.timeSeriesList = timeSeriesList;
+	this.timeseries = timeSeriesList;
 }
 
 /**

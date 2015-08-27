@@ -4913,7 +4913,7 @@ throws Exception
         }
         else {
             try {
-                ts = ds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+                ts = dmi.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
             }
             catch ( Exception te ) {
                 Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +

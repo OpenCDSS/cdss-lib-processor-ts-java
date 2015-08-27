@@ -195,8 +195,23 @@ public String getTimeInterval ()
 
 public String getTimeIntervalForTSID ()
 {
-	if ( timeinterval.equalsIgnoreCase("Daily") ) {
+	if ( timeinterval.equalsIgnoreCase("Hourly") ) {
+		return TimeInterval.getName(TimeInterval.HOUR,0);
+	}
+	else if ( timeinterval.equalsIgnoreCase("Daily") ) {
 		return TimeInterval.getName(TimeInterval.DAY,0);
+	}
+	//else if ( timeinterval.equalsIgnoreCase("Weekly") ) {
+	//	return TimeInterval.getName(TimeInterval.WEEK,0);
+	//}
+	else if ( timeinterval.equalsIgnoreCase("Monthly") ) {
+		return TimeInterval.getName(TimeInterval.MONTH,0);
+	}
+	else if ( timeinterval.equalsIgnoreCase("Yearly") ) {
+		return TimeInterval.getName(TimeInterval.YEAR,0);
+	}
+	else if ( timeinterval.equalsIgnoreCase("Irregular") ) {
+		return TimeInterval.getName(TimeInterval.IRREGULAR,0);
 	}
 	else {
 		return null;

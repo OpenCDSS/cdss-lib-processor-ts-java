@@ -86,6 +86,7 @@ import rti.tscommandprocessor.commands.rccacis.ReadRccAcis_Command;
 import rti.tscommandprocessor.commands.reclamationhdb.ReadReclamationHDB_Command;
 import rti.tscommandprocessor.commands.reclamationhdb.WriteReclamationHDB_Command;
 
+import rti.tscommandprocessor.commands.reclamationpisces.ReadReclamationPisces_Command;
 // RiversideDB commands
 import rti.tscommandprocessor.commands.riversidedb.ReadRiversideDB_Command;
 import rti.tscommandprocessor.commands.riversidedb.WriteRiversideDB_Command;
@@ -775,6 +776,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadReclamationHDB") ) {
         return new ReadReclamationHDB_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadReclamationPisces") ) {
+        return new ReadReclamationPisces_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadRiversideDB") ) {
         return new ReadRiversideDB_Command ();

@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.reclamationpisces;
 
 import RTi.DMI.DMIUtil;
+import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 // In the future it may or may not make sense to add classes for one or both of the
@@ -50,6 +51,9 @@ private String expression = "";
 private String notes = "";
 private int enabled = DMIUtil.MISSING_INT;
 private String server = "";
+private DateTime t1 = null;
+private DateTime t2 = null;
+private int count = DMIUtil.MISSING_INT;
 
 /**
 Constructor.
@@ -71,6 +75,11 @@ public String getAgencyRegion ()
 public String getConnectionString ()
 {
 	return this.connectionstring;
+}
+
+public int getCount ()
+{
+	return this.count;
 }
 
 public String getDescription ()
@@ -183,6 +192,16 @@ public String getState ()
 	return this.state;
 }
 
+public DateTime getT1 ()
+{
+	return this.t1;
+}
+
+public DateTime getT2 ()
+{
+	return this.t2;
+}
+
 public String getTableName ()
 {
 	return this.tablename;
@@ -270,6 +289,11 @@ public void setAgencyRegion ( String agency_region )
 public void setConnectionString ( String connectionstring )
 {
     this.connectionstring = connectionstring;
+}
+
+public void setCount ( int count )
+{
+    this.count = count;
 }
 
 public void setDescription ( String description )
@@ -380,6 +404,16 @@ public void setSortOrder ( int sortorder )
 public void setState ( String state )
 {
     this.state = state;
+}
+
+public void setT1 ( DateTime t1 )
+{
+    this.t1 = t1;
+}
+
+public void setT2 ( DateTime t2 )
+{
+    this.t2 = t2;
 }
 
 public void setTableName ( String tablename )

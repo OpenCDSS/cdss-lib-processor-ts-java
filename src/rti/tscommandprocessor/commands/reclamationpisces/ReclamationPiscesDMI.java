@@ -346,8 +346,6 @@ public List<ReclamationPisces_SiteCatalogSeriesCatalog> readSiteCatalogSeriesCat
 	String siteID, String server, String parameter, String interval, InputFilter_JPanel ifp )
 {	String routine = getClass().getSimpleName() + ".readSiteCatalogSeriesCatalogList";
 	List<ReclamationPisces_SiteCatalogSeriesCatalog> metaList = new ArrayList<ReclamationPisces_SiteCatalogSeriesCatalog>();
-	// Get the query parameters from the input filter...
-	//List<String> realModelType = ifp.getInput("Real, Model, Ensemble Data", null, true, null);
 	// Read all the data so values can be set as time series properties
 	ResultSet rs = null;
 	try {
@@ -391,10 +389,10 @@ public List<ReclamationPisces_SiteCatalogSeriesCatalog> readSiteCatalogSeriesCat
 			+ "view_seriescatalog.id, view_seriescatalog.parentid, view_seriescatalog.isfolder, view_seriescatalog.sortorder, view_seriescatalog.iconname, "
 			+ "view_seriescatalog.name, view_seriescatalog.units, view_seriescatalog.timeinterval, view_seriescatalog.parameter, "
 			+ "view_seriescatalog.tablename, view_seriescatalog.provider, view_seriescatalog.connectionstring, view_seriescatalog.expression, "
-			+ "view_seriescatalog.notes, view_seriescatalog.enabled, view_seriescatalog.server "
+			+ "view_seriescatalog.notes, view_seriescatalog.enabled, view_seriescatalog.server, view_seriescatalog.t1, view_seriescatalog.t2, view_seriescatalog.count "
 			+ "FROM sitecatalog "
 			+ "INNER JOIN view_seriescatalog ON sitecatalog.siteid=view_seriescatalog.siteid " + whereClause + " ORDER BY sitecatalog.siteid";
-		Message.printStatus(2,routine,"SQL:" + sql);
+		//Message.printStatus(2,routine,"SQL:" + sql);
 		rs = dmiSelect(sql);
 		// Convert to objects
 		metaList = toSiteCatalogSeriesCatalogList ( rs );
@@ -462,61 +460,71 @@ throws Exception
         setTimeSeriesProperties ( ts, tsMetadata );
     	ResultSet rs = null;
 		String tableName = tsMetadata.getTableName();
-    	// First get the min and max dates
 		int index;
 		Date dt = null;
 		DateTime dbStart = null;
 		DateTime dbEnd = null;
-		String sql0 = "SELECT MIN(" + tableName + ".datetime) FROM " + tableName;
-		//Message.printStatus(2, routine, "SQL: " + sql0);
-    	rs = dmiSelect ( sql0 );
-    	try {
-    		while ( rs.next() ) {
-    			dt = rs.getTimestamp( 1 );
-    			if ( !rs.wasNull() ) {
-    				dbStart = new DateTime(dt);
-    			}
-    		}
-    	}
-	    catch (Exception e) {
-	        Message.printWarning(3, routine, "Error reading time eries data from Pisces database \"" +
-	            getDatabaseName() + "\" table \"" + tableName + "\" (" + e + ")." );
-	        Message.printWarning(3, routine, e );
-	    }
-	    finally {
-	        if ( rs != null ) {
-	            try {
-	            	rs.close();
-	            }
-	            catch ( Exception e ) {
-	            	// OK to absorb
-	            }
-	        }
-	    }
-    	rs = dmiSelect ( "SELECT MAX(" + tableName + ".datetime) FROM " + tableName );
-    	try {
-    		while ( rs.next() ) {
-    			dt = rs.getTimestamp( 1 );
-    			if ( !rs.wasNull() ) {
-    				dbEnd = new DateTime(dt);
-    			}
-    		}
-    	}
-	    catch (Exception e) {
-	        Message.printWarning(3, routine, "Error reading time series max date from Pisces database \"" +
-	            getDatabaseName() + "\" table \"" + tableName + "\" (" + e + ")." );
-	        Message.printWarning(3, routine, e );
-	    }
-	    finally {
-	        if ( rs != null ) {
-	            try {
-	            	rs.close();
-	            }
-	            catch ( Exception e ) {
-	            	// OK to absorb
-	            }
-	        }
-	    }
+    	// First get the min and max dates, rely on t1 and t2 database columns unless null
+		if ( tsMetadata.getT1() != null ) {
+			dbStart = tsMetadata.getT1();
+		}
+		else {
+			String sql0 = "SELECT MIN(" + tableName + ".datetime) FROM " + tableName;
+			//Message.printStatus(2, routine, "SQL: " + sql0);
+	    	rs = dmiSelect ( sql0 );
+	    	try {
+	    		while ( rs.next() ) {
+	    			dt = rs.getTimestamp( 1 );
+	    			if ( !rs.wasNull() ) {
+	    				dbStart = new DateTime(dt);
+	    			}
+	    		}
+	    	}
+		    catch (Exception e) {
+		        Message.printWarning(3, routine, "Error reading time eries data from Pisces database \"" +
+		            getDatabaseName() + "\" table \"" + tableName + "\" (" + e + ")." );
+		        Message.printWarning(3, routine, e );
+		    }
+		    finally {
+		        if ( rs != null ) {
+		            try {
+		            	rs.close();
+		            }
+		            catch ( Exception e ) {
+		            	// OK to absorb
+		            }
+		        }
+		    }
+		}
+		if ( tsMetadata.getT2() != null ) {
+			dbEnd = tsMetadata.getT2();
+		}
+		else {
+	    	rs = dmiSelect ( "SELECT MAX(" + tableName + ".datetime) FROM " + tableName );
+	    	try {
+	    		while ( rs.next() ) {
+	    			dt = rs.getTimestamp( 1 );
+	    			if ( !rs.wasNull() ) {
+	    				dbEnd = new DateTime(dt);
+	    			}
+	    		}
+	    	}
+		    catch (Exception e) {
+		        Message.printWarning(3, routine, "Error reading time series max date from Pisces database \"" +
+		            getDatabaseName() + "\" table \"" + tableName + "\" (" + e + ")." );
+		        Message.printWarning(3, routine, e );
+		    }
+		    finally {
+		        if ( rs != null ) {
+		            try {
+		            	rs.close();
+		            }
+		            catch ( Exception e ) {
+		            	// OK to absorb
+		            }
+		        }
+		    }
+		}
     	// Next read the data records and transfer
     	if ( readStartReq != null ) {
     		ts.setDate1(readStartReq);
@@ -571,6 +579,10 @@ throws Exception
     			}
     			else {
     				flag = flag.trim();
+    				if ( flag.indexOf("m") >= 0 ) {
+    					// Missing - also set the numerical value to missing because it might be a special value
+    					value = missing;
+    				}
     			}
     			if ( dt != null ) {
     				dt2 = new DateTime(dt);
@@ -841,6 +853,36 @@ throws SQLException
 		s = rs.getString ( index++ );
 		if ( !rs.wasNull() ) {
 			data.setServer ( s.trim() );
+		}
+		// Stored in database as string
+		s = rs.getString ( index++ );
+		if ( !rs.wasNull() ) {
+			try {
+				data.setT1 ( DateTime.parse(s.trim()) );
+			}
+			catch ( Exception e ) {
+				// Leave as initial value
+			}
+		}
+		// Stored in database as string
+		s = rs.getString ( index++ );
+		if ( !rs.wasNull() ) {
+			try {
+				data.setT2 ( DateTime.parse(s.trim()) );
+			}
+			catch ( Exception e ) {
+				// Leave as initial value
+			}
+		}
+		// Stored in database as string
+		s = rs.getString ( index++ );
+		if ( !rs.wasNull() ) {
+			try {
+				data.setCount ( Integer.parseInt(s.trim()) );
+			}
+			catch ( NumberFormatException e ) {
+				// Leave as initial value
+			}
 		}
 		v.add(data);
 	}

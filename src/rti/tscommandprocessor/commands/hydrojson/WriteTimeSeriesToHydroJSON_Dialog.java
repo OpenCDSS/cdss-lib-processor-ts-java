@@ -434,7 +434,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToHydroJSON_Command comm
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>THIS COMMAND IS UNDER DEVELOPMENT</b></html>." ),
+        "<html><b>This command is under development.  The HydroJSON specification is under development.</b></html>." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a HydroJSON format file, which can be used for website integration." ),

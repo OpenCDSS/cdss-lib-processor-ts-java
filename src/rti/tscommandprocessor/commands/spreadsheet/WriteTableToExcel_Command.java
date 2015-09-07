@@ -983,7 +983,11 @@ private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TableCo
 			// Write the condition string
 			// TODO SAM 2015-07-11 evaluate how to make presentation-friendly
 			rec = ct.getRecord(i);
-			cell = tk.setCellValue(sheet,rowOut,colOut,styleManager.getConditionString(i));
+			String legendString = styleManager.getDisplayString(i);
+			if ( legendString.isEmpty() ) {
+				legendString = styleManager.getConditionString(i);
+			}
+			cell = tk.setCellValue(sheet,rowOut,colOut,legendString);
 			// Write a cell with the format - blank string to force column size
 			cell = tk.setCellValue(sheet,rowOut,(colOut + 1),"     ");
         	if ( styleManager != null ) {

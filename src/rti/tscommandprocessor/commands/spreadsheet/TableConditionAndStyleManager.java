@@ -53,6 +53,11 @@ Column number for "Condition" column in condition table.
 private int conditionTableConditionNum = -1;
 
 /**
+Column number for "Display" column in condition table.
+*/
+private int conditionTableDisplayNum = -1;
+
+/**
 Column number for "StyleID" column in condition table.
 */
 private int conditionTableStyleIDNum = -1;
@@ -110,6 +115,12 @@ public TableConditionAndStyleManager ( DataTable dataTable, int [] includeColumn
 	}
 	catch ( Exception e ) {
 		throw new RuntimeException("Condition table does not include \"Condition\" column (" + e + ")");
+	}
+	try {
+		this.conditionTableDisplayNum = conditionTable.getFieldIndex("Display");
+	}
+	catch ( Exception e ) {
+		// OK, optional - use condition string by default
 	}
 	try {
 		this.conditionTableStyleIDNum = conditionTable.getFieldIndex("StyleID");
@@ -173,6 +184,27 @@ Return the condition table used with the manager.
 public DataTable getConditionTable ()
 {
 	return this.conditionTable;
+}
+
+/**
+TODO SAM 2015-07-11 In future may have condition object.
+Return the display string for a row in the condition table.
+*/
+public String getDisplayString (int irec)
+{
+	String c = "";
+	try {
+		if ( this.conditionTableDisplayNum < 0 ) {
+			c = "";
+		}
+		else {
+			c = (String)this.conditionTable.getFieldValue(irec, this.conditionTableDisplayNum);
+		}
+	}
+	catch ( Exception e ) {
+		// Swallow for now
+	}
+	return c;
 }
 
 /**

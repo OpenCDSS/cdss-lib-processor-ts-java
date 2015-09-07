@@ -49,6 +49,11 @@ Column number for "Condition" column in condition table.
 private int conditionTableConditionNum = -1;
 
 /**
+Column number for "Display" column in condition table.
+*/
+private int conditionTableDisplayNum = -1;
+
+/**
 Column number for "StyleID" column in condition table.
 */
 private int conditionTableStyleIDNum = -1;
@@ -104,6 +109,12 @@ public TimeSeriesConditionAndStyleManager ( List<TS> tslist, DataTable condition
 	}
 	catch ( Exception e ) {
 		throw new RuntimeException("Condition table does not include \"Condition\" column (" + e + ")");
+	}
+	try {
+		this.conditionTableDisplayNum = conditionTable.getFieldIndex("Display");
+	}
+	catch ( Exception e ) {
+		// OK, optional - use condition string by default
 	}
 	try {
 		this.conditionTableStyleIDNum = conditionTable.getFieldIndex("StyleID");
@@ -167,6 +178,27 @@ Return the condition table used with the manager.
 public DataTable getConditionTable ()
 {
 	return this.conditionTable;
+}
+
+/**
+TODO SAM 2015-07-11 In future may have condition object.
+Return the display string for a row in the condition table.
+*/
+public String getDisplayString (int irec)
+{
+	String c = "";
+	try {
+		if ( this.conditionTableDisplayNum < 0 ) {
+			c = "";
+		}
+		else {
+			c = (String)this.conditionTable.getFieldValue(irec, this.conditionTableDisplayNum);
+		}
+	}
+	catch ( Exception e ) {
+		// Swallow for now
+	}
+	return c;
 }
 
 /**
@@ -317,7 +349,7 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 								valueMatch = true;
 							}
 						}
-						else if ( !(flag == null) && flag.equals(value2) ) {
+						else if ( (flag != null) && flag.equals(value2) ) {
 							valueMatch = true;
 						}
 					}
@@ -327,7 +359,7 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 								valueMatch = true;
 							}
 						}
-						else if ( !(flag == null) && !flag.equals(value2) ) {
+						else if ( (flag != null) && !flag.equals(value2) ) {
 							valueMatch = true;
 						}
 					}
@@ -337,7 +369,7 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 								valueMatch = true;
 							}
 						}
-						else if ( !(flag == null) && (flag.indexOf(value2) >= 0) ) {
+						else if ( (flag != null) && (flag.indexOf(value2) >= 0) ) {
 							valueMatch = true;
 						}
 					}
@@ -347,7 +379,7 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 								valueMatch = true;
 							}
 						}
-						else if ( !(flag == null) && (flag.startsWith(value2,0)) ) {
+						else if ( (flag != null) && (flag.startsWith(value2,0)) ) {
 							valueMatch = true;
 						}
 					}
@@ -357,7 +389,7 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 								valueMatch = true;
 							}
 						}
-						else if ( !(flag == null) && (flag.endsWith(value2)) ) {
+						else if ( (flag != null) && (flag.endsWith(value2)) ) {
 							valueMatch = true;
 						}
 					}

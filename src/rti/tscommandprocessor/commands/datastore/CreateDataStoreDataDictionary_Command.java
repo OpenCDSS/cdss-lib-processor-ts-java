@@ -72,6 +72,8 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {   String DataStore = parameters.getValue ( "DataStore" );
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String SurroundWithPre = parameters.getValue ( "SurroundWithPre" );
+    String EncodeHtmlChars = parameters.getValue ( "EncodeHtmlChars" );
     String ERDiagramLayoutTableID = parameters.getValue ( "ERDiagramLayoutTableID" );
     String ERDiagramLayoutTableNameColumn = parameters.getValue ( "ERDiagramLayoutTableNameColumn" );
     String ERDiagramLayoutTableXColumn = parameters.getValue ( "ERDiagramLayoutTableXColumn" );
@@ -140,6 +142,26 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (SurroundWithPre != null) && !SurroundWithPre.isEmpty() ) {
+        if ( !SurroundWithPre.equalsIgnoreCase(_False) && !SurroundWithPre.equalsIgnoreCase(_True) ) {
+            message = "The SurroundWithPre parameter \"" + SurroundWithPre + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the parameter as " + _False + " (default) or " + _True + "."));
+        }
+    }
+    
+    if ( (EncodeHtmlChars != null) && !EncodeHtmlChars.isEmpty() ) {
+        if ( !EncodeHtmlChars.equalsIgnoreCase(_False) && !EncodeHtmlChars.equalsIgnoreCase(_True) ) {
+            message = "The EncodeHtmlChars parameter \"" + EncodeHtmlChars + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the parameter as " + _False + " or " + _True + " (default)."));
+        }
+    }
+    
     if ( (ERDiagramLayoutTableID != null) && !ERDiagramLayoutTableID.isEmpty() ) {
     	// Make sure the coordinate columns and page size are specified
     	if ( (ERDiagramLayoutTableNameColumn == null) || ERDiagramLayoutTableNameColumn.isEmpty() ) {
@@ -186,11 +208,14 @@ throws InvalidCommandParameterException
     }
     
 	//  Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(3);
+	List<String> validList = new ArrayList<String>(14);
     validList.add ( "DataStore" );
     validList.add ( "ReferenceTables" );
     validList.add ( "ExcludeTables" );
     validList.add ( "OutputFile" );
+    validList.add ( "Newline" );
+    validList.add ( "SurroundWithPre" );
+    validList.add ( "EncodeHtmlChars" );
     validList.add ( "ERDiagramLayoutTableID" );
     validList.add ( "ERDiagramLayoutTableNameColumn" );
     validList.add ( "ERDiagramLayoutTableXColumn" );
@@ -285,6 +310,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String OutputFile = parameters.getValue("OutputFile");
+    String Newline = parameters.getValue("Newline");
+    String SurroundWithPre = parameters.getValue("SurroundWithPre");
+    boolean surroundWithPre = false;
+    if ( (SurroundWithPre != null) && SurroundWithPre.equalsIgnoreCase("True") ) {
+    	surroundWithPre = true;
+    }
+    String EncodeHtmlChars = parameters.getValue("EncodeHtmlChars");
+    boolean encodeHtmlChars = true;
+    if ( (EncodeHtmlChars != null) && EncodeHtmlChars.equalsIgnoreCase("False") ) {
+    	encodeHtmlChars = false;
+    }
     String ERDiagramLayoutTableID = parameters.getValue("ERDiagramLayoutTableID");
     String ERDiagramLayoutTableNameColumn = parameters.getValue("ERDiagramLayoutTableNameColumn");
     String ERDiagramLayoutTableXColumn = parameters.getValue("ERDiagramLayoutTableXColumn");
@@ -361,7 +397,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         OutputFile_full = IOUtil.enforceFileExtension(OutputFile_full, "html");
         // Create the data dictionary.
         DataDictionary dd = new DataDictionary();
-        dd.createHTMLDataDictionary(dmi, OutputFile_full, referenceTablesList, excludeTablesList);
+        dd.createHTMLDataDictionary(dmi, OutputFile_full, Newline, surroundWithPre, encodeHtmlChars,
+        	referenceTablesList, excludeTablesList);
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));
         
@@ -424,6 +461,9 @@ public String toString ( PropList props )
 	String ReferenceTables = props.getValue( "ReferenceTables" );
 	String ExcludeTables = props.getValue( "ExcludeTables" );
 	String OutputFile = props.getValue( "OutputFile" );
+	String Newline = props.getValue( "Newline" );
+	String SurroundWithPre = props.getValue( "SurroundWithPre" );
+	String EncodeHtmlChars = props.getValue( "EncodeHtmlChars" );
 	String ERDiagramLayoutTableID = props.getValue( "ERDiagramLayoutTableID" );
 	String ERDiagramLayoutTableNameColumn = props.getValue( "ERDiagramLayoutTableNameColumn" );
 	String ERDiagramLayoutTableXColumn = props.getValue( "ERDiagramLayoutTableXColumn" );
@@ -455,6 +495,24 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "OutputFile=\"" + OutputFile + "\"" );
+    }
+    if ( (SurroundWithPre != null) && (SurroundWithPre.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SurroundWithPre=" + SurroundWithPre );
+    }
+    if ( (Newline != null) && (Newline.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Newline=\"" + Newline + "\"" );
+    }
+    if ( (EncodeHtmlChars != null) && (EncodeHtmlChars.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EncodeHtmlChars=" + EncodeHtmlChars );
     }
     if ( (ERDiagramLayoutTableID != null) && !ERDiagramLayoutTableID.isEmpty() ) {
         if ( b.length() > 0 ) {

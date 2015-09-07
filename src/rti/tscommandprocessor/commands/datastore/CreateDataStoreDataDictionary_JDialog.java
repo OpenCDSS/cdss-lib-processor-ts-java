@@ -31,6 +31,7 @@ import java.awt.event.WindowListener;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.DMI.DMI;
@@ -65,9 +66,12 @@ private boolean __first_time = true;
 private JTextArea __command_JTextArea=null;
 private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
-private JTextField __OutputFile_JTextField = null;
 private JTextField __ReferenceTables_JTextField = null;
 private JTextField __ExcludeTables_JTextField = null;
+private JTextField __OutputFile_JTextField = null;
+private JTextField __Newline_JTextField = null;
+private SimpleJComboBox __SurroundWithPre_JComboBox = null;
+private SimpleJComboBox __EncodeHtmlChars_JComboBox = null;
 private SimpleJComboBox __ERDiagramLayoutTableID_JComboBox = null;
 private JTextField __ERDiagramLayoutTableNameColumn_JTextField = null;
 private JTextField __ERDiagramLayoutTableXColumn_JTextField = null;
@@ -197,6 +201,9 @@ private void checkInput ()
     String ReferenceTables = __ReferenceTables_JTextField.getText().trim();
     String ExcludeTables = __ExcludeTables_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String Newline = __Newline_JTextField.getText().trim();
+	String SurroundWithPre = __SurroundWithPre_JComboBox.getSelected();
+	String EncodeHtmlChars = __EncodeHtmlChars_JComboBox.getSelected();
 	String ERDiagramLayoutTableID = __ERDiagramLayoutTableID_JComboBox.getSelected();
 	String ERDiagramLayoutTableNameColumn = __ERDiagramLayoutTableXColumn_JTextField.getText().trim();
 	String ERDiagramLayoutTableXColumn = __ERDiagramLayoutTableXColumn_JTextField.getText().trim();
@@ -214,6 +221,15 @@ private void checkInput ()
     }
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
+    }
+    if ( Newline.length() > 0 ) {
+        props.set ( "Newline", Newline );
+    }
+    if ( SurroundWithPre.length() > 0 ) {
+        props.set ( "SurroundWithPre", SurroundWithPre );
+    }
+    if ( EncodeHtmlChars.length() > 0 ) {
+        props.set ( "EncodeHtmlChars", EncodeHtmlChars );
     }
     if ( ERDiagramLayoutTableID.length() > 0 ) {
     	props.set ( "ERDiagramLayoutTableID", ERDiagramLayoutTableID );
@@ -256,6 +272,9 @@ private void commitEdits ()
     String ReferenceTables = __ReferenceTables_JTextField.getText().trim();
     String ExcludeTables = __ExcludeTables_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
+	String Newline = __Newline_JTextField.getText().trim();
+	String SurroundWithPre = __SurroundWithPre_JComboBox.getSelected();
+	String EncodeHtmlChars = __EncodeHtmlChars_JComboBox.getSelected();
 	String ERDiagramLayoutTableID = __ERDiagramLayoutTableID_JComboBox.getSelected();
 	String ERDiagramLayoutTableNameColumn = __ERDiagramLayoutTableNameColumn_JTextField.getText().trim();
 	String ERDiagramLayoutTableXColumn = __ERDiagramLayoutTableXColumn_JTextField.getText().trim();
@@ -267,6 +286,9 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ReferenceTables", ReferenceTables );
 	__command.setCommandParameter ( "ExcludeTables", ExcludeTables );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "Newline", Newline );
+	__command.setCommandParameter ( "SurroundWithPre", SurroundWithPre );
+	__command.setCommandParameter ( "EncodeHtmlChars", EncodeHtmlChars );
 	__command.setCommandParameter ( "ERDiagramLayoutTableID", ERDiagramLayoutTableID );
 	__command.setCommandParameter ( "ERDiagramLayoutTableNameColumn", ERDiagramLayoutTableNameColumn );
 	__command.setCommandParameter ( "ERDiagramLayoutTableXColumn", ERDiagramLayoutTableXColumn );
@@ -328,9 +350,6 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
 	paragraph.setLayout(new GridBagLayout());
 	int yy = -1;
 	
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "<html><b>This command is under development.</b></html>"),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command creates an HTML data dictionary for the specified database datastore."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -409,6 +428,18 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     JPanel dict_JPanel = new JPanel();
     dict_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Data Dictionary", dict_JPanel );
+    
+    JGUIUtil.addComponent(dict_JPanel, new JLabel (
+        "Specify the output file and how to format content of the dictionary."),
+        0, ++yDict, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dict_JPanel, new JLabel (
+        "If comments (remarks) are defined with surrounding <html> and </html> the content will be passed through to HTML output."),
+        0, ++yDict, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dict_JPanel, new JLabel (
+        "Parameters are provided to format comment/remark content in HTML output."),
+        0, ++yDict, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dict_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yDict, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(dict_JPanel, new JLabel ( "Output file:" ), 
         0, ++yDict, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -421,11 +452,59 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
         JGUIUtil.addComponent(dict_JPanel, __browse_JButton,
         6, yDict, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
+    JGUIUtil.addComponent(dict_JPanel, new JLabel ( "Surround with <pre></pre>?:" ), 
+        0, ++yDict, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SurroundWithPre_JComboBox = new SimpleJComboBox ( false );
+    List<String> preChoices = new ArrayList<String>(3);
+    preChoices.add("");
+    preChoices.add(__command._False);
+    preChoices.add(__command._True);
+    __SurroundWithPre_JComboBox.setData ( preChoices );
+    __SurroundWithPre_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(dict_JPanel, __SurroundWithPre_JComboBox,
+        1, yDict, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dict_JPanel,
+    	new JLabel( "Optional - surround content with <pre></pre> (default=" + __command._False + ")."), 
+        3, yDict, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(dict_JPanel, new JLabel ("Newline:"), 
+        0, ++yDict, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Newline_JTextField = new JTextField (10);
+    __Newline_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(dict_JPanel, __Newline_JTextField,
+        1, yDict, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dict_JPanel, new JLabel ("Optional - string to replace newlines (default=blank)."),
+        3, yDict, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(dict_JPanel, new JLabel ( "Encode HTML characters?:" ), 
+        0, ++yDict, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EncodeHtmlChars_JComboBox = new SimpleJComboBox ( false );
+    List<String> encodeChoices = new ArrayList<String>(3);
+    encodeChoices.add("");
+    encodeChoices.add(__command._False);
+    encodeChoices.add(__command._True);
+    __EncodeHtmlChars_JComboBox.setData ( encodeChoices );
+    __EncodeHtmlChars_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(dict_JPanel, __EncodeHtmlChars_JComboBox,
+        1, yDict, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dict_JPanel,
+    	new JLabel( "Optional - encode < >, etc. to protect in HTML (default=" + __command._True + ")."), 
+        3, yDict, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
     // Panel for entity relationship (ER) diagram
     int yDiag = -1;
     JPanel diag_JPanel = new JPanel();
     diag_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Entity-Relationship Diagram", diag_JPanel );
+
+    JGUIUtil.addComponent(diag_JPanel, new JLabel (
+        "<html><b>Features to create an Entity Relation Diagram are under development</b></html>."),
+        0, ++yDiag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(diag_JPanel, new JLabel (
+        "In the future this command will use an input table with diagram coordinates and create the diagram."),
+        0, ++yDiag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(diag_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yDiag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(diag_JPanel, new JLabel ( "Layout table ID:" ), 
         0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -615,6 +694,9 @@ try{
     String ReferenceTables = "";
     String ExcludeTables = "";
     String OutputFile = "";
+    String Newline = "";
+    String SurroundWithPre = "";
+    String EncodeHtmlChars = "";
     String ERDiagramLayoutTableID = "";
     String ERDiagramLayoutTableNameColumn = "";
     String ERDiagramLayoutTableXColumn = "";
@@ -629,6 +711,9 @@ try{
 		ReferenceTables = props.getValue ( "ReferenceTables" );
 		ExcludeTables = props.getValue ( "ExcludeTables" );
 		OutputFile = props.getValue ( "OutputFile" );
+		Newline = props.getValue ( "Newline" );
+		SurroundWithPre = props.getValue ( "SurroundWithPre" );
+		EncodeHtmlChars = props.getValue ( "EncodeHtmlChars" );
 		ERDiagramLayoutTableID = props.getValue ( "ERDiagramLayoutTableID" );
 		ERDiagramLayoutTableXColumn = props.getValue ( "ERDiagramLayoutTableXColumn" );
 		ERDiagramLayoutTableNameColumn = props.getValue ( "ERDiagramLayoutTableNameColumn" );
@@ -661,6 +746,39 @@ try{
         }
         if ( (OutputFile != null) && !OutputFile.isEmpty() ) {
             __OutputFile_JTextField.setText(OutputFile);
+        }
+        if ( (Newline != null) && !Newline.isEmpty() ) {
+            __Newline_JTextField.setText(Newline);
+        }
+        if ( SurroundWithPre == null ) {
+            // Select default...
+            __SurroundWithPre_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __SurroundWithPre_JComboBox,SurroundWithPre, JGUIUtil.NONE, null, null ) ) {
+                __SurroundWithPre_JComboBox.select ( SurroundWithPre );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nSurroundWithPre value \"" + SurroundWithPre +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( EncodeHtmlChars == null ) {
+            // Select default...
+            __EncodeHtmlChars_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EncodeHtmlChars_JComboBox,EncodeHtmlChars, JGUIUtil.NONE, null, null ) ) {
+                __EncodeHtmlChars_JComboBox.select ( EncodeHtmlChars );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEncodeHtmlChars value \"" + EncodeHtmlChars +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
         }
         if ( ERDiagramLayoutTableID == null ) {
             // Select default...
@@ -744,6 +862,9 @@ try{
 	ReferenceTables = __ReferenceTables_JTextField.getText().trim();
 	ExcludeTables = __ExcludeTables_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	Newline = __Newline_JTextField.getText().trim();
+	SurroundWithPre = __SurroundWithPre_JComboBox.getSelected();
+	EncodeHtmlChars = __EncodeHtmlChars_JComboBox.getSelected();
 	ERDiagramLayoutTableID = __ERDiagramLayoutTableID_JComboBox.getSelected();
 	ERDiagramLayoutTableNameColumn = __ERDiagramLayoutTableNameColumn_JTextField.getText().trim();
 	ERDiagramLayoutTableXColumn = __ERDiagramLayoutTableXColumn_JTextField.getText().trim();
@@ -756,6 +877,9 @@ try{
 	props.add ( "ReferenceTables=" + ReferenceTables );
 	props.add ( "ExcludeTables=" + ExcludeTables );
 	props.add ( "OutputFile=" + OutputFile);
+	props.add ( "Newline=" + Newline);
+	props.add ( "SurroundWithPre=" + SurroundWithPre);
+	props.add ( "EncodeHtmlChars=" + EncodeHtmlChars);
 	props.add ( "ERDiagramLayoutTableID=" + ERDiagramLayoutTableID);
 	props.add ( "ERDiagramLayoutTableNameColumn=" + ERDiagramLayoutTableNameColumn);
 	props.add ( "ERDiagramLayoutTableXColumn=" + ERDiagramLayoutTableXColumn);

@@ -19,8 +19,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.io.File;
 import java.util.List;
@@ -29,13 +31,11 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -51,16 +51,16 @@ implements ActionListener, KeyListener, ItemListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 
-private SimpleJButton __cancel_JButton = null,
-			__browse_JButton = null,
-			__ok_JButton = null,
-			__path_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
 private WriteWaterML_Command __command = null;
 private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
 private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __Version_JComboBox = null;
-private JTextField __Precision_JTextField = null;// Precision for output
+private JTextField __Precision_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private SimpleJComboBox	__TSList_JComboBox = null;
@@ -78,7 +78,7 @@ WriteWaterML_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public WriteWaterML_JDialog (	JFrame parent, Command command )
+public WriteWaterML_JDialog ( JFrame parent, WriteWaterML_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -100,9 +100,11 @@ public void actionPerformed( ActionEvent event )
 		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle("Select WaterML Time Series File to Write");
-		SimpleFileFilter sff = new SimpleFileFilter("xml", "WaterML Time Series File");
+		SimpleFileFilter sff = new SimpleFileFilter("json", "WaterML Time Series File, JSON");
 		fc.addChoosableFileFilter(sff);
-		sff = new SimpleFileFilter("waterml", "WaterML Time Series File");
+		sff = new SimpleFileFilter("xml", "WaterML Time Series File");
+		fc.addChoosableFileFilter(sff);
+		sff = new SimpleFileFilter("wml", "WaterML Time Series File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -281,8 +283,8 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (WriteWaterML_Command)command;
+private void initialize ( JFrame parent, WriteWaterML_Command command )
+{	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
@@ -296,7 +298,8 @@ private void initialize ( JFrame parent, Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command is under development.  Functionality currently is very limited.</b></html>" ),
+        "<html><b>This command is under development.  Functionality currently is limited in that only "
+        + "some JSON elements are written using default data mapping.</b></html>" ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a WaterML format file," +
@@ -308,23 +311,24 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The output filename can be specified using ${Property} notation to utilize global properties."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Enter date/times to a precision appropriate for output time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -333,6 +337,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "WaterML file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
+	__OutputFile_JTextField.setToolTipText("Specify the output file or use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -344,7 +349,9 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Version_JComboBox = new SimpleJComboBox(false);
     __Version_JComboBox.add ( "" ); // Most recent
-    __Version_JComboBox.add ( __command._WaterML1_1 );
+    __Version_JComboBox.add ( __command._WaterML1_1_JSON );
+    __Version_JComboBox.add ( __command._WaterML2_0 );
+    //__Version_JComboBox.add ( __command._WaterML2_0_JSON );
     __Version_JComboBox.select ( 0 );
     __Version_JComboBox.addActionListener (this);
     JGUIUtil.addComponent(main_JPanel, __Version_JComboBox,
@@ -354,7 +361,7 @@ private void initialize ( JFrame parent, Command command )
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output precision:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Precision_JTextField = new JTextField ( "", 20 );
+    __Precision_JTextField = new JTextField ( "", 5 );
     __Precision_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -363,7 +370,7 @@ private void initialize ( JFrame parent, Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MissingValue_JTextField = new JTextField ( "", 20 );
+    __MissingValue_JTextField = new JTextField ( "", 5 );
     __MissingValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -373,7 +380,8 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputStart_JTextField = new JTextField (20);
+	__OutputStart_JTextField = new JTextField (15);
+	__OutputStart_JTextField.setToolTipText("Specify the output start using a date/time string or processor ${Property}");
 	__OutputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -383,7 +391,8 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
 		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputEnd_JTextField = new JTextField (20);
+	__OutputEnd_JTextField = new JTextField (15);
+	__OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or processor ${Property}");
 	__OutputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

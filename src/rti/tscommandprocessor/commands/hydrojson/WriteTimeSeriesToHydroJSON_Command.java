@@ -314,6 +314,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	if ( (OutputStart == null) || OutputStart.isEmpty() ) {
 		OutputStart = "${OutputStart}"; // Default global property

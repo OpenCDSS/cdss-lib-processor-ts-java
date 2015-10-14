@@ -680,7 +680,7 @@ throws InvalidCommandParameterException
     setDataSource ( dataSource );
     */
     
-    List<String> dataType = new Vector<String>();
+    List<String> dataType = new ArrayList<String>();
     setDataType ( dataType );
     if ( (DataType == null) || DataType.equals("") ) {
         // Set to the same as the value columns
@@ -1032,6 +1032,7 @@ private String formatTSIDFromTableRecord ( TableRecord rec, int locationTypePos,
     String dataTypeFromParam, String scenarioFromParam )
 throws Exception
 {   String locationType = null, locationId = null, dataSource = null, dataType = null, scenario = null;
+	String periodReplacement = ""; // TODO SAM 2015-10-12 Evaluate whether to pass as command parameter
     StringBuffer tsidFromTable = new StringBuffer();
     locationId = rec.getFieldValueString(locationPos);
     if ( locationId == null ) {
@@ -1071,6 +1072,7 @@ throws Exception
     if ( dataType == null ) {
         dataType = "";
     }
+    dataType = dataType.replace(".", periodReplacement);
     tsidFromTable.append(TSIdent.SEPARATOR);
     tsidFromTable.append(dataType);
     tsidFromTable.append(TSIdent.SEPARATOR);
@@ -2374,8 +2376,8 @@ throws IOException
     // A hashmap is used to track the TSIDs, where the key is the TSID string and the object is initially the same
     // TSID string but will be set to the TS when initialized
     String unitsFromTable;
-    LinkedHashMap<String,String> tsidsFromTable = new LinkedHashMap<String,String>();
-    List<String> unitsFromTableList = new Vector<String>();
+    LinkedHashMap<String,String> tsidsFromTable = new LinkedHashMap<String,String>(); // Will retain insert order
+    List<String> unitsFromTableList = new ArrayList<String>();
     Object o;
     String tsidFromTable;
     for ( int iRec = 0; iRec <= nRecords; iRec++ ) {
@@ -2392,7 +2394,7 @@ throws IOException
             if ( (dtMinFromTable == null) || dt.lessThan(dtMinFromTable) ) {
                 dtMinFromTable = dt;
             }
-            // Determine the location identifier from the data.
+            // Determine the TSID from the data.
             try {
                 tsidFromTable = formatTSIDFromTableRecord ( rec, locationTypePos, locationPos, dataSourcePos,
                     dataTypePos, interval, scenarioPos, locationType, dataSource, dataType, scenario );
@@ -2473,22 +2475,26 @@ throws IOException
                 ts.setDate2Original(dtMaxFromTable);
             }
             catch ( Exception e ) {
-                // Set the TS to null to match the column positions but won't be able to set data below
+                // Set the TS to null to match the original list positions but won't be able to set data below
                 ts = null;
                 errorMessages.add ( "Error initializing time series \"" +
                     tsidentstr + "\" (" + e + ") - will not read.");
                 Message.printWarning(3,routine,e);
             }
         }
-        // Don't add if null
-        if ( ts != null ) {
-            tslist.add ( ts );
-        }
+        // Add even if null to keep the list size the same
+        tslist.add ( ts );
     }
     if ( !readData ) {
+    	// Remove null time series
+    	for ( int i = tslist.size() - 1; i >= 0; i-- ) {
+    		if ( tslist.get(i) == null ) {
+    			tslist.remove(i);
+    		}
+    	}
         return tslist;
     }
-    // Process the data records.
+    Message.printStatus(2, routine, "Number of time series including null =" + tslist.size());
     // Create an ordered hash map to simplify lookup of time series based on the TSID information
     LinkedHashMap<String,TS> tsHash = new LinkedHashMap<String,TS>();
     its = -1;
@@ -2496,13 +2502,24 @@ throws IOException
         ++its;
         tsidentstr = tsid.getKey();
         ts = tslist.get(its);
-        ts.allocateDataSpace();
-        tsHash.put(tsidentstr,ts);
+        if ( ts != null ) {
+	        ts.allocateDataSpace();
+	        tsHash.put(tsidentstr,ts);
+        }
     }
+	// Now remove null time series since not needed
+	for ( int i = tslist.size() - 1; i >= 0; i-- ) {
+		if ( tslist.get(i) == null ) {
+			tslist.remove(i);
+		}
+	}
+	Message.printStatus(2, routine, "Number of time series excluding null =" + tslist.size());
+    // Process the data records.
     String tsidFromTablePrev = "";
     Double value = null;
+    String sValue;
     String flag;
-    for ( int iRec = 0; iRec <= nRecords; iRec++ ) {
+    for ( int iRec = 0; iRec < nRecords; iRec++ ) {
         try {
             rec = table.getRecord(iRec);
             dt = getDateTimeFromRecord(rec,(iRec + 1),dateTimePos,datePos,timePos,null,dateTimeParser,null);
@@ -2524,9 +2541,20 @@ throws IOException
             else if ( o instanceof Integer ) {
                 value = ((Integer)o).doubleValue();
             }
-            else {
-                continue;
+            else if ( o instanceof String ) {
+            	// Try to convert to a number
+            	sValue = (String)o;
+            	sValue = sValue.trim();
+            	try {
+            		value = Double.parseDouble(sValue);
+            	}
+            	catch ( NumberFormatException e ) {
+            		continue;
+            	}
             }
+        	else {
+        		continue;
+        	}
             // Get the TSID string for the table record, used to look up the time series
             try {
                 tsidFromTable = formatTSIDFromTableRecord ( rec, locationTypePos, locationPos, dataSourcePos,
@@ -2534,12 +2562,19 @@ throws IOException
             }
             catch ( Exception e ) {
                 // Should not happen - don't process the table record
+            	if ( Message.isDebugOn ) {
+            		Message.printWarning(3, routine, e);
+            	}
                 continue;
             }
             // Get the time series to process, may be the same as for the previous record, in which
             // case a hash table lookup is not needed.
             if ( !tsidFromTable.equals(tsidFromTablePrev) ) {
                 ts = tsHash.get(tsidFromTable);
+                if ( ts == null ) {
+                	Message.printStatus(2, routine, "Null time series from hashtable using \"" + tsidFromTable + "\"");
+                	continue;
+                }
             }
             tsidFromTablePrev = tsidFromTable;
             // Get the the data flag
@@ -2619,6 +2654,9 @@ throws IOException
         }
         catch ( Exception e ) {
             // Skip the record
+        	if ( Message.isDebugOn ) {
+        		Message.printWarning(1,routine,e);
+        	}
             continue;
         }
     }
@@ -2853,6 +2891,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	TimeInterval layoutColumns = TimeInterval.parseInterval(BlockLayoutColumns);
         	TimeInterval layoutRows = TimeInterval.parseInterval(BlockLayoutRows);
         	YearType yearType = YearType.valueOfIgnoreCase(BlockOutputYearType);
+    		String dataType = (getDataType().size() == 1 ? getDataType().get(0) : null);
+    		if ( (dataType != null) && (dataType.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    			dataType = TSCommandProcessorUtil.expandParameterValue(processor, this, dataType);
+    		}
         	tslist = readTimeSeriesListBlock ( table,
         		layoutColumns.getBase(), layoutRows.getBase(), yearType,
         		DateTimeColumn,
@@ -2860,7 +2902,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		(getLocationType().size() == 1 ? getLocationType().get(0) : null),
         		(getLocationIDRuntime().size() == 1 ? getLocationIDRuntime().get(0) : null),
                 (getDataSource().size() == 1 ? getDataSource().get(0) : null),
-                (getDataType().size() == 1 ? getDataType().get(0) : null),
+                dataType,
                 getInterval(),
                 (getScenario().size() == 1 ? getScenario().get(0) : null),
                 (getUnits().size() == 1 ? getUnits().get(0) : null),
@@ -2872,23 +2914,36 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         else {
         	if ( singleColumn ) {
+        		String dataType = (getDataType().size() == 1 ? getDataType().get(0) : null);
+        		if ( (dataType != null) && (dataType.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+        			dataType = TSCommandProcessorUtil.expandParameterValue(processor, this, dataType);
+        		}
 	            tslist = readTimeSeriesListSingle ( table, getDateTimeColumnRuntime(),
 	                DateTimeFormat, getDateColumnRuntime(),
 	                getTimeColumnRuntime(), ValueColumn, FlagColumn, getSkipRows(),
 	                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
 	                (getLocationType().size() == 1 ? getLocationType().get(0) : null),
 	                (getDataSource().size() == 1 ? getDataSource().get(0) : null),
-	                (getDataType().size() == 1 ? getDataType().get(0) : null), getInterval(),
+	                dataType, getInterval(),
 	                (getScenario().size() == 1 ? getScenario().get(0) : null),
 	                (getUnits().size() == 1 ? getUnits().get(0) : null), getMissingValue(), handleDuplicatesHow,
 	                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
 	        }
 	        else {
+	        	List<String> dataType = getDataType();
+	        	int i = -1;
+	        	for ( String d : dataType ) {
+	        		++i;
+	        		if ( (d != null) && (d.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+	        			d = TSCommandProcessorUtil.expandParameterValue(processor, this, d);
+	        			dataType.set(i,d);
+	        		}
+	        	}
 	            tslist = readTimeSeriesListMultiple ( table, getDateTimeColumnRuntime(),
 	                DateTimeFormat, getDateColumnRuntime(),
 	                getTimeColumnRuntime(), getValueColumnsRuntime(), getFlagColumnsRuntime(), getSkipRows(),
 	                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
-	                getLocationType(), getLocationIDRuntime(), getDataSource(), getDataType(), getInterval(), getScenario(),
+	                getLocationType(), getLocationIDRuntime(), getDataSource(), dataType, getInterval(), getScenario(),
 	                getUnits(), getMissingValue(), handleDuplicatesHow,
 	                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
 	        }

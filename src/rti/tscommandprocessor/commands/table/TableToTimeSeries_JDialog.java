@@ -641,6 +641,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Data type(s):"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataType_JTextField = new JTextField (10);
+    __DataType_JTextField.setToolTipText("Specify the data type(s) or use ${Property} notation");
     __DataType_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(tsid_JPanel, __DataType_JTextField,
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

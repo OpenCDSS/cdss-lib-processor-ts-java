@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -33,14 +35,14 @@ import RTi.Util.Message.Message;
 public class ReadTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private ReadTimeSeries_Command __command= null; // Command as Vector of String
-private JTextArea __command_JTextArea=null;// Command as TextField
-private TSFormatSpecifiersJPanel __Alias_JTextField = null;// Field for time series alias
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private ReadTimeSeries_Command __command = null;
+private JTextArea __command_JTextArea=null;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __TSID_JTextField=null;
 private SimpleJComboBox __IfNotFound_JComboBox = null;
-private JTextField __DefaultUnits_JTextField = null; // Default units when blank time series is created.
+private JTextField __DefaultUnits_JTextField = null;
 private boolean __first_time = true;
 private boolean __error_wait = false;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -170,11 +172,11 @@ private void initialize ( JFrame parent, ReadTimeSeries_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command is a general time series read command."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Its main purpose is to assign an alias to a time series, " +
 		"which is more convenient to use than the long time series identifier."),
@@ -192,13 +194,18 @@ private void initialize ( JFrame parent, ReadTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "See also the ReadTimeSeriesList() command."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Time series identifier:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TSID_JTextField = new JTextField ( 60 );
+	__TSID_JTextField = new JTextField ( 40 );
+	__TSID_JTextField.setToolTipText("Specify a time series identifier, can contain ${Property} notation");
 	__TSID_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - needed to locate data to read."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

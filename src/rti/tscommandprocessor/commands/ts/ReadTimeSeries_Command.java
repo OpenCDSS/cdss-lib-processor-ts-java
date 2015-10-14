@@ -5,11 +5,10 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TimeSeriesNotFoundException;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -108,12 +107,12 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "IfNotFound" );
-    valid_Vector.add ( "DefaultUnits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(4);
+    validList.add ( "Alias" );
+    validList.add ( "TSID" );
+    validList.add ( "IfNotFound" );
+    validList.add ( "DefaultUnits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -263,10 +262,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -283,7 +280,7 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "ReadTimeSeries_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -294,13 +291,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
     }
 	
 	String Alias = parameters.getValue ( "Alias" );
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String IfNotFound = parameters.getValue("IfNotFound");
     if ( (IfNotFound == null) || IfNotFound.equals("")) {
         IfNotFound = _Warn; // default
@@ -313,101 +325,108 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
 	    boolean notFoundLogged = false;
         boolean readData = true;
-        if ( commandPhase == CommandPhaseType.DISCOVERY ){
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             readData = false;
         }
-        // Make a request to the processor...
-        PropList request_params = new PropList ( "" );
-        request_params.set ( "TSID", TSID );
-        request_params.setUsingObject ( "WarningLevel", new Integer(warning_level) );
-        request_params.set ( "CommandTag", command_tag );
-        request_params.set ( "IfNotFound", IfNotFound );
-        request_params.setUsingObject ( "ReadData", new Boolean(readData) );
-        CommandProcessorRequestResultsBean bean = null;
-        try {
-            bean = processor.processRequest( "ReadTimeSeries", request_params);
-            PropList bean_PropList = bean.getResultsPropList();
-            Object o_TS = bean_PropList.getContents ( "TS" );
-            if ( o_TS != null ) {
-                ts = (TS)o_TS;
-            }
+        if ( TSID.indexOf("${") < 0 ) {
+	        // Have a valid TSID - make a request to the processor...
+	        PropList request_params = new PropList ( "" );
+	        request_params.set ( "TSID", TSID );
+	        request_params.setUsingObject ( "WarningLevel", new Integer(warning_level) );
+	        request_params.set ( "CommandTag", command_tag );
+	        request_params.set ( "IfNotFound", IfNotFound );
+	        request_params.setUsingObject ( "ReadData", new Boolean(readData) );
+	        CommandProcessorRequestResultsBean bean = null;
+	        try {
+	            bean = processor.processRequest( "ReadTimeSeries", request_params);
+	            PropList bean_PropList = bean.getResultsPropList();
+	            Object o_TS = bean_PropList.getContents ( "TS" );
+	            if ( o_TS != null ) {
+	                ts = (TS)o_TS;
+	            }
+	        }
+	        catch ( TimeSeriesNotFoundException e ) {
+	            message = "Time series could not be read using identifier \"" + TSID + "\".";
+	            if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+	                status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Verify that the identifier information is correct." ) );
+	            }
+	            else {
+	                // Non-fatal - ignoring or defaulting time series.
+	                message += "  Non-fatal because IfNotFound=" + IfNotFound;
+	                status.addToLog ( commandPhase,
+	                        new CommandLogRecord(CommandStatusType.WARNING,
+	                                message, "Verify that the identifier information is correct." ) );
+	            }
+	            ts = null;
+	            notFoundLogged = true;
+	        }
+	        catch ( Exception e ) {
+	            message = "Error reading time series using identifier \"" + TSID + "\" (" + e + ").";
+	            if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+	                status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Verify that the identifier information is correct." ) );
+	                Message.printWarning ( 3, routine, e );
+	            }
+	            else {
+	                // Non-fatal - ignoring or defaulting time series.
+	                message += "  Non-fatal because IfNotFound=" + IfNotFound;
+	                status.addToLog ( commandPhase,
+	                        new CommandLogRecord(CommandStatusType.WARNING,
+	                                message, "Verify that the identifier information is correct." ) );
+	            }
+	            ts = null;
+	            notFoundLogged = true;
+	        }
+	        if ( ts == null ) {
+	            if ( !notFoundLogged ) {
+	                // Only want to include a warning once.
+	                // This is kind of ugly because currently there is not consistency between all
+	                // time series readers in error handling, which is difficult to handle in this
+	                // generic command.
+	                message = "Time series could not be found using identifier \"" + TSID + "\".";
+	                if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+	                    status.addToLog ( commandPhase,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Verify that the identifier information is correct." ) );
+	                }
+	                else {
+	                    // Non-fatal - ignoring or defaulting time series.
+	                    message += "  Non-fatal because IfNotFound=" + IfNotFound;
+	                    status.addToLog ( commandPhase,
+	                            new CommandLogRecord(CommandStatusType.WARNING,
+	                                    message, "Verify that the identifier information is correct." ) );
+	                }
+	            }
+	            // Always check for output period because required for default time series.
+	            if ( IfNotFound.equalsIgnoreCase(_Default) &&
+	                    ((processor.getPropContents("OutputStart") == null) ||
+	                    (processor.getPropContents("OutputEnd") == null)) ) {
+	                message = "Time series could not be found using identifier \"" + TSID + "\"." +
+	                        "  Requesting default time series but no output period is defined.";
+	                status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Set the output period before calling this command." ) );
+	            }
+	        }
+	        else {
+	            if ( (DefaultUnits != null) && (ts.getDataUnits().length() == 0) ) {
+	                // Time series has no units so assign default.
+	                ts.setDataUnits ( DefaultUnits );
+	            }
+	        }
+	        if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
+	            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+	                processor, ts, Alias, status, commandPhase);
+	            ts.setAlias ( alias );
+	        }
         }
-        catch ( TimeSeriesNotFoundException e ) {
-            message = "Time series could not be read using identifier \"" + TSID + "\".";
-            if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the identifier information is correct." ) );
-            }
-            else {
-                // Non-fatal - ignoring or defaulting time series.
-                message += "  Non-fatal because IfNotFound=" + IfNotFound;
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.WARNING,
-                                message, "Verify that the identifier information is correct." ) );
-            }
-            ts = null;
-            notFoundLogged = true;
-        }
-        catch ( Exception e ) {
-            message = "Error reading time series using identifier \"" + TSID + "\" (" + e + ").";
-            if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the identifier information is correct." ) );
-                Message.printWarning ( 3, routine, e );
-            }
-            else {
-                // Non-fatal - ignoring or defaulting time series.
-                message += "  Non-fatal because IfNotFound=" + IfNotFound;
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.WARNING,
-                                message, "Verify that the identifier information is correct." ) );
-            }
-            ts = null;
-            notFoundLogged = true;
-        }
-        if ( ts == null ) {
-            if ( !notFoundLogged ) {
-                // Only want to include a warning once.
-                // This is kind of ugly because currently there is not consistency between all
-                // time series readers in error handling, which is difficult to handle in this
-                // generic command.
-                message = "Time series could not be found using identifier \"" + TSID + "\".";
-                if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the identifier information is correct." ) );
-                }
-                else {
-                    // Non-fatal - ignoring or defaulting time series.
-                    message += "  Non-fatal because IfNotFound=" + IfNotFound;
-                    status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.WARNING,
-                                    message, "Verify that the identifier information is correct." ) );
-                }
-            }
-            // Always check for output period because required for default time series.
-            if ( IfNotFound.equalsIgnoreCase(_Default) &&
-                    ((processor.getPropContents("OutputStart") == null) ||
-                    (processor.getPropContents("OutputEnd") == null)) ) {
-                message = "Time series could not be found using identifier \"" + TSID + "\"." +
-                        "  Requesting default time series but no output period is defined.";
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Set the output period before calling this command." ) );
-            }
-        }
-        else {
-            if ( (DefaultUnits != null) && (ts.getDataUnits().length() == 0) ) {
-                // Time series has no units so assign default.
-                ts.setDataUnits ( DefaultUnits );
-            }
-        }
-        if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
-            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                processor, ts, Alias, status, commandPhase);
-            ts.setAlias ( alias );
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        	// TSID contains a property so create a time series with that identifier for other commands to use as choice
+        	ts = new TS();
+        	ts.setIdentifier(TSID);
         }
 	}
 	catch ( Exception e ) {
@@ -421,7 +440,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Check the log file - report the problem to software support." ) );
 	}
 	
-	List<TS> tslist = new Vector(1);
+	List<TS> tslist = new ArrayList<TS>(1);
     if ( ts != null ) {
         tslist.add ( ts );
     }

@@ -186,6 +186,7 @@ public boolean next ()
 	}
   	if ( !this.forInitialized ) {
     	// Initialize the loop
+  		TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
   		String List = getCommandParameters().getValue ( "List" );
     	if ( (List != null) && !List.isEmpty() ) {
     	    // Iterate with the list
@@ -223,9 +224,11 @@ public boolean next ()
 	        // Create the list of objects for the iterator
 	        // The table may change dynamically so lookup the column number here
 	        String TableID = getCommandParameters().getValue ( "TableID" );
+	        if ( (TableID != null) && !TableID.isEmpty() && TableID.indexOf("${") >= 0 ) {
+	       		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+	        }
 	        String columnName = getCommandParameters().getValue ( "TableColumn" );
 	        // TODO SAM 2014-06-29 Need to optimize all of this - currently have duplicate code in runCommand()
-	        CommandProcessor processor = getCommandProcessor();
 	        CommandStatus status = getCommandStatus();
 	        status.clearLog(CommandPhaseType.RUN);
 	        PropList request_params = null;
@@ -268,6 +271,10 @@ public boolean next ()
 	        try {
 	            this.iteratorObjectListIndex = 0;
 	            this.iteratorObjectList = this.table.getFieldValues(columnName);
+	            if ( (this.iteratorObjectList == null) || (this.iteratorObjectList.size() == 0) ) {
+	            	// No data in list
+	            	return false;
+	            }
 	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
 	            this.forInitialized = true;
 	            if ( Message.isDebugOn ) {

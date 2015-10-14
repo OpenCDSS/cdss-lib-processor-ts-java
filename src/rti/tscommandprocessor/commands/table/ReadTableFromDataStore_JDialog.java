@@ -515,6 +515,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JGUIUtil.addComponent(file_JPanel, new JLabel ( "SQL file to read:" ), 
         0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SqlFile_JTextField = new JTextField ( 50 );
+    __SqlFile_JTextField.setToolTipText("Specify the SQL file or use ${Property} notation");
     __SqlFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(file_JPanel, __SqlFile_JTextField,
         1, yFile, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -545,6 +546,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JTextField = new JTextField (10);
+    __TableID_JTextField.setToolTipText("Specify the table ID or use ${Property} notation");
     __TableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

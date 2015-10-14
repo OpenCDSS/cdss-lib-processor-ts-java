@@ -136,7 +136,7 @@ throws InvalidCommandParameterException
                 message, "Specify the Top parameter as an integer." ) );
     }
     String SqlFile_full = null;
-    if ( (SqlFile != null) && (SqlFile.length() != 0) ) {
+    if ( (SqlFile != null) && !SqlFile.isEmpty() && (SqlFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -274,16 +274,28 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int log_level = 3; // Level for non-user messages for log file.
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+	CommandProcessor processor = getCommandProcessor();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
@@ -291,7 +303,6 @@ CommandWarningException, CommandException
 	// Make sure there are time series available to operate on...
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
     String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreCatalog = parameters.getValue ( "DataStoreCatalog" );
@@ -317,6 +328,9 @@ CommandWarningException, CommandException
     String SqlFile = parameters.getValue("SqlFile");
     String DataStoreProcedure = parameters.getValue("DataStoreProcedure");
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
     String RowCountProperty = parameters.getValue ( "RowCountProperty" );
     
     // Find the data store to use...

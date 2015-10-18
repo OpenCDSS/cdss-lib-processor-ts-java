@@ -375,11 +375,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // Get and clear the status and clear the run log...
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    CommandProcessor processor = getCommandProcessor();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
     }
-    CommandProcessor processor = getCommandProcessor();
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();

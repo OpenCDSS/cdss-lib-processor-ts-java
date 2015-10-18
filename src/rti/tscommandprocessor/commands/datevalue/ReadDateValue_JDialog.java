@@ -18,23 +18,22 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
-
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-
 import RTi.Util.Message.Message;
 
 /**
@@ -82,9 +81,11 @@ public void actionPerformed( ActionEvent event )
 		// Browse for the file to read...
 		JFileChooser fc = new JFileChooser();
         fc.setDialogTitle( "Select DateValue Time Series File");
-        SimpleFileFilter sff = new SimpleFileFilter("txt","DateValue Time Series File");
+        SimpleFileFilter sff = new SimpleFileFilter("dv","DateValue Time Series File");
         fc.addChoosableFileFilter(sff);
-        sff = new SimpleFileFilter("dv","DateValue Time Series File");
+        sff = new SimpleFileFilter("txt","DateValue Time Series File");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("zip","DateValue Time Series File (zipped)");
         fc.addChoosableFileFilter(sff);
 		
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -262,8 +263,10 @@ private void initialize(JFrame parent, ReadDateValue_Command command) {
 	}
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying the input period will limit data that are available for fill commands but can increase performance." ), 
+		"Specifying the input period will limit data that are available for other but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"DateValue file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

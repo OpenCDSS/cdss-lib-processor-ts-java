@@ -271,7 +271,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(18);
+	List<String> validList = new ArrayList<String>(19);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -281,6 +281,7 @@ throws InvalidCommandParameterException
     validList.add ( "OutputFileHeaderFile" );
     validList.add ( "OutputLineFormat" );
     validList.add ( "OutputLineFormatFile" );
+    validList.add ( "LastOutputLineFormat" );
     validList.add ( "DateTimeFormatterType" );
     validList.add ( "DateTimeFormat" );
 	validList.add ( "OutputFileFooter" );
@@ -409,6 +410,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    OutputLineFormat = "${tsdata:datetime} ${tsdata:value}";
 	}
 	String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
+	String LastOutputLineFormat = parameters.getValue ( "LastOutputLineFormat" );
     String DateTimeFormatterType0 = parameters.getValue ( "DateTimeFormatterType" );
     if ( (DateTimeFormatterType0 == null) || DateTimeFormatterType0.equals("") ) {
         DateTimeFormatterType0 = "" + DateTimeFormatterType.C;
@@ -552,6 +554,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Expand the format here to deal with processor properties, leaving only time series properties
         // This improves performance a bit
         outputLineFormat = TSCommandProcessorUtil.expandParameterValue(processor,this,outputLineFormat);
+        String lastOutputLineFormat = TSCommandProcessorUtil.expandParameterValue(processor,this,LastOutputLineFormat);
         // Get the header from the header file if specified
         if ( (OutputFileHeaderFile != null) && !OutputFileHeaderFile.isEmpty() ) {
             // Read the header from the file
@@ -597,7 +600,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
         // Now write the data records and expand the output line format dynamically for each time series and data value
-        writeTimeSeries ( tslist, OutputFile_full, append, outputFileHeader, outputLineFormat, dateTimeFormatterType, DateTimeFormat,
+        writeTimeSeries ( tslist, OutputFile_full, append, outputFileHeader, outputLineFormat, lastOutputLineFormat,
+        	dateTimeFormatterType, DateTimeFormat,
             outputFileFooter, precision, MissingValue, OutputStart_DateTime, OutputEnd_DateTime, nonMissingOutputCount,
             problems, processor, status, CommandPhaseType.RUN );
         // Save the output file name...
@@ -642,6 +646,7 @@ public String toString ( PropList parameters )
 	String OutputFileHeaderFile = parameters.getValue ( "OutputFileHeaderFile" );
 	String OutputLineFormat = parameters.getValue ( "OutputLineFormat" );
 	String OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
+	String LastOutputLineFormat = parameters.getValue ( "LastOutputLineFormat" );
 	String DateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
 	String DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
 	String OutputFileFooter = parameters.getValue ( "OutputFileFooter" );
@@ -706,6 +711,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputLineFormatFile=\"" + OutputLineFormatFile + "\"" );
     }
+    if ( (LastOutputLineFormat != null) && (LastOutputLineFormat.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "LastOutputLineFormat=\"" + LastOutputLineFormat + "\"" );
+    }
     if ( (DateTimeFormatterType != null) && (DateTimeFormatterType.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -769,8 +780,10 @@ Write a time series to the output file.
 @param outputFile full path to output file
 @param append whether or not to append to the output file
 @param outputFileHeader the header content to add at the top of the output file
-@param outputLineFormat output line format to be used for each value, using TS % specifiers, similar to graph
-data point labeling
+@param outputLineFormat output line format to be used for each output line (date/time),
+using TS % specifiers, similar to graph data point labeling
+@param lastOutputLineFormat output line format to be used for the last output line (last date/time),
+using TS % specifiers, similar to graph data point labeling
 @param dateTimeFormatterType formatter type for date/times
 @param dateTimeFormat the format to use for date/times, when processed by the date/time formatter
 @param outputFileFooter the footer content to add at the bottom of the output file
@@ -781,12 +794,17 @@ data point labeling
 @param nonMissingOutputCount number of values to output.  If negative, count the values from the end.
 */
 private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean append,
-    List<String> outputFileHeader, String outputLineFormat, DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat,
+    List<String> outputFileHeader, String outputLineFormat, String lastOutputLineFormat,
+    DateTimeFormatterType dateTimeFormatterType, String dateTimeFormat,
     List<String> outputFileFooter, Integer precision, String missingValue, DateTime outputStart, DateTime outputEnd,
     Integer nonMissingOutputCount,
     List<String> problems, CommandProcessor processor, CommandStatus status, CommandPhaseType commandPhase )
 {   String message;
     PrintWriter fout = null;
+    boolean doLastOutputLineFormat = false;
+    if ( (lastOutputLineFormat != null) && !lastOutputLineFormat.isEmpty() ) {
+    	doLastOutputLineFormat = true;
+    }
     try {
         // Open the file...
         fout = new PrintWriter ( new FileOutputStream ( outputFile, append ) );
@@ -848,6 +866,13 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
             String valueString, dateTimeString = "";
             CommandStatus cs = null;//status; // Set to null once debugged
             while ( (tsdata = it.next()) != null ) {
+            	// If a last output line is specified, need to do a bit more work to check if the last data value
+            	if ( doLastOutputLineFormat ) {
+            		if ( !it.hasNext() ) {
+            			// This is the last line - just use tsdata below
+            			outputLineFormat = lastOutputLineFormat;
+            		}
+            	}
                 // First expand the line to replace time series properties
                 value = tsdata.getDataValue();
                 //Message.printStatus(2, "", "Processing " + tsdata.getDate() + " " + value );
@@ -905,6 +930,7 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, boolean appen
     }
     catch ( Exception e ) {
         message = "Unexpected error writing time series to file \"" + outputFile + "\" (" + e + ").";
+        Message.printWarning(3,"",e);
         problems.add(message);
         throw new RuntimeException ( message );
     }

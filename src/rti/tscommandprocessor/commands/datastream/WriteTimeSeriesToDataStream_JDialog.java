@@ -77,6 +77,7 @@ private JTextArea __OutputFileHeader_JTextArea = null;
 private JTextField __OutputFileHeaderFile_JTextField = null;
 private JTextArea __OutputLineFormat_JTextArea = null;
 private JTextField __OutputLineFormatFile_JTextField = null;
+private JTextArea __LastOutputLineFormat_JTextArea = null;
 private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private JTextArea __OutputFileFooter_JTextArea = null;
 private JTextField __OutputFileFooterFile_JTextField = null;
@@ -384,6 +385,7 @@ private void checkInput ()
 	String OutputFileHeaderFile = __OutputFileHeaderFile_JTextField.getText().trim();
 	String OutputLineFormat = __OutputLineFormat_JTextArea.getText().trim();
 	String OutputLineFormatFile = __OutputLineFormatFile_JTextField.getText().trim();
+	String LastOutputLineFormat = __LastOutputLineFormat_JTextArea.getText().trim();
     String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	String OutputFileFooter = __OutputFileFooter_JTextArea.getText().trim();
@@ -422,6 +424,9 @@ private void checkInput ()
     }
     if ( OutputLineFormatFile.length() > 0 ) {
         parameters.set ( "OutputLineFormatFile", OutputLineFormatFile );
+    }
+    if ( LastOutputLineFormat.length() > 0 ) {
+        parameters.set ( "LastOutputLineFormat", LastOutputLineFormat );
     }
     if ( DateTimeFormatterType.length() > 0 ) {
         parameters.set ( "DateTimeFormatterType", DateTimeFormatterType );
@@ -475,6 +480,7 @@ private void commitEdits ()
 	String OutputFileHeaderFile = __OutputFileHeaderFile_JTextField.getText().trim();
 	String OutputLineFormat = __OutputLineFormat_JTextArea.getText().trim();
 	String OutputLineFormatFile = __OutputLineFormatFile_JTextField.getText().trim();
+	String LastOutputLineFormat = __LastOutputLineFormat_JTextArea.getText().trim();
     String DateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     String DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	String OutputFileFooter = __OutputFileFooter_JTextArea.getText().trim();
@@ -495,6 +501,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputFileHeaderFile", OutputFileHeaderFile );
 	__command.setCommandParameter ( "OutputLineFormat", OutputLineFormat );
 	__command.setCommandParameter ( "OutputLineFormatFile", OutputLineFormatFile );
+	__command.setCommandParameter ( "LastOutputLineFormat", LastOutputLineFormat );
 	__command.setCommandParameter ( "DateTimeFormatterType", DateTimeFormatterType );
 	__command.setCommandParameter ( "DateTimeFormat", DateTimeFormat );
 	__command.setCommandParameter ( "OutputFileFooter", OutputFileFooter );
@@ -528,8 +535,11 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write time series to a data stream format file," +
+		"Write one or more time series to a data stream format file," +
 		" which consists of an optional header, a \"stream\" of time series value data records, and an optional footer." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Time series values are written one per line, NOT multiple columns." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -744,6 +754,19 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 	    JGUIUtil.addComponent(data_JPanel, __pathFormat_JButton,
             3, ++yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
+	
+    JGUIUtil.addComponent(data_JPanel, new JLabel ("Data line format (last line):"),
+        0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LastOutputLineFormat_JTextArea = new JTextArea (3,35);
+    __LastOutputLineFormat_JTextArea.setLineWrap ( true );
+    __LastOutputLineFormat_JTextArea.setWrapStyleWord ( true );
+    __LastOutputLineFormat_JTextArea.setToolTipText(
+    	"Format used for the last output line, including % TS specifiers, ${property}, ${ts:property}, ${tsdata:datetime}, ${tsdata:value}, ${tsdata:flag}.");
+    __LastOutputLineFormat_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(data_JPanel, new JScrollPane(__LastOutputLineFormat_JTextArea),
+        1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel ("Optional - format for last data line."),
+        3, yData, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
     // is supported by the panel
@@ -916,6 +939,7 @@ private void refresh ()
 	String OutputFileHeaderFile = "";
 	String OutputLineFormat = "";
 	String OutputLineFormatFile = "";
+	String LastOutputLineFormat = "";
     String dateTimeFormatterType = "";
     String DateTimeFormat = "";
 	String OutputFileFooter = "";
@@ -945,6 +969,7 @@ private void refresh ()
 		dateTimeFormatterType = parameters.getValue ( "DateTimeFormatterType" );
         DateTimeFormat = parameters.getValue ( "DateTimeFormat" );
 		OutputLineFormatFile = parameters.getValue ( "OutputLineFormatFile" );
+		LastOutputLineFormat = parameters.getValue ( "LastOutputLineFormat" );
 		OutputFileFooter = parameters.getValue ( "OutputFileFooter" );
 		OutputFileFooterFile = parameters.getValue ( "OutputFileFooterFile" );
 	    Precision = parameters.getValue("Precision");
@@ -1028,6 +1053,9 @@ private void refresh ()
         if (OutputLineFormatFile != null) {
             __OutputLineFormatFile_JTextField.setText(OutputLineFormatFile);
         }
+        if (LastOutputLineFormat != null) {
+            __LastOutputLineFormat_JTextArea.setText(LastOutputLineFormat);
+        }
         if ( (dateTimeFormatterType == null) || dateTimeFormatterType.equals("") ) {
             // Select default...
             __DateTimeFormat_JPanel.selectFormatterType(null);
@@ -1079,6 +1107,7 @@ private void refresh ()
 	OutputFileHeaderFile = __OutputFileHeaderFile_JTextField.getText().trim();
 	OutputLineFormat = __OutputLineFormat_JTextArea.getText().trim();
 	OutputLineFormatFile = __OutputLineFormatFile_JTextField.getText().trim();
+	LastOutputLineFormat = __LastOutputLineFormat_JTextArea.getText().trim();
     dateTimeFormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	OutputFileFooter = __OutputFileFooter_JTextArea.getText().trim();
@@ -1098,6 +1127,7 @@ private void refresh ()
 	parameters.add ( "OutputFileHeaderFile=" + OutputFileHeaderFile );
 	parameters.add ( "OutputLineFormat=" + OutputLineFormat );
 	parameters.add ( "OutputLineFormatFile=" + OutputLineFormatFile );
+	parameters.add ( "LastOutputLineFormat=" + LastOutputLineFormat );
 	parameters.add ( "DateTimeFormatterType=" + dateTimeFormatterType );
 	parameters.add ( "DateTimeFormat=" + DateTimeFormat );
 	parameters.add ( "OutputFileFooter=" + OutputFileFooter );

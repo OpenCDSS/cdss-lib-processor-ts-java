@@ -3164,6 +3164,7 @@ public String toString ( PropList props )
     String DateTimeFormat = props.getValue("DateTimeFormat" );
     String DateColumn = props.getValue("DateColumn" );
     String TimeColumn = props.getValue("TimeColumn" );
+    String LocationTypeColumn = props.getValue("LocationTypeColumn" );
     String LocationColumn = props.getValue("LocationColumn" );
     String DataSourceColumn = props.getValue("DataSourceColumn" );
     String DataTypeColumn = props.getValue("DataTypeColumn" );
@@ -3218,6 +3219,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("TimeColumn=\"" + TimeColumn + "\"");
+    }
+    if ((LocationTypeColumn != null) && (LocationTypeColumn.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("LocationTypeColumn=\"" + LocationTypeColumn + "\"");
     }
     if ((LocationColumn != null) && (LocationColumn.length() > 0)) {
         if (b.length() > 0) {

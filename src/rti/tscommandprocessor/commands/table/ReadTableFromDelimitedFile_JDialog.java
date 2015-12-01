@@ -57,6 +57,8 @@ private JTextField __SkipLines_JTextField = null;
 //private JTextField __SkipColumns_JTextField = null;
 private JTextField __HeaderLines_JTextField = null;
 private JTextField __DateTimeColumns_JTextField = null;
+private JTextField __TextColumns_JTextField = null;
+private JTextField __Top_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
@@ -149,6 +151,8 @@ private void checkInput ()
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
 	String DateTimeColumns  = __DateTimeColumns_JTextField.getText().trim();
+	String TextColumns  = __TextColumns_JTextField.getText().trim();
+	String Top  = __Top_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -171,6 +175,12 @@ private void checkInput ()
 	}
     if ( DateTimeColumns.length() > 0 ) {
         props.set ( "DateTimeColumns", DateTimeColumns );
+    }
+    if ( TextColumns.length() > 0 ) {
+        props.set ( "TextColumns", TextColumns );
+    }
+    if ( Top.length() > 0 ) {
+        props.set ( "Top", Top );
     }
 	try {
 	    // This will warn the user...
@@ -195,6 +205,8 @@ private void commitEdits ()
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
 	String DateTimeColumns  = __DateTimeColumns_JTextField.getText().trim();
+	String TextColumns  = __TextColumns_JTextField.getText().trim();
+	String Top  = __Top_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "Delimiter", Delimiter );
@@ -202,6 +214,8 @@ private void commitEdits ()
 	//__command.setCommandParameter ( "SkipColumns", SkipColumns );
 	__command.setCommandParameter ( "HeaderLines", HeaderLines );
 	__command.setCommandParameter ( "DateTimeColumns", DateTimeColumns );
+	__command.setCommandParameter ( "TextColumns", TextColumns );
+	__command.setCommandParameter ( "Top", Top );
 }
 
 /**
@@ -342,7 +356,27 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
     JGUIUtil.addComponent(main_JPanel, __DateTimeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Optional - columns that are date/times, separated by commas."),
+        new JLabel ("Optional - columns that contain date/times, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Text columns:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TextColumns_JTextField = new JTextField (20);
+    __TextColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __TextColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ("Optional - columns that contain text, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Top N columns:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Top_JTextField = new JTextField (5);
+    __Top_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Top_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ("Optional - only process top N rows."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -431,6 +465,8 @@ private void refresh ()
 	//String SkipColumns = "";
 	String HeaderLines = "";
 	String DateTimeColumns = "";
+	String TextColumns = "";
+	String Top = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -441,6 +477,8 @@ private void refresh ()
 		//SkipColumns = props.getValue ( "SkipColumns" );
 		HeaderLines = props.getValue ( "HeaderLines" );
 		DateTimeColumns = props.getValue ( "DateTimeColumns" );
+		TextColumns = props.getValue ( "TextColumns" );
+		Top = props.getValue ( "Top" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
         }
@@ -462,6 +500,12 @@ private void refresh ()
         if ( DateTimeColumns != null ) {
             __DateTimeColumns_JTextField.setText ( DateTimeColumns );
         }
+        if ( TextColumns != null ) {
+            __TextColumns_JTextField.setText ( TextColumns );
+        }
+        if ( Top != null ) {
+            __Top_JTextField.setText ( Top );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TableID = __TableID_JTextField.getText().trim();
@@ -471,6 +515,8 @@ private void refresh ()
 	//SkipColumns = __SkipColumns_JTextField.getText().trim();
 	HeaderLines = __HeaderLines_JTextField.getText().trim();
 	DateTimeColumns = __DateTimeColumns_JTextField.getText().trim();
+	TextColumns = __TextColumns_JTextField.getText().trim();
+	Top = __Top_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
@@ -479,6 +525,8 @@ private void refresh ()
 	//props.add ( "SkipColumns=" + SkipColumns );
 	props.add ( "HeaderLines=" + HeaderLines );
 	props.add ( "DateTimeColumns=" + DateTimeColumns );
+	props.add ( "TextColumns=" + TextColumns );
+	props.add ( "Top=" + Top );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

@@ -169,7 +169,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List validList = new ArrayList<String>(7);
+	List validList = new ArrayList<String>(9);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
     validList.add ( "Delimiter" );
@@ -177,6 +177,8 @@ throws InvalidCommandParameterException
     validList.add ( "SkipColumns" );
     validList.add ( "HeaderLines" );
     validList.add ( "DateTimeColumns" );
+    validList.add ( "TextColumns" );
+    validList.add ( "Top" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -302,6 +304,8 @@ CommandWarningException, CommandException
 	Message.printStatus( 2, routine, "parameter SkipLines=\"" + SkipLines + "\"");
 	Message.printStatus( 2, routine, "parameter HeaderLines=\"" + HeaderLines + "\"");
 	String DateTimeColumns = parameters.getValue ( "DateTimeColumns" );
+	String TextColumns = parameters.getValue ( "TextColumns" );
+	String Top = parameters.getValue ( "Top" );
 
 	String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
@@ -394,6 +398,12 @@ CommandWarningException, CommandException
         if ( (DateTimeColumns != null) && !DateTimeColumns.isEmpty() ) {
             props.set ( "DateTimeColumns=" + DateTimeColumns);
         }
+        if ( (TextColumns != null) && !TextColumns.isEmpty() ) {
+            props.set ( "TextColumns=" + TextColumns);
+        }
+        if ( (Top != null) && !Top.isEmpty() ) {
+            props.set ( "Top=" + Top);
+        }
         Message.printStatus( 2, routine, "parameter zero index SkipLines=\"" + props.getValue("SkipLines") + "\"");
         Message.printStatus( 2, routine, "parameter zero index HeaderLines=\"" + props.getValue("HeaderLines") + "\"");
     	try {
@@ -470,6 +480,8 @@ public String toString ( PropList props )
 	String SkipColumns = props.getValue("SkipColumns");
 	String HeaderLines = props.getValue("HeaderLines");
 	String DateTimeColumns = props.getValue("DateTimeColumns");
+	String TextColumns = props.getValue("TextColumns");
+	String Top = props.getValue("Top");
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -512,6 +524,18 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "DateTimeColumns=\"" + DateTimeColumns + "\"" );
+	}
+	if ( (TextColumns != null) && (TextColumns.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "TextColumns=\"" + TextColumns + "\"" );
+	}
+	if ( (Top != null) && (Top.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "Top=" + Top );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

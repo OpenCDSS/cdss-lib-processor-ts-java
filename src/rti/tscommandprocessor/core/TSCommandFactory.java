@@ -54,6 +54,7 @@ import rti.tscommandprocessor.commands.hydrobase.FillUsingDiversionComments_Comm
 import rti.tscommandprocessor.commands.hydrobase.OpenHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrobase.ReadHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrojson.WriteTimeSeriesToHydroJSON_Command;
+import rti.tscommandprocessor.commands.table.ReadTableFromJSON_Command;
 import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
 
 // Logging commands.
@@ -820,6 +821,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadTableFromFixedFormatFile") ) {
         return new ReadTableFromFixedFormatFile_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadTableFromJSON") ) {
+        return new ReadTableFromJSON_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadTableFromXML") ) {
         return new ReadTableFromXML_Command ();

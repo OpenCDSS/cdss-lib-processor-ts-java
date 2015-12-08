@@ -3,22 +3,24 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.List;
 import java.util.Vector;
+
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -223,6 +225,8 @@ CommandWarningException, CommandException
 
 	try {
 	    FileOutputStream fos = null;
+	    HttpURLConnection urlConnection = null;
+	    InputStream is = null;
         try {
             // Some sites need cookie manager
             // (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
@@ -230,8 +234,8 @@ CommandWarningException, CommandException
             // Open the input stream...
             Message.printStatus(2,routine,"Reading URI \"" + URI + "\"" );
             URL url = new URL(URI);
-            URLConnection urlConnection = url.openConnection();
-            InputStream is = urlConnection.getInputStream();
+            urlConnection = (HttpURLConnection)url.openConnection();
+            is = urlConnection.getInputStream();
             BufferedInputStream isr = new BufferedInputStream(is);
             // Open the output file...
             fos = new FileOutputStream( LocalFile_full );
@@ -258,13 +262,27 @@ CommandWarningException, CommandException
                     message, "See the log file for details."));
         }
         catch (IOException e) {
-            message = "Error opening URI \"" + URI + "\" (" + e + ")";
+        	StringBuilder sb = new StringBuilder("Error opening URI \"" + URI + "\" (" + e );
+        	// Try reading error stream - may only work for some error numbers
+            if ( urlConnection != null ) {
+            	is = urlConnection.getErrorStream(); // close in finally
+            	if ( is != null ) {
+            		sb.append ( " " );
+	            	BufferedReader br = new BufferedReader(new InputStreamReader(is));
+	                // Output the lines to a StringBuilder to improve error handling...
+	            	String s;
+	                while ((s = br.readLine()) != null ) {
+	                    sb.append(s);
+	                }
+            	}
+            }
+            sb.append ( ")" );
             Message.printWarning ( warning_level, 
-                   MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                   MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, sb.toString() );
             Message.printWarning ( 3, routine, e );
             status.addToLog(CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "See the log file for details."));
+                    sb.toString(), "See the log file for details."));
         }
         catch (Exception e) {
             message = "Unexpected error reading URI \"" + URI + "\" (" + e + ")";
@@ -276,9 +294,19 @@ CommandWarningException, CommandException
                     message, "See the log file for details."));
         }
         finally {
-            // Close the streams
+            // Close the streams and connection
+            if ( is != null ) {
+            	try {
+            		is.close();
+            	}
+            	catch ( IOException e ) {
+            	}
+            }
             if ( fos != null ) {
                 fos.close();
+            }
+            if ( urlConnection != null ) {
+            	urlConnection.disconnect();
             }
         }
 	}

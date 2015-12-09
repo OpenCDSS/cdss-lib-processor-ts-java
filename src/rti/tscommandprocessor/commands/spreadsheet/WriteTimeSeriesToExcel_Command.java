@@ -1456,7 +1456,7 @@ throws FileNotFoundException, IOException
         	timeCol = dateCol + 1;
         	++numDateTimeCol;
         }
-        int cols = tslist.size() + numDateTimeCol; // Number of columns to output including date/time columns and time series values
+        int cols = tslist.size() + numDateTimeCol; // Number of columns to output including date/time, date, time columns and time series values
         // Set the cell formats for output (will be used for the data rows).
         // All formats for the column headings are text.
         DataFormat [] cellFormats = new DataFormat[cols];
@@ -1535,6 +1535,7 @@ throws FileNotFoundException, IOException
         if ( (valueComment != null) && !valueComment.isEmpty() ) {
         	doValueComment = true;
         }
+        // Output each row by outputting the date/time and then each time series value left (ts[0]) to right (ts[...])
         for ( DateTime date = new DateTime(outputStart); date.lessThanOrEqualTo(outputEnd); date.addInterval(intervalBase, intervalMult)) {
         	++row;
             // Output the date/time as per the format
@@ -1619,7 +1620,7 @@ throws FileNotFoundException, IOException
 	                    }
 	                	else {
 	                    	// Set the cell value to the numerical missing value
-	                		cell = tk.setCellValue(sheet,row,col,ts.getMissing(),cellStyles[col]);
+	                		cell = tk.setCellValue(sheet,row,col,ts.getMissing(),cellStyles[col - colOutStart]);
 	                	}
                         if ( styleManager != null ) {
                         	// New-style...
@@ -1628,7 +1629,7 @@ throws FileNotFoundException, IOException
 	                }
 	                else {
 	                    // Not missing so set to the numerical value
-	                	cell = tk.setCellValue(sheet,row,col,value,cellStyles[col]);
+	                	cell = tk.setCellValue(sheet,row,col,value,cellStyles[col- colOutStart]);
                         if ( styleManager != null ) {
                         	// New-style...
                         	cell.setCellStyle(styleManager.getStyle(ts,its,value,flag));
@@ -1652,7 +1653,10 @@ throws FileNotFoundException, IOException
             	}
                 catch ( Exception e ) {
                     // Log but let the output continue
-                    Message.printWarning(3, routine, "Unexpected error writing date at Excel row [" + row + "][" + col + "] (" + e + ")." );
+                    Message.printWarning(3, routine, "Unexpected error writing data value at Excel row [" + row + "][" + col + "] (" + e + ")." );
+                    if ( Message.isDebugOn ) {
+                    	Message.printWarning(3, routine, e);
+                    }
                 }
             }
         }

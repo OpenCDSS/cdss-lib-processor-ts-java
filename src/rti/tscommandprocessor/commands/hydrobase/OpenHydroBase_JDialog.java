@@ -742,30 +742,30 @@ private void retrieveDatabaseNames(String server) {
 	// FIXME SAM 2009-04-12 Need to obfuscate this
 	String s = __UseStoredProcedures_JComboBox.getSelected();
 	if (s.trim().equals("") || s.trim().equalsIgnoreCase("true")) {
+		//unms[0] = "cdss";
+		//pws[0] = "cdss%tools";
+		//ports[0] = 5758;
+		
 		unms[0] = "cdss";
 		pws[0] = "cdss%tools";
-		ports[0] = 	5758;
-		
-		unms[1] = "cdss";
-		pws[1] = "cdss%tools";
-		ports[1] = 	21784;
+		ports[0] = 21784;
 		
 		unms[2] = "cdss";	
 		pws[2] = "cdss%tools";  
-		ports[2] = 	1433;	
+		ports[2] = 1433;	
 	} 
 	else {
+		//unms[0] = "crdss";	
+		//pws[0] = "crdss3nt";    
+		//ports[0] = 5758;
+		
 		unms[0] = "crdss";	
 		pws[0] = "crdss3nt";    
-		ports[0] = 	5758;
-		
+		ports[0] = 21784;
+
 		unms[1] = "crdss";	
 		pws[1] = "crdss3nt";    
-		ports[1] = 	21784;
-
-		unms[2] = "crdss";	
-		pws[2] = "crdss3nt";    
-		ports[2] = 1433;
+		ports[1] = 1433;
 	}
 
 	GenericDMI dmi = null;

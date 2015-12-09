@@ -1099,6 +1099,7 @@ throws FileNotFoundException, IOException
         // See if an open workbook by the same name exists
         WorkbookFileMetadata wbMeta = ExcelUtil.getOpenWorkbook(workbookFile);
         if ( wbMeta != null ) {
+        	Message.printStatus(2, routine, "Writing to open workbook \"" + workbookFile + "\".");
         	wb = wbMeta.getWorkbook();
         }
         if ( wb == null ) {
@@ -1112,6 +1113,7 @@ throws FileNotFoundException, IOException
             }
             try {
                 // Open an existing workbook if it exists...
+            	Message.printStatus(2, routine, "Opening and writing to exixting workbook \"" + workbookFile + "\".");
                 wb = WorkbookFactory.create(inp);
             }
             catch ( InvalidFormatException e ) {

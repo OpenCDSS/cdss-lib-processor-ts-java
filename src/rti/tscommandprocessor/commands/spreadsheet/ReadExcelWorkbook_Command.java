@@ -87,6 +87,7 @@ throws InvalidCommandParameterException
                         message, "Specify an existing input file." ) );
 	}
 	else if ( InputFile.indexOf("${") < 0 ) {
+		/* Don't check for existence here - file may be dynamically created - check at runtime
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
 			File f = new File ( adjusted_path );
@@ -109,6 +110,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that input file and working directory paths are compatible." ) );
 		}
+		*/
 	}
     
 	//  Check for invalid parameters...
@@ -141,13 +143,12 @@ public boolean editCommand ( JFrame parent )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "ReadExcelWorkbook_Command.runCommand", message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;

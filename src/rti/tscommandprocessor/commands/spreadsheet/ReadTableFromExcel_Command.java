@@ -137,6 +137,7 @@ throws InvalidCommandParameterException
                         message, "Specify an existing input file." ) );
 	}
 	else if ( InputFile.indexOf("${") < 0 ){
+		/* Allow input file to not exist
         try {
             String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, InputFile) );
 			File f = new File ( adjusted_path );
@@ -159,6 +160,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that input file and working directory paths are compatible." ) );
 		}
+		*/
 	}
 	
     if ( (ExcelColumnNames != null) && !ExcelColumnNames.isEmpty() ) {

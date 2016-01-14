@@ -103,6 +103,7 @@ import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 
 // Spatial commands.
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
+import rti.tscommandprocessor.commands.spatial.WriteTableToShapefile_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 import rti.tscommandprocessor.commands.spreadsheet.CloseExcelWorkbook_Command;
 // Spreadsheet commands
@@ -1124,6 +1125,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToKml") ) {
         return new WriteTableToKml_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTableToShapefile") ) {
+        return new WriteTableToShapefile_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesPropertiesToFile") ) {
         return new WriteTimeSeriesPropertiesToFile_Command ();

@@ -19,15 +19,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.io.File;
 import java.util.List;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -39,42 +40,31 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Command editor dialog for the WriteTableToKml() command.
+Command editor dialog for the WriteTableToShapefile() command.
 */
-public class WriteTableToKml_JDialog extends JDialog
+public class WriteTableToShapefile_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
 
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 
-private final String __ToAbsolute = "To Absolute";
-private final String __ToRelative = "To Relative";
-
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __path_JButton = null;
-private SimpleJButton __styleFileBrowse_JButton = null;
-private SimpleJButton __styleFilePath_JButton = null;
-private WriteTableToKml_Command __command = null;
+private WriteTableToShapefile_Command __command = null;
 private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
-private JTextField __Name_JTextField = null;
-private JTextArea __Description_JTextArea = null;
-private JTextField __PlacemarkNameColumn_JTextField = null;
-private JTextField __PlacemarkDescriptionColumn_JTextField = null;
 private JTextField __LongitudeColumn_JTextField = null;
 private JTextField __LatitudeColumn_JTextField = null;
 private JTextField __ElevationColumn_JTextField = null;
 private JTextField __WKTGeometryColumn_JTextField = null;
-private JTextArea __GeometryInsert_JTextArea = null;
-private JTextArea __StyleInsert_JTextArea = null;
-private JTextField __StyleFile_JTextField = null;
-private JTextField __StyleUrl_JTextField = null;
+private JTextField __IncludeColumns_JTextField = null;
+private JTextField __ExcludeColumns_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Has user pressed OK to close the dialog.
@@ -85,7 +75,7 @@ Dialog constructor.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-public WriteTableToKml_JDialog ( JFrame parent, WriteTableToKml_Command command, List<String> tableIDChoices )
+public WriteTableToShapefile_JDialog ( JFrame parent, WriteTableToShapefile_Command command, List<String> tableIDChoices )
 {   super(parent, true);
     initialize ( parent, command, tableIDChoices );
 }
@@ -106,8 +96,8 @@ public void actionPerformed( ActionEvent event )
         else {
             fc = JFileChooserFactory.createJFileChooser( __working_dir );
         }
-        fc.setDialogTitle("Select KML File to Write");
-        SimpleFileFilter sff = new SimpleFileFilter("kml", "KML File");
+        fc.setDialogTitle("Select Shapefile File to Write");
+        SimpleFileFilter sff = new SimpleFileFilter("shp", "Shapefile");
         fc.addChoosableFileFilter(sff);
         
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -147,52 +137,7 @@ public void actionPerformed( ActionEvent event )
                 IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
             }
             catch ( Exception e ) {
-                Message.printWarning ( 1, "WriteTableToKml_JDialog", "Error converting file to relative path." );
-            }
-        }
-        refresh ();
-    }
-    else if ( o == __styleFileBrowse_JButton ) {
-        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
-        JFileChooser fc = null;
-        if ( last_directory_selected != null ) {
-            fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
-        }
-        else {
-            fc = JFileChooserFactory.createJFileChooser( __working_dir );
-        }
-        fc.setDialogTitle("Select Style File to Insert");
-        SimpleFileFilter sff = new SimpleFileFilter("xml", "XML File");
-        fc.addChoosableFileFilter(sff);
-        
-        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            String directory = fc.getSelectedFile().getParent();
-            String filename = fc.getSelectedFile().getName(); 
-            String path = fc.getSelectedFile().getPath(); 
-    
-            if (filename == null || filename.equals("")) {
-                return;
-            }
-    
-            if (path != null) {
-                __StyleFile_JTextField.setText(path );
-                JGUIUtil.setLastFileDialogDirectory(directory );
-                refresh();
-            }
-        }
-    }
-    else if ( o == __styleFilePath_JButton ) {
-        if ( __styleFilePath_JButton.getText().equals(__ToAbsolute) ) {
-            __StyleFile_JTextField.setText (
-            IOUtil.toAbsolutePath(__working_dir, __StyleFile_JTextField.getText() ) );
-        }
-        else if ( __styleFilePath_JButton.getText().equals(__ToRelative) ) {
-            try {
-                __StyleFile_JTextField.setText (
-                IOUtil.toRelativePath ( __working_dir, __StyleFile_JTextField.getText() ) );
-            }
-            catch ( Exception e ) {
-                Message.printWarning ( 1, "WriteTableToKml_JDialog", "Error converting file to relative path." );
+                Message.printWarning ( 1, "WriteTableToShapefile_JDialog", "Error converting file to relative path." );
             }
         }
         refresh ();
@@ -215,18 +160,12 @@ private void checkInput ()
     PropList parameters = new PropList ( "" );
     String TableID = __TableID_JComboBox.getSelected();
     String OutputFile = __OutputFile_JTextField.getText().trim();
-    String Name = __Name_JTextField.getText().trim();
-    String Description = __Description_JTextArea.getText().trim();
-    String PlacemarkNameColumn = __PlacemarkNameColumn_JTextField.getText().trim();
-    String PlacemarkDescriptionColumn = __PlacemarkDescriptionColumn_JTextField.getText().trim();
     String LongitudeColumn = __LongitudeColumn_JTextField.getText().trim();
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText().trim();
     String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
-    String GeometryInsert = __GeometryInsert_JTextArea.getText().trim();
-    String StyleInsert = __StyleInsert_JTextArea.getText().trim();
-    String StyleFile = __StyleFile_JTextField.getText().trim();
-    String StyleUrl = __StyleUrl_JTextField.getText().trim();
+    String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+    String ExcludeColumns = __IncludeColumns_JTextField.getText().trim();
 
     __error_wait = false;
 
@@ -235,18 +174,6 @@ private void checkInput ()
     }
     if ( OutputFile.length() > 0 ) {
         parameters.set ( "OutputFile", OutputFile );
-    }
-    if ( Name.length() > 0 ) {
-        parameters.set ( "Name", Name );
-    }
-    if ( Description.length() > 0 ) {
-        parameters.set ( "Description", Description );
-    }
-    if ( PlacemarkNameColumn.length() > 0 ) {
-        parameters.set ( "PlacemarkNameColumn", PlacemarkNameColumn );
-    }
-    if ( PlacemarkDescriptionColumn.length() > 0 ) {
-        parameters.set ( "PlacemarkDescriptionColumn", PlacemarkDescriptionColumn );
     }
     if ( LongitudeColumn.length() > 0 ) {
         parameters.set ( "LongitudeColumn", LongitudeColumn );
@@ -260,17 +187,11 @@ private void checkInput ()
     if ( WKTGeometryColumn.length() > 0 ) {
         parameters.set ( "WKTGeometryColumn", WKTGeometryColumn );
     }
-    if ( GeometryInsert.length() > 0 ) {
-        parameters.set ( "GeometryInsert", GeometryInsert );
+    if ( IncludeColumns.length() > 0 ) {
+        parameters.set ( "IncludeColumns", IncludeColumns );
     }
-    if ( StyleInsert.length() > 0 ) {
-        parameters.set ( "StyleInsert", StyleInsert );
-    }
-    if ( StyleFile.length() > 0 ) {
-        parameters.set ( "StyleFile", StyleFile );
-    }
-    if ( StyleUrl.length() > 0 ) {
-        parameters.set ( "StyleUrl", StyleUrl );
+    if ( ExcludeColumns.length() > 0 ) {
+        parameters.set ( "ExcludeColumns", ExcludeColumns );
     }
     try {
         // This will warn the user...
@@ -290,32 +211,20 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {   String TableID = __TableID_JComboBox.getSelected();
     String OutputFile = __OutputFile_JTextField.getText().trim();
-    String Name = __Name_JTextField.getText().trim();
-    String Description = __Description_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
-    String PlacemarkNameColumn = __PlacemarkNameColumn_JTextField.getText().trim();
-    String PlacemarkDescriptionColumn = __PlacemarkDescriptionColumn_JTextField.getText().trim();
     String LongitudeColumn = __LongitudeColumn_JTextField.getText().trim();
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText();
     String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText();
-    String GeometryInsert = __GeometryInsert_JTextArea.getText().trim();
-    String StyleInsert = __StyleInsert_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
-    String StyleFile = __StyleFile_JTextField.getText().trim();
-    String StyleUrl = __StyleUrl_JTextField.getText().trim();
+    String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+    String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "OutputFile", OutputFile );
-    __command.setCommandParameter ( "Name", Name );
-    __command.setCommandParameter ( "Description", Description );
-    __command.setCommandParameter ( "PlacemarkNameColumn", PlacemarkNameColumn );
-    __command.setCommandParameter ( "PlacemarkDescriptionColumn", PlacemarkDescriptionColumn );
     __command.setCommandParameter ( "LongitudeColumn", LongitudeColumn );
     __command.setCommandParameter ( "LatitudeColumn", LatitudeColumn );
     __command.setCommandParameter ( "ElevationColumn", ElevationColumn );
     __command.setCommandParameter ( "WKTGeometryColumn", WKTGeometryColumn );
-    __command.setCommandParameter ( "GeometryInsert", GeometryInsert );
-    __command.setCommandParameter ( "StyleInsert", StyleInsert );
-    __command.setCommandParameter ( "StyleFile", StyleFile );
-    __command.setCommandParameter ( "StyleUrl", StyleUrl );
+    __command.setCommandParameter ( "IncludeColumns", IncludeColumns );
+    __command.setCommandParameter ( "ExcludeColumns", ExcludeColumns );
 }
 
 /**
@@ -324,7 +233,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 @param tableIDChoices list of table identifiers to provide as choices
 */
-private void initialize ( JFrame parent, WriteTableToKml_Command command, List<String> tableIDChoices )
+private void initialize ( JFrame parent, WriteTableToShapefile_Command command, List<String> tableIDChoices )
 {   __command = command;
     CommandProcessor processor = __command.getCommandProcessor();
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -339,7 +248,7 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Write a table to a KML format file, which can be used for map integration." ),
+        "Write a table to an Esri Shapefile, for use in spatial data processing and visualization." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Longitude, latitude, elevation, and other attributes are taken from table columns.  The working directory is:" ),
@@ -351,10 +260,13 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The output filename can be specified using ${Property} notation to utilize global properties."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table to output or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -364,9 +276,10 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to output."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "KML file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Shapefile to write:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
+    __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
     __OutputFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -381,57 +294,6 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
-    // Panel for general parameters
-    int yGen = -1;
-    JPanel gen_JPanel = new JPanel();
-    gen_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "General", gen_JPanel );
-    
-    JGUIUtil.addComponent(gen_JPanel, new JLabel (
-        "General parameters specify information for main KML elements."),
-        0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Name:" ),
-        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Name_JTextField = new JTextField ( "", 30 );
-    __Name_JTextField.setToolTipText("Name for layer");
-    __Name_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(gen_JPanel, __Name_JTextField,
-        1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - layer name (default=table ID)."),
-        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ("Description:"), 
-        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Description_JTextArea = new JTextArea (3,35);
-    __Description_JTextArea.setLineWrap ( true );
-    __Description_JTextArea.setWrapStyleWord ( true );
-    __Description_JTextArea.addKeyListener(this);
-    JGUIUtil.addComponent(gen_JPanel, new JScrollPane(__Description_JTextArea),
-        1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - layer description (default=none)."),
-        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Placemark name column:" ),
-        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __PlacemarkNameColumn_JTextField = new JTextField ( "", 20 );
-    __PlacemarkNameColumn_JTextField.setToolTipText("Short phrase to label markers");
-    __PlacemarkNameColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(gen_JPanel, __PlacemarkNameColumn_JTextField,
-        1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - short name for map marker."),
-        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Placemark description column:" ),
-        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __PlacemarkDescriptionColumn_JTextField = new JTextField ( "", 20 );
-    __PlacemarkDescriptionColumn_JTextField.setToolTipText("Short phrase to label markers");
-    __PlacemarkDescriptionColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(gen_JPanel, __PlacemarkDescriptionColumn_JTextField,
-        1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Optional - longer description for map popup."),
-        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
     // Panel for point data in separate columns
     int yPoint = -1;
     JPanel point_JPanel = new JPanel();
@@ -444,6 +306,8 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     JGUIUtil.addComponent(point_JPanel, new JLabel (
         "Otherwise, specify shape data using parameters in the Geometry Data tab."),
         0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Longitude (X) column:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -489,6 +353,8 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     JGUIUtil.addComponent(geom_JPanel, new JLabel (
         "Coordinates in the WKT strings must be geographic (longitude and latitude decimal degrees)."),
         0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(geom_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(geom_JPanel, new JLabel ( "WKT geometry column:" ),
         0, ++yGeom, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -500,83 +366,42 @@ private void initialize ( JFrame parent, WriteTableToKml_Command command, List<S
     JGUIUtil.addComponent(geom_JPanel, new JLabel ( "Required for geometry data - column containing WKT strings."),
         3, yGeom, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for KML inserts
-    int yKml = -1;
-    JPanel kml_JPanel = new JPanel();
-    kml_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "KML Inserts", kml_JPanel );
+    // Panel for attributes
+    int yAtt = -1;
+    JPanel att_JPanel = new JPanel();
+    att_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Attributes", att_JPanel );
     
-    JGUIUtil.addComponent(kml_JPanel, new JLabel (
-        "KML files allow for many properties to be specified to configure the data."),
-        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(kml_JPanel, new JLabel (
-        "The GeometryInsert command parameter value will be inserted within the <Point>, <Polygon>, etc. data element."),
-        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(kml_JPanel, new JLabel (
-        "Refer to the KML reference for information (https://developers.google.com/kml/documentation/kmlreference)."),
-        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(kml_JPanel, new JLabel ("Geometry insert:"), 
-        0, ++yKml, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __GeometryInsert_JTextArea = new JTextArea (6,35);
-    __GeometryInsert_JTextArea.setLineWrap ( true );
-    __GeometryInsert_JTextArea.setWrapStyleWord ( true );
-    __GeometryInsert_JTextArea.addKeyListener(this);
-    JGUIUtil.addComponent(kml_JPanel, new JScrollPane(__GeometryInsert_JTextArea),
-        1, yKml, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    // Panel for style information
-    int yStyle = -1;
-    JPanel style_JPanel = new JPanel();
-    style_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Marker Styles", style_JPanel );
-    
-    JGUIUtil.addComponent(style_JPanel, new JLabel (
-        "Marker styles control how map layer features are symbolized (colors, etc.) and interact (mouse-over highlight, etc.)."),
-        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(style_JPanel, new JLabel (
-        "Marker style definitions can be defined by inserting XML text or specifying a file to insert."),
-        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(style_JPanel, new JLabel (
-        "The URL to a style map is then specified for the layer (currently all features in the layer will have the same style)."),
-        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(style_JPanel, new JLabel (
-        "Features will be added in the future to determine the style from a table value column."),
-        0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(style_JPanel, new JLabel ("Style insert:"), 
-        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __StyleInsert_JTextArea = new JTextArea (6,50);
-    __StyleInsert_JTextArea.setLineWrap ( true );
-    __StyleInsert_JTextArea.setWrapStyleWord ( true );
-    __StyleInsert_JTextArea.addKeyListener(this);
-    JGUIUtil.addComponent(style_JPanel, new JScrollPane(__StyleInsert_JTextArea),
-        1, yStyle, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    yStyle += 6;
-    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Style file to insert:" ), 
-        0, yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __StyleFile_JTextField = new JTextField ( 50 );
-    __StyleFile_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(style_JPanel, __StyleFile_JTextField,
-        1, yStyle, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __styleFileBrowse_JButton = new SimpleJButton ( "Browse", this );
-    JGUIUtil.addComponent(style_JPanel, __styleFileBrowse_JButton,
-        6, yStyle, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-    __styleFilePath_JButton = new SimpleJButton ( __ToRelative, this );
-    JGUIUtil.addComponent(style_JPanel, __styleFilePath_JButton,
-        7, yStyle, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-    __styleFilePath_JButton.setToolTipText("Change style file path to/from absolute/relative path.");
+    JGUIUtil.addComponent(att_JPanel, new JLabel (
+        "Specify columns to be output in the attribute table (shapefile *.dbf file)."),
+        0, ++yAtt, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(att_JPanel, new JLabel (
+        "These parameters are envisioned for a future software update."),
+        0, ++yAtt, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(att_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yAtt, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(style_JPanel, new JLabel ( "StyleUrl:" ),
-        0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __StyleUrl_JTextField = new JTextField ( "", 20 );
-    __StyleUrl_JTextField.setToolTipText("Use #exampleStyleMap to match a style map id");
-    __StyleUrl_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(style_JPanel, __StyleUrl_JTextField,
-        1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(style_JPanel, new JLabel ( "Optional - style URL for marker (default=pushpin, etc.)."),
-        3, yStyle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(att_JPanel, new JLabel ( "Include columns:" ),
+        0, ++yAtt, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeColumns_JTextField = new JTextField ( "", 30 );
+    __IncludeColumns_JTextField.setEnabled(false);
+    __IncludeColumns_JTextField.setToolTipText("Names of table columns to include");
+    __IncludeColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(att_JPanel, __IncludeColumns_JTextField,
+        1, yAtt, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(att_JPanel, new JLabel ( "Optional - columns to include (default=all)."),
+        3, yAtt, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(att_JPanel, new JLabel ( "Exclude columns:" ),
+        0, ++yAtt, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeColumns_JTextField = new JTextField ( "", 30 );
+    __ExcludeColumns_JTextField.setEnabled(false);
+    __ExcludeColumns_JTextField.setToolTipText("Names of table columns to exclude");
+    __ExcludeColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(att_JPanel, __ExcludeColumns_JTextField,
+        1, yAtt, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(att_JPanel, new JLabel ( "Optional - columns to exclude (default=all)."),
+        3, yAtt, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -659,21 +484,15 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String routine = "WriteTableToKml_JDialog.refresh";
+{   String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String OutputFile = "";
-    String Name = "";
-    String Description = "";
-    String PlacemarkNameColumn = "";
-    String PlacemarkDescriptionColumn = "";
     String LongitudeColumn = "";
     String LatitudeColumn = "";
     String ElevationColumn = "";
     String WKTGeometryColumn = "";
-    String GeometryInsert = "";
-    String StyleInsert = "";
-    String StyleFile = "";
-    String StyleUrl = "";
+    String IncludeColumns = "";
+    String ExcludeColumns = "";
     __error_wait = false;
     PropList parameters = null;
     if ( __first_time ) {
@@ -682,18 +501,12 @@ private void refresh ()
         parameters = __command.getCommandParameters();
         TableID = parameters.getValue ( "TableID" );
         OutputFile = parameters.getValue ( "OutputFile" );
-        Name = parameters.getValue ( "Name" );
-        Description = parameters.getValue ( "Description" );
-        PlacemarkNameColumn = parameters.getValue ( "PlacemarkNameColumn" );
-        PlacemarkDescriptionColumn = parameters.getValue ( "PlacemarkDescriptionColumn" );
         LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
         LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
         ElevationColumn = parameters.getValue ( "ElevationColumn" );
         WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
-        GeometryInsert = parameters.getValue ( "GeometryInsert" );
-        StyleInsert = parameters.getValue ( "StyleInsert" );
-        StyleFile = parameters.getValue ( "StyleFile" );
-        StyleUrl = parameters.getValue ( "StyleUrl" );
+        IncludeColumns = parameters.getValue ( "IncludeColumns" );
+        ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -712,18 +525,6 @@ private void refresh ()
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText (OutputFile);
         }
-        if ( Name != null ) {
-            __Name_JTextField.setText (Name);
-        }
-        if ( Description != null ) {
-            __Description_JTextArea.setText (Description);
-        }
-        if ( PlacemarkNameColumn != null ) {
-            __PlacemarkNameColumn_JTextField.setText (PlacemarkNameColumn);
-        }
-        if ( PlacemarkDescriptionColumn != null ) {
-            __PlacemarkDescriptionColumn_JTextField.setText (PlacemarkDescriptionColumn);
-        }
         if ( LongitudeColumn != null ) {
             __LongitudeColumn_JTextField.setText (LongitudeColumn);
         }
@@ -736,49 +537,31 @@ private void refresh ()
         if ( WKTGeometryColumn != null ) {
             __WKTGeometryColumn_JTextField.setText (WKTGeometryColumn);
         }
-        if ( GeometryInsert != null ) {
-            __GeometryInsert_JTextArea.setText (GeometryInsert);
+        if ( IncludeColumns != null ) {
+            __IncludeColumns_JTextField.setText (IncludeColumns);
         }
-        if ( StyleInsert != null ) {
-            __StyleInsert_JTextArea.setText (StyleInsert);
-        }
-        if ( StyleFile != null ) {
-            __StyleFile_JTextField.setText (StyleFile);
-        }
-        if ( StyleUrl != null ) {
-            __StyleUrl_JTextField.setText (StyleUrl);
+        if ( ExcludeColumns != null ) {
+            __ExcludeColumns_JTextField.setText (ExcludeColumns);
         }
     }
     // Regardless, reset the command from the fields...
     TableID = __TableID_JComboBox.getSelected();
     OutputFile = __OutputFile_JTextField.getText().trim();
-    Name = __Name_JTextField.getText().trim();
-    Description = __Description_JTextArea.getText().trim();
-    PlacemarkNameColumn = __PlacemarkNameColumn_JTextField.getText().trim();
-    PlacemarkDescriptionColumn = __PlacemarkDescriptionColumn_JTextField.getText().trim();
     LongitudeColumn = __LongitudeColumn_JTextField.getText().trim();
     LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     ElevationColumn = __ElevationColumn_JTextField.getText().trim();
     WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
-    GeometryInsert = __GeometryInsert_JTextArea.getText().trim();
-    StyleInsert = __StyleInsert_JTextArea.getText().trim();
-    StyleFile = __StyleFile_JTextField.getText().trim();
-    StyleUrl = __StyleUrl_JTextField.getText().trim();
+    IncludeColumns = __IncludeColumns_JTextField.getText().trim();
+    ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     parameters = new PropList ( __command.getCommandName() );
     parameters.add ( "TableID=" + TableID );
     parameters.add ( "OutputFile=" + OutputFile );
-    parameters.add ( "Name=" + Name );
-    parameters.add ( "Description=" + Description );
-    parameters.add ( "PlacemarkNameColumn=" + PlacemarkNameColumn );
-    parameters.add ( "PlacemarkDescriptionColumn=" + PlacemarkDescriptionColumn );
     parameters.add ( "LongitudeColumn=" + LongitudeColumn );
     parameters.add ( "LatitudeColumn=" + LatitudeColumn );
     parameters.add ( "ElevationColumn=" + ElevationColumn );
     parameters.add ( "WKTGeometryColumn=" + WKTGeometryColumn );
-    parameters.add ( "GeometryInsert=" + GeometryInsert );
-    parameters.add ( "StyleInsert=" + StyleInsert );
-    parameters.add ( "StyleFile=" + StyleFile );
-    parameters.add ( "StyleUrl=" + StyleUrl );
+    parameters.add ( "IncludeColumns=" + IncludeColumns );
+    parameters.add ( "ExcludeColumns=" + ExcludeColumns );
     __command_JTextArea.setText( __command.toString ( parameters ) );
     if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
         if ( __path_JButton != null ) {
@@ -793,22 +576,6 @@ private void refresh ()
         }
         else {
             __path_JButton.setText ( __AddWorkingDirectory );
-        }
-    }
-    // Style file
-    if ( (StyleFile == null) || (StyleFile.length() == 0) ) {
-        if ( __styleFilePath_JButton != null ) {
-            __styleFilePath_JButton.setEnabled ( false );
-        }
-    }
-    if ( __styleFilePath_JButton != null ) {
-        __styleFilePath_JButton.setEnabled ( true );
-        File f = new File ( StyleFile );
-        if ( f.isAbsolute() ) {
-            __styleFilePath_JButton.setText ( __ToRelative );
-        }
-        else {
-            __styleFilePath_JButton.setText ( __ToAbsolute );
         }
     }
 }

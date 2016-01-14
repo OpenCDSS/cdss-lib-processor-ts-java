@@ -12,6 +12,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.tree.TreePath;
 
+import RTi.GRTS.TSProductProcessor;
 import RTi.GRTS.TSViewJFrame;
 import RTi.TS.TS;
 import RTi.Util.GUI.JGUIUtil;
@@ -32,6 +33,12 @@ public class TimeSeriesTreeView_JTree extends SimpleJTree implements ActionListe
 Strings used in menus.
 */
 private String __MENU_Graph_Line = "Graph - Line";
+private String __MENU_Graph_Product = "View Time Series Product";
+
+/**
+Processor for time series product files.
+*/
+private TSProductProcessor __processor = null;
     
 /**
 A single popup menu that is used to provide access to other features from the tree.
@@ -105,6 +112,28 @@ public void actionPerformed(ActionEvent event)
             Message.printWarning(3, routine, e);
         }
     }
+    else if ( action.equals(__MENU_Graph_Product) ) {
+    	List<TS> tslist = new Vector();
+        for ( Object o : selectedNodes ) {
+            // TODO SAM Don't like all the casting but the low-level code deals with generic objects
+            if ( o instanceof SimpleJTree_Node ) {
+                SimpleJTree_Node node = (SimpleJTree_Node)o;
+                Object data = node.getData();
+                if ( data instanceof String ) {
+                	// Name of TSP file
+                	processProduct((String)data);
+                }
+            }
+        }
+    }
+}
+
+/**
+Set the time series product processor.
+*/
+public void setTSProductProcessor ( TSProductProcessor processor )
+{
+	__processor = processor;
 }
 
 /**
@@ -140,6 +169,16 @@ public void mouseReleased(MouseEvent event) {
 }
 
 /**
+Process a TSProduct file.
+*/
+private void processProduct ( String tspFile )
+{
+	if ( __processor != null ) {
+		__processor.processTSProduct(tspFile,new PropList(""));
+	}
+}
+
+/**
 Checks to see if the mouse event would trigger display of the popup menu.
 The popup menu does not display if it is null.
 @param e the MouseEvent that happened.
@@ -169,12 +208,23 @@ private void showPopupMenu(MouseEvent e)
     // then show the specific data item.
     JMenuItem item;
     data = __popup_Node.getData();
+    boolean typeOk = false;
     if ( data instanceof TS ) {
         // Time series object(s) are selected...
         item = new SimpleJMenuItem ( __MENU_Graph_Line, this );
         __popup_JPopupMenu.add ( item );
+        typeOk = true;
     }
-    else {
+    else if ( data instanceof String ) {
+        // Check to see if the name ends in .tsp
+    	String s = (String)data;
+    	if ( s.toUpperCase().endsWith(".TSP") ) {
+	        item = new SimpleJMenuItem ( __MENU_Graph_Product, this );
+	        __popup_JPopupMenu.add ( item );
+	        typeOk = true;
+    	}
+    }
+    if ( !typeOk ) {
         item = new SimpleJMenuItem ( "Unknown data", this );
         __popup_JPopupMenu.add ( item );
         Message.printWarning ( 3, routine, "Tree data type is not recognized for popup menu." );

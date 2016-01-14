@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -125,10 +126,10 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "ViewID" );
-    valid_Vector.add ( "InputFile" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(2);
+    validList.add ( "ViewID" );
+    validList.add ( "InputFile" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -205,34 +206,48 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "NewTreeView_Command.runCommand",message = "";
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal",message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
+	PropList parameters = getCommandParameters();
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryView ( null );
     }
 
 	// Make sure there are time series available to operate on...
-	
-	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
     String ViewID = parameters.getValue ( "ViewID" );
+    if ( (ViewID != null) && (ViewID.indexOf("${") >= 0) ) {
+    	ViewID = TSCommandProcessorUtil.expandParameterValue(processor, this, ViewID);
+	}
     String InputFile = parameters.getValue ( "InputFile" );
     
     String InputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         if ( !IOUtil.fileExists(InputFile_full) ) {
             message += "\nThe tree view definition file \"" + InputFile_full + "\" does not exist.";
             ++warning_count;
-            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Verify that the delimited table file exists." ) );
         }
 
@@ -249,7 +264,7 @@ CommandWarningException, CommandException
     
 	    TimeSeriesTreeView view = null;
         
-        if ( command_phase == CommandPhaseType.RUN ) {
+        if ( commandPhase == CommandPhaseType.RUN ) {
             // Create the view based on the input file
             view = new TimeSeriesTreeView( ViewID );
             List<String> problems = new Vector();
@@ -267,12 +282,12 @@ CommandWarningException, CommandException
                 Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
             }
         }
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Create an empty view and set the ID
             view = new TimeSeriesTreeView(ViewID);
             setDiscoveryView ( view );
@@ -282,7 +297,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error creating new tree view (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
@@ -294,7 +309,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

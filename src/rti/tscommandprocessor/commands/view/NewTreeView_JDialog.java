@@ -6,8 +6,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -16,7 +18,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -198,22 +199,45 @@ private void initialize ( JFrame parent, NewTreeView_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
 	getContentPane().add ("North", main_JPanel);
-	int y = 0;
+	int y = -1;
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
-	int yy = 0;
+	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-	"This command creates a new time series tree view, which is a hierarchical list of time series." ),
-	0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		"This command creates a new tree view, which is a hierarchical list of time series and visual products." ),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+		"Tree views can be used to improve navigation of output time series (rather than the default list of time series)." ),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+		"The input file specifies the organization of time series in the tree using the following syntax:" ),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(paragraph, new JLabel (
+		"<html><pre>"
+   		+ "# Comment<br>"
+		+ "# Use tabs to indicate different tree levels<br>"
+   		+ "# Use TS:  Pattern* to indicate list of time series - match TSID<br>"
+   		+ "# Use Product:  time series product (*.tsp) filename to process<br>"
+   		+ "# For example...<br>"
+		+ "Label:  Text for top-level label<br>"
+		+ "     TS: ts1*<br>"
+		+ "     Product: abc.tsp<br>"
+		+ "     Label:  Second-level label<br>"
+		+ "          TS: ts2*<br>"
+		+ "</pre></html>" ),
+		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("View ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ViewID_JTextField = new JTextField (10);
+    __ViewID_JTextField.setToolTipText("Specify an identifier or use ${Property} notation");
     __ViewID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __ViewID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -223,6 +247,7 @@ private void initialize ( JFrame parent, NewTreeView_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputFile_JTextField = new JTextField (35);
+    __InputFile_JTextField.setToolTipText("Specify the path to the input file or use ${Property} notation");
     __InputFile_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

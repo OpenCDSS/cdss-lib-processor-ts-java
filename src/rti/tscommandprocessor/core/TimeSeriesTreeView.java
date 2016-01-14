@@ -56,10 +56,11 @@ specifically:
 */
 public void createViewFromFile ( TSCommandProcessor processor, File viewFile, List<String> problems )
 throws IOException
-{   String routine = getClass().getName() + ".createViewFromFile";
+{   String routine = getClass().getSimpleName() + ".createViewFromFile";
     // TODO SAM 2010-07-16 This code could use recursion to perhaps read the file more
     // elegantly but for now keep the logic here and just locate the proper list by counting tabs
     String filename = viewFile.getCanonicalPath();
+    File f = new File(filename);
     List<String> fileLines = IOUtil.fileToStringList(filename);
     boolean rootFound = false;
     int ntab = 0; // Number of tabs in current line
@@ -87,7 +88,7 @@ throws IOException
         }
         // First make sure that the root node is properly handled
         if ( !rootFound && StringUtil.startsWithIgnoreCase(fileLineTrimmed, "Label:") ) {
-            String nodeLabel = fileLineTrimmed.substring(6);
+            String nodeLabel = fileLineTrimmed.substring(6).trim();
             // Simple label node
             if ( ntab > 0 ) {
                 throw new IOException ( "No root Label: in \"" + filename +
@@ -95,6 +96,9 @@ throws IOException
             }
             else if ( ntab == 0 ) {
                 // Create the root node
+            	if ( Message.isDebugOn ) {
+            		Message.printDebug(1, routine, "Adding root label \"" + nodeLabel + "\"." );
+            	}
                 __rootNode = new SimpleJTree_Node(nodeLabel);
                 folderNode = __rootNode;
                 nodePrev = folderNode;
@@ -132,10 +136,24 @@ throws IOException
             }
             // Now add the node depending on the node type...
             if ( StringUtil.startsWithIgnoreCase(fileLineTrimmed, "Label:") ) {
-                Message.printStatus(2, routine, "Adding label to folder node \"" + folderNode +
-                    "\" at line " + lineCount );
                 String nodeLabel = fileLineTrimmed.substring(6).trim();
+                if ( Message.isDebugOn ) {
+	                Message.printDebug(1, routine, "Adding node label \"" + nodeLabel + "\" to folder node \"" + folderNode +
+	                    "\" from file line " + lineCount );
+                }
                 nodePrev = new SimpleJTree_Node(nodeLabel);
+                folderNode.add(nodePrev );
+            }
+            else if ( StringUtil.startsWithIgnoreCase(fileLineTrimmed, "Product:") ) {
+                List<String> tokens = StringUtil.breakStringList(fileLineTrimmed.substring(8).trim(), " ", StringUtil.DELIM_ALLOW_STRINGS | StringUtil.DELIM_SKIP_BLANKS );
+                String nodeLabel = tokens.get(0);
+                if ( Message.isDebugOn ) {
+	                Message.printDebug(1, routine, "Adding node graph \"" + nodeLabel + "\" to folder node \"" + folderNode +
+	                    "\" from file line " + lineCount );
+                }
+                nodePrev = new SimpleJTree_Node(nodeLabel);
+                // Filename is data for node
+                nodePrev.setData(IOUtil.toAbsolutePath(f.getParent(),tokens.get(1)));
                 folderNode.add(nodePrev );
             }
             else if ( StringUtil.startsWithIgnoreCase(fileLineTrimmed, "TS:") ) {
@@ -173,9 +191,12 @@ throws IOException
                 }
                 if ( (tslist != null) && (tslist.size() > 0) ) {
                     for ( TS ts: tslist ) {
-                        Message.printStatus(2, routine, "Adding TS to folder node \"" + folderNode +
-                            "\" at line " + lineCount );
-                        nodePrev = new SimpleJTree_Node( ts.getIdentifierString() );
+                    	String tsid = ts.getIdentifierString();
+                    	if ( Message.isDebugOn ) {
+	                        Message.printDebug(1, routine, "Adding node TS \"" + tsid + "\" to folder node \"" + folderNode +
+	                            "\" from file line " + lineCount );
+                    	}
+                        nodePrev = new SimpleJTree_Node( tsid );
                         nodePrev.setData ( ts );
                         folderNode.add(nodePrev );
                     }

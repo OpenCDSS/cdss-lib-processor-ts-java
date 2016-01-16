@@ -31,7 +31,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 // FIXME SAM 2007-08-30 Need to move RiverWare to its own DAO package
 import RTi.TS.RiverWareTS;
 import RTi.TS.TS;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -54,9 +53,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the WriteRiverWare() command.
-</p>
 */
 public class WriteRiverWare_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -351,15 +348,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "writeRiverWare_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -370,7 +364,22 @@ CommandWarningException, CommandException
 
 	// Check whether the processor wants output files to be created...
 
+	CommandStatus status = getCommandStatus();
 	CommandProcessor processor = getCommandProcessor();
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
 			Message.printStatus ( 2, routine,
 			"Skipping \"" + toString() + "\" because output is not being created." );
@@ -379,10 +388,18 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
+    if ( (TSID != null) && !TSID.isEmpty() && (TSID.indexOf("${") >= 0) ) {
+    	TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
-	
-	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	String OutputStart = parameters.getValue ( "OutputStart" );
+	if ( (OutputStart == null) || OutputStart.isEmpty() ) {
+		OutputStart = "${OutputStart}"; // Default
+	}
+	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	if ( (OutputEnd == null) || OutputEnd.isEmpty() ) {
+		OutputEnd = "${OutputEnd}"; // Default
+	}
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -429,94 +446,26 @@ CommandWarningException, CommandException
 	}
 
 	// TODO SAM 2007-02-12 Need to enable OutputStart, OutputEnd in command
-	String OutputStart = null;
 	DateTime OutputStart_DateTime = null;
-	if ( (OutputStart != null) && !OutputStart.equals("") ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputStart );
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputStart +
-				"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {	OutputStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {	// Get from the processor (can be null)...
-		try {	Object o_OutputStart = processor.getPropContents ( "OutputStart" );
-			if ( o_OutputStart != null ) {
-				OutputStart_DateTime = (DateTime)o_OutputStart;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputStart from processor - not using.";
-			Message.printDebug(10, routine, message );
-		}
-	}
-	String OutputEnd = null;
 	DateTime OutputEnd_DateTime = null;
-	if ( (OutputEnd != null) && !OutputEnd.equals("") ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputEnd );
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputEnd +
-			"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
+		try {
+			OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
+				status, warning_level, command_tag );
 		}
-		else {	OutputEnd_DateTime = (DateTime)prop_contents;
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-	}
-	else {	// Get from the processor...
-		try {	Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
-			if ( o_OutputEnd != null ) {
-				OutputEnd_DateTime = (DateTime)o_OutputEnd;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputEnd from processor - not using.";
-			Message.printDebug(10, routine, message );
-		}
-	}
+    }
 
 	if ( warning_count > 0 ) {
 		message = "Error preparing data to write RiverWare file.";
@@ -548,7 +497,8 @@ CommandWarningException, CommandException
 	try {
 		// Convert to an absolute path...
 		OutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
 		Message.printStatus ( 2, routine, "Writing RiverWare file \"" + OutputFile_full + "\"" );
 		// Only write the first time series...
 		TS tsout = (TS)tslist.get(0);

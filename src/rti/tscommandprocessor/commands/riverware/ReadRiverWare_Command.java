@@ -6,7 +6,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.RiverWareTS;
@@ -15,7 +14,6 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
@@ -78,15 +76,14 @@ public ReadRiverWare_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {
-    String routine = getClass().getName() + ".checkCommandParameters";
+    String routine = getClass().getSimpleName() + ".checkCommandParameters";
 	String warning = "";
     String message;
     
@@ -97,9 +94,9 @@ throws InvalidCommandParameterException
 	// Get the property values. 
 	String InputFile = parameters.getValue("InputFile");
 	String Output = parameters.getValue("Output");
-	//String Units  = parameters.getValue("Units");
+	//String Units = parameters.getValue("Units");
 	String InputStart = parameters.getValue("InputStart");
-	String InputEnd   = parameters.getValue("InputEnd");
+	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
     
 	// Require the alias to match historical behavior
@@ -129,7 +126,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
     }
-    else {
+    else if ( InputFile.indexOf("${") < 0 ) {
         String working_dir = null;
         try {
             // TODO SAM 2011-05-23 The below is higher overhead but deals with dynamic folder changes
@@ -178,7 +175,6 @@ throws InvalidCommandParameterException
                 message, "Specify Output as " + _TimeSeries + " (default) or " + _TimeSeriesAndEnsembles + ".") );
     }
     
-
     /*
 	if ( Units != null ) {
 		// Will check at run time
@@ -186,7 +182,7 @@ throws InvalidCommandParameterException
 	*/
 
 	// InputStart
-	if ((InputStart != null) && !InputStart.equals("")) {
+	if ((InputStart != null) && !InputStart.isEmpty() && (InputStart.indexOf("${") < 0) ) {
 		try {
 			__InputStart = DateTime.parse(InputStart);
 		} 
@@ -200,7 +196,7 @@ throws InvalidCommandParameterException
 	}
 
 	// InputEnd
-	if ((InputEnd != null) && !InputEnd.equals("")) {
+	if ((InputEnd != null) && !InputEnd.equals("") && (InputEnd.indexOf("${") < 0) ) {
 		try {
 			__InputEnd = DateTime.parse(InputEnd);
 		} 
@@ -236,14 +232,14 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "Output" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "Units" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>();
+    validList.add ( "Alias" );
+    validList.add ( "InputFile" );
+    validList.add ( "Output" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "Units" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -474,25 +470,37 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "ReadRiverWare_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
-    int log_level = 3;
+    //int log_level = 3;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	    
     // Get and clear the status and clear the run log...
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
+    CommandProcessor processor = getCommandProcessor();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     boolean readData = true;
-    if ( command_phase == CommandPhaseType.DISCOVERY ){
+    if ( commandPhase == CommandPhaseType.DISCOVERY ){
         readData = false;
         setDiscoveryTSList ( new ArrayList<TS>() );
         setDiscoveryEnsembleList ( new ArrayList<TSEnsemble>() );
     }
-    CommandProcessor processor = getCommandProcessor();
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
@@ -503,142 +511,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String Units = parameters.getValue("Units");
 	String InputStart = parameters.getValue("InputStart");
-	String InputEnd = parameters.getValue("InputEnd");
+	if ( (InputStart == null) || InputStart.isEmpty() ) {
+		InputStart = "${InputStart}";
+	}
+    String InputEnd = parameters.getValue("InputEnd");
+	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
+		InputEnd = "${InputEnd}";
+	}
 	String Alias = parameters.getValue("Alias");
     
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
-    if ( (InputStart != null) && (InputStart.length() != 0) ) {
-        try {
-        PropList request_params = new PropList ( "" );
-        request_params.set ( "DateTime", InputStart );
-        CommandProcessorRequestResultsBean bean = null;
-        try {
-            bean = processor.processRequest( "DateTime", request_params);
-        }
-        catch ( Exception e ) {
-            message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-
-        PropList bean_PropList = bean.getResultsPropList();
-        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-        if ( prop_contents == null ) {
-            message = "Null value for InputStart DateTime(DateTime=" + InputStart + ") returned from processor.";
-            Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the specified date/time is valid." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-        else {  InputStart_DateTime = (DateTime)prop_contents;
-        }
-    }
-    catch ( Exception e ) {
-        message = "InputStart \"" + InputStart + "\" is invalid.";
-        Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time for the input start, " +
-                        "or InputStart for the global input start." ) );
-        throw new InvalidCommandParameterException ( message );
-    }
-    }
-    else {
-        // Get the global input start from the processor...
-        try {
-            Object o = processor.getPropContents ( "InputStart" );
-                if ( o != null ) {
-                    InputStart_DateTime = (DateTime)o;
-                }
-        }
-        catch ( Exception e ) {
-            message = "Error requesting the global InputStart from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-    }
-    
-    if ( (InputEnd != null) && (InputEnd.length() != 0) ) {
-        try {
-            PropList request_params = new PropList ( "" );
-            request_params.set ( "DateTime", InputEnd );
-            CommandProcessorRequestResultsBean bean = null;
-            try {
-                bean = processor.processRequest( "DateTime", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting InputEnd DateTime(DateTime=" + InputEnd + ") from processor.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report problem to software support." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-
-            PropList bean_PropList = bean.getResultsPropList();
-            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-            if ( prop_contents == null ) {
-                message = "Null value for InputEnd DateTime(DateTime=" + InputEnd +  ") returned from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the end date/time is valid." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {
-                InputEnd_DateTime = (DateTime)prop_contents;
-            }
-        }
-        catch ( Exception e ) {
-            message = "InputEnd \"" + InputEnd + "\" is invalid.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time for the input end, " +
-                            "or InputEnd for the global input start." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-        }
-        else {
-            // Get from the processor...
-            try {
-                Object o = processor.getPropContents ( "InputEnd" );
-                    if ( o != null ) {
-                        InputEnd_DateTime = (DateTime)o;
-                    }
-            }
-            catch ( Exception e ) {
-                message = "Error requesting the global InputEnd from processor.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report problem to software support." ) );
-            }
-    }
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+	}
 
 	// Read the file.
     List<TS> tslist = new ArrayList<TS>();
@@ -651,7 +552,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         if ( !IOUtil.fileExists(InputFile_full)) {
             message = "The RiverWare file \"" + InputFile_full + "\" does not exist.";
-            status.addToLog(command_phase,
+            status.addToLog(commandPhase,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message,"Verify that the filename is correct."));
         }
@@ -671,7 +572,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 TS ts = RiverWareTS.readTimeSeries ( InputFile_full, InputStart_DateTime, InputEnd_DateTime, Units, readData );
                 if ( ts == null ) {
                     message = "Unable to read time series from RiverWare file \"" + InputFile_full + "\".";
-                    status.addToLog(command_phase,
+                    status.addToLog(commandPhase,
                             new CommandLogRecord(
                                     CommandStatusType.FAILURE, message,"See the log file."));
                 }
@@ -682,7 +583,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             if ( (Alias != null) && !Alias.equals("") ) {
                 for ( TS ts2 : tslist ) {
                     String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                        processor, ts2, Alias, status, command_phase);
+                        processor, ts2, Alias, status, commandPhase);
                     ts2.setAlias ( alias );
                 }
             }
@@ -693,7 +594,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count ),routine, message );
 		Message.printWarning ( 3, routine, e );
-        status.addToLog(command_phase,
+        status.addToLog(commandPhase,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message,"Check the log file for details."));
 		throw new CommandException ( message );
@@ -702,7 +603,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     int size = 1;
     Message.printStatus ( 2, routine, "Read " + size + " RiverWare time series." );
 
-    if ( command_phase == CommandPhaseType.RUN ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
         if ( tslist.size() > 0 ) {
             // Further process the time series...
             // This makes sure the period is at least as long as the output period...
@@ -712,7 +613,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                     message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
@@ -726,7 +627,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                     message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
@@ -738,7 +639,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
     }
-    else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( tslist );
         if ( Output.equalsIgnoreCase(_TimeSeriesAndEnsembles) ) {
             setDiscoveryEnsembleList ( ensembleList );
@@ -753,7 +654,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

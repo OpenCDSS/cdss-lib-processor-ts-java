@@ -21,7 +21,6 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;

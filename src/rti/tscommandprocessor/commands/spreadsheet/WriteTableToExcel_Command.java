@@ -1343,6 +1343,7 @@ throws FileNotFoundException, IOException
         Float fieldValueFloat;
         Integer fieldValueInteger;
         Long fieldValueLong;
+        String fieldValueString;
         String NaNValue = "";
         String cellString;
         int rowOut = rowOutDataStart - 1; // -1 because incremented at the top of the loop below
@@ -1401,6 +1402,7 @@ throws FileNotFoundException, IOException
                     }
                     else if ( tableFieldType == TableField.DATA_TYPE_FLOAT ) {
                         fieldValueFloat = (Float)fieldValue;
+                    	// Set Excel cell value
                         if ( fieldValueFloat.isNaN() ) {
                             cellString = NaNValue;
                             wbCell.setCellValue(cellString);
@@ -1419,26 +1421,24 @@ throws FileNotFoundException, IOException
                             }
                             else {
                                 wbCell.setCellValue(fieldValueFloat);
-                                if ( styleManager == null ) {
-                                	// Old-style...
-                                	wbCell.setCellStyle(columnCellStyles[col]);
-                                }
-                                else {
-                                	// New-style...
-                                	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueFloat));
-                                }
                             }
+                        }
+                        // Set Excel cell style
+                        if ( styleManager == null ) {
+                        	// Old-style...
+                        	wbCell.setCellStyle(columnCellStyles[col]);
+                        }
+                        else {
+                        	// New-style...
+                        	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueFloat));
                         }
                     }
                     else if ( tableFieldType == TableField.DATA_TYPE_DOUBLE ) {
+                    	// Set the Excel cell value
                         fieldValueDouble = (Double)fieldValue;
                         if ( fieldValueDouble.isNaN() ) {
                             cellString = NaNValue;
                             wbCell.setCellValue(cellString);
-                            if ( styleManager != null ) {
-                            	// New-style...
-                            	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueDouble));
-                            }
                         }
                         else {
                             if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
@@ -1454,21 +1454,23 @@ throws FileNotFoundException, IOException
                             }
                             else {
                                 wbCell.setCellValue(fieldValueDouble);
-                                if ( styleManager == null ) {
-                                	// Old-style...
-                                	wbCell.setCellStyle(columnCellStyles[col]);
-                                }
-                                else {
-                                	// New-style...
-                                	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueDouble));
-                                }
-                                //Message.printStatus(2,routine,"After double cell data set, cell style fill foreground color is " + wbCell.getCellStyle().getFillForegroundColor());
-                                //Message.printStatus(2,routine,"After double cell data set, cell style fill background color is " + wbCell.getCellStyle().getFillBackgroundColor());
-                                //Message.printStatus(2,routine,"After double cell data set, cell style fill pattern is " + wbCell.getCellStyle().getFillPattern());
                             }
                         }
+                        // Set Excel cell style
+                        if ( styleManager == null ) {
+                        	// Old-style...
+                        	wbCell.setCellStyle(columnCellStyles[col]);
+                        }
+                        else {
+                        	// New-style...
+                        	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueDouble));
+                        }
+                        //Message.printStatus(2,routine,"After double cell data set, cell style fill foreground color is " + wbCell.getCellStyle().getFillForegroundColor());
+                        //Message.printStatus(2,routine,"After double cell data set, cell style fill background color is " + wbCell.getCellStyle().getFillBackgroundColor());
+                        //Message.printStatus(2,routine,"After double cell data set, cell style fill pattern is " + wbCell.getCellStyle().getFillPattern());
                     }
                     else if ( tableFieldType == TableField.DATA_TYPE_INT ) {
+                    	// Set the Excel cell value
                         fieldValueInteger = (Integer)fieldValue;
                         if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
                             cellString = "" + fieldValue;
@@ -1476,17 +1478,19 @@ throws FileNotFoundException, IOException
                         }
                         else {
                             wbCell.setCellValue(fieldValueInteger);
-                            if ( styleManager == null ) {
-                            	// Old-style...
-                            	wbCell.setCellStyle(columnCellStyles[col]);
-                            }
-                            else {
-                            	// New-style...
-                            	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueInteger));
-                            }
+                        }
+                        // Set the Excel cell style
+                        if ( styleManager == null ) {
+                        	// Old-style...
+                        	wbCell.setCellStyle(columnCellStyles[col]);
+                        }
+                        else {
+                        	// New-style...
+                        	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueInteger));
                         }
                     }
                     else if ( tableFieldType == TableField.DATA_TYPE_LONG ) {
+                    	// Set the Excel cell value
                         fieldValueLong = (Long)fieldValue;
                         if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
                             cellString = "" + fieldValue;
@@ -1494,18 +1498,40 @@ throws FileNotFoundException, IOException
                         }
                         else {
                             wbCell.setCellValue(fieldValueLong);
-                            if ( styleManager == null ) {
-                            	// Old-style...
-                            	wbCell.setCellStyle(columnCellStyles[col]);
-                            }
-                            else {
-                            	// New-style...
-                            	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueLong));
-                            }
+                        }
+                        // Now set the cell style
+                        if ( styleManager == null ) {
+                        	// Old-style...
+                        	wbCell.setCellStyle(columnCellStyles[col]);
+                        }
+                        else {
+                        	// New-style...
+                        	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueLong));
+                        }
+                    }
+                    else if ( tableFieldType == TableField.DATA_TYPE_STRING ) {
+                    	// Set the Excel cell value
+                        fieldValueString = (String)fieldValue;
+                        if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
+                            cellString = fieldValueString;
+                            wbCell.setCellValue(cellString);
+                        }
+                        // TODO SAM 2016-01-17 Could set as number, etc., in Excel
+                        else {
+                            wbCell.setCellValue(fieldValueString);
+                        }
+                        // Set the Excel cell style
+                        if ( styleManager == null ) {
+                        	// Old-style...
+                        	wbCell.setCellStyle(columnCellStyles[col]);
+                        }
+                        else {
+                        	// New-style...
+                        	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueString));
                         }
                     }
                     else {
-                        // Use default formatting.
+                        // Use default formatting without styling
                         cellString = "" + fieldValue;
                         wbCell.setCellValue(cellString);
                     }

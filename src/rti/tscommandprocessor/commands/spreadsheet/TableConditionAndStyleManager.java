@@ -165,6 +165,8 @@ throws Exception
 /**
 TODO SAM 2015-07-11 In future may have condition object.
 Return the condition string for a row in the condition table.
+@return the condition string for a row in the condition table
+@param irec the record (row) in the condition table (0+)
 */
 public String getConditionString (int irec)
 {
@@ -180,6 +182,7 @@ public String getConditionString (int irec)
 
 /**
 Return the condition table used with the manager.
+@return the condition table used with the manager
 */
 public DataTable getConditionTable ()
 {
@@ -189,6 +192,8 @@ public DataTable getConditionTable ()
 /**
 TODO SAM 2015-07-11 In future may have condition object.
 Return the display string for a row in the condition table.
+@return the condition string for a row in the condition table
+@param irec the record (row) in the condition table (0+)
 */
 public String getDisplayString (int irec)
 {
@@ -208,8 +213,11 @@ public String getDisplayString (int irec)
 }
 
 /**
-Get the style to use for the requested column.
+Get the style to use for the requested table column when the column type is DateTime.
+Currently this returns the column style, not cell-specific styling.
+@return the style to use for the requested table column when the column type is DateTime
 @param col output column 0+ corresponding to this.includeColumnNumbers
+@param value DateTime value to compare against conditions to determine style for cell
 */
 public CellStyle getStyle ( int col, DateTime value )
 {
@@ -226,12 +234,14 @@ public CellStyle getStyle ( int col, DateTime value )
 }
 
 /**
-Get the style to use for the requested column.
+Get the style to use for the requested table column when the column type is Double.
 The format table is used to find rows with matching column.
+@return the style to use for the requested table column when the column type is Double
 @param col output column 0+ corresponding to this.includeColumnNumbers
+@param value Double value to compare against conditions to determine style for cell
 */
 public CellStyle getStyle ( int col, Double value )
-{	String routine = "getStyle(Double)";
+{	String routine = getClass().getSimpleName() + ".getStyle(Double)";
 	if ( !this.cellStylesInitialized ) {
 		initializeCellStyles();
 	}
@@ -380,8 +390,12 @@ public CellStyle getStyle ( int col, Double value )
 }
 
 /**
-Get the style to use for the requested column.
+Get the style to use for the requested table column when the column type is Float.
+This method calls the Double version.
+The format table is used to find rows with matching column.
+@return the style to use for the requested table column when the column type is Float
 @param col output column 0+ corresponding to this.includeColumnNumbers
+@param value Float value to compare against conditions to determine style for cell
 */
 public CellStyle getStyle ( int col, Float value )
 {
@@ -398,8 +412,12 @@ public CellStyle getStyle ( int col, Float value )
 }
 
 /**
-Get the style to use for the requested column.
+Get the style to use for the requested table column when the column type is Integer.
+This method calls the Long version.
+The format table is used to find rows with matching column.
+@return the style to use for the requested table column when the column type is Integer
 @param col output column 0+ corresponding to this.includeColumnNumbers
+@param value Integer value to compare against conditions to determine style for cell
 */
 public CellStyle getStyle ( int col, Integer value )
 {
@@ -416,35 +434,343 @@ public CellStyle getStyle ( int col, Integer value )
 }
 
 /**
-Get the style to use for the requested column.
+Get the style to use for the requested table column when the column type is Long.
+The format table is used to find rows with matching column.
+@return the style to use for the requested table column when the column type is Long
 @param col output column 0+ corresponding to this.includeColumnNumbers
+@param value Long value to compare against conditions to determine style for cell
 */
 public CellStyle getStyle ( int col, Long value )
-{
+{	String routine = getClass().getSimpleName() + ".getStyle(Long)";
 	if ( !this.cellStylesInitialized ) {
 		initializeCellStyles();
 	}
-	if ( value == null ) {
-		return getStyle ( col, (Double)null );
+	// Look up the column name
+	String columnName = this.dataTable.getFieldName(this.includeColumnNumbers[col]);
+	// See if the column name matches any rows in the format table
+	List<TableRecord> matchedRowList = new ArrayList<TableRecord>();
+	for ( int cRow = 0; cRow < this.conditionTable.getNumberOfRecords(); cRow++ ) {
+		try {
+			TableRecord row = this.conditionTable.getRecord(cRow);
+			String column = row.getFieldValueString(this.conditionTableColumnNum);
+			column = column.replace("*", ".*");
+			if ( columnName.matches(column)) {
+				// Format table row matches
+				matchedRowList.add(row);
+			}
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
-	else {
-		// Use Double version
-		// TODO SAM 2015-06-24 any issues with precision/roundoff for ==?
-		return getStyle(col, new Double(value));
+	// If here then matched the column in the format table with the requested column
+	// Get the condition
+	try {
+		if ( matchedRowList.size() == 0 ) {
+			// Return the default column style
+			if ( Message.isDebugOn ) {
+				Message.printDebug(1, routine, "Column name \"" + columnName +
+					"\" did not match any condition table rows - defaulting to column style");
+			}
+			return this.columnStyles[col];
+		}
+		else {
+			if ( Message.isDebugOn ) {
+				Message.printDebug(1, routine, "Column name \"" + columnName + "\" matched condition row - evaluating conditions");
+			}
+		}
+		boolean doValue = false; // Is formatting based on cell value?
+		for ( TableRecord row : matchedRowList ) {
+			String cond = row.getFieldValueString(this.conditionTableConditionNum);
+			String styleID = row.getFieldValueString(this.conditionTableStyleIDNum);
+			// Evaluate the condition - if true return the cell style for the matching StyleID
+			// The condition consists of Value1 Cond Value2 [AND Value3 Cond Value4] etc
+			// Split the condition
+			String [] parts = cond.trim().split(" ");
+			for ( int iPart = 0; iPart < parts.length; iPart++ ) {
+				String sValue1 = parts[iPart].trim();
+				if ( (iPart > 0) && sValue1.equalsIgnoreCase("and") ) {
+					// Continue so that the next clause will be evaluated.
+					// If at any time the entire condition is false, nothing will be returned
+					continue;
+				}
+				if ( sValue1.equalsIgnoreCase("${tablecell:value}") ) {
+					doValue = true;
+				}
+				// TODO SAM 2015-05-09 in the future add other cell properties to be check, such as comments/annotations
+				if ( doValue ) {
+					ConditionOperatorType oper = ConditionOperatorType.valueOfIgnoreCase(parts[++iPart].trim());
+					String sValue2 = parts[++iPart].trim();
+					boolean value2Missing = false; // whether checking for missing
+					if ( sValue2.equalsIgnoreCase("missing") || sValue2.equalsIgnoreCase("null")) {
+						value2Missing = true;
+					}
+					long value2 = 0;
+					if ( !value2Missing ) {
+						value2 = Long.parseLong(sValue2);
+					}
+					if ( Message.isDebugOn ) {
+						Message.printDebug(1,routine,"Checking value \"" + value + "\" operator " + oper + " value2 " + value2 + " value2missing " + value2Missing );
+					}
+					boolean valueMatch = false;
+					if ( oper == ConditionOperatorType.EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( value == null ) {
+								valueMatch = true;
+							}
+						}
+						else if ( (value != null) && (value == value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.NOT_EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( value != null ) {
+								valueMatch = true;
+							}
+						}
+						else if ( (value != null) && (value != value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.LESS_THAN ) {
+						if ( (value != null) && (value < value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.LESS_THAN_OR_EQUAL_TO ) {
+						 if ( (value != null) && (value <= value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.GREATER_THAN ) {
+						if ( (value != null) && (value > value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.GREATER_THAN_OR_EQUAL_TO ) {
+						 if ( (value != null) && (value >= value2) ) {
+							valueMatch = true;
+						}
+					}
+					if ( !valueMatch ) {
+						// Can break out of condition
+						break;
+					}
+					// Only finish if there are no more clauses to evaluate
+					if ( ((iPart + 1) == parts.length) && valueMatch ) {
+						// The format table row matched for the value
+						// Lookup the style and return 
+						if ( Message.isDebugOn ) {
+							Message.printDebug(1,routine,"Setting cell style for value " + value + " to " + styleID );
+						}
+						CellStyle cs = getCellStyleForStyleID ( col, styleID );
+						//Message.printStatus(2,routine,"Cell style fill foreground color is " + cs.getFillForegroundColor());
+	                    //Message.printStatus(2,routine,"Cell style fill background color is " + cs.getFillBackgroundColor());
+	                    //Message.printStatus(2,routine,"Cell style fill pattern is " + cs.getFillPattern());
+						return cs;
+					}
+				}
+			}
+		}
+	}
+	catch (Exception e) {
+		Message.printWarning(3,"getStyle",e);
+		throw new RuntimeException(e);
+	}
+	try {
+		if ( Message.isDebugOn ) {
+			Message.printDebug(1,routine,"Setting cell style for value " + value + " to column default" );
+		}
+		return getCellStyleForStyleID(col, null); // Fall-through
+	}
+	catch ( Exception e ) {
+		throw new RuntimeException ( e );
 	}
 }
 
 /**
-Get the style to use for the requested column.
+Get the style to use for the requested table column when the column type is String.
+The format table is used to find rows with matching column.
+@return the style to use for the requested table column when the column type is String
 @param col output column 0+ corresponding to this.includeColumnNumbers
+@param value String value to compare against conditions to determine style for cell
 */
 public CellStyle getStyle ( int col, String value )
-{
+{	String routine = getClass().getSimpleName() + ".getStyle";
 	if ( !this.cellStylesInitialized ) {
 		initializeCellStyles();
 	}
+	// Look up the column name
+	String columnName = this.dataTable.getFieldName(this.includeColumnNumbers[col]);
+	// See if the column name matches any rows in the format table
+	List<TableRecord> matchedRowList = new ArrayList<TableRecord>();
+	for ( int cRow = 0; cRow < this.conditionTable.getNumberOfRecords(); cRow++ ) {
+		try {
+			TableRecord row = this.conditionTable.getRecord(cRow);
+			String column = row.getFieldValueString(this.conditionTableColumnNum);
+			column = column.replace("*", ".*");
+			if ( columnName.matches(column)) {
+				// Format table row matches
+				matchedRowList.add(row);
+			}
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	// If here then matched the column in the format table with the requested column
+	// Get the condition
 	try {
-		// TODO SAM 2015-06-24 Need to enable specific lookup.
+		if ( matchedRowList.size() == 0 ) {
+			// Return the default column style
+			if ( Message.isDebugOn ) {
+				Message.printDebug(1, routine, "Column name \"" + columnName +
+					"\" did not match any condition table rows - defaulting to column style");
+			}
+			return this.columnStyles[col];
+		}
+		else {
+			if ( Message.isDebugOn ) {
+				Message.printDebug(1, routine, "Column name \"" + columnName + "\" matched condition row - evaluating conditions");
+			}
+		}
+		boolean doValue = false; // Is formatting based on cell value?
+		for ( TableRecord row : matchedRowList ) {
+			String cond = row.getFieldValueString(this.conditionTableConditionNum);
+			String styleID = row.getFieldValueString(this.conditionTableStyleIDNum);
+			// Evaluate the condition - if true return the cell style for the matching StyleID
+			// The condition consists of Value1 Cond Value2 [AND Value3 Cond Value4] etc
+			// Split the condition
+			String [] parts = cond.trim().split(" ");
+			for ( int iPart = 0; iPart < parts.length; iPart++ ) {
+				String sValue1 = parts[iPart].trim();
+				if ( (iPart > 0) && sValue1.equalsIgnoreCase("and") ) {
+					// Continue so that the next clause will be evaluated.
+					// If at any time the entire condition is false, nothing will be returned
+					continue;
+				}
+				if ( sValue1.equalsIgnoreCase("${tablecell:value}") ) {
+					doValue = true;
+				}
+				// TODO SAM 2015-05-09 in the future add other cell properties to be check, such as comments/annotations
+				if ( doValue ) {
+					ConditionOperatorType oper = ConditionOperatorType.valueOfIgnoreCase(parts[++iPart].trim());
+					String sValue2 = parts[++iPart].trim(); // Value to check against, e.g., "missing" or a string
+					boolean value2Missing = false; // whether checking for missing
+					if ( sValue2.equalsIgnoreCase("missing") || sValue2.equalsIgnoreCase("null")) {
+						value2Missing = true; // Will check cell value for missing (null or empty string)
+					}
+					String value2 = sValue2;
+					if ( Message.isDebugOn ) {
+						Message.printDebug(1,routine,"Checking value \"" + value + "\" operator " + oper + " value2 " + value2 + " value2missing " + value2Missing );
+					}
+					boolean valueMatch = false;
+					if ( oper == ConditionOperatorType.EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( (value == null) || value.isEmpty() ) {
+								// Actual cell value is null or empty so it is missing
+								valueMatch = true;
+							}
+						}
+						else if ( (value != null) && value.equals(value2) ) {
+							// String match is case-sensitive
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.NOT_EQUAL_TO ) {
+						if ( value2Missing ) {
+							if ( (value != null) && !value.isEmpty() ) {
+								// String is not null or missing so it is not equal to "missing"
+								valueMatch = true;
+							}
+						}
+						else if ( (value != null) && !value.isEmpty() && (value != value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.CONTAINS ) {
+						if ( value2Missing ) {
+							if ( (value == null) || value.isEmpty() ) {
+								// String "contains" missing, which is true
+								valueMatch = true;
+							}
+						}
+						else if ( (value != null) && (value.indexOf(value2) >= 0) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.STARTS_WITH ) {
+						if ( value2Missing ) {
+							if ( (value == null) || value.isEmpty() ) {
+								// String is missing, so it starts with missing, which is true
+								valueMatch = true;
+							}
+						}
+						else if ( (value != null) && value.startsWith(value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.ENDS_WITH ) {
+						if ( value2Missing ) {
+							if ( (value == null) || value.isEmpty() ) {
+								// String is missing, so it ends with missing, which is true
+								valueMatch = true;
+							}
+						}
+						else if ( (value != null) && value.endsWith(value2) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.LESS_THAN ) {
+						if ( (value != null) && (value.compareTo(value2) < 0) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.LESS_THAN_OR_EQUAL_TO ) {
+						 if ( (value != null) && (value.compareTo(value2) <= 0) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.GREATER_THAN ) {
+						if ( (value != null) && (value.compareTo(value2) > 0) ) {
+							valueMatch = true;
+						}
+					}
+					else if ( oper == ConditionOperatorType.GREATER_THAN_OR_EQUAL_TO ) {
+						 if ( (value != null) && (value.compareTo(value2) >= 0) ) {
+							valueMatch = true;
+						}
+					}
+					if ( !valueMatch ) {
+						// Can break out of condition
+						break;
+					}
+					// Only finish if there are no more clauses to evaluate
+					if ( ((iPart + 1) == parts.length) && valueMatch ) {
+						// The format table row matched for the value
+						// Lookup the style and return 
+						if ( Message.isDebugOn ) {
+							Message.printDebug(1,routine,"Setting cell style for value " + value + " to " + styleID );
+						}
+						CellStyle cs = getCellStyleForStyleID ( col, styleID );
+						//Message.printStatus(2,routine,"Cell style fill foreground color is " + cs.getFillForegroundColor());
+	                    //Message.printStatus(2,routine,"Cell style fill background color is " + cs.getFillBackgroundColor());
+	                    //Message.printStatus(2,routine,"Cell style fill pattern is " + cs.getFillPattern());
+						return cs;
+					}
+				}
+			}
+		}
+	}
+	catch (Exception e) {
+		Message.printWarning(3,"getStyle",e);
+		throw new RuntimeException(e);
+	}
+	try {
+		if ( Message.isDebugOn ) {
+			Message.printDebug(1,routine,"Setting cell style for value " + value + " to column default" );
+		}
 		return getCellStyleForStyleID(col, null); // Fall-through
 	}
 	catch ( Exception e ) {
@@ -455,6 +781,8 @@ public CellStyle getStyle ( int col, String value )
 /**
 TODO SAM 2015-07-11 In future may have condition object.
 Return the style ID for a row in the condition table.
+@return the style ID for a row in the condition table.
+@param irec the row (0+) in the condition table
 */
 public String getStyleIDForCondition (int irec)
 {

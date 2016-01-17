@@ -567,7 +567,7 @@ public CellStyle getStyle ( TS ts, int its, double value, String flag )
 		}
 	}
 	catch (Exception e) {
-		Message.printWarning(3,"getStyle",e);
+		Message.printWarning(3,routine,e);
 		throw new RuntimeException(e);
 	}
 	try {

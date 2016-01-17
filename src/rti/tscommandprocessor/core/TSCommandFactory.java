@@ -101,6 +101,7 @@ import rti.tscommandprocessor.commands.riverware.WriteRiverWare_Command;
 // SHEF commands.
 import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 
+import rti.tscommandprocessor.commands.spatial.WriteTableToGeoJSON_Command;
 // Spatial commands.
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTableToShapefile_Command;
@@ -1119,6 +1120,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTableCellsToExcel") ) {
         return new WriteTableCellsToExcel_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTableToGeoJSON") ) {
+        return new WriteTableToGeoJSON_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTableToHTML") ) {
         return new WriteTableToHTML_Command ();

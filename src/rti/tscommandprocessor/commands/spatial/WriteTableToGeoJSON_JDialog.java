@@ -288,7 +288,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to output."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Shapefile to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "GeoJSON file to write:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
     __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");

@@ -118,29 +118,43 @@ public boolean editCommand ( JFrame parent )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "ReadTableFromExcelFile_Command.runCommand",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand",message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	// Make sure there are time series available to operate on...
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Worksheet = parameters.getValue ( "Worksheet" );
+    if ( (Worksheet != null) && !Worksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Worksheet.indexOf("${") >= 0 ) {
+    	Worksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheet);
+    }
 	String FreezePaneColumnRightOfSplit = parameters.getValue ( "FreezePaneColumnRightOfSplit" );
 	if ( (FreezePaneColumnRightOfSplit != null) && FreezePaneColumnRightOfSplit.equals("") ) {
 		FreezePaneColumnRightOfSplit = null; // Easier to check below
@@ -160,8 +174,9 @@ CommandWarningException, CommandException
     }
 
     // TODO SAM 2015-02-04 Not sure that it needs to exist because may be in memory before final write
-	String OutputFile_full = //IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);// );
+	String OutputFile_full = IOUtil.verifyPathForOS(
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+        	TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 	/*
 	if ( !IOUtil.fileExists(OutputFile_full) ) {
 		message += "\nThe Excel workbook file \"" + OutputFile_full + "\" does not exist.";

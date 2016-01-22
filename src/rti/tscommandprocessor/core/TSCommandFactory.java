@@ -27,7 +27,8 @@ import rti.tscommandprocessor.commands.datastore.RunSql_Command;
 import rti.tscommandprocessor.commands.datastore.WriteTimeSeriesToDataStore_Command;
 import rti.tscommandprocessor.commands.datevalue.ReadDateValue_Command;
 import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
-
+import rti.tscommandprocessor.commands.delftfews.ReadDelftFewsPiXml_Command;
+import rti.tscommandprocessor.commands.delftfews.WriteDelftFewsPiXml_Command;
 // Delimited time series file commands
 import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 import rti.tscommandprocessor.commands.delimited.WriteDelimitedFile_Command;
@@ -100,7 +101,6 @@ import rti.tscommandprocessor.commands.riverware.WriteRiverWare_Command;
 
 // SHEF commands.
 import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
-
 import rti.tscommandprocessor.commands.spatial.WriteTableToGeoJSON_Command;
 // Spatial commands.
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
@@ -738,6 +738,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("ReadDateValue") ) {
         return new ReadDateValue_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("ReadDelftFewsPiXml") ) {
+        return new ReadDelftFewsPiXml_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("ReadDelimitedFile") ) {
         return new ReadDelimitedFile_Command ();
     }
@@ -1070,6 +1073,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("WriteDateValue") ) {
 		return new WriteDateValue_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("WriteDelftFewsPiXml") ) {
+        return new WriteDelftFewsPiXml_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("WriteDelimitedFile") ) {
         return new WriteDelimitedFile_Command ();
     }

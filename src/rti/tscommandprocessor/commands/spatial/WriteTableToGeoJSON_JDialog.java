@@ -67,6 +67,8 @@ private JTextField __WKTGeometryColumn_JTextField = null;
 private JTextField __IncludeColumns_JTextField = null;
 private JTextField __ExcludeColumns_JTextField = null;
 private JTextField __JavaScriptVar_JTextField = null;
+private JTextField __PrependText_JTextField = null;
+private JTextField __AppendText_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Has user pressed OK to close the dialog.
@@ -171,6 +173,8 @@ private void checkInput ()
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     String ExcludeColumns = __IncludeColumns_JTextField.getText().trim();
     String JavaScriptVar = __JavaScriptVar_JTextField.getText().trim();
+    String PrependText = __PrependText_JTextField.getText().trim();
+    String AppendText = __AppendText_JTextField.getText().trim();
 
     __error_wait = false;
 
@@ -204,6 +208,12 @@ private void checkInput ()
     if ( JavaScriptVar.length() > 0 ) {
         parameters.set ( "JavaScriptVar", JavaScriptVar );
     }
+    if ( PrependText.length() > 0 ) {
+        parameters.set ( "PrependText", PrependText );
+    }
+    if ( AppendText.length() > 0 ) {
+        parameters.set ( "AppendText", AppendText );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -230,6 +240,8 @@ private void commitEdits ()
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     String JavaScriptVar = __JavaScriptVar_JTextField.getText().trim();
+    String PrependText = __PrependText_JTextField.getText().trim();
+    String AppendText = __AppendText_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "OutputFile", OutputFile );
     __command.setCommandParameter ( "Append", Append );
@@ -240,6 +252,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "IncludeColumns", IncludeColumns );
     __command.setCommandParameter ( "ExcludeColumns", ExcludeColumns );
     __command.setCommandParameter ( "JavaScriptVar", JavaScriptVar );
+    __command.setCommandParameter ( "PrependText", PrependText );
+    __command.setCommandParameter ( "AppendText", AppendText );
 }
 
 /**
@@ -466,6 +480,42 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
         1, yJs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(js_JPanel, new JLabel ( "Optional - JavaScript variable for GeoJSON object (default=none)."),
         3, yJs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for inserts
+    int yInsert = -1;
+    JPanel insert_JPanel = new JPanel();
+    insert_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Inserts", insert_JPanel );
+    
+    JGUIUtil.addComponent(insert_JPanel, new JLabel (
+        "Specify text to insert before and after the GeoJSON.  For example, use the following to initialize the object in an array:"),
+        0, ++yInsert, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(insert_JPanel, new JLabel ( "prepend:  var stationData = []; stationData['Org1'] = "),
+        0, ++yInsert, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(insert_JPanel, new JLabel ( "append:  ;"),
+        0, ++yInsert, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(insert_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yInsert, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(insert_JPanel, new JLabel ( "Prepend text:" ),
+        0, ++yInsert, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PrependText_JTextField = new JTextField ( "", 35 );
+    __PrependText_JTextField.setToolTipText("Text to prepend before GeoJSON - can include ${Property}");
+    __PrependText_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(insert_JPanel, __PrependText_JTextField,
+        1, yInsert, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(insert_JPanel, new JLabel ( "Optional - text to prepend before GeoJSON object (default=none)."),
+        3, yInsert, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(insert_JPanel, new JLabel ( "Append text:" ),
+        0, ++yInsert, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AppendText_JTextField = new JTextField ( "", 35 );
+    __AppendText_JTextField.setToolTipText("Text to append at end of GeoJSON - can include ${Property}");
+    __AppendText_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(insert_JPanel, __AppendText_JTextField,
+        1, yInsert, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(insert_JPanel, new JLabel ( "Optional - text to append after GeoJSON object (default=none)."),
+        3, yInsert, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -559,6 +609,8 @@ private void refresh ()
     String IncludeColumns = "";
     String ExcludeColumns = "";
     String JavaScriptVar = "";
+    String PrependText = "";
+    String AppendText = "";
     __error_wait = false;
     PropList parameters = null;
     if ( __first_time ) {
@@ -575,6 +627,8 @@ private void refresh ()
         IncludeColumns = parameters.getValue ( "IncludeColumns" );
         ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
         JavaScriptVar = parameters.getValue ( "JavaScriptVar" );
+        PrependText = parameters.getValue ( "PrependText" );
+        AppendText = parameters.getValue ( "AppendText" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -629,6 +683,12 @@ private void refresh ()
         if ( JavaScriptVar != null ) {
             __JavaScriptVar_JTextField.setText (JavaScriptVar);
         }
+        if ( PrependText != null ) {
+            __PrependText_JTextField.setText (PrependText);
+        }
+        if ( AppendText != null ) {
+            __AppendText_JTextField.setText (AppendText);
+        }
     }
     // Regardless, reset the command from the fields...
     TableID = __TableID_JComboBox.getSelected();
@@ -641,6 +701,8 @@ private void refresh ()
     IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     JavaScriptVar = __JavaScriptVar_JTextField.getText().trim();
+    PrependText = __PrependText_JTextField.getText().trim();
+    AppendText = __AppendText_JTextField.getText().trim();
     parameters = new PropList ( __command.getCommandName() );
     parameters.add ( "TableID=" + TableID );
     parameters.add ( "OutputFile=" + OutputFile );
@@ -652,6 +714,8 @@ private void refresh ()
     parameters.add ( "IncludeColumns=" + IncludeColumns );
     parameters.add ( "ExcludeColumns=" + ExcludeColumns );
     parameters.add ( "JavaScriptVar=" + JavaScriptVar );
+    parameters.add ( "PrependText=" + PrependText );
+    parameters.add ( "AppendText=" + AppendText );
     __command_JTextArea.setText( __command.toString ( parameters ) );
     if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
         if ( __path_JButton != null ) {

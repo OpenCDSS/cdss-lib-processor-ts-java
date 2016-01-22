@@ -193,6 +193,8 @@ throws InvalidCommandParameterException
     validList.add ( "IncludeColumns" );
     validList.add ( "ExcludeColumns" );
     validList.add ( "JavaScriptVar" );
+    validList.add ( "PrependText" );
+    validList.add ( "AppendText" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
     if ( warning.length() > 0 ) {
@@ -312,6 +314,14 @@ CommandWarningException, CommandException
         }
     }
     String JavaScriptVar = parameters.getValue ( "JavaScriptVar" );
+    String PrependText = parameters.getValue ( "PrependText" );
+	if ( (PrependText != null) && (PrependText.indexOf("${") >= 0) ) {
+		PrependText = TSCommandProcessorUtil.expandParameterValue(processor, this, PrependText);
+	}
+    String AppendText = parameters.getValue ( "AppendText" );
+	if ( (AppendText != null) && (AppendText.indexOf("${") >= 0) ) {
+		AppendText = TSCommandProcessorUtil.expandParameterValue(processor, this, AppendText);
+	}
     
     // Get the table to process.
 
@@ -366,7 +376,7 @@ CommandWarningException, CommandException
         Message.printStatus ( 2, routine, "Writing GeoJSON file \"" + OutputFile_full + "\"" );
         List<String> errors = new ArrayList<String>();
         writeTableToGeoJSON ( table, OutputFile_full, append, includeColumns, excludeColumns,
-            LongitudeColumn, LatitudeColumn, ElevationColumn, WKTGeometryColumn, JavaScriptVar, errors );
+            LongitudeColumn, LatitudeColumn, ElevationColumn, WKTGeometryColumn, JavaScriptVar, PrependText, AppendText, errors );
         for ( String error : errors ) {
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, error );
@@ -417,6 +427,8 @@ public String toString ( PropList parameters )
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
     String ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
     String JavaScriptVar = parameters.getValue ( "JavaScriptVar" );
+    String PrependText = parameters.getValue ( "PrependText" );
+    String AppendText = parameters.getValue ( "AppendText" );
     StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -478,6 +490,18 @@ public String toString ( PropList parameters )
         }
         b.append ( "JavaScriptVar=\"" + JavaScriptVar + "\"" );
     }
+    if ( (PrependText != null) && (PrependText.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PrependText=\"" + PrependText + "\"" );
+    }
+    if ( (AppendText != null) && (AppendText.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AppendText=\"" + AppendText + "\"" );
+    }
     return getCommandName() + "(" + b.toString() + ")";
 }
 
@@ -489,9 +513,13 @@ Write the table to a GeoJSON file.  This uses simple print statements.
 @param errors list of error strings to be propagated to calling code
 */
 private void writeTableToGeoJSON ( DataTable table, String outputFile, boolean append, String [] includeColumns, String [] excludeColumns,
-    String longitudeColumn, String latitudeColumn, String elevationColumn, String wktGeometryColumn, String javaScriptVar, List<String> errors )
+    String longitudeColumn, String latitudeColumn, String elevationColumn, String wktGeometryColumn, String javaScriptVar,
+    String prependText, String appendText, List<String> errors )
 throws IOException
 {   PrintWriter fout = null;
+	if ( appendText == null ) {
+		appendText = "";
+	}
 	try {
 		// Open the output file
 		FileOutputStream fos = new FileOutputStream ( outputFile, append );
@@ -653,6 +681,9 @@ throws IOException
 	    }
 	    
 	    // Output GeoJSON intro
+	    if ( (prependText != null) && !prependText.isEmpty() ) {
+	    	fout.print(prependText);
+	    }
 	    if ( (javaScriptVar != null) && !javaScriptVar.isEmpty() ) {
 	    	fout.print( "var " + javaScriptVar + " = {\n" );
 	    }
@@ -787,10 +818,10 @@ throws IOException
 	    }
 	    fout.print( i1 + "]\n"); // End features
 	    if ( (javaScriptVar != null) && !javaScriptVar.isEmpty() ) {
-	    	fout.print( "};\n"); // End GeoJSON
+	    	fout.print( "};" + appendText + "\n"); // End GeoJSON
 	    }
 	    else {
-	    	fout.print( "}\n"); // End GeoJSON
+	    	fout.print( "}" + appendText + "\n"); // End GeoJSON
 	    }
 	}
 	finally {

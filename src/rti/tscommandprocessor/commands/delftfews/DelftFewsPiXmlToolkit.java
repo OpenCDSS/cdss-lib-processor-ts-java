@@ -1,5 +1,7 @@
 package rti.tscommandprocessor.commands.delftfews;
 
+import RTi.Util.Time.DateTime;
+
 /**
  * Utility methods for Delft FEWS PI XML files, as a toolkit to avoid static methods.
  */
@@ -31,5 +33,21 @@ public class DelftFewsPiXmlToolkit {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * Parse a date "YYYY-MM-DD" and time "hh:mm:ss" into a DateTime object.
+	 */
+	public DateTime parseDateTime ( String date, String time, boolean convert24HourToDay ) throws Exception {
+		DateTime dt = DateTime.parse(date + "T" + time);
+		// Not sure about this...
+		if ( convert24HourToDay ) {
+			// Have a 24-hour date/time where hour 00 is in the next day so subtract a day and set precision
+			if ( dt.getHour() == 0 ) {
+				dt.addDay(-1);
+			}
+			dt.setPrecision(DateTime.PRECISION_DAY);
+		}
+		return dt;
 	}
 }

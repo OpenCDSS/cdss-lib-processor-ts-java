@@ -11,6 +11,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -19,6 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -52,12 +55,19 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private ReadDelftFewsPiXml_Command __command = null;
 private String __working_dir = null;
-private JTextField __InputStart_JTextField;
-private JTextField __InputEnd_JTextField; // Text fields for input period.
-private JTextField __InputFile_JTextField = null; // Field for input file
-//private JTextField __NewUnits_JTextField = null; // Units to convert to at read
+private JTabbedPane __main_JTabbedPane = null;
+private JTextField __InputFile_JTextField = null;
 private SimpleJComboBox __Output_JComboBox = null;
+private JTextField __InputStart_JTextField;
+private JTextField __InputEnd_JTextField;
+private JTextField __DataSource_JTextField;
+private JTextField __DataType_JTextField;
+private JTextField __Description_JTextField;
+private SimpleJComboBox	__Read24HourAsDay_JComboBox = null;
+//private JTextField __NewUnits_JTextField = null; // Units to convert to at read
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private JTextField __EnsembleID_JTextField;
+private JTextField __EnsembleName_JTextField;
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -86,10 +96,10 @@ public void actionPerformed( ActionEvent event )
         fc.setDialogTitle( "Select FEWS PI XML Time Series File");
         SimpleFileFilter sff = new SimpleFileFilter("xml","PI XML Time Series File");
         fc.addChoosableFileFilter(sff);
-        //sff = new SimpleFileFilter("gz","PI XML Time Series File (gzipped)");
-        //fc.addChoosableFileFilter(sff);
-        //sff = new SimpleFileFilter("zip","DateValue Time Series File (zipped)");
-        //fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("gz","PI XML Time Series File (gzipped)");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("zip","PI XML Time Series File (zipped)");
+        fc.addChoosableFileFilter(sff);
 		
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		if ( last_directory_selected != null ) {
@@ -133,7 +143,7 @@ public void actionPerformed( ActionEvent event )
                 __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,	__InputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1, "ReadDateValue_JDialog", "Error converting file to relative path." );
+				Message.printWarning ( 1, "ReadDelfFewsPiXml_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -180,31 +190,55 @@ private void checkInput () {
 	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
+    String Output = __Output_JComboBox.getSelected();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String DataSource = __DataSource_JTextField.getText().trim();
+	String DataType = __DataType_JTextField.getText().trim();
+	String Description = __Description_JTextField.getText().trim();
+	String Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
-    String Output = __Output_JComboBox.getSelected();
 	String Alias = __Alias_JTextField.getText().trim();
+	String EnsembleID = __EnsembleID_JTextField.getText().trim();
+	String EnsembleName = __EnsembleName_JTextField.getText().trim();
 	
 	__error_wait = false;
 
 	if (InputFile.length() > 0) {
 		props.set("InputFile", InputFile);
 	}
+    if (Output.length() > 0) {
+        props.set("Output", Output);
+    }
 	if (InputStart.length() > 0 && !InputStart.equals("*")) {
 		props.set("InputStart", InputStart);
 	}
 	if (InputEnd.length() > 0 && !InputEnd.equals("*")) {
 		props.set("InputEnd", InputEnd);
 	}
+	if (DataSource.length() > 0 && !DataSource.equals("*")) {
+		props.set("DataSource", DataSource);
+	}
+	if (DataType.length() > 0 && !DataType.equals("*")) {
+		props.set("DataType", DataType);
+	}
+	if (Description.length() > 0 && !Description.equals("*")) {
+		props.set("Description", Description);
+	}
+	if (Read24HourAsDay.trim().length() > 0) {
+		props.set("Read24HourAsDay", Read24HourAsDay);
+	}
 	//if (NewUnits.length() > 0 && !NewUnits.equals("*")) {
 	//	props.set("NewUnits", NewUnits);
 	//}
-    if (Output.length() > 0) {
-        props.set("Output", Output);
-    }
     if (Alias != null && Alias.length() > 0) {
         props.set("Alias", Alias);
+    }
+    if (EnsembleID != null && EnsembleID.length() > 0) {
+        props.set("EnsembleID", EnsembleID);
+    }
+    if (EnsembleName != null && EnsembleName.length() > 0) {
+        props.set("EnsembleName", EnsembleName);
     }
 
 	try {	// This will warn the user...
@@ -222,18 +256,30 @@ already been checked and no errors were detected.
 */
 private void commitEdits() {
 	String InputFile = __InputFile_JTextField.getText().trim();
+    String Output = __Output_JComboBox.getSelected();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String DataSource = __DataSource_JTextField.getText().trim();
+	String DataType = __DataType_JTextField.getText().trim();
+	String Description = __Description_JTextField.getText().trim();
+	String Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
-    String Output = __Output_JComboBox.getSelected();
     String Alias = __Alias_JTextField.getText().trim();
+	String EnsembleID = __EnsembleID_JTextField.getText().trim();
+	String EnsembleName = __EnsembleName_JTextField.getText().trim();
 
 	__command.setCommandParameter("InputFile", InputFile);
+	__command.setCommandParameter("Output", Output);
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
+	__command.setCommandParameter("DataSource", DataSource);
+	__command.setCommandParameter("DataType", DataType);
+	__command.setCommandParameter("Description", Description);
+	__command.setCommandParameter("Read24HourAsDay", Read24HourAsDay);
 	//__command.setCommandParameter("NewUnits", NewUnits);
-    __command.setCommandParameter("Output", Output);
     __command.setCommandParameter("Alias", Alias);
+    __command.setCommandParameter("EnsembleID", EnsembleID);
+    __command.setCommandParameter("EnsembleName", EnsembleName);
 }
 
 /**
@@ -254,13 +300,13 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Read all the time series from a Delft FEWS PI XML file."),
-        0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "Read time series from a Delft FEWS PI XML file."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Single time series or ensembles will be read (specific individual traces from an ensemble cannot be extracted by this command)."),
+        "Single time series and optionally ensembles will be read (specific individual traces from an ensemble cannot be extracted by this command)."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to the working directory) for a PI XML file to read." ), 
@@ -284,6 +330,39 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Output_JComboBox = new SimpleJComboBox ( false );
+    __Output_JComboBox.addItem ( "" );
+    __Output_JComboBox.addItem ( __command._TimeSeries );
+    __Output_JComboBox.addItem ( __command._TimeSeriesAndEnsembles );
+    __Output_JComboBox.select ( 0 );
+    __Output_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Output_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - output to generate (default=" + __command._TimeSeriesAndEnsembles + ")."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for time series
+    int yts = -1;
+    JPanel ts_JPanel = new JPanel();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Series", ts_JPanel );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "All time series in the PI XML file are read as time series according to these parameters."),
+        0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+        "The Output command parameter indicates whether individual time series and optionally ensembles (groups of time series) are output."),
+        0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
     /*
     JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -295,50 +374,115 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         */
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Input start:"), 
+        0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
     __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
     __InputStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - date/time for start of data (default=global input start)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(ts_JPanel, __InputStart_JTextField,
+        1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - date/time for start of data (default=global input start)."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
-        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Input end:"), 
+        0, ++yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
     __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - date/time for end of data (default=global input end)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(ts_JPanel, __InputEnd_JTextField,
+        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - date/time for end of data (default=global input end)."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Data source:"), 
+        0, ++yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataSource_JTextField = new JTextField (20);
+    __DataSource_JTextField.setToolTipText("Data source to override default, can use time serie % specifiers or ${ts:Property} notation");
+    __DataSource_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __DataSource_JTextField,
+        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - data source for time series ID (default=FEWS)."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Data type:"), 
+        0, ++yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataType_JTextField = new JTextField (20);
+    __DataType_JTextField.setToolTipText("Data type to override default, can use time serie % specifiers or ${ts:Property} notation");
+    __DataType_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __DataType_JTextField,
+        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - data type (default=read from file)."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Output_JComboBox = new SimpleJComboBox ( false );
-    __Output_JComboBox.addItem ( "" );
-    __Output_JComboBox.addItem ( __command._Ensembles );
-    __Output_JComboBox.addItem ( __command._TimeSeries );
-    __Output_JComboBox.addItem ( __command._TimeSeriesAndEnsembles );
-    __Output_JComboBox.select ( 0 );
-    __Output_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Output_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - output to generate (default=" + __command._TimeSeriesAndEnsembles + ")."), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Description:"), 
+        0, ++yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Description_JTextField = new JTextField (20);
+    __Description_JTextField.setToolTipText("Description to override default, can use time serie % specifiers or ${ts:Property} notation");
+    __Description_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __Description_JTextField,
+        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - description (default=station name)."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	JGUIUtil.addComponent(ts_JPanel, new JLabel("Read 24 hour as day:"),
+		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	List<String> v = new Vector();
+	v.add("");
+	v.add(__command._False);
+	v.add(__command._True);
+	__Read24HourAsDay_JComboBox = new SimpleJComboBox(v);
+	__Read24HourAsDay_JComboBox.select(0);
+	__Read24HourAsDay_JComboBox.addActionListener(this);
+	JGUIUtil.addComponent(ts_JPanel, __Read24HourAsDay_JComboBox,
+		1, yts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(ts_JPanel, new JLabel (
+		"Optional - convert 24Hour interval to Day interval (default=" + __command._False + ")."),
+		3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	
+    JGUIUtil.addComponent(ts_JPanel, new JLabel("Alias to assign:"),
+        0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener(this);
-    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(ts_JPanel, __Alias_JTextField,
+        1, yts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Optional - alias for time series use %L for location, etc."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for ensembles
+    int yEns = -1;
+    JPanel ens_JPanel = new JPanel();
+    ens_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Ensembles", ens_JPanel );
+    
+    JGUIUtil.addComponent(ens_JPanel, new JLabel (
+        "Ensembles are created by grouping time series with matching ensemble ID."),
+        0, ++yEns, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ens_JPanel, new JLabel (
+        "The ensemble ID will default to the locationId_DataType_ensembleId (DataType can be specified as parameter)."),
+        0, ++yEns, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ens_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yEns, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(ens_JPanel, new JLabel ("Ensemble ID:"), 
+        0, ++yEns, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleID_JTextField = new JTextField (20);
+    __EnsembleID_JTextField.setToolTipText("Specify the ensemble ID using text and ${Property} notation");
+    __EnsembleID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ens_JPanel, __EnsembleID_JTextField,
+        1, yEns, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ens_JPanel, new JLabel ( "Optional - ensemble ID (default=locationId_DataType_ensembleId)."),
+        3, yEns, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ens_JPanel, new JLabel ("Ensemble name:"), 
+        0, ++yEns, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleName_JTextField = new JTextField (20);
+    __EnsembleName_JTextField.setToolTipText("Specify the ensemble name using text and ${Property} notation");
+    __EnsembleName_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ens_JPanel, __EnsembleName_JTextField,
+        1, yEns, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ens_JPanel, new JLabel ( "Optional - ensemble name (default=ensemble ID)."),
+        3, yEns, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -365,7 +509,7 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-	setTitle("Edit ReadDateValue() Command");
+	setTitle("Edit " + __command.getCommandName() +"() Command");
 	
 	// Refresh the contents...
     refresh ();
@@ -373,7 +517,7 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
-	refreshPathControl();	// Sets the __path_JButton status
+	refreshPathControl(); // Sets the __path_JButton status
     super.setVisible( true );
 }
 
@@ -416,11 +560,17 @@ Refresh the command from the other text field contents.
 private void refresh() {
 	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile = "";
+	String Output = "";
 	String InputStart = "";
 	String InputEnd = "";
-	String Output = "";
+	String DataSource = "";
+	String DataType = "";
+	String Description = "";
+	String Read24HourAsDay = "";
 	String NewUnits = "";
 	String Alias = "";
+	String EnsembleID = "";
+	String EnsembleName = "";
 
 	PropList props = null;
 
@@ -431,18 +581,19 @@ private void refresh() {
 		props = __command.getCommandParameters();
         Alias = props.getValue("Alias");
 		InputFile = props.getValue("InputFile");
+		Output = props.getValue("Output");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
+		DataSource = props.getValue("DataSource");
+		DataType = props.getValue("DataType");
+		Description = props.getValue("Description");
+		Read24HourAsDay = props.getValue("Read24HourAsDay");
 		NewUnits = props.getValue("NewUnits");
+		EnsembleID = props.getValue("EnsembleID");
+		EnsembleName = props.getValue("EnsembleName");
 		// Set the control fields
 		if (InputFile != null) {
 			__InputFile_JTextField.setText(InputFile);
-		}
-		if (InputStart != null) {
-			__InputStart_JTextField.setText(InputStart);
-		}
-		if (InputEnd != null) {
-			__InputEnd_JTextField.setText(InputEnd);
 		}
         if ( JGUIUtil.isSimpleJComboBoxItem(__Output_JComboBox, Output, JGUIUtil.NONE, null, null ) ) {
             __Output_JComboBox.select ( Output );
@@ -458,30 +609,75 @@ private void refresh() {
                 "Output parameter \"" + Output + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+		if (InputStart != null) {
+			__InputStart_JTextField.setText(InputStart);
+		}
+		if (InputEnd != null) {
+			__InputEnd_JTextField.setText(InputEnd);
+		}
+		if (DataSource != null) {
+			__DataSource_JTextField.setText(DataSource);
+		}
+		if (DataType != null) {
+			__DataType_JTextField.setText(DataType);
+		}
+		if (Description != null) {
+			__Description_JTextField.setText(Description);
+		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Read24HourAsDay_JComboBox, Read24HourAsDay, JGUIUtil.NONE, null, null ) ) {
+            __Read24HourAsDay_JComboBox.select ( Read24HourAsDay );
+        }
+        else {
+            if ( (Read24HourAsDay == null) || Read24HourAsDay.equals("") ) {
+                // New command...select the default...
+                __Read24HourAsDay_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "Read24HourAsDay parameter \"" + Read24HourAsDay + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
 		//if (NewUnits != null) {
 		//	__NewUnits_JTextField.setText(NewUnits);
 		//}
 		if (Alias != null) {
 			__Alias_JTextField.setText(Alias.trim());
 		}
+		if (EnsembleID != null) {
+			__EnsembleID_JTextField.setText(EnsembleID);
+		}
+		if (EnsembleName != null) {
+			__EnsembleName_JTextField.setText(EnsembleName);
+		}
 	}
 
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
+	Output = __Output_JComboBox.getSelected();
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
-	Output = __Output_JComboBox.getSelected();
+	DataSource = __DataSource_JTextField.getText().trim();
+	DataType = __DataType_JTextField.getText().trim();
+	Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
 	//NewUnits = __NewUnits_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
+	EnsembleID = __EnsembleID_JTextField.getText().trim();
+	EnsembleName = __EnsembleName_JTextField.getText().trim();
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
+	props.add("Output=" + Output);
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
-	props.add("Output=" + Output);
+	props.add("DataSource=" + DataSource);
+	props.add("DataType=" + DataType);
+	props.add("Read24HourAsDay=" + Read24HourAsDay);
 	props.add("NewUnits=" + NewUnits);
 	props.add("Alias=" + Alias);
+	props.add("EnsembleID=" + EnsembleID);
+	props.add("EnsembleName=" + EnsembleName);
 	__Command_JTextArea.setText( __command.toString(props) );
 
 	// Refresh the Path Control text.

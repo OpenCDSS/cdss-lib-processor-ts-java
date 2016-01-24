@@ -22,13 +22,10 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -41,9 +38,14 @@ implements Command, CommandDiscoverable, ObjectListProvider
 /**
 Indicate output of command.
 */
-protected final String _Ensembles = "Ensembles";
 protected final String _TimeSeries = "TimeSeries";
 protected final String _TimeSeriesAndEnsembles = "TimeSeriesAndEnsembles";
+
+/**
+Indicate output of command.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 TSEnsemble created in discovery mode (basically to get the identifier for other commands).
@@ -87,18 +89,8 @@ throws InvalidCommandParameterException
 	String NewUnits = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
-	String Alias = parameters.getValue("Alias");
+	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
     
-    if (Alias != null && !Alias.equals("")) {
-        if (Alias.indexOf(" ") > -1) {
-            // do not allow spaces in the alias
-            message = "The Alias value cannot contain any spaces.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Remove spaces from the alias." ) );
-        }
-    }
-
     if ( (InputFile == null) || (InputFile.length() == 0) ) {
         message = "The input file must be specified.";
         warning += "\n" + message;
@@ -181,15 +173,29 @@ throws InvalidCommandParameterException
                     message, "Specify an input start <= the input end." ) );
 		}
 	}
+	
+    if ( (Read24HourAsDay != null) && !Read24HourAsDay.isEmpty() && !Read24HourAsDay.equalsIgnoreCase(_False) &&
+    	!Read24HourAsDay.equalsIgnoreCase(_True) ) {
+        message = "The Read24HourAsDay parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify Read24HourAsDay as " + _False + " (default) or " + _True + ".") );
+    }
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(5);
+	List<String> validList = new ArrayList<String>(11);
     validList.add ( "InputFile" );
+    validList.add ( "Output" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
-    validList.add ( "Output" );
+    validList.add ( "DataSource" );
+    validList.add ( "DataType" );
+    validList.add ( "Description" );
+    validList.add ( "Read24HourAsDay" );
     //validList.add ( "NewUnits" );
     validList.add ( "Alias" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "EnsembleName" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -234,117 +240,29 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-	List<TS> discoveryTSList = getDiscoveryTSList ();
-    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
+	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    // First time series in list should be of a type that be requested (e.g., MonthTS)
-    TS datats = discoveryTSList.get(0);
+    // Since all time series must be the same interval, check the class for the first one (e.g., HourTS)
+    TS datats = discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discoveryTSList;
+        return discovery_TS_Vector;
+    }
+    else if ( c == TSEnsemble.class ) {
+        TSEnsemble ensemble = getDiscoveryEnsemble();
+        if ( ensemble == null ) {
+            return null;
+        }
+        else {
+        	List<TSEnsemble> v = new ArrayList<TSEnsemble>();
+            v.add ( ensemble );
+            return v;
+        }
     }
     else {
         return null;
-    }
-}
-
-/**
-Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings (recommended is 2).
-@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-    if ( !command_string.trim().toUpperCase().startsWith("TS") ) {
-        // New style syntax using simple parameter=value notation
-        super.parseCommand(command_string);
-    }
-    else {
-    	int index = command_string.indexOf("(");
-    	String str = command_string.substring(index);
-    	index = str.indexOf("=");
-    
-        // This is the new format of parsing, where parameters are specified as "InputFilter=", etc.
-    	String routine = "ReadDateValue_Command.parseCommand", message;
-    	
-        String Alias = null;
-        if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
-            // There is an alias specified.  Extract the alias from the full command.
-            str = command_string.substring(3); // Alias = ReadDateValue(...)
-            index = str.indexOf("=");
-            int index2 = str.indexOf("(");
-            if (index2 < index) {
-                // no alias specified -- badly-formed command
-                Alias = "Invalid_Alias";
-                message = "No alias was specified, although the command started with \"TS ...\"";
-                Message.printWarning(warning_level, routine, message);
-                throw new InvalidCommandSyntaxException(message);
-            }
-    
-            Alias = str.substring(0, index).trim();
-            // Parse the command parameters...
-            String command_string2 = str.substring(index+1).trim(); // ReadDateValue(...)
-            if ( (command_string2.indexOf("=") > 0) || command_string2.endsWith("()") ) {
-                // New format...
-                Message.printStatus(2, routine, "Parsing new format for " + command_string2);
-                super.parseCommand ( command_string2 );
-            }
-            else {
-                // Old format TS Alias = ReadDateValue(InputFile,TSID,NewUnits,InputStart,InputEnd)
-                // Where TSID and later arguments are * if defaults
-                Message.printStatus(2, routine, "Parsing old format for " + command_string2);
-                PropList parameters = getCommandParameters();
-                parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-                parameters.set("InputFile", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 1));
-                parameters.set("TSID", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 2));
-                parameters.set("NewUnits", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 3));
-                parameters.set("InputStart", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 4));
-                parameters.set("InputEnd", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 5));
-                parameters.setHowSet ( Prop.SET_UNKNOWN );
-            }
-            // Also set the alias
-            PropList parameters = getCommandParameters();
-            parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-            parameters.set ( "Alias", Alias );
-            // If the dates are old-style "*", convert to blanks.
-            // Note that TSID is not currently used
-            String TSID = parameters.getValue("TSID");
-            String InputStart = parameters.getValue("InputStart");
-            String InputEnd = parameters.getValue("InputEnd");
-            String NewUnits = parameters.getValue("NewUnits");
-            if ( TSID != null ) {
-                // Unset unused parameter
-                parameters.unSet( "TSID" );
-            }
-            if ( (InputStart != null) && InputStart.equals("*") ) {
-                parameters.set("InputStart","");
-            }
-            if ( (InputEnd != null) && InputEnd.equals("*") ) {
-                parameters.set("InputEnd","");
-            }
-            if ( (NewUnits != null) && NewUnits.equals("*") ) {
-                parameters.set("NewUnits","");
-            }
-            parameters.setHowSet ( Prop.SET_UNKNOWN );
-        }
-        else {
-            if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
-                // Named parameters so parse the new way...
-                super.parseCommand ( command_string );
-            }
-            else {
-                // Grab the filename from the fixed list of parameters...
-                PropList parameters = getCommandParameters();
-                parameters.set("InputFile", StringUtil.getToken(command_string, "()", StringUtil.DELIM_ALLOW_STRINGS, 1));
-            }
-        }
     }
 }
 
@@ -412,6 +330,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue("InputFile");
+	String Output = parameters.getValue("Output");
+	if ( (Output == null) || Output.isEmpty() ) {
+		Output = _TimeSeriesAndEnsembles; // Default
+	}
 	String InputStart = parameters.getValue("InputStart");
 	if ( (InputStart == null) || InputStart.isEmpty() ) {
 		InputStart = "${InputStart}"; // Global default
@@ -420,12 +342,33 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
 		InputEnd = "${InputEnd}"; // Global default
 	}
-	String Output = parameters.getValue("Output");
-	if ( (Output == null) || Output.isEmpty() ) {
-		Output = _TimeSeriesAndEnsembles; // Default
+	String DataSource = parameters.getValue("DataSource");
+	if ( (DataSource != null) && DataSource.indexOf("${") >= 0 ) {
+		DataSource = TSCommandProcessorUtil.expandParameterValue(processor,this,DataSource);
+	}
+	String DataType = parameters.getValue("DataType");
+	if ( (DataType != null) && DataType.indexOf("${") >= 0 ) {
+		DataType = TSCommandProcessorUtil.expandParameterValue(processor,this,DataType);
+	}
+	String Description = parameters.getValue("Description");
+	if ( (Description != null) && Description.indexOf("${") >= 0 ) {
+		Description = TSCommandProcessorUtil.expandParameterValue(processor,this,Description);
+	}
+	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
+	boolean read24HourAsDay = false;
+	if ( (Read24HourAsDay != null) && Read24HourAsDay.equalsIgnoreCase(_True) ) {
+		read24HourAsDay = true;
 	}
 	//String NewUnits = parameters.getValue("NewUnits");
 	String Alias = parameters.getValue("Alias");
+	String EnsembleID = parameters.getValue("EnsembleID");
+	if ( (EnsembleID != null) && EnsembleID.indexOf("${") >= 0 ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor,this,EnsembleID);
+	}
+	String EnsembleName = parameters.getValue("EnsembleName");
+	if ( (EnsembleName != null) && EnsembleName.indexOf("${") >= 0 ) {
+		EnsembleName = TSCommandProcessorUtil.expandParameterValue(processor,this,EnsembleName);
+	}
     
 	// InputStart
 	DateTime InputStart_DateTime = null;
@@ -487,9 +430,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Read everything in the file (one time series or traces).
         	DelftFewsPiXmlReader reader = new DelftFewsPiXmlReader ( InputFile_full );
             reader.readTimeSeriesList (
-                InputStart_DateTime, InputEnd_DateTime, null, Output, readData, problems );
+                InputStart_DateTime, InputEnd_DateTime, DataSource, DataType, Description, read24HourAsDay, null,
+                Output, EnsembleID, EnsembleName, readData, problems );
             tsList = reader.getTimeSeriesList();
             ensembleList = reader.getEnsembleList();
+            int count = 0;
+            for ( String problem : problems ) {
+            	++count;
+            	if ( count == 500 ) {
+            		break;
+            	}
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, problem );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        problem, "Check command input." ) );
+            }
         }
 			
 		if ( tsList != null ) {
@@ -556,9 +513,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 throw new CommandException ( message );
             }
         }
+        
+        if ( ensembleList.size() > 0 ) {
+            // Create an ensemble and add to the processor...
+            TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensembleList.get(0));
+        }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( tsList );
+        if ( ensembleList.size() > 0 ) {
+        	setDiscoveryEnsemble ( ensembleList.get(0) );
+        }
     }
 
 	// Throw CommandWarningException in case of problems.
@@ -598,40 +563,65 @@ public String toString ( PropList props )
         return getCommandName() + "()";
     }
 
-	String Alias = props.getValue("Alias");
 	String InputFile = props.getValue("InputFile" );
-	//String NewUnits = props.getValue("NewUnits");
+	String Output = props.getValue("Output");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
+	String DataSource = props.getValue("DataSource");
+	String DataType = props.getValue("DataType");
+	String Description = props.getValue("Description");
+	String Read24HourAsDay = props.getValue("Read24HourAsDay");
+	//String NewUnits = props.getValue("NewUnits");
+	String Alias = props.getValue("Alias");
+	String EnsembleID = props.getValue("EnsembleID");
+	String EnsembleName = props.getValue("EnsembleName");
 
 	StringBuilder b = new StringBuilder ();
 
-	// Input File
 	if ((InputFile != null) && (InputFile.length() > 0)) {
 		b.append("InputFile=\"" + InputFile + "\"");
 	}
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
-        }
-    
-	// Input Start
+	if ((Output != null) && (Output.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("Output=" + Output );
+	}
 	if ((InputStart != null) && (InputStart.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
 		}
 		b.append("InputStart=\"" + InputStart + "\"");
 	}
-
-	// Input End
 	if ((InputEnd != null) && (InputEnd.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
 		}
 		b.append("InputEnd=\"" + InputEnd + "\"");
+	}
+	if ((DataSource != null) && (DataSource.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("DataSource=\"" + DataSource + "\"");
+	}
+	if ((DataType != null) && (DataType.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("DataType=\"" + DataType + "\"");
+	}
+	if ((Description != null) && (Description.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("Description=\"" + Description + "\"");
+	}
+	if ((Read24HourAsDay != null) && (Read24HourAsDay.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("Read24HourAsDay=" + Read24HourAsDay );
 	}
 	
 	// New Units
@@ -643,6 +633,24 @@ public String toString ( PropList props )
 		b.append("NewUnits=\"" + NewUnits + "\"");
 	}
 	*/
+    if ( (Alias != null) && (Alias.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Alias=\"" + Alias + "\"" );
+    }
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
+    if ( (EnsembleName != null) && (EnsembleName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
+    }
 
     return getCommandName() + "("+ b.toString()+")";
 }

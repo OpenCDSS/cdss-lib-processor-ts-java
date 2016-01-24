@@ -2,6 +2,8 @@ package rti.tscommandprocessor.commands.util;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -34,8 +36,9 @@ import RTi.Util.Message.Message;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 public class UnzipFile_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
+	
 private final String __AddWorkingDirectoryInput = "Add Working Directory (Input)";
 private final String __AddWorkingDirectoryOutput = "Add Working Directory (Output File)";
 private final String __AddWorkingDirectoryOutputFolder = "Add Working Directory (Output Folder)";
@@ -54,7 +57,8 @@ private SimpleJButton __ok_JButton = null;
 private JTextField __InputFile_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __OutputFolder_JTextField = null;
-private SimpleJComboBox __IfInputNotFound_JComboBox =null;
+private SimpleJComboBox __IfInputNotFound_JComboBox = null;
+private SimpleJComboBox __ListInResults_JComboBox = null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
 private boolean __error_wait = false;
@@ -234,6 +238,7 @@ private void checkInput ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputFolder = __OutputFolder_JTextField.getText().trim();
 	String IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
+	String ListInResults = __ListInResults_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
@@ -247,6 +252,9 @@ private void checkInput ()
 	if ( IfInputNotFound.length() > 0 ) {
 		props.set ( "IfInputNotFound", IfInputNotFound );
 	}
+    if ( ListInResults.length() > 0 ) {
+        props.set ( "ListInResults", ListInResults );
+    }
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -265,10 +273,12 @@ private void commitEdits ()
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String OutputFolder = __OutputFolder_JTextField.getText().trim();
 	String IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
+    String ListInResults = __ListInResults_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "OutputFolder", OutputFolder );
 	__command.setCommandParameter ( "IfInputNotFound", IfInputNotFound );
+	__command.setCommandParameter ( "ListInResults", ListInResults );
 }
 
 /**
@@ -293,7 +303,7 @@ private void initialize ( JFrame parent, UnzipFile_Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = -1;
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Unzip a zip file's contents to an output folder." ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Unzip a zip (*.zip) or gzip (*.gz) file's contents to an output folder." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Filenames can use the notation ${Property} to use global processor properties." ),
@@ -308,7 +318,7 @@ private void initialize ( JFrame parent, UnzipFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input (zip) file:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input (zip or gz) file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 65 );
 	__InputFile_JTextField.setToolTipText("Path to input (zip) file, can include ${Property}.");
@@ -354,8 +364,21 @@ private void initialize ( JFrame parent, UnzipFile_Command command )
    JGUIUtil.addComponent(main_JPanel, __IfInputNotFound_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - action if input file is not found (default=" + __command._Warn + ")"), 
+		"Optional - action if input file is not found (default=" + __command._Warn + ")."), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "List output in results?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ListInResults_JComboBox = new SimpleJComboBox ( false );
+    __ListInResults_JComboBox.add ( "" );
+    __ListInResults_JComboBox.add ( __command._False );
+    __ListInResults_JComboBox.add ( __command._True );
+    __ListInResults_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ListInResults_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ( "Optional - list unzipped file(s) in results (default=" + __command._True + ")." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -398,6 +421,14 @@ private void initialize ( JFrame parent, UnzipFile_Command command )
 }
 
 /**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{   refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
@@ -430,6 +461,7 @@ private void refresh ()
 	String OutputFile = "";
 	String OutputFolder = "";
 	String IfInputNotFound = "";
+	String ListInResults = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -438,6 +470,7 @@ private void refresh ()
 		OutputFile = parameters.getValue ( "OutputFile" );
 		OutputFolder = parameters.getValue ( "OutputFolder" );
 		IfInputNotFound = parameters.getValue ( "IfInputNotFound" );
+		ListInResults = parameters.getValue ( "ListInResults" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
@@ -462,6 +495,20 @@ private void refresh ()
 				"\".  Select a\n value or Cancel." );
 			}
 		}
+        if ( (ListInResults == null) || (ListInResults.length() == 0) ) {
+            // Select default...
+            __ListInResults_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ListInResults_JComboBox,
+                ListInResults, JGUIUtil.NONE, null, null ) ) {
+                __ListInResults_JComboBox.select ( ListInResults );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "ListInResults \"" + ListInResults + "\" parameter.  Select a\ndifferent value or Cancel." );
+            }
+        }
 	}
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
@@ -469,11 +516,13 @@ private void refresh ()
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	OutputFolder = __OutputFolder_JTextField.getText().trim();
 	IfInputNotFound = __IfInputNotFound_JComboBox.getSelected();
+	ListInResults = __ListInResults_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "OutputFolder=" + OutputFolder );
 	props.add ( "IfInputNotFound=" + IfInputNotFound );
+	props.add ( "ListInResults=" + ListInResults );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __pathInput_JButton != null ) {

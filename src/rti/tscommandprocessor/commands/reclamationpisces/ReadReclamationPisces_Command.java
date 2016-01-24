@@ -259,7 +259,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     
 	String InputStart = parameters.getValue ( "InputStart" );
+	if ( (InputStart == null) || InputStart.isEmpty() ) {
+		InputStart = "${InputStart}";
+	}
 	String InputEnd = parameters.getValue ( "InputEnd" );
+	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
+		InputEnd = "${InputEnd}";
+	}
     String Alias = parameters.getValue ( "Alias" );
     String IfMissing = parameters.getValue ("IfMissing" );
     boolean IfMissingWarn = true;  // Default

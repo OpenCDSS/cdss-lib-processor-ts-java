@@ -537,10 +537,8 @@ private void refresh ()
                 __ListInResults_JComboBox.select ( ListInResults );
             }
             else {
-                Message.printWarning ( 1, routine, "Existing "+
-                "command references an invalid\n"+
-                "ListInResults \"" + ListInResults +
-                "\" parameter.  Select a\ndifferent value or Cancel." );
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "ListInResults \"" + ListInResults + "\" parameter.  Select a\ndifferent value or Cancel." );
             }
         }
         /*

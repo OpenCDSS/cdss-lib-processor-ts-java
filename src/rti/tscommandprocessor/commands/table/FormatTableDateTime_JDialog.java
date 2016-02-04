@@ -21,6 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -34,6 +35,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
 import RTi.Util.Time.DateTimeFormatterType;
+import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.YearType;
 
 public class FormatTableDateTime_JDialog extends JDialog
@@ -43,8 +45,11 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private FormatTableDateTime_Command __command = null;
 private JTextArea __command_JTextArea = null;
+private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __InputColumn_JTextField = null;
+private JTextField __IncrementStart_JTextField = null;
+private SimpleJComboBox __IncrementBaseUnit_JComboBox = null;
 private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private SimpleJComboBox __OutputYearType_JComboBox = null;
 private SimpleJComboBox __OutputColumn_JComboBox = null;
@@ -131,6 +136,8 @@ private void checkInput ()
     PropList parameters = new PropList ( "" );
     String TableID = __TableID_JComboBox.getSelected();
     String InputColumn = __InputColumn_JTextField.getText().trim();
+    String IncrementStart = __IncrementStart_JTextField.getText().trim();
+    String IncrementBaseUnit = __IncrementBaseUnit_JComboBox.getSelected();
     String FormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     String DateTimeFormat =__DateTimeFormat_JPanel.getText().trim();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
@@ -145,6 +152,12 @@ private void checkInput ()
     }
     if ( InputColumn.length() > 0 ) {
         parameters.set ( "InputColumn", InputColumn );
+    }
+    if ( IncrementStart.length() > 0 ) {
+        parameters.set ( "IncrementStart", IncrementStart );
+    }
+    if ( IncrementBaseUnit.length() > 0 ) {
+        parameters.set ( "IncrementBaseUnit", IncrementBaseUnit );
     }
     if ( FormatterType.length() > 0 ) {
         parameters.set ( "FormatterType", FormatterType );
@@ -182,6 +195,8 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
     String InputColumn = __InputColumn_JTextField.getText().trim();
+    String IncrementStart = __IncrementStart_JTextField.getText().trim();
+    String IncrementBaseUnit = __IncrementBaseUnit_JComboBox.getSelected();
     String FormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
     String DateTimeFormat =__DateTimeFormat_JPanel.getText().trim();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
@@ -190,6 +205,8 @@ private void commitEdits ()
     String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "InputColumn", InputColumn );
+    __command.setCommandParameter ( "IncrementStart", IncrementStart );
+    __command.setCommandParameter ( "IncrementBaseUnit", IncrementBaseUnit );
     __command.setCommandParameter ( "FormatterType", FormatterType );
     __command.setCommandParameter ( "DateTimeFormat", DateTimeFormat );
     __command.setCommandParameter ( "OutputYearType", OutputYearType );
@@ -218,83 +235,186 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
 	int y = -1;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Format the contents of a date/time input column to create values in the output column." ), 
+		"Format the contents of a date/time table input column to create values in the table output column." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The input column must have a type of Date, DateTime, or a string that can be parsed to a date/time." ), 
+		"This is helpful when a specific output format is needed." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The output type can be set to:" ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "    DateTime - if the resulting formatted string can be parsed to a date/time (e.g., with less precision than original)" ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "    (note TSTool by default displays all DateTime objets using ISO YYYY-MM-DD, etc. notation in tables)" ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "    Double - if the resulting formatted string can be parsed to a floating point number (e.g., year only)" ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "    Integer - if the resulting formatted string can be parsed to an integer (e.g., year only)" ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "    String - if the resulting formatted string should be treated as a literal string" ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for input
+    int yIn = -1;
+    JPanel in_JPanel = new JPanel();
+    in_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Input", in_JPanel );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	JGUIUtil.addComponent(in_JPanel, new JLabel (
+		"For simple formatting, the input column must have a type of Date, DateTime, or string that can be parsed to a date/time object." ), 
+		0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(in_JPanel, new JLabel (
+		"If a string, several standard formats are automatically recognized such as ISO YYYY-MM-DD hh:mm:ss and MM/DD/YYYY hh:mm:ss." ), 
+		0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(in_JPanel, new JLabel (
+		"The input column may also contain an integer offset from a starting date/time (see the Increment tab)." ), 
+		0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(in_JPanel, new JLabel (
+		"Once parsed, the date/time parts are used to reformat into the output column (see Format and Output tabs)." ), 
+		0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(in_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+	    0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(in_JPanel, new JLabel ( "Table ID:" ), 
+        0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
     __TableID_JComboBox.setToolTipText("Specify the table ID to process or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(in_JPanel, __TableID_JComboBox,
+        1, yIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(in_JPanel, new JLabel( "Required - table to process."), 
+        3, yIn, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(in_JPanel, new JLabel ( "Input column" ), 
+        0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputColumn_JTextField = new JTextField ( 30 );
     __InputColumn_JTextField.setToolTipText("Specify the input column name or use ${Property} notation");
     __InputColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __InputColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - name of date/time column to process."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(in_JPanel, __InputColumn_JTextField,
+        1, yIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(in_JPanel, new JLabel("Required - name of date/time column to process."), 
+        3, yIn, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for increment
+    int yInc = -1;
+    JPanel inc_JPanel = new JPanel();
+    inc_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Increment", inc_JPanel );
+    
+	JGUIUtil.addComponent(inc_JPanel, new JLabel (
+		"If the input column contains date/time increments, the input column must contain integers (e.g., number of hours since start)." ), 
+		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(inc_JPanel, new JLabel (
+		"Also specify the start date/time for time 0." ), 
+		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(inc_JPanel, new JLabel (
+		"Increments will be added to the starting date/time using the increment base unit to define the magnitude of the increment." ), 
+		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(inc_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+		0, ++yInc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	
+    JGUIUtil.addComponent(inc_JPanel, new JLabel ( "Increment start:" ), 
+        0, ++yInc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncrementStart_JTextField = new JTextField ( 15 );
+    __IncrementStart_JTextField.setToolTipText("Specify the starting date/time or use ${Property} notation");
+    __IncrementStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(inc_JPanel, __IncrementStart_JTextField,
+        1, yInc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inc_JPanel, new JLabel("Optional - starting date/time for time 0."), 
+        3, yInc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(inc_JPanel, new JLabel ( "Increment time base unit:" ), 
+        0, ++yInc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncrementBaseUnit_JComboBox = new SimpleJComboBox ( false );
+    List<String> choices0 = TimeInterval.getTimeIntervalBaseChoices(TimeInterval.MINUTE, TimeInterval.YEAR, 1, false);
+    choices0.add(0,"");
+    __IncrementBaseUnit_JComboBox.setData(choices0);
+    __IncrementBaseUnit_JComboBox.addItemListener(this);
+    JGUIUtil.addComponent(inc_JPanel, __IncrementBaseUnit_JComboBox,
+        1, yInc, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inc_JPanel, new JLabel(
+        "Optional - increment time base unit (e.g. " + TimeInterval.getName(TimeInterval.HOUR,0) + "."), 
+        3, yInc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for format information
+    int yFormat = -1;
+    JPanel format_JPanel = new JPanel();
+    format_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Format", format_JPanel );
+
+	JGUIUtil.addComponent(format_JPanel, new JLabel (
+		"The format string indicates how to format date/time parts (parsed from the input) into the output." ), 
+		0, ++yFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(format_JPanel, new JLabel (
+		"Currently only C-language style format is recognized, although other formatters may be added in the future." ), 
+		0, ++yFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(format_JPanel, new JLabel (
+		"See command documentation and specifier choices for an explanation of format specifiers, for example:" ), 
+		0, ++yFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(format_JPanel, new JLabel (
+		"  %Y - will output the year part of the date/time as a 4-digit year padded with zeroes" ), 
+		0, ++yFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(format_JPanel, new JLabel (
+		"  %m - will output the month part of the date/time as a 2-digit month number padded with zeroes" ), 
+		0, ++yFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(format_JPanel, new JLabel (
+		"  literal text will be used as specified, for example dashes, colons, spaces, and other formatting characters" ), 
+		0, ++yFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(format_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+		0, ++yFormat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JLabel DateTimeFormat_JLabel = new JLabel ("Date/time format:");
-    JGUIUtil.addComponent(main_JPanel, DateTimeFormat_JLabel,
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(format_JPanel, DateTimeFormat_JLabel,
+        0, ++yFormat, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel(20,true,true,null,true,true);
     __DateTimeFormat_JPanel.getTextField().setToolTipText("Specify the date/time format or use ${Property} notation");
     __DateTimeFormat_JPanel.addKeyListener (this);
     __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
     __DateTimeFormat_JPanel.getDocument().addDocumentListener(this); // Respond to changes in text field contents
-    JGUIUtil.addComponent(main_JPanel, __DateTimeFormat_JPanel,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(format_JPanel, __DateTimeFormat_JPanel,
+        1, yFormat, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(format_JPanel, new JLabel (
         "Required - to specify output format."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yFormat, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "OutputYearType:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for output
+    int yOut = -1;
+    JPanel out_JPanel = new JPanel();
+    out_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output", out_JPanel );
+
+	JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "The output column will contain the result of formatting the input date/time.  The output type can be set to:" ), 
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "    DateTime - if the resulting formatted string can be parsed to a date/time (e.g., with less precision than original)" ), 
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "                    (note TSTool by default displays all DateTime objets using ISO YYYY-MM-DD, etc. notation in tables)" ), 
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "    Double - if the resulting formatted string can be parsed to a floating point number (e.g., year only)" ), 
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "    Integer - if the resulting formatted string can be parsed to an integer (e.g., year only)" ), 
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(out_JPanel, new JLabel (
+        "    String - if the resulting formatted string should be treated as a literal string" ), 
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "OutputYearType:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputYearType_JComboBox = new SimpleJComboBox ( false );
     List<String> choices = YearType.getYearTypeChoicesAsStrings();
     choices.add(0,"");
     __OutputYearType_JComboBox.setData(choices);
-    JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    __OutputYearType_JComboBox.addItemListener(this);
+    JGUIUtil.addComponent(out_JPanel, __OutputYearType_JComboBox,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
         "Optional - year type to interpret ${dt:YearForTypeYear} (default=" + YearType.CALENDAR + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Output column:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
     __OutputColumn_JComboBox.setToolTipText("Specify the output column name or use ${Property} notation");
     List<String> outputChoices = new ArrayList<String>();
@@ -302,13 +422,13 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __OutputColumn_JComboBox.addItemListener ( this );
     __OutputColumn_JComboBox.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutputColumn_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - output column name."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, __OutputColumn_JComboBox,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel("Required - output column name."), 
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output type:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Output type:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputType_JComboBox = new SimpleJComboBox ( false );
     __OutputType_JComboBox.addItem ( "" );
     __OutputType_JComboBox.addItem ( __command._DateTime );
@@ -317,21 +437,21 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     __OutputType_JComboBox.addItem ( __command._String );
     __OutputType_JComboBox.select ( __command._String );
     __OutputType_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutputType_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(out_JPanel, __OutputType_JComboBox,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
         "Optional - specify output column type (default=" + __command._String + ")."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Insert before column:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Insert before column:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InsertBeforeColumn_JTextField = new JTextField ( 30 );
     __InsertBeforeColumn_JTextField.setToolTipText("Specify the column name to insert before or use ${Property} notation");
     __InsertBeforeColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __InsertBeforeColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - column to insert before (default=at end)."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, __InsertBeforeColumn_JTextField,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel("Optional - column to insert before (default=at end)."), 
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -408,9 +528,11 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String InputColumn = "";
+    String IncrementStart = "";
+    String IncrementBaseUnit = "";
     String FormatterType = "";
     String DateTimeFormat = "";
     String OutputYearType = "";
@@ -424,6 +546,8 @@ private void refresh ()
 		// Get the parameters from the command...
 	    TableID = props.getValue ( "TableID" );
         InputColumn = props.getValue ( "InputColumn" );
+        IncrementStart = props.getValue ( "IncrementStart" );
+        IncrementBaseUnit = props.getValue ( "IncrementBaseUnit" );
         FormatterType = props.getValue ( "FormatterType" );
         DateTimeFormat = props.getValue ( "DateTimeFormat" );
         OutputYearType = props.getValue ( "OutputYearType" );
@@ -447,6 +571,24 @@ private void refresh ()
         }
         if ( InputColumn != null ) {
             __InputColumn_JTextField.setText ( InputColumn );
+        }
+        if ( IncrementStart != null ) {
+            __IncrementStart_JTextField.setText ( IncrementStart );
+        }
+        if ( IncrementBaseUnit == null ) {
+            // Select default...
+            __IncrementBaseUnit_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IncrementBaseUnit_JComboBox,IncrementBaseUnit, JGUIUtil.NONE, null, null ) ) {
+                __IncrementBaseUnit_JComboBox.select ( IncrementBaseUnit );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nIncrementBaseUnit value \"" + IncrementBaseUnit +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
         }
         if ( (FormatterType == null) || FormatterType.equals("") ) {
             // Select default...
@@ -534,6 +676,8 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
 	InputColumn = __InputColumn_JTextField.getText();
+	IncrementStart = __IncrementStart_JTextField.getText();
+	IncrementBaseUnit = __IncrementBaseUnit_JComboBox.getSelected();
     FormatterType = __DateTimeFormat_JPanel.getSelectedFormatterType().trim();
 	DateTimeFormat = __DateTimeFormat_JPanel.getText().trim();
 	OutputYearType = __OutputYearType_JComboBox.getSelected();
@@ -543,6 +687,8 @@ private void refresh ()
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "InputColumn=" + InputColumn );
+    props.add ( "IncrementStart=" + IncrementStart );
+    props.add ( "IncrementBaseUnit=" + IncrementBaseUnit );
     props.add ( "FormatterType=" + FormatterType );
     props.add ( "DateTimeFormat=" + DateTimeFormat );
     props.add ( "OutputYearType=" + OutputYearType );

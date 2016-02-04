@@ -228,10 +228,10 @@ private void checkInput ()
         parameters.set ( "IncludeProperties", IncludeProperties );
     }
     if ( WriteDataFlagDescriptions.length() > 0 ) {
-        parameters.set ( "IncludeProperties", IncludeProperties );
+        parameters.set ( "WriteDataFlagDescriptions", WriteDataFlagDescriptions );
     }
 	if ( OutputStart.length() > 0 ) {
-		parameters.set ( "WriteDataFlagDescriptions", WriteDataFlagDescriptions );
+		parameters.set ( "OutputStart", OutputStart );
 	}
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );

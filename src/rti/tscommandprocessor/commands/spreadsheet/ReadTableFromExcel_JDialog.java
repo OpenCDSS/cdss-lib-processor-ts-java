@@ -437,7 +437,7 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     __ExcelAddress_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(address_JPanel, __ExcelAddress_JTextField,
         1, yAddress, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(address_JPanel, new JLabel ("Excel cell block address in format A1:B2."),
+    JGUIUtil.addComponent(address_JPanel, new JLabel ("Excel cell block address in format A1:B2 (default=entire sheet)."),
         3, yAddress, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JPanel range_JPanel = new JPanel();

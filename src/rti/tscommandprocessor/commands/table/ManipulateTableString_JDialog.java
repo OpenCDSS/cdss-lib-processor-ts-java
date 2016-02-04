@@ -20,8 +20,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
@@ -117,10 +119,10 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 private void checkGUIState ()
 {
 	// Reset the tooltips based on the selected operator.
-	__InputColumn1_JComboBox.setToolTipText("");
-	__InputColumn2_JComboBox.setToolTipText("");
-	__InputValue2_JTextField.setToolTipText("");
-	__InputValue3_JTextField.setToolTipText("");
+	__InputColumn1_JComboBox.setToolTipText("Not used.");
+	__InputColumn2_JComboBox.setToolTipText("Not used.");
+	__InputValue2_JTextField.setToolTipText("Not used.");
+	__InputValue3_JTextField.setToolTipText("Not used.");
 	String operator = __Operator_JComboBox.getSelected();
     if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.APPEND) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column as the input - see also InputColumn2 and InputValue2");
@@ -134,8 +136,8 @@ private void checkGUIState ()
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.REPLACE) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have substrings replaced - see also InputValue2 and InputValue3");
-    	__InputValue2_JTextField.setToolTipText("Specify the substring from the input to be replaced - see also InputValue3");
-    	__InputValue3_JTextField.setToolTipText("Specify the substring to be inserted as the replacement for InputValue2");
+    	__InputValue2_JTextField.setToolTipText("Specify the substring from the input to be replaced (^=start of line, $=end of line, \\s=space, see also InputValue3");
+    	__InputValue3_JTextField.setToolTipText("Specify the substring to be inserted as the replacement for InputValue2 (^=start of line, $=end of line, \\s=space,)");
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.SUBSTRING) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have a substring extracted - see also InputValue2 and InputValue3");
@@ -259,27 +261,33 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Perform simple manipulation on columns of string data in a table, using one of the following approaches:" ), 
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Manipulate a column of string data in a table, using one of the following approaches:" ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - process input values from two columns to populate the output column" ), 
+        "   - process input values from two columns (InputColumn1 and InputColumn2) to populate the output column (e.g. operator Append, Prepend)" ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - process input values from a column and a constant to populate the output column" ), 
+        "   - process input values from a column and a constant (InputColumn1 and InputValue2) to populate the output column (e.g. operator Append, Prepend)" ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "   - convert an input string value into an output value (operator ToDate, ToDateTime, etc.)" ), 
+        "   - process input values from a column and two constants (InputColumn1, InputValue2, InputValue3) to populate the output column (e.g. operator Replace)" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "   - convert an input string value from a column (InputColumn1) into an output value (e.g. operator ToDate, ToDateTime)" ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The operator defines the number of values that are needed as input - mouse over the input fields for feedback on what is needed." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -319,7 +327,8 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column 1:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InputColumn1_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __InputColumn1_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __InputColumn1_JComboBox.setToolTipText("Specify the first input column name (if appropriate) or use ${Property} notation");
     Vector input1Choices = new Vector();
     input1Choices.add("");
     __InputColumn1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
@@ -345,7 +354,8 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input column 2:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InputColumn2_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __InputColumn2_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __InputColumn2_JComboBox.setToolTipText("Specify the second input column name (if appropriate) or use ${Property} notation");
     Vector input2Choices = new Vector();
     input2Choices.add("");
     __InputColumn2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
@@ -359,7 +369,8 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input value 2:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InputValue2_JTextField = new JTextField ( 10 ); 
+    __InputValue2_JTextField = new JTextField ( 10 );
+    __InputValue2_JTextField.setToolTipText("Specify the second input value (if appropriate) or use ${Property} notation");
     __InputValue2_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputValue2_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -368,17 +379,18 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input value 3:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InputValue3_JTextField = new JTextField ( 10 ); 
+    __InputValue3_JTextField = new JTextField ( 10 );
+    __InputValue3_JTextField.setToolTipText("Specify the third input value (if appropriate) or use ${Property} notation");
     __InputValue3_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputValue3_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - only by some operators."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - only used by some operators."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    __OutputColumn_JComboBox.setToolTipText("Specify the column name for the output string.");
+    __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __OutputColumn_JComboBox.setToolTipText("Specify the output column name or use ${Property} notation");
     Vector outputChoices = new Vector();
     outputChoices.add("");
     __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery

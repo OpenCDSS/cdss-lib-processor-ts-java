@@ -275,9 +275,8 @@ Method to execute the command.
 @exception Exception if there is an error processing the command.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{   String message, routine = getCommandName() + "_Command.runCommand";
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   String message, routine = getClass().getSimpleName() + ".runCommand";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
@@ -285,12 +284,28 @@ CommandWarningException, CommandException
     
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
     PropList parameters = getCommandParameters();
     
     // Get the input parameters...
     
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
     String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
     StringDictionary columnIncludeFilters = new StringDictionary(ColumnIncludeFilters,":",",");
     // Expand the filter information
@@ -317,12 +332,27 @@ CommandWarningException, CommandException
         }
     }
     String InputColumn1 = parameters.getValue ( "InputColumn1" );
+    if ( (InputColumn1 != null) && !InputColumn1.isEmpty() && (commandPhase == CommandPhaseType.RUN) && InputColumn1.indexOf("${") >= 0 ) {
+    	InputColumn1 = TSCommandProcessorUtil.expandParameterValue(processor, this, InputColumn1);
+    }
     String Operator = parameters.getValue ( "Operator" );
     DataTableStringOperatorType operator = DataTableStringOperatorType.valueOfIgnoreCase(Operator);
     String InputColumn2 = parameters.getValue ( "InputColumn2" );
+    if ( (InputColumn2 != null) && !InputColumn2.isEmpty() && (commandPhase == CommandPhaseType.RUN) && InputColumn2.indexOf("${") >= 0 ) {
+    	InputColumn2 = TSCommandProcessorUtil.expandParameterValue(processor, this, InputColumn2);
+    }
     String InputValue2 = parameters.getValue ( "InputValue2" );
+    if ( (InputValue2 != null) && !InputValue2.isEmpty() && (commandPhase == CommandPhaseType.RUN) && InputValue2.indexOf("${") >= 0 ) {
+    	InputValue2 = TSCommandProcessorUtil.expandParameterValue(processor, this, InputValue2);
+    }
     String InputValue3 = parameters.getValue ( "InputValue3" );
+    if ( (InputValue3 != null) && !InputValue3.isEmpty() && (commandPhase == CommandPhaseType.RUN) && InputValue3.indexOf("${") >= 0 ) {
+    	InputValue3 = TSCommandProcessorUtil.expandParameterValue(processor, this, InputValue3);
+    }
     String OutputColumn = parameters.getValue ( "OutputColumn" );
+    if ( (OutputColumn != null) && !OutputColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN) && OutputColumn.indexOf("${") >= 0 ) {
+    	OutputColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputColumn);
+    }
 
     // Get the table to process.
 

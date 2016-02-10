@@ -3,6 +3,7 @@ package rti.tscommandprocessor.commands.ts;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -23,14 +24,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -45,16 +47,16 @@ public class VariableLagK_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel button
-			__ok_JButton = null;	// Ok button
-private JFrame __parent_JFrame = null;	// parent JFrame
-private VariableLagK_Command __command = null;	// Command to edit.
-private JTextArea __command_JTextArea=null;// Command as JTextField
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private JFrame __parent_JFrame = null;
+private VariableLagK_Command __command = null;
+private JTextArea __command_JTextArea=null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-private SimpleJComboBox __TSID_JComboBox = null;// Time series available to operate on.
-private JTextArea __NewTSID_JTextArea = null; // New TSID.
-private SimpleJButton __edit_JButton = null;	// Edit button
-private SimpleJButton __clear_JButton = null;	// Clear NewTSID button
+private SimpleJComboBox __TSID_JComboBox = null;
+private JTextArea __NewTSID_JTextArea = null;
+private SimpleJButton __edit_JButton = null;
+private SimpleJButton __clear_JButton = null;
 private JTextArea __Lag_JTextArea = null;
 private JTextArea __K_JTextArea = null;
 private JTextField __FlowUnits_JTextField = null;
@@ -82,7 +84,7 @@ Responds to ActionEvents.
 */
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
-    String routine = "VariableLagK_JDialog.actionPerformed";
+    String routine = getClass().getSimpleName() + ".actionPerformed";
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -92,8 +94,7 @@ public void actionPerformed( ActionEvent event )
         refresh();
 	}
 	else if ( o == __edit_JButton ) {
-		// Edit the NewTSID in the dialog.  It is OK for the string to
-		// be blank.
+		// Edit the NewTSID in the dialog.  It is OK for the string to be blank.
 		String NewTSID = __NewTSID_JTextArea.getText().trim();
 		TSIdent tsident;
 		try {	if ( NewTSID.length() == 0 ) {
@@ -101,18 +102,14 @@ public void actionPerformed( ActionEvent event )
 			}
 			else {	tsident = new TSIdent ( NewTSID );
 			}
-			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame,
-				true, tsident, null )).response();
+			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame, true, tsident, null )).response();
 			if ( tsident2 != null ) {
-				__NewTSID_JTextArea.setText (
-					tsident2.toString(true) );
+				__NewTSID_JTextArea.setText (tsident2.toString(true) );
 				refresh();
 			}
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error creating time series identifier from \"" +
-			NewTSID + "\"." );
+			Message.printWarning ( 1, routine, "Error creating time series identifier from \"" + NewTSID + "\"." );
 			Message.printWarning ( 3, routine, e );
 		}
 	}
@@ -284,11 +281,11 @@ private void initialize ( JFrame parent, VariableLagK_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Lag and attenuate a time series, creating a new time series using variable Lag and K technique." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
        "The time series to be routed cannot contain missing values." ),
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -298,10 +295,13 @@ private void initialize ( JFrame parent, VariableLagK_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
        "<html><b>The input and output state parameters are currently ignored - states default to zero.</b></html>." ),
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+	       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Time series to lag (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
+	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+	__TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
 	List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	if ( tsids == null ) {
@@ -316,6 +316,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 40 );
+	__NewTSID_JTextArea.setToolTipText("Specify new time series ID, can include ${Property} notation for TSID parts");
     __NewTSID_JTextArea.setEditable(false);
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
@@ -335,9 +336,10 @@ private void initialize ( JFrame parent, VariableLagK_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Flow units:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FlowUnits_JTextField = new JTextField (10);
+    __FlowUnits_JTextField.setToolTipText("Specify flow units, can use ${Property}");
     __FlowUnits_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __FlowUnits_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Required - units of Lag and K flow values, compatible with time series."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );

@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -8,13 +9,11 @@ import javax.swing.JFrame;
 import riverside.ts.routing.lagk.LagKBuilder;
 import riverside.ts.util.Table;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIterator;
 import RTi.TS.TSUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
@@ -32,7 +31,6 @@ import RTi.Util.IO.DataUnits;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
@@ -382,17 +380,17 @@ throws InvalidCommandParameterException
 	// Throw an InvalidCommandParameterException in case of errors.
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "NewTSID" );
-    valid_Vector.add ( "Lag" );
-    valid_Vector.add ( "K" );
-    valid_Vector.add ( "FlowUnits" );
-    valid_Vector.add ( "LagInterval" );
-    valid_Vector.add ( "InflowStates" );
-    valid_Vector.add ( "OutflowStates" );
-    valid_Vector.add ( "Alias" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List validList = new ArrayList<String>(9);
+    validList.add ( "TSID" );
+    validList.add ( "NewTSID" );
+    validList.add ( "Lag" );
+    validList.add ( "K" );
+    validList.add ( "FlowUnits" );
+    validList.add ( "LagInterval" );
+    validList.add ( "InflowStates" );
+    validList.add ( "OutflowStates" );
+    validList.add ( "Alias" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {		
 		Message.printWarning ( warning_level,
@@ -651,8 +649,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     status.clearLog(commandPhase);
 	
 	String TSID = parameters.getValue( "TSID"  );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
 	String NewTSID = parameters.getValue( "NewTSID"  );
+	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID);
+	}
     String FlowUnits = parameters.getValue( "FlowUnits" );
+	if ( (FlowUnits != null) && (FlowUnits.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		FlowUnits = TSCommandProcessorUtil.expandParameterValue(processor, this, FlowUnits);
+	}
 	String Lag = parameters.getValue( "Lag" );
     String K = parameters.getValue( "K" );
 	String Alias = parameters.getValue( "Alias" );
@@ -1030,13 +1037,13 @@ public String toString ( PropList props )
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "FlowUnits=" + FlowUnits );
+        b.append ( "FlowUnits=\"" + FlowUnits + "\"" );
     }
     if ( (LagInterval != null) && (LagInterval.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "LagInterval=" + LagInterval );
+        b.append ( "LagInterval=\"" + LagInterval + "\"");
     }
 	if ( (Lag != null) && (Lag.length() > 0) ) {
 		if ( b.length() > 0 ) {

@@ -1221,7 +1221,11 @@ throws FileNotFoundException, IOException
             }
             else {
                 // Else set the type to something reasonable for the table column data type
-                if ( (tableFieldType == TableField.DATA_TYPE_DOUBLE) ||
+            	if ( table.isColumnArray(tableFieldType) ) {
+            		// Output will be formatted as string [ , , , ]
+            		excelColumnTypes[col] = Cell.CELL_TYPE_STRING;
+            	}
+            	else if ( (tableFieldType == TableField.DATA_TYPE_DOUBLE) ||
                     (tableFieldType == TableField.DATA_TYPE_FLOAT) ||
                     (tableFieldType == TableField.DATA_TYPE_INT) ||
                     (tableFieldType == TableField.DATA_TYPE_LONG) ||
@@ -1509,9 +1513,15 @@ throws FileNotFoundException, IOException
                         	wbCell.setCellStyle(styleManager.getStyle(col,fieldValueLong));
                         }
                     }
-                    else if ( tableFieldType == TableField.DATA_TYPE_STRING ) {
+                    else if ( (tableFieldType == TableField.DATA_TYPE_STRING) || table.isColumnArray(tableFieldType) ) {
                     	// Set the Excel cell value
-                        fieldValueString = (String)fieldValue;
+                    	if ( table.isColumnArray(tableFieldType) ) {
+                    		// First format the data array as a string
+                    		fieldValueString = table.formatArrayColumn(row, col);
+                    	}
+                    	else {
+                    		fieldValueString = (String)fieldValue;
+                    	}
                         if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
                             cellString = fieldValueString;
                             wbCell.setCellValue(cellString);

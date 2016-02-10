@@ -4,9 +4,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -15,7 +15,6 @@ import riverside.datastore.GenericDatabaseDataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
-
 import RTi.DMI.DMI;
 import RTi.DMI.DMIDeleteStatement;
 import RTi.DMI.DMISelectStatement;
@@ -26,7 +25,6 @@ import RTi.DMI.DatabaseDataStore;
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSIterator;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -97,7 +95,7 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-	if ( (OutputStart != null) && !OutputStart.equals("")) {
+	if ( (OutputStart != null) && !OutputStart.isEmpty() && (OutputStart.indexOf("${") < 0) ) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
 				throw new Exception ("bad date");
@@ -111,7 +109,7 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output start date/time." ) );
 		}
 	}
-	if ( (OutputEnd != null) && !OutputEnd.equals("")) {
+	if ( (OutputEnd != null) && !OutputEnd.isEmpty() && (OutputEnd.indexOf("${") < 0)) {
 		try {	DateTime datetime2 = DateTime.parse(OutputEnd);
 			if ( datetime2 == null ) {
 				throw new Exception ("bad date");
@@ -154,23 +152,23 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-	valid_Vector.add ( "OutputStart" );
-	valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "DataStore" );
-	valid_Vector.add ( "DataStoreLocationType" );
-	valid_Vector.add ( "DataStoreLocationID" );
-    valid_Vector.add ( "DataStoreDataSource" );
-    valid_Vector.add ( "DataStoreDataType" );
-    valid_Vector.add ( "DataStoreInterval" );
-    valid_Vector.add ( "DataStoreScenario" );
-    valid_Vector.add ( "DataStoreUnits" );
-	valid_Vector.add ( "DataStoreMissingValue" );
-	valid_Vector.add ( "WriteMode" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(15);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+	validList.add ( "OutputStart" );
+	validList.add ( "OutputEnd" );
+	validList.add ( "DataStore" );
+	validList.add ( "DataStoreLocationType" );
+	validList.add ( "DataStoreLocationID" );
+    validList.add ( "DataStoreDataSource" );
+    validList.add ( "DataStoreDataType" );
+    validList.add ( "DataStoreInterval" );
+    validList.add ( "DataStoreScenario" );
+    validList.add ( "DataStoreUnits" );
+	validList.add ( "DataStoreMissingValue" );
+	validList.add ( "WriteMode" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -254,7 +252,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getName()+ ".runCommand", message;
+{	String routine = getClass().getSimpleName()+ ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -269,7 +267,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	
 	CommandStatus status = getCommandStatus();
-	status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
@@ -277,15 +287,42 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String DataStore = parameters.getValue ( "DataStore" );
     String DataStoreLocationType = parameters.getValue ( "DataStoreLocationType" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (DataStoreLocationType != null) && (DataStoreLocationType.indexOf("${") >= 0) ) {
+		DataStoreLocationType = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreLocationType);
+	}
     String DataStoreLocationID = parameters.getValue ( "DataStoreLocationID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (DataStoreLocationID != null) && (DataStoreLocationID.indexOf("${") >= 0) ) {
+		DataStoreLocationID = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreLocationID);
+	}
     String DataStoreDataSource = parameters.getValue ( "DataStoreDataSource" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (DataStoreDataSource != null) && (DataStoreDataSource.indexOf("${") >= 0) ) {
+		DataStoreDataSource = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreDataSource);
+	}
     String DataStoreDataType = parameters.getValue ( "DataStoreDataType" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (DataStoreDataType != null) && (DataStoreDataType.indexOf("${") >= 0) ) {
+		DataStoreDataType = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreDataType);
+	}
     String DataStoreInterval = parameters.getValue ( "DataStoreInterval" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (DataStoreInterval != null) && (DataStoreInterval.indexOf("${") >= 0) ) {
+		DataStoreInterval = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreInterval);
+	}
     String DataStoreScenario = parameters.getValue ( "DataStoreScenario" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (DataStoreScenario != null) && (DataStoreScenario.indexOf("${") >= 0) ) {
+		DataStoreScenario = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreScenario);
+	}
     String DataStoreUnits = parameters.getValue ( "DataStoreUnits" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (DataStoreUnits != null) && (DataStoreUnits.indexOf("${") >= 0) ) {
+		DataStoreUnits = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStoreUnits);
+	}
     String DataStoreMissingValue = parameters.getValue ( "DataStoreMissingValue" );
     String WriteMode = parameters.getValue ( "WriteMode" );
     DMIWriteModeType writeMode = DMIWriteModeType.valueOfIgnoreCase(WriteMode);
@@ -321,6 +358,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     DataStore + "\"." ) );
         }
     }
+    
+	String OutputStart = parameters.getValue ( "OutputStart" );
+	if ( (OutputStart == null) || OutputStart.isEmpty() ) {
+		OutputStart = "${OutputStart}"; // Default global property
+	}
+	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	if ( (OutputEnd == null) || OutputEnd.isEmpty() ) {
+		OutputEnd = "${OutputEnd}"; // Default global property
+	}
+	DateTime OutputStart_DateTime = null;
+	DateTime OutputEnd_DateTime = null;
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+	}
     
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings for command parameters.";
@@ -374,105 +440,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     						message, "Confirm that time series are available (may be OK for partial run)." ) );
     	}
 	}
-
-	String OutputStart = parameters.getValue ( "OutputStart" );
-	DateTime OutputStart_DateTime = null;
-	if ( OutputStart != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputStart );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( commandPhase,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputStart +
-				"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( commandPhase,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor (can be null)...
-		try {
-		    Object o_OutputStart = processor.getPropContents ( "OutputStart" );
-			if ( o_OutputStart != null ) {
-				OutputStart_DateTime = (DateTime)o_OutputStart;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting OutputStart from processor - not using.";
-			Message.printDebug(10, routine, message );
-			status.addToLog ( commandPhase,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-	}
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	DateTime OutputEnd_DateTime = null;
-	if ( OutputEnd != null ) {
-		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", OutputEnd );
-		try {
-		    bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( commandPhase,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputEnd +
-			"\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( commandPhase,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
-		}
-		else {
-		    OutputEnd_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor...
-		try {
-		    Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
-			if ( o_OutputEnd != null ) {
-				OutputEnd_DateTime = (DateTime)o_OutputEnd;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputEnd from processor - not using.";
-			Message.printDebug(10, routine, message );
-		}
-	}
 	
-	List<String> problems = new Vector<String>();
+	List<String> problems = new ArrayList<String>();
     if ( (tslist != null) && (tslist.size() > 0) ) {
         int nts = tslist.size();
         int its = -1;

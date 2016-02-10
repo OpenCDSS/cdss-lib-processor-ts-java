@@ -20,18 +20,20 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.util.List;
 import java.util.Vector;
 
 import riverside.datastore.DataStore;
+import riverside.datastore.GenericDatabaseDataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.DMI.DMIWriteModeType;
 import RTi.DMI.DatabaseDataStore;
 import RTi.Util.GUI.JGUIUtil;
@@ -313,6 +315,18 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int y = -1;
+	
+    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
+	List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( GenericDatabaseDataStore.class, true );
+    GenericDatabaseDataStore ds;
+    int dsWithTsCount = 0;
+    for ( DataStore dataStore: dataStoreList ) {
+        ds = (GenericDatabaseDataStore)dataStore;
+        if ( ds.hasTimeSeriesInterface(true) ) {
+            __DataStore_JComboBox.addItem ( dataStore.getName() );
+            ++dsWithTsCount;
+        }
+    }
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a database datastore," +
@@ -325,6 +339,18 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Enter date/times to a precision appropriate for output time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	if ( dataStoreList.size() == 0 ) {
+   	   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	 		"<html><b>There are no Generic Database Datastores defined - choices below will not work.</b></html>"),
+   	 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	}
+   	else if ( dsWithTsCount == 0 ) {
+   		JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	 		"<html><b>There are no Generic Database Datastores that have time series properties defined - writing will not be functional.</b></html>"),
+   	 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	}
+   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JPanel ts_JPanel = new JPanel ();
     ts_JPanel.setLayout( new GridBagLayout() );
@@ -339,13 +365,15 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     yTS = CommandEditorUtil.addTSListToEditorDialogPanel ( this, ts_JPanel, __TSList_JComboBox, yTS );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTS = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, ts_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTS);
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select a time series ensemble ID from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yTS = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -354,6 +382,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ts_JPanel, new JLabel ("Output start:"), 
 		0, ++yTS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputStart_JTextField = new JTextField (20);
+	__OutputStart_JTextField.setToolTipText("Specify the output start using a date/time string or ${Property} notation");
 	__OutputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __OutputStart_JTextField,
 		1, yTS, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -364,6 +393,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Output end:"), 
 		0, ++yTS, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputEnd_JTextField = new JTextField (20);
+	__OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or ${Property} notation");
 	__OutputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __OutputEnd_JTextField,
 		1, yTS, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -385,8 +415,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
-    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
-    List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
     for ( DataStore dataStore: dataStoreList ) {
         __DataStore_JComboBox.addItem ( dataStore.getName() );
     }
@@ -404,6 +432,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore location type:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreLocationType_JTextField = new JTextField ( 10 );
+    __DataStoreLocationType_JTextField.setToolTipText("Specify the location type, can use ${Property} notation");
     __DataStoreLocationType_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ds_JPanel, __DataStoreLocationType_JTextField,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -413,6 +442,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore location ID:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreLocationID_JTextField = new JTextField ( 10 );
+    __DataStoreLocationID_JTextField.setToolTipText("Specify the location ID, can use ${Property} notation");
     __DataStoreLocationID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ds_JPanel, __DataStoreLocationID_JTextField,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -422,6 +452,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore data source:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreDataSource_JTextField = new JTextField ( 10 );
+    __DataStoreDataSource_JTextField.setToolTipText("Specify the data source, can use ${Property} notation");
     __DataStoreDataSource_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ds_JPanel, __DataStoreDataSource_JTextField,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -431,6 +462,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore data type:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreDataType_JTextField = new JTextField ( 10 );
+    __DataStoreDataType_JTextField.setToolTipText("Specify the data type, can use ${Property} notation");
     __DataStoreDataType_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ds_JPanel, __DataStoreDataType_JTextField,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -440,6 +472,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore interval:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreInterval_JTextField = new JTextField ( 10 );
+    __DataStoreInterval_JTextField.setToolTipText("Specify the data interval, can use ${Property} notation");
     __DataStoreInterval_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ds_JPanel, __DataStoreInterval_JTextField,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -449,6 +482,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore scenario:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreScenario_JTextField = new JTextField ( 10 );
+    __DataStoreScenario_JTextField.setToolTipText("Specify the scenario, can use ${Property} notation");
     __DataStoreScenario_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ds_JPanel, __DataStoreScenario_JTextField,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -468,6 +502,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore units:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreUnits_JTextField = new JTextField ( 10 );
+    __DataStoreUnits_JTextField.setToolTipText("Specify the units, can use ${Property} notation");
     __DataStoreUnits_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ds_JPanel, __DataStoreUnits_JTextField,
         1, yDS, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

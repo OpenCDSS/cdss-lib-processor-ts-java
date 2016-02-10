@@ -13,8 +13,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
@@ -22,9 +22,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -32,7 +34,6 @@ import riverside.datastore.DataStore;
 import riverside.datastore.GenericDatabaseDataStore;
 import riverside.datastore.GenericDatabaseDataStore_TimeSeries_InputFilter_JPanel;
 import rti.tscommandprocessor.core.TSCommandProcessor;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
@@ -41,7 +42,6 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 /**
 Editor for the ReadTimeSeriesFromDataStore() command.
@@ -161,7 +161,8 @@ private void checkInput ()
 	if ( (DataStore != null) && DataStore.length() > 0 ) {
 		props.set ( "DataStore", DataStore );
 	}
-	String DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
+	//String DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
+	String DataType = __DataType_JComboBox.getSelected();
     if ( (DataType != null) && (DataType.length() > 0) ) {
         props.set ( "DataType", DataType );
     }
@@ -222,7 +223,8 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
-    String DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
+    //String DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
+	String DataType = __DataType_JComboBox.getSelected();
     String Interval = __Interval_JComboBox.getSelected();
 	__command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "DataType", DataType );
@@ -303,7 +305,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command command )
-{	String routine = "ReadTimeSeriesFromDataStore_JDialog.initialize";
+{	String routine = getClass().getSimpleName() + ".initialize";
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 
@@ -314,17 +316,41 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
+
+    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
+	List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( GenericDatabaseDataStore.class, true );
+	Message.printStatus(2, routine, "Have " + dataStoreList.size() + " datastores");
+    GenericDatabaseDataStore ds;
+    int dsWithTsCount = 0;
+    for ( DataStore dataStore: dataStoreList ) {
+        ds = (GenericDatabaseDataStore)dataStore;
+        if ( ds.hasTimeSeriesInterface(true) ) {
+            ++dsWithTsCount;
+        }
+    }
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Read one or more time series from a database datastore that has been configured to provide time series metadata."),
-    	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Refer to the Generic Database Datastore documentation for more information." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the global input period is used (see SetInputPeriod())."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	if ( dataStoreList.size() == 0 ) {
+   	   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	 		"<html><b>There are no Generic Database Datastores defined - choices below will not work.</b></html>"),
+   	 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	}
+   	else if ( dsWithTsCount == 0 ) {
+   		JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	 		"<html><b>There are no Generic Database Datastores that have time series properties defined - choices below will not work.</b></html>"),
+   	 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	}
+   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	
     __ignoreEvents = true; // So that a full pass of initialization can occur
    	
@@ -333,9 +359,6 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
-    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
-    List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( GenericDatabaseDataStore.class );
-    GenericDatabaseDataStore ds;
     for ( DataStore dataStore: dataStoreList ) {
         ds = (GenericDatabaseDataStore)dataStore;
         if ( ds.hasTimeSeriesInterface(true) ) {
@@ -466,6 +489,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -475,6 +499,7 @@ private void initialize ( JFrame parent, ReadTimeSeriesFromDataStore_Command com
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -596,7 +621,7 @@ Populate the data source choices in response to a new location type or interval 
 private void populateDataSourceChoices ()
 {   String routine = getClass().getName() + ".populateDataSourceChoices";
     GenericDatabaseDataStore ds = getSelectedDataStore();
-    List<String> dataSources = new Vector<String>();
+    List<String> dataSources = new ArrayList<String>();
     try {
         // Pass null for scenario because scenario is listed after data source in UI
         String locID = __LocationID_JComboBox.getSelected();
@@ -622,9 +647,13 @@ private void populateDataSourceChoices ()
 Populate the data type choices in response to a new data store being selected.
 */
 private void populateDataTypeChoices ()
-{   String routine = getClass().getName() + ".populateDataTypeChoices";
+{   String routine = getClass().getSimpleName() + ".populateDataTypeChoices";
     GenericDatabaseDataStore ds = getSelectedDataStore();
-    List<String> dataTypes = new Vector<String>();
+    if ( ds == null ) {
+    	// No datastores defined?
+    	return;
+    }
+    List<String> dataTypes = new ArrayList<String>();
     try {
         // Pass null for parts that are later components in the UI
         dataTypes = ds.readTimeSeriesMetaDataTypeList ( false, null, null, null, null, null );
@@ -646,10 +675,14 @@ private void populateDataTypeChoices ()
 Populate the data interval choices in response to a new data type being selected.
 */
 private void populateIntervalChoices ()
-{   String routine = "ReadTimeeriesFromDataStore.populateIntervalChoices()";
+{   String routine = getClass().getSimpleName() + ".populateIntervalChoices";
     __Interval_JComboBox.removeAll();
     GenericDatabaseDataStore ds = getSelectedDataStore();
-    List<String> intervals = new Vector<String>();
+    if ( ds == null ) {
+    	// No datastores configured?
+    	return;
+    }
+    List<String> intervals = new ArrayList<String>();
     try {
         // Pass null for choices that are later in the UI
         intervals = ds.readTimeSeriesMetaIntervalList ( null, null, null, __DataType_JComboBox.getSelected(), null );
@@ -670,9 +703,13 @@ private void populateIntervalChoices ()
 Populate the location ID choices in response to a new location type or interval being selected.
 */
 private void populateLocationIDChoices ()
-{   String routine = getClass().getName() + ".populateLocationIDChoices";
+{   String routine = getClass().getSimpleName() + ".populateLocationIDChoices";
     GenericDatabaseDataStore ds = getSelectedDataStore();
-    List<String> locIds = new Vector<String>();
+    if ( ds == null ) {
+    	// No datastores configured?
+    	return;
+    }
+    List<String> locIds = new ArrayList<String>();
     try {
         // Pass null for the data source and scenario since the are later choices in the UI
         locIds = ds.readTimeSeriesMetaLocationIDList ( __LocationType_JComboBox.getSelected(),
@@ -696,13 +733,24 @@ private void populateLocationIDChoices ()
 Populate the location type choices in response to a new data store being selected.
 */
 private void populateLocationTypeChoices ()
-{   String routine = getClass().getName() + ".populateLocationTypeChoices";
+{   String routine = getClass().getSimpleName() + ".populateLocationTypeChoices";
     GenericDatabaseDataStore ds = getSelectedDataStore();
-    List<String> locTypes = new Vector<String>();
+    if ( ds == null ) {
+    	// No datastores configured?
+    	return;
+    }
+    List<String> locTypes = new ArrayList<String>();
     try {
         // Pass null for location ID, data source, and scenario since they are later choices in UI
         locTypes = ds.readTimeSeriesMetaLocationTypeList (
             null, null, __DataType_JComboBox.getSelected(), __Interval_JComboBox.getSelected(), null );
+        // Add a blank in case reading using the filter
+        if ( locTypes.size() == 0 ) {
+        	locTypes.add("");
+        }
+        else {
+        	locTypes.add(0, "");
+        }
     }
     catch ( Exception e ) {
         // Hopefully should not happen
@@ -720,9 +768,13 @@ private void populateLocationTypeChoices ()
 Populate the scenario choices in response to a new location type or interval being selected.
 */
 private void populateScenarioChoices ()
-{   String routine = getClass().getName() + ".populateDataSourceChoices";
+{   String routine = getClass().getSimpleName() + ".populateDataSourceChoices";
     GenericDatabaseDataStore ds = getSelectedDataStore();
-    List<String> scenarioIds = new Vector<String>();
+    if ( ds == null ) {
+    	// No datastores configured?
+    	return;
+    }
+    List<String> scenarioIds = new ArrayList<String>();
     try {
         // Have values for all parts because scenario is last in UI
         String locID = __LocationID_JComboBox.getSelected();
@@ -748,7 +800,7 @@ private void populateScenarioChoices ()
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	String routine = "ReadTimeSeriesFromDataStore_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	__error_wait = false;
 	String DataStore = "";
 	String DataType = "";
@@ -941,15 +993,34 @@ private void refresh ()
 	if ( DataStore != null ) {
 	    DataStore = DataStore.trim();
 	}
+	else {
+		DataStore = "";
+	}
 	// Only save the major variable number because parentheses cause problems in properties
-	DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
+	DataType = __DataType_JComboBox.getSelected();
+	if ( DataType != null ) {
+		//DataType = StringUtil.getToken(DataType.trim(), " ", 0, 0 );
+		DataType = DataType.trim();
+	}
+	else {
+		DataType = "";
+	}
 	Interval = __Interval_JComboBox.getSelected();
+	if ( Interval == null ) {
+		Interval = "";
+	}
     props.add ( "DataStore=" + DataStore );
     props.add ( "DataType=" + DataType );
     props.add ( "Interval=" + Interval );
     LocationType = __LocationType_JComboBox.getSelected();
+    if ( LocationType == null ) {
+    	LocationType = "";
+    }
     props.add ( "LocationType=" + LocationType );
     LocationID = __LocationID_JComboBox.getSelected();
+    if ( LocationID == null ) {
+    	LocationID = "";
+    }
     props.add ( "LocationID=" + LocationID );
 	// Add the where clause(s)...
 	InputFilter_JPanel filter_panel = __inputFilter_JPanel;

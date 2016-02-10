@@ -7,9 +7,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -351,7 +353,7 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
 	getContentPane().add ("North", main_JPanel);
-	int y = 0;
+	int y = -1;
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
@@ -385,12 +387,11 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The resulting table columns will have data types based on the query results."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "SQL specified with ${property} notation will be updated to use processor property values before executing the query."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-
+    
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     // List available data stores of the correct type
     
@@ -434,6 +435,8 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
         "Database catalog and schema choices currently do not cascade because database driver metadata features are limited or may " +
         "be disabled and not provide information."),
         0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
  
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Datastore catalog (database):"),
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -496,10 +499,20 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JPanel sql_JPanel = new JPanel();
     sql_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "SQL string", sql_JPanel );
+
+    JGUIUtil.addComponent(sql_JPanel, new JLabel (
+        "Specify SQL as a string. This is useful for simple SQL.  If newlines and formatting are needed, use an SQL file instead."),
+        0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(sql_JPanel, new JLabel (
+        "SQL specified with ${property} notation will be updated to use processor property values before executing the query."),
+        0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(sql_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++ySql, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(sql_JPanel, new JLabel ("SQL String:"), 
         0, ++ySql, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Sql_JTextArea = new JTextArea (9,50);
+    __Sql_JTextArea.setToolTipText("Specify the SQL string, can use ${Property} notation");
     __Sql_JTextArea.setLineWrap ( true );
     __Sql_JTextArea.setWrapStyleWord ( true );
     __Sql_JTextArea.addKeyListener(this);
@@ -511,6 +524,15 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     JPanel file_JPanel = new JPanel();
     file_JPanel.setLayout( new GridBagLayout() );
     __sql_JTabbedPane.addTab ( "SQL file", file_JPanel );
+    
+    JGUIUtil.addComponent(file_JPanel, new JLabel (
+        "Specify SQL as a file. This is useful for complex SQL containing formatting such as comments and newlines."),
+        0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(file_JPanel, new JLabel (
+        "SQL specified with ${property} notation will be updated to use processor property values before executing the query."),
+        0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(file_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(file_JPanel, new JLabel ( "SQL file to read:" ), 
         0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -530,8 +552,14 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     __sql_JTabbedPane.addTab ( "Procedure", proc_JPanel );
 
     JGUIUtil.addComponent(proc_JPanel, new JLabel (
+        "Run a stored procedure to return results as a table."),
+        0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(proc_JPanel, new JLabel (
         "Currently, only procedures that do not require parameters can be run."),
         0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(proc_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yProc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(proc_JPanel, new JLabel ( "Datastore procedure:"),
         0, ++yProc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStoreProcedure_JComboBox = new SimpleJComboBox ( false );

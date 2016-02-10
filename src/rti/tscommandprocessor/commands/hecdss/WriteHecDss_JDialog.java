@@ -19,8 +19,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.io.File;
 import java.util.List;
@@ -29,13 +31,11 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -51,12 +51,12 @@ implements ActionListener, KeyListener, ItemListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__browse_JButton = null,// Browse Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Button to add/remove path
-private WriteHecDss_Command __command = null;// Command to edit
-private String __working_dir = null;	// Working directory.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
+private WriteHecDss_Command __command = null;
+private String __working_dir = null; // Working directory.
 private JTextArea __command_JTextArea=null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
@@ -75,16 +75,16 @@ private JTextField __F_JTextField = null;
 private SimpleJComboBox __Type_JComboBox = null;
 private SimpleJComboBox __Replace_JComboBox = null;
 private SimpleJComboBox __Close_JComboBox = null;
-private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
-private boolean __ok = false;		// Has user pressed OK to close the dialog.
+private boolean __ok = false; // Has user pressed OK to close the dialog?
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public WriteHecDss_JDialog ( JFrame parent, Command command )
+public WriteHecDss_JDialog ( JFrame parent, WriteHecDss_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -303,8 +303,8 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (WriteHecDss_Command)command;
+private void initialize ( JFrame parent, WriteHecDss_Command command )
+{	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
@@ -315,12 +315,12 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a HEC-DSS format file," +
 		" which can be specified using a full or relative path (relative to the working directory)." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
@@ -342,10 +342,13 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The defaults can be overridden with the optional part fields."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "HEC-DSS file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
+	__OutputFile_JTextField.setToolTipText("Specify the output file, can use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -370,13 +373,15 @@ private void initialize ( JFrame parent, Command command )
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select a time series ensemble ID from the list or specify with ${Property} notation");
     List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -385,6 +390,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField (20);
+    __OutputStart_JTextField.setToolTipText("Specify the output start using a date/time string or ${Property} notation");
     __OutputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -395,6 +401,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputEnd_JTextField = new JTextField (20);
+    __OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or ${Property} notation");
     __OutputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -415,6 +422,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("A:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __A_JTextField = new JTextField (20);
+    __A_JTextField.setToolTipText("Specify the A part, can use ${Property} notation");
     __A_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __A_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -425,6 +433,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("B:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __B_JTextField = new JTextField (20);
+    __B_JTextField.setToolTipText("Specify the B part, can use ${Property} notation");
     __B_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __B_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -435,6 +444,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("C:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __C_JTextField = new JTextField (20);
+    __C_JTextField.setToolTipText("Specify the C part, can use ${Property} notation");
     __C_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __C_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -445,6 +455,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("E:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __E_JTextField = new JTextField (20);
+    __E_JTextField.setToolTipText("Specify the E part, can use ${Property} notation");
     __E_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __E_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -455,6 +466,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("F:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __F_JTextField = new JTextField (20);
+    __F_JTextField.setToolTipText("Specify the F part, can use ${Property} notation");
     __F_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __F_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

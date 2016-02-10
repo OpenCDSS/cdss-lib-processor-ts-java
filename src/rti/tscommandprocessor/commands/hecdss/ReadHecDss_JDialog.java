@@ -18,23 +18,22 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
-
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-
 import RTi.Util.Message.Message;
 
 /**
@@ -43,27 +42,26 @@ Editor for the ReadHecDss() command.
 public class ReadHecDss_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
-private SimpleJButton	__browse_JButton = null,// File browse button
-			__path_JButton = null,	// Convert between relative and absolute path.
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private ReadHecDss_Command __command = null;
 private String __working_dir = null; // Working directory.
-private JTextField
-            __A_JTextField = null,
-            __B_JTextField = null,
-            __C_JTextField = null,
-            __E_JTextField = null,
-            __F_JTextField = null,
-            __Pathname_JTextField = null,
-			__InputStart_JTextField,
-			__InputEnd_JTextField,
-			__InputFile_JTextField = null,
-			__Location_JTextField = null;
+private JTextField __A_JTextField = null;
+private JTextField __B_JTextField = null;
+private JTextField __C_JTextField = null;
+private JTextField __E_JTextField = null;
+private JTextField __F_JTextField = null;
+private JTextField __Pathname_JTextField = null;
+private JTextField __InputStart_JTextField;
+private JTextField __InputEnd_JTextField;
+private JTextField __InputFile_JTextField = null;
+private JTextField __Location_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 			//__NewUnits_JTextField = null; // Units to convert to at read
 private JTextArea __Command_JTextArea = null;
-private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 
 private boolean __ok = false;			
@@ -319,11 +317,11 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Read time series from a HEC-DSS file."),
-        0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use * in the A, B, C, E, and F parts to filter the time series that are read (or leave blank to read all)." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -344,7 +342,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+		"    The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
@@ -352,10 +350,13 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
 		"Specifying the input period will limit data that are " +
 		"available for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+    	    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"HEC-DSS file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
+	__InputFile_JTextField.setToolTipText("Specify the input file, can use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -366,6 +367,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("A part (basin):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __A_JTextField = new JTextField ( "", 30 );
+    __A_JTextField.setToolTipText("Specify the A part to match, can use * for wildcard and ${Property} notation");
     __A_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __A_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -375,6 +377,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("B part (location):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __B_JTextField = new JTextField ( "", 30 );
+    __B_JTextField.setToolTipText("Specify the B part to match, can use * for wildcard and ${Property} notation");
     __B_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __B_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -384,6 +387,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("C part (parameter):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __C_JTextField = new JTextField ( "", 30 );
+    __C_JTextField.setToolTipText("Specify the C part to match, can use * for wildcard and ${Property} notation");
     __C_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __C_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -393,6 +397,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("E part (interval):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __E_JTextField = new JTextField ( "", 30 );
+    __E_JTextField.setToolTipText("Specify the E part to match, can use * for wildcard and ${Property} notation");
     __E_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __E_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -402,6 +407,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("F part (scenario):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __F_JTextField = new JTextField ( "", 30 );
+    __F_JTextField.setToolTipText("Specify the F part to match, can use * for wildcard and ${Property} notation");
     __F_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __F_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -411,6 +417,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("DSS pathname:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Pathname_JTextField = new JTextField ( "", 30 );
+    __Pathname_JTextField.setToolTipText("Specify the DSS pathname, can use ${Property} notation");
     __Pathname_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Pathname_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -429,6 +436,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -438,6 +446,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -447,8 +456,8 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("TSID location to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Location_JTextField = new JTextField ( 30 );
+    __Location_JTextField.setToolTipText("Specify the TSID location to assign, can use %A for A-part, etc., and can use ${Property} notation");
     __Location_JTextField.addKeyListener ( this );
-    __Location_JTextField.setToolTipText("%A for A-part, %B for B-part, etc.");
     JGUIUtil.addComponent(main_JPanel, __Location_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %A for A-part, etc. (default=%A:%B)."),

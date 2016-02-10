@@ -457,6 +457,7 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromLookupTable_Comm
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Column for input value:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableValue1Column_JTextField = new JTextField ( "", 20 );
+    __TableValue1Column_JTextField.setToolTipText("Specify the value 1 (input) column, can use ${Property} notation");
     JGUIUtil.addComponent(table_JPanel, __TableValue1Column_JTextField,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __TableValue1Column_JTextField.addKeyListener ( this );
@@ -481,6 +482,7 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromLookupTable_Comm
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Column for output value:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableValue2Column_JTextField = new JTextField ( "", 20 );
+    __TableValue2Column_JTextField.setToolTipText("Specify the value 2 (output) column, can use ${Property} notation");
     JGUIUtil.addComponent(table_JPanel, __TableValue2Column_JTextField,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __TableValue2Column_JTextField.addKeyListener ( this );

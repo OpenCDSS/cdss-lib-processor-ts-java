@@ -268,7 +268,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList(18);
+    List<String> validList = new ArrayList<String>(18);
     validList.add ( "InputTSID" );
     validList.add ( "OutputTSID" );
     validList.add ( "TableID" );
@@ -385,12 +385,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     //String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     //String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TableValue1Column = parameters.getValue ( "TableValue1Column" );
+    if ( (TableValue1Column != null) && !TableValue1Column.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableValue1Column.indexOf("${") >= 0 ) {
+    	TableValue1Column = TSCommandProcessorUtil.expandParameterValue(processor, this, TableValue1Column);
+    }
     String SortInput = parameters.getValue ( "SortInput" );
     boolean sortInput = false;
     if ( (SortInput != null) && SortInput.equalsIgnoreCase(_True) ) {
         sortInput = true;
     }
     String TableValue2Column = parameters.getValue ( "TableValue2Column" );
+    if ( (TableValue2Column != null) && !TableValue2Column.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableValue2Column.indexOf("${") >= 0 ) {
+    	TableValue2Column = TSCommandProcessorUtil.expandParameterValue(processor, this, TableValue2Column);
+    }
     String EffectiveDateColumn = parameters.getValue ( "EffectiveDateColumn" );
     String LookupMethod = parameters.getValue ( "LookupMethod" );
     LookupMethodType lookupMethodType = LookupMethodType.INTERPOLATE; // Default

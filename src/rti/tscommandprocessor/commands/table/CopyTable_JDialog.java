@@ -264,20 +264,21 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the new table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column names to copy:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Include columns:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (10);
+    __IncludeColumns_JTextField.setToolTipText("Names of columns to include, separated by commas, can use ${Property} notation.");
     __IncludeColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - names of columns to copy (default=copy all)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Distinct column names:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Distinct columns:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DistinctColumns_JTextField = new JTextField (10);
     __DistinctColumns_JTextField.setToolTipText("If specified, the output table will only include the distinct columns, " +
-        "UNLESS IncludeColumns is specified, in which case those columns will be retained in output.");
+        "UNLESS IncludeColumns is specified, in which case those columns will be retained in output, can use ${Property} notation.");
     __DistinctColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DistinctColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

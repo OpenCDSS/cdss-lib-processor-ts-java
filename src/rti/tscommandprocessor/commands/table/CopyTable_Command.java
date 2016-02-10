@@ -181,9 +181,8 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommandInternal",message = "";
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;	
@@ -219,16 +218,22 @@ CommandWarningException, CommandException
     	NewTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTableID);
     }
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
+    if ( (IncludeColumns != null) && !IncludeColumns.isEmpty() && (commandPhase == CommandPhaseType.RUN) && IncludeColumns.indexOf("${") >= 0 ) {
+    	IncludeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IncludeColumns);
+    }
     String [] includeColumns = null;
-    if ( (IncludeColumns != null) && !IncludeColumns.equals("") ) {
+    if ( (commandPhase == CommandPhaseType.RUN) && (IncludeColumns != null) && !IncludeColumns.equals("") ) {
         includeColumns = IncludeColumns.split(",");
         for ( int i = 0; i < includeColumns.length; i++ ) {
             includeColumns[i] = includeColumns[i].trim();
         }
     }
     String DistinctColumns = parameters.getValue ( "DistinctColumns" );
+    if ( (DistinctColumns != null) && !DistinctColumns.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DistinctColumns.indexOf("${") >= 0 ) {
+    	DistinctColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DistinctColumns);
+    }
     String [] distinctColumns = null;
-    if ( (DistinctColumns != null) && !DistinctColumns.equals("") ) {
+    if ( (commandPhase == CommandPhaseType.RUN) && (DistinctColumns != null) && !DistinctColumns.equals("") ) {
         distinctColumns = DistinctColumns.split(",");
         for ( int i = 0; i < distinctColumns.length; i++ ) {
             distinctColumns[i] = distinctColumns[i].trim();

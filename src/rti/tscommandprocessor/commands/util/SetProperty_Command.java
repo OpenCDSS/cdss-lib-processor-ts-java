@@ -230,33 +230,44 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@param command_phase The command phase that is being run (RUN or DISCOVERY).
+@param commandPhase The command phase that is being run (RUN or DISCOVERY).
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-public void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "SetProperty_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3; // Level for non-user messages for log file.
 
 	// Make sure there are time series available to operate on...
-    
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
 	String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyType = parameters.getValue ( "PropertyType" );
 	String PropertyValue = parameters.getValue ( "PropertyValue" );
-	if ( PropertyValue != null ) {
-	    PropertyValue = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, PropertyValue);
+	if ( (commandPhase == CommandPhaseType.RUN) && (PropertyValue != null) && (PropertyValue.indexOf("${") >= 0) ) {
+		PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
 	}
 	
 	try {
@@ -288,7 +299,7 @@ CommandWarningException, CommandException
     	try {
             processor.processRequest( "SetProperty", request_params);
             // Set the 
-            if ( command_phase == CommandPhaseType.DISCOVERY ) {
+            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
                 setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
             }
     	}

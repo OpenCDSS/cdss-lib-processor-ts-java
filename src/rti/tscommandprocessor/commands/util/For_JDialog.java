@@ -44,6 +44,9 @@ private JTextField __Name_JTextField = null;
 private JTextField __IteratorProperty_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __List_JTextArea = null;
+private JTextField __SequenceStart_JTextField = null;
+private JTextField __SequenceEnd_JTextField = null;
+private JTextField __SequenceIncrement_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableColumn_JTextField = null;
 private JTextArea __command_JTextArea = null;
@@ -90,6 +93,9 @@ private void checkInput ()
     String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
     String List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
+    String SequenceStart = __SequenceStart_JTextField.getText().trim();
+    String SequenceEnd = __SequenceEnd_JTextField.getText().trim();
+    String SequenceIncrement = __SequenceIncrement_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
     if ( Name.length() > 0 ) {
@@ -100,6 +106,15 @@ private void checkInput ()
     }
     if ( List.length() > 0 ) {
         props.set ( "List", List );
+    }
+    if ( SequenceStart.length() > 0 ) {
+        props.set ( "SequenceStart", SequenceStart );
+    }
+    if ( SequenceEnd.length() > 0 ) {
+        props.set ( "SequenceEnd", SequenceEnd );
+    }
+    if ( SequenceIncrement.length() > 0 ) {
+        props.set ( "SequenceIncrement", SequenceIncrement );
     }
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
@@ -124,11 +139,17 @@ private void commitEdits ()
 {   String Name = __Name_JTextField.getText().trim();
     String IteratorProperty = __IteratorProperty_JTextField.getText().trim();
     String List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
+    String SequenceStart = __SequenceStart_JTextField.getText().trim();
+    String SequenceEnd = __SequenceEnd_JTextField.getText().trim();
+    String SequenceIncrement = __SequenceIncrement_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "IteratorProperty", IteratorProperty );
     __command.setCommandParameter ( "List", List );
+    __command.setCommandParameter ( "SequenceStart", SequenceStart );
+    __command.setCommandParameter ( "SequenceEnd", SequenceEnd );
+    __command.setCommandParameter ( "SequenceIncrement", SequenceIncrement );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableColumn", TableColumn );
 }
@@ -212,6 +233,48 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         1, yList, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(list_JPanel, new JLabel("Required - list of values for iterator."), 
         3, yList, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel to use sequence for iteration
+    int ySeq = -1;
+    JPanel seq_JPanel = new JPanel();
+    seq_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Sequence", seq_JPanel );
+    
+    JGUIUtil.addComponent(seq_JPanel, new JLabel (
+        "The for loop can iterate using a sequence of values, given a start, end, and increment."),
+        0, ++ySeq, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(seq_JPanel, new JLabel (
+        "The type of property is detected from the start as either integer or double-precision (has decimal point)."),
+        0, ++ySeq, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(seq_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++ySeq, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence start:" ), 
+        0, ++ySeq, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SequenceStart_JTextField = new JTextField (10);
+    __SequenceStart_JTextField.addKeyListener(this);
+    JGUIUtil.addComponent(seq_JPanel, __SequenceStart_JTextField,
+        1, ySeq, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(seq_JPanel, new JLabel("Required - sequence start."), 
+        3, ySeq, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence end:" ), 
+        0, ++ySeq, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SequenceEnd_JTextField = new JTextField (10);
+    __SequenceEnd_JTextField.addKeyListener(this);
+    JGUIUtil.addComponent(seq_JPanel, __SequenceEnd_JTextField,
+        1, ySeq, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(seq_JPanel, new JLabel("Required - sequence end."), 
+        3, ySeq, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(seq_JPanel, new JLabel ( "Sequence increment:" ), 
+        0, ++ySeq, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SequenceIncrement_JTextField = new JTextField (10);
+    __SequenceIncrement_JTextField.addKeyListener(this);
+    JGUIUtil.addComponent(seq_JPanel, __SequenceIncrement_JTextField,
+        1, ySeq, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(seq_JPanel, new JLabel("Optional - sequence increment (default=1)."), 
+        3, ySeq, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      
     // Panel to use table column for iteration
     int yTable = -1;
@@ -248,7 +311,7 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel("Required - name of table column."), 
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __command_JTextArea = new JTextArea ( 4, 60 );
@@ -323,6 +386,9 @@ private void refresh ()
     String Name = "";
     String IteratorProperty = "";
     String List = "";
+    String SequenceStart = "";
+    String SequenceEnd = "";
+    String SequenceIncrement = "";
 	String TableID = "";
 	String TableColumn = "";
 	__error_wait = false;
@@ -332,6 +398,9 @@ private void refresh ()
 		Name = props.getValue( "Name" );
 	    IteratorProperty = props.getValue( "IteratorProperty" );
 	    List = props.getValue( "List" );
+	    SequenceStart = props.getValue( "SequenceStart" );
+	    SequenceEnd = props.getValue( "SequenceEnd" );
+	    SequenceIncrement = props.getValue( "SequenceIncrement" );
 		TableID = props.getValue( "TableID" );
 		TableColumn = props.getValue( "TableColumn" );
 		if ( Name != null ) {
@@ -344,6 +413,16 @@ private void refresh ()
             __List_JTextArea.setText( List );
             __main_JTabbedPane.setSelectedIndex(0);
         }
+		if ( SequenceStart != null ) {
+		    __SequenceStart_JTextField.setText( SequenceStart );
+		    __main_JTabbedPane.setSelectedIndex(1);
+		}
+		if ( SequenceEnd != null ) {
+		    __SequenceEnd_JTextField.setText( SequenceEnd );
+		}
+		if ( SequenceIncrement != null ) {
+		    __SequenceIncrement_JTextField.setText( SequenceIncrement );
+		}
         if ( (TableID == null) || TableID.isEmpty() ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -351,7 +430,7 @@ private void refresh ()
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __TableID_JComboBox,TableID, JGUIUtil.NONE, null, null ) ) {
                 __TableID_JComboBox.select ( TableID );
-                __main_JTabbedPane.setSelectedIndex(1);
+                __main_JTabbedPane.setSelectedIndex(2);
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -368,12 +447,18 @@ private void refresh ()
 	Name = __Name_JTextField.getText().trim();
     IteratorProperty = __IteratorProperty_JTextField.getText().trim();
     List = __List_JTextArea.getText().trim().replace('\n', ' ').replace('\t', ' ');
+    SequenceStart = __SequenceStart_JTextField.getText().trim();
+    SequenceEnd = __SequenceEnd_JTextField.getText().trim();
+    SequenceIncrement = __SequenceIncrement_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
     TableColumn = __TableColumn_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
     props.add ( "IteratorProperty=" + IteratorProperty );
     props.add ( "List=" + List );
+    props.add ( "SequenceStart=" + SequenceStart );
+    props.add ( "SequenceEnd=" + SequenceEnd );
+    props.add ( "SequenceIncrement=" + SequenceIncrement );
     props.set ( "TableID", TableID ); // May contain = so handle differently
     props.add ( "TableColumn=" + TableColumn );
     __command_JTextArea.setText( __command.toString(props) );

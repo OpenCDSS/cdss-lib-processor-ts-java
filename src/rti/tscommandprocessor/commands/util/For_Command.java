@@ -7,7 +7,6 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -22,6 +21,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
 /**
@@ -36,6 +36,21 @@ Current index property value.
 private Object iteratorObject = null;
 
 /**
+Indicate that the iterator is using a list.
+*/
+private boolean iteratorIsList = false;
+
+/**
+Indicate that the iterator is using a sequence.
+*/
+private boolean iteratorIsSequence = false;
+
+/**
+Indicate that the iterator is using a table.
+*/
+private boolean iteratorIsTable = false;
+
+/**
 Indicate whether the loop has been initialized.  This will be done with the first call to next().
 */
 private boolean forInitialized = false;
@@ -46,7 +61,22 @@ Data table to get list to iterate through.
 private DataTable table = null;
 
 /**
-List of objects to iterate.
+Iterator start if sequence.
+*/
+private Object iteratorSequenceStart = null;
+
+/**
+Iterator end if sequence.
+*/
+private Object iteratorSequenceEnd = null;
+
+/**
+Iterator increment if sequence.
+*/
+private Object iteratorSequenceIncrement = null;
+
+/**
+List of objects to iterate if a list or table.
 */
 private List<Object> list = null;
 
@@ -81,6 +111,9 @@ throws InvalidCommandParameterException
 {	String routine = getCommandName() + "_checkCommandParameters";
 	String Name = parameters.getValue ( "Name" );
 	String List = parameters.getValue ( "List" );
+	String SequenceStart = parameters.getValue ( "SequenceStart" );
+	String SequenceEnd = parameters.getValue ( "SequenceEnd" );
+	String SequenceIncrement = parameters.getValue ( "SequenceIncrement" );
 	String TableID = parameters.getValue ( "TableID" );
 	String TableColumn = parameters.getValue ( "TableColumn" );
 	String warning = "";
@@ -89,25 +122,71 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
+	this.iteratorIsList = false;
+	this.iteratorIsSequence = false;
+	this.iteratorIsTable = false;
     if ( (Name == null) || Name.equals("") ) {
         message = "A name for the for block must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
-    if ( ((TableID == null) || TableID.isEmpty()) && ((List == null) || List.isEmpty()) ) {
-        message = "A list or table must be specified";
+    if ( ((TableID == null) || TableID.isEmpty()) && ((List == null) || List.isEmpty()) && ((SequenceStart == null) || SequenceStart.isEmpty())) {
+        message = "A list, sequence, or table must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR table ID/column." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR sequence OR table ID/column." ) );
     }
-    else if ( ((TableID != null) && !TableID.isEmpty()) && ((List != null) && !List.isEmpty()) ) {
-        message = "A list or table must be specified, but not both";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR table ID/column." ) );
+
+    int count = 0;
+    if ( (List != null) && !List.isEmpty() ) {
+    	this.iteratorIsList = true;
+    	++count;
+    }
+    if ( (SequenceStart != null) && !SequenceStart.isEmpty() ) {
+    	this.iteratorIsSequence = true;
+    	++count;
+    	Double sequenceStartD = null;
+    	Integer sequenceStartI = null;
+		if ( StringUtil.isInteger(SequenceStart) ) {
+			sequenceStartI = Integer.parseInt(SequenceStart);
+			this.iteratorSequenceStart = sequenceStartI;
+		}
+		else if ( StringUtil.isDouble(SequenceStart) ) {
+			sequenceStartD = Double.parseDouble(SequenceStart);
+			this.iteratorSequenceStart = sequenceStartD;
+		}
+		this.iteratorIsSequence = true;
+    }
+    if ( (SequenceEnd != null) && !SequenceEnd.isEmpty() ) {
+    	Double sequenceEndD = null;
+    	Integer sequenceEndI = null;
+    	if ( (SequenceEnd != null) && !SequenceEnd.isEmpty() ) {
+    		if ( StringUtil.isInteger(SequenceEnd) ) {
+    			sequenceEndI = Integer.parseInt(SequenceEnd);
+    			this.iteratorSequenceEnd = sequenceEndI;
+    		}
+    		else if ( StringUtil.isDouble(SequenceEnd) ) {
+    			sequenceEndD = Double.parseDouble(SequenceEnd);
+    			this.iteratorSequenceEnd = sequenceEndD;
+    		}
+    	}
+    }
+    if ( (SequenceIncrement != null) && !SequenceIncrement.isEmpty() ) {
+    	Double sequenceIncrementD = null;
+    	Integer sequenceIncrementI = null;
+		if ( StringUtil.isInteger(SequenceIncrement) ) {
+			sequenceIncrementI = Integer.parseInt(SequenceIncrement);
+			this.iteratorSequenceIncrement = sequenceIncrementI;
+		}
+		else if ( StringUtil.isDouble(SequenceIncrement) ) {
+			sequenceIncrementD = Double.parseDouble(SequenceIncrement);
+			this.iteratorSequenceIncrement = sequenceIncrementD;
+		}
     }
     if ( (TableID != null) && !TableID.isEmpty() ) {
+    	this.iteratorIsTable = true;
+    	++count;
 	    if ( (TableColumn == null) || TableColumn.equals("") ) {
 	        message = "A table column must be specified";
 	        warning += "\n" + message;
@@ -115,12 +194,21 @@ throws InvalidCommandParameterException
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the table column." ) );
 	    }
     }
+    if ( count > 1 ) {
+        message = "A list, sequence, or table must be specified, but not more than one";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the list OR sequence OR table ID/column." ) );
+    }
 
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(4);
+    List<String> validList = new ArrayList<String>(8);
 	validList.add ( "Name" );
 	validList.add ( "IteratorProperty" );
 	validList.add ( "List" );
+	validList.add ( "SequenceStart" );
+	validList.add ( "SequenceEnd" );
+	validList.add ( "SequenceIncrement" );
 	validList.add ( "TableID" );
 	validList.add ( "TableColumn" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -187,17 +275,15 @@ public boolean next ()
   	if ( !this.forInitialized ) {
     	// Initialize the loop
   		TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
-  		String List = getCommandParameters().getValue ( "List" );
-    	if ( (List != null) && !List.isEmpty() ) {
+    	if ( this.iteratorIsList ) {
     	    // Iterate with the list
 	        setIteratorPropertyValue(null);
-	    	if ( (List != null) && !List.isEmpty() ) {
-	    		String [] parts = List.split(",");
-	    		this.list = new ArrayList<Object>();
-	    		for ( int i = 0; i < parts.length; i++ ) {
-	    			this.list.add(parts[i].trim());
-	    		}
-	    	}
+	  		String List = getCommandParameters().getValue ( "List" );
+    		String [] parts = List.split(",");
+    		this.list = new ArrayList<Object>();
+    		for ( int i = 0; i < parts.length; i++ ) {
+    			this.list.add(parts[i].trim());
+    		}
 	        CommandStatus status = getCommandStatus();
 	        status.clearLog(CommandPhaseType.RUN);
 	        try {
@@ -217,7 +303,38 @@ public boolean next ()
 	            throw new RuntimeException ( message, e );
 	        }
 	    }
-	    else {
+    	else if ( this.iteratorIsSequence ) {
+    		// Iterating on a sequence
+    		// Initialize the loop
+    		setIteratorPropertyValue(null);
+	        CommandStatus status = getCommandStatus();
+	        status.clearLog(CommandPhaseType.RUN);
+	        try {
+	            this.iteratorObjectListIndex = 0;
+	            //this.iteratorObjectList = this.list;
+	            this.iteratorObject = this.iteratorSequenceStart;
+	            if ( this.iteratorSequenceIncrement == null ) {
+	            	if ( this.iteratorSequenceStart instanceof Integer ) {
+	            		this.iteratorSequenceIncrement = new Integer(1);
+	            	}
+	            	else if ( this.iteratorSequenceStart instanceof Double ) {
+	            		this.iteratorSequenceIncrement = new Double(1.0);
+	            	}
+	            }
+	            this.forInitialized = true;
+	            if ( Message.isDebugOn ) {
+	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
+	            }
+	            return true;
+	        }
+	        catch ( Exception e ) {
+	            message = "Error initializing For() iterator to initial value (" + e + ").";
+	            Message.printWarning(3, routine, message);
+	            Message.printWarning(3, routine, e);
+	            throw new RuntimeException ( message, e );
+	        }
+    	}
+	    else if ( this.iteratorIsTable ) {
 	    	// Iterating on table (table must be specified if list is not)
 	        // Initialize the loop
 	        setIteratorPropertyValue(null);
@@ -289,24 +406,67 @@ public boolean next ()
 	            throw new RuntimeException ( message, e );
 	        }
 	    }
+	    else {
+	    	message = "Unknown iteration type (not list, sequence, or table).";
+            Message.printWarning(3, routine, message);
+            throw new RuntimeException ( message );
+	    }
   	}
     else {
         // Increment the property
-        if ( this.iteratorObjectListIndex >= (this.iteratorObjectList.size() - 1) ) {
-            // Done iterating
-        	if ( Message.isDebugOn ) {
-        		Message.printDebug(1, routine, "Done iterating on list." );
-        	}
-            return false;
-        }
-        else {
-            ++this.iteratorObjectListIndex;
-            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
-        	if ( Message.isDebugOn ) {
-        		Message.printDebug(1, routine, "Iterator object set to: " + this.iteratorObject );
-        	}
-            return true;
-        }
+    	if ( this.iteratorIsList || this.iteratorIsTable ) {
+	        if ( this.iteratorObjectListIndex >= (this.iteratorObjectList.size() - 1) ) {
+	            // Done iterating
+	        	if ( Message.isDebugOn ) {
+	        		Message.printDebug(1, routine, "Done iterating on list." );
+	        	}
+	            return false;
+	        }
+	        else {
+	            ++this.iteratorObjectListIndex;
+	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
+	        	if ( Message.isDebugOn ) {
+	        		Message.printDebug(1, routine, "Iterator object set to: " + this.iteratorObject );
+	        	}
+	            return true;
+	        }
+    	}
+    	else if ( this.iteratorIsSequence ) {
+    		// If the iterator object is already at or will exceed the maximum, then done iterating
+	    	if ( ((this.iteratorSequenceStart instanceof Integer) &&
+	    			(((Integer)this.iteratorObject >= (Integer)this.iteratorSequenceEnd) ||
+	    			((Integer)this.iteratorObject + (Integer)this.iteratorSequenceIncrement > (Integer)this.iteratorSequenceEnd))
+	    			) ||
+	    		((this.iteratorSequenceStart instanceof Double) &&
+	    			(((Double)this.iteratorObject >= (Double)this.iteratorSequenceEnd) ||
+	    			((Double)this.iteratorObject + (Double)this.iteratorSequenceIncrement) >= (Double)this.iteratorSequenceEnd))
+	    			) {
+	        	if ( Message.isDebugOn ) {
+	        		Message.printDebug(1, routine, "Done iterating on list." );
+	        	}
+	            return false;
+	    	}
+	    	else {
+	    		// Iterate by adding increment to iterator object
+	    		if ( this.iteratorSequenceStart instanceof Integer ) {
+	    			Integer o = (Integer)this.iteratorObject;
+	    			Integer oinc = (Integer)this.iteratorSequenceIncrement;
+	    			o = o + oinc;
+	    			this.iteratorObject = o;
+	    		}
+	    		else if ( this.iteratorSequenceStart instanceof Double ) {
+	    			Double o = (Double)this.iteratorObject;
+	    			Double oinc = (Double)this.iteratorSequenceIncrement;
+	    			o = o + oinc;
+	    			this.iteratorObject = o;
+	    		}
+	    		return true;
+	    	}
+    	}
+    	else {
+    		// Iteration type not recognized so jump out right away to avoid infinite loop.
+    		return true;
+    	}
     }
 }
 
@@ -339,6 +499,10 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 	CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	status.clearLog(commandPhase);
 	
+	this.iteratorIsList = false;
+	this.iteratorIsSequence = false;
+	this.iteratorIsTable = false;
+	
 	String Name = parameters.getValue ( "Name" );
 	String IteratorProperty = parameters.getValue ( "IteratorProperty" );
 	if ( (IteratorProperty == null) || IteratorProperty.equals("") ) {
@@ -351,12 +515,56 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		for ( int i = 0; i < parts.length; i++ ) {
 			this.list.add(parts[i].trim());
 		}
+		this.iteratorIsList = true;
+	}
+	String SequenceStart = parameters.getValue ( "SequenceStart" );
+	Double sequenceStartD = null;
+	Integer sequenceStartI = null;
+	if ( (SequenceStart != null) && !SequenceStart.isEmpty() ) {
+		if ( StringUtil.isInteger(SequenceStart) ) {
+			sequenceStartI = Integer.parseInt(SequenceStart);
+			this.iteratorSequenceStart = sequenceStartI;
+		}
+		else if ( StringUtil.isDouble(SequenceStart) ) {
+			sequenceStartD = Double.parseDouble(SequenceStart);
+			this.iteratorSequenceStart = sequenceStartD;
+		}
+		this.iteratorIsSequence = true;
+	}
+	String SequenceEnd = parameters.getValue ( "SequenceEnd" );
+	Double sequenceEndD = null;
+	Integer sequenceEndI = null;
+	if ( (SequenceEnd != null) && !SequenceEnd.isEmpty() ) {
+		if ( StringUtil.isInteger(SequenceEnd) ) {
+			sequenceEndI = Integer.parseInt(SequenceEnd);
+			this.iteratorSequenceEnd = sequenceEndI;
+		}
+		else if ( StringUtil.isDouble(SequenceEnd) ) {
+			sequenceEndD = Double.parseDouble(SequenceEnd);
+			this.iteratorSequenceEnd = sequenceEndD;
+		}
+	}
+	String SequenceIncrement = parameters.getValue ( "SequenceIncrement" );
+	Double sequenceIncrementD = null;
+	Integer sequenceIncrementI = null;
+	if ( (SequenceIncrement != null) && !SequenceIncrement.isEmpty() ) {
+		if ( StringUtil.isInteger(SequenceIncrement) ) {
+			sequenceIncrementI = Integer.parseInt(SequenceIncrement);
+			this.iteratorSequenceIncrement = sequenceIncrementI;
+		}
+		else if ( StringUtil.isDouble(SequenceIncrement) ) {
+			sequenceIncrementD = Double.parseDouble(SequenceIncrement);
+			this.iteratorSequenceIncrement = sequenceIncrementD;
+		}
 	}
 	String TableID = parameters.getValue ( "TableID" );
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     }
-	//String TableColumn = parameters.getValue ( "TableColumn" );
+    if ( (TableID != null) && !TableID.isEmpty() ) {
+    	this.iteratorIsTable = true;
+    }
+	// TableColumn is looked up in next() method because table columns may be added within loop
 	
     // Get the table to process.  This logic is repeated in next() because next() is called first.
 
@@ -407,8 +615,13 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
         request_params.setUsingObject ( "PropertyValue", this.iteratorObject );
         try {
         	if ( Message.isDebugOn ) {
-	            Message.printDebug(1,routine,"For loop \"" + Name + "\" iteration [" + this.iteratorObjectListIndex + "] iterator=" +
-	                this.iteratorObject );
+        		if ( this.iteratorIsList || this.iteratorIsTable ) {
+		            Message.printDebug(1,routine,"For loop \"" + Name + "\" iteration [" + this.iteratorObjectListIndex + "] iterator=" +
+		                this.iteratorObject );
+        		}
+        		else {
+        			Message.printDebug(1,routine,"For loop \"" + Name + "\" iterator=" + this.iteratorObject );
+        		}
         	}
             processor.processRequest( "SetProperty", request_params);
         }
@@ -486,6 +699,9 @@ public String toString ( PropList props )
     String Name = props.getValue( "Name" );
     String IteratorProperty = props.getValue( "IteratorProperty" );
     String List = props.getValue( "List" );
+    String SequenceStart = props.getValue( "SequenceStart" );
+    String SequenceEnd = props.getValue( "SequenceEnd" );
+    String SequenceIncrement = props.getValue( "SequenceIncrement" );
     String TableID = props.getValue( "TableID" );
     String TableColumn = props.getValue( "TableColumn" );
     StringBuffer b = new StringBuffer ();
@@ -503,6 +719,24 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "List=\"" + List + "\"" );
+    }
+    if ( (SequenceStart != null) && (SequenceStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SequenceStart=\"" + SequenceStart + "\"" );
+    }
+    if ( (SequenceEnd != null) && (SequenceEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SequenceEnd=\"" + SequenceEnd + "\"" );
+    }
+    if ( (SequenceIncrement != null) && (SequenceIncrement.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SequenceIncrement=\"" + SequenceIncrement + "\"" );
     }
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {

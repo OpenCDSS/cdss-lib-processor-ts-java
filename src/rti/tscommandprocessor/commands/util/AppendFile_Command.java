@@ -226,7 +226,8 @@ CommandWarningException, CommandException
 	else if ( f.getName().startsWith("*.") ) {
 	    // Process all files in the folder with the matching extension
 	    ext = IOUtil.getFileExtension(f.getName());
-	    fileList = IOUtil.getFilesMatchingPattern(f.getParent(),ext);
+	    // TODO SAM 2016-02-08 Need to enable parameter for case
+	    fileList = IOUtil.getFilesMatchingPattern(f.getParent(),ext,false);
 	}
 	if ( fileList.size() == 0 ) {
 	    message = "Unable to match any files using InputFile=\"" + InputFile + "\"";

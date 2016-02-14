@@ -3957,7 +3957,7 @@ public void setInitialWorkingDir ( String InitialWorkingDir )
 Indicate whether the processor is running.  This should be set in processCommands()
 and can be monitored by code (e.g., GUI) that has behavior that depends on whether
 the processor is running.  The method is protected to allow it to be called from
-TSEngine but would normally not be called from other code.
+TSEngine (for example when an interrupt occurs) but would normally not be called from other code.
 @param is_running indicates whether the processor is running (processing commands).
 */
 protected void setIsRunning ( boolean is_running )

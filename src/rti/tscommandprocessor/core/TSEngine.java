@@ -2790,6 +2790,19 @@ throws Exception
 			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
 			return;
 		}
+		if ( Thread.interrupted() ) {
+			// Similar to above.  Swallow because know what is supposed to be happening at this point.
+			// Set Warning dialog settings back to normal.
+			// Also added this later in the loop in case
+            Message.setPropValue ( "ShowWarningDialog=true" );
+			// Set flag so code interested in processor knows it is not running...
+			__ts_processor.setIsRunning ( false );
+			// Reset the cancel processing request and let interested code know that
+			// processing has been cancelled.
+			__ts_processor.setCancelProcessingRequested ( false );
+			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+			return;
+		}
 		try {
 		    // Catch errors in all the commands.
     		command = commandList.get(i);
@@ -2944,6 +2957,7 @@ throws Exception
                                 commandStatus.addToLog(CommandPhaseType.RUN,
                                     new CommandLogRecord(CommandStatusType.FAILURE,
                                         "Error going to next iteration (" + e + ")", "Check For() command iteration data.") );
+                                Message.printWarning(3, routine, e);
                                 // Same logic as ending the loop...
                                 int endForIndex = lookupEndForCommandIndex(commandList,forCommand.getName());
                                 // Modify the main command loop index and continue - the command after the end will be executed (or done)
@@ -3047,6 +3061,19 @@ throws Exception
     	            }
     				if ( Message.isDebugOn ) {
     					Message.printDebug ( 1, routine, "...back from running command." );
+    				}
+    				// Check to see if the thread was interrupted
+    				if ( Thread.interrupted() ) {
+    					// Same code as earlier in the loop.  Swallow because know what is supposed to be happening at this point.
+    					// Set Warning dialog settings back to normal.
+    		            Message.setPropValue ( "ShowWarningDialog=true" );
+    					// Set flag so code interested in processor knows it is not running...
+    					__ts_processor.setIsRunning ( false );
+    					// Reset the cancel processing request and let interested code know that
+    					// processing has been cancelled.
+    					__ts_processor.setCancelProcessingRequested ( false );
+    					__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+    					return;
     				}
     			}
     			catch ( InvalidCommandSyntaxException e ) {
@@ -3154,29 +3181,38 @@ throws Exception
                     }
     			}
     			catch ( Exception e ) {
-    				message = "Unexpected error processing command - unable to complete command (" + e + ").";
-    				if ( command instanceof CommandStatusProvider ) {
-    					// Add to the log as a failure...
-    					Message.printWarning ( 2,
-    						MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
-                        // Always add to the log because this type of exception is unexpected from a Command object.
-    					commandStatus.addToLog(CommandPhaseType.RUN,
-    							new CommandLogRecord(CommandStatusType.FAILURE,
-    									"Unexpected exception \"" + e.getMessage() + "\"",
-    									"See log file for details.") );
+    				if ( e instanceof InterruptedException ) {
+    					// Command processing was stopped by killing the thread
+    					needToInterrupt = true;
+    					Message.printStatus(2, routine, "Detected interrupt - setting processor running to false");
+    					__ts_processor.setIsRunning(false);
+    					Thread.currentThread().interrupt();
     				}
     				else {
-    					Message.printWarning ( popup_warning_level,
-    							MessageUtil.formatMessageTag(command_tag,
-    									++error_count), routine, message );
+	    				message = "Unexpected error processing command - unable to complete command (" + e + ").";
+	    				if ( command instanceof CommandStatusProvider ) {
+	    					// Add to the log as a failure...
+	    					Message.printWarning ( 2,
+	    						MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
+	                        // Always add to the log because this type of exception is unexpected from a Command object.
+	    					commandStatus.addToLog(CommandPhaseType.RUN,
+	    							new CommandLogRecord(CommandStatusType.FAILURE,
+	    									"Unexpected exception \"" + e.getMessage() + "\"",
+	    									"See log file for details.") );
+	    				}
+	    				else {
+	    					Message.printWarning ( popup_warning_level,
+	    							MessageUtil.formatMessageTag(command_tag,
+	    									++error_count), routine, message );
+	    				}
+	    				Message.printWarning ( 3, routine, e );
+	                    if ( needToInterrupt ) {
+	                        break;
+	                    }
+	                    else {
+	                        continue;
+	                    }
     				}
-    				Message.printWarning ( 3, routine, e );
-                    if ( needToInterrupt ) {
-                        break;
-                    }
-                    else {
-                        continue;
-                    }
     			}
                 finally {
                     // Save the time spent running the command

@@ -11,6 +11,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -102,14 +103,28 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws CommandWarningException, CommandException, InvalidCommandParameterException
+throws CommandWarningException, CommandException, InvalidCommandParameterException, InterruptedException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	PropList parameters = getCommandParameters();
 
 	String WaitTime = parameters.getValue ( "WaitTime" );
@@ -144,6 +159,12 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		}
     }
 	catch ( Exception e ) {
+		if ( Thread.interrupted() ) {
+			// Processing was killed so just rethrow exception to catch in the processor
+			Message.printStatus(2, routine, "Wait command was interrupted.");
+			Message.printWarning(3, routine, e);
+			throw new InterruptedException();
+		}
 		Message.printWarning ( 3, routine, e );
 		message = "Error waiting (" + e + ").";
 		Message.printWarning ( warning_level, 

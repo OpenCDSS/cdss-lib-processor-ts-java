@@ -105,6 +105,7 @@ import rti.tscommandprocessor.commands.spatial.WriteTableToGeoJSON_Command;
 // Spatial commands.
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTableToShapefile_Command;
+import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToGeoJSON_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTimeSeriesToKml_Command;
 import rti.tscommandprocessor.commands.spreadsheet.CloseExcelWorkbook_Command;
 // Spreadsheet commands
@@ -1162,6 +1163,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToJson") ) {
         return new WriteTimeSeriesToJson_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToGeoJSON") ) {
+        return new WriteTimeSeriesToGeoJSON_Command ();
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesToKml") ) {
         return new WriteTimeSeriesToKml_Command ();

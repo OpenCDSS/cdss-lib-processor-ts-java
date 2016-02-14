@@ -142,7 +142,7 @@ throws InvalidCommandParameterException
     
     if ( ((LongitudeProperty != null) && (LongitudeProperty.length() != 0)) &&
         ((WKTGeometryProperty != null) && (WKTGeometryProperty.length() != 0)) ) {
-        message = "The longitude column OR WKT geometry column must be specified.";
+        message = "The longitude property OR WKT geometry property must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify the longitude OR WKT geometry property." ) );

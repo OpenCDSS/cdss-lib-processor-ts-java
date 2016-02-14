@@ -245,8 +245,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {   String routine = getClass().getSimpleName() + ".runCommand", message;
     int warning_level = 2;
     String command_tag = "" + command_number;
@@ -282,7 +281,7 @@ CommandWarningException, CommandException
 
     PropList parameters = getCommandParameters();
     String TableID = parameters.getValue ( "TableID" );
-	if ( (TableID != null) && (TableID.indexOf("${") >= 0) ) {
+	if ( (commandPhase == CommandPhaseType.RUN) && (TableID != null) && (TableID.indexOf("${") >= 0) ) {
 		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	}
     String OutputFile = parameters.getValue ( "OutputFile" );
@@ -378,7 +377,7 @@ CommandWarningException, CommandException
         writeTableToGeoJSON ( table, OutputFile_full, append, includeColumns, excludeColumns,
             LongitudeColumn, LatitudeColumn, ElevationColumn, WKTGeometryColumn, JavaScriptVar, PrependText, AppendText, errors );
         for ( String error : errors ) {
-            Message.printWarning ( warning_level, 
+            Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, error );
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,

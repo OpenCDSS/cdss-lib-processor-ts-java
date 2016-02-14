@@ -100,7 +100,7 @@ public void actionPerformed( ActionEvent event )
         else {
             fc = JFileChooserFactory.createJFileChooser( __working_dir );
         }
-        fc.setDialogTitle("Select File to Write");
+        fc.setDialogTitle("Select GeoJSON File to Write");
         SimpleFileFilter sff = new SimpleFileFilter("json", "GeoJSON");
         fc.addChoosableFileFilter(sff);
         fc.addChoosableFileFilter (new SimpleFileFilter("js", "GeoJSON JavaScript"));

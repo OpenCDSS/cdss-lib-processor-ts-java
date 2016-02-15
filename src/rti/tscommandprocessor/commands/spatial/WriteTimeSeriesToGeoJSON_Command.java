@@ -283,17 +283,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
-    String OutputFile = parameters.getValue ( "OutputFile" );
+    String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
     String Append = parameters.getValue ( "Append" );
     boolean append = false;
     if ( (Append != null) && Append.equalsIgnoreCase(_True) ) {
     	append = true;
     }
     String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (LongitudeProperty != null) && (LongitudeProperty.indexOf("${") >= 0) ) {
+		LongitudeProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, LongitudeProperty);
+	}
     String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (LatitudeProperty != null) && (LatitudeProperty.indexOf("${") >= 0) ) {
+		LatitudeProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, LatitudeProperty);
+	}
     String ElevationProperty = parameters.getValue ( "ElevationProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (ElevationProperty != null) && (ElevationProperty.indexOf("${") >= 0) ) {
+		ElevationProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, ElevationProperty);
+	}
     String WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (WKTGeometryProperty != null) && (WKTGeometryProperty.indexOf("${") >= 0) ) {
+		WKTGeometryProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, WKTGeometryProperty);
+	}
     String IncludeProperties = parameters.getValue ( "IncludeProperties" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (IncludeProperties != null) && (IncludeProperties.indexOf("${") >= 0) ) {
+		IncludeProperties = TSCommandProcessorUtil.expandParameterValue(processor, this, IncludeProperties);
+	}
     String [] includeProperties = null;
     if ( (IncludeProperties != null) && !IncludeProperties.isEmpty() ) {
         // Use the provided columns
@@ -304,6 +319,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String ExcludeProperties = parameters.getValue ( "ExcludeProperties" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (ExcludeProperties != null) && (ExcludeProperties.indexOf("${") >= 0) ) {
+		ExcludeProperties = TSCommandProcessorUtil.expandParameterValue(processor, this, ExcludeProperties);
+	}
     String [] excludeProperties = null;
     if ( (ExcludeProperties != null) && !ExcludeProperties.isEmpty() ) {
         // Use the provided columns
@@ -314,6 +332,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String JavaScriptVar = parameters.getValue ( "JavaScriptVar" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (JavaScriptVar != null) && (JavaScriptVar.indexOf("${") >= 0) ) {
+		JavaScriptVar = TSCommandProcessorUtil.expandParameterValue(processor, this, JavaScriptVar);
+	}
     String PrependText = parameters.getValue ( "PrependText" );
 	if ( (PrependText != null) && (PrependText.indexOf("${") >= 0) ) {
 		PrependText = TSCommandProcessorUtil.expandParameterValue(processor, this, PrependText);

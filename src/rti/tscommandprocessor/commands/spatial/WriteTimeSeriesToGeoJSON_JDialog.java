@@ -426,6 +426,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Longitude (X) property:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LongitudeProperty_JTextField = new JTextField ( "", 20 );
+    __LongitudeProperty_JTextField.setToolTipText("Specify the longitude property, can use ${Property} notation");
     __LongitudeProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(point_JPanel, __LongitudeProperty_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -435,6 +436,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Latitude (Y) property:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LatitudeProperty_JTextField = new JTextField ( "", 20 );
+    __LatitudeProperty_JTextField.setToolTipText("Specify the latitude property, can use ${Property} notation");
     __LatitudeProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(point_JPanel, __LatitudeProperty_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -444,6 +446,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Elevation (Z) property:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ElevationProperty_JTextField = new JTextField ( "", 20 );
+    __ElevationProperty_JTextField.setToolTipText("Specify the elevation property, can use ${Property} notation");
     __ElevationProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(point_JPanel, __ElevationProperty_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -471,6 +474,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(geom_JPanel, new JLabel ( "WKT geometry property:" ),
         0, ++yGeom, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __WKTGeometryProperty_JTextField = new JTextField ( "", 20 );
+    __WKTGeometryProperty_JTextField.setToolTipText("Specify the WKT geometry property, can use ${Property} notation");
     __WKTGeometryProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(geom_JPanel, __WKTGeometryProperty_JTextField,
         1, yGeom, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -492,7 +496,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Include properties:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeProperties_JTextField = new JTextField ( "", 30 );
-    __IncludeProperties_JTextField.setToolTipText("Names of time series properties to include");
+    __IncludeProperties_JTextField.setToolTipText("Names of time series properties to include, can use ${Property}");
     __IncludeProperties_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __IncludeProperties_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -502,7 +506,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Exclude properties:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeProperties_JTextField = new JTextField ( "", 30 );
-    __ExcludeProperties_JTextField.setToolTipText("Names of time series properties to exclude");
+    __ExcludeProperties_JTextField.setToolTipText("Names of time series properties to exclude, can use ${Property}");
     __ExcludeProperties_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __ExcludeProperties_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -547,7 +551,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(js_JPanel, new JLabel ( "JavaScript variable:" ),
         0, ++yJs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __JavaScriptVar_JTextField = new JTextField ( "", 20 );
-    __JavaScriptVar_JTextField.setToolTipText("JavaScript variable:");
+    __JavaScriptVar_JTextField.setToolTipText("JavaScript variable, can use ${Property}");
     __JavaScriptVar_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(js_JPanel, __JavaScriptVar_JTextField,
         1, yJs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

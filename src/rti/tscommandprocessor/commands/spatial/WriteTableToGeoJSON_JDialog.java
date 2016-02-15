@@ -350,7 +350,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Longitude (X) column:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LongitudeColumn_JTextField = new JTextField ( "", 20 );
-    __LongitudeColumn_JTextField.setToolTipText("Longitude is negative if in the Western Hemisphere");
+    __LongitudeColumn_JTextField.setToolTipText("Longitude column, can use ${Property}, longitude is negative if in the Western Hemisphere");
     __LongitudeColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(point_JPanel, __LongitudeColumn_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -360,7 +360,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Latitude (Y) column:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LatitudeColumn_JTextField = new JTextField ( "", 20 );
-    __LatitudeColumn_JTextField.setToolTipText("Latitude is negative if in the Southern Hemisphere");
+    __LatitudeColumn_JTextField.setToolTipText("Latitude column, can use ${Property}, latitude is negative if in the Southern Hemisphere");
     __LatitudeColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(point_JPanel, __LatitudeColumn_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -370,6 +370,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Elevation (Z) column:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ElevationColumn_JTextField = new JTextField ( "", 20 );
+    __ElevationColumn_JTextField.setToolTipText("Elevation column, can use ${Property}");
     __ElevationColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(point_JPanel, __ElevationColumn_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -419,7 +420,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Include columns:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField ( "", 30 );
-    __IncludeColumns_JTextField.setToolTipText("Names of table columns to include");
+    __IncludeColumns_JTextField.setToolTipText("Comma-separated names of table columns to include, can use ${Property}");
     __IncludeColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __IncludeColumns_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -429,7 +430,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Exclude columns:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeColumns_JTextField = new JTextField ( "", 30 );
-    __ExcludeColumns_JTextField.setToolTipText("Names of table columns to exclude");
+    __ExcludeColumns_JTextField.setToolTipText("Comma-separated names of table columns to exclude, can use ${Property}");
     __ExcludeColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __ExcludeColumns_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -474,7 +475,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     JGUIUtil.addComponent(js_JPanel, new JLabel ( "JavaScript variable:" ),
         0, ++yJs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __JavaScriptVar_JTextField = new JTextField ( "", 20 );
-    __JavaScriptVar_JTextField.setToolTipText("JavaScript variable:");
+    __JavaScriptVar_JTextField.setToolTipText("JavaScript variable, can use ${Property}");
     __JavaScriptVar_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(js_JPanel, __JavaScriptVar_JTextField,
         1, yJs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

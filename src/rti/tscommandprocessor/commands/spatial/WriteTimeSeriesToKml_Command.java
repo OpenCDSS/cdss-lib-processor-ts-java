@@ -13,14 +13,12 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
-
 import RTi.GIS.GeoView.WKTGeometryParser;
 import RTi.GR.GRPoint;
 import RTi.GR.GRPointZM;
 import RTi.GR.GRPolygon;
 import RTi.GR.GRShape;
 import RTi.TS.TS;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -92,7 +90,7 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify an output file." ) );
     }
-    else {
+    else if ( OutputFile.indexOf("${") < 0 ){
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -165,7 +163,7 @@ throws InvalidCommandParameterException
     }
     
     String StyleFile_full = null;
-    if ( (StyleFile != null) && (StyleFile.length() != 0) ) {
+    if ( (StyleFile != null) && (StyleFile.length() != 0) && (StyleFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -323,9 +321,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{   String routine = "WriteTimeSeriesToKml_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   String routine = getClass().getSimpleName() + ".runCommandInternal", message;
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
@@ -341,9 +338,21 @@ CommandWarningException, CommandException
             Message.printStatus ( 2, routine,
             "Skipping \"" + toString() + "\" because output is not being created." );
     }
-    
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
     PropList parameters = getCommandParameters();
     String TSList = parameters.getValue ( "TSList" );
@@ -351,20 +360,53 @@ CommandWarningException, CommandException
         TSList = TSListType.ALL_TS.toString();
     }
     String TSID = parameters.getValue ( "TSID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
+    String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
     String Name = parameters.getValue ( "Name" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (Name != null) && (Name.indexOf("${") >= 0) ) {
+		Name = TSCommandProcessorUtil.expandParameterValue(processor, this, Name);
+	}
     String Description = parameters.getValue ( "Description" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (Description != null) && (Description.indexOf("${") >= 0) ) {
+		Description = TSCommandProcessorUtil.expandParameterValue(processor, this, Description);
+	}
     String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (LongitudeProperty != null) && (LongitudeProperty.indexOf("${") >= 0) ) {
+		LongitudeProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, LongitudeProperty);
+	}
     String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (LatitudeProperty != null) && (LatitudeProperty.indexOf("${") >= 0) ) {
+		LatitudeProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, LatitudeProperty);
+	}
     String ElevationProperty = parameters.getValue ( "ElevationProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (ElevationProperty != null) && (ElevationProperty.indexOf("${") >= 0) ) {
+		ElevationProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, ElevationProperty);
+	}
     String WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (WKTGeometryProperty != null) && (WKTGeometryProperty.indexOf("${") >= 0) ) {
+		WKTGeometryProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, WKTGeometryProperty);
+	}
     String GeometryInsert = parameters.getValue ( "GeometryInsert" );
-    String PlacemarkName = parameters.getValue ( "PlacemarkName" );
-    String PlacemarkDescription = parameters.getValue ( "PlacemarkDescription" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (GeometryInsert != null) && (GeometryInsert.indexOf("${") >= 0) ) {
+		GeometryInsert = TSCommandProcessorUtil.expandParameterValue(processor, this, GeometryInsert);
+	}
+    String PlacemarkName = parameters.getValue ( "PlacemarkName" ); // Expanded in TS scope
+    String PlacemarkDescription = parameters.getValue ( "PlacemarkDescription" ); // Expanded in TS scope
     String StyleInsert = parameters.getValue ( "StyleInsert" );
-    String StyleFile = parameters.getValue ( "StyleFile" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (StyleInsert != null) && (StyleInsert.indexOf("${") >= 0) ) {
+		StyleInsert = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleInsert);
+	}
+    String StyleFile = parameters.getValue ( "StyleFile" ); // Expanded below
     String StyleUrl = parameters.getValue ( "StyleUrl" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (StyleUrl != null) && (StyleUrl.indexOf("${") >= 0) ) {
+		StyleUrl = TSCommandProcessorUtil.expandParameterValue(processor, this, StyleUrl);
+	}
 
     // Get the time series to process...
     PropList request_params = new PropList ( "" );

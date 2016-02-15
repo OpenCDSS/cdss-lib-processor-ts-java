@@ -19,9 +19,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -32,7 +34,6 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -448,24 +449,22 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
         "The working directory is: " + __working_dir ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The output filename can be specified using ${Property} notation to utilize global properties."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Enter date/times to a precision appropriate for output time series."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select a time series ensemble ID from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -474,6 +473,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "KML file to write:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
+    __OutputFile_JTextField.setToolTipText("Specify the output file or specify with ${Property} notation");
     __OutputFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -497,11 +497,14 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(gen_JPanel, new JLabel (
         "General parameters specify information for main KML elements."),
         0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(gen_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(gen_JPanel, new JLabel ( "Name:" ),
         0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Name_JTextField = new JTextField ( "", 30 );
     __Name_JTextField.setToolTipText("Name for layer");
+    __Name_JTextField.setToolTipText("Specify the layer name, can use ${Property} notation");
     __Name_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(gen_JPanel, __Name_JTextField,
         1, yGen, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -511,6 +514,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(gen_JPanel, new JLabel ("Description:"), 
         0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Description_JTextArea = new JTextArea (3,35);
+    __Description_JTextArea.setToolTipText("Specify the layer description, can use ${Property} notation");
     __Description_JTextArea.setLineWrap ( true );
     __Description_JTextArea.setWrapStyleWord ( true );
     __Description_JTextArea.addKeyListener(this);
@@ -528,13 +532,16 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(point_JPanel, new JLabel (
         "If the time series are associated with a point layer, then spatial information can be specified from time series properties."),
         0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    //JGUIUtil.addComponent(point_JPanel, new JLabel (
-    //    "Otherwise, specify shape data using parameters in the Geometry Data tab."),
-    //    0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel (
+        "Otherwise, specify geometry data using parameters in the Geometry Data tab."),
+        0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+          0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Longitude property:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LongitudeProperty_JTextField = new JTextField ( "", 20 );
+    __LongitudeProperty_JTextField.setToolTipText("Specify the longitude property, can use ${Property} notation");
     __LongitudeProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(point_JPanel, __LongitudeProperty_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -544,6 +551,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Latitude property:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LatitudeProperty_JTextField = new JTextField ( "", 20 );
+    __LatitudeProperty_JTextField.setToolTipText("Specify the latitude property, can use ${Property} notation");
     __LatitudeProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(point_JPanel, __LatitudeProperty_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -553,6 +561,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Elevation property:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ElevationProperty_JTextField = new JTextField ( "", 20 );
+    __ElevationProperty_JTextField.setToolTipText("Specify the elevation property, can use ${Property} notation");
     __ElevationProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(point_JPanel, __ElevationProperty_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -574,10 +583,13 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(geom_JPanel, new JLabel (
         "Coordinates in the WKT strings must be geographic (longitude and latitude decimal degrees)."),
         0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(geom_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yGeom, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(geom_JPanel, new JLabel ( "WKT geometry property:" ),
         0, ++yGeom, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __WKTGeometryProperty_JTextField = new JTextField ( "", 20 );
+    __WKTGeometryProperty_JTextField.setToolTipText("Specify the WKT geometry property, can use ${Property} notation");
     __WKTGeometryProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(geom_JPanel, __WKTGeometryProperty_JTextField,
         1, yGeom, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -599,15 +611,18 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(kml_JPanel, new JLabel (
         "Refer to the KML reference for information (https://developers.google.com/kml/documentation/kmlreference)."),
         0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(kml_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yKml, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(kml_JPanel, new JLabel ("Geometry insert:"), 
         0, ++yKml, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __GeometryInsert_JTextArea = new JTextArea (6,35);
+    __GeometryInsert_JTextArea.setToolTipText("Specify the geometry insert, can use ${Property} notation");
     __GeometryInsert_JTextArea.setLineWrap ( true );
     __GeometryInsert_JTextArea.setWrapStyleWord ( true );
     __GeometryInsert_JTextArea.addKeyListener(this);
     JGUIUtil.addComponent(kml_JPanel, new JScrollPane(__GeometryInsert_JTextArea),
-        1, yKml, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yKml, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Panel for style information
     int yStyle = -1;
@@ -627,6 +642,8 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(style_JPanel, new JLabel (
         "In the future features will be enabled to lookup the market style from time series values or statistic)."),
         0, ++yStyle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(style_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yStyle, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(style_JPanel, new JLabel("Placemark name:"),
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -657,6 +674,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(style_JPanel, new JLabel ("Style insert:"), 
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StyleInsert_JTextArea = new JTextArea (6,35);
+    __StyleInsert_JTextArea.setToolTipText("Specify the style insert, can use ${Property} notation");
     __StyleInsert_JTextArea.setLineWrap ( true );
     __StyleInsert_JTextArea.setWrapStyleWord ( true );
     __StyleInsert_JTextArea.addKeyListener(this);
@@ -667,6 +685,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(style_JPanel, new JLabel ( "Style file to insert:" ), 
         0, yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StyleFile_JTextField = new JTextField ( 35 );
+    __StyleFile_JTextField.setToolTipText("Specify the style file or specify with ${Property} notation");
     __StyleFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(style_JPanel, __StyleFile_JTextField,
         1, yStyle, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -681,7 +700,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(style_JPanel, new JLabel ( "StyleUrl:" ),
         0, ++yStyle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __StyleUrl_JTextField = new JTextField ( "", 20 );
-    __StyleUrl_JTextField.setToolTipText("Use #exampleStyleMap to match a style map id");
+    __StyleUrl_JTextField.setToolTipText("Use #exampleStyleMap to match a style map id, can use ${Property} notation.");
     __StyleUrl_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(style_JPanel, __StyleUrl_JTextField,
         1, yStyle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -697,6 +716,11 @@ private void initialize ( JFrame parent, WriteTimeSeriesToKml_Command command )
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "Currently time series data are not output. In the future the KML timestamp feature may be implemented.."),
         0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JLabel (
+        "Enter date/times to a precision appropriate for output time series."),
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(data_JPanel, new JLabel ( "Output precision:" ),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

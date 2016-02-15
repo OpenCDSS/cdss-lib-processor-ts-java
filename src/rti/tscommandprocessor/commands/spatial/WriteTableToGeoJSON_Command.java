@@ -284,17 +284,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (TableID != null) && (TableID.indexOf("${") >= 0) ) {
 		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	}
-    String OutputFile = parameters.getValue ( "OutputFile" );
+    String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
     String Append = parameters.getValue ( "Append" );
     boolean append = false;
     if ( (Append != null) && Append.equalsIgnoreCase(_True) ) {
     	append = true;
     }
     String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (LongitudeColumn != null) && (LongitudeColumn.indexOf("${") >= 0) ) {
+		LongitudeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, LongitudeColumn);
+	}
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (LatitudeColumn != null) && (LatitudeColumn.indexOf("${") >= 0) ) {
+		LatitudeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, LatitudeColumn);
+	}
     String ElevationColumn = parameters.getValue ( "ElevationColumn" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (ElevationColumn != null) && (ElevationColumn.indexOf("${") >= 0) ) {
+		ElevationColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, ElevationColumn);
+	}
     String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (WKTGeometryColumn != null) && (WKTGeometryColumn.indexOf("${") >= 0) ) {
+		WKTGeometryColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, WKTGeometryColumn);
+	}
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (IncludeColumns != null) && (IncludeColumns.indexOf("${") >= 0) ) {
+		IncludeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IncludeColumns);
+	}
     String [] includeColumns = null;
     if ( (IncludeColumns != null) && !IncludeColumns.isEmpty() ) {
         // Use the provided columns
@@ -304,6 +319,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (ExcludeColumns != null) && (ExcludeColumns.indexOf("${") >= 0) ) {
+		ExcludeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, ExcludeColumns);
+	}
     String [] excludeColumns = null;
     if ( (ExcludeColumns != null) && !ExcludeColumns.isEmpty() ) {
         // Use the provided columns
@@ -313,6 +331,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String JavaScriptVar = parameters.getValue ( "JavaScriptVar" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (JavaScriptVar != null) && (JavaScriptVar.indexOf("${") >= 0) ) {
+		JavaScriptVar = TSCommandProcessorUtil.expandParameterValue(processor, this, JavaScriptVar);
+	}
     String PrependText = parameters.getValue ( "PrependText" );
 	if ( (PrependText != null) && (PrependText.indexOf("${") >= 0) ) {
 		PrependText = TSCommandProcessorUtil.expandParameterValue(processor, this, PrependText);
@@ -615,7 +636,7 @@ throws IOException
 	                errors.add("Table column to include in output \"" + includeColumns[i] + "\" does not exist in table.");
 	                includeColumnNumbers[i] = -1;
 	            }
-	        	// Ignore the WKT column because it is verbose
+	        	// Automatically ignore the WKT column because it is verbose
 	        	if ( doWkt && includeColumns[i].equalsIgnoreCase(wktGeometryColumn) ) {
 	        		includeColumnNumbers[i] = -1;
 	        	}

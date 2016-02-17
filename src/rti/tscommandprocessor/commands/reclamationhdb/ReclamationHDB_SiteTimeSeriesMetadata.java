@@ -221,34 +221,60 @@ public Date getStartDateTimeMin ()
 }
 
 /**
-Get the time series identifier string corresponding to this instance, without the data store name.
+Get the time series identifier string corresponding to this instance, without the datastore name.
 */
 public String getTSID ()
 {
     String tsType = getRealModelType();
-    String scenario = "";
-    if ( tsType.equalsIgnoreCase("Model") ) {
-        String modelRunDate = "" + getModelRunDate();
-        // Trim off the hundredths of a second since that interferes with the TSID conventions and is not
-        // likely needed to uniquely identify the model time series
-        int pos = modelRunDate.indexOf(".");
-        if ( pos > 0 ) {
-            modelRunDate = modelRunDate.substring(0,pos);
-        }
-        // Replace "." with "?" in the model information so as to not conflict with TSID conventions - will
-        // switch again later.
-        String modelName = getModelName();
-        modelName = modelName.replace('.', '?');
-        String modelRunName = getModelRunName();
-        modelRunName = modelRunName.replace('.', '?');
-        String hydrologicIndicator = getHydrologicIndicator();
-        hydrologicIndicator = hydrologicIndicator.replace('.', '?');
-        // The following should uniquely identify a model time series (in addition to other TSID parts)
-        scenario = "." + modelName + "-" + modelRunName + "-" + hydrologicIndicator + "-" + modelRunDate;
+    boolean oldStyle = false;
+    if ( oldStyle ) {
+    	// TODO SAM 2016-02-15 Remove this once new code checks out - not sure if old will need to be supported anymore
+    	// This was used when the TSID started with REAL: or MODEL:, which is no longer done now that SiteDataTypeID is used.
+        String scenario = "";
+	    if ( tsType.equalsIgnoreCase("Model") ) {
+	        String modelRunDate = "" + getModelRunDate();
+	        // Trim off the hundredths of a second since that interferes with the TSID conventions and is not
+	        // likely needed to uniquely identify the model time series
+	        int pos = modelRunDate.indexOf(".");
+	        if ( pos > 0 ) {
+	            modelRunDate = modelRunDate.substring(0,pos);
+	        }
+	        // Replace "." with "?" in the model information so as to not conflict with TSID conventions - will
+	        // switch again later.
+	        String modelName = getModelName();
+	        modelName = modelName.replace('.', '?');
+	        String modelRunName = getModelRunName();
+	        modelRunName = modelRunName.replace('.', '?');
+	        String hydrologicIndicator = getHydrologicIndicator();
+	        hydrologicIndicator = hydrologicIndicator.replace('.', '?');
+	        // The following should uniquely identify a model time series (in addition to other TSID parts)
+	        scenario = "." + modelName + "-" + modelRunName + "-" + hydrologicIndicator + "-" + modelRunDate;
+	    }
+	    return tsType + ":" + getSiteCommonName().replace('.','?') + ".HDB." +
+	        getDataTypeCommonName().replace('.', '?') + "." + getDataInterval() +
+	        scenario;
     }
-    return tsType + ":" + getSiteCommonName().replace('.','?') + ".HDB." +
-        getDataTypeCommonName().replace('.', '?') + "." + getDataInterval() +
-        scenario;
+    else {
+    	String siteCommonName = getSiteCommonName().replace('.', ' ').replace('-',' ');
+    	String dataTypeCommonName = getSiteCommonName().replace('.', ' ');
+    	String scenario = "";
+    	if ( tsType.equalsIgnoreCase("Model") ) {
+    		String modelName = getModelName().replace('.', ' ').replace('-',' ');
+            String modelRunName = getModelRunName().replace('.', ' ').replace('-',' ');
+            String hydrologicIndicator = getHydrologicIndicator().replace('.', ' ').replace('-',' ');
+            String modelRunDate = "" + getModelRunDate();
+            // Trim off the hundredths of a second since that interferes with the TSID conventions.  It always
+            // appears to be ".0", also remove seconds :00 at end
+            int pos = modelRunDate.indexOf(".");
+            if ( pos > 0 ) {
+                modelRunDate = modelRunDate.substring(0,pos - 3);
+            }
+            // The following should uniquely identify a model time series (in addition to other TSID parts)
+            scenario = "." + siteCommonName + "-" + modelName + "-" + modelRunName + "-" + hydrologicIndicator + "-" + modelRunDate;
+    	}
+    	return getObjectTypeName() + ":" + getSiteDataTypeID() + ".HDB." + dataTypeCommonName + "."
+			+ getDataInterval() + "." + siteCommonName + scenario;
+    }
 }
 
 public String getUnitCommonName ()

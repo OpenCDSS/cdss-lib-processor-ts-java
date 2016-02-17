@@ -284,9 +284,9 @@ CommandWarningException, CommandException
         allowDuplicates = true;
     }
     String TableOutputColumns = parameters.getValue ( "TableOutputColumns" );
-    String [] tableOutputColumnNames = null;
+    String [] tableOutputColumnNames0 = null;
     if ( (TableOutputColumns != null) && !TableOutputColumns.equals("") ) {
-        tableOutputColumnNames = TableOutputColumns.split(",");
+        tableOutputColumnNames0 = TableOutputColumns.split(",");
         // These are expanded below based on dynamic time series properties
     }
 
@@ -433,6 +433,14 @@ CommandWarningException, CommandException
                 // The the time series to process, from the list that was returned above.
                 message = "Copying properties for time series " + (its + 1) + " of " + nts;
                 notifyCommandProgressListeners ( its, nts, (float)-1.0, message );
+                // Reset the tableColumnNames for each time series
+                String [] tableOutputColumnNames = null;
+                if ( tableOutputColumnNames0 != null ) {
+                	tableOutputColumnNames = new String[tableOutputColumnNames0.length];
+                	for ( int i = 0; i < tableOutputColumnNames0.length; i++ ) {
+                		tableOutputColumnNames[i] = tableOutputColumnNames0[i];
+                	}
+                }
                 o_ts = tslist.get(its);
                 if ( o_ts == null ) {
                     message = "Time series " + (its + 1) + " to process is null - skipping.";
@@ -445,7 +453,8 @@ CommandWarningException, CommandException
                 }
                 ts = (TS)o_ts;
                 
-                // Get the properties to process
+                // Get the properties to process - this must be done for each time series because the properties may
+                // be different between time series.
                 if ( IncludeProperties == null ) {
                     // Get all the properties by forming a list of property names from the hashtable
                     HashMap<String, Object> propertyHash = ts.getProperties();
@@ -456,13 +465,15 @@ CommandWarningException, CommandException
                 }
                 // Set the column names from the time series properties
                 if ( tableOutputColumnNames == null ) {
+                	// Default output column names to input
                     tableOutputColumnNames = includeProperties;
                 }
                 else {
-                    // Check for wildcards
-                    for ( int icolumn = 0; icolumn < includeProperties.length; icolumn++ ) {
+                    // Table output columns were set to an array above.  Check for wildcards
+                	// TODO SAM 2016-02-17 What does this do?  Need dictionary to map similar to other commands
+                    for ( int icolumn = 0; icolumn < tableOutputColumnNames.length; icolumn++ ) {
                         if ( tableOutputColumnNames[icolumn].equals("*") ) {
-                            // Output column name is the same as the property name
+                            // Output column name gets reset to the output name
                             tableOutputColumnNames[icolumn] = includeProperties[icolumn];
                         }
                     }
@@ -478,6 +489,12 @@ CommandWarningException, CommandException
                         table.addField(new TableField(TableField.DATA_TYPE_STRING, TableTSIDColumn, -1, -1), null);
                     Message.printStatus(2, routine, "Did not match TableTSIDColumn \"" + TableTSIDColumn +
                         "\" as column table so added to table." );
+                }
+                for ( int icolumn = 0; icolumn < includeProperties.length; icolumn++ ) {
+                	Message.printStatus(2,routine,"includeProperties["+icolumn+"]="+includeProperties[icolumn]);
+                }
+                for ( int icolumn = 0; icolumn < tableOutputColumnNames.length; icolumn++ ) {
+                	Message.printStatus(2,routine,"tableOutputColumnNames["+icolumn+"]="+tableOutputColumnNames[icolumn]);
                 }
                 // Other output column types depend on the time series properties
                 for ( int i = 0; i < tableOutputColumnNames.length; i++ ) {
@@ -618,7 +635,8 @@ CommandWarningException, CommandException
                 //    String propertyName = IncludeProperties[icolumn];
                 //    Object propertyValue = ts.getProperty(propertyName);
                 for ( int icolumn = 0; icolumn < tableOutputColumnNames.length; icolumn++ ) {
-                    String propertyName = includeProperties[icolumn];
+                	// Get property name that matches the table output column
+                    String propertyName = includeProperties[icolumn]; // This should align with a corresponding output column
                     Object propertyValue = ts.getProperty(propertyName);
                     // If the property value is null, just skip setting it - default value for columns is null
                     // TODO SAM 2011-04-27 Should this be a warning?
@@ -645,10 +663,10 @@ CommandWarningException, CommandException
                         try {
                             rec.setFieldValue(colNumber,propertyValue);
                             if ( Message.isDebugOn ) {
-                                Message.printDebug(1, routine, "Setting table column " + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
+                                Message.printDebug(1, routine, "Setting table column [" + icolumn + "]" + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
                                     propertyValue + "\"" );
                             }
-                            Message.printStatus(2, routine, "Setting table column " + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
+                            Message.printStatus(2, routine, "Setting table column [" + icolumn + "] " + tableOutputColumnNamesExpanded[icolumn] + "=\"" +
                                  propertyValue + "\"" );
                             // TODO SAM 2011-04-27 Evaluate why the column width is necessary in the data table
                             // Reset the column width if necessary

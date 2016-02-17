@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -19,20 +20,21 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.TimeInterval;
 
 /**
 Editor for ARMA() command.
@@ -40,18 +42,23 @@ Editor for ARMA() command.
 public class ARMA_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private ARMA_Command __command = null; // Command as Vector of String
-private JTextArea __command_JTextArea=null;// Command as JTextField
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private ARMA_Command __command = null;
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField __a_JTextField = null;	// Field for a values.
-private JTextField __b_JTextField = null;	// Field for b values.
-private	JTextField __ARMAInterval_JTextField = null; // Interval for ARMA coefficients.
+private JTextField __a_JTextField = null;
+private JTextField __b_JTextField = null;
+private SimpleJComboBox	__RequireCoefficientsSumTo1_JComboBox = null;
+private SimpleJComboBox __ARMAInterval_JComboBox = null;
+private JTextField __InputInitialValues_JTextField = null;
+private JTextField __OutputStart_JTextField = null;
+private JTextField __OutputEnd_JTextField = null;
+private JTextField __OutputMinimum_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -61,7 +68,7 @@ ARMA_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ARMA_JDialog ( JFrame parent, Command command )
+public ARMA_JDialog ( JFrame parent, ARMA_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -121,9 +128,14 @@ private void checkInput ()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String ARMAInterval = __ARMAInterval_JTextField.getText().trim();
+    String ARMAInterval = __ARMAInterval_JComboBox.getSelected();
     String a = __a_JTextField.getText().trim();
     String b = __b_JTextField.getText().trim();
+    String RequireCoefficientsSumTo1 = __RequireCoefficientsSumTo1_JComboBox.getSelected().trim();
+    String InputInitialValues = __InputInitialValues_JTextField.getText().trim();
+	String OutputStart = __OutputStart_JTextField.getText().trim();
+	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+    String OutputMinimum = __OutputMinimum_JTextField.getText().trim();
     
     __error_wait = false;
 
@@ -145,6 +157,21 @@ private void checkInput ()
     if ( b.length() > 0 ) {
         parameters.set ( "b", b );
     }
+    if ( RequireCoefficientsSumTo1.length() > 0 ) {
+        parameters.set ( "RequireCoefficientsSumTo1", RequireCoefficientsSumTo1 );
+    }
+    if ( InputInitialValues.length() > 0 ) {
+        parameters.set ( "InputInitialValues", InputInitialValues );
+    }
+	if ( OutputStart.length() > 0 ) {
+		parameters.set ( "OutputStart", OutputStart );
+	}
+	if ( OutputEnd.length() > 0 ) {
+		parameters.set ( "OutputEnd", OutputEnd );
+	}
+    if ( OutputMinimum.length() > 0 ) {
+        parameters.set ( "OutputMinimum", OutputMinimum );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -163,31 +190,25 @@ private void commitEdits ()
 {   String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
-    String ARMAInterval = __ARMAInterval_JTextField.getText().trim();
+    String ARMAInterval = __ARMAInterval_JComboBox.getSelected();
     String a = __a_JTextField.getText().trim();
     String b = __b_JTextField.getText().trim();
+    String RequireCoefficientsSumTo1 = __RequireCoefficientsSumTo1_JComboBox.getSelected().trim();
+    String InputInitialValues = __InputInitialValues_JTextField.getText().trim();
+	String OutputStart = __OutputStart_JTextField.getText().trim();
+	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+    String OutputMinimum = __OutputMinimum_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "ARMAInterval", ARMAInterval );
     __command.setCommandParameter ( "a", a );
     __command.setCommandParameter ( "b", b );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSID_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__a_JTextField = null;
-	__b_JTextField = null;
-	__ARMAInterval_JTextField = null;
-	super.finalize ();
+    __command.setCommandParameter ( "RequireCoefficientsSumTo1", RequireCoefficientsSumTo1 );
+    __command.setCommandParameter ( "InputInitialValues", InputInitialValues );
+	__command.setCommandParameter ( "OutputStart", OutputStart );
+	__command.setCommandParameter ( "OutputEnd", OutputEnd );
+    __command.setCommandParameter ( "OutputMinimum", OutputMinimum );
 }
 
 /**
@@ -195,8 +216,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (ARMA_Command)command;
+private void initialize ( JFrame parent, ARMA_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 
@@ -207,12 +228,14 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Lag and attenuate a time series using the ARMA " +
-		"(AutoRegressive Moving Average) method." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"<html><b>This command is being enhanced - InputInitialValues, OutputStart, OutputEnd, OutputMinimumValue are not fully enabled.</b></html>" ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Lag and attenuate a time series using the ARMA (AutoRegressive Moving Average) method." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The adjusted output time series O is computed from the original input I using:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -224,62 +247,127 @@ private void initialize ( JFrame parent, Command command )
 		"where t = time, p = number of outflows to consider, and q = number of inflows to consider"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"ARMA a and b coefficients must be computed externally and should sum to 1.0." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The values for p and q will be determined from the number of coefficients."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify the interval used to compute ARMA coefficients as 1Day, 6Hour, 2Hour, etc."),
+		"ARMA a and b coefficients must be computed externally.  The values for p and q will be determined from the number of coefficients."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The ARMA interval must be <= the time series interval."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The resulting value is set to missing if one or more input values are missing"),
+		"The output value is set to missing if one or more input values are missing (typically only filled data should be used).  The period will not automatically be extended."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"(typically only filled data should be used).  The period will not automatically be extended."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select a time series ensemble ID from the list or specify with ${Property} notation");
     List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "ARMA interval:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ARMAInterval_JComboBox = new SimpleJComboBox ( false );
+    __ARMAInterval_JComboBox.setData (
+		TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR,false,-1));
+    __ARMAInterval_JComboBox.select(0);
+    __ARMAInterval_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __ARMAInterval_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    	"Required (e.g., 2Hour, 15Minute)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "\"a\" coefficients:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__a_JTextField = new JTextField ( 50 );
+	__a_JTextField = new JTextField ( 35 );
+	__a_JTextField.setToolTipText("Specify coefficients separated by commas.");
 	__a_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __a_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required - \"a\" coefficients to multiply input values."), 
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "\"b\" coefficients:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__b_JTextField = new JTextField ( 50 );
+	__b_JTextField = new JTextField ( 35 );
+	__b_JTextField.setToolTipText("Specify coefficients separated by commas.");
 	__b_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __b_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "ARMA interval:" ), 
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required - \"b\" coefficients to multiply input values."), 
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+	JGUIUtil.addComponent(main_JPanel, new JLabel("Require coefficients to sum to 1:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__ARMAInterval_JTextField = new JTextField ( 10 );
-	__ARMAInterval_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __ARMAInterval_JTextField,
+	List<String> bChoices = new ArrayList<String>(3);
+	bChoices.add("");
+	bChoices.add(__command._False);
+	bChoices.add(__command._True);
+	__RequireCoefficientsSumTo1_JComboBox = new SimpleJComboBox(bChoices);
+	__RequireCoefficientsSumTo1_JComboBox.select(0);
+	__RequireCoefficientsSumTo1_JComboBox.addActionListener(this);
+	JGUIUtil.addComponent(main_JPanel, __RequireCoefficientsSumTo1_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (e.g., 2Hour, 15Minute)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - require \"a\" and \"b\" coefficients to sum to 1 (default=" + __command._True + ")."),
+		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input initial values:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__InputInitialValues_JTextField = new JTextField ( 35 );
+	__InputInitialValues_JTextField.setToolTipText("Specify values separated by commas, earliest value first.");
+	__InputInitialValues_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __InputInitialValues_JTextField,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - input initial values (default - limited by input time series)."), 
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__OutputStart_JTextField = new JTextField (20);
+	__OutputStart_JTextField.setToolTipText("Specify the output start using a date/time string or ${Property} notation");
+	__OutputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
+		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - override the global output start (default=input period)."),
+		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
+		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__OutputEnd_JTextField = new JTextField (20);
+	__OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or ${Property} notation");
+	__OutputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
+		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - override the global output end (default=input period)."),
+		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output minimum value:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__OutputMinimum_JTextField = new JTextField ( 10 );
+	__OutputMinimum_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputMinimum_JTextField,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - output minimum value (default - no minimum limit)."), 
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -356,13 +444,18 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String routine = "ARMA_JDialog.refresh";
+{   String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
     String ARMAInterval = "";
     String a = "";
     String b = "";
+    String RequireCoefficientsSumTo1 = "";
+    String InputInitialValues = "";
+	String OutputStart = "";
+	String OutputEnd = "";
+    String OutputMinimum = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -373,6 +466,11 @@ private void refresh ()
         ARMAInterval = props.getValue ( "ARMAInterval" );
         a = props.getValue ( "a" );
         b = props.getValue ( "b" );
+        RequireCoefficientsSumTo1 = props.getValue ( "RequireCoefficientsSumTo1" );
+        InputInitialValues = props.getValue ( "InputInitialValues" );
+		OutputStart = props.getValue ( "OutputStart" );
+		OutputEnd = props.getValue ( "OutputEnd" );
+        OutputMinimum = props.getValue ( "OutputMinimum" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -417,23 +515,81 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( ARMAInterval != null ) {
-            __ARMAInterval_JTextField.setText( ARMAInterval );
-        }
+		if ( ARMAInterval == null || ARMAInterval.equals("") ) {
+			// Select a default...
+			__ARMAInterval_JComboBox.select ( 0 );
+		} 
+		else {
+			if ( JGUIUtil.isSimpleJComboBoxItem( __ARMAInterval_JComboBox, ARMAInterval, JGUIUtil.NONE, null, null ) ) {
+				__ARMAInterval_JComboBox.select ( ARMAInterval );
+			}
+			else {
+				// For legacy reasons, allow exact interval to be added if it parses
+				// TSTool 11.08.00 added combo box to select
+				boolean oldOk = false;
+				try {
+				    TimeInterval.parseInterval(ARMAInterval);
+				    oldOk = true;
+				    // Add to list at top and select
+				    __ARMAInterval_JComboBox.insert(ARMAInterval, 0);
+				    __ARMAInterval_JComboBox.select(0);
+				}
+				catch ( Exception e ) {
+					oldOk = false;
+				}
+				if ( !oldOk ) {
+					Message.printWarning ( 1, routine,
+						"Existing command references an invalid\nARMAInterval \"" + ARMAInterval + "\".  "
+						+"Select a different choice or Cancel." );
+					__error_wait = true;
+				}
+			}
+		}
         if ( a != null ) {
             __a_JTextField.setText( a );
         }
         if ( b != null ) {
             __b_JTextField.setText( b );
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__RequireCoefficientsSumTo1_JComboBox, RequireCoefficientsSumTo1, JGUIUtil.NONE, null, null ) ) {
+            __RequireCoefficientsSumTo1_JComboBox.select ( RequireCoefficientsSumTo1 );
+        }
+        else {
+            if ( (RequireCoefficientsSumTo1 == null) || RequireCoefficientsSumTo1.equals("") ) {
+                // New command...select the default...
+                __RequireCoefficientsSumTo1_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "RequireCoefficientsSumTo1 parameter \"" + RequireCoefficientsSumTo1 + "\".  Select a different value or Cancel." );
+            }
+        }
+        if ( InputInitialValues != null ) {
+            __InputInitialValues_JTextField.setText( InputInitialValues );
+        }
+		if ( OutputStart != null ) {
+			__OutputStart_JTextField.setText (OutputStart);
+		}
+		if ( OutputEnd != null ) {
+			__OutputEnd_JTextField.setText (OutputEnd);
+		}
+        if ( OutputMinimum != null ) {
+            __OutputMinimum_JTextField.setText( OutputMinimum );
+        }
     }
     // Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-    ARMAInterval = __ARMAInterval_JTextField.getText().trim();
+    ARMAInterval = __ARMAInterval_JComboBox.getSelected();
     a = __a_JTextField.getText().trim();
     b = __b_JTextField.getText().trim();
+    RequireCoefficientsSumTo1 = __RequireCoefficientsSumTo1_JComboBox.getSelected().trim();
+    InputInitialValues = __InputInitialValues_JTextField.getText().trim();
+	OutputStart = __OutputStart_JTextField.getText().trim();
+	OutputEnd = __OutputEnd_JTextField.getText().trim();
+    OutputMinimum = __OutputMinimum_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -441,13 +597,17 @@ private void refresh ()
     props.add ( "ARMAInterval=" + ARMAInterval );
     props.add ( "a=" + a );
     props.add ( "b=" + b );
+    props.add ( "RequireCoefficientsSumTo1=" + RequireCoefficientsSumTo1 );
+    props.add ( "InputInitialValues=" + InputInitialValues );
+    props.add ( "OutputStart=" + OutputStart );
+    props.add ( "OutputEnd=" + OutputEnd );
+    props.add ( "OutputMinimum=" + OutputMinimum );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {   __ok = ok;  // Save to be returned by ok()

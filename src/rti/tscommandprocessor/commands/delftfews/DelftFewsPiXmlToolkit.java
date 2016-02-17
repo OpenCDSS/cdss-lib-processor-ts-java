@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.delftfews;
 
+import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -32,14 +33,25 @@ public class DelftFewsPiXmlToolkit {
 				throw new RuntimeException ( "Don't know how to handle non-hourly data yet." );
 			}
 		}
+		else if ( unit.equalsIgnoreCase("nonequidistant") ) {
+			// Irregular - TODO SAM 2016-01-24 How to handle precision of date/time for period?
+			return "Irregular";
+		}
 		return null;
 	}
 	
 	/**
 	 * Parse a date "YYYY-MM-DD" and time "hh:mm:ss" into a DateTime object.
+	 * @param date date string
+	 * @param time time string
+	 * @param timeZoneShift hours to add to file time for desired output time zone
+	 * @param convert24HourToDay if true convert the original time to a suitable day precision date
 	 */
-	public DateTime parseDateTime ( String date, String time, boolean convert24HourToDay ) throws Exception {
+	public DateTime parseDateTime ( String date, String time, int timeZoneShift, boolean convert24HourToDay ) throws Exception {
 		DateTime dt = DateTime.parse(date + "T" + time);
+		if ( timeZoneShift != 0 ) {
+			dt.addHour(timeZoneShift);
+		}
 		// Not sure about this...
 		if ( convert24HourToDay ) {
 			// Have a 24-hour date/time where hour 00 is in the next day so subtract a day and set precision

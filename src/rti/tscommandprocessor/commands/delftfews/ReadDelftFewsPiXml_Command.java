@@ -26,6 +26,7 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -89,6 +90,7 @@ throws InvalidCommandParameterException
 	String NewUnits = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
+	String TimeZoneOffset = parameters.getValue("TimeZoneOffset");
 	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
     
     if ( (InputFile == null) || (InputFile.length() == 0) ) {
@@ -174,6 +176,13 @@ throws InvalidCommandParameterException
 		}
 	}
 	
+    if ( (TimeZoneOffset != null) && !TimeZoneOffset.isEmpty() && !StringUtil.isInteger(TimeZoneOffset) ) {
+        message = "The TimeZoneOffset parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify TimeZoneOffset as an integer offset from GMT.") );
+    }
+	
     if ( (Read24HourAsDay != null) && !Read24HourAsDay.isEmpty() && !Read24HourAsDay.equalsIgnoreCase(_False) &&
     	!Read24HourAsDay.equalsIgnoreCase(_True) ) {
         message = "The Read24HourAsDay parameter is invalid.";
@@ -183,11 +192,12 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(11);
+	List<String> validList = new ArrayList<String>(12);
     validList.add ( "InputFile" );
     validList.add ( "Output" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
+    validList.add ( "TimeZoneOffset" );
     validList.add ( "DataSource" );
     validList.add ( "DataType" );
     validList.add ( "Description" );
@@ -342,6 +352,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
 		InputEnd = "${InputEnd}"; // Global default
 	}
+	String TimeZoneOffset = parameters.getValue("TimeZoneOffset");
+	Integer timeZoneOffset = null;
+	if ( (TimeZoneOffset != null) && !TimeZoneOffset.isEmpty() ) {
+		timeZoneOffset = Integer.parseInt(TimeZoneOffset);
+	}
 	String DataSource = parameters.getValue("DataSource");
 	if ( (DataSource != null) && DataSource.indexOf("${") >= 0 ) {
 		DataSource = TSCommandProcessorUtil.expandParameterValue(processor,this,DataSource);
@@ -430,7 +445,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Read everything in the file (one time series or traces).
         	DelftFewsPiXmlReader reader = new DelftFewsPiXmlReader ( InputFile_full );
             reader.readTimeSeriesList (
-                InputStart_DateTime, InputEnd_DateTime, DataSource, DataType, Description, read24HourAsDay, null,
+                InputStart_DateTime, InputEnd_DateTime, timeZoneOffset, DataSource, DataType, Description, read24HourAsDay, null,
                 Output, EnsembleID, EnsembleName, readData, problems );
             tsList = reader.getTimeSeriesList();
             ensembleList = reader.getEnsembleList();
@@ -567,6 +582,7 @@ public String toString ( PropList props )
 	String Output = props.getValue("Output");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
+	String TimeZoneOffset = props.getValue("TimeZoneOffset");
 	String DataSource = props.getValue("DataSource");
 	String DataType = props.getValue("DataType");
 	String Description = props.getValue("Description");
@@ -598,6 +614,12 @@ public String toString ( PropList props )
 			b.append(",");
 		}
 		b.append("InputEnd=\"" + InputEnd + "\"");
+	}
+	if ((TimeZoneOffset != null) && (TimeZoneOffset.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("TimeZoneOffset=" + TimeZoneOffset );
 	}
 	if ((DataSource != null) && (DataSource.length() > 0)) {
 		if (b.length() > 0) {

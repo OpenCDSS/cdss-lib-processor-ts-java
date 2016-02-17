@@ -60,6 +60,7 @@ private JTextField __InputFile_JTextField = null;
 private SimpleJComboBox __Output_JComboBox = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
+private JTextField __TimeZoneOffset_JTextField;
 private JTextField __DataSource_JTextField;
 private JTextField __DataType_JTextField;
 private JTextField __Description_JTextField;
@@ -193,6 +194,7 @@ private void checkInput () {
     String Output = __Output_JComboBox.getSelected();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String TimeZoneOffset = __TimeZoneOffset_JTextField.getText().trim();
 	String DataSource = __DataSource_JTextField.getText().trim();
 	String DataType = __DataType_JTextField.getText().trim();
 	String Description = __Description_JTextField.getText().trim();
@@ -215,6 +217,9 @@ private void checkInput () {
 	}
 	if (InputEnd.length() > 0 && !InputEnd.equals("*")) {
 		props.set("InputEnd", InputEnd);
+	}
+	if (TimeZoneOffset.length() > 0 && !TimeZoneOffset.equals("*")) {
+		props.set("TimeZoneOffset", TimeZoneOffset);
 	}
 	if (DataSource.length() > 0 && !DataSource.equals("*")) {
 		props.set("DataSource", DataSource);
@@ -259,6 +264,7 @@ private void commitEdits() {
     String Output = __Output_JComboBox.getSelected();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String TimeZoneOffset = __TimeZoneOffset_JTextField.getText().trim();
 	String DataSource = __DataSource_JTextField.getText().trim();
 	String DataType = __DataType_JTextField.getText().trim();
 	String Description = __Description_JTextField.getText().trim();
@@ -272,6 +278,7 @@ private void commitEdits() {
 	__command.setCommandParameter("Output", Output);
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
+	__command.setCommandParameter("TimeZoneOffset", TimeZoneOffset);
 	__command.setCommandParameter("DataSource", DataSource);
 	__command.setCommandParameter("DataType", DataType);
 	__command.setCommandParameter("Description", Description);
@@ -392,6 +399,16 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     JGUIUtil.addComponent(ts_JPanel, __InputEnd_JTextField,
         1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - date/time for end of data (default=global input end)."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Time zone offset:"), 
+        0, ++yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeZoneOffset_JTextField = new JTextField (20);
+    __TimeZoneOffset_JTextField.setToolTipText("Offset from GMT such as -8 for local time");
+    __TimeZoneOffset_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __TimeZoneOffset_JTextField,
+        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - hours from GMT for output (default=file time zone)."),
         3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Data source:"), 
@@ -563,6 +580,7 @@ private void refresh() {
 	String Output = "";
 	String InputStart = "";
 	String InputEnd = "";
+	String TimeZoneOffset = "";
 	String DataSource = "";
 	String DataType = "";
 	String Description = "";
@@ -584,6 +602,7 @@ private void refresh() {
 		Output = props.getValue("Output");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
+		TimeZoneOffset = props.getValue("TimeZoneOffset");
 		DataSource = props.getValue("DataSource");
 		DataType = props.getValue("DataType");
 		Description = props.getValue("Description");
@@ -614,6 +633,9 @@ private void refresh() {
 		}
 		if (InputEnd != null) {
 			__InputEnd_JTextField.setText(InputEnd);
+		}
+		if (TimeZoneOffset != null) {
+			__TimeZoneOffset_JTextField.setText(TimeZoneOffset);
 		}
 		if (DataSource != null) {
 			__DataSource_JTextField.setText(DataSource);
@@ -658,6 +680,7 @@ private void refresh() {
 	Output = __Output_JComboBox.getSelected();
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
+	TimeZoneOffset = __TimeZoneOffset_JTextField.getText().trim();
 	DataSource = __DataSource_JTextField.getText().trim();
 	DataType = __DataType_JTextField.getText().trim();
 	Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
@@ -671,6 +694,7 @@ private void refresh() {
 	props.add("Output=" + Output);
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
+	props.add("TimeZoneOffset=" + TimeZoneOffset);
 	props.add("DataSource=" + DataSource);
 	props.add("DataType=" + DataType);
 	props.add("Read24HourAsDay=" + Read24HourAsDay);

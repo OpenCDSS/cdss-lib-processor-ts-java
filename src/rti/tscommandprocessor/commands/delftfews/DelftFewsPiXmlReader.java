@@ -29,8 +29,8 @@ import RTi.Util.Time.DateTime;
 
 /**
  * Class to read Delft FEWS PI XML files.
+ * For information, see:  https://publicwiki.deltares.nl/display/FEWSDOC/PiTimeSeriesSerializer.java
  * @author sam
- *
  */
 public class DelftFewsPiXmlReader {
 
@@ -68,11 +68,15 @@ public class DelftFewsPiXmlReader {
 	
 	/**
 	 * Create and initialize a time series object from the <series><header> element.
+	 * @param its counter of time series being read 0+, used to assign index and index1 properties in ensemble.
 	 * @param dataType data type to override internal type
+	 * @param timeZoneShift shift to apply to file times for output
 	 * @param read24HourAsDay if true read 24hour interval data as day interval time series
 	 */
-	private TS createTimeSeriesFromHeader ( XmlToolkit xtk, String piXmlVersion, Node headerNode, DateTime inputStart, DateTime inputEnd,
-		String dataSource, String dataType, String description, boolean read24HourAsDay, String ensembleID, String ensembleName ) throws IOException {
+	private TS createTimeSeriesFromHeader ( XmlToolkit xtk, String piXmlVersion, Node headerNode, int its,
+		DateTime inputStart, DateTime inputEnd,
+		int timeZoneShift, String dataSource, String dataType, String description, boolean read24HourAsDay,
+		String ensembleID, String ensembleName ) throws IOException {
 		TS ts = null;
 		NodeList headerNodeChildren = headerNode.getChildNodes();
 		String type = xtk.getNodeValue("type", headerNodeChildren);
@@ -94,7 +98,12 @@ public class DelftFewsPiXmlReader {
 		String forecastDateDate = xtk.getNodeAttribute("date", forecastDate);
 		String forecastDateTime0 = xtk.getNodeAttribute("time", forecastDate);
 		String missVal = xtk.getNodeValue("missVal", headerNodeChildren);
+		String longName = xtk.getNodeValue("longName", headerNodeChildren);
 		String stationName = xtk.getNodeValue("stationName", headerNodeChildren);
+		String sourceOrganisation = xtk.getNodeValue("sourceOrganisation", headerNodeChildren);
+		String sourceSystem = xtk.getNodeValue("sourceSystem", headerNodeChildren);
+		String fileDescription = xtk.getNodeValue("fileDescription", headerNodeChildren);
+		String region = xtk.getNodeValue("region", headerNodeChildren);
 		String lat = xtk.getNodeValue("lat", headerNodeChildren);
 		String lon = xtk.getNodeValue("lon", headerNodeChildren);
 		String x = xtk.getNodeValue("x", headerNodeChildren);
@@ -112,25 +121,32 @@ public class DelftFewsPiXmlReader {
 		try {
 			ts = TSUtil.newTimeSeries(tsInterval,false);
 			// Set time series properties because they are used below
-			DateTime inputStartOrig = dtk.parseDateTime(startDateDate, startDateTime, convert24HourToDay );
-			DateTime inputEndOrig = dtk.parseDateTime(endDateDate, endDateTime, convert24HourToDay);
-			DateTime forecastDateTime = dtk.parseDateTime(forecastDateDate, forecastDateTime0, convert24HourToDay);
-			ts.setProperty("type", DMIUtil.isMissing(type)? null : type);
-			ts.setProperty("locationId", DMIUtil.isMissing(locationId)? null : locationId);
-			ts.setProperty("parameterId", DMIUtil.isMissing(parameterId)? null : parameterId);
-			ts.setProperty("qualifierId", DMIUtil.isMissing(qualifierId)? null : qualifierId);
-			ts.setProperty("ensembleId", DMIUtil.isMissing(ensembleId)? null : ensembleId);
-			ts.setProperty("ensembleMemberIndex", DMIUtil.isMissing(ensembleMemberIndex)? null : ensembleMemberIndex);
+			DateTime inputStartOrig = dtk.parseDateTime(startDateDate, startDateTime, timeZoneShift, convert24HourToDay );
+			DateTime inputEndOrig = dtk.parseDateTime(endDateDate, endDateTime, timeZoneShift, convert24HourToDay);
+			DateTime forecastDateTime = dtk.parseDateTime(forecastDateDate, forecastDateTime0, timeZoneShift, convert24HourToDay);
+			ts.setProperty("type", DMIUtil.isMissing(type)? "" : type);
+			ts.setProperty("locationId", DMIUtil.isMissing(locationId)? "" : locationId);
+			ts.setProperty("parameterId", DMIUtil.isMissing(parameterId)? "" : parameterId);
+			ts.setProperty("qualifierId", DMIUtil.isMissing(qualifierId)? "" : qualifierId);
+			ts.setProperty("ensembleId", DMIUtil.isMissing(ensembleId)? "" : ensembleId);
+			ts.setProperty("ensembleMemberIndex", DMIUtil.isMissing(ensembleMemberIndex)? "" : ensembleMemberIndex);
+			ts.setProperty("forecastDate", (forecastDateTime == null)? null : forecastDateTime);
+			ts.setProperty("fileDescription", DMIUtil.isMissing(fileDescription)? "" : fileDescription);
+			ts.setProperty("index", new Integer(its));
+			ts.setProperty("index1", new Integer(its + 1));
+			ts.setProperty("longName", DMIUtil.isMissing(longName)? "" : longName);
 			ts.setProperty("lat", DMIUtil.isMissing(lat)? null : Double.parseDouble(lat));
 			ts.setProperty("lon", DMIUtil.isMissing(lon)? null : Double.parseDouble(lon));
-			ts.setProperty("forecastDate", (forecastDateTime == null)? null : forecastDateTime);
 			// Set missing value as string property so it can be checked against event data value
 			ts.setProperty("missVal", DMIUtil.isMissing(missVal)? null : missVal);
-			ts.setProperty("stationName", DMIUtil.isMissing(stationName)? null : stationName);
+			ts.setProperty("region", DMIUtil.isMissing(region)? "" : region);
+			ts.setProperty("stationName", DMIUtil.isMissing(stationName)? "" : stationName);
+			ts.setProperty("sourceOrganisation", DMIUtil.isMissing(sourceOrganisation)? "" : sourceOrganisation);
+			ts.setProperty("sourceSystem", DMIUtil.isMissing(sourceSystem)? "" : sourceSystem);
 			ts.setProperty("x", DMIUtil.isMissing(x)? null : Double.parseDouble(x));
 			ts.setProperty("y", DMIUtil.isMissing(y)? null : Double.parseDouble(y));
 			ts.setProperty("z", DMIUtil.isMissing(z)? null : Double.parseDouble(z));
-			ts.setProperty("piXmlVersion", DMIUtil.isMissing(piXmlVersion)? null : piXmlVersion);
+			ts.setProperty("piXmlVersion", DMIUtil.isMissing(piXmlVersion)? "" : piXmlVersion);
 			// Override data source if requested before assigning identifier
 			if ( (dataSource != null) && !dataSource.isEmpty() ) {
 				dataSource = ts.formatLegend(dataSource);
@@ -229,11 +245,16 @@ public class DelftFewsPiXmlReader {
 	
 	/**
 	 * Read the time series data from XML
+	 * @param xtk XML toolkit to help with processing
+	 * @param dtk Delft FEWS PI XML toolkit to help with processing
 	 * @param seriesNode the <series> element for the time series
 	 * @param ts time series to process
+	 * @param missingVal the string value that indicates missing
+	 * @param timeZoneShift the shift in hours to be applied to times to result in desired output time zone
+	 * @param convert24HourToDay if True convert the date/time to suitable day precision value
 	 */
 	private void readTimeSeriesData ( XmlToolkit xtk, DelftFewsPiXmlToolkit dtk, Node seriesNode,
-		TS ts, String missingVal, boolean convert24HourToDay ) {
+		TS ts, String missingVal, int timeZoneShift, boolean convert24HourToDay ) {
 		List<Node> eventList = xtk.getNodes("event", seriesNode.getChildNodes());
 		double missingDouble = ts.getMissing();
 		double valueDouble = 0.0; // <event value> as double
@@ -242,9 +263,13 @@ public class DelftFewsPiXmlReader {
 			try {
 				String eventDate = xtk.getNodeAttribute("date", event);
 				String eventTime = xtk.getNodeAttribute("time", event);
-				dt = dtk.parseDateTime(eventDate, eventTime, convert24HourToDay);
+				dt = dtk.parseDateTime(eventDate, eventTime, timeZoneShift, convert24HourToDay);
 				String eventValue = xtk.getNodeAttribute("value", event);
 				String eventFlag = xtk.getNodeAttribute("flag", event);
+				// TODO SAM 2016-01-24 Evaluate whether to enable
+				//String eventFlagSource = xtk.getNodeAttribute("flagSource", event);
+				//String eventComment = xtk.getNodeAttribute("comment", event);
+				//String eventUser = xtk.getNodeAttribute("user", event);
 				if ( eventValue.equalsIgnoreCase(missingVal) ) {
 					valueDouble = missingDouble;
 				}
@@ -266,6 +291,7 @@ public class DelftFewsPiXmlReader {
 	 * @param inputFile path to input file to read
 	 * @param inputStart start of period to read or null to read all
 	 * @param inputEnd end of period to read or null to read all
+	 * @param timeZoneOffset requested hour offset from GMT (0) for output
 	 * @param dataSource data source to override default ("FEWS")
 	 * @param dataType data type to override internal type
 	 * @param description description to override internal default (station name)
@@ -274,13 +300,14 @@ public class DelftFewsPiXmlReader {
 	 * @param output indicate what to output:  "Ensembles", "TimeSeries", or "TimeSeriesAndEnsembles" 
 	 */
     public void readTimeSeriesList (
-        DateTime inputStart, DateTime inputEnd, String dataSource, String dataType, String description, boolean read24HourAsDay,
+        DateTime inputStart, DateTime inputEnd, Integer timeZoneOffset, String dataSource, String dataType,
+        String description, boolean read24HourAsDay,
         String newUnits, String output, String ensembleID, String ensembleName, boolean readData, List<String> problems ) {
     	// Clear out the results arrays
     	this.tsList.clear();
     	this.ensembleList.clear();
     	// For now parse the XML. In the future may use DELFT jar files, etc. but don't want the dependencies right now
-    	readTimeSeriesListParseXml ( inputStart, inputEnd, dataSource, dataType, description, read24HourAsDay, newUnits,
+    	readTimeSeriesListParseXml ( inputStart, inputEnd, timeZoneOffset, dataSource, dataType, description, read24HourAsDay, newUnits,
     		output, ensembleID, ensembleName, readData, problems );
     }
     
@@ -290,6 +317,7 @@ public class DelftFewsPiXmlReader {
 	 * @param inputFile path to input file to read
 	 * @param inputStart start of period to read or null to read all
 	 * @param inputEnd end of period to read or null to read all
+	 * @param timeZoneOffset requested hour offset from GMT (0) for output
 	 * @param dataSource data source to override default ("FEWS")
 	 * @param dataType data type to override internal type
 	 * @param description description to override internal default (station name)
@@ -298,7 +326,8 @@ public class DelftFewsPiXmlReader {
 	 * @param output indicate what to output:  "Ensembles", "TimeSeries", or "TimeSeriesAndEnsembles" 
 	 */
     private void readTimeSeriesListParseXml (
-        DateTime inputStart, DateTime inputEnd, String dataSource, String dataType, String description, boolean read24HourAsDay,
+        DateTime inputStart, DateTime inputEnd, Integer timeZoneOffset, String dataSource, String dataType,
+        String description, boolean read24HourAsDay,
         String newUnits, String output, String ensembleID, String ensembleName, boolean readData, List<String> problems ) {
     	String routine = getClass().getSimpleName() + ".readTimeSeriesListParseXml";
     	boolean doReadTs = false;
@@ -368,6 +397,30 @@ public class DelftFewsPiXmlReader {
     	Message.printStatus(2,routine,"Root node name=\"" + rootNode.getNodeName() + "\"");
     	// Get the version, in case needed
     	String piXmlVersion = xtk.getNodeAttribute("version", rootNode);
+    	// Get the timezone, needed to ensure that output is as requested
+    	String timeZoneXml = xtk.getNodeValue("timeZone", rootNode.getChildNodes());
+    	Double timeZoneDouble = null;
+    	try {
+    		timeZoneDouble = Double.parseDouble(timeZoneXml);
+    		if ( !timeZoneXml.endsWith(".0")) {
+    			problems.add ( "<timeZone> in file value \"" + timeZoneXml + "\" does not follow format N.0");
+    			return;
+    		}
+    	}
+		catch ( NumberFormatException e ) {
+			problems.add ( "<timeZone> in file value \"" + timeZoneXml + "\" does not follow format N.0");
+			return;
+		}
+    	int timeZoneFile = (int)(timeZoneDouble + .01);
+    	int timeZoneShift = 0; // Hour to add to times in the file
+    	if ( timeZoneOffset != null ) {
+    		// Time zone is requested as an hour offset from GMT
+    		// Compute an actual shift
+    		timeZoneShift = timeZoneOffset - timeZoneFile;
+    	}
+    	Message.printStatus(2,routine,"Time zone in file is " + timeZoneFile + " offset from GMT.");
+    	Message.printStatus(2,routine,"Requested time zone offset from GMT is " + timeZoneOffset );
+    	Message.printStatus(2,routine,"Time zone hour shift applied to all date/time will be " + timeZoneShift );
     	// Get the elements to use for the table, or children under the root if not specified
     	NodeList seriesNodeList = null;
     	seriesNodeList = document.getElementsByTagName("series");
@@ -378,20 +431,22 @@ public class DelftFewsPiXmlReader {
     	// Loop through the <series> nodes and read time series for each.
     	Message.printStatus(2, routine, "XML file has " + seriesNodeList.getLength() + " <series> elements to process into time series.");
     	TS ts;
-    	for ( int i = 0; i < seriesNodeList.getLength(); i++ ) {
-    		Node seriesNode = seriesNodeList.item(i);
+    	for ( int its = 0; its < seriesNodeList.getLength(); its++ ) {
+    		Node seriesNode = seriesNodeList.item(its);
     		Node headerNode = xtk.getNode("header", seriesNode.getChildNodes());
     		if ( headerNode == null ) {
-    			problems.add("No <header> element in <series> element " + (i + 1) + " - cannot initialize time series");
+    			problems.add("No <header> element in <series> element " + (its + 1) + " - cannot initialize time series");
     		}
     		else {
     			try {
-    				ts = createTimeSeriesFromHeader ( xtk, piXmlVersion, headerNode, inputStart, inputEnd,
-    					dataSource, dataType, description, read24HourAsDay, ensembleID, ensembleName );
+    				ts = createTimeSeriesFromHeader ( xtk, piXmlVersion, headerNode, its, inputStart, inputEnd,
+    					timeZoneShift, dataSource, dataType, description, read24HourAsDay,
+    					ensembleID, ensembleName );
     				if ( readData ) {
 	    				// Read the data values
     					ts.allocateDataSpace();
-	    				readTimeSeriesData ( xtk, dtk, seriesNode, ts, (String)ts.getProperty("MissingVal"), this.convert24HourToDay );
+	    				readTimeSeriesData ( xtk, dtk, seriesNode, ts, 
+	    					(String)ts.getProperty("MissingVal"), timeZoneShift, this.convert24HourToDay );
     				}
     				// If reading time series, add to the time series list
     				if ( doReadTs) {

@@ -1,12 +1,14 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -54,8 +56,7 @@ public RunProgram_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -101,16 +102,18 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
-	valid_Vector.add ( "CommandLine" );
-	valid_Vector.add ( "Program" );
+    List validList = new ArrayList<String>(7+_ProgramArg_SIZE);
+	validList.add ( "CommandLine" );
+	validList.add ( "Program" );
 	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
-	    valid_Vector.add ( "ProgramArg" + (i + 1) );
+	    validList.add ( "ProgramArg" + (i + 1) );
 	}
-	valid_Vector.add ( "UseCommandShell" );
-	valid_Vector.add ( "Timeout" );
-	valid_Vector.add ( "ExitStatusIndicator" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	validList.add ( "UseCommandShell" );
+	validList.add ( "CommandShell" );
+	validList.add ( "Timeout" );
+	validList.add ( "ExitStatusIndicator" );
+	validList.add ( "OutputCheckTableID" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -123,12 +126,14 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	return (new RunProgram_JDialog ( parent, this )).ok();
+{	List<String> tableIDChoices =
+        TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)getCommandProcessor(), this);
+	// The command will be modified if changed...
+	return (new RunProgram_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
 /**
@@ -342,8 +347,10 @@ public String toString ( PropList parameters )
 	    ProgramArg[i] = parameters.getValue("ProgramArg" + (i + 1));
 	}
 	String UseCommandShell = parameters.getValue("UseCommandShell");
+	String CommandShell = parameters.getValue("CommandShell");
 	String Timeout = parameters.getValue("Timeout");
 	String ExitStatusIndicator = parameters.getValue("ExitStatusIndicator");
+	String OutputCheckTableID = parameters.getValue("OutputCheckTableID");
 	StringBuffer b = new StringBuffer ();
 	if ( (CommandLine != null) && (CommandLine.length() > 0) ) {
 		b.append ( "CommandLine=\"" + CommandLine + "\"" );
@@ -368,6 +375,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "UseCommandShell=" + UseCommandShell );
     }
+    if ( (CommandShell != null) && (CommandShell.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CommandShell=" + CommandShell );
+    }
 	if ( (Timeout != null) && (Timeout.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -379,6 +392,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "ExitStatusIndicator=\"" + ExitStatusIndicator + "\"");
+    }
+    if ( (OutputCheckTableID != null) && (OutputCheckTableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputCheckTableID=\"" + OutputCheckTableID +"\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

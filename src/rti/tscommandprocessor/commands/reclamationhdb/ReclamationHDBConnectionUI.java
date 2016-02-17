@@ -10,6 +10,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +33,7 @@ import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBConnectionUI
 User interface for the ReclamationHDB connection dialog.
 @author sam
 */
-public class ReclamationHDBConnectionUI extends JDialog implements ActionListener, ItemListener
+public class ReclamationHDBConnectionUI extends JDialog implements ActionListener, ItemListener, KeyListener
 {
 	
 /**
@@ -260,6 +262,7 @@ private void initUI()
     JGUIUtil.addComponent(northJPanel, new JLabel("Password:"), 
 		0, ++y, 1, 1, 0, 0, LTB_insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	this.passwordJPasswordField = new JPasswordField(25);
+	this.passwordJPasswordField.addKeyListener(this);
 	this.passwordJPasswordField.setEchoChar('*');
 	setPassword();
 	//passwordJPasswordField.addKeyListener(this);
@@ -317,6 +320,23 @@ public void itemStateChanged ( ItemEvent evt )
 		setPassword();
 	}
 }
+
+/**
+Respond to KeyEvents.
+*/
+public void keyPressed ( KeyEvent event )
+{	int code = event.getKeyCode();
+	if ( code == KeyEvent.VK_ENTER ) {
+		// Same as OK
+		okClicked();
+	}
+}
+
+public void keyReleased ( KeyEvent event )
+{
+}
+
+public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Lookup the datastore matching the datastore name, used when list of datastores was used in constructor.

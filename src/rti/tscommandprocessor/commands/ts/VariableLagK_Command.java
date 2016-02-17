@@ -636,7 +636,7 @@ Run the command.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "VariableLagK_Command.runCommand", message = "";
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
     //int dl = 10;
 	int log_level = 3;
 	int warning_level = 2;

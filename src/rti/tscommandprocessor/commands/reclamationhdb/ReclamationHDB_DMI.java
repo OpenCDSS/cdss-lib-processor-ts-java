@@ -2974,7 +2974,7 @@ Read a time series from the ReclamationHDB database using the string time series
 */
 public TS readTimeSeries ( String tsidentString, DateTime readStart, DateTime readEnd, boolean readData )
 throws Exception
-{   String routine = getClass().getName() + "readTimeSeries";
+{   String routine = getClass().getSimpleName() + "readTimeSeries";
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString );
 
     if ( (tsident.getIntervalBase() != TimeInterval.HOUR) && (tsident.getIntervalBase() != TimeInterval.IRREGULAR) &&
@@ -3103,7 +3103,7 @@ private TS readTimeSeriesHelper ( String tsidentString, TSIdent tsident, int int
     int siteDataTypeID, int modelRunID, ReclamationHDB_SiteTimeSeriesMetadata tsMetadata,
     boolean isReal, boolean isTrace, String tsType, DateTime readStart, DateTime readEnd, boolean readData )
 throws Exception
-{   String routine = "ReclamationHDB_DMI.readTimeSeriesHelper";
+{   String routine = getClass().getSimpleName() + ".readTimeSeriesHelper";
 
     Message.printStatus(2,routine,"Reading time series isTrace=" + isTrace);
     // Create the time series...
@@ -4056,6 +4056,8 @@ throws SQLException
     // Maximum batch, 256 as per: http://docs.oracle.com/cd/E11882_01/timesten.112/e21638/tuning.htm
     int batchCountMax = __writeToHdbInsertStatementMax; // Putting a large number here works with new Oracle driver
     int batchCountTotal = 0;
+    DateTime batchStart = null;
+    DateTime batchEnd = null;
     try {
         while ( true ) {
             tsdata = tsi.next();
@@ -4166,7 +4168,11 @@ throws SQLException
                                 " HDB date/time ms end=null");
                         }
                     }
-                    ++batchCount;
+                    if ( batchCount == 0 ) {
+                    	batchStart = new DateTime(dt);
+                    }
+                    batchEnd = dt;
+                    ++batchCount; 
                     cs.addBatch();
                 }
                 catch ( Exception e ) {
@@ -4188,7 +4194,7 @@ throws SQLException
                     // TODO SAM 2012-03-28 Figure out how to use to compare values updated with expected number
                     batchCountTotal += batchCount;
                     Message.printStatus(2, routine, "Writing time series records, this batch count = " + batchCount +
-                        ", batch count total = " + batchCountTotal );
+                        ", batch count total = " + batchCountTotal + " period = " + batchStart + " to " + batchEnd );
                     int [] updateCounts = cs.executeBatch();
                     if ( updateCounts != null ) {
                         for ( int iu = 0; iu < updateCounts.length; iu++ ) {

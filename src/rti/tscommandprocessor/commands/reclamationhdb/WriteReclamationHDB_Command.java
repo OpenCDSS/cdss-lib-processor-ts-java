@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -45,8 +46,7 @@ public WriteReclamationHDB_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -381,38 +381,38 @@ throws InvalidCommandParameterException
 	}
 	*/
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-	valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "SiteCommonName" );
-    valid_Vector.add ( "DataTypeCommonName" );
-    valid_Vector.add ( "SiteDataTypeID" );
+	List<String> validList = new ArrayList<String>(27);
+	validList.add ( "DataStore" );
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "SiteCommonName" );
+    validList.add ( "DataTypeCommonName" );
+    validList.add ( "SiteDataTypeID" );
     //valid_Vector.add ( "IntervalHint" );
-    valid_Vector.add ( "ModelName" );
-    valid_Vector.add ( "ModelRunName" );
-    valid_Vector.add ( "HydrologicIndicator" );
-    valid_Vector.add ( "ModelRunDate" );
-    valid_Vector.add ( "NewModelRunDate" );
-    valid_Vector.add ( "ModelRunID" );
-    valid_Vector.add ( "EnsembleName" );
-    valid_Vector.add ( "NewEnsembleName" );
-    valid_Vector.add ( "EnsembleTrace" );
-    valid_Vector.add ( "EnsembleModelName" );
-    valid_Vector.add ( "EnsembleModelRunDate" );
-    valid_Vector.add ( "NewEnsembleModelRunDate" );
-    valid_Vector.add ( "EnsembleModelRunID" );
-    valid_Vector.add ( "Agency" );
-    valid_Vector.add ( "ValidationFlag" );
-    valid_Vector.add ( "OverwriteFlag" );
-    valid_Vector.add ( "DataFlags" );
-    valid_Vector.add ( "TimeZone" );
-	valid_Vector.add ( "OutputStart" );
-	valid_Vector.add ( "OutputEnd" );
+    validList.add ( "ModelName" );
+    validList.add ( "ModelRunName" );
+    validList.add ( "HydrologicIndicator" );
+    validList.add ( "ModelRunDate" );
+    validList.add ( "NewModelRunDate" );
+    validList.add ( "ModelRunID" );
+    validList.add ( "EnsembleName" );
+    validList.add ( "NewEnsembleName" );
+    validList.add ( "EnsembleTrace" );
+    validList.add ( "EnsembleModelName" );
+    validList.add ( "EnsembleModelRunDate" );
+    validList.add ( "NewEnsembleModelRunDate" );
+    validList.add ( "EnsembleModelRunID" );
+    validList.add ( "Agency" );
+    validList.add ( "ValidationFlag" );
+    validList.add ( "OverwriteFlag" );
+    validList.add ( "DataFlags" );
+    validList.add ( "TimeZone" );
+	validList.add ( "OutputStart" );
+	validList.add ( "OutputEnd" );
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//valid_Vector.add ( "IntervalOverride" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -440,16 +440,28 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "WriteReclamationHDB_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
 	CommandProcessor processor = getCommandProcessor();
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	PropList parameters = getCommandParameters();
     String DataStore = parameters.getValue("DataStore");
@@ -458,7 +470,13 @@ CommandWarningException, CommandException
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String SiteCommonName = parameters.getValue ( "SiteCommonName" );
     String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
     String SiteDataTypeID = parameters.getValue ( "SiteDataTypeID" );

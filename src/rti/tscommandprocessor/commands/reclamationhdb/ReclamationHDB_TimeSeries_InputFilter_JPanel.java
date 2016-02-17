@@ -215,6 +215,11 @@ public void setFilters ( ReclamationHDB_DMI dmi, int numFilterGroups )
     filters.add(new InputFilter("Model Run - ID",
         "REF_MODEL_RUN.MODEL_RUN_ID", "",
         StringUtil.TYPE_INTEGER, null, null, true));
+
+    // Have to use function to convert to text for date since don't handle dates generically in filter code
+    filters.add(new InputFilter("Model Run - Date",
+        "TO_CHAR(REF_MODEL_RUN.RUN_DATE,'YYYY-MM-DD HH24:MI:SS')", "",
+        StringUtil.TYPE_STRING, null, null, true));
     
     filters.add(new InputFilter("Model Run - Name",
         "REF_MODEL_RUN.MODEL_RUN_NAME", "",

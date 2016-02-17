@@ -2,17 +2,17 @@ package rti.tscommandprocessor.commands.ensemble;
 
 import javax.swing.JFrame;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_NewStatisticTimeSeriesFromEnsemble;
-
+import RTi.Util.Math.DistributionType;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -32,11 +32,8 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.WarningCount;
-
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.DateTimeRange;
 
 /**
 This class initializes, checks, and runs the NewStatisticTimeSeriesFromEnsemble() command.
@@ -62,8 +59,7 @@ public NewStatisticTimeSeriesFromEnsemble_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -71,8 +67,10 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String Alias = parameters.getValue ( "Alias" );
 	String EnsembleID = parameters.getValue ( "EnsembleID" );
+    String Distribution = parameters.getValue ( "Distribution" );
+    String ProbabilityUnits = parameters.getValue ( "ProbabilityUnits" );
 	String Statistic = parameters.getValue ( "Statistic" );
-	String TestValue = parameters.getValue ( "TestValue" );
+    String Value1 = parameters.getValue ( "Value1" );
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
 	String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
@@ -84,6 +82,8 @@ throws InvalidCommandParameterException
 	
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
+	
+	TSUtil_NewStatisticTimeSeriesFromEnsemble tsu = new TSUtil_NewStatisticTimeSeriesFromEnsemble();
 
 	if ( (Alias == null) || Alias.equals("") ) {
 		message = "The time series alias must be specified.";
@@ -100,6 +100,33 @@ throws InvalidCommandParameterException
 						message, "Specify an ensemble identifier." ) );
 	}
 	// TODO SAM 2005-08-29 Need to decide whether to check NewTSID - it might need to support wildcards.
+	DistributionType distType = null;
+    if ( (Distribution != null) && !Distribution.equals("") ) {
+        List<String> distChoices = tsu.getDistributionChoicesAsStrings();
+        for ( String d : distChoices ) {
+            if ( d.equalsIgnoreCase(Distribution) ) {
+            	distType = DistributionType.valueOfIgnoreCase(d);
+                break;
+            }
+        }
+        if ( distType == null ) {
+            message = "The distribution (" + Distribution + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a distribution as one of the choices in the command editor." ) );
+        }
+    }
+    
+    if ( (ProbabilityUnits != null) && !ProbabilityUnits.equals("") && !ProbabilityUnits.equalsIgnoreCase("Fraction") &&
+        !ProbabilityUnits.equalsIgnoreCase("Percent") && !ProbabilityUnits.equalsIgnoreCase("%")) {
+        message = "The probability units (" + ProbabilityUnits + ") are invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a the probability units as Fraction, Percent, or %." ) );
+    }
+    
 	if ( (Statistic == null) || Statistic.equals("") ) {
 		message = "The statistic must be specified.";
 		warning += "\n" + message;
@@ -107,18 +134,70 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify a Statistic." ) );
 	}
-	if ( (TestValue != null) && !TestValue.equals("") ) {
-		// If a test value is specified, for now make sure it is a
-		// number.  It is possible that in the future it could be a
-		// special value (date, etc.) but for now focus on numbers.
-		if ( !StringUtil.isDouble(TestValue) ) {
-			message = "The test value (" + TestValue + ") is not a number.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a number for the test value." ) );
-		}
-	}
+    else {
+        // Make sure that the statistic is known in general
+        boolean supported = false;
+        TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
+        if ( statisticType == null ) {
+            message = "The statistic (" + Statistic + ") is not recognized.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Select a supported statistic using the command editor." ) );
+        }
+        else {
+            // Make sure that it is in the supported list
+            supported = false;
+            List<TSStatisticType> statistics = tsu.getStatisticChoices();
+            for ( TSStatisticType statistic : statistics ) {
+                if ( statisticType == statistic ) {
+                    supported = true;
+                }
+            }
+            if ( !supported ) {
+                message = "The statistic (" + Statistic + ") is not supported by this command.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Select a supported statistic using the command editor." ) );
+            }
+            if ( (distType != null) && !tsu.isStatisticSupportedForDistribution(statisticType, distType) ) {
+            	message = "The statistic (" + Statistic + ") is not supported for distribution (" + Distribution + ").";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Don't specify distribution to get simple statistics (e.g., Mean of sample values, rather than Mean for distribution)." ) );
+            }
+        }
+	
+	    // Additional checks that depend on the statistic
+	    
+	    if ( supported ) {
+	        int nRequiredValues = -1;
+	        try {
+	            nRequiredValues = tsu.getRequiredNumberOfValuesForStatistic ( statisticType );
+	        }
+	        catch ( Exception e ) {
+	            message = "Statistic \"" + statisticType + "\" is not recognized.";
+	            warning += "\n" + message;
+	            status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Contact software support." ) );
+	        }
+	        
+	        if ( nRequiredValues >= 1 ) {
+	            if ( (Value1 == null) || Value1.equals("") ) {
+	                message = "Value1 must be specified for the statistic.";
+	                warning += "\n" + message;
+	                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Provide Value1." ) );
+	            }
+	            else if ( !StringUtil.isDouble(Value1) ) {
+	                message = "Value1 (" + Value1 + ") is not a number.";
+	                warning += "\n" + message;
+	                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Specify Value1 as a number." ) );
+	            }
+	        }
+	    }
+    }
+
 	// TODO SAM 2005-09-12
 	// Need to evaluate whether the test value is needed, depending on the statistic
     if ( (AllowMissingCount != null) && !AllowMissingCount.equals("") ) {
@@ -164,7 +243,8 @@ throws InvalidCommandParameterException
     }
 
 	if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
-		!AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
+		!AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") &&
+		(AnalysisStart.indexOf("${") < 0)) {
 		try {	DateTime.parse(AnalysisStart);
 		}
 		catch ( Exception e ) {
@@ -176,7 +256,8 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") &&
-		!AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
+		!AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") &&
+		(AnalysisEnd.indexOf("${") < 0)) {
 		try {	DateTime.parse( AnalysisEnd );
 		}
 		catch ( Exception e ) {
@@ -189,7 +270,8 @@ throws InvalidCommandParameterException
 	}
 	
     if ( (OutputStart != null) && !OutputStart.equals("") &&
-          !OutputStart.equalsIgnoreCase("OutputStart") && !OutputStart.equalsIgnoreCase("OutputEnd") ) {
+          !OutputStart.equalsIgnoreCase("OutputStart") && !OutputStart.equalsIgnoreCase("OutputEnd") &&
+          (OutputStart.indexOf("${") < 0)) {
           try {
               DateTime.parse(OutputStart);
           }
@@ -202,7 +284,8 @@ throws InvalidCommandParameterException
           }
       }
       if ( (OutputEnd != null) && !OutputEnd.equals("") &&
-          !OutputEnd.equalsIgnoreCase("OutputStart") && !OutputEnd.equalsIgnoreCase("OutputEnd") ) {
+          !OutputEnd.equalsIgnoreCase("OutputStart") && !OutputEnd.equalsIgnoreCase("OutputEnd") &&
+          (OutputEnd.indexOf("${") < 0)) {
           try {
               DateTime.parse( OutputEnd );
           }
@@ -216,19 +299,23 @@ throws InvalidCommandParameterException
       }
 	
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "Alias" );
-	valid_Vector.add ( "EnsembleID" );
-	valid_Vector.add ( "NewTSID" );
-	valid_Vector.add ( "Statistic" );
-	//valid_Vector.add ( "TestValue" );
-	valid_Vector.add ( "AllowMissingCount" );
-	valid_Vector.add ( "MinimumSampleSize" );
-	valid_Vector.add ( "AnalysisStart" );
-	valid_Vector.add ( "AnalysisEnd" );
-    valid_Vector.add ( "OutputStart" );
-    valid_Vector.add ( "OutputEnd" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(15);
+	validList.add ( "EnsembleID" );
+    validList.add ( "Distribution" );
+    validList.add ( "DistributionParameters" );
+    validList.add ( "ProbabilityUnits" );
+	validList.add ( "Statistic" );
+	validList.add ( "Value1" );
+	validList.add ( "AllowMissingCount" );
+	validList.add ( "MinimumSampleSize" );
+	validList.add ( "AnalysisStart" );
+	validList.add ( "AnalysisEnd" );
+	validList.add ( "NewTSID" );
+	validList.add ( "Alias" );
+	validList.add ( "Description" );
+    validList.add ( "OutputStart" );
+    validList.add ( "OutputEnd" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -281,15 +368,13 @@ public List getObjectList ( Class c )
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "NewStatisticTimeSeriesFromEnsemble.parseCommand", message;
+	String routine = getClass().getSimpleName() + ".parseCommand", message;
 
     if ( !command.trim().toUpperCase().startsWith("TS") ) {
         // New style syntax using simple parameter=value notation
@@ -375,13 +460,11 @@ CommandWarningException, CommandException
 Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "NewStatisticTimeSeriesFromEnsemble.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -392,18 +475,34 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList(null);
     }
 
-	String Alias = parameters.getValue ( "Alias" );
 	String EnsembleID = parameters.getValue ( "EnsembleID" );
-	String NewTSID = parameters.getValue ( "NewTSID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
 	String Statistic = parameters.getValue ( "Statistic" );
 	TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
-	//TODO SAM 2007-11-05 Enable later with counts
-	//String TestValue = parameters.getValue ( "TestValue" );
+	String Value1 = parameters.getValue ( "Value1" );
+    Double value1 = null;
+    if ( (Value1 != null) && !Value1.isEmpty() ) {
+        value1 = new Double(Value1);
+    }
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     Integer AllowMissingCount_Integer = null;
     if ( (AllowMissingCount != null) && StringUtil.isInteger(AllowMissingCount) ) {
@@ -414,30 +513,66 @@ CommandWarningException, CommandException
     if ( (MinimumSampleSize != null) && StringUtil.isInteger(MinimumSampleSize) ) {
         MinimumSampleSize_Integer = new Integer(MinimumSampleSize);
     }
-	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
-	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+	String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // Default will be TS period
+	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" ); // Default will be TS period
+	String NewTSID = parameters.getValue ( "NewTSID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (NewTSID != null) && (NewTSID.indexOf("${") >= 0) ) {
+		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID);
+	}
+	String Alias = parameters.getValue ( "Alias" );
+	String Description = parameters.getValue ( "Description" ); // Expand using first time series when read below
     String OutputStart = parameters.getValue ( "OutputStart" );
+	if ( (OutputStart == null) || OutputStart.isEmpty() ) {
+		OutputStart = "${OutputStart}"; // Default global property
+	}
     String OutputEnd = parameters.getValue ( "OutputEnd" );
+	if ( (OutputEnd == null) || OutputEnd.isEmpty() ) {
+		OutputEnd = "${OutputEnd}"; // Default global property
+	}
 
 	// Figure out the dates to use for the analysis...
 
-    WarningCount warningCount = new WarningCount();
-    DateTimeRange analysisStartAndEnd = TSCommandProcessorUtil.getOutputPeriodForCommand (
-        this, commandPhase, "AnalysisStart", AnalysisStart,  "AnalysisEnd", AnalysisEnd,
-        false,
-        log_level, command_tag, warning_level, warningCount );
-    warning_count += warningCount.getCount();
-    DateTime AnalysisStart_DateTime = analysisStartAndEnd.getStart();
-    DateTime AnalysisEnd_DateTime = analysisStartAndEnd.getEnd();
+	DateTime AnalysisStart_DateTime = null;
+	DateTime AnalysisEnd_DateTime = null;
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+	}
 	
-    warningCount = new WarningCount();
-    DateTimeRange outputStartAndEnd = TSCommandProcessorUtil.getOutputPeriodForCommand (
-        this, commandPhase, "OutputStart", OutputStart,  "OutputEnd", OutputEnd,
-        true, // Use global output period from SetOutputPeriod()
-        log_level, command_tag, warning_level, warningCount );
-    warning_count += warningCount.getCount();
-    DateTime OutputStart_DateTime = outputStartAndEnd.getStart();
-    DateTime OutputEnd_DateTime = outputStartAndEnd.getEnd();
+	DateTime OutputStart_DateTime = null;
+	DateTime OutputEnd_DateTime = null;
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+	}
 
 	// Get the time series to process.  The time series list is searched backwards until the first match...
     
@@ -517,9 +652,20 @@ CommandWarningException, CommandException
                     message, "Verify the ensemble identifier and confirm that data are available." ) );
     	    }
 	    }
+	    String description = null;
+	    if ( (commandPhase == CommandPhaseType.RUN) && (Description != null) && !Description.isEmpty() ) {
+	    	TS ts = tsensemble.get(0);
+	    	if ( ts != null ) {
+	    		description = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+	                processor, ts, Description, status, commandPhase);
+	    	}
+	    }
+	    else {
+	    	description = Description;
+	    }
 	    TSUtil_NewStatisticTimeSeriesFromEnsemble tsu = new TSUtil_NewStatisticTimeSeriesFromEnsemble (
 	        tsensemble, AnalysisStart_DateTime, AnalysisEnd_DateTime, OutputStart_DateTime, OutputEnd_DateTime,
-	        NewTSID, statisticType, AllowMissingCount_Integer, MinimumSampleSize_Integer );
+	        NewTSID, description, statisticType, value1, AllowMissingCount_Integer, MinimumSampleSize_Integer );
 	    stats_ts = tsu.newStatisticTimeSeriesFromEnsemble ( createData );
         if ( (Alias != null) && !Alias.equals("") ) {
             String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
@@ -598,14 +744,19 @@ public String toString ( PropList props, int majorVersion )
             return getCommandName() + "()";
         }
     }
-	String Alias = props.getValue( "Alias" );
 	String EnsembleID = props.getValue( "EnsembleID" );
-	String NewTSID = props.getValue( "NewTSID" );
+    String Distribution = props.getValue("Distribution");
+    String DistributionParameters = props.getValue("DistributionParameters");
+    String ProbabilityUnits = props.getValue("ProbabilityUnits");
 	String Statistic = props.getValue( "Statistic" );
+    String Value1 = props.getValue( "Value1" );
 	String AllowMissingCount = props.getValue( "AllowMissingCount" );
 	String MinimumSampleSize = props.getValue( "MinimumSampleSize" );
 	String AnalysisStart = props.getValue( "AnalysisStart" );
 	String AnalysisEnd = props.getValue( "AnalysisEnd" );
+	String NewTSID = props.getValue( "NewTSID" );
+	String Alias = props.getValue( "Alias" );
+	String Description = props.getValue( "Description" );
     String OutputStart = props.getValue( "OutputStart" );
     String OutputEnd = props.getValue( "OutputEnd" );
 	StringBuffer b = new StringBuffer ();
@@ -615,20 +766,23 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
 	}
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewTSID=\"" + NewTSID + "\"" );
-	}
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
+    if ( (Distribution != null) && (Distribution.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
         }
+        b.append ( "Distribution=\"" + Distribution + "\"" );
+    }
+    if ( (DistributionParameters != null) && (DistributionParameters.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DistributionParameters=\"" + DistributionParameters + "\"");
+    }
+    if ( (ProbabilityUnits != null) && (ProbabilityUnits.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ProbabilityUnits=\"" + ProbabilityUnits + "\"" );
     }
 	if ( (Statistic != null) && (Statistic.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -636,6 +790,12 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "Statistic=" + Statistic );
 	}
+    if ( (Value1 != null) && (Value1.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Value1=" + Value1 );
+    }
 	if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -659,6 +819,27 @@ public String toString ( PropList props, int majorVersion )
 			b.append ( "," );
 		}
 		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
+	}
+	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "NewTSID=\"" + NewTSID + "\"" );
+	}
+    if ( majorVersion >= 10 ) {
+        // Add as a parameter
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.append ( "," );
+            }
+            b.append ( "Alias=\"" + Alias + "\"" );
+        }
+    }
+	if ( (Description != null) && (Description.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "Description=\"" + Description + "\"" );
 	}
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

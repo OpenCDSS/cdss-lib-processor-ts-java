@@ -51,10 +51,9 @@ public DataStore create ( PropList props )
     // The password is set below into the DMI and a reopen of the DMI will use that value.
     PropList props2 = new PropList(props);
     props2.unSet("SystemPassword");
-    ds.setProperties(props2);
-    Message.printStatus(2,"","In factory create, description property is \"" + props2.getValue("Description") +
+    Message.printStatus(2,routine,"In factory create, description property is \"" + props2.getValue("Description") +
     	"\" from DS=\"" + ds.getProperty("Description") + "\", all properties:");
-    Message.printStatus(2, "", props2.toString());
+    Message.printStatus(2, routine, props2.toString());
     ReclamationPiscesDMI dmi = null;
     try {
         dmi = new ReclamationPiscesDMI (
@@ -66,6 +65,7 @@ public DataStore create ( PropList props )
             systemPassword );
         // Set the datastore here so it has a DMI instance, but DMI instance will not be open
         ds = new ReclamationPiscesDataStore ( name, description, dmi );
+        ds.setProperties(props2);
         // Open the database connection
         dmi.open();
     }

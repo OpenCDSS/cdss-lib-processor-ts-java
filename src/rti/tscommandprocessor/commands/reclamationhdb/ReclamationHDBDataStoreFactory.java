@@ -24,7 +24,7 @@ Create a ReclamationHDBDataStore instance and open the encapsulated ReclamationH
 @param props datastore configuration properties, such as read from the configuration file
 */
 public DataStore create ( PropList props )
-{   String routine = getClass().getName() + ".create";
+{   String routine = getClass().getSimpleName() + ".create";
     String name = props.getValue ( "Name" );
     String description = props.getValue ( "Description" );
     if ( description == null ) {
@@ -105,9 +105,8 @@ public DataStore create ( PropList props )
     // The password is set below into the DMI and a reopen of the DMI will use that value.
     PropList props2 = new PropList(props);
     props2.unSet("SystemPassword");
-    ds.setProperties(props2);
-    Message.printStatus(2,"","In factory create, description property is \"" + props2.getValue("Description") + "\" from DS=\"" + ds.getProperty("Description") + "\", all properties:");
-    Message.printStatus(2, "", props2.toString());
+    //Message.printStatus(2,routine,"In factory create, description property is \"" + props2.getValue("Description") + "\" from DS=\"" + ds.getProperty("Description") + "\", all properties:");
+    Message.printStatus(2,routine, props2.toString());
     ReclamationHDB_DMI dmi = null;
     try {
         dmi = new ReclamationHDB_DMI (

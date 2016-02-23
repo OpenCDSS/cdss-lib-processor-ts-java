@@ -32,7 +32,7 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
 /**
-API to read/write HEC-DSS time series files by interfacing the RTi time series packages with the HEC API.
+API to read/write HEC-DSS time series using the HEC API.
 
 TODO SAM 2009-01-08 It is likely that some performance optimization may still need to occur.
 TODO SAM 2009-01-08 Comments are included below to indicate issues to resolve and to help Bill Charley answer
@@ -432,7 +432,7 @@ Create the time window string to limit the time series read.  The format will be
 the D part if includeHour=false and compatible with the time window string in any case.
 @param startDateTime the start date/time for the read.
 @param endDateTime the end date/time for the read, null if not included.
-@param ts the RTi time series being processed, used to determine the data interval.
+@param ts the time series being processed, used to determine the data interval.
 @param includeHour indicates whether the hour should be included
 */
 private static String createTimeWindowString ( DateTime startDateTime, DateTime endDateTime, TS ts, boolean includeHour )
@@ -459,6 +459,7 @@ private static String createTimeWindowString ( DateTime startDateTime, DateTime 
                 endString = endString + StringUtil.formatString(endDateTime.getMinute(),"%02d");
             }
             else {
+            	// Minute
                 startString = startString + "00";
                 endString = endString + "00";
             }
@@ -475,11 +476,10 @@ private static String createTimeWindowString ( DateTime startDateTime, DateTime 
 }
 
 /**
-Convert an RTi DateTime to HecTime instance.  The precision of the DateTime is used to set the date values.
+Convert a DateTime to HecTime instance.  The precision of the DateTime is used to set the date values.
 For example, for daily and monthly values the hour is set to 24.
-@param dt RTi DateTime instance.
-@param ht Existing HecTime instance to reuse (for optimization).  If null, create a new
-instance to return.
+@param dt DateTime instance.
+@param ht Existing HecTime instance to reuse (for optimization).  If null, create a new instance to return.
 @return HecTime instance.
 */
 private static HecTime dateTimeToHecTime ( DateTime dt, HecTime ht )
@@ -491,7 +491,7 @@ private static HecTime dateTimeToHecTime ( DateTime dt, HecTime ht )
     // Transfer the values.
     
     // TODO QUESTION FOR BILL CHARLEY - why doesn't HecTime have setYear(), etc.?  If the precision of
-    // the date/time is year, why force the other values to set?  The RTi DateTime class has a precision data
+    // the date/time is year, why force the other values to set?  The DateTime class has a precision data
     // member that seems to be similar to the HecTime granularity so I'm trying to keep them consistent.
     // Does the HEC code now how to deal with granularity from the interval on the time series?  See the commented
     // lines below.  Doesn't HecTime allow setting the "granularity" to "year", "month", or even "period"?
@@ -654,7 +654,7 @@ public static boolean isTimeSeriesIntervalSupportedByAPI ( TS ts )
         supported = true;
     }
     else if ( intervalBase == TimeInterval.WEEK ) {
-        // Not currently handled by RTi code
+        // Not currently handled
         supported = false;
     }
     else if ( (intervalBase == TimeInterval.MONTH) && ( (intervalMult == 1) ) ) {
@@ -673,7 +673,7 @@ read for processing.
 @param tsident Time series identifier string of the form where only the parts before "~" are required since
 this API equates to HEC-DSS input type and the filename is in the "file" parameter:
 <pre>
-RTi convention:
+TSID convention:
 Location.DataSource.DataType.Interval.Scenario~HEC-DSS~Filename
 
 HEC parts inserted:
@@ -726,7 +726,7 @@ in GUIs to be fast.
 @param tsident Time series identifier string of the form where only the parts before "~" are required since
 this API equates to HEC-DSS input type and the filename is in the "file" parameter:
 <pre>
-RTi convention:
+TSID convention:
 Location.DataSource.DataType.Interval.Scenario~HEC-DSS~Filename
 
 HEC parts inserted:
@@ -791,7 +791,7 @@ throws Exception
             "F=\"" + fPartReq + "\"" );
     List condensedPathnameList = null;
     // FIXME SAM 2009-01-08 Cannot get the following HEC code to work because it does not seem to allow filtering
-    // on the pathname parts.  Therefore use the RTi code below but use boolean to allow HEC code to be turned on.
+    // on the pathname parts.  Therefore use the code below but use boolean to allow HEC code to be turned on.
 
     // TODO QUESTION FOR BILL CHARLEY - I can't get this to work - see questions below
     boolean useHECCondensedPathnameListCode = false;
@@ -807,7 +807,7 @@ throws Exception
         condensedPathnameList = u.getCondensedCatalog();
     }
     else {
-        // Use the code written by SAM at RTi, which condenses catalog records and allows wildcards on parts
+        // Use the code written by SAM, which condenses catalog records and allows wildcards on parts
         stat = dssFile.searchDSSCatalog(aPartReq, bPartReq, cPartReq, dPartReq, ePartReq, fPartReq, pathnameList);
         Message.printStatus ( 2, routine, "Status from searching catalog is " + stat +
             ".  Number of matching path names before condensing is " + pathnameList.size() );
@@ -879,9 +879,9 @@ throws Exception
         String dPart1 = null, dPart2 = null;
         String ePart = null;
         String fPart = null;
-        // The following use of instanceof allows the HEC and RTi code from above to be used.
+        // The following use of instanceof allows the HEC and non-HEC code from above to be used.
         if ( condensedPathname instanceof String ) {
-            // From RTi code above.
+            // From non-HEC code above.
             String p = (String)condensedPathname;
             dssPathName = new DSSPathname ( p );
             Message.printStatus ( 2, routine, "Reading using condensed pathname \"" + dssPathName + "\"." );
@@ -932,7 +932,7 @@ throws Exception
                 Message.printStatus(2, routine, "Path \"" + dssPathName + "\" has record type " + t + ".");
             }
         }
-        // Handle the D part similarly regardless of whether using RTi or HEC code above.
+        // Handle the D part similarly regardless of whether using non-HEC or HEC code above.
         if ( !dPart.equals("") ) {
             // Parse out the D part into DateTime objects, but only to day precision since that is all that is in D.
             // Note that the D part might be one date if no condensing was necessary, or two parts if
@@ -966,12 +966,12 @@ throws Exception
             date2FromDPart.setYear(Integer.parseInt(dPart2.substring(5,9)));
         }
         if ( ePart.equals("") ) {
-            // If no E part, assume irregular interval for RTi time series - otherwise HEC intervals are
-            // already interpreted correctly for RTi time series
+            // If no E part, assume irregular interval for time series objects - otherwise HEC intervals are
+            // already interpreted correctly for time series objects
             
             // FIXME SAM 2008-11-10 Evaluate whether this is a good idea - need to understand better the
             // irregular intervals used by HEC software - might need to adopt a more granular irregular
-            // interval convention in RTi code than the current generic irregular interval.  For example use
+            // interval convention in time series code than the current generic irregular interval.  For example use
             // Irr6Hour.
             ePart = "Irregular";
             Message.printStatus ( 2, routine, "Reading irregular time series and paired data are not yet supported - " +
@@ -984,7 +984,7 @@ throws Exception
             "D=\"" + dPart + "\" " + "E=\"" + ePart + "\" " + "F=\"" + fPart + "\"" );
         // Create time series.
         // TODO SAM 2009-01-08 Need to evaluate how to handle use of reserved characters (periods and dashes) in
-        // HEC parts since these conflict with RTi time series identifier conventions.  For now, replace the
+        // HEC parts since these conflict with TSID conventions.  For now, replace the
         // periods with spaces in the identifier and utilize the time
         // series alias to retain the original identifier.
         String dotfPart = "";
@@ -1027,7 +1027,7 @@ throws Exception
         // Set the description to the location, space, and data type
         
         // TODO QUESTION FOR BILL CHARLEY - do DSS files have any narrative description or comments for each time
-        // series other than the parts?  RTi time series have a description (typically like
+        // series other than the parts?  Time series objects have a description (typically like
         // "South Fork of ABC below XYZ") and also comments, which can be any number of strings.
         String locType = ts.getIdentifier().getLocationType();
         if ( locType.isEmpty() ) {
@@ -1136,28 +1136,27 @@ throws Exception
             // a performance hit in the HEC code to remove the missing values.  If false, there is more overhead
             // to process more records.  Not sure what is best.
             
-            // TODO QUESTION FOR BILL CHARLEY - The RTi time series package handles missing values.  Regular
+            // TODO QUESTION FOR BILL CHARLEY - The TS time series package handles missing values.  Regular
             // time series are filled with missing at initialization.  I'm not sure what the performance impacts
             // are for the boolean (see also above TODO comment).
             
             int status = rts.read (tsc,false);
             Message.printStatus(2, routine, "Status from read = " + status + " number of values=" + tsc.values.length );
-            // Some time series don't have a period so can't set dates in RTi TS from HecTimeSeries
+            // Some time series don't have a period so can't set dates in TS from HecTimeSeries
             // TODO QUESTION FOR BILL CHARLEY - why do some time series not have dates for their period?  Is it
             // because a time series is defined but no data records are saved?
             if ( Message.isDebugOn ) {
                 Message.printDebug(2, routine, "Before setDataPeriod()" );
             }
             // readData2 below indicates that a period was determined so it is OK to continue reading the data.
-            // If OK, it also sets the period for the RTi time series.  However, it is possible that data were
+            // If OK, it also sets the period for the time series objects.  However, it is possible that data were
             // read but the output of getTimeRange() is not valid so rely on the data values below to set the dates.
             readData2 = setDataPeriodFromData ( ts, tsc, readStartReq, readEndReq );
             // Remember units are not available until data records are read so handle units below.
             String units = rts.units();
             ts.setDataUnits ( units );
             ts.setDataUnitsOriginal ( units );
-            // FIXME SAM 2009-01-09 Need to evaluate mapping of HEC units with standard units supported by
-            // RTi code base
+            // FIXME SAM 2009-01-09 Need to evaluate mapping of HEC units with standard units supported by TS code
             if ( (unitsReq != null) && !unitsReq.equalsIgnoreCase(units) ) {
                 throw new RuntimeException ( "Requested units \"" + unitsReq +
                      "\" do not equal time series units and don't know how to convert." );
@@ -1167,7 +1166,7 @@ throws Exception
                 Message.printStatus(2,routine, "No Data for " + dssPathName + " in \"" + dssFilename + "\"");
             }
             else if ( readData2 || (tsc.values.length > 0) ) {
-                // Have data - transfer to the RTi time series instance.
+                // Have data - transfer to the time series instance.
                 if ( Message.isDebugOn ) {
                     Message.printStatus(2, routine, "Start transferring data." );
                 }
@@ -1179,7 +1178,7 @@ throws Exception
                 }
                 // Now allocate the data space for the time series before actually transferring the data.
                 ts.allocateDataSpace();
-                // FIXME SAM 2009-01-08 Evaluate transfer of quality flag to RTi time series
+                // FIXME SAM 2009-01-08 Evaluate transfer of quality flag to time series
                 
                 // Transfer the data values from the HEC time series container - the container arrays are
                 // apparently public to increase performance.
@@ -1197,7 +1196,7 @@ throws Exception
                         // Don't try to set because this may cause exceptions in some cases.
                         continue;
                     }
-                    // Set RTi DateTime class instances to HecTime data
+                    // Set DateTime class instances to HecTime data
                     // Monthly and daily values are set using hecTime like 31 January 2000 24:00
                     // ... so be picky about how dates roll over hour 24
                     if ( (tsIntervalBase == TimeInterval.YEAR) || (tsIntervalBase == TimeInterval.MONTH) ||
@@ -1207,7 +1206,7 @@ throws Exception
                     else {
                         setDateTime ( date, hecTime, tsIntervalBase, true );
                     }
-                    // Set the value in the RTi time series
+                    // Set the value in the time series object
                     ts.setDataValue( date, tsc.values[idata]);
                     // FIXME SAM 2009-01-08 Here is where units would be converted, or do it on the entire time
                     // series once read.
@@ -1245,7 +1244,7 @@ throws Exception
 
 /**
 Set the period in the TS using the HecTimeSeries.
-@param ts RTi time series to set period.
+@param ts time series to set period.
 @param hects HEC time series to get period from.
 @return true if the period can be set, false if not (undefined period in the time series).
 */
@@ -1302,8 +1301,8 @@ private static boolean setDataPeriodFromData ( TS ts, TimeSeriesContainer tsc, D
 }
 
 /**
-Set an RTi DateTime from a HecTime instance.
-@param date RTi DateTime instance to modify.
+Set a DateTime from a HecTime instance.
+@param date DateTime instance to modify.
 @param hecTime HecTime instance from which to retrieve data.
 @param tsIntervalBase time series interval base.  Monthly dates in hecTime will have an hour of 24 and therefore
 need to ignore the hour when setting the date.
@@ -1328,7 +1327,7 @@ private static void setDateTime ( DateTime date, HecTime hecTime, int tsInterval
     boolean hour24 = false;
     if ( (hecTime.hour() == 24) ) {
         // Set to hour 23 and then increment by one hour after setting everything, to roll to hour "24"
-        // This is because RTi DateTime only allows hour 0
+        // This is because DateTime only allows hour 0
         date.setHour( 23 );
         hour24 = true;
     }
@@ -1377,7 +1376,7 @@ private static void setTimeSeriesDatesToData ( TS ts, int [] times )
 }
 
 /**
-Convert an RTi time series identifier interval to a HEC-DSS time series interval.
+Convert a time series identifier interval to a HEC-DSS time series interval.
 */
 private static String tsidIntervalToHecInterval ( TSIdent tsid )
 {
@@ -1418,26 +1417,25 @@ private static String tsidIntervalToHecInterval ( TSIdent tsid )
         }
         hecInterval = "" + intervalMult + "HOUR";
     }
-    else if ( intervalBase == TimeInterval.HOUR) {
+    else if ( intervalBase == TimeInterval.MINUTE) {
         if ( (intervalMult != 1) && (intervalMult != 2) && (intervalMult != 3) && (intervalMult != 4) &&
             (intervalMult != 5) && (intervalMult != 10) && (intervalMult != 15) && (intervalMult != 20) &&
             (intervalMult != 30) ) {
-            throw new RuntimeException ( "Only hours intervals 1, 2, 3, 4, 6, 8, and 12 are allowed, " +
-                intervalMult + " hour is not supported." );
+            throw new RuntimeException ( "Only minute intervals 1, 2, 3, 4, 5, 10, 15, 20, and 30 are allowed, " +
+                intervalMult + " minute is not supported." );
         }
         hecInterval = "" + intervalMult + "MIN";
     }
     else {
-        throw new RuntimeException ( "Interval " + tsid.getInterval() +
-            " is not supported with HEC-DSS time series." );
+        throw new RuntimeException ( "Interval " + tsid.getInterval() + " is not supported with HEC-DSS time series." );
     }
     return hecInterval;
 }
 
 /**
-Convert an RTi time series identifier to a HEC-DSS pathname.
+Convert a time series identifier to a HEC-DSS pathname.
 This is designed for writing time series, not general use, especially the handling of the D part.
-@param ts Time series that follows RTi conventions.
+@param ts Time series that follows TS conventions.
 @param A A-part to override default from TSID, or null to use TSID.
 @param B B-part to override default from TSID, or null to use TSID.
 @param C C-part to override default from TSID, or null to use TSID.
@@ -1551,7 +1549,7 @@ Write a list of time series to a HEC-DSS file.
 @param outputFile the output file to write.  The file will be created if it does not already exist.
 The parent folder must exist.
 @param tslist list of time series to write.  The HEC-DSS pathname for each time series will be created from the
-RTi time series ID convention (see readTimeSeries() for documentation).
+time series ID convention (see readTimeSeries() for documentation).
 @param writeStartReq the requested start for output, or null to write all data.
 @param writeEndReq the requested end for output, or null to write all data.
 @param unitsReq the requested units for output, currently not used.
@@ -1605,7 +1603,7 @@ throws IOException, Exception
         if ( writeEndReq != null ) {
             writeEnd = new DateTime(writeEndReq);
         }
-        // Create a container to receive the data from the RTi time series
+        // Create a container to receive the data from the time series object
         TimeSeriesContainer tsc = new TimeSeriesContainer();
         int numValues = TSUtil.calculateDataSize(ts, writeStart, writeEnd);
         Message.printStatus(2, routine, "Writing " + numValues + " values for period " + writeStart + " to " + writeEnd );
@@ -1619,11 +1617,11 @@ throws IOException, Exception
         HecTime hectime = new HecTime(); // Used for transfer of date/times to HEC time series
         double value;
         // Iterate through the time series and transfer the date and corresponding values from
-        // the RTi time series to the HEC time series container.
+        // the internal time series to the HEC time series container.
         for ( int ival = 0; ((dataPoint = tsi.next()) != null) && (ival < numValues); ival++ ) {
             value = dataPoint.getDataValue();
             date = dataPoint.getDate();
-            // Check for missing values in the RTi time series and set the the HEC missing value for output
+            // Check for missing values in the time series and set the the HEC missing value for output
             if( ts.isDataMissing( value ) ) {
                 // Translate to the missing value used by HEC
                 value = Heclib.UNDEFINED_DOUBLE;
@@ -1693,7 +1691,7 @@ throws IOException, Exception
                 ts.getIdentifierString() + "\"" );
         }
         Message.printStatus(2, routine, "HEC-DSS time series container units=\"" + tsc.units + "\"" );
-        // Set the data type.  This is equivalent to the RTi TimeScale.  Allowable values are:
+        // Set the data type.  This is equivalent to the TimeScale.  Allowable values are:
         //   PER-AVER (period average, is this interval average?)
         //   PER-CUM (period cumulative, is this interval cumulative?)
         //   INST-VAL (instantaneous)

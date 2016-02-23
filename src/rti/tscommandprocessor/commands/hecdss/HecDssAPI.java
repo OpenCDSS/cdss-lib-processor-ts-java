@@ -94,45 +94,49 @@ static
                     // This relies on the java.library.path to locate the javaHeclib.dll,
                     // which may be problematic since that configuration is outside the control
                     // of this software and may result in a version issue.
-                    if ( loadUsingJavaLibraryPath ) {
+                	try {
                         dll = libnames[ilib];
                         Message.printStatus(2, routine, "Attempting to load library using System.loadLibrary(" + dll + ")." );
                         System.loadLibrary(dll);
                         // If successful, make sure the exception object is null and break out of the retries
                         Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
-                        libException[ilib] = null;
+                        libException[ilib] = null; // Set to null indicating success
                         break;
                     }
-                    else {
-                        // Instead, load the file explicitly knowing the application home and
+                    catch ( UnsatisfiedLinkError e ) {
+                        // Try to load the file explicitly knowing the application home and
                         // assuming that the file exists in the bin folder.  This is safer in that a specific DLL version
                         // can be loaded.  However, it may result in a duplicate load because the HEC software itself may try
                         // to load the DLL using the above method, which does not look for the filename in the path,
                         // but matches the requested dll by name, which won't match the path below, even though it is
                         // already loaded.  Either approach may be OK as long as the application install controls the
                         // Java run-time environment.
+                    	// TODO SAM 2016-02-22 Is the above comment about duplicate load relevant?
+                    	// - trying to resolve issue on Windows where double-clicking on TSTool command file does not find dll in java.library.path
+                    	// - changed code to try each of the load methods whereas before it only did one or the other
+                    	libException[ilib] = e;
+                    	// Use status message since next try below is still an option.
+                        Message.printStatus ( 2, routine, "[Try " + (i + 1) +
+                                "] Unable to load " + dll + " using System.loadLibrary(" +
+                                dll + ") and java.library.path \"" + System.getProperty("java.library.path") + "\" (" + e + ")." );
                         dll = IOUtil.getApplicationHomeDir() + "/bin/" + libnames[ilib] + ".dll";
                         Message.printStatus(2, routine, "Attempting to load library using System.load(" + dll + ")." );
                         System.load( dll );
                         Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
+                        // If unsuccessful an exception will be thrown.  If successful, break out of the loop.
+                        libException[ilib] = null; // Set to null indicating success
+                        break;
                     }
-                    // Sleep for the next try...
-                    TimeUtil.sleep(sleepMilliSeconds);
                 }
                 // Exceptions should only be thrown if the test environment or build process is incorrect and should be
                 // corrected on the developer side - users should never see an issue if the build process is correct.
                 catch ( UnsatisfiedLinkError e2 ) {
                     libException[ilib] = e2;
-                    if ( loadUsingJavaLibraryPath ) {
-                        Message.printWarning ( 2, routine, "[Try " + (i + 1) +
-                            "] Unable to load " + dll + " using System.loadLibrary(" +
-                            dll + ") and java.library.path \"" + System.getProperty("java.library.path") + "\" (" + e2 + ")." );
-                    }
-                    else {
-                        Message.printWarning ( 2, routine, "[Try " + (i + 1) +
-                            "] Unable to load " + dll + " using System.load(" + dll + ") (" + e2 + ")." );
-                    }
+                    Message.printWarning ( 2, routine, "[Try " + (i + 1) +
+                        "] Unable to load " + dll + " using System.load(" + dll + ") (" + e2 + ")." );
                     Message.printWarning ( 3, routine, e2 );
+                    // Sleep for the next try...
+                    TimeUtil.sleep(sleepMilliSeconds);
                 }
             }
         }

@@ -555,6 +555,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         message = "Unexpected error loading HEC-DSS dynamic library (" + e + ").";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+        Message.printWarning ( warning_level, routine, e );
         status.addToLog(commandPhase, new CommandLogRecord( CommandStatusType.FAILURE, message,
             "Contact software support - may be a problem if running on a file server."));
         throw new CommandException ( message );

@@ -3,10 +3,10 @@ package rti.tscommandprocessor.commands.util;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -97,7 +97,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList(3);
+	List<String> validList = new ArrayList<String>(3);
 	validList.add ( "InputFile" );
 	validList.add ( "OutputFile" );
 	validList.add ( "IfInputNotFound" );
@@ -149,8 +149,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -159,14 +158,27 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	
     CommandProcessor processor = getCommandProcessor();
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
     // Clear the output file
     setOutputFile ( null );
 	
-	String InputFile = parameters.getValue ( "InputFile" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
+	String InputFile = parameters.getValue ( "InputFile" ); // Expand below
+	String OutputFile = parameters.getValue ( "OutputFile" ); // Expand below
 	String IfInputNotFound = parameters.getValue ( "IfInputNotFound" );
 	if ( (IfInputNotFound == null) || IfInputNotFound.equals("")) {
 	    IfInputNotFound = _Warn; // Default

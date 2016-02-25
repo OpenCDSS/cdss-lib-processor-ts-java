@@ -2,12 +2,12 @@ package rti.tscommandprocessor.commands.util;
 
 import java.io.FileReader;
 import java.io.BufferedReader;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -77,8 +77,7 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	// The existence of the parent directories or files is not checked
-	// because the files may be created dynamically after the command is
-	// edited.
+	// because the files may be created dynamically after the command is edited.
 
 	if ( (InputFile1 == null) || (InputFile1.length() == 0) ) {
 		message = "The first input file to compare must be specified.";
@@ -136,16 +135,16 @@ throws InvalidCommandParameterException
 					_Warn + ", or " + _Fail + "."));
 	}
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-	valid_Vector.add ( "InputFile1" );
-	valid_Vector.add ( "InputFile2" );
-	valid_Vector.add ( "CommentLineChar" );
-	valid_Vector.add ( "MatchCase" );
-	valid_Vector.add ( "IgnoreWhitespace" );
-	valid_Vector.add ( "AllowedDiff" );
-	valid_Vector.add ( "IfDifferent" );
-	valid_Vector.add ( "IfSame" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(8);
+	validList.add ( "InputFile1" );
+	validList.add ( "InputFile2" );
+	validList.add ( "CommentLineChar" );
+	validList.add ( "MatchCase" );
+	validList.add ( "IgnoreWhitespace" );
+	validList.add ( "AllowedDiff" );
+	validList.add ( "IfDifferent" );
+	validList.add ( "IfSame" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -274,9 +273,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "CompareFiles_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -285,8 +283,21 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	
     CommandProcessor processor = getCommandProcessor();
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );

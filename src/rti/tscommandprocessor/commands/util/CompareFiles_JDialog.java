@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -299,28 +301,28 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command compares text files.  Comment lines starting with # are ignored." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "A line by line comparison is made."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The filenames can be specified using ${Property} notation to utilize global properites."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"It is recommended that file names be relative to the working directory, which is:"),
+		"It is recommended that file names are specified relative to the working directory, which is:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    " + __working_dir),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "First file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile1_JTextField = new JTextField ( 50 );
+	__InputFile1_JTextField.setToolTipText("Specify the filename for the first file, can use ${Property} notation");
 	__InputFile1_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile1_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -331,6 +333,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Second file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile2_JTextField = new JTextField ( 50 );
+	__InputFile2_JTextField.setToolTipText("Specify the filename for the second file, can use ${Property} notation");
 	__InputFile2_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile2_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

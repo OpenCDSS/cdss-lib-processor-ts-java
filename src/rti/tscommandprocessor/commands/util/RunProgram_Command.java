@@ -1,9 +1,10 @@
 package rti.tscommandprocessor.commands.util;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -15,9 +16,11 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ProcessManager;
@@ -26,6 +29,8 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableRecord;
 
 /**
 This class initializes, checks, and runs the RunProgram() command.
@@ -102,7 +107,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List validList = new ArrayList<String>(7+_ProgramArg_SIZE);
+    List validList = new ArrayList<String>(10+_ProgramArg_SIZE);
 	validList.add ( "CommandLine" );
 	validList.add ( "Program" );
 	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
@@ -112,7 +117,10 @@ throws InvalidCommandParameterException
 	validList.add ( "CommandShell" );
 	validList.add ( "Timeout" );
 	validList.add ( "ExitStatusIndicator" );
+	validList.add ( "ExitCodeProperty" );
 	validList.add ( "OutputCheckTableID" );
+	validList.add ( "OutputCheckWarningCountProperty" );
+	validList.add ( "OutputCheckFailureCountProperty" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -189,42 +197,125 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_line Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "RunProgram_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
+	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
 	PropList parameters = getCommandParameters();
 	
     CommandProcessor processor = getCommandProcessor();
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	String CommandLine = parameters.getValue ( "CommandLine" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (CommandLine != null) && (CommandLine.indexOf("${") >= 0) ) {
+		CommandLine = TSCommandProcessorUtil.expandParameterValue(processor, this, CommandLine);
+	}
 	String Program = parameters.getValue ( "Program" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (Program != null) && (Program.indexOf("${") >= 0) ) {
+		Program = TSCommandProcessorUtil.expandParameterValue(processor, this, Program);
+	}
 	String [] ProgramArg = new String[_ProgramArg_SIZE];
 	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
 	    ProgramArg[i] = parameters.getValue ( "ProgramArg" + (i + 1) );
+		if ( (commandPhase == CommandPhaseType.RUN) && (ProgramArg[i] != null) && (ProgramArg[i].indexOf("${") >= 0) ) {
+			ProgramArg[i] = TSCommandProcessorUtil.expandParameterValue(processor, this, ProgramArg[i]);
+		}
 	}
     String UseCommandShell = parameters.getValue ( "UseCommandShell" );
     boolean UseCommandShell_boolean = true; // default
     if ( (UseCommandShell != null) && UseCommandShell.equalsIgnoreCase(_False) ) {
         UseCommandShell_boolean = false;
     }
+    String CommandShell = parameters.getValue ( "CommandShell" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (CommandShell != null) && (CommandShell.indexOf("${") >= 0) ) {
+		CommandShell = TSCommandProcessorUtil.expandParameterValue(processor, this, CommandShell);
+	}
+	// The ProcessManager wants to see the command shell as its parts so split by spaces
+	String [] commandInterpreter = null;
+	if ( (CommandShell != null) && !CommandShell.isEmpty() ) {
+		commandInterpreter = CommandShell.split(" ");
+		for ( int i = 0; i < commandInterpreter.length; i++ ) {
+			commandInterpreter[i] = commandInterpreter[i].trim();
+		}
+	}
 	String Timeout = parameters.getValue ( "Timeout" );
     double Timeout_double = 0.0;
     if ( (Timeout != null) && (Timeout.length() > 0) ) {
         Timeout_double = Double.parseDouble(Timeout);
     }
     String ExitStatusIndicator = parameters.getValue ( "ExitStatusIndicator" );
+    String ExitCodeProperty = parameters.getValue ( "ExitCodeProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (ExitCodeProperty != null) && (ExitCodeProperty.indexOf("${") >= 0) ) {
+		ExitCodeProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, ExitCodeProperty);
+	}
+    String OutputCheckTableID = parameters.getValue ( "OutputCheckTableID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (OutputCheckTableID != null) && (OutputCheckTableID.indexOf("${") >= 0) ) {
+		OutputCheckTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputCheckTableID);
+	}
+    String OutputCheckWarningCountProperty = parameters.getValue ( "OutputCheckWarningCountProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (OutputCheckWarningCountProperty != null) && (OutputCheckWarningCountProperty.indexOf("${") >= 0) ) {
+		OutputCheckWarningCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputCheckWarningCountProperty);
+	}
+    String OutputCheckFailureCountProperty = parameters.getValue ( "OutputCheckFailureCountProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (OutputCheckFailureCountProperty != null) && (OutputCheckFailureCountProperty.indexOf("${") >= 0) ) {
+		OutputCheckFailureCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputCheckFailureCountProperty);
+	}
+	
+	// Get the output check table.
+
+    DataTable outputCheckTable = null;
+    if ( commandPhase == CommandPhaseType.RUN ) {
+        PropList request_params = null;
+        CommandProcessorRequestResultsBean bean = null;
+        if ( (OutputCheckTableID != null) && !OutputCheckTableID.equals("") ) {
+            // Get the table to be updated
+            request_params = new PropList ( "" );
+            request_params.set ( "TableID", OutputCheckTableID );
+            try {
+                bean = processor.processRequest( "GetTable", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting GetTable(TableID=\"" + OutputCheckTableID + "\") from processor.";
+                Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report problem to software support." ) );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object o_Table = bean_PropList.getContents ( "Table" );
+            if ( o_Table == null ) {
+                message = "Unable to find table to process using OutputCheckTableID=\"" + OutputCheckTableID + "\".";
+                Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that a table exists with the requested ID." ) );
+            }
+            else {
+                outputCheckTable = (DataTable)o_Table;
+            }
+        }
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -246,20 +337,7 @@ CommandWarningException, CommandException
 	    CommandLine = b.toString();
 	}
 
-	String CommandLine_full = CommandLine;
-	String Program_full = Program;
-	String [] ProgramArg_full = new String[_ProgramArg_SIZE];
 	try {
-        // Expand the command line to recognize processor-level properties like WorkingDir
-        CommandLine_full = TSCommandProcessorUtil.expandParameterValue(processor,this,CommandLine);
-        if ( Program != null ) {
-            Program_full = TSCommandProcessorUtil.expandParameterValue(processor,this,Program);
-        }
-        for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
-            if ( ProgramArg[i] != null ) {
-                ProgramArg_full[i] = TSCommandProcessorUtil.expandParameterValue(processor,this,ProgramArg[i]);
-            }
-        }
         // Do the following if it is hard to track what is going on...
         //PropList props = new PropList ( "PM" );
         //ProcessManagerDialog pmg = new ProcessManagerDialog ( program, props );
@@ -268,31 +346,37 @@ CommandWarningException, CommandException
         // Normally can do this, although TSTool may sit for awhile until the
         // process is finished (need to figure out a way to make TSTool wait on the thread without hanging).
         ProcessManager pm = null;
-        if ( (Program != null) && !Program.equals("") ) {
+        if ( (Program != null) && !Program.isEmpty() ) {
             // Specify the program to run using individual strings - this takes precedence over the full
             // command line.
-            List programAndArgsList = new Vector();
-            programAndArgsList.add ( Program_full );
+            List programAndArgsList = new ArrayList<String>();
+            programAndArgsList.add ( Program );
             for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
-                if ( ProgramArg_full[i] != null ) {
-                    programAndArgsList.add (ProgramArg_full[i]);
+                if ( (ProgramArg[i] != null) && !ProgramArg[i].isEmpty() ) {
+                    programAndArgsList.add (ProgramArg[i]);
                 }
             }
             pm = new ProcessManager ( StringUtil.toArray(programAndArgsList), (int)(Timeout_double*1000.0),
                 ExitStatusIndicator, UseCommandShell_boolean,
                 new File((String)processor.getPropContents("WorkingDir")));
+            if ( commandInterpreter != null ) {
+            	pm.setCommandInterpreter(commandInterpreter);
+            }
             //CommandLine_full, (int)(Timeout_double*1000.0), ExitStatusIndicator);
         }
         else {
             // Specify the command to run using a full command line
-            pm = new ProcessManager (CommandLine_full, (int)(Timeout_double*1000.0), ExitStatusIndicator,
+            pm = new ProcessManager (CommandLine, (int)(Timeout_double*1000.0), ExitStatusIndicator,
                 UseCommandShell_boolean, new File((String)processor.getPropContents("WorkingDir")));
+            if ( commandInterpreter != null ) {
+            	pm.setCommandInterpreter(commandInterpreter);
+            }
         }
         pm.saveOutput ( true ); // Save output so it can be used in troubleshooting
         pm.run();
         Message.printStatus ( 2, routine, "Exit status from program = " + pm.getExitStatus() );
         if ( pm.getExitStatus() == 996 ) {
-            message = "Program \"" + CommandLine_full + "\" timed out.  Full output may not be available.";
+            message = "Program \"" + CommandLine + "\" timed out.  Full output may not be available.";
             Message.printWarning ( warning_level, 
             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             status.addToLog(CommandPhaseType.RUN,
@@ -300,7 +384,7 @@ CommandWarningException, CommandException
                     message, "Verify running the program on the command line before running in TSTool."));
         }
         else if ( pm.getExitStatus() != 0 ) {
-            message = "Program \"" + CommandLine_full + "\" exited with status " + pm.getExitStatus() +
+            message = "Program \"" + CommandLine + "\" exited with status " + pm.getExitStatus() +
             ".  Full output may not be available.  Output from program is:\n" +
             StringUtil.toString(pm.getOutputList(),"\n") + "\nStandard error from program is:\n" +
             StringUtil.toString(pm.getErrorList(),"\n");
@@ -310,8 +394,25 @@ CommandWarningException, CommandException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify running the program on the command line before running in TSTool."));
         }
+        if ( (ExitCodeProperty != null) && !ExitCodeProperty.isEmpty() ) {
+            PropList request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", ExitCodeProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(pm.getExitStatus()) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + ExitCodeProperty + "\") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
         // Echo the output to the log file.
-        List output = pm.getOutputList();
+        List<String> output = pm.getOutputList();
         int size = 0;
         if ( output != null ) {
             size = output.size();
@@ -319,9 +420,280 @@ CommandWarningException, CommandException
         for ( int i = 0; i < size; i++ ) {
             Message.printStatus(2, routine, "Program output:  " + output.get(i));
         }
+        // Process the check table
+        if ( outputCheckTable != null ) {
+        	// Loop through the lines of the table and for each process the patterns in the check file.
+        	// This will make it easier to review the output results without jumping around
+        	int outputWarningCount = 0;
+        	int outputFailureCount = 0;
+        	// Get the column numbers for the check table
+        	int fileColumnNum = -1;
+        	try {
+                fileColumnNum = outputCheckTable.getFieldIndex("File");
+            }
+            catch ( Exception e ) {
+            	message = "Output check table \"" + OutputCheckTableID + "\" does not have \"File\" column - unable to check output.";
+        		Message.printWarning ( warning_level, 
+	        		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+	        			Message.printWarning ( 3, routine, e );
+        		status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+        		    message, "Verify that output check table includes \"File\" column."));
+            }
+        	int patternColumnNum = -1;
+        	try {
+        		patternColumnNum = outputCheckTable.getFieldIndex("Pattern");
+            }
+            catch ( Exception e ) {
+            	message = "Output check table \"" + OutputCheckTableID + "\" does not have \"Pattern\" column - unable to check output.";
+        		Message.printWarning ( warning_level, 
+	        		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+	        			Message.printWarning ( 3, routine, e );
+        		status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+        		    message, "Verify that output check table includes \"Pattern\" column."));
+            }
+        	int levelColumnNum = -1;
+        	try {
+        		levelColumnNum = outputCheckTable.getFieldIndex("Level");
+            }
+            catch ( Exception e ) {
+            	message = "Output check table \"" + OutputCheckTableID + "\" does not have \"Level\" column - unable to check output.";
+        		Message.printWarning ( warning_level, 
+	        		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+	        			Message.printWarning ( 3, routine, e );
+        		status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+        		    message, "Verify that output check table includes \"Level\" column."));
+            }
+        	int messageColumnNum = -1;
+        	try {
+        		messageColumnNum = outputCheckTable.getFieldIndex("Message");
+            }
+            catch ( Exception e ) {
+            	message = "Output check table \"" + OutputCheckTableID + "\" does not have \"Message\" column - unable to check output.";
+        		Message.printWarning ( warning_level, 
+	        		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+	        			Message.printWarning ( 3, routine, e );
+        		status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+        		    message, "Verify that output check table includes \"Message\" column."));
+            }
+        	int recommendationColumnNum = -1;
+        	try {
+        		recommendationColumnNum = outputCheckTable.getFieldIndex("Recommendation");
+            }
+            catch ( Exception e ) {
+            	message = "Output check table \"" + OutputCheckTableID + "\" does not have \"Recommendation\" column - unable to check output.";
+        		Message.printWarning ( warning_level, 
+	        		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+	        			Message.printWarning ( 3, routine, e );
+        		status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+        		    message, "Verify that output check table includes \"Recommendation\" column."));
+            }
+        	if ( (fileColumnNum >= 0) && (patternColumnNum >= 0) && (levelColumnNum >= 0) && (messageColumnNum >= 0) && (recommendationColumnNum >= 0) ) {
+	        	// First loop through the table and get a list of the distinct output files, ignoring "stdout" since that is processed separately
+	        	List<String>outputFiles = new ArrayList<String>();
+	        	for ( int irow = 0; irow < outputCheckTable.getNumberOfRecords(); irow++ ) {
+	        		TableRecord rec = outputCheckTable.getRecord(irow);
+	        		String file = rec.getFieldValueString(fileColumnNum);
+	        		if ( file == null ) {
+	        			continue;
+	        		}
+	        		else if ( (commandPhase == CommandPhaseType.RUN) && (file.indexOf("${") >= 0) ) {
+	        			file = TSCommandProcessorUtil.expandParameterValue(processor, this, file);
+	        		}
+	        		boolean found = false;
+	        		for ( String outputFile : outputFiles ) {
+	        			if ( file.equals(outputFile) ) {
+	        				found = true;
+	        				break;
+	        			}
+	        		}
+	        		if ( !found ) {
+	        			outputFiles.add(file);
+	        		}
+	        	}
+	        	// Get the list of patterns and other data for each output file
+	        	List<String> [] patternList = new ArrayList[outputFiles.size()];
+	        	List<String> [] levelList = new ArrayList[outputFiles.size()];
+	        	List<String> [] messageList = new ArrayList[outputFiles.size()];
+	        	List<String> [] recommendationList = new ArrayList[outputFiles.size()];
+	        	// Construct the lists of patterns and store in arrays of lists for fast access during processing
+	        	for ( int iFile = 0; iFile < outputFiles.size(); iFile++ ) {
+	        		String outputFile = outputFiles.get(iFile);
+	        		patternList[iFile] = new ArrayList<String>();
+	        		levelList[iFile] = new ArrayList<String>();
+	        		messageList[iFile] = new ArrayList<String>();
+	        		recommendationList[iFile] = new ArrayList<String>();
+	        		for ( int irow = 0; irow < outputCheckTable.getNumberOfRecords(); irow++ ) {
+		        		TableRecord rec = outputCheckTable.getRecord(irow);
+		        		String file = rec.getFieldValueString(fileColumnNum);
+		        		if ( (commandPhase == CommandPhaseType.RUN) && (file != null) && (file.indexOf("${") >= 0) ) {
+		        			file = TSCommandProcessorUtil.expandParameterValue(processor, this, file);
+		        		}
+		        		String pattern = rec.getFieldValueString(patternColumnNum);
+		        		if ( (commandPhase == CommandPhaseType.RUN) && (pattern != null) && (pattern.indexOf("${") >= 0) ) {
+		        			pattern = TSCommandProcessorUtil.expandParameterValue(processor, this, pattern);
+		        		}
+	        			// Replace * with .* for Java regular expressions
+	        			pattern = pattern.replace("*",".*");
+		        		String level = rec.getFieldValueString(levelColumnNum);
+		        		if ( (commandPhase == CommandPhaseType.RUN) && (level != null) && (level.indexOf("${") >= 0) ) {
+		        			level = TSCommandProcessorUtil.expandParameterValue(processor, this, level);
+		        		}
+		        		String message2 = rec.getFieldValueString(messageColumnNum);
+		        		if ( (commandPhase == CommandPhaseType.RUN) && (message2 != null) && (message2.indexOf("${") >= 0) ) {
+		        			message2 = TSCommandProcessorUtil.expandParameterValue(processor, this, message2);
+		        		}
+		        		String recommendation = rec.getFieldValueString(recommendationColumnNum);
+		        		if ( (commandPhase == CommandPhaseType.RUN) && (recommendation != null) && (recommendation.indexOf("${") >= 0) ) {
+		        			recommendation = TSCommandProcessorUtil.expandParameterValue(processor, this, recommendation);
+		        		}
+		        		if ( file.equals(outputFile) ) {
+		        			// Found a row that matches the output file
+		        			patternList[iFile].add(pattern);
+		        			levelList[iFile].add(level);
+		        			messageList[iFile].add(message2);
+		        			recommendationList[iFile].add(recommendation);
+		        		}
+	        		}
+	        	}
+	        	// Loop through the files, open each one, and process the patterns
+	        	for ( int iFile = 0; iFile < outputFiles.size(); iFile++ ) {
+	        		String outputFile = outputFiles.get(iFile);
+	        		boolean doStdout = false;
+	        		String outputFileFull = null;
+	        		if ( outputFile.equalsIgnoreCase("stdout") ) {
+	        			doStdout = true;
+	        		}
+	        		else {
+		        		outputFileFull = IOUtil.verifyPathForOS(
+	        	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        	                TSCommandProcessorUtil.expandParameterValue(processor,this,outputFile)));
+	        		}
+	        		if ( Message.isDebugOn ) {
+	        			Message.printDebug(1,routine,"Checking output file \"" + outputFileFull + "\"");
+	        		}
+	        		BufferedReader fp = null;
+	        		try {
+	        			if ( !doStdout ) {
+	        				fp = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream(outputFileFull) ));
+	        			}
+	        		    String line = null;
+	        		    int lineCount = -1;
+	        		    int lineCountMax = output.size() - 1;
+		        		while ( true ) {
+		        			++lineCount;
+		        			if ( doStdout ) {
+		        				// Get a line from the standard output
+		        				if ( lineCount > lineCountMax ) {
+		        					break;
+		        				}
+		        				line = output.get(lineCount);
+		        			}
+		        			else {
+		        				// Get a line from the file
+			        			line = fp.readLine();
+			        			if ( line == null ) {
+			        				break;
+			        			}
+		        			}
+		        			for ( int iPattern = 0; iPattern < patternList[iFile].size(); iPattern++ ) {
+		        				if ( Message.isDebugOn ) {
+		        					Message.printDebug(1,routine,"Checking pattern \"" +patternList[iFile].get(iPattern) + "\"");
+		        				}
+		        				if ( line.matches(patternList[iFile].get(iPattern)) ) {
+		        					// Line matches so generate a message
+		    	        			message = messageList[iFile].get(iPattern);
+		    	        			if ( message.indexOf("${file.line:text}") >= 0 ) {
+		    	        				// Replace the place-holder with the output line
+		    	        				message = message.replace("${file.line:text}",line);
+		    	        			}
+		    	        			if ( message.indexOf("${file.line:number}") >= 0 ) {
+		    	        				// Replace the place-holder with the output line
+		    	        				message = message.replace("${file.line:number}",(""+lineCount));
+		    	        			}
+		    	        			if ( message.indexOf("${file:path}") >= 0 ) {
+		    	        				// Replace the place-holder with the output line
+		    	        				message = message.replace("${file:path}",(""+outputFile));
+		    	        			}
+		    	        			String level = levelList[iFile].get(iPattern);
+		    	        			if ( level.equalsIgnoreCase("warning") ) {
+			    	            		Message.printWarning ( warning_level, 
+			            	        		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+			                    		status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+			                    		    message, recommendationList[iFile].get(iPattern)));
+			                    		++outputWarningCount;
+		        					}
+		    	        			else if ( level.equalsIgnoreCase("failure") || level.equalsIgnoreCase("error")) {
+			    	            		Message.printWarning ( warning_level, 
+			            	        		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+			                    		status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+			                    		    message, recommendationList[iFile].get(iPattern)));
+			                    		++outputFailureCount;
+		        					}
+		    	        			else if ( level.equalsIgnoreCase("success") ) {
+			    	            		Message.printWarning ( warning_level, 
+			            	        		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+			                    		status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.SUCCESS,
+			                    		    message, recommendationList[iFile].get(iPattern)));
+		        					}
+		        				}
+		        			}
+		        		}
+	        		}
+	        		catch ( Exception e ) {
+	        			message = "Unable to read file \"" + outputFile + "\" (" + e + ").";
+	            		Message.printWarning ( warning_level, 
+        	        		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+        	        			Message.printWarning ( 3, routine, e );
+                		status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                		    message, "Verify that output file \"" + outputFileFull + "\" exists."));
+	        			continue;
+	        		}
+	        		finally {
+	        			if ( fp != null ) {
+	        				fp.close ();
+	        			}
+	        		}
+	        	}
+        	}
+        	// Set properties for the output warning and failure counts
+            if ( (OutputCheckWarningCountProperty != null) && !OutputCheckWarningCountProperty.isEmpty() ) {
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "PropertyName", OutputCheckWarningCountProperty );
+                request_params.setUsingObject ( "PropertyValue", new Integer(outputWarningCount) );
+                try {
+                    processor.processRequest( "SetProperty", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetProperty(Property=\"" + OutputCheckWarningCountProperty + "\") from processor.";
+                    Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+                }
+            }
+            if ( (OutputCheckFailureCountProperty != null) && !OutputCheckFailureCountProperty.isEmpty() ) {
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "PropertyName", OutputCheckFailureCountProperty );
+                request_params.setUsingObject ( "PropertyValue", new Integer(outputFailureCount) );
+                try {
+                    processor.processRequest( "SetProperty", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetProperty(Property=\"" + OutputCheckFailureCountProperty + "\") from processor.";
+                    Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+                }
+            }
+        }
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error running program \"" + CommandLine + "\" (expanded=" + CommandLine_full + ") (" + e + ").";
+		message = "Unexpected error running program \"" + CommandLine + "\" (expanded=" + CommandLine + ") (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
@@ -350,7 +722,10 @@ public String toString ( PropList parameters )
 	String CommandShell = parameters.getValue("CommandShell");
 	String Timeout = parameters.getValue("Timeout");
 	String ExitStatusIndicator = parameters.getValue("ExitStatusIndicator");
+	String ExitCodeProperty = parameters.getValue("ExitCodeProperty");
 	String OutputCheckTableID = parameters.getValue("OutputCheckTableID");
+	String OutputCheckWarningCountProperty = parameters.getValue("OutputCheckWarningCountProperty");
+	String OutputCheckFailureCountProperty = parameters.getValue("OutputCheckFailureCountProperty");
 	StringBuffer b = new StringBuffer ();
 	if ( (CommandLine != null) && (CommandLine.length() > 0) ) {
 		b.append ( "CommandLine=\"" + CommandLine + "\"" );
@@ -379,7 +754,7 @@ public String toString ( PropList parameters )
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "CommandShell=" + CommandShell );
+        b.append ( "CommandShell=\"" + CommandShell + "\"" );
     }
 	if ( (Timeout != null) && (Timeout.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -393,11 +768,29 @@ public String toString ( PropList parameters )
         }
         b.append ( "ExitStatusIndicator=\"" + ExitStatusIndicator + "\"");
     }
+    if ( (ExitCodeProperty != null) && (ExitCodeProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExitCodeProperty=\"" + ExitCodeProperty + "\"");
+    }
     if ( (OutputCheckTableID != null) && (OutputCheckTableID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "OutputCheckTableID=\"" + OutputCheckTableID +"\"" );
+    }
+    if ( (OutputCheckWarningCountProperty != null) && (OutputCheckWarningCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputCheckWarningCountProperty=\"" + OutputCheckWarningCountProperty +"\"" );
+    }
+    if ( (OutputCheckFailureCountProperty != null) && (OutputCheckFailureCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputCheckFailureCountProperty=\"" + OutputCheckFailureCountProperty +"\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

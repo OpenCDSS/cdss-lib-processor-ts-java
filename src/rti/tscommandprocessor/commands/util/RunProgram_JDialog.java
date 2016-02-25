@@ -46,7 +46,10 @@ private SimpleJComboBox __UseCommandShell_JComboBox = null;
 private JTextField __CommandShell_JTextField= null;
 private JTextField __Timeout_JTextField = null;
 private JTextField __ExitStatusIndicator_JTextField = null;
+private JTextField __ExitCodeProperty_JTextField = null;
 private SimpleJComboBox __OutputCheckTableID_JComboBox = null;
+private JTextField __OutputCheckWarningCountProperty_JTextField = null;
+private JTextField __OutputCheckFailureCountProperty_JTextField = null;
 private boolean __error_wait = false; // Is there an error waiting to be cleared up
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
@@ -98,7 +101,10 @@ private void checkInput ()
     String CommandShell = __CommandShell_JTextField.getText().trim();
     String Timeout = __Timeout_JTextField.getText().trim();
     String ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText().trim();
+    String ExitCodeProperty = __ExitCodeProperty_JTextField.getText().trim();
     String OutputCheckTableID =__OutputCheckTableID_JComboBox.getSelected();
+    String OutputCheckWarningCountProperty = __OutputCheckWarningCountProperty_JTextField.getText().trim();
+    String OutputCheckFailureCountProperty = __OutputCheckFailureCountProperty_JTextField.getText().trim();
     __error_wait = false;
     if ( CommandLine.length() > 0 ) {
         props.set ( "CommandLine", CommandLine );
@@ -122,6 +128,15 @@ private void checkInput ()
     }
     if ( ExitStatusIndicator.length() > 0 ) {
         props.set ( "ExitStatusIndicator", ExitStatusIndicator );
+    }
+    if ( ExitCodeProperty.length() > 0 ) {
+        props.set ( "ExitCodeProperty", ExitCodeProperty );
+    }
+    if ( OutputCheckWarningCountProperty.length() > 0 ) {
+        props.set ( "OutputCheckWarningCountProperty", OutputCheckWarningCountProperty );
+    }
+    if ( OutputCheckFailureCountProperty.length() > 0 ) {
+        props.set ( "OutputCheckFailureCountProperty", OutputCheckFailureCountProperty );
     }
     if ( OutputCheckTableID.length() > 0 ) {
         props.set ( "OutputCheckTableID", OutputCheckTableID );
@@ -151,7 +166,10 @@ private void commitEdits ()
     String CommandShell = __CommandShell_JTextField.getText().trim();
     String Timeout = __Timeout_JTextField.getText().trim();
     String ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText().trim();
+    String ExitCodeProperty = __ExitCodeProperty_JTextField.getText().trim();
     String OutputCheckTableID =__OutputCheckTableID_JComboBox.getSelected();
+    String OutputCheckWarningCountProperty = __OutputCheckWarningCountProperty_JTextField.getText().trim();
+    String OutputCheckFailureCountProperty = __OutputCheckFailureCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "CommandLine", CommandLine );
     __command.setCommandParameter ( "Program", Program );
     for ( int i = 0; i < __ProgramArg_JTextField.length; i++ ) {
@@ -161,7 +179,10 @@ private void commitEdits ()
     __command.setCommandParameter ( "CommandShell", CommandShell );
     __command.setCommandParameter ( "Timeout", Timeout );
     __command.setCommandParameter ( "ExitStatusIndicator", ExitStatusIndicator );
+    __command.setCommandParameter ( "ExitCodeProperty", ExitCodeProperty );
     __command.setCommandParameter ( "OutputCheckTableID", OutputCheckTableID );
+    __command.setCommandParameter ( "OutputCheckWarningCountProperty", OutputCheckWarningCountProperty );
+    __command.setCommandParameter ( "OutputCheckFailureCountProperty", OutputCheckFailureCountProperty );
 }
 
 /**
@@ -184,19 +205,16 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"<html><b>This command is in the process of being enhanced.</b></html>"),
-		0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command runs another program."),
 		0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"In order for TSTool to find input files, one of the following approaches should be used:"),
+		"In order for TSTool to locate input and output files, one of the following approaches should be used:"),
 		0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"     1) Start TSTool from the folder (directory) where files exist in order to use relative paths (use \"Command (full)\" tab)."),
+		"     1) Start TSTool from the folder (directory) where files exist in order to use relative paths."),
 		0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "     2) Start TSTool anywhere and use ${WorkingDir} in the command line to specify files relative to the working directory (folder) (use \"Command (parts)\" tab)."),
+        "     2) Start TSTool anywhere and use ${WorkingDir} in the command line to specify files relative to the working directory (folder)."),
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Specify the program to run using the command line OR separate arguments - the latter makes it simpler " +
@@ -237,6 +255,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(command_JPanel, new JLabel ( "Command to run (with arguments):" ), 
 		0, ++yCommand, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__CommandLine_JTextArea = new JTextArea ( 4, 50 );
+	__CommandLine_JTextArea.setToolTipText("Specify the full command line string, can use ${Property} notation.");
     __CommandLine_JTextArea.setLineWrap ( true );
     __CommandLine_JTextArea.setWrapStyleWord ( true );
 	__CommandLine_JTextArea.setText( "");
@@ -262,6 +281,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(parts_JPanel, new JLabel ( "Program to run:" ), 
         0, ++yParts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Program_JTextField = new JTextField ( "", 40 );
+    __Program_JTextField.setToolTipText("Specify the program to run, can use ${Property} notation.");
     __Program_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(parts_JPanel, __Program_JTextField,
         1, yParts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -274,6 +294,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         JGUIUtil.addComponent(parts_JPanel, new JLabel ( "Program argument " + (i + 1) + ":" ), 
             0, ++yParts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
         __ProgramArg_JTextField[i] = new JTextField ( "", 40 );
+        __ProgramArg_JTextField[i].setToolTipText("Specify the program command-line parameters, can use ${Property} notation.");
         __ProgramArg_JTextField[i].addKeyListener ( this );
         JGUIUtil.addComponent(parts_JPanel, __ProgramArg_JTextField[i],
             1, yParts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -319,10 +340,11 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(shell_JPanel, new JLabel ( "Command shell:" ), 
 		0, ++yShell, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__CommandShell_JTextField = new JTextField ( "", 10 );
+	__CommandShell_JTextField.setToolTipText("Specify the program command shell program, can use ${Property} notation.");
 	__CommandShell_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(shell_JPanel, __CommandShell_JTextField,
 		1, yShell, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(shell_JPanel, new JLabel( "Optional - shell program to run default depends on system."), 
+    JGUIUtil.addComponent(shell_JPanel, new JLabel( "Optional - shell program to run (default=depends on system)."), 
         3, yShell, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for command timeout
@@ -366,10 +388,10 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         "exit status (e.g., \"Status:\")."),
         0, ++yExit, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(exit_JPanel, new JLabel (
-        "<html><b>This functionality is being reviewed and improved.</b></html>"),
+        "<html><b>The ExitStatusIndicator parameter functionality is being reviewed and may be changed.</b></html>"),
         0, ++yExit, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(exit_JPanel, new JLabel (
-        "<html><b>In the future a table may be added to control how exit code is handled.</b></html>"),
+        "<html><b>In the future a table may be added to control how exit code is handled, similar to output checks.</b></html>"),
         0, ++yExit, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(exit_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yExit, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -383,6 +405,16 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
     JGUIUtil.addComponent(exit_JPanel, new JLabel(
         "Optional - output string to indicate status (default=use process exit status)."), 
         3, yExit, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(exit_JPanel, new JLabel("Exit code property:"),
+        0, ++yExit, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExitCodeProperty_JTextField = new JTextField ( "", 20 );
+    __ExitCodeProperty_JTextField.setToolTipText("Processor property to set to program exit code, can use ${Property} notation");
+    __ExitCodeProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(exit_JPanel, __ExitCodeProperty_JTextField,
+        1, yExit, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(exit_JPanel, new JLabel ( "Optional - processor property to set as program exit code." ),
+        3, yExit, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for output checks
     int yCheck = -1;
@@ -400,7 +432,7 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 		"Table columns should be:"),
 		0, ++yCheck, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel (
-		"  File - name of file to search, can contain ${Property}"),
+		"  File - name of file to search, use \"stdout\" for console output, can contain ${Property}"),
 		0, ++yCheck, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel (
 		"  Pattern - pattern to match in file, using literal text and *, can contain ${Property}"),
@@ -409,13 +441,10 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
 		"  Level - for match, level of message, one of:  Status, Warning, Failure"),
 		0, ++yCheck, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel (
-		"  Message - message for TSTool command status, use ${TBD} to include output line, can contain ${Property}"),
+		"  Message - message for TSTool command status, use ${file.line:text} to include output line text, can contain ${Property}"),
 		0, ++yCheck, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel (
 		"  Recommendation - recommendation for TSTool command status, can contain ${Property}"),
-		0, ++yCheck, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(check_JPanel, new JLabel (
-		"<html><b>Need to figure out syntax to pass back content from file, maybe even multiple lines.</b></html>"),
 		0, ++yCheck, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yCheck, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -431,6 +460,26 @@ private void initialize ( JFrame parent, RunProgram_Command command, List<String
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(check_JPanel, new JLabel( "Optional - table with output check information."), 
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(check_JPanel, new JLabel("Output check warning count property:"),
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputCheckWarningCountProperty_JTextField = new JTextField ( "", 20 );
+    __OutputCheckWarningCountProperty_JTextField.setToolTipText("Processor property to set to output check warning count, can use ${Property} notation");
+    __OutputCheckWarningCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(check_JPanel, __OutputCheckWarningCountProperty_JTextField,
+        1, yCheck, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Optional - processor property to set as warning count." ),
+        3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(check_JPanel, new JLabel("Output check failure count property:"),
+        0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputCheckFailureCountProperty_JTextField = new JTextField ( "", 20 );
+    __OutputCheckFailureCountProperty_JTextField.setToolTipText("Processor property to set to output check failure count, can use ${Property} notation");
+    __OutputCheckFailureCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(check_JPanel, __OutputCheckFailureCountProperty_JTextField,
+        1, yCheck, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(check_JPanel, new JLabel ( "Optional - processor property to set as failure count." ),
+        3, yCheck, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -513,7 +562,10 @@ private void refresh ()
     String CommandShell = "";
 	String Timeout = "";
 	String ExitStatusIndicator = "";
+	String ExitCodeProperty = "";
 	String OutputCheckTableID = "";
+	String OutputCheckWarningCountProperty = "";
+	String OutputCheckFailureCountProperty = "";
     PropList parameters = null;
     if ( __first_time ) {
         __first_time = false;
@@ -527,7 +579,10 @@ private void refresh ()
         CommandShell = parameters.getValue ( "CommandShell" );
         Timeout = parameters.getValue ( "Timeout" );
         ExitStatusIndicator = parameters.getValue ( "ExitStatusIndicator" );
+        ExitCodeProperty = parameters.getValue ( "ExitCodeProperty" );
         OutputCheckTableID = parameters.getValue ( "OutputCheckTableID" );
+        OutputCheckWarningCountProperty = parameters.getValue ( "OutputCheckWarningCountProperty" );
+        OutputCheckFailureCountProperty = parameters.getValue ( "OutputCheckFailureCountProperty" );
         if ( CommandLine != null ) {
             __CommandLine_JTextArea.setText ( CommandLine );
         }
@@ -564,6 +619,9 @@ private void refresh ()
         if ( ExitStatusIndicator != null ) {
             __ExitStatusIndicator_JTextField.setText ( ExitStatusIndicator );
         }
+        if ( ExitCodeProperty != null ) {
+            __ExitCodeProperty_JTextField.setText ( ExitCodeProperty );
+        }
         if ( OutputCheckTableID == null ) {
             // Select default...
             __OutputCheckTableID_JComboBox.select ( 0 );
@@ -579,6 +637,12 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( OutputCheckWarningCountProperty != null ) {
+            __OutputCheckWarningCountProperty_JTextField.setText ( OutputCheckWarningCountProperty );
+        }
+        if ( OutputCheckFailureCountProperty != null ) {
+            __OutputCheckFailureCountProperty_JTextField.setText ( OutputCheckFailureCountProperty );
+        }
 	}
 	// Regardless, reset the command from the fields...
     CommandLine = __CommandLine_JTextArea.getText();
@@ -590,7 +654,10 @@ private void refresh ()
     CommandShell = __CommandShell_JTextField.getText();
     Timeout = __Timeout_JTextField.getText();
     ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText();
+    ExitCodeProperty = __ExitCodeProperty_JTextField.getText();
     OutputCheckTableID =__OutputCheckTableID_JComboBox.getSelected();
+    OutputCheckWarningCountProperty = __OutputCheckWarningCountProperty_JTextField.getText();
+    OutputCheckFailureCountProperty = __OutputCheckFailureCountProperty_JTextField.getText();
     PropList props = new PropList ( __command.getCommandName() );
     props.add ( "CommandLine=" + CommandLine );
     props.add ( "Program=" + Program );
@@ -601,7 +668,10 @@ private void refresh ()
     props.add ( "CommandShell=" + CommandShell );
     props.add ( "Timeout=" + Timeout );
     props.add ( "ExitStatusIndicator=" + ExitStatusIndicator );
+    props.add ( "ExitCodeProperty=" + ExitCodeProperty );
     props.add ( "OutputCheckTableID=" + OutputCheckTableID );
+    props.add ( "OutputCheckWarningCountProperty=" + OutputCheckWarningCountProperty );
+    props.add ( "OutputCheckFailureCountProperty=" + OutputCheckFailureCountProperty );
     __command_JTextArea.setText( __command.toString(props) );
 }
 

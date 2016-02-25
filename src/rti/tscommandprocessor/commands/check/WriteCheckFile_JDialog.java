@@ -6,8 +6,10 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -15,7 +17,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -24,13 +25,15 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
 import java.io.File;
+import java.util.List;
+import java.util.Vector;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -50,6 +53,7 @@ private SimpleJButton __path_JButton = null;
 private String __working_dir = null;    
 private JTextField __OutputFile_JTextField = null;
 private JTextField __Title_JTextField = null;
+private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;  
@@ -140,12 +144,16 @@ private void checkInput () {
     PropList props = new PropList ( "" );
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String Title = __Title_JTextField.getText().trim();
+    String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     
     if (OutputFile.length() > 0) {
         props.set("OutputFile", OutputFile);
     }
     if (Title.length() > 0) {
         props.set("Title", Title);
+    }
+    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+        props.set ( "WriteHeaderComments", WriteHeaderComments );
     }
 
     __error_wait = false;
@@ -168,24 +176,10 @@ private void commitEdits()
 {
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String Title = __Title_JTextField.getText().trim();
+	String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     __command.setCommandParameter("OutputFile", OutputFile);
     __command.setCommandParameter("Title", Title);
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable {
-    __OutputFile_JTextField = null;
-    __browse_JButton = null;
-    __cancel_JButton = null;
-    __command_JTextArea = null;
-    __command = null;
-    __ok_JButton = null;
-    __path_JButton = null;
-    __working_dir = null;
-    super.finalize ();
+	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
 }
 
 /**
@@ -215,28 +209,30 @@ private void initialize ( JFrame parent, WriteCheckFile_Command command )
 
     JPanel paragraph = new JPanel();
     paragraph.setLayout(new GridBagLayout());
-    int yy = 0;
+    int yy = -1;
     JGUIUtil.addComponent(paragraph, new JLabel (
         "This command writes command warning/failure messages to a check file, as a summary of data/processing problems."),
-        0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "Use Check*() commands prior to this command to perform checks on specific data object types."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Specify an \"html\" extension for the output file to generate an HTML report, or \"csv\" to " +
+        "Command messages generated during processing will be included in output."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Use commands such as CheckTimeSeries() to perform additional checks on specific data object types."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Specify an \"html\" extension for the output file to generate a navigable HTML file, or \"csv\" to " +
         "create a comma-separated value file."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "The HTML file will contain navigable information whereas the CSV file will only contain a list of " +
-        "warning/failure messages."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, paragraph,
         0, y, 7, 1, 0, 1, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 1, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Check (output) file:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField (35);
+    __OutputFile_JTextField.setToolTipText("Specify the output file, can use ${Property} notation.");
     __OutputFile_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -247,10 +243,27 @@ private void initialize ( JFrame parent, WriteCheckFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Title:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Title_JTextField = new JTextField (35);
+    __Title_JTextField.setToolTipText("Specify the title for the HTML output, can use ${Property} notation.");
     __Title_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Title_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - title for output file."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - title for HTML output file."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Write header comments?:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
+    List<String> writeHeaderCommentsList = new Vector();
+    writeHeaderCommentsList.add("");
+    writeHeaderCommentsList.add(__command._False);
+    writeHeaderCommentsList.add(__command._True);
+    __WriteHeaderComments_JComboBox.setData ( writeHeaderCommentsList );
+    __WriteHeaderComments_JComboBox.select(0);
+    __WriteHeaderComments_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __WriteHeaderComments_JComboBox,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - should header comments be written? (default=" + __command._True + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -331,8 +344,10 @@ public boolean ok() {
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String OutputFile = "";
+{   String routine = getClass().getSimpleName() + ".refresh";
+	String OutputFile = "";
 	String Title = "";
+	String WriteHeaderComments = "";
     PropList props = null;
     
     if (__first_time) {
@@ -341,6 +356,7 @@ private void refresh ()
         // Get the properties from the command
         props = __command.getCommandParameters();
         OutputFile = props.getValue ( "OutputFile" );
+        WriteHeaderComments = props.getValue ( "WriteHeaderComments" );
         Title = props.getValue ( "Title" );
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText ( OutputFile );
@@ -348,13 +364,33 @@ private void refresh ()
         if ( Title != null ) {
             __Title_JTextField.setText ( Title );
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__WriteHeaderComments_JComboBox, WriteHeaderComments, JGUIUtil.NONE, null, null ) ) {
+            __WriteHeaderComments_JComboBox.select ( WriteHeaderComments );
+        }
+        else {
+            if ( (WriteHeaderComments == null) || WriteHeaderComments.equals("") ) {
+                // New command...select the default...
+                if ( __WriteHeaderComments_JComboBox.getItemCount() > 0 ) {
+                    __WriteHeaderComments_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                  "WriteHeaderComments parameter \"" + WriteHeaderComments + "\".  Select a different value or Cancel." );
+            }
+        }
     }
     // Regardless, reset the command from the fields...
     props = new PropList(__command.getCommandName());
     OutputFile = __OutputFile_JTextField.getText().trim();
     Title = __Title_JTextField.getText().trim();
+    WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
     props.add("OutputFile=" + OutputFile);
     props.add("Title=" + Title);
+    if ( WriteHeaderComments != null ) {
+    	props.add ( "WriteHeaderComments=" + WriteHeaderComments );
+    }
     __command_JTextArea.setText( __command.toString(props) );
     // Check the path and determine what the label on the path button should be...
     if (__path_JButton != null) {

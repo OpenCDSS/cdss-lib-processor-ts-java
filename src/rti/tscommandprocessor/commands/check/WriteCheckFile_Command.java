@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -32,13 +33,17 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
 
 /**
-<p>
 This class initializes, checks, and runs the WriteCheckFile() command.  This command can be run from any CommandProcessor
 because it depends only on command classes.
-</p>
 */
 public class WriteCheckFile_Command extends AbstractCommand implements Command, FileGenerator
 {
+	
+/** 
+Values for use with WriteHeaderComments parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
     
 /**
 Output file that is created by this command.
@@ -63,6 +68,7 @@ Check the command parameter for valid values, combination, etc.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {   String OutputFile = parameters.getValue ( "OutputFile" );
+	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
     String warning = "";
     String message;
     
@@ -76,7 +82,7 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify an output file." ) );
     }
-    else {
+    else if ( OutputFile.indexOf("${") < 0 ){
         String working_dir = null;      
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -124,14 +130,25 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the output file with an extension of html or csv." ) );
         }
-                
+    }
+    
+    if ( (WriteHeaderComments != null) && !WriteHeaderComments.equals("") ) {
+        if ( !WriteHeaderComments.equalsIgnoreCase(_False) && !WriteHeaderComments.equalsIgnoreCase(_True) ) {
+            message = "The WriteHeaderComments parameter (" + WriteHeaderComments + ") must be " + _False +
+            " or " + _True + ".";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the parameter as " + _False + " or " + _True + "."));
+        }
     }
 
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
-    valid_Vector.add ( "OutputFile" );
-    valid_Vector.add ( "Title" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(3);
+    validList.add ( "OutputFile" );
+    validList.add ( "Title" );
+	validList.add ( "WriteHeaderComments" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
     // Throw an InvalidCommandParameterException in case of errors.
     if ( warning.length() > 0 ) {       
@@ -536,7 +553,7 @@ Run method internal to this class, to handle running in discovery and run mode.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {
-    String routine = getClass().getName() + ".runCommandInternal", message;
+    String routine = getClass().getSimpleName() + ".runCommandInternal", message;
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
@@ -545,41 +562,65 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // Check whether the processor wants output files to be created...
 
     CommandProcessor processor = getCommandProcessor();
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
     if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
         Message.printStatus ( 2, routine, "Skipping \"" + toString() + "\" because output is not being created." );
         return;
     }
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     
     PropList parameters = getCommandParameters();
-    String OutputFile = parameters.getValue ( "OutputFile" );
+    String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
     String Title = parameters.getValue ( "Title" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (Title != null) && (Title.indexOf("${") >= 0) ) {
+		Title = TSCommandProcessorUtil.expandParameterValue(processor, this, Title);
+	}
+    String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+    boolean writeHeaderComments = true;
+    if ( (WriteHeaderComments != null) && WriteHeaderComments.equalsIgnoreCase(_False) ) {
+    	writeHeaderComments = false;
+    }
 
     String OutputFile_full = OutputFile;
     try {
         // Get the comments to add to the top of the file.
 
-        List OutputComments_List = null;
-        try {
-            Object o = processor.getPropContents ( "OutputComments" );
-            // Comments are available so use them...
-            if ( o != null ) {
-                OutputComments_List = (List)o;
-            }
-        }
-        catch ( Exception e ) {
-            // Not fatal, but of use to developers.
-            message = "Error requesting OutputComments from processor (" + e + ") - not using.";
-            Message.printWarning(3, routine, message );
-            Message.printWarning(3, routine, e );
+        List OutputComments_List = new ArrayList<String>();
+        if ( writeHeaderComments ) {
+	        try {
+	            Object o = processor.getPropContents ( "OutputComments" );
+	            // Comments are available so use them...
+	            if ( o != null ) {
+	                OutputComments_List = (List)o;
+	            }
+	        }
+	        catch ( Exception e ) {
+	            // Not fatal, but of use to developers.
+	            message = "Error requesting OutputComments from processor (" + e + ") - not using.";
+	            Message.printWarning(3, routine, message );
+	            Message.printWarning(3, routine, e );
+	        }
         }
         
         // Clear the filename for the FileGenerator interface
         setOutputFile ( null );
         OutputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            	TSCommandProcessorUtil.expandParameterValue(processor, this,OutputFile)) );
         
         // Get the log records...
         
@@ -589,7 +630,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Write the output file.
         
         if ( StringUtil.endsWithIgnoreCase(OutputFile,"csv") ) {
-            writeListFile(OutputFile_full, ",", logRecordList, OutputComments_List );
+            writeListFile(OutputFile_full, ",", logRecordList, writeHeaderComments, OutputComments_List );
         }
         else if ( StringUtil.endsWithIgnoreCase(OutputFile,"html") ) {
             writeHtmlFile(IOUtil.getProgramName(), processor, OutputFile_full, ",", logRecordList,
@@ -633,6 +674,7 @@ public String toString ( PropList parameters )
 
     String OutputFile = parameters.getValue ( "OutputFile" );
     String Title = parameters.getValue ( "Title" );
+    String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 
     StringBuffer b = new StringBuffer ();
     if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
@@ -643,6 +685,12 @@ public String toString ( PropList parameters )
     		b.append ( "," );
     	}
         b.append ( "Title=\"" + Title + "\"" );
+    }
+    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteHeaderComments=" + WriteHeaderComments );
     }
     
     return getCommandName() + "(" + b.toString() + ")";
@@ -661,7 +709,7 @@ file.  Any strings in the body of the file that contain the field delimiter will
 @throws Exception if an error occurs.
 */
 public void writeHtmlFile( String appName, CommandProcessor processor, String filename, String delimiter,
-    List data, List newComments, String userTitle ) 
+    List<CommandLogRecord> data, List<String> newComments, String userTitle ) 
 throws Exception {
     // Put together high-level properties for the report.
     
@@ -674,21 +722,21 @@ throws Exception {
         "Problem",
         "Recommendation" };
     
-    List commentIndicators = new Vector(1);
+    List<String> commentIndicators = new Vector<String>(1);
     commentIndicators.add ( "#" );
-    List ignoredCommentIndicators = new Vector(1);
+    List<String> ignoredCommentIndicators = new Vector<String>(1);
     ignoredCommentIndicators.add ( "#>");
     
     // TODO SAM Need to get normal comment header info and fold into HTML file in nice format
     
     // Format some basic comments at the top of the file.  Do this to a copy of the
     // incoming comments so that they are not modified in the calling code.
-    List newComments2 = null;
+    List<String> newComments2 = null;
     if ( newComments == null ) {
-        newComments2 = new Vector();
+        newComments2 = new ArrayList<String>();
     }
     else {
-        newComments2 = new Vector(newComments);
+        newComments2 = new ArrayList<String>(newComments);
     }
     newComments2.add(0,"");
     newComments2.add(1,appName + " check file containing all warning/failure messages from run.");
@@ -736,7 +784,7 @@ file.  Any strings in the body of the file that contain the field delimiter will
 @param newComments list of comments to add at the top of the file.
 @throws Exception if an error occurs.
 */
-public void writeListFile(String filename, String delimiter, List data, List newComments ) 
+public void writeListFile(String filename, String delimiter, List<CommandLogRecord> data, boolean writeHeaderComments, List<String> newComments ) 
 throws Exception {
     int size = 0;
     if (data != null) {
@@ -762,9 +810,9 @@ throws Exception {
     int j = 0;
     PrintWriter out = null;
     CommandLogRecord logRecord = null;
-    List commentIndicators = new Vector(1);
+    List<String> commentIndicators = new ArrayList<String>(1);
     commentIndicators.add ( "#" );
-    List ignoredCommentIndicators = new Vector(1);
+    List<String> ignoredCommentIndicators = new ArrayList<String>(1);
     ignoredCommentIndicators.add ( "#>");
     String[] line = new String[fieldCount];
     StringBuffer buffer = new StringBuffer();
@@ -772,18 +820,23 @@ throws Exception {
     try {
         // Add some basic comments at the top of the file.  Do this to a copy of the
         // incoming comments so that they are not modified in the calling code.
-        List newComments2 = null;
-        if ( newComments == null ) {
-            newComments2 = new Vector();
-        }
-        else {
-            newComments2 = new Vector(newComments);
-        }
-        newComments2.add(0,"");
-        newComments2.add(1,IOUtil.getProgramName() + " check file containing all warning/failure messages from run.");
-        newComments2.add(2,"");
-        out = IOUtil.processFileHeaders( oldFile, IOUtil.getPathUsingWorkingDir(filename), 
-            newComments2, commentIndicators, ignoredCommentIndicators, 0);
+    	if ( writeHeaderComments ) {
+	        List<String> newComments2 = null;
+	        if ( newComments == null ) {
+	            newComments2 = new ArrayList<String>();
+	        }
+	        else {
+	            newComments2 = new ArrayList(newComments);
+	        }
+	        newComments2.add(0,"");
+	        newComments2.add(1,IOUtil.getProgramName() + " check file containing all warning/failure messages from run.");
+	        newComments2.add(2,"");
+	        out = IOUtil.processFileHeaders( oldFile, filename, newComments2, commentIndicators, ignoredCommentIndicators, 0);
+    	}
+    	else {
+    		// Just open the file and start writing below.
+    		out = new PrintWriter(filename);
+    	}
 
         for (int i = 0; i < fieldCount; i++) {
             if (i > 0) {

@@ -423,6 +423,158 @@ public static String expandParameterValue( CommandProcessor processor, Command c
 /**
 Expand a string using:
 <ol>
+<li> time series processor ${Property} strings</li>
+<li> time series ensemble ${tsensemble:Property} strings</li>
+</ol>
+If a property string is not found, it will remain without being replaced.
+@param processor The processor that is being used, if a ${property} needs to be expanded (if passed as null,
+the processor property won't be expanded)
+@param ensemble Time series ensemble to be used for metadata string.
+@param s String to expand, which includes format specifiers and literal strings.
+@param status CommandStatus to add messages to if problems occur, or null to ignore.
+@param commandPhase command phase (for logging), can be null to ignore logging.
+*/
+public static String expandTimeSeriesEnsembleMetadataString ( CommandProcessor processor, TSEnsemble ensemble, String s,
+    CommandStatus status, CommandPhaseType commandPhase )
+{   String routine = "TSCommandProcessorUtil.expandTimeSeriesEnsembleMetadataString";
+    if ( s == null ) {
+        return "";
+    }
+    //Message.printStatus(2, routine, "After formatLegend(), string is \"" + s2 + "\"" );
+    // Now replace ${tsensemble:Property} and ${Property} strings with properties from the processor
+    // Put the most specific first so it is matched first
+    String [] startStrings = { "${tsensemble:", "${" };
+    int [] startStringsLength = { 13, 2 };
+    String [] endStrings = { "}", "}" };
+    boolean isTsProp = false;
+    Object propO;
+    // Loop through and expand the string, first by expanding the time series properties, which have a more specific
+    // ${tsensemble: starting pattern and then the processor properties starting with ${
+    for ( int ipat = 0; ipat < startStrings.length; ipat++ ) {
+        int start = 0; // Start at the beginning of the string
+        int pos2 = 0;
+        isTsProp = false;
+        if ( ipat == 0 ) {
+            // Time series property corresponding to startStrings[0] for loop below.
+            // The fundamental logic is the same but getting the property is different whether from TS or processor
+            isTsProp = true;
+        }
+        while ( pos2 < s.length() ) {
+            int pos1 = StringUtil.indexOfIgnoreCase(s, startStrings[ipat], start );
+            if ( pos1 >= 0 ) {
+                // Find the end of the property
+                pos2 = s.indexOf( endStrings[ipat], pos1 );
+                if ( pos2 > 0 ) {
+                    // Get the property...
+                    String propname = s.substring(pos1+startStringsLength[ipat],pos2);
+                    //Message.printStatus(2, routine, "Property=\"" + propname + "\" isTSProp=" + isTsProp + " pos1=" + pos1 + " pos2=" + pos2 );
+                    // By convention if the property is not found, keep the original string so can troubleshoot property issues
+                    String propvalString = s.substring(pos1,(pos2 + 1));
+                    if ( isTsProp ) {
+                        // Get the property out of the time series
+                        propO = ensemble.getProperty(propname);
+                        if ( propO == null ) {
+                            if ( status != null ) {
+                                String message = "Time series ensemble \"" + ensemble.getEnsembleID() + "\" property=\"" +
+                                propname + "\" has a null value.";
+                                Message.printWarning ( 3,routine, message );
+                                status.addToLog ( commandPhase,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Verify that the property is set for the time series ensemble." ) );
+                            }
+                        }
+                        else {
+                            // This handles conversion of integers to strings
+                            propvalString = "" + propO;
+                        }
+                    }
+                    else if ( processor != null ) {
+                        // Not a time series property so this is a processor property
+                        // Get the property from the processor properties
+                        PropList request_params = new PropList ( "" );
+                        request_params.set ( "PropertyName", propname );
+                        CommandProcessorRequestResultsBean bean = null;
+                        boolean processorError = false;
+                        try {
+                            bean = processor.processRequest( "GetProperty", request_params);
+                        }
+                        /* TODO SAM 2015-07-05 Need to evaluate whether error should be absorbed and ${property} remain unexpanded, as javadoc'ed
+                        catch ( UnrecognizedRequestException e ) {
+                        	// Property is not set - OK
+                        	processorError = true;
+                        }
+                        */
+                        catch ( Exception e ) {
+                        	// Unexpected exception
+                            if ( status != null ) {
+                                String message = "Error requesting GetProperty(Property=\"" + propname + "\") from processor.";
+                                Message.printWarning ( 3,routine, message );
+                                status.addToLog ( commandPhase,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Report the problem to software support." ) );
+                            }
+                            processorError = true;
+                        }
+                        if ( !processorError ) {
+                            if ( bean == null ) {
+                                // Not an exception but the property was not found in the processor
+                                if ( status != null ) {
+                                    String message =
+                                        "Unable to find property from processor using GetProperty(Property=\"" + propname + "\").";
+                                    Message.printWarning ( 3,routine, message );
+                                    status.addToLog ( commandPhase,
+                                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                            message, "Verify that the property name is valid - must match case." ) );
+                                }
+                            }
+                            else {
+                                // Have a property, but still need to check for null value
+                                // TODO SAM 2013-09-09 should this be represented as "null" in output?
+                                PropList bean_PropList = bean.getResultsPropList();
+                                Object o_PropertyValue = bean_PropList.getContents ( "PropertyValue" );
+                                if ( o_PropertyValue == null ) {
+                                    if ( status != null ) {
+                                        String message =
+                                            "Null PropertyValue returned from processor for GetProperty(PropertyName=\"" + propname + "\").";
+                                        Message.printWarning ( 3, routine, message );
+                                        status.addToLog ( commandPhase,
+                                            new CommandLogRecord(CommandStatusType.FAILURE, message,
+                                                "Verify that the property name is valid - must match case." ) );
+                                    }
+                                }
+                                else {
+                                    // This handles conversion of integers and dates to strings
+                                    propvalString = "" + o_PropertyValue;
+                                }
+                            }
+                        }
+                    }
+                    // Replace the string and continue to evaluate s2
+                    s = s.substring ( 0, pos1 ) + propvalString + s.substring (pos2 + 1);
+                    // Next search will be at the end of the expanded string (end delimiter will be skipped in any case)
+                    start = pos1 + propvalString.length();
+                }
+                else {
+                    // No closing character so leave the property string as is and march on...
+                    start = pos1 + startStringsLength[ipat];
+                    if ( start > s.length() ) {
+                        break;
+                    }
+                }
+            }
+            else {
+                // No more ${} property strings so done processing properties.
+                // If checking time series properties will then check global properties in next loop
+                break;
+            }
+        }
+    }
+    return s;
+}
+
+/**
+Expand a string using:
+<ol>
 <li> time series % formatting strings using TS.formatLegend()</li>
 <li> time series processor ${Property} strings</li>
 <li> time series  ${ts:Property} strings</li>

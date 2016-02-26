@@ -202,7 +202,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	// Get the ensemble to process...
 	PropList request_params = new PropList ( "" );
-	request_params.set ( "EnsembleList", EnsembleList );
+	request_params.set ( "EnsembleList", EnsembleList ); // Will be ignored for now
     request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
 	try {
@@ -234,6 +234,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Now try to process.
 
 	List<TSEnsemble> ensembleList = new ArrayList<TSEnsemble>(1);
+	if ( o_TSEnsemble != null ) {
+		ensembleList.add((TSEnsemble)o_TSEnsemble);
+	}
 	int size = 0;
 	if ( ensembleList != null ) {
 		size = ensembleList.size();
@@ -327,18 +330,18 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "PropertyName=\"" + PropertyName + "\"" );
-    }
-    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyType=" + PropertyType );
-    }
-    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
+	    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
+	        if ( b.length() > 0 ) {
+	            b.append ( "," );
+	        }
+	        b.append ( "PropertyType=" + PropertyType );
+	    }
+	    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
+	        if ( b.length() > 0 ) {
+	            b.append ( "," );
+	        }
+	        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
+	    }
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

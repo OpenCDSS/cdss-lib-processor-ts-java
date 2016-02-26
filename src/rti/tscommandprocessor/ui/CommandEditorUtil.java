@@ -2,15 +2,16 @@ package rti.tscommandprocessor.ui;
 
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
-
 import java.awt.event.ItemListener;
 import java.awt.event.KeyListener;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import rti.tscommandprocessor.core.EnsembleListType;
 import rti.tscommandprocessor.core.TSListType;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -59,6 +60,60 @@ public static int addEnsembleIDToEditorDialogPanel ( ItemListener itemlistener, 
     }
     JGUIUtil.addComponent(panel, choices,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    return y;
+}
+
+/**
+Add the EnsembleList parameter components to a command dialog.
+It is assumed that GridBagLayout is used for the layout.
+@param dialog The dialog that is being added to.
+@param panel The JPanel to which the controls are being added.
+@param y The GridBagLayout vertical position.
+@return Incremented y reflecting the addition of a new vertical component group.
+*/
+public static int addEnsembleListToEditorDialogPanel (
+    ItemListener dialog, JPanel panel, SimpleJComboBox choices, int y )
+{
+    return addEnsembleListToEditorDialogPanel ( dialog, panel, null, choices, y, null );
+}
+
+// TODO SAM 2016-02-26 Enable these in code
+/**
+Add the EnsembleList parameter components to a command dialog.
+It is assumed that GridBagLayout is used for the layout.
+@param dialog The dialog that is being added to.
+@param panel The JPanel to which the controls are being added.
+@param label Label for the row.  If null a default will be provided.
+@param y The GridBagLayout vertical position.
+@param note to override default note.
+@return Incremented y reflecting the addition of a new vertical component group.
+*/
+public static int addEnsembleListToEditorDialogPanel (
+    ItemListener dialog, JPanel panel, JLabel label, SimpleJComboBox choices, int y, JLabel note )
+{
+    Insets insetsTLBR = new Insets(2,2,2,2);
+    if ( label == null ) {
+        label = new JLabel ("Ensemble list:");
+    }
+    JGUIUtil.addComponent(panel, label, 0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    List<String> ensembleListChoices = new ArrayList<String>();
+    //ensembleListChoices.add ( "" );
+    //ensembleListChoices.add ( EnsembleListType.ALL_MATCHING_ENSEMBLEID.toString() );
+    //ensembleListChoices.add ( EnsembleListType.ALL_ENSEMBLE.toString() );
+    ensembleListChoices.add ( EnsembleListType.FIRST_MATCHING_ENSEMBLEID.toString() );
+    //ensembleListChoices.add ( EnsembleListType.LAST_MATCHING_ENSEMBLEID.toString() );
+    //ensembleListChoices.add ( EnsembleListType.SELECTED_ENSEMBLE.toString() );
+    
+    choices.setData ( ensembleListChoices );
+    choices.addItemListener (dialog);
+    JGUIUtil.addComponent(panel, choices,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    if ( note == null ) {
+        // Use a default note
+        note = new JLabel ( "Optional - indicates the time series ensembles to process." );
+    }
+    JGUIUtil.addComponent(panel, note,
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     return y;
 }
 

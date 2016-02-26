@@ -42,6 +42,7 @@ import rti.tscommandprocessor.commands.ensemble.NewEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemble_Command;
 
+import rti.tscommandprocessor.commands.ensemble.SetEnsembleProperty_Command;
 // GRTS commands (time series products).
 import rti.tscommandprocessor.commands.products.ProcessRasterGraph_Command;
 import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
@@ -927,6 +928,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("SetDebugLevel") ) {
         return new SetDebugLevel_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("SetEnsembleProperty") ) {
+        return new SetEnsembleProperty_Command ();
     }
     else if ( commandName.equalsIgnoreCase("SetExcelCell") ) {
         return new SetExcelCell_Command ();

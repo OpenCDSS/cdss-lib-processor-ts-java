@@ -1,6 +1,5 @@
 package rti.tscommandprocessor.commands.ensemble;
 
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -14,7 +13,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
-import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -34,7 +32,6 @@ import rti.tscommandprocessor.core.EnsembleListType;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -56,7 +53,7 @@ private SimpleJComboBox	__EnsembleList_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTabbedPane __props_JTabbedPane = null;
-private TSFormatSpecifiersJPanel __Name_JTextField = null;
+private JTextField __Name_JTextField = null;
 private SimpleJComboBox __PropertyType_JComboBox = null;
 private JTextField __PropertyValue_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
@@ -216,7 +213,7 @@ private void initialize ( JFrame parent, SetEnsembleProperty_Command command )
 	
     addWindowListener( this );
 
-    Insets insetsTLBR = new Insets(1,2,1,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -227,15 +224,15 @@ private void initialize ( JFrame parent, SetEnsembleProperty_Command command )
 		"Set time series ensemble properties (metadata)." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Time series enemble identifier information cannot be changed because it is fundamental to locating time series ensembles during processing."),
+		"The time series ensemble identifier (EnsembleID) cannot be changed because it is fundamental to ensembles during processing."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __EnsembleList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __EnsembleList_JComboBox, y );
+    y = CommandEditorUtil.addEnsembleListToEditorDialogPanel ( this, main_JPanel, __EnsembleList_JComboBox, y );
     
-    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + EnsembleListType.ALL_MATCHING_ENSEMBLEID.toString() + "):");
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for EnsembleList=" + EnsembleListType.ALL_MATCHING_ENSEMBLEID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
@@ -244,9 +241,6 @@ private void initialize ( JFrame parent, SetEnsembleProperty_Command command )
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
     
     __props_JTabbedPane = new JTabbedPane ();
-    __props_JTabbedPane.setBorder(
-        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
-        "Specify time series properties" ));
     JGUIUtil.addComponent(main_JPanel, __props_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
@@ -258,12 +252,12 @@ private void initialize ( JFrame parent, SetEnsembleProperty_Command command )
 
     JGUIUtil.addComponent(builtIn_JPanel, new JLabel ( "Built-in properties are core to the time series ensemble design." ), 
         0, ++yBuiltIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    //JGUIUtil.addComponent(builtIn_JPanel, new JLabel (
-    //    "Some built-in properties can be referenced later with % specifier notation (e.g., %D for description)." ), 
-    //    0, ++yBuiltIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yBuiltIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(builtIn_JPanel, new JLabel("Name:"),
         0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Name_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Name_JTextField = new JTextField(10);
     //__Name_JTextField.getTextField().setToolTipText("Use %L for location, %T for data type, %I for interval, also ${ts:Property} and ${Property}.");
     __Name_JTextField.addKeyListener ( this );
     __Name_JTextField.getDocument().addDocumentListener(this);
@@ -284,6 +278,9 @@ private void initialize ( JFrame parent, SetEnsembleProperty_Command command )
     JGUIUtil.addComponent(user_JPanel, new JLabel (
         "User-defined properties require that all three of the following parameters are specified." ), 
         0, ++yUser, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yUser, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(user_JPanel, new JLabel ( "Property name:" ), 
         0, ++yUser, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField ( 20 );
@@ -316,7 +313,7 @@ private void initialize ( JFrame parent, SetEnsembleProperty_Command command )
     __PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(user_JPanel, __PropertyValue_JTextField,
         1, yUser, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(user_JPanel, new JLabel( "Required - property value as string, can use % and ${ts:property}."), 
+    JGUIUtil.addComponent(user_JPanel, new JLabel( "Required - property value as string."), 
         3, yUser, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

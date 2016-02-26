@@ -311,7 +311,6 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     __Description_JTextField.getTextField().setToolTipText("Use %L for location, %T for data type, %I for interval, also ${ts:Property} and ${Property}.");
     __Description_JTextField.addKeyListener ( this );
     __Description_JTextField.getDocument().addDocumentListener(this);
-    __Description_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(builtIn_JPanel, __Description_JTextField,
         1, yBuiltIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(builtIn_JPanel,

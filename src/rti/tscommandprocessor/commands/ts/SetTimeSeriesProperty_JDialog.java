@@ -305,6 +305,9 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(builtIn_JPanel, new JLabel (
         "Some built-in properties can be referenced later with % specifier notation (e.g., %D for description)." ), 
         0, ++yBuiltIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(builtIn_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yBuiltIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(builtIn_JPanel, new JLabel("Description:"),
         0, ++yBuiltIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Description_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -365,6 +368,9 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(user_JPanel, new JLabel (
         "User-defined properties require that all three of the following parameters are specified." ), 
         0, ++yUser, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(user_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yUser, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(user_JPanel, new JLabel ( "Property name:" ), 
         0, ++yUser, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField ( 20 );

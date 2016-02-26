@@ -420,18 +420,18 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "PropertyName=\"" + PropertyName + "\"" );
-    }
-    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyType=" + PropertyType );
-    }
-    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
+	    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
+	        if ( b.length() > 0 ) {
+	            b.append ( "," );
+	        }
+	        b.append ( "PropertyType=" + PropertyType );
+	    }
+	    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
+	        if ( b.length() > 0 ) {
+	            b.append ( "," );
+	        }
+	        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
+	    }
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

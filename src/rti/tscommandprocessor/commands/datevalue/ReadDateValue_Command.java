@@ -407,7 +407,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String Alias = parameters.getValue("Alias");
     
-	// InputStart
 	DateTime InputStart_DateTime = null;
 	DateTime InputEnd_DateTime = null;
 	if ( commandPhase == CommandPhaseType.RUN ) {

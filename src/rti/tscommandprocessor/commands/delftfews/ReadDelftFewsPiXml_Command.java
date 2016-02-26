@@ -92,6 +92,7 @@ throws InvalidCommandParameterException
 	String InputEnd = parameters.getValue("InputEnd");
 	String TimeZoneOffset = parameters.getValue("TimeZoneOffset");
 	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
+	String Read24HourAsDayCutoff = parameters.getValue("Read24HourAsDayCutoff");
     
     if ( (InputFile == null) || (InputFile.length() == 0) ) {
         message = "The input file must be specified.";
@@ -191,17 +192,37 @@ throws InvalidCommandParameterException
             message, "Specify Read24HourAsDay as " + _False + " (default) or " + _True + ".") );
     }
     
+    if ( (Read24HourAsDayCutoff != null) && !Read24HourAsDayCutoff.isEmpty() ) {
+    	if ( !StringUtil.isInteger(Read24HourAsDayCutoff) ) {
+	        message = "The Read24HourAsDayCutoff parameter is invalid.";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Specify Read24HourAsDayCutoff as an integer >= 0 and <= 23.") );
+    	}
+    	else {
+    		int cutoff = Integer.parseInt(Read24HourAsDayCutoff);
+        	if ( (cutoff < 0) || (cutoff > 23) ) {
+    	        message = "The Read24HourAsDayCutoff parameter is invalid.";
+    	        warning += "\n" + message;
+    	        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+    	            message, "Specify Read24HourAsDayCutoff as an integer >= 0 and <= 23.") );
+        	}
+    	}
+    }
+    
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(12);
+	List<String> validList = new ArrayList<String>(14);
     validList.add ( "InputFile" );
     validList.add ( "Output" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
     validList.add ( "TimeZoneOffset" );
+    validList.add ( "TimeZone" );
     validList.add ( "DataSource" );
     validList.add ( "DataType" );
     validList.add ( "Description" );
     validList.add ( "Read24HourAsDay" );
+    validList.add ( "Read24HourAsDayCutoff" );
     //validList.add ( "NewUnits" );
     validList.add ( "Alias" );
     validList.add ( "EnsembleID" );
@@ -357,6 +378,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (TimeZoneOffset != null) && !TimeZoneOffset.isEmpty() ) {
 		timeZoneOffset = Integer.parseInt(TimeZoneOffset);
 	}
+	String TimeZone = parameters.getValue("TimeZone");
+	if ( (TimeZone != null) && TimeZone.indexOf("${") >= 0 ) {
+		TimeZone = TSCommandProcessorUtil.expandParameterValue(processor,this,TimeZone);
+	}
 	String DataSource = parameters.getValue("DataSource");
 	if ( (DataSource != null) && DataSource.indexOf("${") >= 0 ) {
 		DataSource = TSCommandProcessorUtil.expandParameterValue(processor,this,DataSource);
@@ -373,6 +398,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	boolean read24HourAsDay = false;
 	if ( (Read24HourAsDay != null) && Read24HourAsDay.equalsIgnoreCase(_True) ) {
 		read24HourAsDay = true;
+	}
+	String Read24HourAsDayCutoff = parameters.getValue("Read24HourAsDayCutoff");
+	int read24HourAsDayCutoff = 0; // default
+	if ( (Read24HourAsDayCutoff != null) && Read24HourAsDayCutoff.equalsIgnoreCase(_True) ) {
+		read24HourAsDayCutoff = Integer.parseInt(Read24HourAsDayCutoff);
 	}
 	//String NewUnits = parameters.getValue("NewUnits");
 	String Alias = parameters.getValue("Alias");
@@ -404,6 +434,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		catch ( InvalidCommandParameterException e ) {
 			// Warning will have been added above...
 			++warning_count;
+		}
+	}
+	if ( (TimeZone != null) && !TimeZone.isEmpty() ) {
+		if ( InputStart_DateTime != null ) {
+			InputStart_DateTime.setTimeZone(TimeZone);
+		}
+		if ( InputEnd_DateTime != null ) {
+			InputEnd_DateTime.setTimeZone(TimeZone);
 		}
 	}
 	
@@ -445,7 +483,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Read everything in the file (one time series or traces).
         	DelftFewsPiXmlReader reader = new DelftFewsPiXmlReader ( InputFile_full );
             reader.readTimeSeriesList (
-                InputStart_DateTime, InputEnd_DateTime, timeZoneOffset, DataSource, DataType, Description, read24HourAsDay, null,
+                InputStart_DateTime, InputEnd_DateTime, timeZoneOffset, TimeZone, DataSource, DataType,
+                Description, read24HourAsDay, read24HourAsDayCutoff, null,
                 Output, EnsembleID, EnsembleName, readData, problems );
             tsList = reader.getTimeSeriesList();
             ensembleList = reader.getEnsembleList();
@@ -530,8 +569,51 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         
         if ( ensembleList.size() > 0 ) {
-            // Create an ensemble and add to the processor...
-            TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensembleList.get(0));
+        	// Transfer some properties from the time series to the ensemble
+    		TSEnsemble ensemble = ensembleList.get(0);
+    		List<TS>tslist = ensemble.getTimeSeriesList(false);
+        	if ( tslist.size() > 0 ) {
+        		TS ts = tslist.get(0);
+        		// Set properties that are relevant to an ensemble - mostly at station level since time series hold time series properties
+        		Object o = ts.getProperty("ensembleId");
+        		if ( o != null) {
+        			ensemble.setProperty("ensembleId",ts.getProperty("ensembleId")); 
+        		}
+        		o = ts.getProperty("forecastDate");
+        		if ( o != null) {
+        			ensemble.setProperty("forecastDate",ts.getProperty("forecastDate")); 
+        		}
+        		o = ts.getProperty("lat");
+        		if ( o != null) {
+        			ensemble.setProperty("lat",ts.getProperty("lat")); 
+        		}
+        		o = ts.getProperty("lon");
+        		if ( o != null) {
+        			ensemble.setProperty("lon",ts.getProperty("lon")); 
+        		}
+        		o = ts.getProperty("locationId");
+        		if ( o != null) {
+        			ensemble.setProperty("locationId",ts.getProperty("locationId")); 
+        		}
+        		o = ts.getProperty("stationName");
+        		if ( o != null) {
+        			ensemble.setProperty("stationName",ts.getProperty("stationName")); 
+        		}
+        		o = ts.getProperty("x");
+        		if ( o != null) {
+        			ensemble.setProperty("x",ts.getProperty("x"));
+        		}
+        		o = ts.getProperty("y");
+        		if ( o != null) {
+        			ensemble.setProperty("y",ts.getProperty("y"));
+        		}
+        		o = ts.getProperty("z");
+        		if ( o != null) {
+        			ensemble.setProperty("z",ts.getProperty("z")); 
+        		}
+        	}
+            // Add first ensemble in ensemble list to the processor...
+            TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -583,10 +665,12 @@ public String toString ( PropList props )
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
 	String TimeZoneOffset = props.getValue("TimeZoneOffset");
+	String TimeZone = props.getValue("TimeZone");
 	String DataSource = props.getValue("DataSource");
 	String DataType = props.getValue("DataType");
 	String Description = props.getValue("Description");
 	String Read24HourAsDay = props.getValue("Read24HourAsDay");
+	String Read24HourAsDayCutoff = props.getValue("Read24HourAsDayCutoff");
 	//String NewUnits = props.getValue("NewUnits");
 	String Alias = props.getValue("Alias");
 	String EnsembleID = props.getValue("EnsembleID");
@@ -603,6 +687,18 @@ public String toString ( PropList props )
 		}
 		b.append("Output=" + Output );
 	}
+	if ((TimeZoneOffset != null) && (TimeZoneOffset.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("TimeZoneOffset=" + TimeZoneOffset );
+	}
+	if ((TimeZone != null) && (TimeZone.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("TimeZone=\"" + TimeZone + "\"");
+	}
 	if ((InputStart != null) && (InputStart.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
@@ -614,12 +710,6 @@ public String toString ( PropList props )
 			b.append(",");
 		}
 		b.append("InputEnd=\"" + InputEnd + "\"");
-	}
-	if ((TimeZoneOffset != null) && (TimeZoneOffset.length() > 0)) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("TimeZoneOffset=" + TimeZoneOffset );
 	}
 	if ((DataSource != null) && (DataSource.length() > 0)) {
 		if (b.length() > 0) {
@@ -644,6 +734,12 @@ public String toString ( PropList props )
 			b.append(",");
 		}
 		b.append("Read24HourAsDay=" + Read24HourAsDay );
+	}
+	if ((Read24HourAsDayCutoff != null) && (Read24HourAsDayCutoff.length() > 0)) {
+		if (b.length() > 0) {
+			b.append(",");
+		}
+		b.append("Read24HourAsDayCutoff=" + Read24HourAsDayCutoff );
 	}
 	
 	// New Units

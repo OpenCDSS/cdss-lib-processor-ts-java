@@ -41,24 +41,32 @@ public class DelftFewsPiXmlToolkit {
 	}
 	
 	/**
-	 * Parse a date "YYYY-MM-DD" and time "hh:mm:ss" into a DateTime object.
+	 * Parse a date "YYYY-MM-DD" and time "hh:mm:ss" into a DateTime object.  The input is expected to be
+	 * from the PI XML and therefore in the time zone for that file.  The timeZoneShift and timeZone parameters
+	 * are used to convert to the output date/time to be returned in time series.
 	 * @param date date string
 	 * @param time time string
 	 * @param timeZoneShift hours to add to file time for desired output time zone
+	 * @param timeZone time zone string to assign to output date/time
 	 * @param convert24HourToDay if true convert the original time to a suitable day precision date
+	 * @param convert24HourToDayCutoff hour value to indicate when previous day should be used
 	 */
-	public DateTime parseDateTime ( String date, String time, int timeZoneShift, boolean convert24HourToDay ) throws Exception {
+	public DateTime parseDateTime ( String date, String time, int timeZoneShift, String timeZone,
+		boolean convert24HourToDay, int convert24HourToDayCutoff ) throws Exception {
 		DateTime dt = DateTime.parse(date + "T" + time);
 		if ( timeZoneShift != 0 ) {
 			dt.addHour(timeZoneShift);
 		}
 		// Not sure about this...
 		if ( convert24HourToDay ) {
-			// Have a 24-hour date/time where hour 00 is in the next day so subtract a day and set precision
-			if ( dt.getHour() == 0 ) {
+			// Have a 24-hour date/time where hour is such that the previous day should be used
+			if ( dt.getHour() <= convert24HourToDayCutoff ) {
 				dt.addDay(-1);
 			}
 			dt.setPrecision(DateTime.PRECISION_DAY);
+		}
+		if ( (timeZone != null) && !timeZone.equals("") ) {
+			dt.setTimeZone(timeZone);
 		}
 		return dt;
 	}

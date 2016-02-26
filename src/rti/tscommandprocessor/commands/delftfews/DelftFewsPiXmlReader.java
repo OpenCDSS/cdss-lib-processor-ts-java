@@ -68,14 +68,27 @@ public class DelftFewsPiXmlReader {
 	
 	/**
 	 * Create and initialize a time series object from the <series><header> element.
+	 * @param xtk XmlToolkit to help parse XML
+	 * @param piXmlVersion PI XML file version
+	 * @param headerNode PI XML <header> element node
 	 * @param its counter of time series being read 0+, used to assign index and index1 properties in ensemble.
+	 * @param inputStart input start to use for assigning output time series (in output time zone) or null for full period read
+	 * @param inputEnd input end to use for assigning output time series (in output time zone) or null for full period read
 	 * @param dataType data type to override internal type
-	 * @param timeZoneShift shift to apply to file times for output
+	 * @param timeZoneShift shift to apply to file times for output, hours from GMT (negative is west, positive is east)
+	 * @param timeZone time zone string for output
+	 * @param dataSource data source to use in time series identifier or null to default
+	 * @param dataType data type to use in time series identifier or null to default
+	 * @param description description to use for time series or null to default
 	 * @param read24HourAsDay if true read 24hour interval data as day interval time series
+	 * @param read24HourAsDayCutoff hour <= to which the previous day will be used for 24hour time series
+	 * @param ensembleID ensemble identifier to use for time series or null to default - this is internal EnsembleID,
+	 * which is different from ensembleId property read from file element
+	 * @param ensembleName ensemble name to assign or null to default
 	 */
 	private TS createTimeSeriesFromHeader ( XmlToolkit xtk, String piXmlVersion, Node headerNode, int its,
-		DateTime inputStart, DateTime inputEnd,
-		int timeZoneShift, String dataSource, String dataType, String description, boolean read24HourAsDay,
+		DateTime inputStart, DateTime inputEnd, int timeZoneShift, String timeZone,
+		String dataSource, String dataType, String description, boolean read24HourAsDay, int convert24HourToDayCutoff,
 		String ensembleID, String ensembleName ) throws IOException {
 		TS ts = null;
 		NodeList headerNodeChildren = headerNode.getChildNodes();
@@ -121,9 +134,9 @@ public class DelftFewsPiXmlReader {
 		try {
 			ts = TSUtil.newTimeSeries(tsInterval,false);
 			// Set time series properties because they are used below
-			DateTime inputStartOrig = dtk.parseDateTime(startDateDate, startDateTime, timeZoneShift, convert24HourToDay );
-			DateTime inputEndOrig = dtk.parseDateTime(endDateDate, endDateTime, timeZoneShift, convert24HourToDay);
-			DateTime forecastDateTime = dtk.parseDateTime(forecastDateDate, forecastDateTime0, timeZoneShift, convert24HourToDay);
+			DateTime inputStartOrig = dtk.parseDateTime(startDateDate, startDateTime, timeZoneShift, timeZone, convert24HourToDay, convert24HourToDayCutoff );
+			DateTime inputEndOrig = dtk.parseDateTime(endDateDate, endDateTime, timeZoneShift, timeZone, convert24HourToDay, convert24HourToDayCutoff);
+			DateTime forecastDateTime = dtk.parseDateTime(forecastDateDate, forecastDateTime0, timeZoneShift, timeZone, convert24HourToDay, convert24HourToDayCutoff);
 			ts.setProperty("type", DMIUtil.isMissing(type)? "" : type);
 			ts.setProperty("locationId", DMIUtil.isMissing(locationId)? "" : locationId);
 			ts.setProperty("parameterId", DMIUtil.isMissing(parameterId)? "" : parameterId);
@@ -184,12 +197,14 @@ public class DelftFewsPiXmlReader {
 				}
 			}
 			if ( inputStart != null ) {
+				// This will be in output time zone and optionally include time zone string
 				ts.setDate1(inputStart);
 			}
 			else {
 				ts.setDate1(inputStartOrig);
 			}
 			if ( inputEnd != null ) {
+				// This will be in output time zone and optionally include time zone string
 				ts.setDate2(inputEnd);
 			}
 			else {
@@ -251,10 +266,11 @@ public class DelftFewsPiXmlReader {
 	 * @param ts time series to process
 	 * @param missingVal the string value that indicates missing
 	 * @param timeZoneShift the shift in hours to be applied to times to result in desired output time zone
-	 * @param convert24HourToDay if True convert the date/time to suitable day precision value
+	 * @param convert24HourToDay if true convert the date/time to suitable day precision value
+	 * @param convert24HourToDayCutoff cutoff hour <= to which the previous day should be used
 	 */
 	private void readTimeSeriesData ( XmlToolkit xtk, DelftFewsPiXmlToolkit dtk, Node seriesNode,
-		TS ts, String missingVal, int timeZoneShift, boolean convert24HourToDay ) {
+		TS ts, String missingVal, int timeZoneShift, String timeZone, boolean convert24HourToDay, int convert24HourToDayCutoff ) {
 		List<Node> eventList = xtk.getNodes("event", seriesNode.getChildNodes());
 		double missingDouble = ts.getMissing();
 		double valueDouble = 0.0; // <event value> as double
@@ -263,7 +279,7 @@ public class DelftFewsPiXmlReader {
 			try {
 				String eventDate = xtk.getNodeAttribute("date", event);
 				String eventTime = xtk.getNodeAttribute("time", event);
-				dt = dtk.parseDateTime(eventDate, eventTime, timeZoneShift, convert24HourToDay);
+				dt = dtk.parseDateTime(eventDate, eventTime, timeZoneShift, timeZone, convert24HourToDay, convert24HourToDayCutoff);
 				String eventValue = xtk.getNodeAttribute("value", event);
 				String eventFlag = xtk.getNodeAttribute("flag", event);
 				// TODO SAM 2016-01-24 Evaluate whether to enable
@@ -292,22 +308,25 @@ public class DelftFewsPiXmlReader {
 	 * @param inputStart start of period to read or null to read all
 	 * @param inputEnd end of period to read or null to read all
 	 * @param timeZoneOffset requested hour offset from GMT (0) for output
+	 * @param timeZone time zone string for output date/time
 	 * @param dataSource data source to override default ("FEWS")
 	 * @param dataType data type to override internal type
 	 * @param description description to override internal default (station name)
 	 * @param read24HourAsDay if true read 24hour interval data as day interval time series
+	 * @param read24HourAsDayCutoff hour cutoff in day to indicate that previous day should be used
 	 * @param newUnits units for output (currently ignored)
 	 * @param output indicate what to output:  "Ensembles", "TimeSeries", or "TimeSeriesAndEnsembles" 
 	 */
     public void readTimeSeriesList (
-        DateTime inputStart, DateTime inputEnd, Integer timeZoneOffset, String dataSource, String dataType,
-        String description, boolean read24HourAsDay,
+        DateTime inputStart, DateTime inputEnd, Integer timeZoneOffset, String timeZone, String dataSource, String dataType,
+        String description, boolean read24HourAsDay, int read24HourAsDayCutoff,
         String newUnits, String output, String ensembleID, String ensembleName, boolean readData, List<String> problems ) {
     	// Clear out the results arrays
     	this.tsList.clear();
     	this.ensembleList.clear();
     	// For now parse the XML. In the future may use DELFT jar files, etc. but don't want the dependencies right now
-    	readTimeSeriesListParseXml ( inputStart, inputEnd, timeZoneOffset, dataSource, dataType, description, read24HourAsDay, newUnits,
+    	readTimeSeriesListParseXml ( inputStart, inputEnd, timeZoneOffset, timeZone,
+    		dataSource, dataType, description, read24HourAsDay, read24HourAsDayCutoff, newUnits,
     		output, ensembleID, ensembleName, readData, problems );
     }
     
@@ -318,16 +337,19 @@ public class DelftFewsPiXmlReader {
 	 * @param inputStart start of period to read or null to read all
 	 * @param inputEnd end of period to read or null to read all
 	 * @param timeZoneOffset requested hour offset from GMT (0) for output
+	 * @param timeZone string time zone to use for output date/time
 	 * @param dataSource data source to override default ("FEWS")
 	 * @param dataType data type to override internal type
 	 * @param description description to override internal default (station name)
 	 * @param read24HourAsDay if true read 24hour interval data as day interval time series
+	 * @param read24HourAsDayCutoff hour cutoff in day to indicate that previous day should be used
 	 * @param newUnits units for output (currently ignored)
 	 * @param output indicate what to output:  "Ensembles", "TimeSeries", or "TimeSeriesAndEnsembles" 
 	 */
     private void readTimeSeriesListParseXml (
-        DateTime inputStart, DateTime inputEnd, Integer timeZoneOffset, String dataSource, String dataType,
-        String description, boolean read24HourAsDay,
+        DateTime inputStart, DateTime inputEnd, Integer timeZoneOffset, String timeZone,
+        String dataSource, String dataType,
+        String description, boolean read24HourAsDay, int read24HourAsDayCutoff,
         String newUnits, String output, String ensembleID, String ensembleName, boolean readData, List<String> problems ) {
     	String routine = getClass().getSimpleName() + ".readTimeSeriesListParseXml";
     	boolean doReadTs = false;
@@ -440,13 +462,13 @@ public class DelftFewsPiXmlReader {
     		else {
     			try {
     				ts = createTimeSeriesFromHeader ( xtk, piXmlVersion, headerNode, its, inputStart, inputEnd,
-    					timeZoneShift, dataSource, dataType, description, read24HourAsDay,
+    					timeZoneShift, timeZone, dataSource, dataType, description, read24HourAsDay, read24HourAsDayCutoff,
     					ensembleID, ensembleName );
     				if ( readData ) {
 	    				// Read the data values
     					ts.allocateDataSpace();
 	    				readTimeSeriesData ( xtk, dtk, seriesNode, ts, 
-	    					(String)ts.getProperty("MissingVal"), timeZoneShift, this.convert24HourToDay );
+	    					(String)ts.getProperty("MissingVal"), timeZoneShift, timeZone, this.convert24HourToDay, read24HourAsDayCutoff );
     				}
     				// If reading time series, add to the time series list
     				if ( doReadTs) {

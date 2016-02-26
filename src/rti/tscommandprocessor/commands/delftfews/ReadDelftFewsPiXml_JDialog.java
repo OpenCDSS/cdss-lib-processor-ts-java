@@ -61,10 +61,12 @@ private SimpleJComboBox __Output_JComboBox = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private JTextField __TimeZoneOffset_JTextField;
+private JTextField __TimeZone_JTextField;
 private JTextField __DataSource_JTextField;
 private JTextField __DataType_JTextField;
 private JTextField __Description_JTextField;
 private SimpleJComboBox	__Read24HourAsDay_JComboBox = null;
+private JTextField __Read24HourAsDayCutoff_JTextField;
 //private JTextField __NewUnits_JTextField = null; // Units to convert to at read
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __EnsembleID_JTextField;
@@ -195,10 +197,12 @@ private void checkInput () {
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String TimeZoneOffset = __TimeZoneOffset_JTextField.getText().trim();
+	String TimeZone = __TimeZone_JTextField.getText().trim();
 	String DataSource = __DataSource_JTextField.getText().trim();
 	String DataType = __DataType_JTextField.getText().trim();
 	String Description = __Description_JTextField.getText().trim();
 	String Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
+	String Read24HourAsDayCutoff = __Read24HourAsDayCutoff_JTextField.getText().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 	String EnsembleID = __EnsembleID_JTextField.getText().trim();
@@ -221,6 +225,9 @@ private void checkInput () {
 	if (TimeZoneOffset.length() > 0 && !TimeZoneOffset.equals("*")) {
 		props.set("TimeZoneOffset", TimeZoneOffset);
 	}
+	if (TimeZone.length() > 0 && !TimeZone.equals("*")) {
+		props.set("TimeZone", TimeZone);
+	}
 	if (DataSource.length() > 0 && !DataSource.equals("*")) {
 		props.set("DataSource", DataSource);
 	}
@@ -232,6 +239,9 @@ private void checkInput () {
 	}
 	if (Read24HourAsDay.trim().length() > 0) {
 		props.set("Read24HourAsDay", Read24HourAsDay);
+	}
+	if (Read24HourAsDayCutoff.trim().length() > 0) {
+		props.set("Read24HourAsDayCutoff", Read24HourAsDayCutoff);
 	}
 	//if (NewUnits.length() > 0 && !NewUnits.equals("*")) {
 	//	props.set("NewUnits", NewUnits);
@@ -265,10 +275,12 @@ private void commitEdits() {
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String TimeZoneOffset = __TimeZoneOffset_JTextField.getText().trim();
+	String TimeZone = __TimeZone_JTextField.getText().trim();
 	String DataSource = __DataSource_JTextField.getText().trim();
 	String DataType = __DataType_JTextField.getText().trim();
 	String Description = __Description_JTextField.getText().trim();
 	String Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
+	String Read24HourAsDayCutoff = __Read24HourAsDayCutoff_JTextField.getText().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
 	String EnsembleID = __EnsembleID_JTextField.getText().trim();
@@ -279,10 +291,12 @@ private void commitEdits() {
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
 	__command.setCommandParameter("TimeZoneOffset", TimeZoneOffset);
+	__command.setCommandParameter("TimeZone", TimeZone);
 	__command.setCommandParameter("DataSource", DataSource);
 	__command.setCommandParameter("DataType", DataType);
 	__command.setCommandParameter("Description", Description);
 	__command.setCommandParameter("Read24HourAsDay", Read24HourAsDay);
+	__command.setCommandParameter("Read24HourAsDayCutoff", Read24HourAsDayCutoff);
 	//__command.setCommandParameter("NewUnits", NewUnits);
     __command.setCommandParameter("Alias", Alias);
     __command.setCommandParameter("EnsembleID", EnsembleID);
@@ -323,6 +337,9 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The Output command parameter indicates whether individual time series and optionally ensembles (groups of time series) are output."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
@@ -364,9 +381,6 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "All time series in the PI XML file are read as time series according to these parameters."),
         0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ts_JPanel, new JLabel (
-        "The Output command parameter indicates whether individual time series and optionally ensembles (groups of time series) are output."),
-        0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
@@ -381,7 +395,27 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         */
 
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Input start:"), 
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Time zone offset:"), 
+        0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeZoneOffset_JTextField = new JTextField (20);
+    __TimeZoneOffset_JTextField.setToolTipText("Offset from GMT such as -8 for local time");
+    __TimeZoneOffset_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __TimeZoneOffset_JTextField,
+        1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - hours from GMT for output (default=file time zone)."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Time zone:"), 
+        0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeZone_JTextField = new JTextField (20);
+    __TimeZone_JTextField.setToolTipText("Output time zone text to assign to time series date/times, e.g., \"MST\".");
+    __TimeZone_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __TimeZone_JTextField,
+        1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - output time zone as string (default=no time zone string)."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ("Input start (output time zone):"), 
         0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
     __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
@@ -391,33 +425,23 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - date/time for start of data (default=global input start)."),
         3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Input end:"), 
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Input end (output time zone):"), 
         0, ++yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
     __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __InputEnd_JTextField,
-        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - date/time for end of data (default=global input end)."),
         3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Time zone offset:"), 
-        0, ++yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TimeZoneOffset_JTextField = new JTextField (20);
-    __TimeZoneOffset_JTextField.setToolTipText("Offset from GMT such as -8 for local time");
-    __TimeZoneOffset_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(ts_JPanel, __TimeZoneOffset_JTextField,
-        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - hours from GMT for output (default=file time zone)."),
-        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Data source:"), 
         0, ++yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataSource_JTextField = new JTextField (20);
     __DataSource_JTextField.setToolTipText("Data source to override default, can use time serie % specifiers or ${ts:Property} notation");
     __DataSource_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __DataSource_JTextField,
-        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - data source for time series ID (default=FEWS)."),
         3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
@@ -427,7 +451,7 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     __DataType_JTextField.setToolTipText("Data type to override default, can use time serie % specifiers or ${ts:Property} notation");
     __DataType_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __DataType_JTextField,
-        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - data type (default=read from file)."),
         3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
@@ -437,7 +461,7 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     __Description_JTextField.setToolTipText("Description to override default, can use time serie % specifiers or ${ts:Property} notation");
     __Description_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __Description_JTextField,
-        1, yts, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - description (default=station name)."),
         3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
@@ -456,6 +480,16 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
 		"Optional - convert 24Hour interval to Day interval (default=" + __command._False + ")."),
 		3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "24 Hour to day cutoff:"), 
+        0, ++yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Read24HourAsDayCutoff_JTextField = new JTextField (20);
+    __Read24HourAsDayCutoff_JTextField.setToolTipText("If hour is <= this value, decrement day.");
+    __Read24HourAsDayCutoff_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ts_JPanel, __Read24HourAsDayCutoff_JTextField,
+        1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - decrement day if hour is <= this value (default=0)."),
+        3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	
     JGUIUtil.addComponent(ts_JPanel, new JLabel("Alias to assign:"),
         0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -473,10 +507,16 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     __main_JTabbedPane.addTab ( "Ensembles", ens_JPanel );
     
     JGUIUtil.addComponent(ens_JPanel, new JLabel (
-        "Ensembles are created by grouping time series with matching ensemble ID."),
+        "Ensembles are created by grouping time series with matching <ensembleId> property in the PI XML file."),
         0, ++yEns, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ens_JPanel, new JLabel (
-        "The ensemble ID will default to the locationId_DataType_ensembleId (DataType can be specified as parameter)."),
+        "The TSTool EnsembleID will default to the locationId_DataType_ensembleId (DataType can be specified as parameter)."),
+        0, ++yEns, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ens_JPanel, new JLabel (
+        "Relevant elements from the PI XML file are saved as properties on the ensemble and can be accessed with ${tsensemble:property}."),
+        0, ++yEns, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ens_JPanel, new JLabel (
+        "Important:  TSTool EnsembleID can be different from the ensembleId value (property names are case-specific)."),
         0, ++yEns, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ens_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yEns, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -498,7 +538,7 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     __EnsembleName_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ens_JPanel, __EnsembleName_JTextField,
         1, yEns, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ens_JPanel, new JLabel ( "Optional - ensemble name (default=ensemble ID)."),
+    JGUIUtil.addComponent(ens_JPanel, new JLabel ( "Optional - ensemble name (default=EnsembleID)."),
         3, yEns, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -581,10 +621,12 @@ private void refresh() {
 	String InputStart = "";
 	String InputEnd = "";
 	String TimeZoneOffset = "";
+	String TimeZone = "";
 	String DataSource = "";
 	String DataType = "";
 	String Description = "";
 	String Read24HourAsDay = "";
+	String Read24HourAsDayCutoff = "";
 	String NewUnits = "";
 	String Alias = "";
 	String EnsembleID = "";
@@ -603,10 +645,12 @@ private void refresh() {
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		TimeZoneOffset = props.getValue("TimeZoneOffset");
+		TimeZone = props.getValue("TimeZone");
 		DataSource = props.getValue("DataSource");
 		DataType = props.getValue("DataType");
 		Description = props.getValue("Description");
 		Read24HourAsDay = props.getValue("Read24HourAsDay");
+		Read24HourAsDayCutoff = props.getValue("Read24HourAsDayCutoff");
 		NewUnits = props.getValue("NewUnits");
 		EnsembleID = props.getValue("EnsembleID");
 		EnsembleName = props.getValue("EnsembleName");
@@ -637,6 +681,9 @@ private void refresh() {
 		if (TimeZoneOffset != null) {
 			__TimeZoneOffset_JTextField.setText(TimeZoneOffset);
 		}
+		if (TimeZone != null) {
+			__TimeZone_JTextField.setText(TimeZone);
+		}
 		if (DataSource != null) {
 			__DataSource_JTextField.setText(DataSource);
 		}
@@ -660,6 +707,9 @@ private void refresh() {
                 "Read24HourAsDay parameter \"" + Read24HourAsDay + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+        if (Read24HourAsDayCutoff != null) {
+			__Read24HourAsDayCutoff_JTextField.setText(Read24HourAsDayCutoff);
+		}
 		//if (NewUnits != null) {
 		//	__NewUnits_JTextField.setText(NewUnits);
 		//}
@@ -681,9 +731,11 @@ private void refresh() {
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	TimeZoneOffset = __TimeZoneOffset_JTextField.getText().trim();
+	TimeZone = __TimeZone_JTextField.getText().trim();
 	DataSource = __DataSource_JTextField.getText().trim();
 	DataType = __DataType_JTextField.getText().trim();
 	Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
+	Read24HourAsDayCutoff = __Read24HourAsDayCutoff_JTextField.getText().trim();
 	//NewUnits = __NewUnits_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
 	EnsembleID = __EnsembleID_JTextField.getText().trim();
@@ -695,9 +747,11 @@ private void refresh() {
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 	props.add("TimeZoneOffset=" + TimeZoneOffset);
+	props.add("TimeZone=" + TimeZone);
 	props.add("DataSource=" + DataSource);
 	props.add("DataType=" + DataType);
 	props.add("Read24HourAsDay=" + Read24HourAsDay);
+	props.add("Read24HourAsDayCutoff=" + Read24HourAsDayCutoff);
 	props.add("NewUnits=" + NewUnits);
 	props.add("Alias=" + Alias);
 	props.add("EnsembleID=" + EnsembleID);

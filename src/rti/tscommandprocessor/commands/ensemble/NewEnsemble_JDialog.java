@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -42,22 +44,22 @@ public class NewEnsemble_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
-private NewEnsemble_Command __command = null;// Command to edit
-private JTextArea __command_JTextArea=null;// Command as JTextField
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private NewEnsemble_Command __command = null;
+private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
-private JTextField __InputStart_JTextField;// Text fields for query period, both versions.
+private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private JTextField __NewEnsembleID_JTextField;
 private JTextField __NewEnsembleName_JTextField;
 private SimpleJComboBox __CopyTimeSeries_JComboBox = null;
 
-private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
 
@@ -239,19 +241,23 @@ private void initialize ( JFrame parent, NewEnsemble_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "    Specifying the input period for copied time series." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, null, __TSList_JComboBox, y,
         new JLabel("Optional - indicates time series to add to new ensemble (default=none).") );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select a time series ensemble ID from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
@@ -261,6 +267,7 @@ private void initialize ( JFrame parent, NewEnsemble_Command command )
         new JLabel ( "New ensemble ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewEnsembleID_JTextField = new JTextField ( "", 20 );
+    __NewEnsembleID_JTextField.setToolTipText("New ensemble ID, can specify with ${Property} notation");
     __NewEnsembleID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewEnsembleID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -270,6 +277,7 @@ private void initialize ( JFrame parent, NewEnsemble_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New ensemble name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewEnsembleName_JTextField = new JTextField ( "", 30 );
+    __NewEnsembleName_JTextField.setToolTipText("New ensemble name, can specify with ${Property} notation");
     __NewEnsembleName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewEnsembleName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -281,6 +289,7 @@ private void initialize ( JFrame parent, NewEnsemble_Command command )
     JGUIUtil.addComponent(main_JPanel, InputStart_JLabel, 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
     __InputStart_JTextField.addKeyListener (this);
     // FIXME SAM 2009-10-10 Resolve issue with access of copy and main time series list
     __InputStart_JTextField.setEnabled (false);
@@ -294,6 +303,7 @@ private void initialize ( JFrame parent, NewEnsemble_Command command )
     JGUIUtil.addComponent(main_JPanel, InputEnd_JLabel, 
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
     // FIXME SAM 2009-10-10 Resolve issue with access of copy and main time series list
     __InputEnd_JTextField.setEnabled (false);

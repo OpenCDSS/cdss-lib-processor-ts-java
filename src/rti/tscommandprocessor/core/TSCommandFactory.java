@@ -41,8 +41,8 @@ import rti.tscommandprocessor.commands.ensemble.InsertTimeSeriesIntoEnsemble_Com
 import rti.tscommandprocessor.commands.ensemble.NewEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemble_Command;
-
 import rti.tscommandprocessor.commands.ensemble.SetEnsembleProperty_Command;
+
 // GRTS commands (time series products).
 import rti.tscommandprocessor.commands.products.ProcessRasterGraph_Command;
 import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;

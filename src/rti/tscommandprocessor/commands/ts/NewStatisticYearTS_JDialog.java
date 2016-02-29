@@ -8,12 +8,12 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
@@ -22,6 +22,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -30,6 +31,8 @@ import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
@@ -52,13 +55,23 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JFrame __parent_JFrame = null;
 private NewStatisticYearTS_Command __command = null;
+private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __command_JTextArea=null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-private SimpleJComboBox	__TSID_JComboBox = null;// Time series to evaluate
-private JTextArea __NewTSID_JTextArea = null; // New TSID.
-private SimpleJComboBox	__Statistic_JComboBox = null; // Statistic to analyze.
-private JTextField __TestValue_JTextField = null; // Test value for the statistic.
-private JTextField __AllowMissingCount_JTextField = null; // Missing data count allowed in analysis interval.
+private SimpleJComboBox __TSList_JComboBox = null;
+private JLabel __TSID_JLabel = null;
+private SimpleJComboBox __TSID_JComboBox = null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JLabel __NewEnsembleID_JLabel = null;
+private JTextField __NewEnsembleID_JTextField;
+private JLabel __NewEnsembleName_JLabel = null;
+private JTextField __NewEnsembleName_JTextField;
+private JTextArea __NewTSID_JTextArea = null;
+private SimpleJComboBox	__Statistic_JComboBox = null;
+private JTextField __TestValue_JTextField = null;
+private JTextField __Value1_JTextField = null;
+private JTextField __AllowMissingCount_JTextField = null;
 private JTextField __MinimumSampleSize_JTextField = null;
 private SimpleJComboBox __OutputYearType_JComboBox = null;
 private JTextField __AnalysisStart_JTextField = null; // Fields for analysis period (time series period)
@@ -169,7 +182,34 @@ public void removeUpdate ( DocumentEvent e )
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
 private void checkGUIState()
-{	
+{	// Handle TSList-related parameter editing...
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __TSID_JComboBox.setEnabled(false);
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JLabel.setEnabled ( true );
+        __EnsembleID_JComboBox.setEnabled(true);
+        __NewEnsembleID_JLabel.setEnabled ( true );
+        __NewEnsembleID_JTextField.setEnabled(true);
+        __NewEnsembleName_JLabel.setEnabled ( true );
+        __NewEnsembleName_JTextField.setEnabled(true);
+    }
+    else {
+        __EnsembleID_JLabel.setEnabled ( false );
+        __EnsembleID_JComboBox.setEnabled(false);
+        __NewEnsembleID_JLabel.setEnabled ( false );
+        __NewEnsembleID_JTextField.setEnabled(false);
+        __NewEnsembleName_JLabel.setEnabled ( false );
+        __NewEnsembleName_JTextField.setEnabled(false);
+    }
     if ( __AnalysisWindow_JCheckBox.isSelected() ) {
         // Checked so enable the date panels
         __AnalysisWindowStart_JPanel.setEnabled ( true );
@@ -189,10 +229,15 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
-	String TSID = __TSID_JComboBox.getSelected();
+	String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
+    String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Statistic = __Statistic_JComboBox.getSelected();
 	String TestValue = __TestValue_JTextField.getText().trim();
+	String Value1 = __Value1_JTextField.getText().trim();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
@@ -204,9 +249,21 @@ private void checkInput ()
 	if ( Alias.length() > 0 ) {
 		props.set ( "Alias", Alias );
 	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		props.set ( "TSID", TSID );
-	}
+    if ( TSList.length() > 0 ) {
+        props.set ( "TSList", TSList );
+    }
+    if ( TSID.length() > 0 ) {
+        props.set ( "TSID", TSID );
+    }
+    if ( EnsembleID.length() > 0 ) {
+        props.set ( "EnsembleID", EnsembleID );
+    }
+    if ( NewEnsembleID.length() > 0 ) {
+        props.set ( "NewEnsembleID", NewEnsembleID );
+    }
+    if ( NewEnsembleName.length() > 0 ) {
+        props.set ( "NewEnsembleName", NewEnsembleName );
+    }
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		props.set ( "NewTSID", NewTSID );
 	}
@@ -215,6 +272,19 @@ private void checkInput ()
 	}
 	if ( (TestValue != null) && (TestValue.length() > 0) ) {
 		props.set ( "TestValue", TestValue );
+	    // If TestValue is populated set the background to yellow because Value1 should be used instead
+		__TestValue_JTextField.setBackground(Color.yellow);
+		// If Value1 is not set, automatically set to transition to future
+		if ( (Value1 == null) || (Value1.isEmpty()) ) {
+			Value1 = TestValue;
+		}
+	}
+	else {
+		// Background is white
+		__TestValue_JTextField.setBackground(Color.white);
+	}
+	if ( (Value1 != null) && (Value1.length() > 0) ) {
+		props.set ( "Value1", Value1 );
 	}
 	if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
 		props.set ( "AllowMissingCount", AllowMissingCount );
@@ -260,10 +330,15 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String Alias = __Alias_JTextField.getText().trim();
+	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
+	String EnsembleID = __EnsembleID_JComboBox.getSelected();
+	String NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
+	String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Statistic = __Statistic_JComboBox.getSelected();
 	String TestValue = __TestValue_JTextField.getText().trim();
+	String Value1 = __Value1_JTextField.getText().trim();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
 	String OutputYearType = __OutputYearType_JComboBox.getSelected();
@@ -271,10 +346,15 @@ private void commitEdits ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String SearchStart = __SearchStart_JTextField.getText().trim();
 	__command.setCommandParameter ( "Alias", Alias );
-	__command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "TSList", TSList );
+    __command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
+    __command.setCommandParameter ( "NewEnsembleID", NewEnsembleID );
+    __command.setCommandParameter ( "NewEnsembleName", NewEnsembleName );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Statistic", Statistic );
 	__command.setCommandParameter ( "TestValue", TestValue );
+	__command.setCommandParameter ( "Value1", Value1 );
 	__command.setCommandParameter ( "AllowMissingCount", AllowMissingCount);
 	__command.setCommandParameter ( "MinimumSampleSize", MinimumSampleSize);
 	__command.setCommandParameter ( "OutputYearType", OutputYearType );
@@ -308,106 +388,136 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Create a time series where each value is a statistic calculated from a year of data from the " +
-		"input time series.  The output time series has an interval of year." ),
+		"Create a time series (or ensemble of time series) where each value is a statistic calculated from a sample determined from a year of data from the input time series." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"It is recommended that new time series identifier (TSID)" +
-		" information be specified for the output time series to avoid confusing the output with the original." ), 
+		"The output time series has an interval of year." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to analyze (TSID):"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
-    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
-	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-			(TSCommandProcessor)__command.getCommandProcessor(), __command );
-	if ( tsids == null ) {
-		// User will not be able to select anything.
-		tsids = new Vector();
-	}
-	__TSID_JComboBox.setData ( tsids );
-	__TSID_JComboBox.addItemListener ( this );
-	__TSID_JComboBox.getJTextComponent().addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
-    __Alias_JTextField.getTextField().setToolTipText("Specify the alias using % specifiers, ${ts:property}, and ${Property} notation");
-    __Alias_JTextField.addKeyListener ( this );
-    __Alias_JTextField.getDocument().addDocumentListener(this);
-    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for input
+    int yInput = -1;
+    JPanel input_JPanel = new JPanel();
+    input_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Input", input_JPanel );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
-	__NewTSID_JTextArea.setToolTipText("Specify the new time series identifier, can use ${Property} notation");
-	__NewTSID_JTextArea.setLineWrap ( true );
-	__NewTSID_JTextArea.setWrapStyleWord ( true );
-	__NewTSID_JTextArea.addKeyListener ( this );
-	// Make 3-high to fit in the edit button...
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
-		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Recommended - to avoid confusion with TSID from original time series."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	y += 2;
-    JGUIUtil.addComponent(main_JPanel, (__edit_JButton = new SimpleJButton ( "Edit", "Edit", this ) ),
-		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, (__clear_JButton = new SimpleJButton ( "Clear", "Clear", this ) ),
-		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(input_JPanel, new JLabel (
+		"Each year of the input time series will be processed to provide the sample for the statistic." ),
+		0, ++yInput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(input_JPanel, new JLabel (
+		"If an ensemble is specified as input, each trace time series in the ensemble is processed." ),
+		0, ++yInput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(input_JPanel, new JLabel (
+		"Optionally specify an output ensemble ID and name to create a new output ensemble." ),
+		0, ++yInput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(input_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yInput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    yInput = CommandEditorUtil.addTSListToEditorDialogPanel ( this, input_JPanel, __TSList_JComboBox, yInput );
+
+    __TSID_JLabel = new JLabel ("TSID (for TSList=*TSID:");
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yInput = CommandEditorUtil.addTSIDToEditorDialogPanel (
+        this, this, input_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yInput );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yInput = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, input_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yInput );
+    
+    // Panel for distribution
+    int yDist = -1;
+    JPanel dist_JPanel = new JPanel();
+    dist_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Distribution", dist_JPanel );
+    
+    JGUIUtil.addComponent(dist_JPanel, new JLabel (
+		"A distribution cannot currently be specified.  Statistics are calculated by treating the data as simple sample data." ),
+		0, ++yDist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dist_JPanel, new JLabel (
+		"Support for a distribution may be added in the future, similar to other commands that calculate statistics." ),
+		0, ++yDist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dist_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yDist, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for analysis
+    int yAnalysis = -1;
+    JPanel analysis_JPanel = new JPanel();
+    analysis_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Analysis", analysis_JPanel );
+    
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+		"Specify parameters for the statistical analysis." ),
+		0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Statistic:"),
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Statistic_JComboBox = new SimpleJComboBox(false);
 	// TODO SAM 2009-11-11 Ideally should figure out the input time series interval and limit the choices.
 	__Statistic_JComboBox.setData ( TSUtil_NewStatisticYearTS.getStatisticChoicesForIntervalAsStrings (
 	    TimeInterval.UNKNOWN, null ) );
 	__Statistic_JComboBox.select ( 0 );
 	__Statistic_JComboBox.addActionListener (this);
-	JGUIUtil.addComponent(main_JPanel, __Statistic_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - statistic to calculate."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	JGUIUtil.addComponent(analysis_JPanel, __Statistic_JComboBox,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Required - statistic to calculate."),
+		3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Test value:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Test value:"),
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TestValue_JTextField = new JTextField (10);
+	__TestValue_JTextField.setToolTipText("Use Value1 instead of this parameter - TestValue parameter will be removed in the future.");
 	__TestValue_JTextField.addKeyListener (this);
-	JGUIUtil.addComponent(main_JPanel, __TestValue_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - test value (required for comparison statistics)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	JGUIUtil.addComponent(analysis_JPanel, __TestValue_JTextField,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Legacy - use Value1 as of TSTool 11.09.00."),
+		3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Value1:"),
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Value1_JTextField = new JTextField (10);
+	__Value1_JTextField.addKeyListener (this);
+	JGUIUtil.addComponent(analysis_JPanel, __Value1_JTextField,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Optional - required by some statistics."),
+		3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Allow missing count:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Allow missing count:"),
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AllowMissingCount_JTextField = new JTextField (10);
 	__AllowMissingCount_JTextField.addKeyListener (this);
-	JGUIUtil.addComponent(main_JPanel, __AllowMissingCount_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+	JGUIUtil.addComponent(analysis_JPanel, __AllowMissingCount_JTextField,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
 		"Optional - number of missing values allowed in analysis interval (default=allow missing)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Minimum sample size:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Minimum sample size:"),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MinimumSampleSize_JTextField = new JTextField (10);
     __MinimumSampleSize_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __MinimumSampleSize_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(analysis_JPanel, __MinimumSampleSize_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "Optional - minimum required sample size (default=determined by statistic)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Output year type:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputYearType_JComboBox = new SimpleJComboBox ( false );
     __OutputYearType_JComboBox.add ( "" );
     __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
@@ -415,38 +525,38 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
     __OutputYearType_JComboBox.add ( "" + YearType.WATER );
     __OutputYearType_JComboBox.add ( "" + YearType.YEAR_MAY_TO_APR );
     __OutputYearType_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
-        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(analysis_JPanel, __OutputYearType_JComboBox,
+        1, yAnalysis, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "Optional - to define year span (default=" + YearType.CALENDAR + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisStart_JTextField = new JTextField ( "", 20 );
     __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
     __AnalysisStart_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisStart_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis start date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField ( "", 20 );
     __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
     __AnalysisEnd_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisEnd_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis end date/time (default=full time series period)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	__AnalysisWindow_JCheckBox = new JCheckBox ( "Analysis window:", false );
 	__AnalysisWindow_JCheckBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __AnalysisWindow_JCheckBox, 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisWindow_JCheckBox, 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     JPanel analysisWindow_JPanel = new JPanel();
     analysisWindow_JPanel.setLayout(new GridBagLayout());
     __AnalysisWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.HOUR, null );
@@ -460,21 +570,95 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
     __AnalysisWindowEnd_JPanel.addKeyListener ( this );
     JGUIUtil.addComponent(analysisWindow_JPanel, __AnalysisWindowEnd_JPanel,
         4, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, analysisWindow_JPanel,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, analysisWindow_JPanel,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
         "Optional - analysis window within input year (default=full year)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Search start:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ("Search start:"),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SearchStart_JTextField = new JTextField (10);
     __SearchStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __SearchStart_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(analysis_JPanel, __SearchStart_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
         "Optional - search start (needed for some statistics, default=full year)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for output
+    int yOutput = -1;
+    JPanel output_JPanel = new JPanel();
+    output_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output", output_JPanel );
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+		"The result of the analysis is a new year interval time series." ), 
+		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+		"It is recommended that new time series identifier (TSID)" +
+		" information be specified for the output time series to avoid confusing the output with the original." ), 
+		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+		"An alias can also be defined to identify the output time series." ), 
+		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+		"If an ensemble was specified as input, a new ensemble can be created as output." ), 
+		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(output_JPanel, new JLabel("Alias to assign:"),
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.getTextField().setToolTipText("Specify the alias using % specifiers, ${ts:property}, and ${Property} notation");
+    __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(output_JPanel, __Alias_JTextField,
+        1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "New time series ID:" ),
+		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
+	__NewTSID_JTextArea.setToolTipText("Specify the new time series identifier, can use ${Property} notation");
+	__NewTSID_JTextArea.setLineWrap ( true );
+	__NewTSID_JTextArea.setWrapStyleWord ( true );
+	__NewTSID_JTextArea.addKeyListener ( this );
+	// Make 3-high to fit in the edit button...
+    JGUIUtil.addComponent(output_JPanel, new JScrollPane(__NewTSID_JTextArea),
+		1, yOutput, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel(
+		"Recommended - to avoid confusion with TSID from original time series."), 
+		3, yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    yOutput += 2;
+    JGUIUtil.addComponent(output_JPanel, (__edit_JButton = new SimpleJButton ( "Edit", "Edit", this ) ),
+		3, yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(output_JPanel, (__clear_JButton = new SimpleJButton ( "Clear", "Clear", this ) ),
+		4, yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    __NewEnsembleID_JLabel = new JLabel ( "New ensemble ID:" );
+    JGUIUtil.addComponent(output_JPanel, __NewEnsembleID_JLabel, 
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewEnsembleID_JTextField = new JTextField ( "", 20 );
+    __NewEnsembleID_JTextField.setToolTipText("Specify the new ensemble identifier, can use ${Property} notation");
+    __NewEnsembleID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(output_JPanel, __NewEnsembleID_JTextField,
+        1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel( "Optional - to create ensemble when input is an ensemble."), 
+        3, yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    __NewEnsembleName_JLabel = new JLabel ( "New ensemble name:" );
+    JGUIUtil.addComponent(output_JPanel, __NewEnsembleName_JLabel,
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewEnsembleName_JTextField = new JTextField ( "", 30 );
+    __NewEnsembleName_JTextField.setToolTipText("Specify the new ensemble name, can use ${Property} notation");
+    __NewEnsembleName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(output_JPanel, __NewEnsembleName_JTextField,
+        1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel( "Optional - name for new ensemble."), 
+        3, yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -550,12 +734,17 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "newStatisticYearTS_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String Alias = "";
-	String TSID = "";
+	String TSList = "";
+    String TSID = "";
+    String EnsembleID = "";
+    String NewEnsembleID = "";
+    String NewEnsembleName = "";
 	String NewTSID = "";
 	String Statistic = "";
 	String TestValue = "";
+	String Value1 = "";
 	String AllowMissingCount = "";
 	String MinimumSampleSize = "";
 	String OutputYearType = "";
@@ -569,10 +758,15 @@ private void refresh ()
 		__first_time = false;
 		// Get the parameters from the command...
 		Alias = props.getValue ( "Alias" );
-		TSID = props.getValue ( "TSID" );
+		TSList = props.getValue ( "TSList" );
+        TSID = props.getValue ( "TSID" );
+        EnsembleID = props.getValue ( "EnsembleID" );
+        NewEnsembleID = props.getValue ( "NewEnsembleID" );
+        NewEnsembleName = props.getValue ( "NewEnsembleName" );
 		NewTSID = props.getValue ( "NewTSID" );
 		Statistic = props.getValue ( "Statistic" );
 		TestValue = props.getValue ( "TestValue" );
+		Value1 = props.getValue ( "Value1" );
 		AllowMissingCount = props.getValue ( "AllowMissingCount" );
 		MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
 		OutputYearType = props.getValue ( "OutputYearType" );
@@ -584,20 +778,50 @@ private void refresh ()
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
-		// Now select the item in the list.  If not a match, print a warning.
-		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,	JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
-		}
-		else {	// Automatically add to the list after the blank...
-			if ( (TSID != null) && (TSID.length() > 0) ) {
-				__TSID_JComboBox.insertItemAt ( TSID, 1 );
-				// Select...
-				__TSID_JComboBox.select ( TSID );
-			}
-			else {
-			    // Do not select anything...
-			}
-		}
+        if ( TSList == null ) {
+            // Select default...
+            __TSList_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TSList_JComboBox,TSList, JGUIUtil.NONE, null, null ) ) {
+                __TSList_JComboBox.select ( TSList );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTSList value \"" + TSList +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
+                JGUIUtil.NONE, null, null ) ) {
+                __TSID_JComboBox.select ( TSID );
+        }
+        else {  // Automatically add to the list after the blank...
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+                // Select...
+                __TSID_JComboBox.select ( TSID );
+            }
+            else {  // Select the blank...
+                __TSID_JComboBox.select ( 0 );
+            }
+        }
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 		if ( NewTSID != null ) {
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
@@ -618,6 +842,9 @@ private void refresh ()
 		}
 		if ( TestValue != null ) {
 			__TestValue_JTextField.setText ( TestValue );
+		}
+		if ( Value1 != null ) {
+			__Value1_JTextField.setText ( Value1 );
 		}
 		if ( AllowMissingCount != null ) {
 			__AllowMissingCount_JTextField.setText ( AllowMissingCount );
@@ -680,26 +907,36 @@ private void refresh ()
         if ( SearchStart != null ) {
             __SearchStart_JTextField.setText( SearchStart );
         }
+        if ( NewEnsembleID != null ) {
+            __NewEnsembleID_JTextField.setText ( NewEnsembleID );
+        }
+        if ( NewEnsembleName != null ) {
+            __NewEnsembleName_JTextField.setText ( NewEnsembleName );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	checkGUIState();
-	Alias = __Alias_JTextField.getText().trim();
-	TSID = __TSID_JComboBox.getSelected();
-	NewTSID = __NewTSID_JTextArea.getText().trim();
+    TSList = __TSList_JComboBox.getSelected();
+    TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
 	Statistic = __Statistic_JComboBox.getSelected();
 	TestValue = __TestValue_JTextField.getText();
+	Value1 = __Value1_JTextField.getText();
 	AllowMissingCount = __AllowMissingCount_JTextField.getText();
 	MinimumSampleSize = __MinimumSampleSize_JTextField.getText();
 	OutputYearType = __OutputYearType_JComboBox.getSelected();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	SearchStart = __SearchStart_JTextField.getText().trim();
+	Alias = __Alias_JTextField.getText().trim();
+	NewTSID = __NewTSID_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
-	props.add ( "Alias=" + Alias );
-	props.add ( "TSID=" + TSID );
-	props.add ( "NewTSID=" + NewTSID );
+    props.add ( "TSList=" + TSList );
+    props.add ( "TSID=" + TSID );
+    props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "Statistic=" + Statistic );
 	props.add ( "TestValue=" + TestValue );
+	props.add ( "Value1=" + Value1 );
 	props.add ( "AllowMissingCount=" + AllowMissingCount );
 	props.add ( "MinimumSampleSize=" + MinimumSampleSize );
 	props.add ( "OutputYearType=" + OutputYearType );
@@ -712,6 +949,10 @@ private void refresh ()
 	    props.add ( "AnalysisWindowEnd=" + AnalysisWindowEnd );
 	}
 	props.add ( "SearchStart=" + SearchStart );
+	props.add ( "Alias=" + Alias );
+	props.add ( "NewTSID=" + NewTSID );
+    props.add ( "NewEnsembleID=" + NewEnsembleID );
+    props.add ( "NewEnsembleName=" + NewEnsembleName );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

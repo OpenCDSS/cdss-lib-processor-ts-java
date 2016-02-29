@@ -967,11 +967,11 @@ protected static List<TSEnsemble> getDiscoveryEnsembleFromCommands ( List<Comman
 }
 
 /**
-Return the time series identifiers for commands before a specific command
+Return the time series ensemble (TSEnsemble) for commands before a specific command
 in the TSCommandProcessor.  This is used, for example, to provide a list of identifiers to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
-@return a list of String containing the time series identifiers, or an empty list.
+@return a list of time series ensemble, or an empty list.
 */
 public static List<TSEnsemble> getDiscoveryEnsembleFromCommandsBeforeCommand(
     TSCommandProcessor processor, Command command )

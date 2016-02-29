@@ -53,7 +53,7 @@ private SimpleJButton __ok_JButton = null;
 private JFrame __parent_JFrame = null;
 private NewStatisticTimeSeriesFromEnsemble_Command __command = null;
 private JTabbedPane __main_JTabbedPane = null;
-private JTextArea __command_JTextArea=null;
+private JTextArea __command_JTextArea = null;
 private SimpleJComboBox	__EnsembleID_JComboBox = null;
 private SimpleJComboBox __Distribution_JComboBox = null;
 private JTextArea __DistributionParameters_JTextArea = null;
@@ -350,7 +350,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeriesFromEnsemble_Comm
 	TSUtil_NewStatisticTimeSeriesFromEnsemble tsu = new TSUtil_NewStatisticTimeSeriesFromEnsemble();
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"<html><b>This command is being enhanced.  Distributions and statistics that are not in documentation are not yet enabled." ),
+		"<html><b>This command is being enhanced.  Strict checks on distribution and statistic combinations are being enabled." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create a time series as a statistic determined from an ensemble of time series." ),
@@ -410,7 +410,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeriesFromEnsemble_Comm
         0, ++yDist, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Distribution_JComboBox = new SimpleJComboBox(false);
     __Distribution_JComboBox.setToolTipText(
-        "Distribution is used with PlottingPosition*, *ExceedanceProbability statistics.  Default is Weibull.");
+        "Distribution is used with PlottingPosition*, *ExceedanceProbability statistics.  Default is " + DistributionType.SAMPLE_DATA + ".");
     List<String> distributions = tsu.getDistributionChoicesAsStrings();
     distributions.add(0,"");
     __Distribution_JComboBox.setData ( distributions );

@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
@@ -9,11 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import RTi.TS.TS;
+import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_ARMA;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.AbstractCommand;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -24,6 +27,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
@@ -33,7 +37,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 This class initializes, checks, and runs the ARMA() command.
 */
-public class ARMA_Command extends AbstractCommand implements Command
+public class ARMA_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 	
 /**
@@ -43,19 +47,9 @@ protected final String _False = "False";
 protected final String _True = "True";
     
 /**
-"a" coefficients, parsed during checks to improve performance.
+List of time series read during discovery.  These are TS objects but with mainly the metadata (TSIdent) filled in.
 */
-private double __a[] = null;
-
-/**
-"b" coefficients, parsed during checks to improve performance.
-*/
-private double __b[] = null;
-
-/**
-Input initial values, parsed during checks to improve performance.
-*/
-private double __inputInitialValues[] = null;
+private List<TS> __discoveryTSList = null;
 
 /**
 Constructor.
@@ -84,6 +78,7 @@ throws InvalidCommandParameterException
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String OutputMinimum = parameters.getValue ( "OutputMinimum" );
+	String OutputMaximum = parameters.getValue ( "OutputMaximum" );
 	String warning = "";
     String message;
     
@@ -121,15 +116,16 @@ throws InvalidCommandParameterException
     */
 
     double total = 0.0;
+    double [] aArray;
     // a is optional
-    if ( (a != null) && !a.equals("") ) {
+    if ( (a != null) && !a.isEmpty() && (a.indexOf("${") < 0) ) {
         // Make sure coefficients are doubles...
     	List aVector = StringUtil.breakStringList ( a, ", ", StringUtil.DELIM_SKIP_BLANKS );
         int aSize = 0;
         if ( aVector != null ) {
             aSize = aVector.size();
         }
-        __a = new double[aSize];
+        aArray = new double[aSize];
         String aVal;
         for ( int i = 0; i < aSize; i++ ) {
             aVal = ((String)aVector.get(i)).trim();
@@ -141,42 +137,41 @@ throws InvalidCommandParameterException
                         message, "Correct the value of the a-coefficient." ) );
             }
             else {
-                __a[i] = StringUtil.atod(aVal);
-                total += __a[i];
+            	aArray[i] = StringUtil.atod(aVal);
+                total += aArray[i];
             }
         }
     }
-    
-    if ( (b == null) || b.equals("") ) {
+
+    double [] bArray;
+    if ( (b == null) || b.isEmpty() ) {
         message = "No b-coefficients are specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify b-coefficients." ) );
     }
-    else {
-        if ( (b != null) && !b.equals("") ) {
-            // Make sure coefficients are doubles...
-        	List bVector = StringUtil.breakStringList ( b, ", ", StringUtil.DELIM_SKIP_BLANKS );
-            int bSize = 0;
-            if ( bVector != null ) {
-                bSize = bVector.size();
+    else if ( b.indexOf("${") < 0 ) {
+        // Make sure coefficients are doubles...
+    	List bVector = StringUtil.breakStringList ( b, ", ", StringUtil.DELIM_SKIP_BLANKS );
+        int bSize = 0;
+        if ( bVector != null ) {
+            bSize = bVector.size();
+        }
+        bArray = new double[bSize];
+        String bVal;
+        for ( int i = 0; i < bSize; i++ ) {
+            bVal = ((String)bVector.get(i)).trim();
+            if ( !StringUtil.isDouble(bVal)) {
+                message = "The b-coefficient " + bVal + " is not a number.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Correct the value of the b-coefficient." ) );
             }
-            __b = new double[bSize];
-            String bVal;
-            for ( int i = 0; i < bSize; i++ ) {
-                bVal = ((String)bVector.get(i)).trim();
-                if ( !StringUtil.isDouble(bVal)) {
-                    message = "The b-coefficient " + bVal + " is not a number.";
-                    warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Correct the value of the b-coefficient." ) );
-                }
-                else {
-                    __b[i] = StringUtil.atod(bVal);
-                    total += __b[i];
-                }
+            else {
+            	bArray[i] = StringUtil.atod(bVal);
+                total += bArray[i];
             }
         }
     }
@@ -194,7 +189,7 @@ throws InvalidCommandParameterException
     	}
     }
 
-    if ( requireCoefficientsSumTo1 ) {
+    if ( requireCoefficientsSumTo1 && (a.indexOf("${") < 0) && (b.indexOf("${") < 0)) {
 	    String total_String = StringUtil.formatString(total,"%.6f");
 	    if ( !total_String.equals("1.000000") ) {
 	        message = "\nSum of a and b coefficients (" +
@@ -206,14 +201,14 @@ throws InvalidCommandParameterException
 	    }
     }
 
-	if ( (ARMAInterval == null) || ARMAInterval.equals("") ) {
+	if ( (ARMAInterval == null) || ARMAInterval.isEmpty() ) {
         message = "The ARMA interval is not specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the ARMA interval (e.g., 2Hour)." ) );
 	}
-	else {
+	else if ( ARMAInterval.indexOf("${") < 0 ) {
 		try {
 		    TimeInterval.parseInterval(ARMAInterval);
 		}
@@ -226,28 +221,28 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-    if ( (InputInitialValues != null) && !InputInitialValues.equals("") ) {
+    if ( (InputInitialValues != null) && !InputInitialValues.equals("") && (InputInitialValues.indexOf("${") < 0) ) {
         // Make sure values are doubles...
-    	List<String> strings = StringUtil.breakStringList ( a, ", ", StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> strings = StringUtil.breakStringList ( InputInitialValues, ", ", StringUtil.DELIM_SKIP_BLANKS );
         int size = 0;
         if ( strings != null ) {
             size = strings.size();
         }
-        __inputInitialValues = new double[size];
+        double [] inputInitialValues = new double[size];
         String s;
         for ( int i = 0; i < size; i++ ) {
             s = strings.get(i).trim();
             double val;
             try {
             	val = Double.parseDouble(s);
-                __inputInitialValues[i] = val;
+                inputInitialValues[i] = val;
             }
             catch ( NumberFormatException e ) {
                 message = "The input initial value " + s + " is not a number.";
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Correct the value of the initial value." ) );
+                        message, "Verify that initial values are numbers." ) );
             }
         }
     }
@@ -281,16 +276,24 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	if ( (OutputMinimum != null) && OutputMinimum.isEmpty() && !StringUtil.isDouble(OutputMinimum) ) {
+	if ( (OutputMinimum != null) && !OutputMinimum.isEmpty() && (OutputMinimum.indexOf("${") < 0) && !StringUtil.isDouble(OutputMinimum) ) {
         message = "The output minimum value is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the minimum value as a floating point number." ) );
 	}
+	
+	if ( (OutputMaximum != null) && !OutputMaximum.isEmpty() && (OutputMaximum.indexOf("${") < 0) && !StringUtil.isDouble(OutputMaximum) ) {
+        message = "The output maximum value is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the maximum value as a floating point number." ) );
+	}
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(11);
+	List<String> validList = new ArrayList<String>(15);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -299,8 +302,12 @@ throws InvalidCommandParameterException
     validList.add ( "b" );
     validList.add ( "RequireCoefficientsSumTo1" );
     validList.add ( "InputInitialValues" );
+    validList.add ( "Alias" );
+    validList.add ( "NewTSID" );
+    validList.add ( "Description" );
     validList.add ( "OutputStart" );
     validList.add ( "OutputEnd" );
+    validList.add ( "OutputMaximum" );
     validList.add ( "OutputMinimum" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
@@ -326,14 +333,39 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discoveryTSList;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discovery_TS_Vector.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
@@ -408,25 +440,48 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
 Run the command.
-@param command_number number of command to run.
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getSimpleName() + ".runCommand", message;
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3; // Warning message level for non-user messages
+	//int log_level = 3; // Warning message level for non-user messages
 
 	// Make sure there are time series available to operate on...
 	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
-    CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // default
     try {
@@ -454,85 +509,252 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
+	String InputInitialValues = parameters.getValue ( "InputInitialValues" );
+	double [] inputInitialValues = new double[0];
+	if ( (commandPhase == CommandPhaseType.RUN) && (InputInitialValues != null) && (InputInitialValues.indexOf("${") >= 0) ) {
+		InputInitialValues = TSCommandProcessorUtil.expandParameterValue(processor, this, InputInitialValues);
+	}
+	if ( (commandPhase == CommandPhaseType.RUN) && (InputInitialValues != null) && !InputInitialValues.isEmpty() ) {
+		// TODO SAM 2016-02-29 need utility code to help with this - duplicates code in checkCommandParameters due to properties
+	    // Make sure values are doubles...
+		List<String> strings = StringUtil.breakStringList ( InputInitialValues, ", ", StringUtil.DELIM_SKIP_BLANKS );
+	    int size = 0;
+	    if ( strings != null ) {
+	        size = strings.size();
+	    }
+	    String s;
+	    inputInitialValues = new double[size];
+	    for ( int i = 0; i < size; i++ ) {
+	        s = strings.get(i).trim();
+	        double val;
+	        try {
+	        	val = Double.parseDouble(s);
+	        	inputInitialValues[i] = val;
+	        }
+	        catch ( NumberFormatException e ) {
+	            message = "The input initial value " + s + " is not a number.";
+	    		Message.printWarning(warning_level,
+	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	    				routine, message );
+	            status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Check the value." ) );
+	        }
+	    }
+	}
+	double total = 0.0;
+	String a = parameters.getValue("a");
+	if ( (commandPhase == CommandPhaseType.RUN) && (a != null) && (a.indexOf("${") >= 0) ) {
+		a = TSCommandProcessorUtil.expandParameterValue(processor, this, a);
+	}
+	double [] aArray = new double[0];
+	if ( (commandPhase == CommandPhaseType.RUN) && (a != null) && !a.isEmpty() ) {
+		// TODO SAM 2016-03-29 Need to consolidate this code with checkCommandParameters...
+		List<String> aList = StringUtil.breakStringList ( a, ", ", StringUtil.DELIM_SKIP_BLANKS );
+	    int aSize = 0;
+	    if ( aList != null ) {
+	        aSize = aList.size();
+	    }
+	    aArray = new double[aSize];
+	    String aVal;
+	    for ( int i = 0; i < aSize; i++ ) {
+	        aVal = aList.get(i).trim();
+	        if ( !StringUtil.isDouble(aVal)) {
+	            message = "The a coefficient " + aVal + " is not a number.";
+	    		Message.printWarning(warning_level,
+	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	    				routine, message );
+	            status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Check the value." ) );
+	        }
+	        else {
+	        	aArray[i] = StringUtil.atod(aVal);
+	        	total += aArray[i];
+	        }
+	    }
+	}
+	String b = parameters.getValue("b");
+	if ( (commandPhase == CommandPhaseType.RUN) && (b != null) && (b.indexOf("${") >= 0) ) {
+		b = TSCommandProcessorUtil.expandParameterValue(processor, this, b);
+	}
+	double [] bArray = new double[0];
+	if ( (commandPhase == CommandPhaseType.RUN) && (b != null) && !b.isEmpty() ) {
+		// TODO SAM 2016-03-29 Need to consolidate this code with checkCommandParameters...
+		List<String> bList = StringUtil.breakStringList ( b, ", ", StringUtil.DELIM_SKIP_BLANKS );
+	    int bSize = 0;
+	    if ( bList != null ) {
+	        bSize = bList.size();
+	    }
+	    bArray = new double[bSize];
+	    String bVal;
+	    for ( int i = 0; i < bSize; i++ ) {
+	        bVal = bList.get(i).trim();
+	        if ( !StringUtil.isDouble(bVal)) {
+	            message = "The b coefficient " + bVal + " is not a number.";
+	    		Message.printWarning(warning_level,
+	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	    				routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Check the value." ) );
+	        }
+	        else {
+	        	bArray[i] = StringUtil.atod(bVal);
+	        	total += bArray[i];
+	        }
+	    }
+	}
+	String RequireCoefficientsSumTo1 = parameters.getValue ( "RequireCoefficientsSumTo1" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (RequireCoefficientsSumTo1 != null) && (RequireCoefficientsSumTo1.indexOf("${") >= 0) ) {
+		RequireCoefficientsSumTo1 = TSCommandProcessorUtil.expandParameterValue(processor, this, RequireCoefficientsSumTo1);
+	}
+	if ( (commandPhase == CommandPhaseType.RUN) && (RequireCoefficientsSumTo1 != null) &&
+		(RequireCoefficientsSumTo1.isEmpty() || RequireCoefficientsSumTo1.equalsIgnoreCase("true")) ) {
+	    String total_String = StringUtil.formatString(total,"%.6f");
+	    if ( !total_String.equals("1.000000") ) {
+	        message = "\nSum of a and b coefficients (" + StringUtil.formatString(total,"%.6f") + ") does not equal 1.000000.";
+    		Message.printWarning(warning_level,
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check the value." ) );
+	    }
+	}
+	String ARMAInterval = parameters.getValue("ARMAInterval");
+	if ( (commandPhase == CommandPhaseType.RUN) && (ARMAInterval != null) && (ARMAInterval.indexOf("${") >= 0) ) {
+		ARMAInterval = TSCommandProcessorUtil.expandParameterValue(processor, this, ARMAInterval);
+	}
+	String Alias = parameters.getValue ( "Alias" ); // Expanded below after creating time series
+	String NewTSID = parameters.getValue ( "NewTSID" );
+	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID);
+	}
+	String Description = parameters.getValue ( "Description" ); // Expanded below
+	if ( (Description != null) && (Description.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		Description = TSCommandProcessorUtil.expandParameterValue(processor, this, Description);
+	}
     String OutputMinimum = parameters.getValue ( "OutputMinimum" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (OutputMinimum != null) && (OutputMinimum.indexOf("${") >= 0) ) {
+		OutputMinimum = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputMinimum);
+	}
     double outputMinimum = Double.NaN;
-    if ( (OutputMinimum != null) && !OutputMinimum.isEmpty() ) {
-    	outputMinimum = Double.parseDouble(OutputMinimum);
+    if ( (commandPhase == CommandPhaseType.RUN) && (OutputMinimum != null) && !OutputMinimum.isEmpty() ) {
+    	try {
+    		outputMinimum = Double.parseDouble(OutputMinimum);
+    	}
+    	catch ( NumberFormatException e ) {
+    		message = "The OutputMinimum (" + OutputMinimum + ") is not a number.";
+    		Message.printWarning(warning_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Check the OutputMinimum value." ) );
+    	}
+    }
+    String OutputMaximum = parameters.getValue ( "OutputMaximum" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (OutputMaximum != null) && (OutputMaximum.indexOf("${") >= 0) ) {
+		OutputMaximum = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputMaximum);
+	}
+    double outputMaximum = Double.NaN;
+    if ( (commandPhase == CommandPhaseType.RUN) && (OutputMaximum != null) && !OutputMaximum.isEmpty() ) {
+		try {
+	    	outputMaximum = Double.parseDouble(OutputMaximum);
+		}
+		catch ( NumberFormatException e ) {
+    		message = "The OutputMaximum (" + OutputMaximum + ") is not a number.";
+    		Message.printWarning(warning_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Check the OutputMaximum value." ) );
+		}
     }
 
 	// Get the time series to process...
-	
-	PropList request_params = new PropList ( "" );
-	request_params.set ( "TSList", TSList );
-	request_params.set ( "TSID", TSID );
-    request_params.set ( "EnsembleID", EnsembleID );
-	CommandProcessorRequestResultsBean bean = null;
-	try {
-        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
-	}
-	catch ( Exception e ) {
-        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-	}
-	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
-	if ( o_TSList == null ) {
-        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
-        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message,
-                "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
-	}
-	else {
-        tslist = (List)o_TSList;
-		if ( tslist.size() == 0 ) {
-            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
-            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-					command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                    message,
-                    "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+
+    List<TS> tslist = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request!
+        tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+		PropList request_params = new PropList ( "" );
+		request_params.set ( "TSList", TSList );
+		request_params.set ( "TSID", TSID );
+	    request_params.set ( "EnsembleID", EnsembleID );
+		CommandProcessorRequestResultsBean bean = null;
+		try {
+	        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 		}
-	}
-	Object o_Indices = bean_PropList.getContents ( "Indices" );
-	int [] tspos = null;
-	if ( o_Indices == null ) {
-        message = "Unable to find indices for time series to process using TSList=\"" + TSList +
-        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
-	}
-	else {
-        tspos = (int [])o_Indices;
-		if ( tspos.length == 0 ) {
-            message = "Unable to find indices for time series to process using TSList=\"" + TSList +
-            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
-			Message.printWarning ( warning_level,
-			    MessageUtil.formatMessageTag(
-			        command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report the problem to software support." ) );
+		catch ( Exception e ) {
+	        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+	        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+			Message.printWarning(warning_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+	        status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Report the problem to software support." ) );
 		}
-	}
+		PropList bean_PropList = bean.getResultsPropList();
+		Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+		if ( o_TSList == null ) {
+	        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+	        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+			Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(
+			command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message,
+	                "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+		}
+		else {
+	        tslist = (List)o_TSList;
+			if ( tslist.size() == 0 ) {
+	            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+	            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag(
+						command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.WARNING,
+	                    message,
+	                    "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+			}
+		}
+		Object o_Indices = bean_PropList.getContents ( "Indices" );
+		int [] tspos = null;
+		if ( o_Indices == null ) {
+	        message = "Unable to find indices for time series to process using TSList=\"" + TSList +
+	        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
+			Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(
+			command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Report the problem to software support." ) );
+		}
+		else {
+	        tspos = (int [])o_Indices;
+			if ( tspos.length == 0 ) {
+	            message = "Unable to find indices for time series to process using TSList=\"" + TSList +
+	            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
+				Message.printWarning ( warning_level,
+				    MessageUtil.formatMessageTag(
+				        command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Report the problem to software support." ) );
+			}
+		}
+    }
 	
 	int nts = 0;
 	if ( tslist != null ) {
@@ -549,11 +771,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message,
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
-
-	// ARMA values...
-
-	String ARMAInterval = parameters.getValue("ARMAInterval");
-	// a and b are determined during parsing
 
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	if ( (OutputStart == null) || OutputStart.isEmpty() ) {
@@ -599,40 +816,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		readData = false;
 	}
 	TS ts = null;
+	List<TS> newtsList = new ArrayList<TS>();
 	for ( int its = 0; its < nts; its++ ) {
-		ts = null;
-		request_params = new PropList ( "" );
-		request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
-		bean = null;
-		try { bean =
-			processor.processRequest( "GetTimeSeries", request_params);
-		}
-		catch ( Exception e ) {
-            message = "Error requesting GetTimeSeries(Index=" + tspos[its] + "\") from processor.";
-			Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-		}
-		bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "TS" );
-		if ( prop_contents == null ) {
-            message = "Null value for GetTimeSeries(Index=" + tspos[its] + "\") returned from processor.";
-			Message.printWarning(log_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-		}
-		else {	ts = (TS)prop_contents;
-		}
-		
+		ts = tslist.get(its);
 		if ( ts == null ) {
 			// Skip time series.
-            message = "Unable to set time series at position " + tspos[its] + " - null time series.";
+            message = "Time series at position [" + its + "] is null - skipping.";
 			Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -647,9 +836,87 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		
 		// Do the setting...
 		Message.printStatus ( 2, routine, "Processing \"" + ts.getIdentifier()+ "\" using ARMA." );
+		TS newts = null;
 		try {
-			TSUtil_ARMA tsu = new TSUtil_ARMA();
-		    ts = tsu.ARMA ( ts, ARMAInterval, __a, __b, __inputInitialValues, outputMinimum, OutputStart_DateTime, OutputEnd_DateTime, readData );
+			if ( (NewTSID != null) && !NewTSID.isEmpty() ) {
+				newts = null;
+				try {
+				    // Create the time series...
+					newts = TSUtil.newTimeSeries ( NewTSID, true );
+					newtsList.add(newts); // Need because need to add more than one time series at end
+					if ( newts == null ) {
+			            message = "Null time series returned when trying to create with NewTSID=\"" + NewTSID + "\"";
+			            Message.printWarning ( warning_level,
+			                    MessageUtil.formatMessageTag(
+			                    command_tag,++warning_count),routine,message );
+			            status.addToLog ( commandPhase,
+			                    new CommandLogRecord(CommandStatusType.FAILURE,
+			                            message, "Verify the NewTSID - contact software support if necessary." ) );
+						throw new Exception ( "Null time series." );
+					}
+				}
+				catch ( Exception e ) {
+					message = "Unexpected error creating the new time series using NewTSID=\""+	NewTSID + "\".";
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag(
+						command_tag,++warning_count),routine,message );
+					Message.printWarning(3,routine,e);
+			        status.addToLog ( commandPhase,
+			                new CommandLogRecord(CommandStatusType.FAILURE,
+			                        message, "Verify the NewTSID - contact software support if necessary." ) );
+					throw new CommandException ( message );
+				}
+				// Make sure intervals are the same
+				if ( !TSUtil.intervalsMatch(ts,newts) ) {
+					message = "Intervals for time series \"" + ts.getIdentifierString() + "\" and \"" +
+						newts.getIdentifierString() + "\" do not match.";
+					Message.printWarning ( warning_level,
+						MessageUtil.formatMessageTag(
+						command_tag,++warning_count),routine,message );
+			        status.addToLog ( commandPhase,
+		                new CommandLogRecord(CommandStatusType.FAILURE,
+		                    message, "Verify the that NewTSID interval matches input time series." ) );
+					throw new CommandException ( message );
+				}
+		        // Try to fill out the time series.  Allocate memory and set other information...
+				newts.setIdentifier ( NewTSID );
+				if ( commandPhase == CommandPhaseType.RUN ) {
+					if ( (Description != null) && !Description.isEmpty() ) {
+						newts.setDescription ( Description );
+					}
+					newts.setDataUnits(ts.getDataUnits());
+					newts.setDataUnitsOriginal(ts.getDataUnitsOriginal());
+					DateTime outputStart = new DateTime(ts.getDate1());
+					DateTime outputEnd = new DateTime(ts.getDate2());
+					// Use set to retain precision
+					if ( OutputStart_DateTime != null ) {
+						outputStart.setDate(OutputStart_DateTime);
+					}
+					if ( OutputEnd_DateTime != null ) {
+						outputEnd.setDate(OutputEnd_DateTime);
+					}
+					newts.setDate1(outputStart);
+					newts.setDate1Original(outputStart);
+					newts.setDate2(outputEnd);
+					newts.setDate2Original(outputEnd);
+					newts.allocateDataSpace();
+				}
+			}
+			if ( commandPhase == CommandPhaseType.RUN ) {
+				// Do full processing
+				TSUtil_ARMA tsu = new TSUtil_ARMA();
+			    ts = tsu.ARMA ( ts, newts, ARMAInterval, aArray, bArray, inputInitialValues,
+			    	outputMinimum, outputMaximum, OutputStart_DateTime, OutputEnd_DateTime, readData );
+			}
+		    if ( newts != null ) {
+		        if ( (Alias != null) && !Alias.isEmpty() ) {
+		            String alias = Alias;
+		            if ( commandPhase == CommandPhaseType.RUN ) {
+		            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, Alias, status, commandPhase);
+		            }
+		            newts.setAlias ( alias );
+		        }
+		    }
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error processing time series \"" + ts.getIdentifier() + "\" using ARMA (" + e + ").";
@@ -660,6 +927,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "See the log file for details - report the problem to software support." ) );
 		}
+	}
+	
+	if ( newtsList.size() > 0 ) {
+		// Add the new time series to the processor
+		if ( commandPhase == CommandPhaseType.RUN ) {
+	    	// Update the data to the processor so that appropriate actions are taken...
+	        TSCommandProcessorUtil.appendTimeSeriesListToResultsList(processor, this, newtsList);
+		}
+	    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	        // Set in the discovery list
+	        setDiscoveryTSList(newtsList);
+	    }
 	}
 
 	if ( warning_count > 0 ) {
@@ -675,6 +954,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 }
 
 /**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
+{
+    __discoveryTSList = discoveryTSList;
+}
+
+/**
 Return the string representation of the command.
 */
 public String toString ( PropList props )
@@ -684,14 +971,18 @@ public String toString ( PropList props )
     String TSList = props.getValue( "TSList" );
     String TSID = props.getValue( "TSID" );
     String EnsembleID = props.getValue( "EnsembleID" );
+	String InputInitialValues = props.getValue( "InputInitialValues" );
 	String ARMAInterval = props.getValue( "ARMAInterval" );
     String a = props.getValue( "a" );
 	String b = props.getValue("b");
 	String RequireCoefficientsSumTo1 = props.getValue( "RequireCoefficientsSumTo1" );
-	String InputInitialValues = props.getValue( "InputInitialValues" );
+	String Alias = props.getValue( "Alias" );
+	String NewTSID = props.getValue( "NewTSID" );
+	String Description = props.getValue( "Description" );
 	String OutputStart = props.getValue ( "OutputStart" );
 	String OutputEnd = props.getValue ( "OutputEnd" );
 	String OutputMinimum = props.getValue( "OutputMinimum" );
+	String OutputMaximum = props.getValue( "OutputMaximum" );
 	StringBuffer b2 = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b2.length() > 0 ) {
@@ -710,6 +1001,12 @@ public String toString ( PropList props )
             b2.append ( "," );
         }
         b2.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
+    if ( (InputInitialValues != null) && (InputInitialValues.length() > 0) ) {
+        if ( b2.length() > 0 ) {
+            b2.append ( "," );
+        }
+        b2.append ( "InputInitialValues=\"" + InputInitialValues + "\"");
     }
 	if ( (ARMAInterval != null) && (ARMAInterval.length() > 0) ) {
 		if ( b2.length() > 0 ) {
@@ -735,12 +1032,24 @@ public String toString ( PropList props )
         }
         b2.append ( "RequireCoefficientsSumTo1=" + RequireCoefficientsSumTo1 );
     }
-    if ( (InputInitialValues != null) && (InputInitialValues.length() > 0) ) {
-        if ( b2.length() > 0 ) {
-            b2.append ( "," );
-        }
-        b2.append ( "InputInitialValues=\"" + InputInitialValues + "\"");
-    }
+	if ( (Alias != null) && (Alias.length() > 0) ) {
+		if ( b2.length() > 0 ) {
+			b2.append ( "," );
+		}
+		b2.append ( "Alias=\"" + Alias + "\"" );
+	}
+	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
+		if ( b2.length() > 0 ) {
+			b2.append ( "," );
+		}
+		b2.append ( "NewTSID=\"" + NewTSID + "\"" );
+	}
+	if ( (Description != null) && (Description.length() > 0) ) {
+		if ( b2.length() > 0 ) {
+			b2.append ( "," );
+		}
+		b2.append ( "Description=\"" + Description + "\"" );
+	}
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b2.length() > 0 ) {
             b2.append ( "," );
@@ -758,6 +1067,12 @@ public String toString ( PropList props )
             b2.append ( "," );
         }
         b2.append ( "OutputMinimum=" + OutputMinimum );
+    }
+    if ( (OutputMaximum != null) && (OutputMaximum.length() > 0) ) {
+        if ( b2.length() > 0 ) {
+            b2.append ( "," );
+        }
+        b2.append ( "OutputMaximum=" + OutputMaximum );
     }
 	return getCommandName() + "(" + b2.toString() + ")";
 }

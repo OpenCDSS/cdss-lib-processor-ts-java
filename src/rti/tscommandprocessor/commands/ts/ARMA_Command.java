@@ -74,7 +74,8 @@ throws InvalidCommandParameterException
 	String a = parameters.getValue ( "a" );
 	String b = parameters.getValue ( "b" );
 	String RequireCoefficientsSumTo1 = parameters.getValue ( "RequireCoefficientsSumTo1" );
-	String InputInitialValues = parameters.getValue ( "InputInitialValues" );
+	String InputPreviousValues = parameters.getValue ( "InputPreviousValues" );
+	String OutputPreviousValues = parameters.getValue ( "OutputPreviousValues" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String OutputMinimum = parameters.getValue ( "OutputMinimum" );
@@ -116,7 +117,7 @@ throws InvalidCommandParameterException
     */
 
     double total = 0.0;
-    double [] aArray;
+    double [] aArray = new double[0];
     // a is optional
     if ( (a != null) && !a.isEmpty() && (a.indexOf("${") < 0) ) {
         // Make sure coefficients are doubles...
@@ -143,7 +144,7 @@ throws InvalidCommandParameterException
         }
     }
 
-    double [] bArray;
+    double [] bArray = new double[0];
     if ( (b == null) || b.isEmpty() ) {
         message = "No b-coefficients are specified.";
         warning += "\n" + message;
@@ -220,22 +221,23 @@ throws InvalidCommandParameterException
                             message, "Specify a valid time interval." ) );
 		}
 	}
-	
-    if ( (InputInitialValues != null) && !InputInitialValues.equals("") && (InputInitialValues.indexOf("${") < 0) ) {
+
+	double [] inputPreviousValues = new double[0];
+    if ( (InputPreviousValues != null) && !InputPreviousValues.equals("") && (InputPreviousValues.indexOf("${") < 0) ) {
         // Make sure values are doubles...
-    	List<String> strings = StringUtil.breakStringList ( InputInitialValues, ", ", StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> strings = StringUtil.breakStringList ( InputPreviousValues, ", ", StringUtil.DELIM_SKIP_BLANKS );
         int size = 0;
         if ( strings != null ) {
             size = strings.size();
         }
-        double [] inputInitialValues = new double[size];
+        inputPreviousValues = new double[size];
         String s;
         for ( int i = 0; i < size; i++ ) {
             s = strings.get(i).trim();
             double val;
             try {
             	val = Double.parseDouble(s);
-                inputInitialValues[i] = val;
+                inputPreviousValues[i] = val;
             }
             catch ( NumberFormatException e ) {
                 message = "The input initial value " + s + " is not a number.";
@@ -244,6 +246,51 @@ throws InvalidCommandParameterException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that initial values are numbers." ) );
             }
+        }
+        // Additional checks
+        if ( (b != null) && (b.indexOf("${") < 0) && (bArray.length > 0) && ((bArray.length - 1) != inputPreviousValues.length) ) {
+            message = "The number of input previous values (" + inputPreviousValues.length +
+            	") is not equal to the number of b-coeffients (" + bArray.length + ") minus 1 (" + (bArray.length - 1) + ").";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check the number of input previous values." ) );
+        }
+    }
+
+    double [] outputPreviousValues = new double[0];
+    if ( (OutputPreviousValues != null) && !OutputPreviousValues.equals("") && (OutputPreviousValues.indexOf("${") < 0) ) {
+        // Make sure values are doubles...
+    	List<String> strings = StringUtil.breakStringList ( OutputPreviousValues, ", ", StringUtil.DELIM_SKIP_BLANKS );
+        int size = 0;
+        if ( strings != null ) {
+            size = strings.size();
+        }
+        outputPreviousValues = new double[size];
+        String s;
+        for ( int i = 0; i < size; i++ ) {
+            s = strings.get(i).trim();
+            double val;
+            try {
+            	val = Double.parseDouble(s);
+                outputPreviousValues[i] = val;
+            }
+            catch ( NumberFormatException e ) {
+                message = "The output initial value " + s + " is not a number.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that initial values are numbers." ) );
+            }
+        }
+        // Additional checks
+        if ( (a != null) && (a.indexOf("${") < 0) && (aArray.length > 0) && (aArray.length != outputPreviousValues.length) ) {
+            message = "The number of output previous values (" + outputPreviousValues.length +
+            	") is not equal to the number of a-coeffients (" + aArray.length + ").";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check the number of output previous values." ) );
         }
     }
     
@@ -293,7 +340,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(15);
+	List<String> validList = new ArrayList<String>(16);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -301,7 +348,8 @@ throws InvalidCommandParameterException
     validList.add ( "a" );
     validList.add ( "b" );
     validList.add ( "RequireCoefficientsSumTo1" );
-    validList.add ( "InputInitialValues" );
+    validList.add ( "InputPreviousValues" );
+    validList.add ( "OutputPreviousValues" );
     validList.add ( "Alias" );
     validList.add ( "NewTSID" );
     validList.add ( "Description" );
@@ -509,30 +557,63 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
-	String InputInitialValues = parameters.getValue ( "InputInitialValues" );
-	double [] inputInitialValues = new double[0];
-	if ( (commandPhase == CommandPhaseType.RUN) && (InputInitialValues != null) && (InputInitialValues.indexOf("${") >= 0) ) {
-		InputInitialValues = TSCommandProcessorUtil.expandParameterValue(processor, this, InputInitialValues);
+	String InputPreviousValues = parameters.getValue ( "InputPreviousValues" );
+	double [] inputPreviousValues = new double[0];
+	if ( (commandPhase == CommandPhaseType.RUN) && (InputPreviousValues != null) && (InputPreviousValues.indexOf("${") >= 0) ) {
+		InputPreviousValues = TSCommandProcessorUtil.expandParameterValue(processor, this, InputPreviousValues);
 	}
-	if ( (commandPhase == CommandPhaseType.RUN) && (InputInitialValues != null) && !InputInitialValues.isEmpty() ) {
+	if ( (commandPhase == CommandPhaseType.RUN) && (InputPreviousValues != null) && !InputPreviousValues.isEmpty() ) {
 		// TODO SAM 2016-02-29 need utility code to help with this - duplicates code in checkCommandParameters due to properties
 	    // Make sure values are doubles...
-		List<String> strings = StringUtil.breakStringList ( InputInitialValues, ", ", StringUtil.DELIM_SKIP_BLANKS );
+		List<String> strings = StringUtil.breakStringList ( InputPreviousValues, ", ", StringUtil.DELIM_SKIP_BLANKS );
 	    int size = 0;
 	    if ( strings != null ) {
 	        size = strings.size();
 	    }
 	    String s;
-	    inputInitialValues = new double[size];
+	    inputPreviousValues = new double[size];
 	    for ( int i = 0; i < size; i++ ) {
 	        s = strings.get(i).trim();
 	        double val;
 	        try {
 	        	val = Double.parseDouble(s);
-	        	inputInitialValues[i] = val;
+	        	inputPreviousValues[i] = val;
 	        }
 	        catch ( NumberFormatException e ) {
 	            message = "The input initial value " + s + " is not a number.";
+	    		Message.printWarning(warning_level,
+	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	    				routine, message );
+	            status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Check the value." ) );
+	        }
+	    }
+	}
+	String OutputPreviousValues = parameters.getValue ( "OutputPreviousValues" );
+	double [] outputPreviousValues = new double[0];
+	if ( (commandPhase == CommandPhaseType.RUN) && (OutputPreviousValues != null) && (OutputPreviousValues.indexOf("${") >= 0) ) {
+		OutputPreviousValues = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputPreviousValues);
+	}
+	if ( (commandPhase == CommandPhaseType.RUN) && (OutputPreviousValues != null) && !OutputPreviousValues.isEmpty() ) {
+		// TODO SAM 2016-02-29 need utility code to help with this - duplicates code in checkCommandParameters due to properties
+	    // Make sure values are doubles...
+		List<String> strings = StringUtil.breakStringList ( OutputPreviousValues, ", ", StringUtil.DELIM_SKIP_BLANKS );
+	    int size = 0;
+	    if ( strings != null ) {
+	        size = strings.size();
+	    }
+	    String s;
+	    outputPreviousValues = new double[size];
+	    for ( int i = 0; i < size; i++ ) {
+	        s = strings.get(i).trim();
+	        double val;
+	        try {
+	        	val = Double.parseDouble(s);
+	        	outputPreviousValues[i] = val;
+	        }
+	        catch ( NumberFormatException e ) {
+	            message = "The output initial value " + s + " is not a number.";
 	    		Message.printWarning(warning_level,
 	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 	    				routine, message );
@@ -684,6 +765,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
+    	// Do some runtime checks
+    	if ( (inputPreviousValues.length > 0) && (inputPreviousValues.length != (bArray.length - 1)) ) {
+	        message = "Number of input previous values (" + inputPreviousValues.length +
+	        	") does not match number of b-coefficients (" + bArray.length + ") minus 1 (" + (bArray.length - 1) + ").";
+			Message.printWarning(warning_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+	        status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Check the number of output previous values." ) );
+    	}
+    	if ( (outputPreviousValues.length > 0) && (outputPreviousValues.length != aArray.length) ) {
+	        message = "Number of output previous values (" + outputPreviousValues.length + ") does not match number of a-coefficients (" + aArray.length + ").";
+			Message.printWarning(warning_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+	        status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Check the number of output previous values." ) );
+    	}
+    	// Get the time series to process
 		PropList request_params = new PropList ( "" );
 		request_params.set ( "TSList", TSList );
 		request_params.set ( "TSID", TSID );
@@ -811,10 +913,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	// Now process the time series...
 
-	boolean readData = true;
-	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-		readData = false;
-	}
 	TS ts = null;
 	List<TS> newtsList = new ArrayList<TS>();
 	for ( int its = 0; its < nts; its++ ) {
@@ -905,8 +1003,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			if ( commandPhase == CommandPhaseType.RUN ) {
 				// Do full processing
 				TSUtil_ARMA tsu = new TSUtil_ARMA();
-			    ts = tsu.ARMA ( ts, newts, ARMAInterval, aArray, bArray, inputInitialValues,
-			    	outputMinimum, outputMaximum, OutputStart_DateTime, OutputEnd_DateTime, readData );
+			    ts = tsu.ARMA ( ts, newts, ARMAInterval, aArray, bArray, inputPreviousValues, outputPreviousValues,
+			    	outputMinimum, outputMaximum, OutputStart_DateTime, OutputEnd_DateTime );
 			}
 		    if ( newts != null ) {
 		        if ( (Alias != null) && !Alias.isEmpty() ) {
@@ -971,7 +1069,8 @@ public String toString ( PropList props )
     String TSList = props.getValue( "TSList" );
     String TSID = props.getValue( "TSID" );
     String EnsembleID = props.getValue( "EnsembleID" );
-	String InputInitialValues = props.getValue( "InputInitialValues" );
+	String InputPreviousValues = props.getValue( "InputPreviousValues" );
+	String OutputPreviousValues = props.getValue( "OutputPreviousValues" );
 	String ARMAInterval = props.getValue( "ARMAInterval" );
     String a = props.getValue( "a" );
 	String b = props.getValue("b");
@@ -1002,11 +1101,11 @@ public String toString ( PropList props )
         }
         b2.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-    if ( (InputInitialValues != null) && (InputInitialValues.length() > 0) ) {
+    if ( (InputPreviousValues != null) && (InputPreviousValues.length() > 0) ) {
         if ( b2.length() > 0 ) {
             b2.append ( "," );
         }
-        b2.append ( "InputInitialValues=\"" + InputInitialValues + "\"");
+        b2.append ( "InputPreviousValues=\"" + InputPreviousValues + "\"");
     }
 	if ( (ARMAInterval != null) && (ARMAInterval.length() > 0) ) {
 		if ( b2.length() > 0 ) {
@@ -1032,17 +1131,17 @@ public String toString ( PropList props )
         }
         b2.append ( "RequireCoefficientsSumTo1=" + RequireCoefficientsSumTo1 );
     }
-	if ( (Alias != null) && (Alias.length() > 0) ) {
-		if ( b2.length() > 0 ) {
-			b2.append ( "," );
-		}
-		b2.append ( "Alias=\"" + Alias + "\"" );
-	}
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		if ( b2.length() > 0 ) {
 			b2.append ( "," );
 		}
 		b2.append ( "NewTSID=\"" + NewTSID + "\"" );
+	}
+	if ( (Alias != null) && (Alias.length() > 0) ) {
+		if ( b2.length() > 0 ) {
+			b2.append ( "," );
+		}
+		b2.append ( "Alias=\"" + Alias + "\"" );
 	}
 	if ( (Description != null) && (Description.length() > 0) ) {
 		if ( b2.length() > 0 ) {
@@ -1062,6 +1161,12 @@ public String toString ( PropList props )
 		}
 		b2.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
+    if ( (OutputPreviousValues != null) && (OutputPreviousValues.length() > 0) ) {
+        if ( b2.length() > 0 ) {
+            b2.append ( "," );
+        }
+        b2.append ( "OutputPreviousValues=\"" + OutputPreviousValues + "\"");
+    }
     if ( (OutputMinimum != null) && (OutputMinimum.length() > 0) ) {
         if ( b2.length() > 0 ) {
             b2.append ( "," );

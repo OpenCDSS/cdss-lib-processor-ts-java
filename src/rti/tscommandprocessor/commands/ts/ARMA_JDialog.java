@@ -62,7 +62,8 @@ private JTextField __a_JTextField = null;
 private JTextField __b_JTextField = null;
 private SimpleJComboBox	__RequireCoefficientsSumTo1_JComboBox = null;
 private SimpleJComboBox __ARMAInterval_JComboBox = null;
-private JTextField __InputInitialValues_JTextField = null;
+private JTextField __InputPreviousValues_JTextField = null;
+private JTextField __OutputPreviousValues_JTextField = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextArea __NewTSID_JTextArea = null;
 private SimpleJButton __edit_JButton = null;
@@ -212,7 +213,8 @@ private void checkInput ()
     String a = __a_JTextField.getText().trim();
     String b = __b_JTextField.getText().trim();
     String RequireCoefficientsSumTo1 = __RequireCoefficientsSumTo1_JComboBox.getSelected().trim();
-    String InputInitialValues = __InputInitialValues_JTextField.getText().trim();
+    String InputPreviousValues = __InputPreviousValues_JTextField.getText().trim();
+    String OutputPreviousValues = __OutputPreviousValues_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Description = __Description_JTextField.getText().trim();
@@ -244,8 +246,11 @@ private void checkInput ()
     if ( RequireCoefficientsSumTo1.length() > 0 ) {
         parameters.set ( "RequireCoefficientsSumTo1", RequireCoefficientsSumTo1 );
     }
-    if ( InputInitialValues.length() > 0 ) {
-        parameters.set ( "InputInitialValues", InputInitialValues );
+    if ( InputPreviousValues.length() > 0 ) {
+        parameters.set ( "InputPreviousValues", InputPreviousValues );
+    }
+    if ( OutputPreviousValues.length() > 0 ) {
+        parameters.set ( "OutputPreviousValues", OutputPreviousValues );
     }
 	if ( Alias.length() > 0 ) {
 		parameters.set ( "Alias", Alias );
@@ -290,7 +295,8 @@ private void commitEdits ()
     String a = __a_JTextField.getText().trim();
     String b = __b_JTextField.getText().trim();
     String RequireCoefficientsSumTo1 = __RequireCoefficientsSumTo1_JComboBox.getSelected().trim();
-    String InputInitialValues = __InputInitialValues_JTextField.getText().trim();
+    String InputPreviousValues = __InputPreviousValues_JTextField.getText().trim();
+    String OutputPreviousValues = __OutputPreviousValues_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Description = __Description_JTextField.getText().trim();
@@ -305,7 +311,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "a", a );
     __command.setCommandParameter ( "b", b );
     __command.setCommandParameter ( "RequireCoefficientsSumTo1", RequireCoefficientsSumTo1 );
-    __command.setCommandParameter ( "InputInitialValues", InputInitialValues );
+    __command.setCommandParameter ( "InputPreviousValues", InputPreviousValues );
+    __command.setCommandParameter ( "OutputPreviousValues", OutputPreviousValues );
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Description", Description );
@@ -342,13 +349,13 @@ private void initialize ( JFrame parent, ARMA_Command command )
 		"An example of ARMA application is to lag and attenuate a time series." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The adjusted output time series O is computed from the original input I using:"),
+		"The output time series O is computed from the original input time series I using:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    O[t] = a_1*O[t-1] + a_2*O[t-2] + ... + a_p*O[t-p] + b_0*I[t] + b_1*I[t-1] + ... + b_q*I[t-q]" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"where t = time, p = number of outflows to consider, and q = number of inflows to consider"),
+		"where t = time, p = number of previous output values to consider, and q = number of previous input values to consider."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -364,13 +371,15 @@ private void initialize ( JFrame parent, ARMA_Command command )
     __main_JTabbedPane.addTab ( "Input", input_JPanel );
 
     JGUIUtil.addComponent(input_JPanel, new JLabel (
-		"Specify the input time series to process.  The input time series will be modified unless a NewTSID parameter is specified for output."),
+		"Specify the input time series to process.  The input time series will be modified unless a NewTSID parameter is specified for output (see \"Output\" tab)."),
 		0, ++yInput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(input_JPanel, new JLabel (
-		"The output value is set to missing if one or more input values are missing (typically only filled data should be used).  The period will not automatically be extended."),
+		"The output value is set to missing if one or more input values are missing "
+		+ "(typically only filled data should be used).  The period will not automatically be extended."),
 		0, ++yInput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(input_JPanel, new JLabel (
-		"Specify initial input time series values to avoid missing values in output (leftmost value is earliest in time prior to time series start)."),
+		"Specify previous input time series values to avoid missing values in output "
+		+ "(leftmost value is earliest in time, rightmost is value for interval prior to input time series start)."),
 		0, ++yInput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(input_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yInput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -393,15 +402,15 @@ private void initialize ( JFrame parent, ARMA_Command command )
     yInput = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, input_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yInput );
     
-    JGUIUtil.addComponent(input_JPanel, new JLabel ( "Input initial values:" ), 
+    JGUIUtil.addComponent(input_JPanel, new JLabel ( "Input previous values:" ), 
 		0, ++yInput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputInitialValues_JTextField = new JTextField ( 35 );
-	__InputInitialValues_JTextField.setToolTipText("Specify values separated by commas, earliest value first.");
-	__InputInitialValues_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(input_JPanel, __InputInitialValues_JTextField,
+	__InputPreviousValues_JTextField = new JTextField ( 35 );
+	__InputPreviousValues_JTextField.setToolTipText("Specify values separated by commas, earliest value first, can use ${Property}.");
+	__InputPreviousValues_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(input_JPanel, __InputPreviousValues_JTextField,
 		1, yInput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(input_JPanel, new JLabel(
-        "Optional - input initial values (default - limited by input time series)."), 
+        "Optional - input previous values (default - limited by input time series)."), 
         3, yInput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for ARMA parameters
@@ -414,7 +423,10 @@ private void initialize ( JFrame parent, ARMA_Command command )
 		"ARMA a and b coefficients must be computed externally.  The values for p and q will be determined from the number of coefficients."),
 		0, ++yARMA, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ARMA_JPanel, new JLabel (
-		"The ARMA interval must be <= the time series interval."),
+		"Specify the order of the coefficients as time t-1, t-2, etc."),
+		0, ++yARMA, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ARMA_JPanel, new JLabel (
+		"The ARMA interval must be <= the time series interval.  If the ARMA interval is different from the input time series each input time series value is repeated."),
 		0, ++yARMA, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ARMA_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yARMA, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -435,18 +447,18 @@ private void initialize ( JFrame parent, ARMA_Command command )
     JGUIUtil.addComponent(ARMA_JPanel, new JLabel ( "\"a\" coefficients:" ), 
 		0, ++yARMA, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__a_JTextField = new JTextField ( 35 );
-	__a_JTextField.setToolTipText("Specify coefficients separated by commas, can use ${Property}.");
+	__a_JTextField.setToolTipText("Specify coefficients for t-1, t-2, etc. separated by commas, can use ${Property}.");
 	__a_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ARMA_JPanel, __a_JTextField,
 		1, yARMA, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(ARMA_JPanel, new JLabel(
-        "Required - \"a\" coefficients to multiply input values."), 
+        "Required - \"a\" coefficients to multiply output values."), 
         3, yARMA, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(ARMA_JPanel, new JLabel ( "\"b\" coefficients:" ), 
 		0, ++yARMA, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__b_JTextField = new JTextField ( 35 );
-	__b_JTextField.setToolTipText("Specify coefficients separated by commas, can use ${Property}.");
+	__b_JTextField.setToolTipText("Specify coefficients for t, t-1, t-2, etc. separated by commas, can use ${Property}.");
 	__b_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(ARMA_JPanel, __b_JTextField,
 		1, yARMA, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -476,28 +488,24 @@ private void initialize ( JFrame parent, ARMA_Command command )
     __main_JTabbedPane.addTab ( "Output", output_JPanel );
 
     JGUIUtil.addComponent(output_JPanel, new JLabel (
-		"Specify a new TSID and optionally alias to create a new output time series - otherwise original time series will be modified."),
+		"Specify a new TSID and optionally alias to create a new output time series - otherwise original input time series will be modified."),
 		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel (
-		"The output period will default to the input time series but if specified will override the input period."),
+		"The output period will default to the input time series period unless specified below."),
 		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel (
-		"The output minimum and maximum values are applied after the ARMA method is applied and therefore don't impact the ARMA calculations."),
+		"Specify output time series previous values to avoid missing values in output "
+		+ "(leftmost value is earliest in time, rightmost is value for interval prior to input start)."),
+		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+		"Output previous values will be considered in ARMA calculations."),
+		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel (
+		"The output minimum and maximum value checks occur during the ARMA calculations and will impact subsequent output values."),
 		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yOutput, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(output_JPanel, new JLabel("Alias to assign:"),
-        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
-    __Alias_JTextField.getTextField().setToolTipText("Specify alias using % format specifiers, ${ts:Property} or ${Property} notation");
-    __Alias_JTextField.addKeyListener ( this );
-    __Alias_JTextField.getDocument().addDocumentListener(this);
-    JGUIUtil.addComponent(output_JPanel, __Alias_JTextField,
-        1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(output_JPanel, new JLabel ("Required - use %L for location, etc."),
-        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
@@ -509,7 +517,7 @@ private void initialize ( JFrame parent, ARMA_Command command )
 	// Make 3-high to fit in the edit button...
     JGUIUtil.addComponent(output_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, yOutput, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(output_JPanel, new JLabel("Required - specify unique TSID information to define time series."), 
+    JGUIUtil.addComponent(output_JPanel, new JLabel("Required if new output time series - unique TSID."), 
 		3, yOutput, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     yOutput += 2;
     JGUIUtil.addComponent(output_JPanel, (__edit_JButton =
@@ -518,6 +526,17 @@ private void initialize ( JFrame parent, ARMA_Command command )
     JGUIUtil.addComponent(output_JPanel, (__clear_JButton =
 		new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(output_JPanel, new JLabel("Alias to assign:"),
+        0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.getTextField().setToolTipText("Specify alias using % format specifiers, ${ts:Property} or ${Property} notation");
+    __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(output_JPanel, __Alias_JTextField,
+        1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel ("Optional if new output time series - use %L for location, etc."),
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Description/Name:" ), 
 		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -538,7 +557,7 @@ private void initialize ( JFrame parent, ARMA_Command command )
     JGUIUtil.addComponent(output_JPanel, __OutputStart_JTextField,
 		1, yOutput, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel (
-		"Optional - override the global output start (default=input period)."),
+		"Optional - output period start (default=input period)."),
 		3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output end:"), 
@@ -549,12 +568,23 @@ private void initialize ( JFrame parent, ARMA_Command command )
     JGUIUtil.addComponent(output_JPanel, __OutputEnd_JTextField,
 		1, yOutput, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(output_JPanel, new JLabel (
-		"Optional - override the global output end (default=input period)."),
+		"Optional - output period end (default=input period)."),
 		3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output previous values:" ), 
+		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__OutputPreviousValues_JTextField = new JTextField ( 35 );
+	__OutputPreviousValues_JTextField.setToolTipText("Specify values separated by commas, earliest value first, can use ${Property}.");
+	__OutputPreviousValues_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(output_JPanel, __OutputPreviousValues_JTextField,
+		1, yOutput, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(output_JPanel, new JLabel(
+        "Optional - output previous values (default - calculated from input time series)."), 
+        3, yOutput, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output minimum value:" ), 
 		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputMinimum_JTextField = new JTextField ( 10 );
+	__OutputMinimum_JTextField = new JTextField ( 20 );
 	__OutputMinimum_JTextField.setToolTipText("Specify the output minimum value, can use ${Property} notation");
 	__OutputMinimum_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __OutputMinimum_JTextField,
@@ -565,7 +595,7 @@ private void initialize ( JFrame parent, ARMA_Command command )
     
     JGUIUtil.addComponent(output_JPanel, new JLabel ( "Output maximum value:" ), 
 		0, ++yOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputMaximum_JTextField = new JTextField ( 10 );
+	__OutputMaximum_JTextField = new JTextField ( 20 );
 	__OutputMaximum_JTextField.setToolTipText("Specify the output maximum value, can use ${Property} notation");
 	__OutputMaximum_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(output_JPanel, __OutputMaximum_JTextField,
@@ -657,7 +687,8 @@ private void refresh ()
     String a = "";
     String b = "";
     String RequireCoefficientsSumTo1 = "";
-    String InputInitialValues = "";
+    String InputPreviousValues = "";
+    String OutputPreviousValues = "";
     String Alias = "";
 	String NewTSID = "";
 	String Description = "";
@@ -676,7 +707,8 @@ private void refresh ()
         a = props.getValue ( "a" );
         b = props.getValue ( "b" );
         RequireCoefficientsSumTo1 = props.getValue ( "RequireCoefficientsSumTo1" );
-        InputInitialValues = props.getValue ( "InputInitialValues" );
+        InputPreviousValues = props.getValue ( "InputPreviousValues" );
+        OutputPreviousValues = props.getValue ( "OutputPreviousValues" );
 		Alias = props.getValue ( "Alias" );
 		NewTSID = props.getValue ( "NewTSID" );
 		Description = props.getValue ( "Description" );
@@ -786,8 +818,11 @@ private void refresh ()
                 "RequireCoefficientsSumTo1 parameter \"" + RequireCoefficientsSumTo1 + "\".  Select a different value or Cancel." );
             }
         }
-        if ( InputInitialValues != null ) {
-            __InputInitialValues_JTextField.setText( InputInitialValues );
+        if ( InputPreviousValues != null ) {
+            __InputPreviousValues_JTextField.setText( InputPreviousValues );
+        }
+        if ( OutputPreviousValues != null ) {
+            __OutputPreviousValues_JTextField.setText( OutputPreviousValues );
         }
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
@@ -819,7 +854,8 @@ private void refresh ()
     a = __a_JTextField.getText().trim();
     b = __b_JTextField.getText().trim();
     RequireCoefficientsSumTo1 = __RequireCoefficientsSumTo1_JComboBox.getSelected().trim();
-    InputInitialValues = __InputInitialValues_JTextField.getText().trim();
+    InputPreviousValues = __InputPreviousValues_JTextField.getText().trim();
+    OutputPreviousValues = __OutputPreviousValues_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
 	Description = __Description_JTextField.getText().trim();
@@ -835,7 +871,8 @@ private void refresh ()
     props.add ( "a=" + a );
     props.add ( "b=" + b );
     props.add ( "RequireCoefficientsSumTo1=" + RequireCoefficientsSumTo1 );
-    props.add ( "InputInitialValues=" + InputInitialValues );
+    props.add ( "InputPreviousValues=" + InputPreviousValues );
+    props.add ( "OutputPreviousValues=" + OutputPreviousValues );
 	props.add ( "Alias=" + Alias );
 	props.add ( "NewTSID=" + NewTSID );
 	props.add ( "Description=" + Description );

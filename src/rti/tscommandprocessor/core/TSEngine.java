@@ -642,6 +642,7 @@
 
 package rti.tscommandprocessor.core;
 
+import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -3593,7 +3594,6 @@ time series list.  If null, all are processed.  The indices do not have to be in
 <td>No default.</td>
 </tr>
 </table>
-@param comments Comments to add to the to of output files.
 @exception IOException if there is an error generating the results.
 */
 protected void processTimeSeries ( int ts_indices[], PropList proplist )
@@ -3808,6 +3808,11 @@ throws IOException
 		reportProps.set ( "PrintSize", "7" );
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
+		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
+		if ( uiComponent != null ) {
+			reportProps.setUsingObject("ParentUIComponent", uiComponent);
+		}
 
 		try {
 		    // For now, put the code in here at the bottom of this file...
@@ -3833,6 +3838,11 @@ throws IOException
 		reportProps.set ( "PrintSize", "7" );
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
+		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
+		if ( uiComponent != null ) {
+			reportProps.setUsingObject("ParentUIComponent", uiComponent);
+		}
 
 		try {
 		    // For now, put the code in here at the bottom of this file...
@@ -3927,6 +3937,11 @@ throws IOException
 		reportProps.set ( "PrintSize", "7" );
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
+		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
+		if ( uiComponent != null ) {
+			reportProps.setUsingObject("ParentUIComponent", uiComponent);
+		}
 
 		PropList sumprops = new PropList ( "" );
 		sumprops.set ( "DayType", daytype );
@@ -4085,6 +4100,11 @@ throws IOException
     			reportProps.set ( "PrintSize", "7" );
     			//reportProps.set ( "PageLength", "100" );
     			reportProps.set ( "PageLength", "100000" );
+    			// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+    			Object uiComponent = props.getContents( "TSViewParentUIComponent" );
+    			if ( (uiComponent != null) && (uiComponent instanceof Component) ) {
+    				reportProps.setUsingObject("ParentUIComponent", uiComponent);
+    			}
     
     			try {
     				List summary = TSUtil.formatOutput ( tslist_output, sumprops );
@@ -4206,12 +4226,14 @@ throws IOException
     		graphprops.set ( "PrintFont", "Courier" );
     		graphprops.set ( "PrintSize", "7" );
     		graphprops.set ( "PageLength", "100" );
+			// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+			Object uiComponent = props.getContents( "TSViewParentUIComponent" );
+			if ( (uiComponent != null) && (uiComponent instanceof Component) ) {
+				graphprops.setUsingObject("TSViewParentUIComponent", uiComponent);
+			}
     		TSViewJFrame view = new TSViewJFrame ( tslist, graphprops );
     		addTSViewTSProductDMIs ( view );
     		addTSViewTSProductAnnotationProviders ( view );
-    		// For garbage collection...
-    		view = null;
-    		tslist = null;
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 3, routine, e );
@@ -4234,6 +4256,11 @@ throws IOException
 		reportProps.set ( "PrintSize", "7" );
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
+		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
+		if ( uiComponent != null ) {
+			reportProps.setUsingObject("ParentUIComponent", uiComponent);
+		}
 
 		try {
 			List report = createYearToDateReport (tslist_output,__reference_date, null );
@@ -4410,6 +4437,11 @@ throws IOException
     		graphprops.set ( "PrintFont", "Courier" );
     		graphprops.set ( "PrintSize", "7" );
     		graphprops.set ( "PageLength", "100" );
+    		// To allow the graph to display on TSTool main UI screen, pass along the TSTool component
+    		Object uiComponent = props.getContents( "TSViewParentUIComponent" );
+    		if ( (uiComponent != null) && (uiComponent instanceof Component) ) {
+    			graphprops.setUsingObject("TSViewParentUIComponent", uiComponent);
+    		}
     		TSViewJFrame view = new TSViewJFrame ( tslist, graphprops );
     		// Connect dynamic data objects...
     		addTSViewTSProductDMIs ( view );

@@ -61,14 +61,13 @@ public CreateRegressionTestCommandFile_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String routine = getClass().getName() + ".checkCommandParameters";
+{	String routine = getClass().getSimpleName() + ".checkCommandParameters";
     String SearchFolder = parameters.getValue ( "SearchFolder" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String SetupCommandFile = parameters.getValue ( "SetupCommandFile" );
@@ -91,7 +90,7 @@ throws InvalidCommandParameterException
         status.addToLog(CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
 			message, "Specify the search folder."));
 	}
-    else {
+    else if ( SearchFolder.indexOf("${") < 0 ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -130,7 +129,7 @@ throws InvalidCommandParameterException
         status.addToLog(CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
 			message, "Specify the output file name."));
 	}
-	else {
+	else if ( OutputFile.indexOf("${") < 0 ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -170,7 +169,7 @@ throws InvalidCommandParameterException
         }
     }
 	
-    if ( (SetupCommandFile != null) && (SetupCommandFile.length() != 0) ) {
+    if ( (SetupCommandFile != null) && (SetupCommandFile.length() != 0) && (SetupCommandFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -203,7 +202,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (EndCommandFile != null) && !EndCommandFile.isEmpty() ) {
+    if ( (EndCommandFile != null) && !EndCommandFile.isEmpty() && (EndCommandFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -246,7 +245,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List validList = new ArrayList<String>();
+	List validList = new ArrayList<String>(9);
 	validList.add ( "SearchFolder" );
 	validList.add ( "OutputFile" );
     validList.add ( "SetupCommandFile" );
@@ -519,7 +518,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -527,13 +526,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 	
     CommandProcessor processor = getCommandProcessor();
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
-	String SearchFolder = parameters.getValue ( "SearchFolder" );
-    String OutputFile = parameters.getValue ( "OutputFile" );
-    String SetupCommandFile = parameters.getValue ( "SetupCommandFile" );
-    String EndCommandFile = parameters.getValue ( "EndCommandFile" );
+	String SearchFolder = parameters.getValue ( "SearchFolder" ); // Expanded below
+    String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
+    String SetupCommandFile = parameters.getValue ( "SetupCommandFile" ); // Expanded below
+    String EndCommandFile = parameters.getValue ( "EndCommandFile" ); // Expanded below
 	String FilenamePattern = parameters.getValue ( "FilenamePattern" );
 	String FilenamePattern_Java = "";
 	if ( FilenamePattern == null ) {
@@ -562,10 +574,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String IncludeTestSuitePattern = StringUtil.replaceString(IncludeTestSuite,"*",".*");
     String IncludeOSPattern = StringUtil.replaceString(IncludeOS,"*",".*");
 
-	String SearchFolder_full = IOUtil.verifyPathForOS ( IOUtil.toAbsolutePath(
-        TSCommandProcessorUtil.getWorkingDir(processor), SearchFolder ) );
-	String OutputFile_full = IOUtil.verifyPathForOS (IOUtil.toAbsolutePath(
-        TSCommandProcessorUtil.getWorkingDir(processor), OutputFile ) );
+	String SearchFolder_full = IOUtil.verifyPathForOS(
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor,this,SearchFolder)));
+	String OutputFile_full = IOUtil.verifyPathForOS(
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
 	if ( !IOUtil.fileExists(SearchFolder_full) ) {
 		message = "The folder to search \"" + SearchFolder_full + "\" does not exist.";
 		Message.printWarning ( warning_level,
@@ -575,8 +589,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String SetupCommandFile_full = null;
 	if ( (SetupCommandFile != null) && !SetupCommandFile.equals("") ) {
-	    SetupCommandFile_full = IOUtil.verifyPathForOS (IOUtil.toAbsolutePath(
-            TSCommandProcessorUtil.getWorkingDir(processor), SetupCommandFile ) );
+	    SetupCommandFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,SetupCommandFile)));
         if ( !IOUtil.fileExists(SetupCommandFile_full) ) {
             message = "The setup command file \"" + SetupCommandFile_full + "\" does not exist.";
             Message.printWarning ( warning_level,
@@ -587,8 +602,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String EndCommandFile_full = null;
 	if ( (EndCommandFile != null) && !EndCommandFile.equals("") ) {
-	    EndCommandFile_full = IOUtil.verifyPathForOS (IOUtil.toAbsolutePath(
-            TSCommandProcessorUtil.getWorkingDir(processor), EndCommandFile ) );
+	    EndCommandFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,EndCommandFile)));
         if ( !IOUtil.fileExists(EndCommandFile_full) ) {
             message = "The end command file \"" + EndCommandFile_full + "\" does not exist.";
             Message.printWarning ( warning_level,

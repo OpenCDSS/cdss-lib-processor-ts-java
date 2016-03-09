@@ -17,17 +17,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TSIdent;
-
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -64,7 +63,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public TSID_JDialog (	JFrame parent, Command command )
+public TSID_JDialog (	JFrame parent, TSID_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -190,8 +189,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (TSID_Command)command;
+private void initialize ( JFrame parent, TSID_Command command )
+{	__command = command;
     CommandProcessor processor = __command.getCommandProcessor();
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
     
@@ -210,36 +209,40 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command reads a single time series given a time series identifier that includes " +
-		"the input name (database, file) information."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"This command reads a single time series given a time series identifier (TDID) that includes " +
+		"the datastore (database, web service) or input name (database, file) information."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The TSID parts are generally consistent but do vary slightly between datastores based on requirements to uniquely identify time series."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"See also the ReadTimeSeries() command, which assigns an alias to a time series. " +
 		"The alias may be more convenient to use than the long time series identifier."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read commands for specific input types are also available, generally offer more " +
-		"options, and should be used if available."),
+		"More specific Read commands may also available for a datastore or input type and generally offer more options."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "See also the CreateFromList() command."),
+        "See also the ReadTimeSeriesList() command, which creates TSIDs from a table and then reads each time series."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( identifierHasFilename(__tsident) ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-            "Specify a full path or relative path (relative to working directory) for a file to read." ), 
+            "If the TSID requires a filename, specify a full path or relative path (relative to working directory) for the file to read." ), 
             0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<HTML><B>It is strongly recommended that relative paths be used in commands if possible.</B></HTML>." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         if ( __working_dir != null ) {
             JGUIUtil.addComponent(main_JPanel, new JLabel (
             "The working directory is: " + __working_dir ), 
             0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         }
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+	        "<HTML><B>It is strongly recommended that relative paths are used in commands if possible.</B></HTML>." ), 
+	        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Time series identifier:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

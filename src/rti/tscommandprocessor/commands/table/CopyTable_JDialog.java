@@ -302,10 +302,9 @@ private void initialize ( JFrame parent, CopyTable_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column include filters:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnFilters_JTextArea = new JTextArea (3,35);
-    __ColumnFilters_JTextArea.setToolTipText("Specify table column filters or use ${Property} notation");
     __ColumnFilters_JTextArea.setLineWrap ( true );
     __ColumnFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnFilters_JTextArea.setToolTipText("Specify table column filters ColumnName1:FilterPattern1,ColumnName2:FilterPattern2, can use ${Property} notation");
     __ColumnFilters_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnFilters_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

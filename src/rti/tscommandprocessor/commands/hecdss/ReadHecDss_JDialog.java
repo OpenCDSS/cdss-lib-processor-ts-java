@@ -466,6 +466,7 @@ private void initialize(JFrame parent, ReadHecDss_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, can use ${Property}.");
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener(this);
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,

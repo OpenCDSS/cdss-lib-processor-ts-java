@@ -25,9 +25,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -719,7 +721,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
-{	String routine = "ReadReclamationHDB_JDialog.initialize";
+{	String routine = getClass().getSimpleName() + ".initialize";
     __parent = parent;
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
@@ -731,11 +733,11 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int yMain = 0;
+	int yMain = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Read one or more time series, or an ensemble, from a Reclamation HDB database."),
-    	0, yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Constrain the query by specifying time series metadata to match." ), 
     	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -743,6 +745,8 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
         "Specify date/times using the format YYYY-MM-DD hh:mm:ss, to a precision appropriate for the data " +
         "interval (default=input period from SetInputPeriod())."),
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __ignoreEvents = true; // So that a full pass of initialization can occur
    	

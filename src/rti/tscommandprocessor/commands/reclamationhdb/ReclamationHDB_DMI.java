@@ -11,10 +11,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 
 import rti.tscommandprocessor.commands.reclamationhdb.java_lib.hdbLib.JavaConnections;
-
 import RTi.DMI.DMI;
 import RTi.DMI.DMIUtil;
 import RTi.TS.TS;
@@ -31,6 +29,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.StopWatch;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
+import RTi.Util.Time.TimeZoneDefaultType;
 
 // TODO SAM 2010-10-25 Evaluate updating code to be more general (e.g., more completely use DMI base class)
 /**
@@ -53,12 +52,12 @@ private Hashtable<String, String> __databaseParameterList = new Hashtable();
 /**
 Agencies from HDB_AGEN.
 */
-private List<ReclamationHDB_Agency> __agencyList = new Vector<ReclamationHDB_Agency>();
+private List<ReclamationHDB_Agency> __agencyList = new ArrayList<ReclamationHDB_Agency>();
 
 /**
 Data types from HDB_DATATYPE.
 */
-private List<ReclamationHDB_DataType> __dataTypeList = new Vector<ReclamationHDB_DataType>();
+private List<ReclamationHDB_DataType> __dataTypeList = new ArrayList<ReclamationHDB_DataType>();
 
 /**
 Keep alive SQL string and frequency.  If specified in configuration file and set with
@@ -98,12 +97,12 @@ private boolean __readNHourEndDateTime = false; // Default, because WRITE_TO_HDB
 /**
 Loading applications from HDB_LOADING_APPLICATION.
 */
-private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new Vector<ReclamationHDB_LoadingApplication>();
+private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new ArrayList<ReclamationHDB_LoadingApplication>();
 
 /**
 Models from HDB_MODEL.
 */
-private List<ReclamationHDB_Model> __modelList = new Vector<ReclamationHDB_Model>();
+private List<ReclamationHDB_Model> __modelList = new ArrayList<ReclamationHDB_Model>();
 
 /**
 Object types from HDB_OBJECTTYPE.
@@ -113,17 +112,17 @@ private List<ReclamationHDB_ObjectType> __objectTypeList = new ArrayList<Reclama
 /**
 Overwrite flags from HDB_OVERWRITE_FLAG.
 */
-private List<ReclamationHDB_OverwriteFlag> __overwriteFlagList = new Vector<ReclamationHDB_OverwriteFlag>();
+private List<ReclamationHDB_OverwriteFlag> __overwriteFlagList = new ArrayList<ReclamationHDB_OverwriteFlag>();
 
 /**
 Time zones supported when writing time series.
 */
-private List<String> __timeZoneList = new Vector<String>();
+private List<String> __timeZoneList = new ArrayList<String>();
 
 /**
 Loading applications from HDB_VALIDATION.
 */
-private List<ReclamationHDB_Validation> __validationList = new Vector<ReclamationHDB_Validation>();
+private List<ReclamationHDB_Validation> __validationList = new ArrayList<ReclamationHDB_Validation>();
 
 /**
 Indicate whether the database has ensemble tables, which will be true if the table REF_ENSEMBLE is present.
@@ -203,8 +202,7 @@ for the time series period start/end.
 @param timeZone time zone abbreviation (e.g., "MST" to use for hourly and instantaneous data)
 @return internal date/time that can be used to set the time series start/end, for memory allocation
 */
-private DateTime convertHDBStartDateTimeToInternal ( Date startDateTime, int intervalBase, int intervalMult,
-    String timeZone )
+private DateTime convertHDBStartDateTimeToInternal ( Date startDateTime, int intervalBase, int intervalMult, String timeZone )
 {   DateTime dateTime = new DateTime(startDateTime);
     if ( intervalBase == TimeInterval.HOUR ) {
         // The date/time using internal conventions is N-hour later
@@ -291,7 +289,7 @@ Find an instance of ReclamationHDB_Ensemble given the ensemble name.
 */
 public List<ReclamationHDB_Ensemble> findEnsemble( List<ReclamationHDB_Ensemble> ensembleList, String ensembleName )
 {
-    List<ReclamationHDB_Ensemble> foundList = new Vector();
+    List<ReclamationHDB_Ensemble> foundList = new ArrayList<ReclamationHDB_Ensemble>();
     for ( ReclamationHDB_Ensemble ensemble: ensembleList ) {
         if ( (ensembleName != null) && !ensemble.getEnsembleName().equalsIgnoreCase(ensembleName) ) {
             // Ensemble name to match was specified but did not match
@@ -312,7 +310,7 @@ Find an instance of ReclamationHDB_LoadingApplication given the application name
 public List<ReclamationHDB_LoadingApplication> findLoadingApplication (
     List<ReclamationHDB_LoadingApplication> loadingApplicationList, String loadingApplication )
 {
-    List<ReclamationHDB_LoadingApplication> foundList = new Vector();
+    List<ReclamationHDB_LoadingApplication> foundList = new ArrayList<ReclamationHDB_LoadingApplication>();
     for ( ReclamationHDB_LoadingApplication la: loadingApplicationList ) {
         if ( (loadingApplication != null) && !la.getLoadingApplicationName().equalsIgnoreCase(loadingApplication) ) {
             // Application name to match was specified but did not match
@@ -332,7 +330,7 @@ Find an instance of ReclamationHDB_Model given the model name.
 */
 public List<ReclamationHDB_Model> findModel( List<ReclamationHDB_Model> modelList, String modelName )
 {
-    List<ReclamationHDB_Model> foundList = new Vector();
+    List<ReclamationHDB_Model> foundList = new ArrayList<ReclamationHDB_Model>();
     for ( ReclamationHDB_Model model: modelList ) {
         if ( (modelName != null) && !model.getModelName().equalsIgnoreCase(modelName) ) {
             // Model name to match was specified but did not match
@@ -401,7 +399,7 @@ Find an instance of ReclamationHDB_SiteDataType given the site common name and d
 public List<ReclamationHDB_SiteDataType> findSiteDataType( List<ReclamationHDB_SiteDataType> siteDataTypeList,
     String siteCommonName, String dataTypeCommonName )
 {
-    List<ReclamationHDB_SiteDataType> foundList = new Vector();
+    List<ReclamationHDB_SiteDataType> foundList = new ArrayList<ReclamationHDB_SiteDataType>();
     for ( ReclamationHDB_SiteDataType siteDataType: siteDataTypeList ) {
         if ( (siteCommonName != null) && !siteDataType.getSiteCommonName().equalsIgnoreCase(siteCommonName) ) {
             // Site common name to match was specified but did not match
@@ -480,7 +478,7 @@ throws SQLException
         " HDB_SITE.SITE_ID = HDB_SITE_DATATYPE.SITE_ID and" +
         " HDB_DATATYPE.DATATYPE_ID = HDB_SITE_DATATYPE.DATATYPE_ID" +
         " order by HDB_OBJECTTYPE.OBJECTTYPE_NAME, HDB_DATATYPE.DATATYPE_COMMON_NAME";
-    List<String> types = new Vector<String>();
+    List<String> types = new ArrayList<String>();
     
     try {
         stmt = __hdbConnection.ourConn.createStatement();
@@ -661,12 +659,12 @@ private List<String> getWhereClausesFromInputFilter ( DMI dmi, InputFilter_JPane
     // Loop through each filter group.  There will be one where clause per filter group.
 
     if (panel == null) {
-        return new Vector();
+        return new ArrayList<String>();
     }
 
     int nfg = panel.getNumFilterGroups ();
     InputFilter filter;
-    List<String> where_clauses = new Vector();
+    List<String> where_clauses = new ArrayList<String>();
     String where_clause=""; // A where clause that is being formed.
     for ( int ifg = 0; ifg < nfg; ifg++ ) {
         filter = panel.getInputFilter ( ifg );  
@@ -962,7 +960,8 @@ public void readGlobalData()
     // As per email from Mark Bogner (2013-03-13):
     // They have to be the standard 3 character time zones (GMT,EST,MST,PST,MDT,CST,EDT...) are all valid
     // For stability, put the supported codes here
-    __timeZoneList = new Vector<String>();
+    // TODO SAM 2016-03-10 Standard time or GMT is the most robust because time zones won't impact data
+    __timeZoneList = new ArrayList<String>();
     __timeZoneList.add ( "CDT" );
     __timeZoneList.add ( "CST" );
     __timeZoneList.add ( "EDT" );
@@ -997,7 +996,7 @@ Read the HDB_AGEN table.
 private List<ReclamationHDB_Agency> readHdbAgencyList ( )
 throws SQLException
 {   String routine = getClass().getName() + ".readHdbAgencyList";
-    List<ReclamationHDB_Agency> results = new Vector();
+    List<ReclamationHDB_Agency> results = new ArrayList<ReclamationHDB_Agency>();
     String sqlCommand = "select HDB_AGEN.AGEN_ID, HDB_AGEN.AGEN_NAME, HDB_AGEN.AGEN_ABBREV from HDB_AGEN " +
         "order by HDB_AGEN.AGEN_NAME";
     ResultSet rs = null;
@@ -1060,7 +1059,7 @@ additionally processed.
 public List<ReclamationHDB_DataType> readHdbDataTypeList ( )
 throws SQLException
 {   String routine = getClass().getName() + ".readHdbDataTypeList";
-    List<ReclamationHDB_DataType> results = new Vector();
+    List<ReclamationHDB_DataType> results = new ArrayList<ReclamationHDB_DataType>();
     String sqlCommand = "select HDB_DATATYPE.DATATYPE_ID, " +
         "HDB_DATATYPE.DATATYPE_NAME, HDB_DATATYPE.DATATYPE_COMMON_NAME, " +
         "HDB_DATATYPE.PHYSICAL_QUANTITY_NAME, HDB_DATATYPE.UNIT_ID, HDB_DATATYPE.ALLOWABLE_INTERVALS, " +
@@ -1142,7 +1141,7 @@ Read the database parameters from the HDB_LOADING_APPLICATION table.
 private List<ReclamationHDB_LoadingApplication> readHdbLoadingApplicationList ( )
 throws SQLException
 {   String routine = getClass().getName() + ".readHdbLoadingApplication";
-    List<ReclamationHDB_LoadingApplication> results = new Vector();
+    List<ReclamationHDB_LoadingApplication> results = new ArrayList<ReclamationHDB_LoadingApplication>();
     String sqlCommand = "select HDB_LOADING_APPLICATION.LOADING_APPLICATION_ID, " +
     	"HDB_LOADING_APPLICATION.LOADING_APPLICATION_NAME, HDB_LOADING_APPLICATION.MANUAL_EDIT_APP, " +
     	"HDB_LOADING_APPLICATION.CMMNT from HDB_LOADING_APPLICATION";
@@ -1514,7 +1513,7 @@ Read the data from the HDB_OVERWRITE_FLAG table.
 private List<ReclamationHDB_OverwriteFlag> readHdbOverwriteFlagList ( )
 throws SQLException
 {   String routine = getClass().getName() + ".readHdbOverwriteFlagList";
-    List<ReclamationHDB_OverwriteFlag> results = new Vector();
+    List<ReclamationHDB_OverwriteFlag> results = new ArrayList<ReclamationHDB_OverwriteFlag>();
     String sqlCommand = "select HDB_OVERWRITE_FLAG.OVERWRITE_FLAG, " +
         "HDB_OVERWRITE_FLAG.OVERWRITE_FLAG_NAME, HDB_OVERWRITE_FLAG.CMMNT from HDB_OVERWRITE_FLAG";
     ResultSet rs = null;
@@ -1573,7 +1572,7 @@ HDB_DATATYPE to get the common names.
 public List<ReclamationHDB_SiteDataType> readHdbSiteDataTypeList ( )
 throws SQLException
 {   String routine = getClass().getName() + ".readHdbSiteDataTypeList";
-    List<ReclamationHDB_SiteDataType> results = new Vector();
+    List<ReclamationHDB_SiteDataType> results = new ArrayList<ReclamationHDB_SiteDataType>();
     String sqlCommand = "select HDB_SITE_DATATYPE.SITE_ID, HDB_SITE_DATATYPE.DATATYPE_ID, " +
         "HDB_SITE_DATATYPE.SITE_DATATYPE_ID, HDB_SITE.SITE_COMMON_NAME, HDB_DATATYPE.DATATYPE_COMMON_NAME " +
         "from HDB_SITE_DATATYPE, HDB_SITE, HDB_DATATYPE " +
@@ -1646,7 +1645,7 @@ Currently the main focus of this is to provide lists to TSTool commands.
 public List<ReclamationHDB_Site> readHdbSiteList ( )
 throws SQLException
 {   String routine = getClass().getName() + ".readHdbSiteList";
-    List<ReclamationHDB_Site> results = new Vector();
+    List<ReclamationHDB_Site> results = new ArrayList<ReclamationHDB_Site>();
     String sqlCommand = "select HDB_SITE.SITE_ID," +
     " HDB_SITE.SITE_NAME," +
     " HDB_SITE.SITE_COMMON_NAME,\n" +
@@ -1787,7 +1786,7 @@ Read the data from the HDB_VALIDATION table.
 private List<ReclamationHDB_Validation> readHdbValidationList ( )
 throws SQLException
 {   String routine = getClass().getName() + ".readHdbValidation";
-    List<ReclamationHDB_Validation> results = new Vector();
+    List<ReclamationHDB_Validation> results = new ArrayList<ReclamationHDB_Validation>();
     String sqlCommand = "select HDB_VALIDATION.VALIDATION, HDB_VALIDATION.CMMNT from HDB_VALIDATION";
     ResultSet rs = null;
     Statement stmt = null;
@@ -1897,7 +1896,7 @@ public Long readModelRunIDForEnsembleTrace ( String ensembleName, int traceNumbe
             cs.setString(iParam++,"N"); // 6 - P_IS_RUNDATE_KEY
         }
         else {
-            cs.setTimestamp(iParam++,new Timestamp(ensembleModelRunDate.getDate().getTime())); // 5 - P_RUN_DATE
+            cs.setTimestamp(iParam++,new Timestamp(ensembleModelRunDate.getDate(TimeZoneDefaultType.LOCAL).getTime())); // 5 - P_RUN_DATE
             cs.setString(iParam++,"Y"); // 6 - P_IS_RUNDATE_KEY
         }
         if ( agenID < 0 ) {
@@ -3613,7 +3612,7 @@ input filters or by specific criteria, as per TSID.
 private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeriesMetadataList (
     String routine, String tsType, boolean isEnsembleTrace, String interval, ResultSet rs )
 {
-    List <ReclamationHDB_SiteTimeSeriesMetadata> results = new Vector();
+    List <ReclamationHDB_SiteTimeSeriesMetadata> results = new ArrayList<ReclamationHDB_SiteTimeSeriesMetadata>();
     ReclamationHDB_SiteTimeSeriesMetadata data = null;
     int i;
     float f;
@@ -3885,7 +3884,7 @@ public void writeTimeSeries ( TS ts, String loadingApp,
     String agency, String validationFlag, String overwriteFlag, String dataFlags,
     String timeZone, DateTime outputStartReq, DateTime outputEndReq ) //, TimeInterval intervalOverride )
 throws SQLException
-{   String routine = "ReclamationHDB_DMI.writeTimeSeries";
+{   String routine = getClass().getSimpleName() + ".writeTimeSeries";
     if ( ts == null ) {
         return;
     }
@@ -4052,6 +4051,7 @@ throws SQLException
         modelRunID = new Long(0);
     }
     Timestamp startTimeStamp, endTimeStamp;
+    Long startTimeStampMs;
     int batchCount = 0;
     // Maximum batch, 256 as per: http://docs.oracle.com/cd/E11882_01/timesten.112/e21638/tuning.htm
     int batchCountMax = __writeToHdbInsertStatementMax; // Putting a large number here works with new Oracle driver
@@ -4095,7 +4095,8 @@ throws SQLException
                     //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
                     //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
                     // The offset is negative in order to shift to the start of the interval
-                    startTimeStamp = new Timestamp(dt.getDate().getTime()+timeOffsetTsToHdbStart);
+                    startTimeStampMs = dt.getDate(TimeZoneDefaultType.LOCAL).getTime()+timeOffsetTsToHdbStart;
+                    startTimeStamp = new Timestamp(startTimeStampMs);
                     cs.setTimestamp(iParam++,startTimeStamp); // SAMPLE_DATE_TIME
                     cs.setDouble(iParam++,value); // SAMPLE_VALUE
                     cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
@@ -4148,25 +4149,25 @@ throws SQLException
                     // Consequently, for the most part pass the SAMPLE_END_DATE_TIME as null except in the case
                     // where have NHour data
                     if ( (outputIntervalBase == TimeInterval.HOUR) && (outputIntervalMult != 1) ) {
-                        endTimeStamp = new Timestamp(dt.getDate().getTime());
+                        endTimeStamp = new Timestamp(dt.getDate(TimeZoneDefaultType.LOCAL).getTime());
                         cs.setTimestamp(iParam++,endTimeStamp); // SAMPLE_END_DATE_TIME
-                        if ( Message.isDebugOn ) {
+                        //if ( Message.isDebugOn ) {
                             // TODO SAM 2013-10-02 The end date/time always seems to be written as 1 hour offset, regardless of
                             // the value that is passed in
                             Message.printStatus(2, routine, "Writing time series date/time=" + dt + " value=" + value +
-                                " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffsetTsToHdbStart) +
-                                " " + startTimeStamp + " HDB date/time ms end=" + dt.getDate().getTime() + " " +
-                                endTimeStamp + " offset from end = " + timeOffsetTsToHdbStart );
-                        }
+                                " HDB date/time ms sample (start)=" + startTimeStampMs + " " + startTimeStamp +
+                                " HDB date/time ms end=" + dt.getDate(TimeZoneDefaultType.LOCAL).getTime() + " " +
+                                endTimeStamp + " offset from end = " + timeOffsetTsToHdbStart + " batchCount=" + batchCount);
+                        //}
                     }
                     else {
                         // Pass a null for SAMEPLE_END_DATE_TIME as per previous functionality
                         cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
-                        if ( Message.isDebugOn ) {
-                            Message.printDebug(1, routine, "Writing time series date/time=" + dt + " value=" + value +
-                                " HDB date/time ms sample (start)=" + (dt.getDate().getTime()+timeOffsetTsToHdbStart) +
-                                " HDB date/time ms end=null");
-                        }
+                        //if ( Message.isDebugOn ) {
+                            Message.printStatus(2, routine, "Writing time series date/time=" + dt + " value=" + value +
+                                " HDB date/time ms sample (start)=" + startTimeStampMs + " " + startTimeStamp +
+                                " HDB date/time ms end=null batchCount=" + batchCount);
+                        //}
                     }
                     if ( batchCount == 0 ) {
                     	batchStart = new DateTime(dt);

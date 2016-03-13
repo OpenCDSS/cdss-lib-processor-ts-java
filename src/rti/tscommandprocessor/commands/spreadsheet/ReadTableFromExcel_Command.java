@@ -47,6 +47,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeZoneDefaultType;
 
 /**
 This class initializes, checks, and runs the ReadTableFromExcel() command, using Apache POI.
@@ -523,9 +524,13 @@ throws FileNotFoundException, IOException
                         }
                         else if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_DATE ) {
                             // Try to parse to a date/time string
+                        	// TODO SAM 2016-03-10 Need to understand better how to handle time zone
+                        	// Format is like Sun Jan 01 00:00:00 MST 2012
                             try {
                                 dt = DateTime.parse(cellValueString);
-                                table.setFieldValue(iRowOut, iColOut, dt.getDate(), true);
+                                Date d = dt.getDate(TimeZoneDefaultType.LOCAL);
+                                //Message.printStatus(2, routine, "Original Excel date string \"" + cellValueString + "\" DateTime=\"" + dt + "\" Date=\"" + d + "\"");
+                                table.setFieldValue(iRowOut, iColOut, d, true);
                             }
                             catch ( Exception e ) {
                                 // Set to null
@@ -536,6 +541,7 @@ throws FileNotFoundException, IOException
                             // Try to parse to a date/time string
                             try {
                                 dt = DateTime.parse(cellValueString);
+                                //Message.printStatus(2, routine, "Original Excel date string \"" + cellValueString + "\" DateTime=\"" + dt + "\"");
                                 table.setFieldValue(iRowOut, iColOut, dt, true);
                             }
                             catch ( Exception e ) {

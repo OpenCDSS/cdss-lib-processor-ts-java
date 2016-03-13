@@ -26,6 +26,7 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableColumnType;
 import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeZoneDefaultType;
 
 /**
 This class initializes, checks, and runs the InsertTableColumn() command.
@@ -260,8 +261,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		}
         		if ( initValue != null ) {
         			if ( columnType == TableField.DATA_TYPE_DATE ) {
-        				// Actually want Date
-        				initValue = ((DateTime)initValue).getDate();
+        				// Actually want Date rather than DateTime
+        				initValue = ((DateTime)initValue).getDate(TimeZoneDefaultType.LOCAL);
         			}
         		}
         	}

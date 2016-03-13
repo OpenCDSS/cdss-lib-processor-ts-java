@@ -36,6 +36,7 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableColumnType;
 import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeZoneDefaultType;
 
 /**
 This class initializes, checks, and runs the WriteTableToDataStore() command.
@@ -584,7 +585,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                 }
                                 else if ( o instanceof DateTime ) {
                                     fkSelect.addWhereClause(dataStoreRelatedLookupColumns[iCol] + " = " +
-                                        ((DateTime)o).getDate() );
+                                        ((DateTime)o).getDate(TimeZoneDefaultType.LOCAL) );
                                 }
                             }
                         }
@@ -666,7 +667,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                 ws.addValue((Date)o);
                             }
                             else if ( o instanceof DateTime ) {
-                                ws.addValue(((DateTime)o).getDate());
+                                ws.addValue(((DateTime)o).getDate(TimeZoneDefaultType.LOCAL));
                             }
                         }
                     }

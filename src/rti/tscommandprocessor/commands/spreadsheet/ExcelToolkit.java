@@ -41,6 +41,7 @@ import RTi.Util.Table.TableColumnType;
 import RTi.Util.Table.TableField;
 import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeZoneDefaultType;
 
 /**
 Toolkit that contains useful Excel methods, for use with Apache POI Excel package.
@@ -1598,7 +1599,8 @@ throws FileNotFoundException, IOException
                         // Try to parse to a date/time string
                         try {
                             dt = DateTime.parse(cellValueString);
-                            table.setFieldValue(iRowOut, iColOut, dt.getDate(), true);
+                            // If no time zone is specified, treat as LOCAL as per legacy behavior
+                            table.setFieldValue(iRowOut, iColOut, dt.getDate(TimeZoneDefaultType.LOCAL), true);
                         }
                         catch ( Exception e ) {
                             // Set to null

@@ -2,6 +2,8 @@ package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -10,15 +12,21 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -29,20 +37,23 @@ import RTi.Util.Message.Message;
 Editor dialog for CompareTimeSeries() command.
 */
 public class CompareTimeSeries_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
-private SimpleJComboBox	__MatchLocation_JComboBox =null;
-private SimpleJComboBox	__MatchDataType_JComboBox =null;
+private JTabbedPane __main_JTabbedPane = null;
+private SimpleJComboBox	__TSID1_JComboBox = null;
+private SimpleJComboBox	__TSID2_JComboBox = null;
+private SimpleJComboBox	__MatchLocation_JComboBox = null;
+private SimpleJComboBox	__MatchDataType_JComboBox = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __Tolerance_JTextField = null;
 private JTextField __AnalysisStart_JTextField;
 private JTextField __AnalysisEnd_JTextField;
 private JTextField __DiffFlag_JTextField = null;
-private SimpleJComboBox	__CreateDiffTS_JComboBox =null;
-private SimpleJComboBox	__WarnIfDifferent_JComboBox =null;
-private SimpleJComboBox	__WarnIfSame_JComboBox =null;
+private SimpleJComboBox	__CreateDiffTS_JComboBox = null;
+private SimpleJComboBox	__WarnIfDifferent_JComboBox = null;
+private SimpleJComboBox	__WarnIfSame_JComboBox = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
@@ -88,6 +99,8 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
+	String TSID1 = __TSID1_JComboBox.getSelected();
+	String TSID2 = __TSID2_JComboBox.getSelected();
 	String MatchLocation = __MatchLocation_JComboBox.getSelected();
 	String MatchDataType = __MatchDataType_JComboBox.getSelected();
 	String Precision = __Precision_JTextField.getText().trim();
@@ -99,6 +112,12 @@ private void checkInput ()
 	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	__error_wait = false;
+	if ( TSID1.length() > 0 ) {
+		props.set ( "TSID1", TSID1 );
+	}
+	if ( TSID2.length() > 0 ) {
+		props.set ( "TSID2", TSID2 );
+	}
 	if ( MatchLocation.length() > 0 ) {
 		props.set ( "MatchLocation", MatchLocation );
 	}
@@ -143,7 +162,9 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String MatchLocation = __MatchLocation_JComboBox.getSelected();
+{	String TSID1 = __TSID1_JComboBox.getSelected();
+	String TSID2 = __TSID2_JComboBox.getSelected();
+	String MatchLocation = __MatchLocation_JComboBox.getSelected();
 	String MatchDataType = __MatchDataType_JComboBox.getSelected();
 	String Precision = __Precision_JTextField.getText().trim();
 	String Tolerance = __Tolerance_JTextField.getText().trim();
@@ -153,6 +174,8 @@ private void commitEdits ()
 	String CreateDiffTS = __CreateDiffTS_JComboBox.getSelected();
 	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
+	__command.setCommandParameter ( "TSID1", TSID1 );
+	__command.setCommandParameter ( "TSID2", TSID2 );
 	__command.setCommandParameter ( "MatchLocation", MatchLocation );
 	__command.setCommandParameter ( "MatchDataType", MatchDataType );
 	__command.setCommandParameter ( "Precision", Precision );
@@ -207,132 +230,217 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command compares time series.  Currently all available time series are evaluated," ),
+		"This command compares time series, in particular to detect differences for matching pairs of time series." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"comparing time series that have the same time series identifier location and/or data type." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "The command is useful for comparing two time series (e.g., a simple test) " +
-    "or two similar lists of time series (e.g., two data files)." ),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify one or more tolerances, separated by commas.  " +
-		"Differences greater than these values will be noted." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST); 
+    
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel specifying two time series
+    int yts2 = -1;
+    JPanel ts2_JPanel = new JPanel();
+    ts2_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Series (2)", ts2_JPanel );
+    
+    JGUIUtil.addComponent(ts2_JPanel, new JLabel (
+		"Use these parameters to specify two time series to compare." ),
+		0, ++yts2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts2_JPanel, new JLabel (
+	    "For example, compare two time series to validate software or a procedure." ),
+	    0, ++yts2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts2_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yts2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ts2_JPanel, new JLabel ( "First time series to compare:" ), 
+		0, ++yts2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSID1_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    if ( tsids.size() == 0 ) {
+    	tsids.add("");
+    }
+    else {
+    	tsids.add(0, "");
+    }
+    __TSID1_JComboBox.setData ( tsids );
+    __TSID1_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(ts2_JPanel, __TSID1_JComboBox,
+        1, yts2, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match location:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(ts2_JPanel, new JLabel ( "Second time series compare:" ), 
+		0, ++yts2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSID2_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    __TSID2_JComboBox.setData ( tsids );
+    __TSID2_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(ts2_JPanel, __TSID2_JComboBox,
+        1, yts2, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel specifying many time series
+    int yts = -1;
+    JPanel ts_JPanel = new JPanel();
+    ts_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Time Series (many)", ts_JPanel );
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+		"Use these parameters to specify information to pair time series from the full time series list." ),
+		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+	    "For example, compare time series from from two model runs to determine changes." ),
+	    0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel (
+		"Currently all available time series are evaluated, comparing time series that have the same time series identifier location and/or data type." ),
+		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yts, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Match location:"),
+		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchLocation_JComboBox = new SimpleJComboBox ( false );
 	__MatchLocation_JComboBox.addItem ( "" );	// Default
 	__MatchLocation_JComboBox.addItem ( __command._False );
 	__MatchLocation_JComboBox.addItem ( __command._True );
 	__MatchLocation_JComboBox.select ( 0 );
 	__MatchLocation_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __MatchLocation_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+        JGUIUtil.addComponent(ts_JPanel, __MatchLocation_JComboBox,
+		1, yts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(ts_JPanel, new JLabel(
 		"Optional - match location to find time series pair? (default=" + __command._True + ")."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yts, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match data type:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Match data type:"),
+		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchDataType_JComboBox = new SimpleJComboBox ( false );
 	__MatchDataType_JComboBox.addItem ( "" );	// Default
 	__MatchDataType_JComboBox.addItem ( __command._False );
 	__MatchDataType_JComboBox.addItem ( __command._True );
 	__MatchDataType_JComboBox.select ( 0 );
 	__MatchDataType_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __MatchDataType_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(ts_JPanel, __MatchDataType_JComboBox,
+		1, yts, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JLabel(
 		"Optional - match data type to find time series pair? (default=" + __command._False + ")."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yts, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel specifying analysis parameters
+    int yAnalysis = -1;
+    JPanel analysis_JPanel = new JPanel();
+    analysis_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Analysis", analysis_JPanel );
+    
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel (
+		"Specify one or more tolerances, separated by commas.  Differences greater than these values will be noted." ),
+		0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yAnalysis, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);    
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Precision:" ), 
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Precision_JTextField = new JTextField ( 5 );
 	__Precision_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __Precision_JTextField,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
 		"Optional - digits after decimal to compare (default=available digits are used)."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Tolerance:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Tolerance:" ), 
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Tolerance_JTextField = new JTextField ( 15 );
 	__Tolerance_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Tolerance_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __Tolerance_JTextField,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
 		"Optional - tolerance(s) to indicate difference (e.g., .01, .1, default=exact comparison)."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis period:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__AnalysisStart_JTextField = new JTextField ( "", 15 );
-	__AnalysisStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__AnalysisEnd_JTextField = new JTextField ( "", 15 );
-	__AnalysisEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
-		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
+    __AnalysisStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisStart_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
+        "Optional - analysis start date/time (default=full time series period)."),
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Difference flag:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
+    __AnalysisEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisEnd_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
+        "Optional - analysis end date/time (default=full time series period)."),
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Difference flag:" ), 
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DiffFlag_JTextField = new JTextField ( 15 );
 	__DiffFlag_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __DiffFlag_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __DiffFlag_JTextField,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
 		"Optional - 1-character flag to use for values that are different."),
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-   JGUIUtil.addComponent(main_JPanel, new JLabel ( "Create difference time series?:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-  	__CreateDiffTS_JComboBox = new SimpleJComboBox ( false );
-  	__CreateDiffTS_JComboBox.addItem ( "" );	// Default
-   	__CreateDiffTS_JComboBox.addItem ( __command._False );
-   	__CreateDiffTS_JComboBox.addItem ( __command._True );
-   	__CreateDiffTS_JComboBox.select ( 0 );
-   	__CreateDiffTS_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __CreateDiffTS_JComboBox,
-	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Optional - create a time series TS1 - TS2? (default=" + __command._False + ")."), 
-	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);        
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if different?:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Warn if different?:"),
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfDifferent_JComboBox = new SimpleJComboBox ( false );
 	__WarnIfDifferent_JComboBox.addItem ( "" );	// Default
 	__WarnIfDifferent_JComboBox.addItem ( __command._False );
 	__WarnIfDifferent_JComboBox.addItem ( __command._True );
 	__WarnIfDifferent_JComboBox.select ( 0 );
 	__WarnIfDifferent_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __WarnIfDifferent_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(analysis_JPanel, __WarnIfDifferent_JComboBox,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
 		"Optional - generate a warning if different? (default=" + __command._False + ")."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if same?:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Warn if same?:"),
+		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfSame_JComboBox = new SimpleJComboBox ( false );
 	__WarnIfSame_JComboBox.addItem ( "" );	// Default
 	__WarnIfSame_JComboBox.addItem ( __command._False );
 	__WarnIfSame_JComboBox.addItem ( __command._True );
 	__WarnIfSame_JComboBox.select ( 0 );
 	__WarnIfSame_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __WarnIfSame_JComboBox,
-	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Optional - generate a warning if same? (default=" + __command._False + ")."), 
-	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	    JGUIUtil.addComponent(analysis_JPanel, __WarnIfSame_JComboBox,
+		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
+		"Optional - generate a warning if same? (default=" + __command._False + ")."), 
+		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel specifying output parameters
+    int yOut = -1;
+    JPanel out_JPanel = new JPanel();
+    out_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output", out_JPanel );
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+		"Indicate whether output time series should be created indicating the difference between time series." ),
+		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST); 
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Create difference time series?:"),
+		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+  	__CreateDiffTS_JComboBox = new SimpleJComboBox ( false );
+  	__CreateDiffTS_JComboBox.addItem ( "" );	// Default
+   	__CreateDiffTS_JComboBox.addItem ( __command._False );
+   	__CreateDiffTS_JComboBox.addItem ( __command._True );
+   	__CreateDiffTS_JComboBox.select ( 0 );
+   	__CreateDiffTS_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(out_JPanel, __CreateDiffTS_JComboBox,
+    		1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
+		"Optional - create a time series TS2 - TS1? (default=" + __command._False + ")."), 
+		3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST); 
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -366,6 +474,14 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
 }
 
 /**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{	refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
@@ -393,7 +509,9 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
+	String TSID1 = "";
+	String TSID2 = "";
 	String MatchLocation = "";
 	String MatchDataType = "";
 	String Precision = "";
@@ -407,6 +525,8 @@ private void refresh ()
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
+		TSID1 = props.getValue ( "TSID1" );
+		TSID2 = props.getValue ( "TSID2" );
 		MatchLocation = props.getValue ( "MatchLocation" );
 		MatchDataType = props.getValue ( "MatchDataType" );
 		Precision = props.getValue ( "Precision" );
@@ -417,6 +537,42 @@ private void refresh ()
 		CreateDiffTS = props.getValue ( "CreateDiffTS" );
 		WarnIfDifferent = props.getValue ( "WarnIfDifferent" );
 		WarnIfSame = props.getValue ( "WarnIfSame" );
+        // Select the item in the list.  If not a match, print a warning.
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID1_JComboBox, TSID1, JGUIUtil.NONE, null, null ) ) {
+            __TSID1_JComboBox.select ( TSID1 );
+        }
+        else {
+            // Automatically add to the list...
+            if ( (TSID1 != null) && (TSID1.length() > 0) ) {
+                __TSID1_JComboBox.insertItemAt ( TSID1, 0 );
+                // Select...
+                __TSID1_JComboBox.select ( TSID1 );
+            }
+            else {
+                // Select the first choice...
+                if ( __TSID1_JComboBox.getItemCount() > 0 ) {
+                    __TSID1_JComboBox.select ( 0 );
+                }
+            }
+        }
+        // Select the item in the list.  If not a match, print a warning.
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID2_JComboBox, TSID2, JGUIUtil.NONE, null, null ) ) {
+            __TSID2_JComboBox.select ( TSID2 );
+        }
+        else {
+            // Automatically add to the list...
+            if ( (TSID2 != null) && (TSID2.length() > 0) ) {
+                __TSID2_JComboBox.insertItemAt ( TSID2, 0 );
+                // Select...
+                __TSID2_JComboBox.select ( TSID2 );
+            }
+            else {
+                // Select the first choice...
+                if ( __TSID2_JComboBox.getItemCount() > 0 ) {
+                    __TSID2_JComboBox.select ( 0 );
+                }
+            }
+        }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__MatchLocation_JComboBox, MatchLocation,JGUIUtil.NONE, null, null ) ) {
 			__MatchLocation_JComboBox.select ( MatchLocation );
 		}
@@ -511,6 +667,8 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
+	TSID1 = __TSID1_JComboBox.getSelected();
+	TSID2 = __TSID2_JComboBox.getSelected();
 	MatchLocation = __MatchLocation_JComboBox.getSelected();
 	MatchDataType = __MatchDataType_JComboBox.getSelected();
 	Precision = __Precision_JTextField.getText().trim();
@@ -522,6 +680,8 @@ private void refresh ()
 	WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
+	props.add ( "TSID1=" + TSID1 );
+	props.add ( "TSID2=" + TSID2 );
 	props.add ( "MatchLocation=" + MatchLocation );
 	props.add ( "MatchDataType=" + MatchDataType );
 	props.add ( "Precision=" + Precision );

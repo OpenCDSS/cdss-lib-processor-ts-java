@@ -1040,6 +1040,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     "\" elementCode="+elementCode + " duration=" + duration + " beginDate=" + beginDateString +
                     " endDate=" + endDateString);
                 if ( duration == Duration.INSTANTANEOUS ) {
+                	// Instantaneous data so use getInstantaneousData web service call
                     try {
                         // Get the data values for the list of station triplets.
                         // Since only one triplet is processed here, the data array will have one element.
@@ -1108,18 +1109,24 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     }
                 }
                 else if ( interval.getBase() == TimeInterval.HOUR ) {
+                	// Hourly data so use getHourlyData web service call
                     try {
                         // Get the hourly data values for the list of station triplets.
                         // Since only one triplet is processed here, the data array will have one element.
                         // Make sure the begin and end date strings are YYYY-MM-DD and that the hour is extracted from
                         // the strings.
                         int beginHour = 0, endHour = 23;
-                        if ( readStart != null ) {
-                            beginHour = readStart.getHour();
-                        }
-                        if ( readEnd != null ) {
-                            endHour = readEnd.getHour();
-                        }
+                        // beginHour and endHour apply to each day!  These should not be needed if the request period contains the hour but
+                        // to be certain, specify getting all the hours.  The following code might set begin and end hour to 0 and only return
+                        // even-hour measurements.
+                        //if ( readStart != null ) {
+                            //beginHour = readStart.getHour();
+                        	//beginHour = -1;
+                        //}
+                        //if ( readEnd != null ) {
+                            //endHour = readEnd.getHour();
+                        	//beginHour = -1;
+                        //}
                         Message.printStatus(2, routine, "Calling getHourlyData with stationTriplet=\"" + stationTriplet +
                             "\" elementCode=\"" + elementCode + "\" ordinal=" + ordinal + " heightDepth=" + heightDepth +
                             " beginDateString=" + beginDateString + " endDateString=" + endDateString + " beginHour=" +
@@ -1127,7 +1134,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                         List<HourlyData> dataList = ws.getHourlyData(stationTriplets, elementCode, ordinal, heightDepth,
                             beginDateString, endDateString, beginHour, endHour );
                         if ( dataList.size() == 1 ) {
-                            // Have data values for the requested station triplet and element code
+                            // Have data values for the single requested station triplet and element code so OK to continue
                             HourlyData data = dataList.get(0);
                             List<HourlyDataValue> values = data.getValues();
                             int nValues = values.size();
@@ -1144,7 +1151,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             ts.allocateDataSpace();
                             Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet +
                                 " starting on " + data.getBeginDate() + " ending on " + data.getEndDate() + " expecting " +
-                                ts.getDataSize() );
+                                ts.getDataSize() + " if values are recorded every hour." );
                             // Loop through the data values and set the values and the flag
                             // Use the dates returned in the data list to set the period because time series
                             // requested period may differ (although should be the same)
@@ -1154,6 +1161,12 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             HourlyDataValue hourlyValue;
                             String dateTime; // format YYYY-MM-dd
                             for ( int i = 0; i < nValues; i++ ) {
+                            	// Get values, which will correspond to XML:
+                                // <values>
+                                //   <dateTime>2000-01-01 00:00</dateTime>
+                                //   <flag>V</flag>
+                                //   <value>7.00</value>
+                                // </values>
                                 hourlyValue = values.get(i);
                                 if ( hourlyValue == null ) {
                                     continue;
@@ -1163,6 +1176,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                     flag = hourlyValue.getFlag();
                                     dateTime = hourlyValue.getDateTime();
                                     // Use the specified date/time to set data rather than rely on aligning with requested period
+                                    // because there may be gaps in the data.
                                     dt = DateTime.parse(dateTime);
                                     if ( value == null ) {
                                         // Value is missing but flag may be non-null
@@ -1179,7 +1193,9 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                             ts.setDataValue(dt, value.doubleValue(),flag,0);
                                         }
                                     }
-                                    //Message.printStatus(2, routine, "Date " + dateTime + " value=" + value + " flag=" + flag);
+                                    if ( Message.isDebugOn ) {
+                                    	Message.printDebug(1, routine, "Date " + dateTime + " value=" + value + " flag=" + flag);
+                                    }
                                 }
                             }
                         }
@@ -1192,6 +1208,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                     }
                 }
                 else {
+                	// Not instantaneous or hour interval so use getData() web service call
                     try {
                         // Get the data values for the list of station triplets.
                         // Since only one triplet is processed here, the data array will have one element.

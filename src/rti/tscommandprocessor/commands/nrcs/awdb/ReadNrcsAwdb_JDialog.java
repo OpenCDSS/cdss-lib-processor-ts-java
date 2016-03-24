@@ -14,6 +14,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -32,7 +33,6 @@ import javax.swing.event.DocumentListener;
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.commands.rccacis.FIPSCounty;
 import rti.tscommandprocessor.core.TSCommandProcessor;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.ChoiceFormatterJPanel;
 import RTi.Util.GUI.JGUIUtil;
@@ -436,7 +436,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     __Interval_JComboBox.add("Month");
     __Interval_JComboBox.add("Year");
     __Interval_JComboBox.add("Irregular");
-    __Interval_JComboBox.setToolTipText("Irregular = instantaneous, and will be discontinued in the future.  Use Hour instead.");
+    __Interval_JComboBox.setToolTipText("Irregular = instantaneous, NRCS has indicated the method is deprecated so use Hour if possible.");
     // Select a default...
     __Interval_JComboBox.select ( 0 );
     __Interval_JComboBox.addItemListener ( this );
@@ -592,7 +592,13 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(fc_JPanel, new JLabel( "Forecast period:"),
         0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ForecastPeriod_JComboBox = new SimpleJComboBox ( true ); // Editable because property may be entered
-    List<String> periodList = getSelectedDataStore().getForecastPeriodStrings();
+    List<String> periodList = new ArrayList<String>();
+    try {
+    	periodList = getSelectedDataStore().getForecastPeriodStrings();
+    }
+    catch ( Exception e ) {
+    	periodList.add("Error getting forecast periods");
+    }
     periodList.add(0,"");
     __ForecastPeriod_JComboBox.setData(periodList);
     // Select a default...

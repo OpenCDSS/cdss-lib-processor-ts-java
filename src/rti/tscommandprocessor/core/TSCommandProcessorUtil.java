@@ -948,7 +948,11 @@ protected static List<TSEnsemble> getDiscoveryEnsembleFromCommands ( List<Comman
     List<TSEnsemble> tsEnsembleList = new Vector ();
     for ( Command command: commands ) {
         if ( (command != null) && (command instanceof ObjectListProvider) ) {
-            List<TSEnsemble> list = ((ObjectListProvider)command).getObjectList ( TSEnsemble.class );
+        	Object o = ((ObjectListProvider)command).getObjectList ( TSEnsemble.class );
+        	List<TSEnsemble> list = null;
+        	if ( o != null ) {
+        		list = (List<TSEnsemble>)o;
+        	}
             if ( list != null ) {
                 for ( TSEnsemble tsEnsemble : list ) {
                     if ( tsEnsemble != null ) {
@@ -1007,7 +1011,11 @@ protected static List<TS> getDiscoveryTSFromCommands ( List<Command> commands, b
     List<TS> tslist = new Vector ();
     for ( Command command: commands ) {
         if ( (command != null) && (command instanceof ObjectListProvider) ) {
-            List<TS> list = ((ObjectListProvider)command).getObjectList ( TS.class );
+        	Object o = ((ObjectListProvider)command).getObjectList ( TS.class );
+            List<TS> list = null;
+            if ( o != null ) {
+            	list = (List<TS>)o;
+            }
             if ( list != null ) {
                 int tssize = list.size();
                 TS ts;
@@ -1131,7 +1139,11 @@ protected static List<String> getEnsembleIdentifiersFromCommands ( List<Command>
             continue;
         }
         if ( command instanceof ObjectListProvider ) {
-            List<TSEnsemble> list = ((ObjectListProvider)command).getObjectList ( new TSEnsemble().getClass() );
+        	Object o = ((ObjectListProvider)command).getObjectList ( new TSEnsemble().getClass() );
+            List<TSEnsemble> list = null;
+            if ( o != null ) { 
+            	list = (List<TSEnsemble>)o;
+            }
             String id;
             if ( list != null ) {
                 int listsize = list.size();
@@ -1404,7 +1416,11 @@ protected static List<TS> getPatternTSListFromCommands ( List commands )
         if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
             // Try to get the list of identifiers using the interface method.
             // TODO SAM 2007-12-07 Evaluate the automatic use of the alias.
-            List<TS> list = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
+        	Object o = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
+            List<TS> list = null;
+            if ( o != null ) {
+            	list = (List<TS>)o;
+            }
             if ( list != null ) {
                 int tssize = list.size();
                 TS ts;
@@ -1509,7 +1525,11 @@ public static List<String> getTableColumnNamesFromCommandsBeforeCommand(
         command = (Command)processor.get(i);
         if ( command instanceof ObjectListProvider ) {
             // Request table objects
-            List<DataTable> tables = ((ObjectListProvider)command).getObjectList(DataTable.class);
+        	Object o = ((ObjectListProvider)command).getObjectList(DataTable.class);
+        	List<DataTable> tables = null;
+        	if ( o != null ) {
+        		tables = (List<DataTable>)o;
+        	}
             int ntables = 0;
             if ( tables != null ) {
                 ntables = tables.size();
@@ -1579,7 +1599,11 @@ protected static List<String> getTableIdentifiersFromCommands ( List<Command> co
         }
         // Commands that provide a list of tables (so add to the list)
         if ( command instanceof ObjectListProvider ) {
-            List<DataTable> list = ((ObjectListProvider)command).getObjectList ( new DataTable().getClass() );
+        	Object o = ((ObjectListProvider)command).getObjectList ( new DataTable().getClass() );
+            List<DataTable> list = null;
+            if ( o != null ) {
+            	list = (List<DataTable>)o;
+            }
             String id;
             if ( list != null ) {
                 int tablesize = list.size();
@@ -1793,7 +1817,11 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
         if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
             // Try to get the list of identifiers using the interface method.
             // TODO SAM 2007-12-07 Evaluate the automatic use of the alias (takes priority over TSID) - probably good.
-            List<TS> list = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
+        	Object o = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
+            List<TS> list = null;
+            if ( o != null ) {
+            	list = (List<TS>)o;
+            }
             if ( list != null ) {
                 int tssize = list.size();
                 TS ts;

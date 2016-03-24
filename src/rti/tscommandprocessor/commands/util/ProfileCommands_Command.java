@@ -4,9 +4,9 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -69,7 +69,7 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	// Check for invalid parameters...
-	List<String> validParameterNames = new Vector();
+	List<String> validParameterNames = new ArrayList<String>();
     validParameterNames.add ( "SummaryTableID" );
     validParameterNames.add ( "DetailTableID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validParameterNames, this, warning );    
@@ -116,7 +116,7 @@ Return a list of objects of the requested type.  This class only keeps a list of
 public List getObjectList ( Class c )
 {   DataTable summaryTable = getDiscoverySummaryTable();
     DataTable detailTable = getDiscoveryDetailTable();
-    List v = new Vector();
+    List<Object> v = new ArrayList<Object>();
     if ( (summaryTable != null) && (c == summaryTable.getClass()) ) {
         v.add ( summaryTable );
     }
@@ -136,7 +136,7 @@ Fill the detail table with command statistics.
 private DataTable profileCommandsDetail ( String detailTableID, List<Command> commandList )
 throws Exception
 {   // Create the summary table...
-    List<TableField> columnList = new Vector();
+    List<TableField> columnList = new ArrayList<TableField>();
     columnList.add ( new TableField(TableField.DATA_TYPE_INT, "CommandNum", -1, -1) );
     columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Command", -1, -1) );
     columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "StartTime", -1, -1) );
@@ -159,12 +159,10 @@ throws Exception
     CommandProfile profile;
     for ( Command c : commandList ) {
         profile = c.getCommandProfile(CommandPhaseType.RUN);
-        Message.printStatus(2,"XXX","Runtime=" + profile.getRunTime());
         if ( profile.getEndTime() != 0 ) { // Check because ProfileCommands may have start but no end
             runTimeAll += profile.getRunTime();
         }
     }
-    Message.printStatus(2,"XXX","RuntimeAll=" + runTimeAll);
     // Loop through the commands again and output runtime information to table
     CommandStatus status;
     long runTime;
@@ -247,7 +245,7 @@ Fill the summary table with command statistics.
 private DataTable profileCommandsSummary ( String summaryTableID, List<Command> commandList )
 throws Exception
 {   // Create the summary table...
-    List<TableField> columnList = new Vector();
+    List<TableField> columnList = new ArrayList<TableField>();
     columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Command", -1, -1) );
     columnList.add ( new TableField(TableField.DATA_TYPE_INT, "NumberOfOccurances", -1, -1) );
     columnList.add ( new TableField(TableField.DATA_TYPE_LONG, "TotalTime (ms)", -1, -1) );
@@ -258,7 +256,7 @@ throws Exception
     DataTable table = new DataTable( columnList );
     table.setTableID ( summaryTableID );
     // Loop through the commands once to get a unique list of commands that are used
-    List<String> commandNameList = new Vector<String>();
+    List<String> commandNameList = new ArrayList<String>();
     String commandName;
     for ( Command c : commandList ) {
         commandName = c.getCommandName();
@@ -369,17 +367,29 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message = "";
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
-    
+
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoverySummaryTable ( null );
         setDiscoveryDetailTable ( null );
     }
@@ -387,10 +397,15 @@ CommandWarningException, CommandException
 	// Make sure there are time series available to operate on...
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
     String SummaryTableID = parameters.getValue ( "SummaryTableID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (SummaryTableID != null) && (SummaryTableID.indexOf("${") >= 0) ) {
+		SummaryTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, SummaryTableID);
+	}
     String DetailTableID = parameters.getValue ( "DetailTableID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (DetailTableID != null) && (DetailTableID.indexOf("${") >= 0) ) {
+		DetailTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, DetailTableID);
+	}
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings for command parameters.";
@@ -402,7 +417,7 @@ CommandWarningException, CommandException
 
 	try {
 	    if ( (SummaryTableID != null) && !SummaryTableID.equals("") ) {
-            if ( command_phase == CommandPhaseType.RUN ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
                 DataTable table = profileCommandsSummary ( SummaryTableID, processor.getCommands() );
                 
                 // Set the table in the processor...
@@ -417,12 +432,12 @@ CommandWarningException, CommandException
                     Message.printWarning(warning_level,
                             MessageUtil.formatMessageTag( command_tag, ++warning_count),
                             routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                message, "Report problem to software support." ) );
                 }
             }
-            else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+            else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
                 // Create an empty table and set the ID
                 DataTable table = new DataTable();
                 table.setTableID ( SummaryTableID );
@@ -430,7 +445,7 @@ CommandWarningException, CommandException
             }
 	    }
         if ( (DetailTableID != null) && !DetailTableID.equals("") ) {
-            if ( command_phase == CommandPhaseType.RUN ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
                 DataTable table = profileCommandsDetail ( DetailTableID, processor.getCommands() );
                 
                 // Set the table in the processor...
@@ -445,12 +460,12 @@ CommandWarningException, CommandException
                     Message.printWarning(warning_level,
                             MessageUtil.formatMessageTag( command_tag, ++warning_count),
                             routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                message, "Report problem to software support." ) );
                 }
             }
-            else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+            else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
                 // Create an empty table and set the ID
                 DataTable table = new DataTable();
                 table.setTableID ( DetailTableID );
@@ -462,7 +477,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error creating command profile (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
@@ -474,7 +489,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

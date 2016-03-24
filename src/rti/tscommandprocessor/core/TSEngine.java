@@ -2717,6 +2717,7 @@ throws Exception
 	int i;	// Put here so can check count outside of end of loop
 	boolean prev_command_complete_notified = false;// If previous command completion listeners were notified
 										// May not occur if "continue" in loop.
+	// TODO SAM 2016-03-23 Need to evaluate how to use in For() and also whether to allow disable to improve performance
 	CommandProfile commandProfile = null; // Profile to track execution time, memory use
 	Command commandPrev = null; // previous command in loop
 	// Initialize the If() command stack that is in effect, needed to "and" the if conditions

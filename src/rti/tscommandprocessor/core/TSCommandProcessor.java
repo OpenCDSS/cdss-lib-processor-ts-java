@@ -239,10 +239,12 @@ public TSCommandProcessor ()
 
 	// Create a TSEngine that works parallel to this class.
 	__tsengine = new TSEngine ( this );
-    // Define some standard properties
+    // Define some standard properties, even before the command processor has run
 	// TODO SAM 2010-05-26 Need to evaluate how to set important global properties up front but also
 	// dynamically in resetWorkflowProperties
     __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
+    // This is used to locate the HTML documentation for command editor dialogs, etc.
+    __property_Hashtable.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
 }
 
 /**
@@ -3768,6 +3770,7 @@ throws Exception
     __property_Hashtable.clear();
     // Define some standard properties
     __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
+    __property_Hashtable.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // Set the program version as a property, useful for version-dependent command logic
     // Assume the version is xxx.xxx.xxx beta (date), with at least one period
     // Save the program version as a string

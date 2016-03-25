@@ -1,10 +1,12 @@
 package rti.tscommandprocessor.core;
 
+import java.awt.Desktop;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.StringBuffer;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,6 +31,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.ProcessRunner;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.WarningCount;
 import RTi.Util.Message.Message;
@@ -342,6 +345,39 @@ throws Exception
         }
     }
     return null;
+}
+
+// TODO SAM 2016-03-24 May move this to class that focuses on UI
+// and make generic so as to not hard-code TSTool documentation path
+// Maybe have some configuration/hooks on the processor to define more properties like ${CommandDocRootURL}
+/**
+Display the command documentation.  This will use the default web browser.
+@param command command to display documentation.
+*/
+public static void displayCommandDocumentation ( Command command ) {
+	try {
+		// TODO SAM 2016-03-23 This is a prototype of how to do interactive documentation - put in utility code
+		String docURL = null;
+		boolean isPluginCommand = false;
+		if ( isPluginCommand ) {
+			// Envision that command documentation would be in:
+			// $home/.tstool/plugins-command/CommandName/doc/CommandName.html or CommandName.pdf
+		}
+		else {
+			Prop prop = command.getCommandProcessor().getProp("InstallDirURL");
+			if ( prop != null ) {
+				docURL = prop.getValue() + "/doc/UserManual/html/TSTool-Vol2-CommandReference/" +
+				command.getCommandName() + "/" + command.getCommandName() + ".html";
+			}
+		}
+		if ( docURL != null ) {
+			Desktop desktop = Desktop.getDesktop();
+		    desktop.browse ( new URI(docURL) );
+		}
+	}
+	catch ( Exception err ) {
+		Message.printWarning(1,"","Error displaying documentation (" + err + ")");
+	}
 }
 
 /**

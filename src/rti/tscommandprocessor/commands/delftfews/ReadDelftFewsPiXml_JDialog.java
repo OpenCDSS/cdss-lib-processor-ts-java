@@ -398,7 +398,7 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Time zone offset:"), 
         0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeZoneOffset_JTextField = new JTextField (20);
-    __TimeZoneOffset_JTextField.setToolTipText("Offset from GMT such as -8 for local time");
+    __TimeZoneOffset_JTextField.setToolTipText("Time series output will have time zone offset from GMT such as -7 for Mountain Standard Time");
     __TimeZoneOffset_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __TimeZoneOffset_JTextField,
         1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -408,11 +408,11 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Time zone:"), 
         0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeZone_JTextField = new JTextField (20);
-    __TimeZone_JTextField.setToolTipText("Output time zone text to assign to time series date/times, e.g., \"MST\".");
+    __TimeZone_JTextField.setToolTipText("Output time zone text to assign to time series date/times, e.g., MST.");
     __TimeZone_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ts_JPanel, __TimeZone_JTextField,
         1, yts, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - output time zone as string (default=no time zone string)."),
+    JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Optional - output time zone as string (default=GMT+/-TimeZoneOffset)."),
         3, yts, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(ts_JPanel, new JLabel ("Input start (output time zone):"), 

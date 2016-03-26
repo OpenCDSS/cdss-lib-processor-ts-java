@@ -440,6 +440,17 @@ public class DelftFewsPiXmlReader {
     		// Compute an actual shift
     		timeZoneShift = timeZoneOffset - timeZoneFile;
     	}
+    	// Also reset the time zone used for output to be relative to GMT as default
+    	if ( (timeZone == null) || timeZone.isEmpty() ) {
+    		// Set the time zone to reflect the actual offset
+    		if ( timeZoneOffset == 0 ) {
+    			// No shift from GMT
+    			timeZone = "GMT";
+    		}
+    		else {
+    			timeZone = "GMT" + String.format("%+03d", timeZoneOffset );
+    		}
+    	}
     	Message.printStatus(2,routine,"Time zone in file is " + timeZoneFile + " offset from GMT.");
     	Message.printStatus(2,routine,"Requested time zone offset from GMT is " + timeZoneOffset );
     	Message.printStatus(2,routine,"Time zone hour shift applied to all date/time will be " + timeZoneShift );

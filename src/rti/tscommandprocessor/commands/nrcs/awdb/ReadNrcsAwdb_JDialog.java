@@ -27,6 +27,7 @@ import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -35,6 +36,7 @@ import rti.tscommandprocessor.commands.rccacis.FIPSCounty;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.ChoiceFormatterJPanel;
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -75,11 +77,13 @@ private JTextField __ElevationMin_JTextField;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private JTextField __TimeZoneMap_JTextField = null;
 			
 private JTextArea __command_JTextArea = null; // Command as JTextArea
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
+private JFrame __parent = null;
 
 /**
 Command editor constructor.
@@ -129,6 +133,23 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditTimeZoneMap") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String TimeZoneMap = __TimeZoneMap_JTextField.getText().trim();
+        String [] notes = {
+            "Time zones from the NRCS AWDB property stationDataTimeZone can translated in output.",
+            "For example, convert -8.0 to PST, the latter of which is a more standard representation.",
+            "The translated time zone may be needed to properly use in other commands, datastores, etc.",
+            "The date/time numerical values will not be changed - only the time zone string is set.",
+            "See the TSTool Date/time tool for time zone information."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, TimeZoneMap,
+            "Edit TimeZone Parameter", notes, "Original NRCS AWDB TimeZone", "Time Zone to Use",10)).response();
+        if ( dict != null ) {
+        	__TimeZoneMap_JTextField.setText ( dict );
+            refresh();
+        }
+    }
 	else {
 		refresh();
 	}
@@ -276,6 +297,10 @@ private void checkInput ()
 	if ( InputEnd.length() > 0 ) {
 		props.set ( "InputEnd", InputEnd );
 	}
+	String TimeZoneMap = __TimeZoneMap_JTextField.getText().trim();
+    if ( TimeZoneMap.length() > 0 ) {
+        props.set ( "TimeZoneMap", TimeZoneMap );
+    }
     String Alias = __Alias_JTextField.getText().trim();
     if ( Alias.length() > 0 ) {
         props.set ( "Alias", Alias );
@@ -314,6 +339,7 @@ private void commitEdits ()
     String ElevationMin = __ElevationMin_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String TimeZoneMap = __TimeZoneMap_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 	__command.setCommandParameter ( "DataStore", DataStore );
     __command.setCommandParameter ( "Interval", Interval );
@@ -334,6 +360,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ElevationMin", ElevationMin );
     __command.setCommandParameter ( "InputStart", InputStart );
     __command.setCommandParameter ( "InputEnd", InputEnd );
+    __command.setCommandParameter ( "TimeZoneMap", TimeZoneMap );
     __command.setCommandParameter ( "Alias", Alias );
 }
 
@@ -358,7 +385,8 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
-{	//String routine = "ReadNrcsAwdbDaily_JDialog.initialize";
+{
+	__parent = parent;
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 
@@ -392,6 +420,8 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the input period defaults to the input period from SetInputPeriod() (or read all data)."),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
    	// Put the buttons in vertical slots that are less width than content below, to conserve space
     __dataStoreDocumentation_JButton = new SimpleJButton ("NRCS AWDB Documentation",this);
@@ -406,8 +436,6 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     __dataStoreOnline_JButton.setEnabled(false);
     __dataStoreOnline_JButton.setToolTipText("Show the NRCS AWDB web service web page in a browser - " +
         "useful for testing queries.");
-    JGUIUtil.addComponent(main_JPanel, new JSeparator(), 
-        0, ++yMain, 7, 1, 1, 1, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	
    	// List available data stores of the correct type
    	
@@ -461,6 +489,8 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(loc_JPanel, new JLabel (
         "Specify one or more location constraints to filter the query.  Unconstrained queries can be VERY SLOW."),
         0, ++yLoc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(loc_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yLoc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Station ID(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -564,6 +594,8 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
         "<html>Forecasts are a list of values and corresponding exceedance probabilities for the forecast period.  " +
         "Consequently, <b>output is a table rather than a time series</b>.</html>"),
         0, ++yFc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(fc_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yFc, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(fc_JPanel, new JLabel( "Read forecast?:"),
         0, ++yFc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -688,6 +720,18 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - YYYY-MM-DD, override the global input end."),
         3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Time zone map:"),
+        0, ++yMain, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeZoneMap_JTextField = new JTextField(35);
+    __TimeZoneMap_JTextField.setToolTipText("OriginalTimeZone1:AssignedTimeZone1,OriginalTimeZone2:AssignedTimeZone2");
+    __TimeZoneMap_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __TimeZoneMap_JTextField,
+        1, yMain, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - assign time zone ID (default=from data)."),
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditTimeZoneMap",this),
+        3, ++yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -796,6 +840,7 @@ private void refresh ()
     String ElevationMax = "";
 	String InputStart = "";
 	String InputEnd = "";
+	String TimeZoneMap = "";
 	String Alias = "";
 	PropList props = null;
 	if ( __first_time ) {
@@ -821,6 +866,7 @@ private void refresh ()
 		ElevationMax = props.getValue ( "ElevationMax" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
+		TimeZoneMap = props.getValue ( "TimeZoneMap" );
 		Alias = props.getValue ( "Alias" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( DataStore );
@@ -941,6 +987,9 @@ private void refresh ()
 		if ( InputEnd != null ) {
 			__InputEnd_JTextField.setText ( InputEnd );
 		}
+        if ( TimeZoneMap != null ) {
+            __TimeZoneMap_JTextField.setText ( TimeZoneMap );
+        }
         if ( Alias != null ) {
             __Alias_JTextField.setText ( Alias );
         }
@@ -968,6 +1017,7 @@ private void refresh ()
     ElevationMax = __ElevationMax_JTextField.getText().trim();
     InputStart = __InputStart_JTextField.getText().trim();
     InputEnd = __InputEnd_JTextField.getText().trim();
+    TimeZoneMap = __TimeZoneMap_JTextField.getText().trim();
     props.add ( "DataStore=" + DataStore );
     props.add ( "Interval=" + Interval );
     props.add ( "Stations=" + Stations );
@@ -987,6 +1037,7 @@ private void refresh ()
     props.add ( "ElevationMax=" + ElevationMax );
 	props.add ( "InputStart=" + InputStart );
 	props.add ( "InputEnd=" + InputEnd );
+	props.add ( "TimeZoneMap=" + TimeZoneMap );
 	props.add ( "Alias=" + Alias );
 	__command_JTextArea.setText( __command.toString ( props ) );
 

@@ -28,11 +28,10 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 
 import riverside.datastore.AbstractWebServiceDataStore;
-
 import RTi.TS.TS;
 import RTi.TS.TSDataFlagMetadata;
 import RTi.TS.TSIdent;
@@ -646,13 +645,13 @@ not read the data
 public TS readTimeSeries ( String tsid, DateTime readStart, DateTime readEnd, boolean readData )
 throws MalformedURLException, IOException, Exception
 {   // Initialize empty query parameters.
-    List<String> stationIdList = new Vector();
-    List<String> stateList = new Vector();
-    List<String> hucList = new Vector();
+    List<String> stationIdList = new ArrayList<String>();
+    List<String> stateList = new ArrayList<String>();
+    List<String> hucList = new ArrayList<String>();
     double [] boundingBox = null;
-    List<String> countyList = new Vector();
-    List<NrcsAwdbNetworkCode> networkList = new Vector();
-    List<Element> elementList = new Vector<Element>();
+    List<String> countyList = new ArrayList<String>();
+    List<NrcsAwdbNetworkCode> networkList = new ArrayList<NrcsAwdbNetworkCode>();
+    List<Element> elementList = new ArrayList<Element>();
     // Parse the TSID string and set in the query parameters
     TSIdent tsident = TSIdent.parseIdentifier(tsid);
     TimeInterval interval = TimeInterval.parseInterval(tsident.getInterval() );
@@ -664,9 +663,10 @@ throws MalformedURLException, IOException, Exception
     Element element = new Element();
     element.setElementCd(tsident.getType());
     elementList.add ( element );
+    Hashtable<String,String> timeZoneMap = new Hashtable<String,String>();
     // The following should return one and only one time series.
     List<TS> tsList = readTimeSeriesList ( stationIdList, stateList, networkList, hucList, boundingBox,
-        countyList, elementList, null, null, interval, readStart, readEnd, readData );
+        countyList, elementList, null, null, interval, readStart, readEnd, timeZoneMap, readData );
     if ( tsList.size() > 0 ) {
         return tsList.get(0);
     }
@@ -680,11 +680,13 @@ Read a list of time series from the web service, using query parameters that are
 @param boundingBox bounding box as WestLong, SouthLat, EastLong, NorthLat (negatives for western hemisphere longitudes).
 @param elementListReq list of requested element codes to match stations -
 if null then the element list is queried for each station as processed
+@param timeZoneMap a map that allows resetting the time zone ID from the NRCS value
+(e.g., "-8.0" to a more standard representation such as "PST").
 */
 public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> stateList,
     List<NrcsAwdbNetworkCode>networkList, List<String> hucList, double [] boundingBox, List<String> countyList,
     List<Element> elementListReq, Double elevationMin, Double elevationMax,
-    TimeInterval interval, DateTime readStartReq, DateTime readEndReq, boolean readData )
+    TimeInterval interval, DateTime readStartReq, DateTime readEndReq, Hashtable<String,String> timeZoneMap, boolean readData )
 {   String routine = getClass().getSimpleName() + ".readTimeSeriesList";
     List<TS> tsList = new ArrayList<TS>();
     // First translate method parameters into types consistent with web service
@@ -715,14 +717,14 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
     if ( elevationMax != null ) {
         maxElevation = new BigDecimal(elevationMax);
     }
-    List<String> elementCds = new Vector();
+    List<String> elementCds = new ArrayList<String>();
     if ( elementListReq != null ) {
         for ( Element el: elementListReq ) {
             elementCds.add ( el.getElementCd() );
         }
     }
-    List<Integer> ordinals = new Vector<Integer>();
-    List<HeightDepth> heightDepths = new Vector<HeightDepth>();
+    List<Integer> ordinals = new ArrayList<Integer>();
+    List<HeightDepth> heightDepths = new ArrayList<HeightDepth>();
     boolean logicalAnd = true;
     List<String> stationTriplets = ws.getStations(stationIds, stateCds, networkCds, hucs, countyNames,
         minLatitude, maxLatitude, minLongitude, maxLongitude, minElevation, maxElevation,
@@ -780,11 +782,9 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
         readEnd = new DateTime(readEndReq);
         endDateString = formatDateTime(readEndReq,interval,true,1);
     }
-    int iMeta = -1;
     // Loop through the stations and then the elements for each station
     ReservoirMetadata metaRes;
     for ( StationMetaData meta: stationMetaData ) {
-        ++iMeta;
         stationTriplet = meta.getStationTriplet();
         state = parseStateFromTriplet(stationTriplet);
         stationID = parseStationIDFromTriplet(stationTriplet);
@@ -834,14 +834,14 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                 intervalFound = true;
             }
             if ( elementFound && lookupIntervalFromDuration(sel.getDuration()) == TimeInterval.DAY ) {
-                // Save the daily record because may need to add an instantaneous/irregular record
+                // Save the daily record because may need to add an instantaneous/irregular/hour record
                 dailyElementList.add(sel);
             }
             // If data from web service does not match the requested values, remove from the list so
             // the StationElement does not get processed below.
             if ( !elementFound || !intervalFound ) {
                 // Available element/interval was not requested so remove from list
-                // See special handling of instantaneous/irregular data below
+                // See special handling of instantaneous/irregular/hour data below
                 if ( Message.isDebugOn ) {
                     Message.printDebug(1,routine,"Tossing out unrequested StationElement elementCode=" +
                         sel.getElementCd() + " duration=" + sel.getDuration());
@@ -902,7 +902,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                 elAdd.setOriginalUnitCd(selDaily.getOriginalUnitCd());
                 if ( Message.isDebugOn ) {
                     Message.printDebug(2,routine,"Adding elementCode=" +
-                        elAdd.getElementCd() + " duration=" + elAdd.getDuration() + " for hourly data.");
+                        elAdd.getElementCd() + " duration=" + elAdd.getDuration() + " for hourly data because DAILY was found");
                 }
                 stationElementList.add(elAdd);
             }
@@ -916,6 +916,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
             // Process each element code that applies to the station
             elementCode = sel.getElementCd();
             tsid = state + "-" + stationID + "." + networkCode + "." + elementCode + "." + interval;
+            String tzString = "";
             ++tscount;
             try {
                 ts = TSUtil.newTimeSeries(tsid,true);
@@ -924,24 +925,54 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                 intervalMult = ts.getDataIntervalMult();
                 ts.setMissing(Double.NaN);
                 ts.setDescription(meta.getName());
+                // Time zone is set to the stationDataTimeZone value
+                // If the timeZoneMap is specified and has a key that matches stationDataTimeZone, use the value
+                BigDecimal stationDataTimeZone = meta.getStationDataTimeZone();
+                String tzString0 = "";
+                if ( stationDataTimeZone != null ) {
+                	tzString0 = tzString = "" + stationDataTimeZone; // Default, will be something like "-8.0" for PST
+                	if ( tzString.startsWith("-") ) {
+                		// GMT in front because something like -8.0 may mess up date/time parser
+                		tzString = "GMT" + tzString;
+                	}
+                }
+                // Always try the lookup because allowing blank key to reset to default value
+                if ( timeZoneMap != null ) {
+                	// Allow lookup on original -8.0 or modified GMT-8.0
+                	String tzString2 = timeZoneMap.get(tzString0);
+                	if ( tzString2 == null ) {
+                		tzString2 = timeZoneMap.get(tzString);
+                	}
+                	if ( tzString2 != null ) {
+                		// Use the requested time zone instead of internal
+                		tzString = tzString2;
+                	}
+                } 
                 ts.setDate1Original(parseDateTime(sel.getBeginDate())); // Sensor install date
+                ts.setDate1Original(ts.getDate1Original().setTimeZone(tzString));
                 // Sensor end, or 2100-01-01 00:00 if active (switched to current because don't want 2100)
                 ts.setDate2Original(parseDateTime(sel.getEndDate()));
+                ts.setDate2Original(ts.getDate2Original().setTimeZone(tzString));
                 // The following will be reset below if reading data but are OK for discovery mode...
                 if ( readStartReq != null ) {
                     ts.setDate1(readStartReq);
+                    ts.setDate1(ts.getDate1().setTimeZone(tzString));
                 }
                 else {
                     // Set the period to read from the data
                     ts.setDate1(ts.getDate1Original());
+                    ts.setDate1(ts.getDate1().setTimeZone(tzString));
                 }
                 if ( readEndReq != null ) {
                     ts.setDate2(readEndReq);
+                    ts.setDate2(ts.getDate2().setTimeZone(tzString));
                 }
                 else {
                     // Set the period to read from the data
                     ts.setDate2(ts.getDate2Original());
+                    ts.setDate2(ts.getDate2().setTimeZone(tzString));
                 }
+                // Set the data units
                 ts.setDataUnits(sel.getStoredUnitCd());
                 ts.setDataUnitsOriginal(sel.getOriginalUnitCd());
                 // Set the flag descriptions
@@ -999,8 +1030,7 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                         ts.setProperty("heighDepthValue", (hd.getValue() == null) ? null : new Double(hd.getValue().doubleValue()));
                         ts.setProperty("heightDepthUnitCd", (hd.getUnitCd() == null) ? "" : hd.getUnitCd() );
                     }
-                    bd = meta.getStationDataTimeZone();
-                    ts.setProperty("stationDataTimeZone", (bd == null) ? null : bd.doubleValue() );
+                    ts.setProperty("stationDataTimeZone", (stationDataTimeZone == null) ? null : stationDataTimeZone.doubleValue() );
                     bd = meta.getStationTimeZone();
                     ts.setProperty("stationTimeZone", (bd == null) ? null : bd.doubleValue() );
                     if ( metaRes != null ) {
@@ -1057,11 +1087,13 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             if ( readStartReq == null ) {
                                 readStart = DateTime.parse(beginDateString);
                                 ts.setDate1(readStart);
+                                ts.setDate1(ts.getDate1().setTimeZone(tzString));
                             }
                             if ( readEndReq == null ) {
                                 readEnd = new DateTime(ts.getDate1());
                                 readEnd = TimeUtil.addIntervals(readEnd,intervalBase,intervalMult,(nValues - 1));
                                 ts.setDate2(readEnd);
+                                ts.setDate2(ts.getDate2().setTimeZone(tzString));
                             }
                             // Loop through the data values and set the values and the flag
                             // The date/time is provided with each value so there should be no issues parsing
@@ -1131,9 +1163,18 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             "\" elementCode=\"" + elementCode + "\" ordinal=" + ordinal + " heightDepth=" + heightDepth +
                             " beginDateString=" + beginDateString + " endDateString=" + endDateString + " beginHour=" +
                             beginHour + " endHour=" + endHour );
-                        List<HourlyData> dataList = ws.getHourlyData(stationTriplets, elementCode, ordinal, heightDepth,
+                        List<String> stationTriplets1 = new ArrayList<String>(1);
+                        stationTriplets1.add(stationTriplet);
+                        List<HourlyData> dataList = ws.getHourlyData(stationTriplets1, elementCode, ordinal, heightDepth,
                             beginDateString, endDateString, beginHour, endHour );
-                        if ( dataList.size() == 1 ) {
+                        Message.printStatus(2, routine,"getHourlyData returned " + dataList.size() + " objects.");
+                        if ( dataList.size() != 1 ) {
+                            Message.printStatus(2, routine,"Was expecting 1 record from getHourlyData but got " + dataList.size() );
+                            for ( HourlyData data: dataList ) {
+                            	Message.printStatus(2,routine,"" + data.getStationTriplet() + " " + data.getBeginDate() + " " + data.getEndDate() );
+                            }
+                        }
+                        else {
                             // Have data values for the single requested station triplet and element code so OK to continue
                             HourlyData data = dataList.get(0);
                             List<HourlyDataValue> values = data.getValues();
@@ -1143,10 +1184,12 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                             if ( readStartReq == null ) {
                                 readStart = DateTime.parse(data.getBeginDate());
                                 ts.setDate1(readStart);
+                                ts.setDate1(ts.getDate1().setTimeZone(tzString));
                             }
                             if ( readEndReq == null ) {
                                 readEnd = DateTime.parse(data.getEndDate());
                                 ts.setDate2(readEnd);
+                                ts.setDate2(ts.getDate2().setTimeZone(tzString));
                             }
                             ts.allocateDataSpace();
                             Message.printStatus(2, routine, "Have " + nValues + " data values for triplet " + stationTriplet +
@@ -1234,16 +1277,20 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                 ts.setDate1(dt1);
                                 DateTime dt2 = DateTime.parse(endDateString);
                                 ts.setDate2(dt2);
+                                ts.setDate1(ts.getDate1().setTimeZone(tzString));
+                                ts.setDate2(ts.getDate2().setTimeZone(tzString));
                             }
                             else {
                                 // If the period was not requested, reset to what was returned here
                                 if ( readStartReq == null ) {
                                     readStart = DateTime.parse(data.getBeginDate());
                                     ts.setDate1(readStart);
+                                    ts.setDate1(ts.getDate1().setTimeZone(tzString));
                                 }
                                 if ( readEndReq == null ) {
                                     readEnd = DateTime.parse(data.getEndDate());
                                     ts.setDate2(readEnd);
+                                    ts.setDate2(ts.getDate2().setTimeZone(tzString));
                                 }
                             }
                             if ( nrcsBug ) {
@@ -1272,18 +1319,22 @@ public List<TS> readTimeSeriesList ( List<String> stationIdList, List<String> st
                                             // Dates returned from web service are wrong. Use what was specified for the read
                                             DateTime dt1 = DateTime.parse(beginDateString);
                                             ts.setDate1(dt1);
+                                            ts.setDate1(ts.getDate1().setTimeZone(tzString));
                                             DateTime dt2 = DateTime.parse(endDateString);
                                             ts.setDate2(dt2);
+                                            ts.setDate2(ts.getDate2().setTimeZone(tzString));
                                         }
                                         else {
                                             // If the period was not requested, reset to what was returned here
                                             if ( readStartReq == null ) {
                                                 readStart = DateTime.parse(data.getBeginDate());
                                                 ts.setDate1(readStart);
+                                                ts.setDate1(ts.getDate1().setTimeZone(tzString));
                                             }
                                             if ( readEndReq == null ) {
                                                 readEnd = DateTime.parse(data.getEndDate());
                                                 ts.setDate2(readEnd);
+                                                ts.setDate2(ts.getDate2().setTimeZone(tzString));
                                             }
                                         }
                                     }

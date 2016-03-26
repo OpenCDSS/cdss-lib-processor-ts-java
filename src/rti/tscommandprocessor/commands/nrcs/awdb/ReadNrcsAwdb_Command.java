@@ -3,24 +3,21 @@ package rti.tscommandprocessor.commands.nrcs.awdb;
 import gov.usda.nrcs.wcc.ns.awdbwebservice.Element;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TS;
-
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -262,7 +259,7 @@ throws InvalidCommandParameterException
 	}
 	
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(20);
+    List<String> validList = new ArrayList<String>(21);
     validList.add ( "DataStore" );
     validList.add ( "Interval" );
     validList.add ( "Stations" );
@@ -282,6 +279,7 @@ throws InvalidCommandParameterException
     validList.add ( "ElevationMax" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
+    validList.add ( "TimeZoneMap" );
     validList.add ( "Alias" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -385,9 +383,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "ReadNrcsAwdb_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -395,7 +392,19 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     
     boolean readData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -451,7 +460,7 @@ CommandWarningException, CommandException
         }
     }
     String HUCs = parameters.getValue("HUCs");
-    List<String> hucList = new Vector();
+    List<String> hucList = new ArrayList<String>();
     if ( (HUCs != null) && !HUCs.equals("") ) {
         // HUC list is allowed to use a processor property
         HUCs = TSCommandProcessorUtil.expandParameterValue(processor,this,HUCs);
@@ -466,7 +475,7 @@ CommandWarningException, CommandException
         }
     }
     String Counties = parameters.getValue("Counties");
-    List<String> countyList = new Vector();
+    List<String> countyList = new ArrayList<String>();
     if ( (Counties != null) && !Counties.equals("") ) {
         // County list is allowed to use a processor property
         Counties = TSCommandProcessorUtil.expandParameterValue(processor,this,Counties);
@@ -510,7 +519,7 @@ CommandWarningException, CommandException
     }
    
     String Elements = parameters.getValue("Elements");
-    List<Element> elementList = new Vector();
+    List<Element> elementList = new ArrayList<Element>();
     Element el;
     if ( (Elements != null) && !Elements.equals("") ) {
         if ( Elements.indexOf(",") < 0 ) {
@@ -546,111 +555,45 @@ CommandWarningException, CommandException
             // Should not happen since previously checked
         }
     }
+	String InputStart = parameters.getValue("InputStart");
+	if ( (InputStart == null) || InputStart.isEmpty() ) {
+		InputStart = "${InputStart}"; // Global default
+	}
+	String InputEnd = parameters.getValue("InputEnd");
+	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
+		InputEnd = "${InputEnd}"; // Global default
+	}
+    String TimeZoneMap = parameters.getValue ( "TimeZoneMap" );
+    Hashtable timeZoneMap = new Hashtable();
+    if ( (TimeZoneMap != null) && (TimeZoneMap.length() > 0) && (TimeZoneMap.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(TimeZoneMap, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            timeZoneMap.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
     String Alias = parameters.getValue("Alias");
     
-	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
-	if ( (InputStart != null) && (InputStart.length() > 0) ) {
-		PropList request_params = new PropList ( "" );
-		request_params.set ( "DateTime", InputStart );
-		CommandProcessorRequestResultsBean bean = null;
-		try {
-            bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputStart + ") from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                   message, "Report problem to software support." ) );
-		}
-		PropList bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + InputStart + "\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a valid InputStart string has been specified." ) );
-		}
-		else {
-		    InputStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor...
-		try {
-            Object o = processor.getPropContents ( "InputStart" );
-			if ( o != null ) {
-				InputStart_DateTime = (DateTime)o;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting InputStart from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report problem to software support." ) );
-		}
-	}
-	String InputEnd = parameters.getValue ( "InputEnd" );
 	DateTime InputEnd_DateTime = null;
-	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-		PropList request_params = new PropList ( "" );
-		request_params.set ( "DateTime", InputEnd );
-		CommandProcessorRequestResultsBean bean = null;
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-            bean = processor.processRequest( "DateTime", request_params);
+			InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report problem to software support." ) );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-		PropList bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + InputEnd + ") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a valid InputEnd has been specified." ) );
+		try {
+			InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
+				status, warning_level, command_tag );
 		}
-		else {
-		    InputEnd_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor...
-		try { Object o = processor.getPropContents ( "InputEnd" );
-			if ( o != null ) {
-				InputEnd_DateTime = (DateTime)o;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting InputEnd from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report problem to software support." ) );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
 	}
 
@@ -713,7 +656,7 @@ CommandWarningException, CommandException
 		    // Reading time series
             tslist = nrcsAwdbDataStore.readTimeSeriesList ( stationList, stateList, networkList,
                 hucList, __boundingBox, countyList, elementList, elevationMin, elevationMax, interval,
-                InputStart_DateTime, InputEnd_DateTime, readData );
+                InputStart_DateTime, InputEnd_DateTime, timeZoneMap, readData );
     		// Make sure that size is set...
     		int size = 0;
     		if ( tslist != null ) {
@@ -967,6 +910,13 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "InputEnd=\"" + InputEnd + "\"" );
+	}
+	String TimeZoneMap = props.getValue("TimeZoneMap");
+	if ( (TimeZoneMap != null) && (TimeZoneMap.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "TimeZoneMap=\"" + TimeZoneMap + "\"" );
 	}
     String Alias = props.getValue("Alias");
     if ( (Alias != null) && (Alias.length() > 0) ) {

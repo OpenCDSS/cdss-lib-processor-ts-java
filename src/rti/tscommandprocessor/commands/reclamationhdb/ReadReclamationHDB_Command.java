@@ -91,6 +91,7 @@ throws InvalidCommandParameterException
     String DataStore = parameters.getValue ( "DataStore" );
     String DataType = parameters.getValue ( "DataType" );
     String Interval = parameters.getValue ( "Interval" );
+    String NHourIntervalOffset = parameters.getValue ( "NHourIntervalOffset" );
     String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
     String SiteDataTypeID = parameters.getValue ( "SiteDataTypeID" );
     String InputStart = parameters.getValue ( "InputStart" );
@@ -125,7 +126,8 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data type only for the filters or reading specific time series." ) );
     }
-    
+
+    TimeInterval interval = null;
     if ( (Interval == null) || Interval.equals("") ) {
         message = "The data interval must be specified.";
         warning += "\n" + message;
@@ -135,7 +137,7 @@ throws InvalidCommandParameterException
     }
     else {
         try {
-            TimeInterval.parseInterval(Interval);
+        	interval = TimeInterval.parseInterval(Interval);
         }
         catch ( Exception e ) {
             message = "The data interval (" + Interval + ") is invalid.";
@@ -144,6 +146,42 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify a valid data interval." ) );
         }
+    }
+    
+    if ( (NHourIntervalOffset != null) && !NHourIntervalOffset.isEmpty() ) {
+    	if ( (interval != null) && (interval.getBase() != TimeInterval.HOUR) ||
+    		((interval.getBase() == TimeInterval.HOUR) && (interval.getMultiplier() == 1)) ) {
+    		message = "The NHourIntervalOffset parameter can only be specified for NHour interval.";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Do not use parameter unless interval is NHour" ) );
+    	}
+    	try {
+    		int nHourIntervalOffset = Integer.parseInt(NHourIntervalOffset);
+    		if ( nHourIntervalOffset < 0 ) {
+    			message = "The NHourIntervalOffset (" + NHourIntervalOffset + ") is invalid.";
+    	        warning += "\n" + message;
+    	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+    	            new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Specify a value >= 0 and <= 23." ) );
+    		}
+        	if ( (interval != null) && (interval.getBase() == TimeInterval.HOUR) && (nHourIntervalOffset >= interval.getMultiplier())) {
+        		message = "The NHourIntervalOffset parameter (" + NHourIntervalOffset +
+        			") must be < the NHour interval multiplier (" + interval.getMultiplier() + ").";
+    	        warning += "\n" + message;
+    	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+    	            new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Specify as < " + interval.getMultiplier() ) );
+        	}
+    	}
+    	catch ( NumberFormatException e ) {
+	        message = "The NHourIntervalOffset (" + NHourIntervalOffset + ") is invalid - must be >0 = and less than NHour multiplier.";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Specify a value >= 0." ) );
+    	}
     }
 
 	// TODO SAM 2006-04-24 Need to check the WhereN parameters.
@@ -176,9 +214,10 @@ throws InvalidCommandParameterException
 	}
 
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(19+__numFilterGroups);
+    List<String> validList = new ArrayList<String>(20+__numFilterGroups);
     validList.add ( "DataStore" );
     validList.add ( "Interval" );
+    validList.add ( "NHourIntervalOffset" );
     validList.add ( "DataType" );
     for ( int i = 1; i <= __numFilterGroups; i++ ) { 
         validList.add ( "Where" + i );
@@ -310,9 +349,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "ReadReclamationHDB_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -320,7 +358,19 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     
     boolean readData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -334,6 +384,11 @@ CommandWarningException, CommandException
     String Interval = parameters.getValue("Interval");
     TimeInterval interval = null;
     interval = TimeInterval.parseInterval(Interval);
+    String NHourIntervalOffset = parameters.getValue("NHourIntervalOffset");
+    int nHourIntervalOffset = -1; // Default - don't use
+    if ( (NHourIntervalOffset != null) && !NHourIntervalOffset.isEmpty() ) {
+    	nHourIntervalOffset = Integer.parseInt(NHourIntervalOffset);
+    }
     String SiteCommonName = parameters.getValue("SiteCommonName");
     String DataTypeCommonName = parameters.getValue("DataTypeCommonName");
     String SiteDataTypeID = parameters.getValue("SiteDataTypeID");
@@ -619,7 +674,7 @@ CommandWarningException, CommandException
     	
     				Message.printStatus ( 2, routine, "Reading time series for \"" + tsidentString + "\"..." );
     				try {
-    				    ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
+    				    ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, nHourIntervalOffset, readData );
     					// Add the time series to the temporary list.  It will be further processed below...
     					tslist.add ( ts );
     				}
@@ -630,7 +685,7 @@ CommandWarningException, CommandException
     					++warning_count;
                         status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
-                               message, "Report the problem to software support - also see the log file." ) );
+                               message, "Verify command parameters - also see the log file." ) );
     				}
     			}
     		}
@@ -641,7 +696,7 @@ CommandWarningException, CommandException
                 ", ensemble MRI=" + ensembleModelRunID + ", interval=" + interval );
             try {
                 TS ts = dmi.readTimeSeries ( siteDataTypeID, ensembleModelRunID, true, interval,
-                    InputStart_DateTime, InputEnd_DateTime, readData );
+                    InputStart_DateTime, InputEnd_DateTime, nHourIntervalOffset, readData );
                 // Add the time series to the temporary list.  It will be further processed below...
                 tslist.add ( ts );
             }
@@ -660,7 +715,8 @@ CommandWarningException, CommandException
             // Reading an ensemble of model time series
 	        Message.printStatus(2,routine,"Reading time series ensemble for SDI=" + siteDataTypeID + ", ensemble name=\"" +
 	            EnsembleName + "\", interval=" + interval + ".");
-	        ensemble = dmi.readEnsemble ( siteDataTypeID, EnsembleName, interval, InputStart_DateTime, InputEnd_DateTime, readData );
+	        ensemble = dmi.readEnsemble ( siteDataTypeID, EnsembleName, interval,
+	        	InputStart_DateTime, InputEnd_DateTime, nHourIntervalOffset, readData );
             if ( ensemble != null ) {
                 tslist = ensemble.getTimeSeriesList (false);
                 int tscount = 0;
@@ -679,7 +735,7 @@ CommandWarningException, CommandException
                 ", interval=" + interval );
             try {
                 TS ts = dmi.readTimeSeries ( siteDataTypeID, modelRunID, false, interval,
-                    InputStart_DateTime, InputEnd_DateTime, readData );
+                    InputStart_DateTime, InputEnd_DateTime, nHourIntervalOffset, readData );
                 // Add the time series to the temporary list.  It will be further processed below...
                 tslist.add ( ts );
             }
@@ -699,7 +755,7 @@ CommandWarningException, CommandException
             Message.printStatus(2,routine,"Reading 1 real time series for SDI=" + siteDataTypeID + ", interval=" + interval );
             try {
                 TS ts = dmi.readTimeSeries ( siteDataTypeID, modelRunID, false, interval,
-                    InputStart_DateTime, InputEnd_DateTime, readData );
+                    InputStart_DateTime, InputEnd_DateTime, nHourIntervalOffset, readData );
                 // Add the time series to the temporary list.  It will be further processed below...
                 tslist.add ( ts );
             }
@@ -793,7 +849,7 @@ CommandWarningException, CommandException
             if ( okToRead ) {
 	            try {
 	                TS ts = dmi.readTimeSeries ( siteDataTypeID, modelRunID, false, interval,
-	                    InputStart_DateTime, InputEnd_DateTime, readData );
+	                    InputStart_DateTime, InputEnd_DateTime, nHourIntervalOffset, readData );
 	                // Add the time series to the temporary list.  It will be further processed below...
 	                tslist.add ( ts );
 	            }
@@ -953,6 +1009,13 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "Interval=\"" + Interval + "\"" );
+	}
+	String NHourIntervalOffset = props.getValue("NHourIntervalOffset");
+	if ( (NHourIntervalOffset != null) && (NHourIntervalOffset.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "NHourIntervalOffset=" + NHourIntervalOffset );
 	}
     String DataType = props.getValue("DataType");
     if ( (DataType != null) && (DataType.length() > 0) ) {

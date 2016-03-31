@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -20,12 +21,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -42,6 +46,8 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
@@ -57,6 +63,7 @@ public class WriteReclamationHDB_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
 
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
@@ -135,7 +142,10 @@ public void actionPerformed( ActionEvent e )
         return; // Startup.
     }
     Object o = e.getSource();
-	if ( o == __cancel_JButton ) {
+	if ( o == __help_JButton ) {
+		TSCommandProcessorUtil.displayCommandDocumentation(__command);
+	}
+	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
 	else if ( o == __ok_JButton ) {
@@ -807,6 +817,8 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "The HDB time series table is determined from the data interval, with irregular data being written to the " +
         "instantaneous data table." ),
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL ),
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __ignoreEvents = true; // So that a full pass of initialization can occur
     
@@ -1211,12 +1223,11 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "Optional - user-defined flag (default=no flag)."),
         3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(general_JPanel, new JLabel ("Time zone:"), 
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Time zone for time series:"), 
         0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeZone_JComboBox = new SimpleJComboBox ( false );
     __TimeZone_JComboBox.addItemListener (this);
-    __TimeZone_JComboBox.setToolTipText ( "The time zone in time series is NOT used by default.  " +
-    	"Use this parameter to tell the database the time zone for data." );
+    __TimeZone_JComboBox.setToolTipText ( "Use this parameter to tell the database the time zone for time zone data." );
     JGUIUtil.addComponent(general_JPanel, __TimeZone_JComboBox,
         1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __TimeZone_JLabel = new JLabel ("");
@@ -1282,8 +1293,14 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+    __help_JButton = new SimpleJButton("Help", "Help", this);
+    __help_JButton.setToolTipText("Show command documentation in web browser" );
+	button_JPanel.add ( __help_JButton );
+	if ( !Desktop.isDesktopSupported() ) {
+		__help_JButton.setEnabled(false);
+	}
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
 	__ok_JButton = new SimpleJButton("OK", "OK", this);
@@ -2090,6 +2107,15 @@ private void populateTimeZoneChoices ( ReclamationHDB_DMI rdmi )
 {
     __TimeZone_JComboBox.removeAll ();
     List<String> timeZoneChoices = rdmi.getTimeZoneList();
+    // Remove (blank) because can lead to errors loading data
+    for ( int i = (timeZoneChoices.size() - 1); i >= 0; i-- ) {
+    	String tz = timeZoneChoices.get(i);
+    	if ( (tz == null) || tz.isEmpty() ) {
+    		timeZoneChoices.remove(i);
+    	}
+    }
+    // But do add one blank because don't want an assumed default that may be wrong
+    // Command checks will force something other than blank to be selected
     timeZoneChoices.add(0,"");
     __TimeZone_JComboBox.setData(timeZoneChoices);
     // Select first choice (may get reset from existing parameter values).
@@ -2105,8 +2131,7 @@ Populate the time zone label, which uses the HDB default time zone.
 private void populateTimeZoneLabel ( ReclamationHDB_DMI rdmi )
 {
     String defaultTZ = __dmi.getDatabaseTimeZone();
-    __TimeZone_JLabel.setText("Optional - time zone for instantaneous and hourly data (default="+
-        defaultTZ + ").");
+    __TimeZone_JLabel.setText("Required - time zone for instantaneous and hourly data (HDB=" + defaultTZ + ").");
 }
 
 /**

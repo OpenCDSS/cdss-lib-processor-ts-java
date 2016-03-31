@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -35,6 +36,7 @@ import javax.swing.event.DocumentListener;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.InputFilter_JPanel;
@@ -53,12 +55,15 @@ Editor for the ReadReclamationHDB() command.
 public class ReadReclamationHDB_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private ReadReclamationHDB_Command __command = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private SimpleJComboBox __DataType_JComboBox = null;
 private SimpleJComboBox __Interval_JComboBox = null;
+private JLabel __TimeZone_JLabel = null;
+private JTextField __NHourIntervalOffset_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTabbedPane __inner_JTabbedPane = null;
 private JTabbedPane __sdi_JTabbedPane = null;
@@ -122,7 +127,10 @@ public void actionPerformed( ActionEvent e )
         return; // Startup.
     }
     Object o = e.getSource();
-    if ( o == __cancel_JButton ) {
+    if ( o == __help_JButton ) {
+		TSCommandProcessorUtil.displayCommandDocumentation(__command);
+	}
+	else if ( o == __cancel_JButton ) {
         response ( false );
     }
     else if ( o == __ok_JButton ) {
@@ -173,6 +181,7 @@ private void actionPerformedDataStoreSelected ( )
     //populateEnsembleModelRunIDChoices ( __dmi );
     populateEnsembleNameChoices ( __dmi );
     //populateEnsembleModelNameChoices ( __dmi );
+    populateTimeZoneLabel ( __dmi );
 }
 
 /**
@@ -402,6 +411,10 @@ private void checkInput ()
     if ( Interval.length() > 0 ) {
         props.set ( "Interval", Interval );
     }
+    String NHourIntervalOffset = __NHourIntervalOffset_JTextField.getText().trim();
+    if ( NHourIntervalOffset.length() > 0 ) {
+        props.set ( "NHourIntervalOffset", NHourIntervalOffset );
+    }
 	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
 	for ( int i = 1; i <= numWhere; i++ ) {
 	    String where = getWhere ( i - 1 );
@@ -497,9 +510,11 @@ private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
     String DataType = __DataType_JComboBox.getSelected();
     String Interval = __Interval_JComboBox.getSelected();
+    String NHourIntervalOffset = __NHourIntervalOffset_JTextField.getText().trim();
 	__command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "DataType", DataType );
 	__command.setCommandParameter ( "Interval", Interval );
+	__command.setCommandParameter ( "NHourIntervalOffset", NHourIntervalOffset );
 	String delim = ";";
 	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
 	for ( int i = 1; i <= numWhere; i++ ) {
@@ -545,21 +560,6 @@ private void commitEdits ()
 	__command.setCommandParameter ( "InputEnd", InputEnd );
 	String Alias = __Alias_JTextField.getText().trim();
     __command.setCommandParameter ( "Alias", Alias );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__InputStart_JTextField = null;
-	__InputEnd_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -745,6 +745,9 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
         "Specify date/times using the format YYYY-MM-DD hh:mm:ss, to a precision appropriate for the data " +
         "interval (default=input period from SetInputPeriod())."),
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __TimeZone_JLabel = new JLabel();
+    JGUIUtil.addComponent(main_JPanel, __TimeZone_JLabel,
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
@@ -779,6 +782,17 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
         1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data interval (time step) for time series."), 
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "NHour interval offset:"),
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NHourIntervalOffset_JTextField = new JTextField ( 5 );
+    __NHourIntervalOffset_JTextField.setToolTipText(
+    	"This is needed in some cases where all NHour data don't exactly align with midnight of the database time zone, such as tests");
+    __NHourIntervalOffset_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __NHourIntervalOffset_JTextField,
+        1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - hours that NHour data are offset from midnight."), 
         3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Top-level tabbed panel to separate filter input and specific choices
@@ -1188,6 +1202,12 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+    __help_JButton = new SimpleJButton("Help", "Help", this);
+    __help_JButton.setToolTipText("Show command documentation in web browser" );
+	button_JPanel.add ( __help_JButton );
+	if ( !Desktop.isDesktopSupported() ) {
+		__help_JButton.setEnabled(false);
+	}
 	__cancel_JButton = new SimpleJButton( "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -1942,6 +1962,15 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
+Populate the time zone label, which uses the HDB default time zone.
+*/
+private void populateTimeZoneLabel ( ReclamationHDB_DMI rdmi )
+{
+    String defaultTZ = __dmi.getDatabaseTimeZone();
+    __TimeZone_JLabel.setText("Output time series for hourly and irregular (instantaneous) interval will be in HDB time zone " + defaultTZ + ".");
+}
+
+/**
 Read the model list and set for use in the editor.
 */
 private void readModelList ( ReclamationHDB_DMI rdmi )
@@ -2008,10 +2037,11 @@ private void readSiteDataTypeList ( ReclamationHDB_DMI rdmi )
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	__error_wait = false;
 	String DataStore = "";
 	String Interval = "";
+	String NHourIntervalOffset = "";
 	String DataType = "";
 	String filter_delim = ";";
     String SiteCommonName = "";
@@ -2038,6 +2068,7 @@ private void refresh ()
 		props = __command.getCommandParameters();
 		DataStore = props.getValue ( "DataStore" );
 		Interval = props.getValue ( "Interval" );
+		NHourIntervalOffset = props.getValue ( "NHourIntervalOffset" );
 	    DataType = props.getValue ( "DataType" );
         SiteCommonName = props.getValue ( "SiteCommonName" );
         DataTypeCommonName = props.getValue ( "DataTypeCommonName" );
@@ -2134,6 +2165,8 @@ private void refresh ()
                 }
             }
         }
+        // Time zone label for information
+        populateTimeZoneLabel(getReclamationHDB_DMI() );
         // First populate the choices...
         populateIntervalChoices();
         if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
@@ -2150,6 +2183,9 @@ private void refresh ()
                   "Interval parameter \"" + Interval + "\".  Select a\ndifferent value or Cancel." );
             }
         }
+		if ( NHourIntervalOffset != null ) {
+			__NHourIntervalOffset_JTextField.setText ( NHourIntervalOffset );
+		}
         // First populate the choices...
         populateDataTypeChoices();
         __main_JTabbedPane.setSelectedIndex(0); // Default unless SiteCommonName is specified
@@ -2436,9 +2472,11 @@ private void refresh ()
 	}
 	DataType = __DataType_JComboBox.getSelected().trim();
 	Interval = __Interval_JComboBox.getSelected().trim();
+	NHourIntervalOffset = __NHourIntervalOffset_JTextField.getText().trim();
     props.add ( "DataStore=" + DataStore );
     props.add ( "DataType=" + DataType );
     props.add ( "Interval=" + Interval );
+	props.add ( "NHourIntervalOffset=" + NHourIntervalOffset );
 	// Add the where clause(s)...
 	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
 	int nfg = filter_panel.getNumFilterGroups();

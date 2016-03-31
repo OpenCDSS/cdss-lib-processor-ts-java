@@ -2,7 +2,6 @@ package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -75,6 +74,7 @@ throws InvalidCommandParameterException
     String DataFlags = parameters.getValue ( "DataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String TimeZone = parameters.getValue ( "TimeZone" );
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//String IntervalOverride = parameters.getValue ( "IntervalOverride" );
 	String warning = "";
@@ -380,6 +380,15 @@ throws InvalidCommandParameterException
         }
 	}
 	*/
+	
+    if ( (TimeZone == null) || TimeZone.equals("") ) {
+        message = "The time zone for the time series must be specified to ensure proper data loading.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the time zone." ) );
+    }
+    
 	// Check for invalid parameters...
 	List<String> validList = new ArrayList<String>(27);
 	validList.add ( "DataStore" );

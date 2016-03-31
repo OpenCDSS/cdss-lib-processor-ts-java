@@ -8,10 +8,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.TimeZone;
 
+import oracle.jdbc.OracleConnection;
 import rti.tscommandprocessor.commands.reclamationhdb.java_lib.hdbLib.JavaConnections;
 import RTi.DMI.DMI;
 import RTi.DMI.DMIUtil;
@@ -69,13 +72,17 @@ TODO SAM 2015-03-23 This feature is not needed now that database re-connection i
 
 /**
 The maximum number of insert statements to execute in a batch.
+See: http://docs.oracle.com/cd/E11882_01/timesten.112/e21638/tuning.htm
+The value is set in the datastore factory - changing here has no effect
 */
-private int __writeToHdbInsertStatementMax = 10000;
+private int __writeToHdbInsertStatementMaxDefault = 256; // 10000
+private int __writeToHdbInsertStatementMax = __writeToHdbInsertStatementMaxDefault;
 
 /**
 The result set fetch size.  Oracle defaults to 10 which results in slow performance.
 */
-private int __resultSetFetchSize = 10000;
+private int __resultSetFetchSizeDefault = 10000;
+private int __resultSetFetchSize = __resultSetFetchSizeDefault;
 
 /**
 Timeout for database statements.
@@ -158,14 +165,16 @@ with time series.
 @param startDateTime the START_DATE_TIME value from an HDB time series table
 @param endDateTime the END_DATE_TIME value from an HDB time series table
 @param intervalBase the TimeInterval interval base for the data
-@param intervalMult the TimeInterval multipler for the data
+@param intervalMult the TimeInterval multiplier for the data
 @param dateTime if null, create a DateTime and return; if not null, reuse the instance
+@param timeZone the string time zone (e.g., MST for HDB time series)
 */
 private DateTime convertHDBDateTimesToInternal ( DateTime startDateTime, DateTime endDateTime,
-        int intervalBase, int intervalMult, DateTime dateTime )
+        int intervalBase, int intervalMult, DateTime dateTime, String timeZone )
 {   if ( dateTime == null ) {
-        // Create a new instance with precision that matches the interval...
+        // Create a new instance with precision that matches the interval and HDB time zone.
         dateTime = new DateTime(intervalBase);
+        dateTime.setTimeZone ( timeZone ); // If time zone is not set will default to internal, usually local time
     }
     if ( (intervalBase == TimeInterval.HOUR) && (intervalMult != 1) ) {
         // NHour data - only case where a shift from the HDB start_date_time to the TSTool recording time is needed
@@ -220,6 +229,7 @@ private DateTime convertHDBStartDateTimeToInternal ( Date startDateTime, int int
 
 /**
 Convert an internal date/time to an HDB start date/time suitable to limit the query of time series records.
+Strip off the time zone if specified.
 @param startDateTime min/max start date/time from time series data records as per HDB conventions
 @param intervalBase time series interval base
 @param intervalMult time series interval multiplier
@@ -229,6 +239,8 @@ private String convertInternalDateTimeToHDBStartString ( DateTime dateTime, int 
 {   // Protect the original value by making a copy...
     // TODO SAM 2013-04-14 for some reason copying loses the time zone.
     DateTime dateTime2 = new DateTime(dateTime);
+    // Set time zone to blank because don't want it in the query string
+    dateTime2.setTimeZone("");
     if ( intervalBase == TimeInterval.HOUR ) {
         // The date/time using internal conventions is Nhour later
         // FIXME SAM 2010-11-01 Are there any instantaneous 1hour values?
@@ -1896,6 +1908,7 @@ public Long readModelRunIDForEnsembleTrace ( String ensembleName, int traceNumbe
             cs.setString(iParam++,"N"); // 6 - P_IS_RUNDATE_KEY
         }
         else {
+        	// TODO SAM 2016-03-12 Check with Tim Miller whether model run date is MST or local time (MDT)
             cs.setTimestamp(iParam++,new Timestamp(ensembleModelRunDate.getDate(TimeZoneDefaultType.LOCAL).getTime())); // 5 - P_RUN_DATE
             cs.setString(iParam++,"Y"); // 6 - P_IS_RUNDATE_KEY
         }
@@ -1959,7 +1972,7 @@ throws SQLException
         rs = stmt.executeQuery(sqlCommand);
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
-        rs.setFetchSize(10000);
+        rs.setFetchSize(__resultSetFetchSizeDefault);
         String propName, propValue;
         while (rs.next()) {
             propName = rs.getString(1);
@@ -2759,10 +2772,13 @@ Read an HDB ensemble given the ensemble name.
 @param interval time interval for ensemble
 @param readStart starting date/time for read
 @param readEnd ending date/time for read
+@param nHourIntervalOffset if >= 0 indicates the hour for the first valid value,
+to allow for cases where the data do not align with hour zero (needed if a previous data load caused
+data to be loaded at more hours than appropriate)
 @param readData if true read the data; if false only read time series metadata
 */
 public TSEnsemble readEnsemble ( int sdi, String ensembleName, TimeInterval interval,
-    DateTime readStart, DateTime readEnd, boolean readData )
+    DateTime readStart, DateTime readEnd, int nHourIntervalOffset, boolean readData )
 throws Exception
 {
     // First read the ensemble object(s) from the HDB database
@@ -2807,7 +2823,7 @@ throws Exception
         }
         // If here, OK to read the trace time series
         try {
-            TS ts = readTimeSeries(sdi, mriList.get(0), true, interval, readStart, readEnd, readData);
+            TS ts = readTimeSeries(sdi, mriList.get(0), true, interval, readStart, readEnd, nHourIntervalOffset, readData);
             // Set the sequence number for TSTool
             ts.setSequenceID("" + trace.getTraceNumeric() );
             // TODO SAM 2013-10-02 Can set to the trace name if appropriate in the future
@@ -2875,11 +2891,14 @@ Read a time series using the SDI and MRI keys that match time series metadata, u
 (for example to specify NHour interval)
 @param readStart the starting date/time to read, or null to read all available
 @param readEnd the ending date/time to read, or null to read all available
+@param nHourIntervalOffset if >= 0 indicates the hour for the first valid value,
+to allow for cases where the data do not align with hour zero (needed if a previous data load caused
+data to be loaded at more hours than appropriate)
 @param readData if true, read the data; if false, only read the time series metadata
 @return the time series
 */
 public TS readTimeSeries ( int siteDataTypeID, int modelRunID, boolean readingEnsemble, TimeInterval interval,
-    DateTime readStart, DateTime readEnd, boolean readData )
+    DateTime readStart, DateTime readEnd, int nHourIntervalOffset, boolean readData )
 throws Exception
 {
     // Call the helper method that is shared between read methods
@@ -2959,8 +2978,21 @@ throws Exception
         }
     }
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString.toString());
-    return readTimeSeriesHelper ( tsidentString.toString(), tsident, intervalBase, intervalMult,
-        siteDataTypeID, modelRunID, tsMetadata, isReal, readingEnsemble, tsType, readStart, readEnd, readData );
+    List<String> problems = new ArrayList<String>();
+    TS ts = readTimeSeriesHelper ( tsidentString.toString(), tsident, intervalBase, intervalMult,
+        siteDataTypeID, modelRunID, tsMetadata, isReal, readingEnsemble, tsType, readStart, readEnd,
+        nHourIntervalOffset, readData, problems );
+    if ( problems.size() > 0 ) {
+    	StringBuilder b = new StringBuilder();
+    	for ( int i = 0; i < problems.size(); i++ ) {
+    		if ( i > 0 ) {
+    			b.append("\n");
+    		}
+    		b.append(problems.get(i));
+    	}
+    	throw new RuntimeException ( "Error reading from HDB:\n" + b );
+    }
+    return ts;
 }
 
 /**
@@ -2973,13 +3005,31 @@ Read a time series from the ReclamationHDB database using the string time series
 */
 public TS readTimeSeries ( String tsidentString, DateTime readStart, DateTime readEnd, boolean readData )
 throws Exception
-{   String routine = getClass().getSimpleName() + "readTimeSeries";
+{
+	int nHourIntervalOffset = -1; // Don't use offset
+	return readTimeSeries ( tsidentString, readStart, readEnd, nHourIntervalOffset, readData );
+}
+
+/**
+Read a time series from the ReclamationHDB database using the string time series identifier.
+@param tsidentString time series identifier string.
+@param readStart the starting date/time to read.
+@param readEnd the ending date/time to read
+@param nHourIntervalOffset if >= 0 indicates the hour for the first valid value,
+to allow for cases where the data do not align with hour zero (needed if a previous data load caused
+data to be loaded at more hours than appropriate)
+@param readData if true, read the data; if false, only read the time series metadata
+@return the time series
+*/
+public TS readTimeSeries ( String tsidentString, DateTime readStart, DateTime readEnd, int nHourIntervalOffset, boolean readData )
+throws Exception
+{   String routine = getClass().getSimpleName() + ".readTimeSeries";
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString );
 
     if ( (tsident.getIntervalBase() != TimeInterval.HOUR) && (tsident.getIntervalBase() != TimeInterval.IRREGULAR) &&
          (tsident.getIntervalMult() != 1) ) {
         // Not able to handle multiples for non-hourly
-        throw new IllegalArgumentException("Data interval must be 1 for intervals other than hour." );
+        throw new IllegalArgumentException("Data interval multiplier must be 1 for intervals other than hour." );
     }
     
     // Read the time series metadata...
@@ -3076,8 +3126,21 @@ throws Exception
     if ( !tsMetadata.getEnsembleTraceDomain().equals("") ) {
         isEnsembleTrace = true;
     }
-    return readTimeSeriesHelper ( tsidentString, tsident, intervalBase, intervalMult,
-        siteDataTypeID, refModelRunID, tsMetadata, isReal, isEnsembleTrace, tsType, readStart, readEnd, readData );
+    List<String> problems = new ArrayList<String>();
+    TS ts = readTimeSeriesHelper ( tsidentString, tsident, intervalBase, intervalMult,
+        siteDataTypeID, refModelRunID, tsMetadata, isReal, isEnsembleTrace, tsType, readStart, readEnd,
+        nHourIntervalOffset, readData, problems );
+    if ( problems.size() > 0 ) {
+    	StringBuilder b = new StringBuilder();
+    	for ( int i = 0; i < problems.size(); i++ ) {
+    		if ( i > 0 ) {
+    			b.append("\n");
+    		}
+    		b.append(problems.get(i));
+    	}
+    	throw new RuntimeException ( "Error reading from HDB:\n" + b );
+    }
+    return ts;
 }
 
 /**
@@ -3096,27 +3159,32 @@ See the called methods to see how all of the information is determined.
 @param tsType "real" or "model" used for messaging
 @param readStart the date/time to start reading, in TSTool conventions
 @param readEnd the date/time to end reading, in TSTool conventions
+@param nHourIntervalOffset if >= 0 indicates the hour for the first valid value,
+to allow for cases where the data do not align with hour zero (needed if a previous data load caused
+data to be loaded at more hours than appropriate)
 @param readData whether to read data (true) or just the header (false)
+@param problems a list of strings indicating problems, to be passed to calling code
 */
 private TS readTimeSeriesHelper ( String tsidentString, TSIdent tsident, int intervalBase, int intervalMult,
     int siteDataTypeID, int modelRunID, ReclamationHDB_SiteTimeSeriesMetadata tsMetadata,
-    boolean isReal, boolean isTrace, String tsType, DateTime readStart, DateTime readEnd, boolean readData )
+    boolean isReal, boolean isTrace, String tsType, DateTime readStart, DateTime readEnd,
+    int nHourIntervalOffset, boolean readData, List<String> problems )
 throws Exception
 {   String routine = getClass().getSimpleName() + ".readTimeSeriesHelper";
 
-    Message.printStatus(2,routine,"Reading time series isTrace=" + isTrace);
+    Message.printStatus(2,routine,"Reading time series isTrace=" + isTrace + " nHourIntervalOffset=" + nHourIntervalOffset );
     // Create the time series...
     TS ts = TSUtil.newTimeSeries(tsidentString, true);
     ts.setIdentifier(tsident);   
 
     // Set the time series metadata in core TSTool data as well as general property list...
     
-    String timeZone = getDatabaseTimeZone();
+    String hdbTimeZone = getDatabaseTimeZone(); // From ref_db_parameter TIME_ZONE, for example MST
     ts.setDataUnits(tsMetadata.getUnitCommonName() );
     ts.setDate1Original(convertHDBStartDateTimeToInternal ( tsMetadata.getStartDateTimeMin(),
-        intervalBase, intervalMult, timeZone ) );
+        intervalBase, intervalMult, hdbTimeZone ) );
     ts.setDate2Original(convertHDBStartDateTimeToInternal ( tsMetadata.getStartDateTimeMax(),
-        intervalBase, intervalMult, timeZone ) );
+        intervalBase, intervalMult, hdbTimeZone ) );
     // Set the missing value to NaN (HDB missing records typically are not even written to the DB).
     ts.setMissing(Double.NaN);
     setTimeSeriesProperties ( ts, tsMetadata );
@@ -3134,7 +3202,7 @@ throws Exception
             //Message.printStatus(2,routine,"Setting time series start to requested \"" + readStart + "\"");
             ts.setDate1(readStart);
             if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
-                ts.setDate1(ts.getDate1().setTimeZone(timeZone) );
+                ts.setDate1(ts.getDate1().setTimeZone(hdbTimeZone) );
             }
             if ( intervalBase == TimeInterval.IRREGULAR ) {
                 ts.setDate1(ts.getDate1().setPrecision(DateTime.PRECISION_MINUTE) );
@@ -3151,7 +3219,7 @@ throws Exception
             //Message.printStatus(2,routine,"Setting time series end to requested \"" + readEnd + "\"");
             ts.setDate2(readEnd);
             if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
-                ts.setDate2( ts.getDate2().setTimeZone(timeZone) );
+                ts.setDate2( ts.getDate2().setTimeZone(hdbTimeZone) );
             }
             if ( intervalBase == TimeInterval.IRREGULAR ) {
                 ts.setDate2( ts.getDate2().setPrecision(DateTime.PRECISION_MINUTE) );
@@ -3213,7 +3281,7 @@ throws Exception
             Message.printStatus(2,routine,"Query of \"" + tsidentString + "\" data took " + sw.getSeconds() + " seconds.");
             sw.clearAndStart();
             Date dt;
-            double value;
+            double value = 0.0;
             String validation;
             String overwriteFlag;
             String derivationFlags;
@@ -3222,23 +3290,58 @@ throws Exception
             // Create the date/times from the period information to set precision and time zone,
             // in particular to help with irregular data
             DateTime startDateTime = new DateTime(ts.getDate1()); // Reused start for each record
+            startDateTime.setTimeZone(hdbTimeZone); // Set here because HDB timestamp does not include time zone
             DateTime endDateTime = new DateTime(ts.getDate1()); // Reused end for each record
+            endDateTime.setTimeZone(hdbTimeZone); // Set here because HDB timestamp does not include time zone
             int hour1 = ts.getDate1().getHour();
+            // Array to count how many NHour observations fall in a certain hour to allow integrity check
+            int [] countHourForNHour = new int[24];
+            for ( int i = 0; i < countHourForNHour.length; i++ ) {
+            	countHourForNHour[i] = 0;
+            }
             int col = 1;
             boolean transferDateTimesAsStrings = true; // Use to evaluate performance of date/time transfer
                                                        // It seems that strings are a bit faster
+            boolean doNHour = false;
+            if ( (intervalBase == TimeInterval.HOUR) && (intervalMult > 1) ) {
+            	doNHour = true;
+            }
             while (rs.next()) {
                 ++record;
                 col = 1;
                 // TODO SAM 2010-11-01 Not sure if using getTimestamp() vs. getDate() changes performance
+                // In all cases the TimeStamp and Date that come back from the query reflect the database contents,
+                // which will have date/time values consistent with MST time (since that is what is in the database)
+                // but no time zone set (since HDB uses TIMESTAMP without local time zone)
                 if ( transferDateTimesAsStrings ) {
+                	// Start
+                    dateTimeString = rs.getString(col); // Increment column below
+                    String sampleStartString = dateTimeString; // This will not contain time zone since Oracle HDB column does not include
+                    setDateTimeFromHDBString ( startDateTime, intervalBase, dateTimeString );
+                    // Also get Date for debugging
+                    if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
+                    	// Will contain nonoseconds and time zone
+                        dt = rs.getTimestamp(col);
+                    }
+                    else {
+                    	// Will only contain to date
+                        dt = rs.getDate(col);
+                    }
+                    ++col; // Increment after the above since retrieved for troubleshooting
+                    // End 
                     dateTimeString = rs.getString(col++);
-                    setDateTime ( startDateTime, intervalBase, dateTimeString );
-                    dateTimeString = rs.getString(col++);
-                    setDateTime ( endDateTime, intervalBase, dateTimeString );
+                    String sampleEndString = dateTimeString;
+                    setDateTimeFromHDBString ( endDateTime, intervalBase, dateTimeString );
+                    // Get value inside if block so can use in debugging
+                    value = rs.getDouble(col++);
+                    if ( Message.isDebugOn ) {
+	                    Message.printStatus(2,routine,"Sample start string from HDB=" + sampleStartString + " read start=" + startDateTime + " start Timestamp/Date=" + dt +
+	                    	" sample end string=" + sampleEndString + " end=" + endDateTime + " value=" + value);
+                    }
                 }
+                /* Comment out to avoid using - above works and is tested
                 else {
-                    // Use Date variants to transfer data (seems to be slow)
+                    // Use Date variants to transfer data
                     if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
                         dt = rs.getTimestamp(col++);
                     }
@@ -3277,17 +3380,21 @@ throws Exception
                         endDateTime.setMonth(dt.getMonth() + 1);
                         endDateTime.setDay(dt.getDate());
                     }
-                }
-                value = rs.getDouble(col++);
+                    // Put inside so can print debug above
+                    value = rs.getDouble(col++);
+                }*/
                 if ( isReal ) {
                     validation = rs.getString(col++);
                     overwriteFlag = rs.getString(col++);
                     derivationFlags = rs.getString(col++);
                 }
                 // Set the data in the time series - note that these dates may get modified during the set
-                dateTime = convertHDBDateTimesToInternal ( startDateTime, endDateTime, intervalBase, intervalMult, dateTime );
+                dateTime = convertHDBDateTimesToInternal ( startDateTime, endDateTime, intervalBase, intervalMult, dateTime, hdbTimeZone );
+                if ( Message.isDebugOn ) {
+                	Message.printStatus(2, routine, "Sample start from query = " + startDateTime + " dateTime after adjusting=" + dateTime + " value=" + value);
+                }
                 // TODO SAM 2010-10-31 Figure out how to handle flags
-                if ( (intervalBase == TimeInterval.HOUR) && (intervalMult > 1) ) {
+                if ( doNHour ) {
                     // TODO SAM 2013-10-14 Need to fix this issue but really need WRITE_TO_HDB to work when setting the end date
                     // It is possible, for example during testing, that an hourly time series is used for 1Hour and NHour
                     // records.  Old records may fill intervening records.  Therefore, only try setting if the hour is
@@ -3304,21 +3411,35 @@ throws Exception
                 }
                 // Make sure that the start and end hour are evenly divisible by the hour in the database
                 badAlignment = false;
-                if ( (intervalBase == TimeInterval.HOUR) && (intervalMult > 1) ) {
+                if ( doNHour ) {
+                	// NHour time series
                     if ( !timeAlignmentChecked ) {
+                    	// Need to check time alignment for first value
                         boolean datesAdjusted = false;
-                        if ( ((dateTime.getHour() - date1.getHour() ) % intervalMult) != 0 ) {
+                        if ( nHourIntervalOffset >= 0 ) {
+                        	// Calling code has specified the hour offset to use in data (all other values will be ignored)
+                        	date1.setHour(nHourIntervalOffset);
+                        	ts.setDate1(date1);
+                        	datesAdjusted = true;
+                        }
+                        else if ( ((dateTime.getHour() - date1.getHour() ) % intervalMult) != 0 ) {
                             // The requested start is offset from the actual data so adjust the time series period to that
                             // of the data.  For example this may be due to:
                             // 1) User does not specify input period for appropriate time zone
-                            // 2) Data are being read through "current", which will typically will not match data interval exactly
-                            // Set the hour to the smallest in the day that aligns with the data records
+                            // 2) Data are being read through "current", which will typically will not match data interval exactly.
+                        	// The data could be offset from even intervals, depending on original source.
+                            // Set the hour to the smallest in the day that aligns with the data records.
                             date1.setHour(dateTime.getHour()%intervalMult);
                             ts.setDate1(date1);
                             datesAdjusted = true;
                         }
                         DateTime date2 = ts.getDate2();
-                        if ( ((dateTime.getHour() - date2.getHour() ) % intervalMult) != 0 ) {
+                        if ( nHourIntervalOffset >= 0 ) {
+                        	date2.setHour(24 - intervalMult + nHourIntervalOffset);
+                            ts.setDate2(date2);
+                            datesAdjusted = true;
+                        }
+                        else if ( ((dateTime.getHour() - date2.getHour() ) % intervalMult) != 0 ) {
                             // Set the hour to the largest in the day that aligns with the data records
                             date2.setHour(24 - intervalMult + dateTime.getHour()%intervalMult);
                             ts.setDate2(date2);
@@ -3332,12 +3453,15 @@ throws Exception
                     }
                     else {
                         // Time alignment was previously checked but to be absolutely sure, check each data record
-                        // for alignment.
+                        // for alignment.  If nHourIntervalOffset was specified, off-hour data will be ignored below.
                         if ( (dateTime.getHour() - date1.getHour() ) % intervalMult != 0 ) {
                             ++badAlignmentCount;
                             badAlignment = true;
                         }
                     }
+                    // Also count the number of occurrences of data values at each hour of the day so a final
+                    // check can be done below.
+                    ++countHourForNHour[dateTime.getHour()];
                 }
                 if ( Message.isDebugOn ) {
                     Message.printStatus(2,routine,"Read HDB startDateTime=\"" + startDateTime +
@@ -3350,19 +3474,34 @@ throws Exception
             sw.stop();
             Message.printStatus(2,routine,"Transfer of \"" + tsidentString + "\" data took " + sw.getSeconds() +
                 " seconds for " + record + " records.");
-            if ( badAlignmentCount > 0 ) {
-                Message.printWarning(3, routine, "There were " + badAlignmentCount +
-                    " data values with date/times that did not align as expected with data interval and first data.");
+            if ( (badAlignmentCount > 0) && (nHourIntervalOffset >= 0) ) {
+            	// Create a warning unless nHourIntervalOffset was specified - specifying indicates user is purposefully ignoring bad data
+            	String message = "There were " + badAlignmentCount +
+                    " data values with date/times that did not align as expected with data interval and hour (" +
+            			date1.getHour() + ") time zone " + hdbTimeZone + " of the first data value from query (bad data loaded previously?).";
+                Message.printWarning(3, routine, message);
+                problems.add(message);
+                // Check to see that data values were on expected hours
+                for ( int i = 0; i < countHourForNHour.length; i++ ) {
+                	problems.add("Count of values at hour " + i + ": " + countHourForNHour[i]);
+                }
             }
         }
         catch (SQLException e) {
             Message.printWarning(3, routine, "Error reading " + tsType + " time series data from HDB for TSID \"" +
                 tsidentString + "\" (" + e + ") SQL:\n" + selectSQL );
             Message.printWarning(3, routine, e );
+            String message = "Error reading " + tsType + " time series data from HDB for TSID \"" +
+                    tsidentString + "\" (" + e + ")";
+            problems.add(message);
         }
         finally {
-            rs.close();
-            stmt.close();
+        	if ( rs != null ) {
+        		rs.close();
+        	}
+        	if ( stmt != null ) {
+        		stmt.close();
+        	}
         }
     }
     return ts;
@@ -3371,12 +3510,13 @@ throws Exception
 /**
 Set a DateTime's contents given an HDB (Oracle) date/time string.
 This does not do a full parse constructor because a single DateTime instance is reused.
-@param dateTime the DateTime instance to set values in (should be at an appropriate precision)
+@param dateTime the DateTime instance to set values in (should be at an appropriate precision).  This is reused.
 @param intervalBase the base data interval for the date/time being processed - will limit the transfer from the string
 @param dateTimeString a string in the format YYYY-MM-DD hh:mm:ss.  The intervalBase is used to determine when
-to stop transferring values.
+to stop transferring values.  This string will NOT contain a time zone because HDB time series columns are TIMESTAMP without local time zone.
+Therefore, set the time zone on dateTime independently (once at start since dateTime is reused).
 */
-public void setDateTime ( DateTime dateTime, int intervalBase, String dateTimeString )
+public void setDateTimeFromHDBString ( DateTime dateTime, int intervalBase, String dateTimeString )
 {
     // Transfer the year
     dateTime.setYear ( Integer.parseInt(dateTimeString.substring(0,4)) );
@@ -3438,7 +3578,7 @@ public void setResultSetFetchSize(int resultSetFetchSize)
 {	String routine = getClass().getSimpleName() + ".setResultSetFetchSize";
 	if ( resultSetFetchSize <= 0 ) {
 		// Reset to default
-		resultSetFetchSize = 10000;
+		resultSetFetchSize = __resultSetFetchSizeDefault;
 	}
 	__resultSetFetchSize = resultSetFetchSize;
 	// Print a message to make sure the value is being set from config files
@@ -3530,6 +3670,16 @@ private void setTimeSeriesProperties ( TS ts, ReclamationHDB_SiteTimeSeriesMetad
             ts.setProperty("tsp:LegendFormat", "%L, ${ts:SITE_COMMON_NAME}, ${ts:DATA_TYPE_COMMON_NAME}, ${ts:HYDROLOGIC_INDICATOR}, %U");
         }
     }
+    // Additional properties useful for troubleshooting
+    // Use for troubleshooting
+    try {
+    	OracleConnection conn = (OracleConnection)this.getConnection();
+	    ts.setProperty("OracleSessionTimeZone", conn.getSessionTimeZone());
+	    ts.setProperty("OracleSessionTimeZoneOffset", conn.getSessionTimeZoneOffset());
+    }
+    catch ( Exception e ) {
+    	// swallow since not critical
+    }
 }
 
 /**
@@ -3595,7 +3745,7 @@ public void setWriteToHdbInsertStatementMax(int writeToHdbInsertStatementMax)
 {	String routine = getClass().getSimpleName() + ".setWriteToHdbInsertStatementMax";
 	if ( writeToHdbInsertStatementMax <= 0 ) {
 		// Reset to default
-		writeToHdbInsertStatementMax = 10000;
+		writeToHdbInsertStatementMax = __writeToHdbInsertStatementMaxDefault;
 	}
 	__writeToHdbInsertStatementMax = writeToHdbInsertStatementMax;
 	// Print a message to make sure the value is being set from config files
@@ -3911,7 +4061,16 @@ throws SQLException
         outputInterval = intervalOverride;
     }
     */
-
+    // Time zone must be specified to avoid issues
+    if ( (timeZone == null) || timeZone.isEmpty() ) {
+    	throw new IllegalArgumentException("Time zone for data must be specified for data loader to work." );
+    }
+    // Calendar is used when creating TimeStamp to load data, for example "MST", makes sure to avoid daylight savings shift
+    // Have to make sure that timeZone is valid because TimeZone.getTimeZone() will return GMT if it is not recognized
+    if ( !TimeUtil.isValidTimeZone(timeZone) ) {
+    	throw new IllegalArgumentException("Time zone ID \"" + timeZone + "\" is not recognized." );
+    }
+    Calendar calendarForTimeZone = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
     // Determine the loading application
     List<ReclamationHDB_LoadingApplication> loadingApplicationList =
         findLoadingApplication ( getLoadingApplicationList(), loadingApp );
@@ -3985,10 +4144,6 @@ throws SQLException
         // Set to null to use default
         dataFlags = null;
     }
-    if ( (timeZone != null) && timeZone.equals("") ) {
-        // Set to null to use default
-        timeZone = null;
-    }
     DateTime outputStart = new DateTime(ts.getDate1());
     if ( outputStartReq != null ) {
         outputStart = new DateTime(outputStartReq);
@@ -4050,8 +4205,10 @@ throws SQLException
         // Stored procedure wants value of zero if no MRI
         modelRunID = new Long(0);
     }
-    Timestamp startTimeStamp, endTimeStamp;
-    Long startTimeStampMs;
+    Timestamp startTimeStamp, endTimeStampGMT;
+    long startTimeStampMsDelta = 0, startTimeStampMsPrev = 0;
+    long startTimeStampBeforeShiftMs;
+    long startTimeStampMs;
     int batchCount = 0;
     // Maximum batch, 256 as per: http://docs.oracle.com/cd/E11882_01/timesten.112/e21638/tuning.htm
     int batchCountMax = __writeToHdbInsertStatementMax; // Putting a large number here works with new Oracle driver
@@ -4092,12 +4249,19 @@ throws SQLException
                     ++writeTryCount;
                     cs.setInt(iParam++,siteDataTypeID.intValue()); // SAMPLE_SDI
                     // Format the date/time as a string consistent with the database engine
-                    //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
-                    //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
+                    //x Old comment leave for now
+                    //x sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
+                    //x writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
                     // The offset is negative in order to shift to the start of the interval
-                    startTimeStampMs = dt.getDate(TimeZoneDefaultType.LOCAL).getTime()+timeOffsetTsToHdbStart;
+                    // Database timestamp is in GMT but corresponds to MST from time series.
+                    // In other words, MST time zone will shift times by 7 hours to GMT
+                    startTimeStampBeforeShiftMs = dt.getDate(timeZone).getTime(); // GMT
+                    startTimeStampMs = startTimeStampBeforeShiftMs + timeOffsetTsToHdbStart; // GMT
+                    startTimeStampMsDelta = startTimeStampMs - startTimeStampMsPrev; // Delta to see if incrementing evenly over daylight savings
+                    startTimeStampMsPrev = startTimeStampMs; // Reset previous value
+                    // Version to create Timestamp from date/time parts is deprecated so use millisecond version
                     startTimeStamp = new Timestamp(startTimeStampMs);
-                    cs.setTimestamp(iParam++,startTimeStamp); // SAMPLE_DATE_TIME
+                    cs.setTimestamp(iParam++,startTimeStamp,calendarForTimeZone); // SAMPLE_DATE_TIME - now back to MST, for example, so JDBC driver sets as MST in database
                     cs.setDouble(iParam++,value); // SAMPLE_VALUE
                     cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
                     cs.setInt(iParam++,loadingAppID); // LOADING_APP_ID
@@ -4149,25 +4313,26 @@ throws SQLException
                     // Consequently, for the most part pass the SAMPLE_END_DATE_TIME as null except in the case
                     // where have NHour data
                     if ( (outputIntervalBase == TimeInterval.HOUR) && (outputIntervalMult != 1) ) {
-                        endTimeStamp = new Timestamp(dt.getDate(TimeZoneDefaultType.LOCAL).getTime());
-                        cs.setTimestamp(iParam++,endTimeStamp); // SAMPLE_END_DATE_TIME
-                        //if ( Message.isDebugOn ) {
+                        endTimeStampGMT = new Timestamp(dt.getDate(timeZone).getTime()); // GMT
+                        cs.setTimestamp(iParam++,endTimeStampGMT,calendarForTimeZone); // SAMPLE_END_DATE_TIME, with Calendar indicating MST, so JDBC sets as MST in DB
+                        if ( Message.isDebugOn ) {
                             // TODO SAM 2013-10-02 The end date/time always seems to be written as 1 hour offset, regardless of
-                            // the value that is passed in
-                            Message.printStatus(2, routine, "Writing time series date/time=" + dt + " value=" + value +
-                                " HDB date/time ms sample (start)=" + startTimeStampMs + " " + startTimeStamp +
-                                " HDB date/time ms end=" + dt.getDate(TimeZoneDefaultType.LOCAL).getTime() + " " +
-                                endTimeStamp + " offset from end = " + timeOffsetTsToHdbStart + " batchCount=" + batchCount);
-                        //}
+                            // the value that is passed in to WRITE_TO_HDB
+                            Message.printStatus(2, routine, "Write date/time=" + dt + " val=" + value +
+                                " HDB sample start (before shift)=" + startTimeStampBeforeShiftMs +
+                                " HDB sample start (after shift)=" + startTimeStampMs + " msdiff=" + startTimeStampMsDelta + " timestamp=" + startTimeStamp +
+                                " HDB end=" + dt.getDate(timeZone).getTime() + " " + endTimeStampGMT +
+                                " time zone = " + timeZone + " offset from end = " + timeOffsetTsToHdbStart + " batchCount=" + batchCount);
+                        }
                     }
                     else {
                         // Pass a null for SAMEPLE_END_DATE_TIME as per previous functionality
                         cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
-                        //if ( Message.isDebugOn ) {
-                            Message.printStatus(2, routine, "Writing time series date/time=" + dt + " value=" + value +
+                        if ( Message.isDebugOn ) {
+                            Message.printStatus(2, routine, "Write date/time=" + dt + " value=" + value +
                                 " HDB date/time ms sample (start)=" + startTimeStampMs + " " + startTimeStamp +
                                 " HDB date/time ms end=null batchCount=" + batchCount);
-                        //}
+                        }
                     }
                     if ( batchCount == 0 ) {
                     	batchStart = new DateTime(dt);
@@ -4189,13 +4354,16 @@ throws SQLException
             //    // TODO SAM 2012-03-28 Only write one value for testing
             //    break;
             //}
-            if ( ((tsdata == null) && (batchCount > 0)) || (batchCount == batchCountMax) ) {
+            if ( ((tsdata == null) && (batchCount > 0)) || // No more time series data but have a batch to process
+            	(batchCount == batchCountMax) ) { // Batch count has reached maximum so process data so far
                 // Process the insert, either a group of maximum batch count or the last batch
                 try {
                     // TODO SAM 2012-03-28 Figure out how to use to compare values updated with expected number
                     batchCountTotal += batchCount;
-                    Message.printStatus(2, routine, "Writing time series records, this batch count = " + batchCount +
-                        ", batch count total = " + batchCountTotal + " period = " + batchStart + " to " + batchEnd );
+                    if ( Message.isDebugOn ) {
+	                    Message.printStatus(2, routine, "Writing time series records, this batch count = " + batchCount +
+	                        ", batch count max = " + batchCountMax + " batch count total = " + batchCountTotal + " period = " + batchStart + " to " + batchEnd );
+                    }
                     int [] updateCounts = cs.executeBatch();
                     if ( updateCounts != null ) {
                         for ( int iu = 0; iu < updateCounts.length; iu++ ) {
@@ -4205,8 +4373,9 @@ throws SQLException
                             }
                         }
                     }
-                    // Now clear the batch commands for the next group of inserts
+                    // Explicitly commit statements to apply changes
                     cs.getConnection().commit();
+                    // Now clear the batch commands for the next group of inserts
                     cs.clearBatch();
                     batchCount = 0;
                 }
@@ -4215,6 +4384,9 @@ throws SQLException
                     Message.printWarning(3,routine,"Error executing write callable statement (" + e + ")." );
                     Message.printWarning(3,routine,e);
                     ++errorCount;
+                }
+                finally {
+                	batchCount = 0;
                 }
             }
             if ( tsdata == null ) {

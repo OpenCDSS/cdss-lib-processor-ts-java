@@ -8,6 +8,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -18,12 +19,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -34,6 +38,7 @@ import RTi.Util.Message.Message;
 public class SortTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JTabbedPane __main_JTabbedPane = null;
@@ -64,7 +69,10 @@ Responds to ActionEvents.
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
-	if ( o == __cancel_JButton ) {
+	if ( o == __help_JButton ) {
+		TSCommandProcessorUtil.displayCommandDocumentation(__command);
+	}
+	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
 	else if ( o == __ok_JButton ) {
@@ -184,6 +192,8 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The default is to sort based on the full time series identifier." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
@@ -198,6 +208,8 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
     JGUIUtil.addComponent(id_JPanel, new JLabel (
         "Specify how to sort using the alias and/or identifier." ),
         0, ++yId, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(id_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yId, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(id_JPanel, new JLabel ( "TSID format:"),
         0, ++yId, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -226,6 +238,8 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
     JGUIUtil.addComponent(prop_JPanel, new JLabel (
         "A missing (null) property is treated as a blank string or small number." ),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Property to sort:"),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -248,6 +262,8 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
     JGUIUtil.addComponent(format_JPanel, new JLabel (
         "The notation ${ts:Property} can also be used to specify a time series property." ),
         0, ++yFormatted, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(format_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yFormatted, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(format_JPanel, new JLabel ( "Format for properties to sort:"),
         0, ++yFormatted, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -289,7 +305,12 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
-
+    __help_JButton = new SimpleJButton("Help", "Help", this);
+    __help_JButton.setToolTipText("Show command documentation in web browser" );
+	button_JPanel.add ( __help_JButton );
+	if ( !Desktop.isDesktopSupported() ) {
+		__help_JButton.setEnabled(false);
+	}
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 

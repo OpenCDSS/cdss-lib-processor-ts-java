@@ -6,10 +6,8 @@ import java.util.List;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TS;
 import RTi.TS.TSUtil_SortTimeSeries;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -120,14 +118,27 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
-{	String routine = "SortTimeSeries_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	List tslist = null;
+	List<TS> tslist = null;
 	
     CommandProcessor processor = getCommandProcessor();
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     
     PropList parameters = getCommandParameters();
     String TSIDFormat = parameters.getValue ( "TSIDFormat" );

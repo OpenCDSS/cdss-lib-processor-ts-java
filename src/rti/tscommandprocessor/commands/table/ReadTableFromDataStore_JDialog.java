@@ -31,6 +31,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -327,6 +328,8 @@ private DatabaseDataStore getSelectedDataStore ()
         DataStore, DatabaseDataStore.class );
     if ( dataStore != null ) {
         Message.printStatus(2, routine, "Selected data store is \"" + dataStore.getName() + "\"." );
+        // Make sure database connection is open
+        dataStore.checkDatabaseConnection();
     }
     else {
         Message.printStatus(2, routine, "Cannot get data store for \"" + DataStore + "\"." );
@@ -686,11 +689,11 @@ Populate the database list based on the selected datastore.
 @param dmi DMI to use when selecting database list
 */
 private void populateDataStoreCatalogChoices ( DMI dmi )
-{   String routine = getClass().getName() + "populateDataStoreDatastoreChoices";
+{   String routine = getClass().getSimpleName() + ".populateDataStoreDatastoreChoices";
     List<String> catalogList = null;
-    List<String> notIncluded = new Vector<String>();
+    List<String> notIncluded = new ArrayList<String>();
     if ( dmi == null ) {
-        catalogList = new Vector<String>();
+        catalogList = new ArrayList<String>();
     }
     else {
         // TODO SAM 2013-07-22 Improve this - it should only be shown when the master DB is used
@@ -706,7 +709,7 @@ private void populateDataStoreCatalogChoices ( DMI dmi )
         }
     }
     if ( catalogList == null ) {
-        catalogList = new Vector();
+        catalogList = new ArrayList();
     }
     // Always add a blank option at the start to help with initialization
     catalogList.add ( 0, "" );
@@ -731,9 +734,9 @@ Populate the procedure list based on the selected database.
 private void populateDataStoreProcedureChoices ( DMI dmi )
 {   String routine = getClass().getName() + "populateDataStoreProcedureChoices";
     List<String> procList = null;
-    List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system procedures
+    List<String> notIncluded = new ArrayList<String>(); // TODO SAM 2012-01-31 need to omit system procedures
     if ( dmi == null ) {
-        procList = new Vector();
+        procList = new ArrayList<String>();
     }
     else {
         try {
@@ -746,7 +749,7 @@ private void populateDataStoreProcedureChoices ( DMI dmi )
         }
     }
     if ( procList == null ) {
-        procList = new Vector<String>();
+        procList = new ArrayList<String>();
     }
     // Always add a blank option at the start to help with initialization
     procList.add ( 0, "" );
@@ -771,9 +774,9 @@ Populate the schema list based on the selected database.
 private void populateDataStoreSchemaChoices ( DMI dmi )
 {   String routine = getClass().getName() + "populateDataStoreSchemaChoices";
     List<String> schemaList = null;
-    List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system tables
+    List<String> notIncluded = new ArrayList<String>(); // TODO SAM 2012-01-31 need to omit system tables
     if ( dmi == null ) {
-        schemaList = new Vector<String>();
+        schemaList = new ArrayList<String>();
     }
     else {
         // TODO SAM 2013-07-22 Improve this - it should only be shown when the master DB is used
@@ -791,7 +794,7 @@ private void populateDataStoreSchemaChoices ( DMI dmi )
         }
     }
     if ( schemaList == null ) {
-        schemaList = new Vector<String>();
+        schemaList = new ArrayList<String>();
     }
     // Always add a blank option at the start to help with initialization
     schemaList.add ( 0, "" );
@@ -816,9 +819,9 @@ Populate the table list based on the selected database.
 private void populateDataStoreTableChoices ( DMI dmi )
 {   String routine = getClass().getName() + "populateDataStoreTableChoices";
     List<String> tableList = null;
-    List<String> notIncluded = new Vector(); // TODO SAM 2012-01-31 need to omit system tables
+    List<String> notIncluded = new ArrayList(); // TODO SAM 2012-01-31 need to omit system tables
     if ( dmi == null ) {
-        tableList = new Vector<String>();
+        tableList = new ArrayList<String>();
     }
     else {
         try {
@@ -839,7 +842,7 @@ private void populateDataStoreTableChoices ( DMI dmi )
         }
     }
     if ( tableList == null ) {
-        tableList = new Vector<String>();
+        tableList = new ArrayList<String>();
     }
     // Always add a blank option at the start to help with initialization
     tableList.add ( 0, "" );

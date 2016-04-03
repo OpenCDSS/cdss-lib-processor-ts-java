@@ -346,6 +346,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 DataStore + "\"." ) );
     }
     else {
+    	DatabaseDataStore dbds = (DatabaseDataStore)dataStore;
+    	// Make sure database connection is open - may have timed out
+    	dbds.checkDatabaseConnection();
         dmi = ((DatabaseDataStore)dataStore).getDMI();
     }
     

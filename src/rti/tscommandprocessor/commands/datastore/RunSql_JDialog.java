@@ -162,6 +162,8 @@ private void actionPerformedDataStoreSelected ( )
     }
     __dataStore = getSelectedDataStore();
     __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+    // Update list of procedures
+    populateDataStoreProcedureChoices(getDMI() );
 }
 
 /**
@@ -239,6 +241,8 @@ private DatabaseDataStore getSelectedDataStore ()
         DataStore, DatabaseDataStore.class );
     if ( dataStore != null ) {
         Message.printStatus(2, routine, "Selected data store is \"" + dataStore.getName() + "\"." );
+        // Make sure database connection is open
+        dataStore.checkDatabaseConnection();
     }
     else {
         Message.printStatus(2, routine, "Cannot get data store for \"" + DataStore + "\"." );
@@ -478,7 +482,7 @@ Populate the procedure list based on the selected database.
 @param dmi DMI to use when selecting procedure list
 */
 private void populateDataStoreProcedureChoices ( DMI dmi )
-{   String routine = getClass().getName() + "populateDataStoreProcedureChoices";
+{   String routine = getClass().getSimpleName() + "populateDataStoreProcedureChoices";
     List<String> procList = null;
     List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system procedures
     if ( dmi == null ) {

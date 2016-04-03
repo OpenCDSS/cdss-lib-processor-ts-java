@@ -3456,6 +3456,10 @@ throws Exception
                         // for alignment.  If nHourIntervalOffset was specified, off-hour data will be ignored below.
                         if ( (dateTime.getHour() - date1.getHour() ) % intervalMult != 0 ) {
                             ++badAlignmentCount;
+                            if ( Message.isDebugOn ) {
+                            	Message.printDebug(1,routine,"Data date " + dateTime + " does not align with " +
+                            		intervalMult + "Hour data with hour offset " + date1.getHour() );
+                            }
                             badAlignment = true;
                         }
                     }
@@ -3474,7 +3478,7 @@ throws Exception
             sw.stop();
             Message.printStatus(2,routine,"Transfer of \"" + tsidentString + "\" data took " + sw.getSeconds() +
                 " seconds for " + record + " records.");
-            if ( (badAlignmentCount > 0) && (nHourIntervalOffset >= 0) ) {
+            if ( (badAlignmentCount > 0) && (nHourIntervalOffset < 0) ) {
             	// Create a warning unless nHourIntervalOffset was specified - specifying indicates user is purposefully ignoring bad data
             	String message = "There were " + badAlignmentCount +
                     " data values with date/times that did not align as expected with data interval and hour (" +
@@ -3538,19 +3542,6 @@ public void setDateTimeFromHDBString ( DateTime dateTime, int intervalBase, Stri
     // Instantaneous treat as minute...
     dateTime.setMinute ( Integer.parseInt(dateTimeString.substring(14,16)) );
 }
-
-/**
-Set whether the "keep alive" query thread should run, useful when accessing an HDB remotely
-@param keepAliveSql SQL string to run periodically to keep database connection alive
-@param keepAliveFrequency number of seconds between "keep alive" queries
-*/
-/* TODO SAM 2015-03-23 Remove once new reconnect feature in TSTool 11.00.00 proves out
-public void setKeepAlive ( String keepAliveSql, String keepAliveFrequency )
-{
-    __keepAliveSql = keepAliveSql;
-    __keepAliveFrequency = keepAliveFrequency;
-}
-*/
 
 /**
 Set the database read timeout.
@@ -3689,53 +3680,6 @@ public void setTSIDStyleSDI ( boolean tsidStyleSDI )
 {
     __tsidStyleSDI = tsidStyleSDI;
 }
-
-/**
-Start a keep alive thread going that periodically does a trivial SQL query to ensure
-that the database connection is kept open.
-*/
-/* TODO SAM 2015-03-23 remove this if the reconnect funcitonality in TSTool 11.00.00 works
-private void startKeepAliveThread()
-{
-    // Only start the thread if the KeepAliveSQL and KeepAliveFrequency datastore properties
-    // have been specified
-    if ( (__keepAliveSql != null) && !__keepAliveSql.equals("") &&
-        (__keepAliveFrequency != null) && !__keepAliveFrequency.equals("") ) {
-        int freq = 120;
-        try {
-            freq = Integer.parseInt(__keepAliveFrequency);
-        }
-        catch ( NumberFormatException e ) {
-            return;
-        }
-        final long freqms = freq*1000;
-        Runnable r = new Runnable() {
-            public void run() {
-            	// TODO SAM 2015-02-14 doesn't this need a loop?
-                try {
-                    // Put in some protection against injection by checking for keywords other than SELECT
-                    String sql = __keepAliveSql.toUpperCase();
-                    if ( sql.startsWith("SELECT") && (sql.indexOf("INSERT") < 0) &&
-                        (sql.indexOf("DELETE") < 0) && (sql.indexOf("UPDATE") < 0) ) {
-                        dmiSelect(__keepAliveSql);
-                    }
-                    Thread.sleep(freqms);
-                }
-                catch ( Exception e ) {
-                    // OK since don't care about results but output to troubleshoot (typical user won't see).
-                    Message.printWarning(3, "keepAlive.run", e);
-                }
-            }
-        };
-        if ( SwingUtilities.isEventDispatchThread() ) {
-            r.run();
-        }
-        else {
-            SwingUtilities.invokeLater ( r );
-        }
-    }
-}
-*/
 
 /**
 Set the maximum number of statements to execute in a batch insert.

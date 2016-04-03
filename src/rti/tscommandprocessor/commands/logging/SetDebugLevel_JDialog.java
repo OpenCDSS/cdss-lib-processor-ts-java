@@ -16,12 +16,13 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 
 /**
@@ -30,22 +31,22 @@ Editor dialog for the SetDebugLevel() command.
 public class SetDebugLevel_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private SetDebugLevel_Command		__command = null; // Command to edit
-private JTextArea	__command_JTextArea = null;// Command as JTextArea
-private JTextField	__LogFileLevel_JTextField = null,// Fields for debug levels
-			__ScreenLevel_JTextField;
-private boolean		__error_wait = false;	// Is there an error to be cleared up?
-private boolean		__first_time = true;
-private boolean     __ok = false;       // Indicates whether user pressed OK to close the dialog.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SetDebugLevel_Command __command = null;
+private JTextArea __command_JTextArea = null;
+private JTextField __LogFileLevel_JTextField = null;
+private JTextField __ScreenLevel_JTextField;
+private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false;       // Indicates whether user pressed OK to close the dialog.
 
 /**
 Command dialog editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetDebugLevel_JDialog ( JFrame parent, Command command )
+public SetDebugLevel_JDialog ( JFrame parent, SetDebugLevel_Command command )
 { 	super(parent, true);
 	initialize ( parent, command );
 }
@@ -124,8 +125,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{   __command = (SetDebugLevel_Command)command;
+private void initialize ( JFrame parent, SetDebugLevel_Command command )
+{   __command = command;
 
 	addWindowListener( this );
 
@@ -137,11 +138,11 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Set the level for screen and/or log file debug messages."),
-        0, y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     "Debug information is useful for troubleshooting.  The default debug level is 0."),
     0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -152,6 +153,11 @@ private void initialize ( JFrame parent, Command command )
 		"Debug levels can be increased before and decreased after " +
 		"specific commands to troublesheet the commands." ), 
 		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Set the screen and log file debug levels to 0 to turn off debugging (execution speed will increase)." ), 
+		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL), 
+		0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Screen debug level:"), 
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);

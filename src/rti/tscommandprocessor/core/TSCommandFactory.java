@@ -34,6 +34,7 @@ import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 import rti.tscommandprocessor.commands.delimited.WriteDelimitedFile_Command;
 import rti.tscommandprocessor.commands.derby.NewDerbyDatabase_Command;
 
+import rti.tscommandprocessor.commands.email.SendEmailMessage_Command;
 // Ensemble commands
 import rti.tscommandprocessor.commands.ensemble.CopyEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.CreateEnsembleFromOneTimeSeries_Command;
@@ -928,6 +929,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("SelectTimeSeries") ) {
         return new SelectTimeSeries_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("SendEmailMessage") ) {
+        return new SendEmailMessage_Command ();
     }
     else if ( commandName.equalsIgnoreCase("SetAutoExtendPeriod") ) {
         return new SetAutoExtendPeriod_Command ();

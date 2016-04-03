@@ -29,5 +29,6 @@
 	<classpathentry kind="lib" path="lib/MySQL_JDBC/mysql-connector-java-5.1.36-bin.jar"/>
 	<classpathentry kind="lib" path="lib/gson/gson-2.3.1.jar"/>
 	<classpathentry kind="lib" path="lib/PostgreSQL_JDBC/postgresql-9.4-1205.jdbc4.jar"/>
+	<classpathentry kind="lib" path="lib/javax-mail/javax.mail-1.4.5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

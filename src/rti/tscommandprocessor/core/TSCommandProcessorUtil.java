@@ -358,10 +358,15 @@ public static void displayCommandDocumentation ( Command command ) {
 	try {
 		// TODO SAM 2016-03-23 This is a prototype of how to do interactive documentation - put in utility code
 		String docURL = null;
-		boolean isPluginCommand = false;
-		if ( isPluginCommand ) {
+		boolean isCommandPlugin = command.getIsCommandPlugin();
+		if ( isCommandPlugin ) {
 			// Envision that command documentation would be in:
-			// $home/.tstool/plugins-command/CommandName/doc/CommandName.html or CommandName.pdf
+			// $home/.tstool/plugin-command/CommandName/doc/CommandName.html or CommandName.pdf
+			Prop prop = command.getCommandProcessor().getProp("UserHomeDirURL");
+			if ( prop != null ) {
+				docURL = prop.getValue() + "/plugin-command/" + command.getCommandName() + "/doc/" +
+				command.getCommandName() + ".html";
+			}
 		}
 		else {
 			Prop prop = command.getCommandProcessor().getProp("InstallDirURL");

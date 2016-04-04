@@ -245,6 +245,10 @@ public TSCommandProcessor ()
     __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
     // This is used to locate the HTML documentation for command editor dialogs, etc.
     __property_Hashtable.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
+    // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
+    String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
+    __property_Hashtable.put ( "UserHomeDir", homeDir );
+    __property_Hashtable.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
 }
 
 /**
@@ -3771,6 +3775,10 @@ throws Exception
     // Define some standard properties
     __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
     __property_Hashtable.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
+    // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
+    String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
+    __property_Hashtable.put ( "UserHomeDir", homeDir );
+    __property_Hashtable.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
     // Set the program version as a property, useful for version-dependent command logic
     // Assume the version is xxx.xxx.xxx beta (date), with at least one period
     // Save the program version as a string

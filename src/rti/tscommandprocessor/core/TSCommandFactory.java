@@ -4,6 +4,11 @@ package rti.tscommandprocessor.core;
 // avoid mixing with lower-level code.
 //import RTi.DataServices.Adapter.NDFD.openNDFD_Command;
 //import RTi.DataServices.Adapter.NDFD.readNDFD_Command;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+
+import RTi.Util.GUI.SimpleJMenuItem;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;
 import RTi.Util.IO.UnknownCommand;
@@ -33,7 +38,6 @@ import rti.tscommandprocessor.commands.delftfews.WriteDelftFewsPiXml_Command;
 import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 import rti.tscommandprocessor.commands.delimited.WriteDelimitedFile_Command;
 import rti.tscommandprocessor.commands.derby.NewDerbyDatabase_Command;
-
 import rti.tscommandprocessor.commands.email.SendEmailMessage_Command;
 // Ensemble commands
 import rti.tscommandprocessor.commands.ensemble.CopyEnsemble_Command;
@@ -317,13 +321,27 @@ is required, but parameters are not because parsing does not occur.
 */
 public class TSCommandFactory implements CommandFactory
 {
-    
+
+/**
+ * List of classes for plugin commands.
+ */
+List<Class> pluginCommandClassList = null;
+ 
 /**
 Constructor.
 */
 public TSCommandFactory ()
 {
     super();
+}
+
+/**
+Constructor.
+*/
+public TSCommandFactory ( List<Class> pluginCommandClassList )
+{
+    super();
+    this.pluginCommandClassList = pluginCommandClassList;
 }
 	
 /**
@@ -1196,6 +1214,44 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteWaterML") ) {
         return new WriteWaterML_Command ();
+    }
+    
+    // TODO SAM 2016-04-02 Figure out more elegant approach for getting command name
+    // Check for plugin commands - for now brute force based on naming convention
+    
+    if ( this.pluginCommandClassList != null ) {
+    	Message.printStatus(2,routine,"Checking " + this.pluginCommandClassList.size() + " plugin classes for matching command.");
+    	for ( Class c : this.pluginCommandClassList ) {
+	    	String nameFromClass = c.getSimpleName(); // Should be like CommandName_Command
+	    	int pos = nameFromClass.indexOf("_Command");
+	    	if ( pos > 0 ) {
+	    		nameFromClass = nameFromClass.substring(0,pos);
+	    		Message.printStatus(2,routine,"Checking plugin command \"" + nameFromClass + "\" against command name \"" + commandName + "\"");
+	    		if ( nameFromClass.equalsIgnoreCase(commandName) ) {
+	    	    	// Construct the command instance
+	    	    	try {
+	    	    		Constructor<?> constructor = c.getConstructor();
+	    	    		Object command = constructor.newInstance();
+	    	    		// The object must be a Command if it follows implementation requirements
+	    	    		return (Command)command;
+	    	    	}
+	    	    	catch ( NoSuchMethodException e ) {
+	    	    		Message.printWarning(2,routine,"Error getting constructor for plugin command class \"" + nameFromClass + "\"");
+	    	    	}
+	    	    	catch ( IllegalAccessException e ) {
+	    	    		Message.printWarning(2,routine,"Error creating instance of command for plugin command class \"" + nameFromClass + "\"");
+	    	    	}
+	    	    	catch ( InstantiationException e ) {
+	    	    		Message.printWarning(2,routine,"Error creating instance of command for plugin command class \"" + nameFromClass + "\"");
+	    	    	}
+	    	    	catch ( InvocationTargetException e ) {
+	    	    		Message.printWarning(2,routine,"Error creating instance of command for plugin command class \"" + nameFromClass + "\"");
+	    	    	}
+	    		}
+    	    	// No need to keep searching
+    	    	break;
+	    	}
+    	}
     }
     
     // Check for time series identifier

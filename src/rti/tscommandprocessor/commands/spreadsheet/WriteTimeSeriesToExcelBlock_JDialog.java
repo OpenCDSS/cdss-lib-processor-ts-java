@@ -652,8 +652,8 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcelBlock_Command com
         0, ++yLayout, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LayoutColumns_JComboBox = new SimpleJComboBox ( false );
     //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.YEAR)); // TODO SAM 2015-03-10 Need to enable
-    __LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH));
-    __LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.DAY));
+    __LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH,1));
+    __LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.DAY,1));
     __LayoutColumns_JComboBox.select ( 0 );
     __LayoutColumns_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(layout_JPanel, __LayoutColumns_JComboBox,

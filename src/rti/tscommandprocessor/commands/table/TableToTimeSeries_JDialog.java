@@ -790,7 +790,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
     __BlockLayoutColumns_JComboBox.add("");
     //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.YEAR)); // TODO SAM 2015-03-10 Need to enable
     //__LayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH));
-    __BlockLayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH));
+    __BlockLayoutColumns_JComboBox.add("" + TimeInterval.getName(TimeInterval.MONTH,1));
     __BlockLayoutColumns_JComboBox.select ( 0 );
     __BlockLayoutColumns_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(blockData_JPanel, __BlockLayoutColumns_JComboBox,
@@ -802,7 +802,7 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         0, ++yBlockData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __BlockLayoutRows_JComboBox = new SimpleJComboBox ( false );
     __BlockLayoutRows_JComboBox.add("");
-    __BlockLayoutRows_JComboBox.add("" + TimeInterval.getName(TimeInterval.YEAR));
+    __BlockLayoutRows_JComboBox.add("" + TimeInterval.getName(TimeInterval.YEAR,1));
     __BlockLayoutRows_JComboBox.select ( 0 );
     __BlockLayoutRows_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(blockData_JPanel, __BlockLayoutRows_JComboBox,

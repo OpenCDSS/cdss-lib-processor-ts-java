@@ -18,15 +18,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.IOUtil;
@@ -39,27 +40,25 @@ implements ActionListener, KeyListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 
-private SimpleJButton	__cancel_JButton = null,	// Cancel Button
-			__browse_JButton = null,	// Browse Button
-			__ok_JButton = null,		// Ok Button
-			__path_JButton = null;		// Button to add/remove
-							// path
-private JTextField	__LogFile_JTextField = null;	// Field for LogFile
-private SimpleJComboBox	__Suffix_JComboBox = null;	// Choice for file
-							// suffix
-private JTextArea	__command_JTextArea = null;	// Command as JTextField
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
-private StartLog_Command __command = null;	// Command to edit
-private boolean		__ok = false;		// Indicates whether user pressed OK to close the dialog.
-private String		__working_dir = null;	// The working directory.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
+private JTextField	__LogFile_JTextField = null;
+private SimpleJComboBox	__Suffix_JComboBox = null;
+private JTextArea __command_JTextArea = null;
+private boolean __error_wait = false;
+private boolean __first_time = true;
+private StartLog_Command __command = null; // Command to edit
+private boolean __ok = false; // Indicates whether user pressed OK to close the dialog.
+private String __working_dir = null; // The working directory.
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public StartLog_JDialog ( JFrame parent, Command command )
+public StartLog_JDialog ( JFrame parent, StartLog_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -195,8 +194,8 @@ Get the working directory for a command (e.g., for editing).
 @param command Command for which to get the working directory.
 @return The working directory in effect for a command.
 */
-private String getWorkingDirForCommand ( CommandProcessor processor, Command command )
-{	String routine = getClass().getName() + ".getWorkingDirForCommand";
+private String getWorkingDirForCommand ( CommandProcessor processor, StartLog_Command command )
+{	String routine = getClass().getSimpleName() + ".getWorkingDirForCommand";
 	PropList request_params = new PropList ( "" );
 	request_params.setUsingObject ( "Command", command );
 	CommandProcessorRequestResultsBean bean = null;
@@ -205,8 +204,7 @@ private String getWorkingDirForCommand ( CommandProcessor processor, Command com
 		return bean.getResultsPropList().getValue("WorkingDir");
 	}
 	catch ( Exception e ) {
-		String message = "Error requesting GetWorkingDirForCommand(Command=\"" + command +
-		"\" from processor).";
+		String message = "Error requesting GetWorkingDirForCommand(Command=\"" + command + "\" from processor).";
 		Message.printWarning(3, routine, e);
 		Message.printWarning(3, routine, message );
 	}
@@ -218,8 +216,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (StartLog_Command)command;
+private void initialize ( JFrame parent, StartLog_Command command )
+{	__command = command;
 	__working_dir = null;
 	// Because this command is shared by StateDMI_Processor, do it the generic way, NOT as commented -
 	// basically paste in the code from the method indicated below.
@@ -235,12 +233,12 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"(Re)start the log file.  This is useful when it is desirable "+
 		"to have a log file saved for a commands file." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A blank log file name will restart the current file."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -259,10 +257,13 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying a suffix for the file will insert the suffix before the \"log\" file extension."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Log file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__LogFile_JTextField = new JTextField ( 50 );
+	__LogFile_JTextField.setToolTipText("Specify the path to the log file to write, can use ${Property} notation");
 	__LogFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __LogFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

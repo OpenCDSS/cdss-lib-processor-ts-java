@@ -1,33 +1,13 @@
-//------------------------------------------------------------------------------
-// startLog_Command - handle the startLog() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-05-13	Steven A. Malers, RTi	Initial version (copy and modify
-//					sortTimeSeries).
-// 2005-05-19	SAM, RTi		Move from TSTool package.
-// 2005-05-20	SAM, RTi		Add Suffix parameter.
-// 2005-12-12	J. Thomas Sapienza, RTi Added check for null log file names in
-//					the check parameter method so that by
-//					not specifying a name, the command will
-//					re-open the current log file.
-// 2007-02-16	SAM, RTi		Update for new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.logging;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -47,9 +27,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
-This class initializes, checks, and runs the tartLog() command.
-</p>
+This class initializes, checks, and runs the StartLog() command.
 */
 public class StartLog_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -82,7 +60,7 @@ Check the command parameter for valid values, combination, etc.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String routine = getCommandName() + "_checkCommandParameters";
+{	String routine = getCommandName() + ".checkCommandParameters";
 	String LogFile = parameters.getValue ( "LogFile" );
 	String Suffix = parameters.getValue ( "Suffix" );
 	String working_dir = null;
@@ -148,10 +126,10 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-	valid_Vector.add ( "Logfile" );
-	valid_Vector.add ( "Suffix" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(2);
+	validList.add ( "Logfile" );
+	validList.add ( "Suffix" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -200,7 +178,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
-{	String routine = "startLog_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -209,7 +187,19 @@ throws CommandWarningException, CommandException
 	
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	
 	String LogFile_full = null;	// File with path, used below and in final catch.
 	try {
@@ -255,8 +245,9 @@ throws CommandWarningException, CommandException
 					LogFile = LogFile.substring(0,LogFile.length()-ext.length()-1)+ Suffix + "." + ext;
 				}
 			}
-			LogFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LogFile) );
+			LogFile_full = TSCommandProcessorUtil.expandParameterValue(processor,this,
+				IOUtil.verifyPathForOS(
+						IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LogFile)));
 			Message.printStatus(2, routine, "Logfile full path is \"" + LogFile_full + "\"");
 			// Close the old log file...
 			Message.closeLogFile();

@@ -26,6 +26,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.DataTableValueStringProvider;
 
 /**
 This class initializes, checks, and runs the SetTableValues() command.
@@ -106,7 +107,7 @@ command could produce some results).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message = "";
+{	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
@@ -115,10 +116,29 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
 
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
+	final CommandProcessor processor = getCommandProcessor();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
     String ColumnFilters = parameters.getValue ( "ColumnFilters" );
+    if ( (ColumnFilters != null) && !ColumnFilters.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnFilters.indexOf("${") >= 0 ) {
+    	ColumnFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnFilters);
+    }
     Hashtable columnFilters = new Hashtable();
     if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
         // First break map pairs by comma
@@ -185,7 +205,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	try {
     	// Set values in the table...
-        table.setTableValues ( columnFilters, columnValues, true );
+		final Command thisCommand = this; // for anonymous class below
+		DataTableValueStringProvider tableValueGetter = new DataTableValueStringProvider () {
+			public String getTableCellValueAsString ( String valueFormat ) {
+				return TSCommandProcessorUtil.expandParameterValue(processor, thisCommand, valueFormat);
+			}
+		};
+	    table.setTableValues ( columnFilters, columnValues, tableValueGetter, true );
  	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );

@@ -5,13 +5,14 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -20,7 +21,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
 import java.util.List;
 
 import RTi.Util.GUI.DictionaryJDialog;
@@ -80,7 +80,7 @@ public void actionPerformed(ActionEvent event)
         String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
         String [] notes = { "Filter to indicate which rows should be modified",
             "Column to Filter - table column to check for values (currently can only be columns containing strings)",
-            "Filter Value - value in columns to match, to determine rows to set values"
+            "Filter Value - value in columns to match, to determine rows to set values, can use ${Property}"
         };
         String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
             notes, "Column to Filter", "Filter Value (can include * wildcards)",10)).response();
@@ -92,7 +92,9 @@ public void actionPerformed(ActionEvent event)
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnValues") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnValues = __ColumnValues_JTextArea.getText().trim();
-        String [] notes = { "Specify the column names and corresponding values to set." };
+        String [] notes = { "Specify the column names and corresponding values to set.",
+        	"Column - name of column to set value",
+        	"Value - value to set, can use ${Property}"};
         String columnValues = (new DictionaryJDialog ( __parent, true, ColumnValues, "Edit ColumnValues Parameter",
             notes, "Column", "Value",10)).response();
         if ( columnValues != null ) {
@@ -180,6 +182,8 @@ private void initialize ( JFrame parent, SetTableValues_Command command, List<St
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

@@ -25,6 +25,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -49,10 +50,12 @@ private JTextField __SequenceEnd_JTextField = null;
 private JTextField __SequenceIncrement_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableColumn_JTextField = null;
+private JTextArea __TablePropertyMap_JTextArea = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether user pressed OK to close the dialog.
+private JFrame __parent = null;
 
 /**
 Command dialog editor constructor.
@@ -81,6 +84,20 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditTablePropertyMap") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim();
+        String [] notes = {
+            "Column names in the table can be mapped to processor property names, to set table values as properties.",
+            "The property will be of the same object type as in the table (e.g., integer column -> integer property)."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, TablePropertyMap,
+            "Edit TablePropertyMap Parameter", notes, "Column Name", "Property Name",10)).response();
+        if ( dict != null ) {
+        	__TablePropertyMap_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
 }
 
 /**
@@ -98,6 +115,7 @@ private void checkInput ()
     String SequenceIncrement = __SequenceIncrement_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
+	String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
     if ( Name.length() > 0 ) {
         props.set ( "Name", Name );
     }
@@ -122,6 +140,9 @@ private void checkInput ()
     if ( TableColumn.length() > 0 ) {
         props.set ( "TableColumn", TableColumn );
     }
+    if ( TablePropertyMap.length() > 0 ) {
+        props.set ( "TablePropertyMap", TablePropertyMap );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -144,6 +165,7 @@ private void commitEdits ()
     String SequenceIncrement = __SequenceIncrement_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableColumn = __TableColumn_JTextField.getText().trim();
+    String TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "IteratorProperty", IteratorProperty );
     __command.setCommandParameter ( "List", List );
@@ -152,6 +174,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "SequenceIncrement", SequenceIncrement );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableColumn", TableColumn );
+    __command.setCommandParameter ( "TablePropertyMap", TablePropertyMap );
 }
 
 /**
@@ -161,6 +184,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, For_Command command, List<String> tableIDChoices )
 {   __command = command;
+	__parent = parent;
 
 	addWindowListener( this );
 
@@ -288,6 +312,12 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
     JGUIUtil.addComponent(table_JPanel, new JLabel (
         "If necessary, copy a subset of values from a table using CopyTable() and other table commands."),
         0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "Optionally, also set properties from other columns during iteration."),
+        0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel (
+        "The table being iterated cannot have rows added to it during iteration."),
+        0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yTable, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
@@ -311,6 +341,20 @@ private void initialize ( JFrame parent, For_Command command, List<String> table
         1, yTable, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(table_JPanel, new JLabel("Required - name of table column."), 
         3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Table property map:"),
+        0, ++yTable, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TablePropertyMap_JTextArea = new JTextArea (6,35);
+    __TablePropertyMap_JTextArea.setLineWrap ( true );
+    __TablePropertyMap_JTextArea.setWrapStyleWord ( true );
+    __TablePropertyMap_JTextArea.setToolTipText("ColumnName1:PropertyName1,ColumnName2:PropertyName2");
+    __TablePropertyMap_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(table_JPanel, new JScrollPane(__TablePropertyMap_JTextArea),
+        1, yTable, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(table_JPanel, new JLabel ("Optional - to set properties from table (default=none set)."),
+        3, yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(table_JPanel, new SimpleJButton ("Edit","EditTablePropertyMap",this),
+        3, ++yTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -391,6 +435,7 @@ private void refresh ()
     String SequenceIncrement = "";
 	String TableID = "";
 	String TableColumn = "";
+	String TablePropertyMap = "";
 	__error_wait = false;
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -403,6 +448,7 @@ private void refresh ()
 	    SequenceIncrement = props.getValue( "SequenceIncrement" );
 		TableID = props.getValue( "TableID" );
 		TableColumn = props.getValue( "TableColumn" );
+		TablePropertyMap = props.getValue ( "TablePropertyMap" );
 		if ( Name != null ) {
 		    __Name_JTextField.setText( Name );
 		}
@@ -442,6 +488,9 @@ private void refresh ()
         if ( TableColumn != null ) {
             __TableColumn_JTextField.setText( TableColumn );
         }
+        if ( TablePropertyMap != null ) {
+            __TablePropertyMap_JTextArea.setText ( TablePropertyMap );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	Name = __Name_JTextField.getText().trim();
@@ -452,6 +501,7 @@ private void refresh ()
     SequenceIncrement = __SequenceIncrement_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
     TableColumn = __TableColumn_JTextField.getText().trim();
+	TablePropertyMap = __TablePropertyMap_JTextArea.getText().trim().replace("\n"," ");
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
     props.add ( "IteratorProperty=" + IteratorProperty );
@@ -461,6 +511,7 @@ private void refresh ()
     props.add ( "SequenceIncrement=" + SequenceIncrement );
     props.set ( "TableID", TableID ); // May contain = so handle differently
     props.add ( "TableColumn=" + TableColumn );
+    props.add ( "TablePropertyMap=" + TablePropertyMap );
     __command_JTextArea.setText( __command.toString(props) );
 }
 

@@ -1,7 +1,9 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
 
@@ -34,6 +36,11 @@ public class For_Command extends AbstractCommand implements Command
 Current index property value.
 */
 private Object iteratorObject = null;
+
+/**
+Hashmap for column to property map.
+*/
+private Hashtable tablePropertyMap = null;
 
 /**
 Indicate that the iterator is using a list.
@@ -202,7 +209,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(8);
+    List<String> validList = new ArrayList<String>(9);
 	validList.add ( "Name" );
 	validList.add ( "IteratorProperty" );
 	validList.add ( "List" );
@@ -211,6 +218,7 @@ throws InvalidCommandParameterException
 	validList.add ( "SequenceIncrement" );
 	validList.add ( "TableID" );
 	validList.add ( "TableColumn" );
+	validList.add ( "TablePropertyMap" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
@@ -245,8 +253,8 @@ public int getIterationsCompleted ()
 }
 
 /**
-Return the current index property value.
-@return the current index property value
+Return the current iterator index property value.
+@return the current iterator index property value
 */
 public Object getIteratorPropertyValue ()
 {
@@ -264,7 +272,7 @@ public String getName ()
 
 /**
 Increment the loop counter.
-If called the first time, initialize.
+If called the first time, initialize.  This may be called before runCommands() so have to process properties here.
 If the increment will go past the end, return false.
 */
 public boolean next ()
@@ -339,12 +347,13 @@ public boolean next ()
 	        // Initialize the loop
 	        setIteratorPropertyValue(null);
 	        // Create the list of objects for the iterator
-	        // The table may change dynamically so lookup the column number here
+	        // The list is looked up once because rows cannot be added to the table during processing.
 	        String TableID = getCommandParameters().getValue ( "TableID" );
 	        if ( (TableID != null) && !TableID.isEmpty() && TableID.indexOf("${") >= 0 ) {
 	       		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	        }
 	        String columnName = getCommandParameters().getValue ( "TableColumn" );
+	        parseTablePropertyMap ( getCommandParameters().getValue ( "TablePropertyMap" ) );
 	        // TODO SAM 2014-06-29 Need to optimize all of this - currently have duplicate code in runCommand()
 	        CommandStatus status = getCommandStatus();
 	        status.clearLog(CommandPhaseType.RUN);
@@ -354,7 +363,7 @@ public boolean next ()
 	        String command_tag = "";
 	        int warning_count = 0;
 	        if ( (TableID != null) && !TableID.equals("") ) {
-	            // Get the table to be updated
+	            // Get the table providing the list
 	            request_params = new PropList ( "" );
 	            request_params.set ( "TableID", TableID );
 	            try {
@@ -397,6 +406,8 @@ public boolean next ()
 	            if ( Message.isDebugOn ) {
 	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
 	            }
+	            // Also need to set properties
+	            nextSetPropertiesFromTable();
 	            return true;
 	        }
 	        catch ( Exception e ) {
@@ -413,7 +424,7 @@ public boolean next ()
 	    }
   	}
     else {
-        // Increment the property
+        // Increment the property and optionally set properties from table columns
     	if ( this.iteratorIsList || this.iteratorIsTable ) {
 	        if ( this.iteratorObjectListIndex >= (this.iteratorObjectList.size() - 1) ) {
 	            // Done iterating
@@ -427,6 +438,11 @@ public boolean next ()
 	            this.iteratorObject = this.iteratorObjectList.get(this.iteratorObjectListIndex);
 	        	if ( Message.isDebugOn ) {
 	        		Message.printDebug(1, routine, "Iterator object set to: " + this.iteratorObject );
+	        	}
+	        	// If properties were requested, set.  The column number is looked up each time because columns may be added
+	        	// in the loop.
+	        	if ( this.tablePropertyMap != null ) {
+	        		nextSetPropertiesFromTable();
 	        	}
 	            return true;
 	        }
@@ -467,6 +483,84 @@ public boolean next ()
     		// Iteration type not recognized so jump out right away to avoid infinite loop.
     		return true;
     	}
+    }
+}
+
+/**
+Set properties from the table.
+*/
+private void nextSetPropertiesFromTable() {
+	String message, routine = getClass().getSimpleName() + ".nextSetPropertiesFromTable";
+	TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
+	Hashtable<String,String> map = this.tablePropertyMap;
+	int propertyColumnNum = -1;
+	String key = null;
+	String propertyName = null;
+	for ( Map.Entry<String,String> entry : map.entrySet() ) {
+	    propertyColumnNum = -1;
+	    try {
+	    	// key is the column name
+	    	// 
+	        key = entry.getKey();
+	        propertyName = entry.getValue();
+	        propertyColumnNum = table.getFieldIndex(key);
+	    }
+	    catch ( Exception e ) {
+	    	message = "Column \"" + key + "\" not found in table (" + e + ").  Cannot set corresponding property.";
+	        Message.printWarning(3, routine, message);
+	        continue;
+	    }
+	    Object o = null;
+	    try {
+	        // Set the processor property value
+	        // The table record index corresponds to the list values used in iteration
+	    	// Set using a property because processor.setPropContents() only works for built-in properties
+	    	// Want to set the same as the table value even if null, but also need string value
+	    	o = table.getFieldValue(this.iteratorObjectListIndex, propertyColumnNum);
+	    }
+	    catch ( Exception e ) {
+	    	message = "Error getting property value from table (" + e + ").";
+	        Message.printWarning(3, routine, message);
+	        continue;
+	    }
+	    PropList request_params = new PropList ( "" );
+		request_params.setUsingObject ( "PropertyName", propertyName );
+		request_params.setUsingObject ( "PropertyValue", o );
+		try {
+	        processor.processRequest( "SetProperty", request_params);
+		}
+		catch ( Exception e ) {
+			message = "Error requesting SetProperty(Property=\"" + propertyName + "\") from processor.";
+			/* TODO SAM 2016-04-09 Need to do logging for errors
+			Message.printWarning(log_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+	        status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Report the problem to software support." ) );
+	        */
+	    	message = "Error setting property value (" + e + ").";
+	        Message.printWarning(3, routine, message);
+	        continue;
+		}
+	}
+}
+
+/**
+Parse the TablePropertyMap command parameter and set internal data.
+This is necessary because the next() method is called before runCommand().
+*/
+private void parseTablePropertyMap ( String TablePropertyMap ) {
+	//if ( TablePropertyMap != null) && (TablePropertyMap)
+    this.tablePropertyMap = new Hashtable();
+    if ( (TablePropertyMap != null) && (TablePropertyMap.length() > 0) && (TablePropertyMap.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(TablePropertyMap, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            this.tablePropertyMap.put(parts[0].trim(), parts[1].trim() );
+        }
     }
 }
 
@@ -565,6 +659,7 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
     	this.iteratorIsTable = true;
     }
 	// TableColumn is looked up in next() method because table columns may be added within loop
+    // TablePropertyMap handled in next(), which is called before this method
 	
     // Get the table to process.  This logic is repeated in next() because next() is called first.
 
@@ -704,6 +799,7 @@ public String toString ( PropList props )
     String SequenceIncrement = props.getValue( "SequenceIncrement" );
     String TableID = props.getValue( "TableID" );
     String TableColumn = props.getValue( "TableColumn" );
+    String TablePropertyMap = props.getValue( "TablePropertyMap" );
     StringBuffer b = new StringBuffer ();
     if ( (Name != null) && (Name.length() > 0) ) {
         b.append ( "Name=\"" + Name + "\"" );
@@ -749,6 +845,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "TableColumn=\"" + TableColumn + "\"" );
+    }
+    if ( (TablePropertyMap != null) && (TablePropertyMap.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TablePropertyMap=\"" + TablePropertyMap + "\"" );
     }
     return getCommandName() + "(" + b.toString() + ")";
 }

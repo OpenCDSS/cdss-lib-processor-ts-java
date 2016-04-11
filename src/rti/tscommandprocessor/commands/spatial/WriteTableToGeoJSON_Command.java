@@ -15,6 +15,7 @@ import com.google.gson.Gson;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.GIS.GeoView.GeoJSONGeometryFormatter;
+import RTi.GIS.GeoView.UnrecognizedGeometryException;
 import RTi.GIS.GeoView.WKTGeometryParser;
 import RTi.GR.GRPoint;
 import RTi.GR.GRPointZM;
@@ -791,10 +792,21 @@ throws IOException
 	                wkt = rec.getFieldValueString(wktGeometryColNum);
 	                // Parse WKT string needs to extract coordinates
 	                //Message.printStatus(2, "", "Parsing \"" + wkt + "\"." );
-	                shape = wktParser.parseWKT(wkt);
-	                if ( shape == null ) {
-	                    //Message.printStatus(2, "", "Shape from \"" + wkt + "\" is null." );
-	                    continue;
+	                try {
+	                	shape = wktParser.parseWKT(wkt);
+		                if ( shape == null ) {
+		                    //Message.printStatus(2, "", "Shape from \"" + wkt + "\" is null." );
+		                    continue;
+		                }
+	                }
+	                catch ( UnrecognizedGeometryException ue ) {
+	                	errors.add("Unrecognized WKT geometry type (" + ue + ") table row " + (iRow + 1) );
+	                	continue;
+	                }
+	                catch ( Exception e ) {
+	                	errors.add("Exception adding shape (" + e + ") table row " + (iRow + 1) );
+	                	Message.printWarning(3,"",e);
+	                	continue;
 	                }
 	            }
 	            // If get to here it is OK to output the feature and table columns as related properties.

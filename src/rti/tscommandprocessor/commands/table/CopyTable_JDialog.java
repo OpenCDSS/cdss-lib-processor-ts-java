@@ -411,7 +411,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String NewTableID = "";
     String IncludeColumns = "";

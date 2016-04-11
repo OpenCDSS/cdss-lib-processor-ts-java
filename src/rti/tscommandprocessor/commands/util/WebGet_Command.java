@@ -15,6 +15,7 @@ import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -85,14 +86,8 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify the URI."));
 	}
-    if ( (LocalFile == null) || (LocalFile.length() == 0) ) {
-        message = "The local file must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a local file." ) );
-    }
-    else {
+	// LocalFile is not required given that output property can be specified
+    if ( (LocalFile != null) && !LocalFile.isEmpty() && (LocalFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -133,10 +128,11 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "URI" );
-	valid_Vector.add ( "LocalFile" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(3);
+	validList.add ( "URI" );
+	validList.add ( "LocalFile" );
+	validList.add ( "OutputProperty" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -182,15 +178,14 @@ private File getOutputFile ()
 /**
 Run the command.
 @param command_line Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "WebGet_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
+	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
@@ -202,19 +197,37 @@ CommandWarningException, CommandException
 	
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	
 	String URI = parameters.getValue ( "URI" );
 	if ( URI != null ) {
 	    URI = TSCommandProcessorUtil.expandParameterValue(processor,this,URI);
 	}
     String LocalFile = parameters.getValue ( "LocalFile" );
-	if ( LocalFile != null ) {
+    boolean doOutputFile = false;
+	if ( (LocalFile != null) && !LocalFile.isEmpty() ) {
 		LocalFile = TSCommandProcessorUtil.expandParameterValue(processor,this,LocalFile);
+		doOutputFile = true;
 	}
-
 	String LocalFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LocalFile) );
+	boolean doOutputProperty = false;
+	String OutputProperty = parameters.getValue ( "OutputProperty" );
+	if ( (OutputProperty != null) && !OutputProperty.isEmpty() ) {
+		doOutputProperty = true;
+	}
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -227,6 +240,10 @@ CommandWarningException, CommandException
 	    FileOutputStream fos = null;
 	    HttpURLConnection urlConnection = null;
 	    InputStream is = null;
+    	StringBuilder content = null;
+    	if ( doOutputProperty ) {
+    		content = new StringBuilder();
+    	}
         try {
             // Some sites need cookie manager
             // (see http://stackoverflow.com/questions/11022934/getting-java-net-protocolexception-server-redirected-too-many-times-error)
@@ -238,19 +255,54 @@ CommandWarningException, CommandException
             is = urlConnection.getInputStream();
             BufferedInputStream isr = new BufferedInputStream(is);
             // Open the output file...
-            fos = new FileOutputStream( LocalFile_full );
+            if ( doOutputFile ) {
+            	fos = new FileOutputStream( LocalFile_full );
+            }
             // Output the characters to the local file...
             int numCharsRead;
             int arraySize = 8192; // 8K optimal
             byte[] byteArray = new byte[arraySize];
             int bytesRead = 0;
             while ((numCharsRead = isr.read(byteArray, 0, arraySize)) != -1) {
-                fos.write(byteArray, 0, numCharsRead);
+            	if ( doOutputFile ) {
+            		fos.write(byteArray, 0, numCharsRead);
+            	}
+                if ( doOutputProperty ) {
+                	// Also set the content in memory
+                	if ( numCharsRead == byteArray.length ) {
+                		content.append(new String(byteArray));
+                	}
+                	else {
+                		byte [] byteArray2 = new byte[numCharsRead];
+                		System.arraycopy(byteArray, 0, byteArray2, 0, numCharsRead);
+                		content.append(new String(byteArray2));
+                	}
+                }
                 bytesRead += numCharsRead;
             }
             // Save the output file name...
             Message.printStatus(2,routine,"Number of bytes read=" + bytesRead );
-            setOutputFile ( new File(LocalFile_full));
+            if ( doOutputFile ) {
+            	setOutputFile ( new File(LocalFile_full));
+            }
+            // If requested, also set as a property
+            if ( doOutputProperty ) {
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "PropertyName", OutputProperty );
+                request_params.setUsingObject ( "PropertyValue", content.toString() );
+                try {
+                    processor.processRequest( "SetProperty", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting SetProperty(Property=\"" + OutputProperty + "\") from processor.";
+                    Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+                }
+            }
         }
         catch (MalformedURLException e) {
             message = "URI \"" + URI + "\" is malformed (" + e + ")";
@@ -302,8 +354,10 @@ CommandWarningException, CommandException
             	catch ( IOException e ) {
             	}
             }
-            if ( fos != null ) {
-                fos.close();
+            if ( doOutputFile ) {
+	            if ( fos != null ) {
+	                fos.close();
+	            }
             }
             if ( urlConnection != null ) {
             	urlConnection.disconnect();
@@ -341,6 +395,7 @@ public String toString ( PropList parameters )
 	}
     String URI = parameters.getValue ( "URI" );
     String LocalFile = parameters.getValue ( "LocalFile" );
+    String OutputProperty = parameters.getValue ( "OutputProperty" );
 	StringBuffer b = new StringBuffer ();
 	if ( (URI != null) && (URI.length() > 0) ) {
 		b.append ( "URI=\"" + URI + "\"" );
@@ -350,6 +405,12 @@ public String toString ( PropList parameters )
 			b.append ( "," );
 		}
 		b.append ( "LocalFile=\"" + LocalFile + "\"" );
+	}
+	if ( (OutputProperty != null) && (OutputProperty.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "OutputProperty=\"" + OutputProperty + "\"" );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

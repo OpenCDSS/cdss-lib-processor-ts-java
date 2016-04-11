@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -29,7 +31,6 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -39,13 +40,13 @@ implements ActionListener, KeyListener, WindowListener
 private final String __AddWorkingDirectoryFile = "Add Working Directory to Local File";
 private final String __RemoveWorkingDirectoryFile = "Remove Working Directory from Local File";
 
-private SimpleJButton
-            __browse_JButton = null,
-			__path_JButton = null,
-			__cancel_JButton = null,
-			__ok_JButton = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private JTextArea __URI_JTextArea = null;
 private JTextField __LocalFile_JTextField = null;
+private JTextField __OutputProperty_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
 private boolean __error_wait = false;
@@ -141,12 +142,16 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String URI = __URI_JTextArea.getText().trim();
 	String LocalFile = __LocalFile_JTextField.getText().trim();
+	String OutputProperty = __OutputProperty_JTextField.getText().trim();
 	__error_wait = false;
 	if ( URI.length() > 0 ) {
 		props.set ( "URI", URI );
 	}
     if ( LocalFile.length() > 0 ) {
         props.set ( "LocalFile", LocalFile );
+    }
+    if ( OutputProperty.length() > 0 ) {
+        props.set ( "OutputProperty", OutputProperty );
     }
 	try {
 	    // This will warn the user...
@@ -165,8 +170,10 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String URI = __URI_JTextArea.getText().trim();
     String LocalFile = __LocalFile_JTextField.getText().trim();
+    String OutputProperty = __OutputProperty_JTextField.getText().trim();
 	__command.setCommandParameter ( "URI", URI );
 	__command.setCommandParameter ( "LocalFile", LocalFile );
+	__command.setCommandParameter ( "OutputProperty", OutputProperty );
 }
 
 /**
@@ -206,23 +213,23 @@ private void initialize ( JFrame parent, WebGet_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command retrieves content from the web using a Uniform Resource Identifier (URI) and" +
-		" saves the content to a local file." ),
+		" saves the content to a local file and/or a processor property." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The URI and local file can be specified using ${Property} notation to utilize global properties."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
-    		"It is recommended that the local file name be relative to the working directory, which is:"),
+    		"It is recommended that the local file name is relative to the working directory, which is:"),
     		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
     		"    " + __working_dir),
     		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("URI:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __URI_JTextArea = new JTextArea ( 6, 60 );
+    __URI_JTextArea.setToolTipText("Specify the URL from which to read content, can use ${Property}.");
     __URI_JTextArea.setLineWrap ( true );
     __URI_JTextArea.setWrapStyleWord ( true );
     __URI_JTextArea.addKeyListener ( this );
@@ -233,12 +240,23 @@ private void initialize ( JFrame parent, WebGet_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Local file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__LocalFile_JTextField = new JTextField ( 50 );
+	__LocalFile_JTextField.setToolTipText("Specify the output file (will have same the contents as retrieved from URL), can use ${Property}.");
 	__LocalFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __LocalFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output property:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputProperty_JTextField = new JTextField (10);
+    __OutputProperty_JTextField.setToolTipText("Name of processor property to assign retrieved URI content.");
+    __OutputProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputProperty_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - property name for output (default=not set)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -307,26 +325,33 @@ private void refresh ()
 {	//String routine = "WebGet_JDialog.refresh";
     String URI = "";
     String LocalFile = "";
+    String OutputProperty = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
         parameters = __command.getCommandParameters();
         URI = parameters.getValue ( "URI" );
         LocalFile = parameters.getValue ( "LocalFile" );
+        OutputProperty = parameters.getValue ( "OutputProperty" );
 		if ( URI != null ) {
 			__URI_JTextArea.setText ( URI );
 		}
         if ( LocalFile != null ) {
             __LocalFile_JTextField.setText ( LocalFile );
         }
+        if ( OutputProperty != null ) {
+            __OutputProperty_JTextField.setText ( OutputProperty );
+        }
 	}
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
 	URI = __URI_JTextArea.getText().trim();
     LocalFile = __LocalFile_JTextField.getText().trim();
+    OutputProperty = __OutputProperty_JTextField.getText().trim();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "URI=" + URI );
 	props.add ( "LocalFile=" + LocalFile );
+	props.add ( "OutputProperty=" + OutputProperty );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

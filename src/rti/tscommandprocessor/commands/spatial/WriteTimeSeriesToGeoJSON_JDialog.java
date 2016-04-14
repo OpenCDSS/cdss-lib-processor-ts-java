@@ -418,6 +418,9 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
         "If the time series are associated with a point layer, then spatial information can be specified from time series properties (below)."),
         0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(point_JPanel, new JLabel (
+        "The property names are case-specific."),
+        0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel (
         "Otherwise, specify shape data using parameters in the Geometry Data tab."),
         0, ++yPoint, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(point_JPanel, new JSeparator(SwingConstants.HORIZONTAL),

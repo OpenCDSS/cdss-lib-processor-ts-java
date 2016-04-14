@@ -544,7 +544,8 @@ private void writeTimeSeriesToGeoJSON ( List<TS> tslist, String outputFile, bool
     String longitudeProperty, String latitudeProperty, String elevationProperty, String wktGeometryProperty, String javaScriptVar,
     String prependText, String appendText, List<String> errors )
 throws IOException
-{   PrintWriter fout = null;
+{   String routine = getClass().getSimpleName() + ".writeTimeSeriesToGeoJSON";
+	PrintWriter fout = null;
 	if ( appendText == null ) {
 		appendText = "";
 	}
@@ -607,11 +608,20 @@ throws IOException
 	    int nts = tslist.size();
 	    int nts0 = nts - 1;
 	    Object o = null; // Object from t
-	    TS ts;
+	    TS ts = null;
 	    boolean haveElevation = false;
+	    if ( Message.isDebugOn ) {
+	    	Message.printDebug(1,routine,"Processing " + nts + " time series into GeoJSON...");
+	    }
 	    for ( int its = 0; its < nts; its++ ) {
 	        try {
 	            ts = tslist.get(its);
+	            if ( ts == null ) {
+	            	continue;
+	            }
+	            if ( Message.isDebugOn ) {
+	            	Message.printDebug(1,routine,"Processing \"" + ts.getIdentifierString() + "\"");
+	            }
 	            longitudeO = null;
 	            latitudeO = null;
 	            haveElevation = false;
@@ -619,6 +629,7 @@ throws IOException
 	                // Property columns can be any type because objects are treated as strings below
 	                longitudeO = ts.getProperty(longitudeProperty);
 	                if ( longitudeO == null ) {
+	                	Message.printStatus(2,routine,"Skipping because longitude property is null.");
 	                    continue;
 	                }
 	                else if ( longitudeO instanceof Double ) {
@@ -632,6 +643,7 @@ throws IOException
 	                }
 	                latitudeO = ts.getProperty(latitudeProperty);
 	                if ( latitudeO == null ) {
+	                	Message.printStatus(2,routine,"Skipping because latitude property is null.");
 	                    continue;
 	                }
 	                else if ( latitudeO instanceof Double ) {
@@ -751,7 +763,7 @@ throws IOException
 	    	    }
 	        }
 	        catch ( Exception e ) {
-	            errors.add("Error adding shape (" + e + ")." );
+	            errors.add("Error adding GeoJSON shape for time series \"" + ts.getIdentifierString() + "\" (" + e + ")." );
 	            Message.printWarning(3, "", e);
 	            continue;
 	        }

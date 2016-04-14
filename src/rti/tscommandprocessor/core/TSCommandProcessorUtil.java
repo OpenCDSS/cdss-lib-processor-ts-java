@@ -429,6 +429,7 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         String propvalString = "";
         try {
             propval = processor.getPropContents ( propname );
+            // The following should work for all representations as long as the toString() does not truncate
             propvalString = "" + propval;
         }
         catch ( Exception e ) {
@@ -439,12 +440,13 @@ public static String expandParameterValue( CommandProcessor processor, Command c
             // Keep the original literal value to alert user that property could not be expanded
             propvalString = delimStart + propname + delimEnd;
         }
+        // If here have a property
         StringBuffer b = new StringBuffer();
         // Append the start of the string
         if ( foundPos > 0 ) {
             b.append ( parameterValue.substring(0,foundPos) );
         }
-        // Now append the value of the property...
+        // Now append the value of the property.
         b.append ( propvalString );
         // Now append the end of the original string if anything is at the end...
         if ( parameterValue.length() > (foundPosEnd + 1) ) {
@@ -1481,6 +1483,42 @@ protected static List<TS> getPatternTSListFromCommands ( List commands )
         // Return original order below
     }
     return v;
+}
+
+/**
+Lookup a property by its name and return the value as a Double.
+This is useful for ${Property} lookups for floating point data.
+The normal expandParameterValue() method does not work well because floating point numbers are
+converted to scientific notation in some cases, which may truncate the value that is expected.
+@param processor command processor from which to retrieve properties.
+If it is ${Property} syntax the surrounding characters will be stripped.
+@paramName parameter name to look up
+@return the parameter value as a Double or null
+@exception NumberFormatException if the property has a value but cannot be converted to a Double.
+*/
+public static Double getPropertyValueAsDouble ( TSCommandProcessor processor, String propName )
+throws NumberFormatException
+{	propName = propName.replace("${", "").replace("}","");
+	Object o = null;
+	try {
+		o = processor.getPropContents ( propName );
+	}
+	catch ( Exception e ) {
+		throw new NumberFormatException("Requested property \"" + propName + "\" is not found in processor");
+	}
+	if ( o == null ) {
+		return null;
+	}
+	if ( o instanceof Double ) {
+		return (Double)o;
+	}
+	else if ( o instanceof Float ) {
+		return new Double((Float)o);
+	}
+	else {
+		// Integers, strings, etc. try to parse Double and throw exception if an error
+		return Double.parseDouble(""+o);
+	}
 }
 
 /**

@@ -276,6 +276,13 @@ private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean 
         adjusted.setHour(dt.getHour());
         adjusted.setMinute(0);
     }
+    else if ( dt.getPrecision() == DateTime.PRECISION_MINUTE ) {
+        adjusted.setYear(dt.getYear());
+        adjusted.setMonth(dt.getMonth());
+        adjusted.setDay(dt.getDay());
+        adjusted.setHour(dt.getHour());
+        adjusted.setMinute(dt.getMinute());
+    }
     return adjusted;
 }
 
@@ -1100,7 +1107,8 @@ throws Exception
                 String timeWindow = createTimeWindowString ( adjustRequestedDateTimePrecision(readStartReq,true),
                     adjustRequestedDateTimePrecision(readEndReq,false), ts, true );
                 Message.printStatus(2, routine,
-                    "Setting time window for read (requested by calling code) to \"" + timeWindow + "\"" );
+                    "Setting time window for read (requested by calling code) to \"" + timeWindow +
+                    "\" based on requested start \"" + readStartReq + "\" and end \"" + readEndReq + "\"" );
                 rts.setTimeWindow(timeWindow);
             }
             else {
@@ -1744,9 +1752,9 @@ throws IOException, Exception
     // Throw an exception if there were any other problems in the loop.  Could put this in the loop but want
     // as much writing to occur as possible.  For now a single message is passed back to the calling code.
     int pathsNotWritten80ListSize = pathsNotWritten80List.size();
-    int pathsNotWrittenBadIntervalListSize = pathsNotWritten80List.size();
+    int pathsNotWrittenBadIntervalListSize = pathsNotWrittenBadIntervalList.size();
     StringBuffer b = new StringBuffer();
-    if ( (pathsNotWritten80ListSize > 0) || (pathsNotWrittenBadIntervalListSize > 0) ) {
+    if ( pathsNotWritten80ListSize > 0 ) {
         b.append ( "\nError writing the following time series because the pathname is > 80 characters:\n" );
         for ( int i = 0; i < pathsNotWritten80ListSize; i++ ) {
             if ( i > 0 ) {
@@ -1754,6 +1762,8 @@ throws IOException, Exception
             }
             b.append ( (String)pathsNotWritten80List.get(i) );
         }
+    }
+    if ( pathsNotWrittenBadIntervalListSize > 0 ) {
         b.append ( "\nError writing the following time series because the interval is not supported:\n" );
         for ( int i = 0; i < pathsNotWrittenBadIntervalListSize; i++ ) {
             if ( i > 0 ) {

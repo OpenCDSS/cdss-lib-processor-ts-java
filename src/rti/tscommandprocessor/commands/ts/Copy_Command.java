@@ -518,65 +518,115 @@ CommandWarningException, CommandException
 	// Now process the time series...
 
 	TS tscopy = null;
+	boolean error = false;
 	try {
-		if ( ts == null ) {
-			// This happens in discovery mode, especially in complex dynamic processes when using ${Property} notation
-			if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-			    // Create the time series...
-				try {
-					tscopy = TSUtil.newTimeSeries ( NewTSID, true );
-					if ( tscopy == null ) {
-			            message = "Null time series returned when trying to create with NewTSID=\"" + NewTSID + "\"";
-			            Message.printWarning ( warning_level,
-			                    MessageUtil.formatMessageTag(
-			                    command_tag,++warning_count),routine,message );
-			            status.addToLog ( commandPhase,
-		                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Verify the NewTSID - contact software support if necessary." ) );
-						throw new Exception ( "Null time series." );
-					}
-				}
-				catch ( Exception e ) {
-					message = "Unexpected error creating the new time series using NewTSID=\""+	NewTSID + "\".";
-					Message.printWarning ( warning_level,
-						MessageUtil.formatMessageTag(
-						command_tag,++warning_count),routine,message );
-					Message.printWarning(3,routine,e);
-			        status.addToLog ( commandPhase,
-		                new CommandLogRecord(CommandStatusType.FAILURE,
-	                        message, "Verify the NewTSID - contact software support if necessary." ) );
-					throw new CommandException ( message );
+		if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+		    // Create the time series...
+			try {
+				tscopy = TSUtil.newTimeSeries ( NewTSID, true );
+				if ( tscopy == null ) {
+		            message = "Null time series returned when trying to create with NewTSID=\"" + NewTSID + "\"";
+		            Message.printWarning ( warning_level,
+		                    MessageUtil.formatMessageTag(
+		                    command_tag,++warning_count),routine,message );
+		            status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the NewTSID - contact software support if necessary." ) );
 				}
 			}
+			catch ( Exception e ) {
+				message = "Unexpected error creating the new time series using NewTSID=\""+	NewTSID + "\".";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag(
+					command_tag,++warning_count),routine,message );
+				Message.printWarning(3,routine,e);
+		        status.addToLog ( commandPhase,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the NewTSID - contact software support if necessary." ) );
+			}
 		}
-		else {
-			// Should work in runtime
-			tscopy = (TS)ts.clone();
-		}
-        if ( commandPhase == CommandPhaseType.RUN ) {
-            if ( !copyDataFlags ) {
-                // Clear out the data flags in the copy
-                if ( tscopy.hasDataFlags() ) {
-                    // Iterate through and set to blank (since no API to totally remove)
-                    TSIterator tsi = tscopy.iterator();
-                    TSData tsdata;
-                    while ( (tsdata = tsi.next()) != null ) {
-                        tscopy.setDataValue(tsdata.getDate(), tsdata.getDataValue(), "", tsdata.getDuration() );
-                    }
-                }
-            }
-            if ( !copyHistory ) {
-                // Clear out the history
-                tscopy.setGenesis(new ArrayList<String>());
-            }
-            // Add a new message to the genesis
-            if ( ts.getAlias().length() > 0 ) {
-                tscopy.addToGenesis("Copied TSID=\"" + ts.getIdentifier() + "\" Alias=\"" + ts.getAlias() + "\"");
-            }
-            else {
-                tscopy.addToGenesis("Copied TSID=\"" + ts.getIdentifier() + "\"");
-            }
+		else if ( commandPhase == CommandPhaseType.RUN ) {
+			// Make sure that the requested output time series interval matches the original
+        	// Although it is possible to copy using different intervals this is not desirable
+			TSIdent newTSID = new TSIdent(NewTSID);
+			if ( !TSUtil.intervalsMatch(ts.getIdentifier(),newTSID) ) {
+				message = "Original time series \"" + ts.getIdentifierString() + "\" and copy \"" + NewTSID +
+					"\" have different data intervals.  Unable to copy.";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag(
+					command_tag,++warning_count),routine,message );
+		        status.addToLog ( commandPhase,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the copy has the same interval as the original." ) );
+				error = true;
+			}
+			if ( !error ) {
+				tscopy = (TS)ts.clone();
+	            if ( !copyDataFlags ) {
+	                // Clear out the data flags in the copy
+	                if ( tscopy.hasDataFlags() ) {
+	                    // Iterate through and set to blank (since no API to totally remove)
+	                    TSIterator tsi = tscopy.iterator();
+	                    TSData tsdata;
+	                    while ( (tsdata = tsi.next()) != null ) {
+	                        tscopy.setDataValue(tsdata.getDate(), tsdata.getDataValue(), "", tsdata.getDuration() );
+	                    }
+	                }
+	            }
+	            if ( !copyHistory ) {
+	                // Clear out the history
+	                tscopy.setGenesis(new ArrayList<String>());
+	            }
+	            // Add a new message to the genesis
+	            if ( ts.getAlias().length() > 0 ) {
+	                tscopy.addToGenesis("Copied TSID=\"" + ts.getIdentifier() + "\" Alias=\"" + ts.getAlias() + "\"");
+	            }
+	            else {
+	                tscopy.addToGenesis("Copied TSID=\"" + ts.getIdentifier() + "\"");
+	            }
+			}
         }
+		if ( tscopy != null ) {
+			try {
+				// NewTSID was expanded above
+		        if ( (NewTSID != null) && !NewTSID.isEmpty() ) {
+					TSIdent tsident = new TSIdent ( NewTSID );
+					tscopy.setIdentifier ( tsident );
+				}
+		        if ( (Alias != null) && !Alias.isEmpty() ) {
+		            String alias = Alias;
+		            if ( commandPhase == CommandPhaseType.RUN ) {
+		            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+		            		processor, tscopy, Alias, status, commandPhase);
+		            }
+		            tscopy.setAlias ( alias );
+		        }
+			}
+			catch ( Exception e ) {
+				message = "Unexpected error setting the new time series identifier \"" + NewTSID + "\" (" + e + ").";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag(
+					command_tag,++warning_count),routine,message );
+				Message.printWarning(3,routine,e);
+		        status.addToLog ( commandPhase,
+		            new CommandLogRecord(CommandStatusType.FAILURE,
+		                message, "Check the log file - report the problem to software support." ) );
+			}
+	
+		    // Update the data to the processor so that appropriate actions are taken...
+	
+		    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+		        // Just want time series headers initialized
+		        List<TS> discoveryTSList = new ArrayList<TS>(1);
+		        if ( tscopy != null ) {
+		        	discoveryTSList.add ( tscopy );
+		        }
+		        setDiscoveryTSList ( discoveryTSList );
+		    }
+		    else if ( commandPhase == CommandPhaseType.RUN ) {
+		        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, tscopy );
+		    }
+		}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error trying to copy time series \""+ ts.getIdentifier() + "\".";
@@ -588,46 +638,6 @@ CommandWarningException, CommandException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Check the log file - report the problem to software support." ) );
 	}
-
-	try {
-		// NewTSID was expanded above
-        if ( (NewTSID != null) && !NewTSID.isEmpty() ) {
-			TSIdent tsident = new TSIdent ( NewTSID );
-			tscopy.setIdentifier ( tsident );
-		}
-        if ( (Alias != null) && !Alias.isEmpty() ) {
-            String alias = Alias;
-            if ( commandPhase == CommandPhaseType.RUN ) {
-            	alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-            		processor, tscopy, Alias, status, commandPhase);
-            }
-            tscopy.setAlias ( alias );
-        }
-	}
-	catch ( Exception e ) {
-		message = "Unexpected error setting the new time series identifier \"" + NewTSID + "\" (" + e + ").";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count),routine,message );
-		Message.printWarning(3,routine,e);
-        status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Check the log file - report the problem to software support." ) );
-	}
-
-    // Update the data to the processor so that appropriate actions are taken...
-
-    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Just want time series headers initialized
-        List<TS> discoveryTSList = new ArrayList<TS>(1);
-        if ( tscopy != null ) {
-        	discoveryTSList.add ( tscopy );
-        }
-        setDiscoveryTSList ( discoveryTSList );
-    }
-    else if ( commandPhase == CommandPhaseType.RUN ) {
-        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, tscopy );
-    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";

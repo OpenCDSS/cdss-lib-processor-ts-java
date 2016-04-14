@@ -287,7 +287,7 @@ private void initialize ( JFrame parent, Copy_Command command )
     __CopyDataFlags_JComboBox.setData ( choices );
     __CopyDataFlags_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __CopyDataFlags_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - should data flags be copied (default=" + __command._True + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -298,7 +298,7 @@ private void initialize ( JFrame parent, Copy_Command command )
     __CopyHistory_JComboBox.setData ( choices );
     __CopyHistory_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __CopyHistory_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - should history be copied (default=" + __command._True + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
@@ -71,21 +72,24 @@ throws InvalidCommandParameterException
                         message, "Provide a time series identifier." ) );
 	}
     */
-	if ( (ConstantValue == null) || ConstantValue.equals("") ) {
+	if ( (ConstantValue == null) || ConstantValue.isEmpty() ) {
         message = "The constant value must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Provide a constant value." ) );
 	}
-    if ( !ConstantValue.equals("") && !StringUtil.isDouble(ConstantValue) ) {
-        message = "The constant value " + ConstantValue + " is not a number.";
+	else if ( ConstantValue.startsWith("${") && ConstantValue.endsWith("}") ) {
+		// OK
+	}
+	else if ( !StringUtil.isDouble(ConstantValue) ) {
+        message = "The constant value " + ConstantValue + " is not a number or ${Property}.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the constant value as a number." ) );
+                message, "Specify the constant value as a number or ${Property}." ) );
     }
-	if ( (AnalysisStart != null) && !AnalysisStart.isEmpty() && !AnalysisStart.startsWith("${") &&
+	if ( (AnalysisStart != null) && !AnalysisStart.isEmpty() && (AnalysisStart.indexOf("${") < 0) &&
 		!AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
 		try {	DateTime.parse(AnalysisStart);
 		}
@@ -97,7 +101,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, OutputStart, or output end." ) );
 		}
 	}
-	if ( (AnalysisEnd != null) && !AnalysisEnd.isEmpty() && !AnalysisEnd.startsWith("${") &&
+	if ( (AnalysisEnd != null) && !AnalysisEnd.isEmpty() && (AnalysisEnd.indexOf("${") < 0) &&
 		!AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
 		try {	DateTime.parse( AnalysisEnd );
 		}
@@ -281,6 +285,28 @@ CommandWarningException, CommandException
 	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
+    String ConstantValue = parameters.getValue("ConstantValue");
+    double constantValue = Double.NaN;
+	if ( (ConstantValue != null) && !ConstantValue.isEmpty() ) {
+	    try {
+			if ( ConstantValue.startsWith("${") ) {
+				// Property must be a floating point value because string expansion may drop digits from Integer.toString()
+				constantValue = TSCommandProcessorUtil.getPropertyValueAsDouble((TSCommandProcessor)processor, ConstantValue);
+			}
+			else {
+				constantValue = Double.parseDouble(ConstantValue);
+			}
+	    }
+	    catch ( NumberFormatException e ) {
+			message = "ConstantValue is not a number.  If using ${Property} the property was not found or was not a number at runtime.";
+			Message.printWarning(log_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+	        status.addToLog ( CommandPhaseType.RUN,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Correct the ConstatValue parameter." ) );
+	    }
+	}
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 
@@ -383,9 +409,6 @@ CommandWarningException, CommandException
 	}
 
 	// Now process the time series...
-    
-    String ConstantValue = parameters.getValue("ConstantValue");
-    double ConstantValue_double = StringUtil.atod ( ConstantValue );
 
 	TS ts = null;
 	Object o_ts = null;
@@ -411,7 +434,7 @@ CommandWarningException, CommandException
 		try {
             // Do the processing...
 			Message.printStatus ( 2, routine, "Adding constant " + ConstantValue + " to \"" + ts.getIdentifier()+ "\"." );
-            TSUtil.addConstant ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, ConstantValue_double );
+            TSUtil.addConstant ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, constantValue );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error adding constant to time series \""+ ts.getIdentifier() + "\" (" + e + ").";

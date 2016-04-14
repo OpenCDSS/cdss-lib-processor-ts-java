@@ -221,7 +221,8 @@ private void initialize ( JFrame parent, AddConstant_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Constant value to add:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__ConstantValue_JTextField = new JTextField ( 10 );
+	__ConstantValue_JTextField = new JTextField ( 20 );
+	__ConstantValue_JTextField.setToolTipText("Specify the constant to add or use ${Property} notation");
 	__ConstantValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ConstantValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -230,7 +231,7 @@ private void initialize ( JFrame parent, AddConstant_Command command )
 
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Analysis start date/time:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField = new JTextField ( 20 );
     __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
     __AnalysisStart_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
@@ -241,7 +242,7 @@ private void initialize ( JFrame parent, AddConstant_Command command )
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Analysis end date/time:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField = new JTextField ( 20 );
     __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
     __AnalysisEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,

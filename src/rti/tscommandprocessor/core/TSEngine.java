@@ -660,6 +660,7 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import DWR.DMI.HydroBaseDMI.HydroBaseDataStore;
 import riverside.datastore.DataStore;
 import riverside.datastore.GenericDatabaseDataStore;
+import riverside.datastore.PluginDataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
 import rti.tscommandprocessor.commands.nrcs.awdb.NrcsAwdbDataStore;
 import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
@@ -4879,7 +4880,7 @@ throws Exception
             // For now read the file for each trace...
 			// TODO SAM 2004-11-29 need to optimize so the file does not need to get reread...
 			NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( inputNameFull, readData );
-			List tslist = ensemble.getTimeSeriesList ();
+			List<TS> tslist = ensemble.getTimeSeriesList ();
 			// Loop through and find a matching time series...
 			int size = 0;
 			boolean found = false;
@@ -4888,7 +4889,7 @@ throws Exception
 			if ( tslist != null ) {
 				size = tslist.size();
 				for ( int i = 0; i < size; i++ ) {
-					ts2 = (TS)tslist.get(i);
+					ts2 = tslist.get(i);
 					// This compares the sequence number but does not include the input
 					// type/name since that was already used to read the file...
 					if ( tsident.matches( ts2.getIdentifier().toString())){
@@ -4947,6 +4948,19 @@ throws Exception
 		}
 		*/
 	}
+    else if ((dataStore != null) && (dataStore instanceof PluginDataStore) ) {
+        // New style TSID~dataStore
+        PluginDataStore pds = (PluginDataStore)dataStore;
+        try {
+            ts = pds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+        }
+        catch ( Exception te ) {
+            Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 +
+                "\" from plugin data store \"" + dataStore.getName() + "\" (" + te + ")." );
+            Message.printWarning ( 3, routine, te );
+            ts = null;
+        }
+    }
 	else if ((dataStore != null) && (dataStore instanceof ReclamationHDBDataStore) ) {
         // New style TSID~dataStoreName for ReclamationHDB...
         // Check the connection in case the connection timed out.

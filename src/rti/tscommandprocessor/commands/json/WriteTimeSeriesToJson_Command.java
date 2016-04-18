@@ -605,6 +605,7 @@ private void writeTimeSeriesList01 ( PrintWriter fout, List<TS> tslist, Integer 
             	continue;
             }
             ++its;
+            boolean canWriteValues = true; // Whether data array can be written
             // Metadata about each time series
             if ( its == 0 ) {
                 fout.write( i3+ "{" + nl );
@@ -612,7 +613,7 @@ private void writeTimeSeriesList01 ( PrintWriter fout, List<TS> tslist, Integer 
             else {
                 fout.write( "," + nl + i3+ "{" + nl );
             }
-            // Determie the missing value as a string, to output in metadata and 
+            // Determine the missing value as a string, to output in metadata and 
             String missingValueString = "" + ts.getMissing();
             if ( (missingValue != null) && !missingValue.equals("") ) {
                 missingValueString = missingValue;
@@ -642,7 +643,7 @@ private void writeTimeSeriesList01 ( PrintWriter fout, List<TS> tslist, Integer 
             fout.write( i5 + "\"endOriginal\": \"" + ts.getDate2Original() + "\"," + nl );
             boolean hasDataFlags = ts.hasDataFlags();
             fout.write( i5 + "\"hasDataFlags\": " + hasDataFlags + nl );
-            fout.write( i4 + "}," + nl );
+            fout.write( i4 + "}," + nl ); // End of starting "timeSeriesMeta": {
             // Data for each time series (write arrays separately but have an option to line up
             fout.write( i4 + "\"timeSeriesData\": [" + nl );
             TSIterator tsi = null;
@@ -651,50 +652,54 @@ private void writeTimeSeriesList01 ( PrintWriter fout, List<TS> tslist, Integer 
             }
             catch ( Exception e ) {
                 errors.add ( "Error creating iterator for time series data (" + e + ")." );
-                continue; 
+                canWriteValues = false;
             }
-            // Process the data array
-            TSData tsdata;
-            double value;
-            String valueFormat = "%.4f";
-            if ( precision != null ) {
-                valueFormat = "%." + precision + "f";
+            if ( canWriteValues ) {
+	            // Process the data array
+	            TSData tsdata;
+	            double value;
+	            String valueFormat = "%.4f";
+	            if ( precision != null ) {
+	                valueFormat = "%." + precision + "f";
+	            }
+	            StringBuffer b = new StringBuffer();
+	            int iVal = -1;
+	            while ( (tsdata = tsi.next()) != null ) {
+	                ++iVal;
+	                b.setLength(0);
+	                if ( iVal != 0 ) {
+	                    // Comma and newline after previous value
+	                    b.append ( "," + nl );
+	                }
+	                b.append ( i5 );
+	                b.append ( "{ \"dt\": \"" );
+	                b.append ( tsdata.getDate().toString() );
+	                b.append ( "\"" );
+	                value = tsdata.getDataValue();
+	                if ( ts.isDataMissing(value) ) {
+	                    b.append ( ", \"value\": " + missingValueString );
+	                }
+	                else {
+	                    b.append ( ", \"value\": " + StringUtil.formatString(value,valueFormat) );
+	                }
+	                if ( hasDataFlags ) {
+	                    b.append ( ", \"flag\": \"" );
+	                    b.append ( tsdata.getDataFlag() );
+	                    b.append ( "\"" );
+	                }
+	                b.append ( " }" );
+	                fout.write( b.toString() );
+	            }
             }
-            StringBuffer b = new StringBuffer();
-            int iVal = -1;
-            while ( (tsdata = tsi.next()) != null ) {
-                ++iVal;
-                b.setLength(0);
-                if ( iVal != 0 ) {
-                    // Comma and newline after previous value
-                    b.append ( "," + nl );
-                }
-                b.append ( i5 );
-                b.append ( "{ \"dt\": \"" );
-                b.append ( tsdata.getDate().toString() );
-                b.append ( "\"" );
-                value = tsdata.getDataValue();
-                if ( ts.isDataMissing(value) ) {
-                    b.append ( ", \"value\": " + missingValueString );
-                }
-                else {
-                    b.append ( ", \"value\": " + StringUtil.formatString(value,valueFormat) );
-                }
-                if ( hasDataFlags ) {
-                    b.append ( ", \"flag\": \"" );
-                    b.append ( tsdata.getDataFlag() );
-                    b.append ( "\"" );
-                }
-                b.append ( " }" );
-                fout.write( b.toString() );
-            }
-            fout.write( nl + i4 + "]" + nl );
-            fout.write( i3 + "}" );
+            // Always close the data value array, whether or not values were written
+            fout.write( nl + i4 + "]" + nl ); // Close bracket that was opened with "timeSeriesData": [
+            // Close the time 
+            fout.write( i3 + "}" ); // Close bracket for the time series in the timeSeries array
         }
     }
-    fout.write( nl + i2 + "]" + nl );
-    fout.write( i1 + "}" + nl );   
-    fout.write( "}" + nl );
+    fout.write( nl + i2 + "]" + nl ); // Close time series array started with:  "timeSeries": [
+    fout.write( i1 + "}" + nl ); // Close "timeSeriesList": {
+    fout.write( "}" + nl ); // Close top level JSON
 }
 
 }

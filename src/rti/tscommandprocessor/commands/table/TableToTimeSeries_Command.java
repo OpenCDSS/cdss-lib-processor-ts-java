@@ -214,6 +214,7 @@ throws InvalidCommandParameterException
     String DataSource = parameters.getValue("DataSource" );
     String DataType = parameters.getValue("DataType" );
     String Interval = parameters.getValue("Interval" );
+    String IrregularIntervalPrecision = parameters.getValue("IrregularIntervalPrecision" );
     String Scenario = parameters.getValue("Scenario" );
     String Units = parameters.getValue("Units" );
     String MissingValue = parameters.getValue("MissingValue" );
@@ -742,6 +743,19 @@ throws InvalidCommandParameterException
     }
     setInterval ( interval );
     
+    if ( (IrregularIntervalPrecision != null) && !IrregularIntervalPrecision.isEmpty() ) {
+        try {
+            TimeInterval.parseInterval(IrregularIntervalPrecision);
+        }
+        catch ( Exception e ) {
+            message = "The irregular interval precision is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid irregular interval precision using the command editor." ) );
+        }
+    }
+    
     List<String> scenario = new Vector<String>();
     setScenario ( scenario );
     if ( (Scenario != null) && !Scenario.equals("") ) {
@@ -916,7 +930,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(25);
+    List<String> validList = new ArrayList<String>(26);
     validList.add ( "TableID" );
     //valid_Vector.add ( "SkipRows" );
     validList.add ( "DateTimeColumn" );
@@ -936,6 +950,7 @@ throws InvalidCommandParameterException
     validList.add ( "DataSource" );
     validList.add ( "DataType" );
     validList.add ( "Interval" );
+    validList.add ( "IrregularIntervalPrecision" );
     validList.add ( "Scenario" );
     validList.add ( "Units" );
     validList.add ( "MissingValue" );
@@ -1816,6 +1831,7 @@ private List<TS> readTimeSeriesListMultiple ( DataTable table,
     int[][] skipRows, String locationTypeColumn, String locationColumn, String dataSourceColumn,
     String dataTypeColumn, String scenarioColumn, String unitsColumn,
     List<String> locationTypes, List<String> locationIds, List<String> dataSources, List<String> dataTypes, TimeInterval interval,
+    TimeInterval irregularIntervalPrecision,
     List<String> scenarios, List<String> units, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
     DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
@@ -1912,12 +1928,12 @@ throws IOException
     // If single column, also get the unique list of identifiers and other metadata
     Object o;
     // Lists of data extracted from time series in the table, used to initialize the time series
-    List<String> locationTypesFromTable = new Vector<String>();
-    List<String> locationIdsFromTable = new Vector<String>();
-    List<String> dataSourcesFromTable = new Vector<String>();
-    List<String> dataTypesFromTable = new Vector<String>();
-    List<String> scenariosFromTable = new Vector<String>();
-    List<String> unitsFromTable = new Vector<String>();
+    List<String> locationTypesFromTable = new ArrayList<String>();
+    List<String> locationIdsFromTable = new ArrayList<String>();
+    List<String> dataSourcesFromTable = new ArrayList<String>();
+    List<String> dataTypesFromTable = new ArrayList<String>();
+    List<String> scenariosFromTable = new ArrayList<String>();
+    List<String> unitsFromTable = new ArrayList<String>();
     for ( int iRec = 0; iRec <= nRecords; iRec++ ) {
         try {
             rec = table.getRecord(iRec);
@@ -2042,6 +2058,12 @@ throws IOException
                     }
                     ts.setDate1Original(dtMinFromTable);
                     ts.setDate2Original(dtMaxFromTable);
+                    if ( (ts.getDataIntervalBase() == TimeInterval.IRREGULAR) && (irregularIntervalPrecision != null) ) {
+                    	ts.setDate1(ts.getDate1().setPrecision(irregularIntervalPrecision.getBase()));
+                    	ts.setDate2(ts.getDate2().setPrecision(irregularIntervalPrecision.getBase()));
+                    	ts.setDate1Original(ts.getDate1Original().setPrecision(irregularIntervalPrecision.getBase()));
+                    	ts.setDate2Original(ts.getDate2Original().setPrecision(irregularIntervalPrecision.getBase()));
+                    }
                 }
                 catch ( Exception e ) {
                     // Set the TS to null to match the column positions but won't be able to set data below
@@ -2077,6 +2099,10 @@ throws IOException
             dt = getDateTimeFromRecord(rec,(iRec + 1),dateTimePos,datePos,timePos,null,dateTimeParser,null);
             if ( dt == null ) {
                 continue;
+            }
+            if ( (ts.getDataIntervalBase() == TimeInterval.IRREGULAR) && (irregularIntervalPrecision != null) ) {
+            	// Set the precision on the date/time
+            	dt.setPrecision(irregularIntervalPrecision.getBase());
             }
             // Loop through the values, taken from 1+ columns in the row
             for ( int ival = 0; ival < valuePos.length; ival++ ) {
@@ -2731,6 +2757,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (LocationID != null) && (LocationID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		LocationID = TSCommandProcessorUtil.expandParameterValue(processor, this, LocationID);
 	}
+	String IrregularIntervalPrecision = parameters.getValue("IrregularIntervalPrecision");
+	TimeInterval irregularIntervalPrecision = null;
+	if ( (IrregularIntervalPrecision != null) && !IrregularIntervalPrecision.isEmpty() ) {
+		irregularIntervalPrecision = TimeInterval.parseInterval(IrregularIntervalPrecision);
+	}
 	String LocationTypeColumn = parameters.getValue("LocationTypeColumn");
 	String LocationColumn = parameters.getValue("LocationColumn");
 	String DataSourceColumn = parameters.getValue("DataSourceColumn");
@@ -2943,7 +2974,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                DateTimeFormat, getDateColumnRuntime(),
 	                getTimeColumnRuntime(), getValueColumnsRuntime(), getFlagColumnsRuntime(), getSkipRows(),
 	                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
-	                getLocationType(), getLocationIDRuntime(), getDataSource(), dataType, getInterval(), getScenario(),
+	                getLocationType(), getLocationIDRuntime(), getDataSource(), dataType, getInterval(), irregularIntervalPrecision, getScenario(),
 	                getUnits(), getMissingValue(), handleDuplicatesHow,
 	                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
 	        }
@@ -3176,6 +3207,7 @@ public String toString ( PropList props )
     String FlagColumn = props.getValue("FlagColumn" );
     //String SkipRows = props.getValue("SkipRows" );
     String Interval = props.getValue("Interval" );
+    String IrregularIntervalPrecision = props.getValue("IrregularIntervalPrecision" );
     String DataSource = props.getValue("DataSource" );
     String DataType = props.getValue("DataType" );
     String Scenario = props.getValue("Scenario" );
@@ -3304,6 +3336,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("Interval=" + Interval );
+    }
+    if ((IrregularIntervalPrecision != null) && (IrregularIntervalPrecision.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("IrregularIntervalPrecision=" + IrregularIntervalPrecision );
     }
     if ((Scenario != null) && (Scenario.length() > 0)) {
         if (b.length() > 0) {

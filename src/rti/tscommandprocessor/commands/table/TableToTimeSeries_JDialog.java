@@ -72,6 +72,7 @@ private JTextField __UnitsColumn_JTextField = null;
 private JTextField __DataSource_JTextField = null;
 private JTextField __DataType_JTextField = null;
 private SimpleJComboBox __Interval_JComboBox = null;
+private SimpleJComboBox __IrregularIntervalPrecision_JComboBox = null;
 private JTextField __Scenario_JTextField = null;
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
@@ -187,6 +188,7 @@ private void checkInput () {
 	String DataSource = __DataSource_JTextField.getText().trim();
 	String DataType = __DataType_JTextField.getText().trim();
 	String Interval = __Interval_JComboBox.getSelected();
+	String IrregularIntervalPrecision = __IrregularIntervalPrecision_JComboBox.getSelected();
 	String Scenario = __Scenario_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
@@ -258,6 +260,9 @@ private void checkInput () {
     if (Interval.length() > 0) {
         props.set("Interval", Interval);
     }
+    if (IrregularIntervalPrecision.length() > 0) {
+        props.set("IrregularIntervalPrecision", IrregularIntervalPrecision);
+    }
     if (Scenario.length() > 0) {
         props.set("Scenario", Scenario);
     }
@@ -326,6 +331,7 @@ private void commitEdits() {
     String DataSource = __DataSource_JTextField.getText().trim();
     String DataType = __DataType_JTextField.getText().trim();
     String Interval = __Interval_JComboBox.getSelected();
+    String IrregularIntervalPrecision = __IrregularIntervalPrecision_JComboBox.getSelected();
     String Scenario = __Scenario_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
@@ -357,6 +363,7 @@ private void commitEdits() {
 	__command.setCommandParameter("DataSource", DataSource );
 	__command.setCommandParameter("DataType", DataType);
 	__command.setCommandParameter("Interval", Interval);
+	__command.setCommandParameter("IrregularIntervalPrecision", IrregularIntervalPrecision);
 	__command.setCommandParameter("Scenario", Scenario);
 	__command.setCommandParameter("Units", Units);
 	__command.setCommandParameter("MissingValue", MissingValue);
@@ -663,6 +670,26 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Required - data interval for time series."),
         3, yTsid, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel( "Irregular interval precision:"),
+        0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IrregularIntervalPrecision_JComboBox = new SimpleJComboBox ( false );
+    List<String> intervals2 = new ArrayList<String>();
+    intervals2.add("");
+    intervals2.add("" + TimeInterval.getName(TimeInterval.YEAR, 0));
+    intervals2.add("" + TimeInterval.getName(TimeInterval.MONTH, 0));
+    intervals2.add("" + TimeInterval.getName(TimeInterval.DAY, 0));
+    intervals2.add("" + TimeInterval.getName(TimeInterval.HOUR, 0));
+    intervals2.add("" + TimeInterval.getName(TimeInterval.MINUTE, 0));
+    intervals2.add("" + TimeInterval.getName(TimeInterval.SECOND, 0));
+    __IrregularIntervalPrecision_JComboBox.setData ( intervals2 );
+    // Select a default...
+    __IrregularIntervalPrecision_JComboBox.select ( 0 );
+    __IrregularIntervalPrecision_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(tsid_JPanel, __IrregularIntervalPrecision_JComboBox,
+        1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ( "Optional - precision for irregular interval date/time."),
+        3, yTsid, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Scenario:"),
         0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -954,6 +981,7 @@ private void refresh()
     String DataSource = "";
     String DataType = "";
     String Interval = "";
+    String IrregularIntervalPrecision = "";
     String Scenario = "";
     String Units = "";
     String MissingValue = "";
@@ -992,6 +1020,7 @@ private void refresh()
 	    DataSource = props.getValue("DataSource");
 	    DataType = props.getValue("DataType");
 	    Interval = props.getValue("Interval");
+	    IrregularIntervalPrecision = props.getValue("IrregularIntervalPrecision");
 	    Scenario = props.getValue("Scenario");
 	    Units = props.getValue("Units");
 	    MissingValue = props.getValue("MissingValue");
@@ -1105,6 +1134,21 @@ private void refresh()
             }
             else {
                 message = "Existing command references an invalid\nInterval \"" + Interval + "\".  "
+                    +"Select a different choice or Cancel.";
+                Message.printWarning ( 1, routine, message );
+            }
+        }
+        if ( IrregularIntervalPrecision == null || IrregularIntervalPrecision.equals("") ) {
+            // Select a default...
+            __IrregularIntervalPrecision_JComboBox.select ( 0 );
+        } 
+        else {
+        	// Select case-independent
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IrregularIntervalPrecision_JComboBox, IrregularIntervalPrecision, JGUIUtil.NONE, null, -1, null, true ) ) {
+                __IrregularIntervalPrecision_JComboBox.select ( IrregularIntervalPrecision );
+            }
+            else {
+                message = "Existing command references an invalid\nIrregularIntervalPrecision \"" + IrregularIntervalPrecision + "\".  "
                     +"Select a different choice or Cancel.";
                 Message.printWarning ( 1, routine, message );
             }
@@ -1225,6 +1269,7 @@ private void refresh()
     DataSource = __DataSource_JTextField.getText().trim();
     DataType = __DataType_JTextField.getText().trim();
     Interval = __Interval_JComboBox.getSelected();
+    IrregularIntervalPrecision = __IrregularIntervalPrecision_JComboBox.getSelected();
     Scenario = __Scenario_JTextField.getText().trim();
     Units = __Units_JTextField.getText().trim();
     MissingValue = __MissingValue_JTextField.getText().trim();
@@ -1257,6 +1302,7 @@ private void refresh()
     props.add("DataSource=" + DataSource );
     props.add("DataType=" + DataType );
     props.add("Interval=" + Interval );
+    props.add("IrregularIntervalPrecision=" + IrregularIntervalPrecision );
     props.add("Scenario=" + Scenario );
     props.add("Units=" + Units );
     props.add("MissingValue=" + MissingValue );

@@ -195,6 +195,20 @@ throws InvalidCommandParameterException
                             message, "Specify False or True (or blank for default of False)." ) );
 		}
 	}
+	// At least one of WarnIfDifferent or WarnIfSame should be True - otherwise the command does nothing and probably a mistake
+	if ( WarnIfSame == null ) {
+		WarnIfSame = _False; // Default
+	}
+	if ( WarnIfDifferent == null ) {
+		WarnIfDifferent = _False; // Default
+	}
+	if ( !WarnIfSame.equals(_True) && !WarnIfDifferent.equals(_True)) {
+        message = "At lease one of WarnIfDifferent or WarnIfSame must be True.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Check the values of WarnIfDifferent and WarnIfSame." ) );
+	}
     
 	// Check for invalid parameters...
 	List<String> validList = new ArrayList<String>(12);

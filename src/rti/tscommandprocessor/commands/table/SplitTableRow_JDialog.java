@@ -5,9 +5,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -39,6 +41,8 @@ private boolean __first_time = true; // Indicate first time display
 private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
+private JTextField __ColumnTuples_JTextField = null;
+private JTextField __NewColumnTuple_JTextField = null;
 private JTextField __MeasureStartColumn_JTextField = null;
 private JTextField __MeasureEndColumn_JTextField = null;
 private JTextField __MeasureIncrement_JTextField = null;
@@ -90,6 +94,8 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
+	String ColumnTuples = __ColumnTuples_JTextField.getText().trim();
+	String NewColumnTuple = __NewColumnTuple_JTextField.getText().trim();
 	String MeasureStartColumn = __MeasureStartColumn_JTextField.getText().trim();
     String MeasureEndColumn = __MeasureEndColumn_JTextField.getText().trim();
 	String MeasureIncrement = __MeasureIncrement_JTextField.getText().trim();
@@ -100,6 +106,12 @@ private void checkInput ()
 
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
+    }
+    if ( ColumnTuples.length() > 0 ) {
+        props.set ( "ColumnTuples", ColumnTuples );
+    }
+    if ( NewColumnTuple.length() > 0 ) {
+        props.set ( "NewColumnTuple", NewColumnTuple );
     }
     if ( MeasureStartColumn.length() > 0 ) {
         props.set ( "MeasureStartColumn", MeasureStartColumn );
@@ -136,6 +148,8 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
+	String ColumnTuples = __ColumnTuples_JTextField.getText().trim();
+	String NewColumnTuple = __NewColumnTuple_JTextField.getText().trim();
 	String MeasureStartColumn = __MeasureStartColumn_JTextField.getText().trim();
 	String MeasureEndColumn = __MeasureEndColumn_JTextField.getText().trim();
 	String MeasureIncrement = __MeasureIncrement_JTextField.getText().trim();
@@ -143,6 +157,8 @@ private void commitEdits ()
 	String MinimumEndSegmentLength = __MinimumEndSegmentLength_JTextField.getText().trim();
 	String DeleteOriginalRow = __DeleteOriginalRow_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
+    __command.setCommandParameter ( "ColumnTuples", ColumnTuples );
+    __command.setCommandParameter ( "NewColumnTuple", NewColumnTuple );
     __command.setCommandParameter ( "MeasureStartColumn", MeasureStartColumn );
 	__command.setCommandParameter ( "MeasureEndColumn", MeasureEndColumn );
 	__command.setCommandParameter ( "MeasureIncrement", MeasureIncrement );
@@ -173,21 +189,21 @@ private void initialize ( JFrame parent, SplitTableRow_Command command, List<Str
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
-	int yy = 0;
+	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command takes information from a single table row and creates a sequence of rows, depending on approach."),
-        0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "For example, a row corresponding to a spatial data line with start and end distance measure can be split into a sequence of even distance increments."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -202,20 +218,69 @@ private void initialize ( JFrame parent, SplitTableRow_Command command, List<Str
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Panel for measure
+    int yTuple = -1;
+    JPanel tuple_JPanel = new JPanel();
+    tuple_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Column Tuples", tuple_JPanel );
+
+   	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
+        "<html><b>These features are under development</b></html>."),
+        0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
+        "Column tuples are groups of related columns that can be overlapped in more general column names."),
+        0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
+        "For example, specify column tuples as Column1,ColumnA;Column2,ColumnB;Column3,ColumnC"),
+        0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
+        "and specify ew column tuples as NewColumn1,NewColumnA."),
+        0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
+        "Column1, Column2, and Column3 values will then be aligned under new NewColumn1"),
+        0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
+        "and ColumnA, ColumnB, and ColumnC values will be aligned under new NewColumnA."),
+        0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(tuple_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Column tuples:"), 
+        0, ++yTuple, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnTuples_JTextField = new JTextField (35);
+    __ColumnTuples_JTextField.setToolTipText("Specify as ColumnName1,ColumnNameA;ColumnName2,ColumnNameB");
+    __ColumnTuples_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tuple_JPanel, __ColumnTuples_JTextField,
+        1, yTuple, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Required - names of columns in each tuple."),
+        3, yTuple, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("New column tuples:"), 
+        0, ++yTuple, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewColumnTuple_JTextField = new JTextField (35);
+    __NewColumnTuple_JTextField.setToolTipText("Specify as ColumnName1,ColumnNameA");
+    __NewColumnTuple_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tuple_JPanel, __NewColumnTuple_JTextField,
+        1, yTuple, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Required - names of columns in new column tuple."),
+        3, yTuple, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for measure
     int yMeasure = -1;
     JPanel measure_JPanel = new JPanel();
     measure_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Distance Measure", measure_JPanel );
     
    	JGUIUtil.addComponent(measure_JPanel, new JLabel (
-        "Create the row sequence by using an input row with start and end measure, for examle stream reach endpoint distances."),
-        0, ++yMeasure, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        "Create the row sequence by using an input row with start and end measure, for example stream reach endpoint distances."),
+        0, ++yMeasure, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(measure_JPanel, new JLabel (
         "The output will be a sequence of rows, each with start and end measures that are increments of the full reach length."),
-        0, ++yMeasure, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yMeasure, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(measure_JPanel, new JLabel (
         "The other column values from the original row are duplicated in the new rows."),
-        0, ++yMeasure, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yMeasure, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(measure_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yMeasure, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(measure_JPanel, new JLabel ("Measure start column:"), 
         0, ++yMeasure, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -352,6 +417,8 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
+    String ColumnTuples = "";
+    String NewColumnTuple = "";
     String MeasureStartColumn = "";
     String MeasureEndColumn = "";
     String MeasureIncrement = "";
@@ -362,6 +429,8 @@ private void refresh ()
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
+        ColumnTuples = props.getValue ( "ColumnTuples" );
+        NewColumnTuple = props.getValue ( "NewColumnTuple" );
         MeasureEndColumn = props.getValue ( "MeasureEndColumn" );
         MeasureStartColumn = props.getValue ( "MeasureStartColumn" );
         MeasureIncrement = props.getValue ( "MeasureIncrement" );
@@ -383,8 +452,16 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( ColumnTuples != null ) {
+            __ColumnTuples_JTextField.setText ( ColumnTuples );
+            __main_JTabbedPane.setSelectedIndex(0);
+        }
+        if ( NewColumnTuple != null ) {
+            __NewColumnTuple_JTextField.setText ( NewColumnTuple );
+        }
         if ( MeasureStartColumn != null ) {
             __MeasureStartColumn_JTextField.setText ( MeasureStartColumn );
+            __main_JTabbedPane.setSelectedIndex(1);
         }
         if ( MeasureEndColumn != null ) {
             __MeasureEndColumn_JTextField.setText ( MeasureEndColumn );
@@ -416,6 +493,8 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
+	ColumnTuples = __ColumnTuples_JTextField.getText().trim();
+	NewColumnTuple = __NewColumnTuple_JTextField.getText().trim();
 	MeasureStartColumn = __MeasureStartColumn_JTextField.getText().trim();
 	MeasureEndColumn = __MeasureEndColumn_JTextField.getText().trim();
 	MeasureIncrement = __MeasureIncrement_JTextField.getText().trim();
@@ -424,6 +503,8 @@ private void refresh ()
 	DeleteOriginalRow = __DeleteOriginalRow_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
+    props.add ( "ColumnTuples=" + ColumnTuples );
+    props.add ( "NewColumnTuple=" + NewColumnTuple );
 	props.add ( "MeasureStartColumn=" + MeasureStartColumn );
     props.add ( "MeasureEndColumn=" + MeasureEndColumn );
 	props.add ( "MeasureIncrement=" + MeasureIncrement );

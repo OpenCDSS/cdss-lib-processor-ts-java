@@ -24,6 +24,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableField;
 import RTi.Util.Table.TableRecord;
 
 /**
@@ -57,6 +58,7 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
+	String ColumnTuples = parameters.getValue ( "ColumnTuples" );
 	String MeasureStartColumn = parameters.getValue ( "MeasureStartColumn" );
 	String MeasureEndColumn = parameters.getValue ( "MeasureEndColumn" );
 	String MeasureIncrement = parameters.getValue ( "MeasureIncrement" );
@@ -77,40 +79,45 @@ throws InvalidCommandParameterException
                 message, "Specify the table identifier." ) );
     }
     
-    if ( (MeasureStartColumn == null) || (MeasureStartColumn.length() == 0) ) {
-        message = "The measure start column must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the measure start column." ) );
-    }
-    
-    if ( (MeasureEndColumn == null) || (MeasureEndColumn.length() == 0) ) {
-        message = "The measure end column must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the measure end column." ) );
-    }
-    
-    if ( (MeasureIncrement == null) || !StringUtil.isDouble(MeasureIncrement) ) {
-        message = "The measure increment must be specified as a number.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the measure increment as a number." ) );
+    if ( (ColumnTuples != null) && !ColumnTuples.isEmpty() ) {
+    	
     }
     else {
-    	double measureIncrement = Double.parseDouble(MeasureIncrement);
-		// TODO SAM 2015-01-11 expand until the end values for iteration in runCommand()
-    	// so that they are evenly divisible by the increment, within a reasonable tolerance
-		if ( measureIncrement > 1.0 ) {
-			message = "The measure increment (" + MeasureIncrement + ") is > 1.0";
+    	if ( (MeasureStartColumn == null) || (MeasureStartColumn.length() == 0) ) {
+	        message = "The measure start column must be specified.";
 	        warning += "\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
 	            new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Specify the measure increment as < 1.0" ) );
-		}
+	                message, "Specify the measure start column." ) );
+	    }
+	    
+	    if ( (MeasureEndColumn == null) || (MeasureEndColumn.length() == 0) ) {
+	        message = "The measure end column must be specified.";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Specify the measure end column." ) );
+	    }
+	    
+	    if ( (MeasureIncrement == null) || !StringUtil.isDouble(MeasureIncrement) ) {
+	        message = "The measure increment must be specified as a number.";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Specify the measure increment as a number." ) );
+	    }
+	    else {
+	    	double measureIncrement = Double.parseDouble(MeasureIncrement);
+			// TODO SAM 2015-01-11 expand until the end values for iteration in runCommand()
+	    	// so that they are evenly divisible by the increment, within a reasonable tolerance
+			if ( measureIncrement > 1.0 ) {
+				message = "The measure increment (" + MeasureIncrement + ") is > 1.0";
+		        warning += "\n" + message;
+		        status.addToLog ( CommandPhaseType.INITIALIZATION,
+		            new CommandLogRecord(CommandStatusType.FAILURE,
+		                message, "Specify the measure increment as < 1.0" ) );
+			}
+	    }
     }
     
     if ( (MinimumStartSegmentLength != null) && !MinimumStartSegmentLength.equals("") && !StringUtil.isDouble(MinimumStartSegmentLength)) {
@@ -139,8 +146,10 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(8);
+	List<String> validList = new ArrayList<String>(9);
     validList.add ( "TableID" );
+    validList.add ( "ColumnTuples" );
+    validList.add ( "NewColumnTuple" );
     validList.add ( "MeasureStartColumn" );
     validList.add ( "MeasureEndColumn" );
     validList.add ( "MeasureIncrement" );
@@ -183,22 +192,59 @@ command could produce some results).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommandInternal",message = "";
+{	String routine = getClass().getSimpleName() + ".runCommandInternal",message = "";
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
     CommandStatus status = getCommandStatus();
-    CommandPhaseType command_phase = CommandPhaseType.RUN;
-    status.clearLog(command_phase);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+	CommandProcessor processor = getCommandProcessor();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	// Make sure there are time series available to operate on...
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TableID != null) && (TableID.indexOf("${") >= 0) ) {
+		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+	}
+	// Do the new column tuples first because it controls the number
+	String NewColumnTuple = parameters.getValue ( "NewColumnTuple" );
+	String [] newColumnTuple = new String[0];
+	if ( (NewColumnTuple != null) && !NewColumnTuple.isEmpty() ) {
+		newColumnTuple = NewColumnTuple.split(",");
+		for ( int i = 0; i < newColumnTuple.length; i++ ) {
+			newColumnTuple[i] = newColumnTuple[i].trim();
+		}
+	}
+	String ColumnTuples = parameters.getValue ( "ColumnTuples" );
+	String [][] columnTuples = new String[0][0];
+	// Limit to the number of new columns
+	if ( (ColumnTuples != null) && !ColumnTuples.isEmpty() ) {
+		String [] temp = ColumnTuples.split(";");
+		columnTuples = new String [temp.length][newColumnTuple.length];
+		for ( int i = 0; i < temp.length; i++ ) {
+			columnTuples[i] = temp[i].split(",");
+			for ( int j = 0; j < newColumnTuple.length; j++ ) {
+				columnTuples[i][j] = columnTuples[i][j].trim();
+			}
+		}
+	}
     String MeasureStartColumn = parameters.getValue ( "MeasureStartColumn" );
     String MeasureEndColumn = parameters.getValue ( "MeasureEndColumn" );
     String MeasureIncrement = parameters.getValue ( "MeasureIncrement" );
@@ -225,7 +271,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // Get the table to process.
 
     DataTable table = null;
-    if ( command_phase == CommandPhaseType.RUN ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (TableID != null) && !TableID.equals("") ) {
@@ -266,118 +312,147 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-    	// Make sure that the table has the columns for the measures
-		int startCol = -1;
-		try {
-			startCol = table.getFieldIndex(MeasureStartColumn);
-		}
-		catch ( Exception e ) {
-            message = "Table \"" + TableID + "\" does not contain measure start column \"" + MeasureStartColumn + "\"";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the table contains the requested start column \"" + MeasureStartColumn + "\"" ) );
-		}
-		int endCol = -1;
-		try {
-			endCol = table.getFieldIndex(MeasureEndColumn);
-		}
-		catch ( Exception e ) {
-            message = "Table \"" + TableID + "\" does not contain measure end column \"" + MeasureStartColumn + "\"";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the table contains the requested end column \"" + MeasureEndColumn + "\"" ) );
-		}
-		if ( (startCol >= 0) && (endCol >= 0) ) {
-			// Loop through the table to process all of the rows
-			int nrec = table.getNumberOfRecords();
-			Double startVal, endVal;
-			Object val;
-			int numRowsAdded = 0;
-			for ( int irec = 0; irec < nrec; irec++ ) {
-				Message.printStatus(2, routine, "Processing record " + irec );
-				numRowsAdded = 0;
-				// Get the values for the start and end measure values
-				val = table.getFieldValue(irec, startCol);
-				if ( (val == null) || !(val instanceof Double) ) {
-					continue;
+		if ( (ColumnTuples != null) && !ColumnTuples.isEmpty() ) {
+			// Process the tuples - first add the output columns so that lookup of input will be correct
+			int [] newColNum = new int[newColumnTuple.length];
+			int oldCol;
+			for ( int inew = 0; inew < newColumnTuple.length; inew++ ) {
+				try {
+					newColNum[inew] = table.getFieldIndex(newColumnTuple[inew]);
 				}
-				startVal = (Double)val;
-				val = table.getFieldValue(irec, endCol);
-				if ( (val == null) || !(val instanceof Double) ) {
-					continue;
+				catch ( Exception e ) {
+		            message = "Table \"" + TableID + "\" does not contain new column \"" + newColumnTuple[inew] + "\" - adding";
+		            Message.printStatus ( 2, routine, message );
+		            // Add the column with the same type as the matched column of the first existing tuple
+					try {
+						oldCol = table.getFieldIndex(columnTuples[0][inew]);
+						TableField oldField = table.getTableField(oldCol);
+						table.addField(new TableField(oldField.getDataType(), newColumnTuple[inew], oldField.getWidth(), oldField.getPrecision()), null);
+					}
+					catch ( Exception e2 ) {
+			            message = "Table \"" + TableID + "\" does not contain column \"" + columnTuples[0][inew] + "\" - cannot process";
+			            Message.printWarning ( warning_level,
+		    	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+		    	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+		    	                message, "Verify that the table contains the requested input column \"" + columnTuples[0][inew] + "\"" ) );
+					}
 				}
-				endVal = (Double)val;
-				// If the start and end are reversed, switch here
-				if ( startVal > endVal ) {
-					Double tmp = endVal;
-					endVal = startVal;
-					startVal = tmp;
-				}
-				// Find the closest integer points to the start and end
-				double floor = Math.floor(startVal);
-				double ceil = Math.ceil(endVal);
-				// Insert new rows after the current row
-				double segEnd;
-				boolean addSeg = false;
-				for ( double segStart = floor; segStart <= ceil; segStart += measureIncrement ) {
-					addSeg = false;
-					segEnd = segStart + measureIncrement;
-					if ( segEnd <= startVal ) {
-						// Right edge of first segment is right at boundary but not straddling yet
+			}
+		}
+		else if ( (MeasureStartColumn != null) && !MeasureStartColumn.isEmpty() ) {
+	    	// Make sure that the table has the columns for the measures
+			int startCol = -1;
+			try {
+				startCol = table.getFieldIndex(MeasureStartColumn);
+			}
+			catch ( Exception e ) {
+	            message = "Table \"" + TableID + "\" does not contain measure start column \"" + MeasureStartColumn + "\"";
+	            Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify that the table contains the requested start column \"" + MeasureStartColumn + "\"" ) );
+			}
+			int endCol = -1;
+			try {
+				endCol = table.getFieldIndex(MeasureEndColumn);
+			}
+			catch ( Exception e ) {
+	            message = "Table \"" + TableID + "\" does not contain measure end column \"" + MeasureStartColumn + "\"";
+	            Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify that the table contains the requested end column \"" + MeasureEndColumn + "\"" ) );
+			}
+			if ( (startCol >= 0) && (endCol >= 0) ) {
+				// Loop through the table to process all of the rows
+				int nrec = table.getNumberOfRecords();
+				Double startVal, endVal;
+				Object val;
+				int numRowsAdded = 0;
+				for ( int irec = 0; irec < nrec; irec++ ) {
+					Message.printStatus(2, routine, "Processing record " + irec );
+					numRowsAdded = 0;
+					// Get the values for the start and end measure values
+					val = table.getFieldValue(irec, startCol);
+					if ( (val == null) || !(val instanceof Double) ) {
 						continue;
 					}
-					else if ( segStart >= endVal ) {
-						// Done with all segments - check whether need to delete original row and reposition iterator
-						if ( deleteOriginalRow ) {
-							// Delete the original row and set the row appropriately for the loop iterator
-							table.deleteRecord(irec);
-							Message.printStatus(2,routine,"Deleted original record " + irec );
-							--irec;
+					startVal = (Double)val;
+					val = table.getFieldValue(irec, endCol);
+					if ( (val == null) || !(val instanceof Double) ) {
+						continue;
+					}
+					endVal = (Double)val;
+					// If the start and end are reversed, switch here
+					if ( startVal > endVal ) {
+						Double tmp = endVal;
+						endVal = startVal;
+						startVal = tmp;
+					}
+					// Find the closest integer points to the start and end
+					double floor = Math.floor(startVal);
+					double ceil = Math.ceil(endVal);
+					// Insert new rows after the current row
+					double segEnd;
+					boolean addSeg = false;
+					for ( double segStart = floor; segStart <= ceil; segStart += measureIncrement ) {
+						addSeg = false;
+						segEnd = segStart + measureIncrement;
+						if ( segEnd <= startVal ) {
+							// Right edge of first segment is right at boundary but not straddling yet
+							continue;
+						}
+						else if ( segStart >= endVal ) {
+							// Done with all segments - check whether need to delete original row and reposition iterator
+							if ( deleteOriginalRow ) {
+								// Delete the original row and set the row appropriately for the loop iterator
+								table.deleteRecord(irec);
+								Message.printStatus(2,routine,"Deleted original record " + irec );
+								--irec;
+								nrec = table.getNumberOfRecords();
+								Message.printStatus(2,routine,"Reset record due to deletion, irec=" + irec + ", nrec=" + nrec );
+							}
+							// Position the record pointer so that the next original record is processed
+							irec += numRowsAdded;
+							Message.printStatus(2,routine,"Reset record due to " + numRowsAdded + " rows added previously, irec=" + irec );
+							break;
+						}
+						else if ( (startVal >= segStart ) && (segEnd > startVal) ) {
+							// First segment straddles start, check whether to include
+							if ( (segEnd - startVal) >= minimumStartSegmentLength ) {
+								addSeg = true;
+							}
+							else {
+								Message.printStatus(2, routine, "Not adding segment because length " + (segEnd - startVal) + " < " + minimumStartSegmentLength );
+							}
+						}
+						else if ( (segStart < endVal) && (segEnd >= endVal) ) {
+							// Last segment straddles end, check whether to include
+							if ( (endVal - segStart) >= minimumEndSegmentLength ) {
+								addSeg = true;
+							}
+							else {
+								Message.printStatus(2, routine, "Not adding segment because length " + (endVal - segStart) + " < " + minimumEndSegmentLength );
+							}
+						}
+						else {
+							// Segment fully in the reach so add
+							addSeg = true;
+						}
+						if ( addSeg ) {
+							// Add the segment
+							// First copy the original row contents
+							TableRecord newRec = new TableRecord(table.getRecord(irec));
+							// Next set the values in the new record
+							newRec.setFieldValue(startCol, new Double(segStart));
+							newRec.setFieldValue(endCol, new Double(segEnd));
+							int irecInsert = irec + numRowsAdded + 1;
+							table.insertRecord(irecInsert, newRec, true);
+							++numRowsAdded;
 							nrec = table.getNumberOfRecords();
-							Message.printStatus(2,routine,"Reset record due to deletion, irec=" + irec + ", nrec=" + nrec );
+							Message.printStatus(2, routine, "Inserting segment record " + irecInsert + ", segStart=" + segStart + ", segEnd=" + segEnd +
+								", numRowsAdded=" + numRowsAdded + ", nrec=" + nrec );
 						}
-						// Position the record pointer so that the next original record is processed
-						irec += numRowsAdded;
-						Message.printStatus(2,routine,"Reset record due to " + numRowsAdded + " rows added previously, irec=" + irec );
-						break;
-					}
-					else if ( (startVal >= segStart ) && (segEnd > startVal) ) {
-						// First segment straddles start, check whether to include
-						if ( (segEnd - startVal) >= minimumStartSegmentLength ) {
-							addSeg = true;
-						}
-						else {
-							Message.printStatus(2, routine, "Not adding segment because length " + (segEnd - startVal) + " < " + minimumStartSegmentLength );
-						}
-					}
-					else if ( (segStart < endVal) && (segEnd >= endVal) ) {
-						// Last segment straddles end, check whether to include
-						if ( (endVal - segStart) >= minimumEndSegmentLength ) {
-							addSeg = true;
-						}
-						else {
-							Message.printStatus(2, routine, "Not adding segment because length " + (endVal - segStart) + " < " + minimumEndSegmentLength );
-						}
-					}
-					else {
-						// Segment fully in the reach so add
-						addSeg = true;
-					}
-					if ( addSeg ) {
-						// Add the segment
-						// First copy the original row contents
-						TableRecord newRec = new TableRecord(table.getRecord(irec));
-						// Next set the values in the new record
-						newRec.setFieldValue(startCol, new Double(segStart));
-						newRec.setFieldValue(endCol, new Double(segEnd));
-						int irecInsert = irec + numRowsAdded + 1;
-						table.insertRecord(irecInsert, newRec, true);
-						++numRowsAdded;
-						nrec = table.getNumberOfRecords();
-						Message.printStatus(2, routine, "Inserting segment record " + irecInsert + ", segStart=" + segStart + ", segEnd=" + segEnd +
-							", numRowsAdded=" + numRowsAdded + ", nrec=" + nrec );
 					}
 				}
 			}
@@ -387,7 +462,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error splitting table row (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
@@ -399,7 +474,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new CommandWarningException ( message );
 	}
 
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -410,6 +485,8 @@ public String toString ( PropList props )
 		return getCommandName() + "()";
 	}
     String TableID = props.getValue( "TableID" );
+    String ColumnTuples = props.getValue( "ColumnTuples" );
+    String NewColumnTuple = props.getValue( "NewColumnTuple" );
     String MeasureStartColumn = props.getValue( "MeasureStartColumn" );
     String MeasureEndColumn = props.getValue( "MeasureEndColumn" );
 	String MeasureIncrement = props.getValue( "MeasureIncrement" );
@@ -422,6 +499,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (ColumnTuples != null) && (ColumnTuples.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ColumnTuples=\"" + ColumnTuples + "\"" );
+    }
+    if ( (NewColumnTuple != null) && (NewColumnTuple.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewColumnTuple=\"" + NewColumnTuple + "\"" );
     }
     if ( (MeasureStartColumn != null) && (MeasureStartColumn.length() > 0) ) {
         if ( b.length() > 0 ) {

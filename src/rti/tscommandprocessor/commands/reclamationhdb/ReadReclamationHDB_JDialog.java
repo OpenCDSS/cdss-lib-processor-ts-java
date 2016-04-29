@@ -1606,7 +1606,8 @@ Set the data interval choices in response to a new datastore being selected.
 private void populateIntervalChoices ()
 {
     __Interval_JComboBox.removeAll();
-    __Interval_JComboBox.add ( "Hour" );
+    __Interval_JComboBox.add ( "Hour" ); // Keep this and 1Hour for flexibility and historical reasons
+    __Interval_JComboBox.add ( "1Hour" );
     __Interval_JComboBox.add ( "2Hour" );
     __Interval_JComboBox.add ( "3Hour" );
     __Interval_JComboBox.add ( "4Hour" );
@@ -1618,7 +1619,7 @@ private void populateIntervalChoices ()
     __Interval_JComboBox.add ( "Year" );
     // FIXME SAM 2010-10-26 Could handle WY as YEAR, but need to think about it
     __Interval_JComboBox.add ( "Irregular" );
-    __Interval_JComboBox.setMaximumRowCount(11);
+    __Interval_JComboBox.setMaximumRowCount(12);
     __Interval_JComboBox.select ( 0 );
 }
 

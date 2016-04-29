@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -3306,6 +3308,7 @@ throws Exception
             if ( (intervalBase == TimeInterval.HOUR) && (intervalMult > 1) ) {
             	doNHour = true;
             }
+            String sampleStartString = "", sampleEndString = "";
             while (rs.next()) {
                 ++record;
                 col = 1;
@@ -3316,7 +3319,7 @@ throws Exception
                 if ( transferDateTimesAsStrings ) {
                 	// Start
                     dateTimeString = rs.getString(col); // Increment column below
-                    String sampleStartString = dateTimeString; // This will not contain time zone since Oracle HDB column does not include
+                    sampleStartString = dateTimeString; // This will not contain time zone since Oracle HDB column does not include
                     setDateTimeFromHDBString ( startDateTime, intervalBase, dateTimeString );
                     // Also get Date for debugging
                     if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
@@ -3330,7 +3333,7 @@ throws Exception
                     ++col; // Increment after the above since retrieved for troubleshooting
                     // End 
                     dateTimeString = rs.getString(col++);
-                    String sampleEndString = dateTimeString;
+                    sampleEndString = dateTimeString;
                     setDateTimeFromHDBString ( endDateTime, intervalBase, dateTimeString );
                     // Get value inside if block so can use in debugging
                     value = rs.getDouble(col++);
@@ -3408,6 +3411,11 @@ throws Exception
                         continue;
                     }
                     */
+                }
+                // If hourly data, make sure the end hour is not the same as the start hour - this was detected at daylight savings change
+                if ( (intervalBase == TimeInterval.HOUR) && sampleStartString.equals(sampleEndString) ) {
+            		Message.printWarning(3,routine,"Sample start and end for hourly data are equal \"" + sampleStartString + "\" - bad data in database (ignoring)." );
+                 	continue;
                 }
                 // Make sure that the start and end hour are evenly divisible by the hour in the database
                 badAlignment = false;
@@ -4015,6 +4023,8 @@ throws SQLException
     	throw new IllegalArgumentException("Time zone ID \"" + timeZone + "\" is not recognized." );
     }
     Calendar calendarForTimeZone = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
+    Message.printStatus(2,routine,"Using specified time zone \"" + timeZone +
+    	"\" for writing time series, Java Calendar used with SQL timestamps is: " + calendarForTimeZone );
     // Determine the loading application
     List<ReclamationHDB_LoadingApplication> loadingApplicationList =
         findLoadingApplication ( getLoadingApplicationList(), loadingApp );
@@ -4099,6 +4109,7 @@ throws SQLException
     TSIterator tsi = null;
     try {
         // Make sure that for NHour data the output start and end align with the time series period
+    	// If 1 hour it should not matter because any hour will align
         if ( (outputInterval.getBase() == TimeInterval.HOUR) && (outputInterval.getMultiplier() > 1) ) {
             DateTime date1 = ts.getDate1();
             if ( ((outputStart.getHour() - date1.getHour() ) % outputInterval.getMultiplier()) != 0 ) {
@@ -4126,7 +4137,7 @@ throws SQLException
     getConnection().setAutoCommit(false);
     CallableStatement cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?,?,?,?,?,?)}");
     TSData tsdata;
-    DateTime dt;
+    DateTime dateTime;
     int errorCount = 0;
     int writeTryCount = 0;
     double value;
@@ -4139,8 +4150,9 @@ throws SQLException
         // Need to have the hour shifted by one hour because start date passed as SAMPLE_DATE_TIME
         // is start of interval.  The offset is in milliseconds
         timeOffsetTsToHdbStart = -1000*3600*outputIntervalMult;
+        Message.printStatus(2,routine,"For " + outputIntervalMult + "Hour interval offset from end to sample start =" + timeOffsetTsToHdbStart + " ms" );
     }
-    else if ( (outputIntervalBase != TimeInterval.IRREGULAR) && outputIntervalMult != 1 ) {
+    else if ( (outputIntervalBase != TimeInterval.IRREGULAR) && (outputIntervalMult != 1) ) {
         // Not able to handle multipliers for non-hourly
         throw new IllegalArgumentException( "Data interval must be 1 for intervals other than hour." );
     }
@@ -4149,7 +4161,7 @@ throws SQLException
         // Stored procedure wants value of zero if no MRI
         modelRunID = new Long(0);
     }
-    Timestamp startTimeStamp, endTimeStampGMT;
+    Timestamp startTimeStamp, endTimeStamp; // Timestamps for SQL inserts, using timeZone data
     long startTimeStampMsDelta = 0, startTimeStampMsPrev = 0;
     long startTimeStampBeforeShiftMs;
     long startTimeStampMs;
@@ -4159,15 +4171,22 @@ throws SQLException
     int batchCountTotal = 0;
     DateTime batchStart = null;
     DateTime batchEnd = null;
+    // Date formats for logging
+    DateFormat timeZoneDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+    timeZoneDateFormat.setTimeZone(TimeZone.getTimeZone(timeZone));
+    DateFormat gmtDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+    gmtDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    DateFormat localDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z"); // Don't set the time zone
     try {
         while ( true ) {
             tsdata = tsi.next();
             if ( tsdata != null ) {
                 // Set the information in the write statement
-                dt = tsdata.getDate();
+                dateTime = tsdata.getDate(); // This is TSTool date/time so no Java Date weirdness (yet)
                 value = tsdata.getDataValue();
                 if ( ts.isDataMissing(value) ) {
-                    // TODO SAM 2012-03-27 Evaluate whether should have option to write
+                    // TODO SAM 2012-03-27 Evaluate whether should have option to write.
+                	// HDB does not have way to write missing because it assumes missing if no records in the database.
                     continue;
                 }
                 // If an override interval is specified, make sure that the date/time passes the test for
@@ -4199,10 +4218,10 @@ throws SQLException
                     // The offset is negative in order to shift to the start of the interval
                     // Database timestamp is in GMT but corresponds to MST from time series.
                     // In other words, MST time zone will shift times by 7 hours to GMT
-                    startTimeStampBeforeShiftMs = dt.getDate(timeZone).getTime(); // GMT
-                    startTimeStampMs = startTimeStampBeforeShiftMs + timeOffsetTsToHdbStart; // GMT
+                    startTimeStampBeforeShiftMs = dateTime.getDate(timeZone).getTime(); // UNIX GMT time reflecting that date/time is in the specified time zone such as MST
+                    startTimeStampMs = startTimeStampBeforeShiftMs + timeOffsetTsToHdbStart; // UNIX GMT, will be non-zero only for hourly data
                     startTimeStampMsDelta = startTimeStampMs - startTimeStampMsPrev; // Delta to see if incrementing evenly over daylight savings
-                    startTimeStampMsPrev = startTimeStampMs; // Reset previous value
+                    startTimeStampMsPrev = startTimeStampMs; // Reset previous value, for log messages
                     // Version to create Timestamp from date/time parts is deprecated so use millisecond version
                     startTimeStamp = new Timestamp(startTimeStampMs);
                     cs.setTimestamp(iParam++,startTimeStamp,calendarForTimeZone); // SAMPLE_DATE_TIME - now back to MST, for example, so JDBC driver sets as MST in database
@@ -4232,7 +4251,7 @@ throws SQLException
                         cs.setNull(iParam++,java.sql.Types.VARCHAR);
                     }
                     else {
-                        cs.setString(iParam++,timeZone);
+                        cs.setString(iParam++,timeZone); // For example "MST"
                     }
                     if ( overwriteFlag == null ) { // OVERWRITE_FLAG
                         cs.setNull(iParam++,java.sql.Types.VARCHAR);
@@ -4256,37 +4275,51 @@ throws SQLException
                     //
                     // Consequently, for the most part pass the SAMPLE_END_DATE_TIME as null except in the case
                     // where have NHour data
-                    if ( (outputIntervalBase == TimeInterval.HOUR) && (outputIntervalMult != 1) ) {
-                        endTimeStampGMT = new Timestamp(dt.getDate(timeZone).getTime()); // GMT
-                        cs.setTimestamp(iParam++,endTimeStampGMT,calendarForTimeZone); // SAMPLE_END_DATE_TIME, with Calendar indicating MST, so JDBC sets as MST in DB
+                    // TODO SAM 2016-04-27 Actually, set for 1 hour also because seems to be issue with daylight savings change otherwise
+                    if ( outputIntervalBase == TimeInterval.HOUR ) {
+                        endTimeStamp = new Timestamp(dateTime.getDate(timeZone).getTime()); // for timeZone
+                        cs.setTimestamp(iParam++,endTimeStamp,calendarForTimeZone); // SAMPLE_END_DATE_TIME, with Calendar indicating MST, so JDBC sets as MST in DB
+                        //cs.setTimestamp(iParam++,endTimeStamp);
                         if ( Message.isDebugOn ) {
-                            // TODO SAM 2013-10-02 The end date/time always seems to be written as 1 hour offset, regardless of
+                            // TODO SAM 2013-10-02 The end date/time always seems to be written as 1 hour offset from start (sample), regardless of
                             // the value that is passed in to WRITE_TO_HDB
-                            Message.printStatus(2, routine, "Write date/time=" + dt + " val=" + value +
-                                " HDB sample start (before shift)=" + startTimeStampBeforeShiftMs +
-                                " HDB sample start (after shift)=" + startTimeStampMs + " msdiff=" + startTimeStampMsDelta + " timestamp=" + startTimeStamp +
-                                " HDB end=" + dt.getDate(timeZone).getTime() + " " + endTimeStampGMT +
-                                " time zone = " + timeZone + " offset from end = " + timeOffsetTsToHdbStart + " batchCount=" + batchCount);
+                            Message.printStatus(2, routine, "Write date/time=" + dateTime + " (timeZone="+timeZone+") val=" + value +
+                                " HDB sampleStartBeforeShift=" + startTimeStampBeforeShiftMs +
+                                " HDB sampleStartAfterShift=" + startTimeStampMs +
+                                //" msdiff=" + startTimeStampMsDelta +
+                                " startTimeStamp(" + timeZone + ")=" +
+                                //startTimeStamp +
+                                timeZoneDateFormat.format(startTimeStamp) +
+                                " HDB end=" + dateTime.getDate(timeZone).getTime() + " endTimeStamp("+timeZone+")=" + timeZoneDateFormat.format(endTimeStamp) +
+                                //" endTimeStamp(GMT)=" + endTimeStamp.toGMTString() +
+                                " endTimeStamp(GMT)=" + gmtDateFormat.format(endTimeStamp) +
+                                //" endTimeStamp(Locale)=" + endTimeStamp.toLocaleString() +
+                                " endTimeStamp(Locale)=" + localDateFormat.format(endTimeStamp) +
+                                //" start's offset from end=" + timeOffsetTsToHdbStart +
+                                " batchCount=" + batchCount);
                         }
                     }
                     else {
-                        // Pass a null for SAMEPLE_END_DATE_TIME as per previous functionality
+                        // Pass a null for SAMPLE_END_DATE_TIME as per functionality before NHour support
                         cs.setNull(iParam++,java.sql.Types.TIMESTAMP);
                         if ( Message.isDebugOn ) {
-                            Message.printStatus(2, routine, "Write date/time=" + dt + " value=" + value +
-                                " HDB date/time ms sample (start)=" + startTimeStampMs + " " + startTimeStamp +
+                            Message.printStatus(2, routine, "Write date/time=" + dateTime + " value=" + value +
+                        		" HDB sampleStart=" + startTimeStampMs +
+                        		" startTimeStamp(" + timeZone + ")=" +
+                                //startTimeStamp +
+                                timeZoneDateFormat.format(startTimeStamp) +
                                 " HDB date/time ms end=null batchCount=" + batchCount);
                         }
                     }
                     if ( batchCount == 0 ) {
-                    	batchStart = new DateTime(dt);
+                    	batchStart = new DateTime(dateTime);
                     }
-                    batchEnd = dt;
+                    batchEnd = dateTime;
                     ++batchCount; 
                     cs.addBatch();
                 }
                 catch ( Exception e ) {
-                    Message.printWarning ( 3, routine, "Error constructing batch write call at " + dt + " (" + e + " )" );
+                    Message.printWarning ( 3, routine, "Error constructing batch write call at " + dateTime + " (" + e + " )" );
                     ++errorCount;
                     if ( errorCount <= 10 ) {
                         // Log the exception, but only for the first 10 errors

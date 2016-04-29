@@ -987,7 +987,6 @@ private void setDiscoveryTSList ( List discovery_TS_Vector )
     __discovery_TS_Vector = discovery_TS_Vector;
 }
 
-// FIXME SAM 2010-10-20 Enable correct properties
 /**
 Return the string representation of the command.
 */

@@ -1424,12 +1424,13 @@ public boolean ok ()
 Populate the agency list based on the selected datastore.
 */
 private void populateAgencyChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateAgencyChoices";
+{   String routine = getClass().getSimpleName() + ".populateAgencyChoices";
     if ( (rdmi == null) || (__Agency_JComboBox == null) ) {
         // Initialization
         return;
     }
-    List<String> agencyStrings = new Vector();
+    //Message.printStatus(2,routine,"Start populating agency choices at " + new DateTime(DateTime.DATE_CURRENT));
+    List<String> agencyStrings = new ArrayList<String>();
     try {
         List<ReclamationHDB_Agency> agencyList = rdmi.getAgencyList();
         agencyStrings.add(""); // No agency will be used
@@ -1455,6 +1456,7 @@ private void populateAgencyChoices ( ReclamationHDB_DMI rdmi )
     }
     __Agency_JComboBox.removeAll ();
     __Agency_JComboBox.setData(agencyStrings);
+    //Message.printStatus(2,routine,"End populating agency choices at " + new DateTime(DateTime.DATE_CURRENT));
     // Select first choice (may get reset from existing parameter values).
     __Agency_JComboBox.select ( null );
     if ( __Agency_JComboBox.getItemCount() > 0 ) {
@@ -1466,15 +1468,16 @@ private void populateAgencyChoices ( ReclamationHDB_DMI rdmi )
 Populate the data type choice list based on the selected site common name.
 */
 private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
-{   //String routine = getClass().getName() + ".populateDataTypeCommonNameChoices";
+{   String routine = getClass().getSimpleName() + ".populateDataTypeCommonNameChoices";
     if ( (rdmi == null) || (__DataTypeCommonName_JComboBox == null) ) {
         // Initialization
         return;
     }
+    //Message.printStatus(2,routine,"Start populating data type common name choices at " + new DateTime(DateTime.DATE_CURRENT));
     // Populate the data types from datatype that match the site_id via site_datatype_id
     // First find the site_id for the selected site
     String selectedSiteCommonName = __SiteCommonName_JComboBox.getSelected();
-    List<String> dataTypeCommonNameStrings = new Vector();
+    List<String> dataTypeCommonNameStrings = new ArrayList<String>();
     if ( selectedSiteCommonName != null ) {
         List<ReclamationHDB_SiteDataType> siteDataTypeList =
             rdmi.findSiteDataType(__siteDataTypeList, selectedSiteCommonName, null );
@@ -1485,6 +1488,7 @@ private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
     }
     __DataTypeCommonName_JComboBox.removeAll ();
     __DataTypeCommonName_JComboBox.setData(dataTypeCommonNameStrings);
+    //Message.printStatus(2,routine,"End populating data type common name choices at " + new DateTime(DateTime.DATE_CURRENT));
     // Select first choice (may get reset from existing parameter values).
     __DataTypeCommonName_JComboBox.select ( null );
     if ( __DataTypeCommonName_JComboBox.getItemCount() > 0 ) {
@@ -1496,12 +1500,13 @@ private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
 Populate the model name list based on the selected datastore.
 */
 private void populateEnsembleModelNameChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateEnsembleModelNameChoices";
+{   String routine = getClass().getSimpleName() + ".populateEnsembleModelNameChoices";
     if ( (rdmi == null) || (__EnsembleModelName_JComboBox == null) ) {
         // Initialization
         return;
     }
-    List<String> modelNameStrings = new Vector();
+    Message.printStatus(2,routine,"Start populating ensemble model name choices at " + new DateTime(DateTime.DATE_CURRENT));
+    List<String> modelNameStrings = new ArrayList<String>();
     modelNameStrings.add ( "" ); // Always add blank because user may not want model time series
     try {
         readModelList(rdmi);
@@ -1517,6 +1522,7 @@ private void populateEnsembleModelNameChoices ( ReclamationHDB_DMI rdmi )
     }
     __EnsembleModelName_JComboBox.removeAll ();
     __EnsembleModelName_JComboBox.setData(modelNameStrings);
+    Message.printStatus(2,routine,"End populating ensemble model name choices at " + new DateTime(DateTime.DATE_CURRENT));
     int max = modelNameStrings.size();
     if ( max > 25 ) {
         max = 25;
@@ -1533,11 +1539,12 @@ private void populateEnsembleModelNameChoices ( ReclamationHDB_DMI rdmi )
 Populate the model run ID list based on the selected datastore.
 */
 private void populateEnsembleModelRunIDChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateEnsembleModelRunIDhoices";
+{   String routine = getClass().getSimpleName() + ".populateEnsembleModelRunIDhoices";
     if ( (rdmi == null) || (__EnsembleModelRunID_JComboBox == null) ) {
         // Initialization
         return;
     }
+    Message.printStatus(2,routine,"Start populating ensemble model run ID choices at " + new DateTime(DateTime.DATE_CURRENT));
     List<String> modelRunIDStrings = new ArrayList<String>();
     List<String> sortStrings = new ArrayList<String>();
     modelRunIDStrings.add ( "" ); // Always add blank because user may not want model time series
@@ -1574,6 +1581,7 @@ private void populateEnsembleModelRunIDChoices ( ReclamationHDB_DMI rdmi )
     }
     __EnsembleModelRunID_JComboBox.removeAll ();
     __EnsembleModelRunID_JComboBox.setData(modelRunIDStrings);
+    Message.printStatus(2,routine,"End populating ensemble model run ID choices at " + new DateTime(DateTime.DATE_CURRENT));
     int max = modelRunIDStrings.size();
     if ( max > 25 ) {
         max = 25;
@@ -1590,12 +1598,13 @@ private void populateEnsembleModelRunIDChoices ( ReclamationHDB_DMI rdmi )
 Populate the model name list based on the selected datastore.
 */
 private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateEnsembleNameChoices";
+{   String routine = getClass().getSimpleName() + ".populateEnsembleNameChoices";
     if ( (rdmi == null) || (__EnsembleName_JComboBox == null) ) {
         // Initialization
         return;
     }
-    List<String> ensembleNameStrings = new Vector();
+    Message.printStatus(2,routine,"Start populating ensemble name choices at " + new DateTime(DateTime.DATE_CURRENT));
+    List<String> ensembleNameStrings = new ArrayList<String>();
     ensembleNameStrings.add ( "" ); // Always add blank because user may not want ensemble time series
     try {
         readEnsembleList(rdmi);
@@ -1611,6 +1620,7 @@ private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
     }
     __EnsembleName_JComboBox.removeAll ();
     __EnsembleName_JComboBox.setData(ensembleNameStrings);
+    Message.printStatus(2,routine,"End populating ensemble name choices at " + new DateTime(DateTime.DATE_CURRENT));
     // Select first choice (may get reset from existing parameter values).
     __EnsembleName_JComboBox.select ( null );
     if ( __EnsembleName_JComboBox.getItemCount() > 0 ) {
@@ -1622,10 +1632,12 @@ private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
 Populate the model hydrologic indicator list based on the selected datastore.
 */
 private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
-{   if ( (rdmi == null) || (__HydrologicIndicator_JComboBox == null) ) {
+{   String routine = getClass().getSimpleName() + ".populateHydrologicIndicatorChoices";
+	if ( (rdmi == null) || (__HydrologicIndicator_JComboBox == null) ) {
         // Initialization
         return;
     }
+	Message.printStatus(2,routine,"Start populating hydrologic indicator choices at " + new DateTime(DateTime.DATE_CURRENT));
     List<String> hydrologicIndicatorStrings = new ArrayList();
     hydrologicIndicatorStrings.add ( "" ); // Always add blank because user may not want model time series
     try {
@@ -1659,6 +1671,7 @@ private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
     }
     __HydrologicIndicator_JComboBox.removeAll ();
     __HydrologicIndicator_JComboBox.setData(hydrologicIndicatorStrings);
+    Message.printStatus(2,routine,"End populating hydrologic indicator choices at " + new DateTime(DateTime.DATE_CURRENT));
     int max = hydrologicIndicatorStrings.size();
     if ( max > 25 ) {
         max = 25;
@@ -1700,11 +1713,12 @@ private void populateIntervalHintChoices ()
 Populate the model name list based on the selected datastore.
 */
 private void populateModelNameChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateModelNameChoices";
+{   String routine = getClass().getSimpleName() + ".populateModelNameChoices";
     if ( (rdmi == null) || (__ModelName_JComboBox == null) ) {
         // Initialization
         return;
     }
+    Message.printStatus(2,routine,"Start populating model name choices at " + new DateTime(DateTime.DATE_CURRENT));
     List<String> modelNameStrings = new ArrayList<String>();
     modelNameStrings.add ( "" ); // Always add blank because user may not want model time series
     try {
@@ -1728,6 +1742,7 @@ private void populateModelNameChoices ( ReclamationHDB_DMI rdmi )
     }
     __ModelName_JComboBox.removeAll ();
     __ModelName_JComboBox.setData(modelNameStrings);
+    Message.printStatus(2,routine,"End populating model name choices at " + new DateTime(DateTime.DATE_CURRENT));
     int max = modelNameStrings.size();
     if ( max > 25 ) {
         max = 25;
@@ -1744,11 +1759,12 @@ private void populateModelNameChoices ( ReclamationHDB_DMI rdmi )
 Populate the model run date list based on the selected datastore.
 */
 private void populateModelRunDateChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateModelRunDateChoices";
+{   String routine = getClass().getSimpleName() + ".populateModelRunDateChoices";
     if ( (rdmi == null) || (__ModelRunDate_JComboBox == null) ) {
         // Initialization
         return;
     }
+    Message.printStatus(2,routine,"Start populating model run date choices at " + new DateTime(DateTime.DATE_CURRENT));
     List<String> runDateStrings = new ArrayList<String>();
     runDateStrings.add ( "" ); // Always add blank because user may not want model time series
     try {
@@ -1793,6 +1809,7 @@ private void populateModelRunDateChoices ( ReclamationHDB_DMI rdmi )
     }
     __ModelRunDate_JComboBox.removeAll ();
     __ModelRunDate_JComboBox.setData(runDateStrings);
+    Message.printStatus(2,routine,"End populating model run date choices at " + new DateTime(DateTime.DATE_CURRENT));
     int max = runDateStrings.size();
     if ( max > 25 ) {
         max = 25;
@@ -1815,11 +1832,12 @@ Populate the model run ID list based on the selected datastore and the selected 
 This requires doing a distinct query on the time series data table to get available model_run_id
 */
 private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateModelRunIDChoices";
+{   String routine = getClass().getSimpleName() + ".populateModelRunIDChoices";
     if ( (rdmi == null) || (__ModelRunID_JComboBox == null) ) {
         // Initialization
         return;
     }
+    Message.printStatus(2,routine,"Start populating model run ID choices at " + new DateTime(DateTime.DATE_CURRENT));
     String selectedInterval = "";
     /*
     if ( __IntervalHint_JComboBox != null ) {
@@ -1899,6 +1917,7 @@ private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
     }
     __ModelRunID_JComboBox.removeAll ();
     __ModelRunID_JComboBox.setData(modelRunIDStrings);
+    Message.printStatus(2,routine,"End populating model run ID choices at " + new DateTime(DateTime.DATE_CURRENT));
     int max = modelRunIDStrings.size();
     if ( max > 25 ) {
         max = 25;
@@ -1915,11 +1934,12 @@ private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
 Populate the model run name list based on the selected datastore.
 */
 private void populateModelRunNameChoices ( ReclamationHDB_DMI rdmi )
-{   //String routine = getClass().getName() + ".populateModelRunNameChoices";
+{   String routine = getClass().getSimpleName() + ".populateModelRunNameChoices";
     if ( (rdmi == null) || (__ModelRunName_JComboBox == null) ) {
         // Initialization
         return;
     }
+    Message.printStatus(2,routine,"Start populating model run name choices at " + new DateTime(DateTime.DATE_CURRENT));
     // TODO SAM 2013-09-27 Remove if functionality works out.
     //readModelRunListForSelectedModel(rdmi);
     List<String> modelRunNameStrings = new ArrayList<String>();
@@ -1950,6 +1970,7 @@ private void populateModelRunNameChoices ( ReclamationHDB_DMI rdmi )
     }
     __ModelRunName_JComboBox.removeAll ();
     __ModelRunName_JComboBox.setData(modelRunNameStrings);
+    Message.printStatus(2,routine,"End populating model run name choices at " + new DateTime(DateTime.DATE_CURRENT));
     int max = modelRunNameStrings.size();
     if ( max > 25 ) {
         max = 25;
@@ -1966,11 +1987,12 @@ private void populateModelRunNameChoices ( ReclamationHDB_DMI rdmi )
 Populate the overwrite flag list based on the selected datastore.
 */
 private void populateOverwriteFlagChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateOverwriteFlagChoices";
+{   String routine = getClass().getSimpleName() + ".populateOverwriteFlagChoices";
     if ( (rdmi == null) || (__OverwriteFlag_JComboBox == null) ) {
         // Initialization
         return;
     }
+    //Message.printStatus(2,routine,"Start populating overwrite flag choices at " + new DateTime(DateTime.DATE_CURRENT));
     List<String> overwriteFlagStrings = new Vector();
     try {
         List<ReclamationHDB_OverwriteFlag> overwriteFlagList = rdmi.getOverwriteFlagList();
@@ -1987,6 +2009,7 @@ private void populateOverwriteFlagChoices ( ReclamationHDB_DMI rdmi )
     }
     __OverwriteFlag_JComboBox.removeAll ();
     __OverwriteFlag_JComboBox.setData(overwriteFlagStrings);
+    //Message.printStatus(2,routine,"End populating overwrite flag choices at " + new DateTime(DateTime.DATE_CURRENT));
     // Select first choice (may get reset from existing parameter values).
     __OverwriteFlag_JComboBox.select ( null );
     if ( __OverwriteFlag_JComboBox.getItemCount() > 0 ) {
@@ -1998,11 +2021,12 @@ private void populateOverwriteFlagChoices ( ReclamationHDB_DMI rdmi )
 Populate the site common name list based on the selected datastore.
 */
 private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateSiteCommonNameChoices";
+{   String routine = getClass().getSimpleName() + ".populateSiteCommonNameChoices";
     if ( (rdmi == null) || (__SiteCommonName_JComboBox == null) ) {
         // Initialization
         return;
     }
+    //Message.printStatus(2,routine,"Start populating site common name choices at " + new DateTime(DateTime.DATE_CURRENT));
     List<String> siteCommonNameStrings = new ArrayList<String>();
     // Add a blank since SDI can be specified directly
     siteCommonNameStrings.add("");
@@ -2020,6 +2044,7 @@ private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
     }
     __SiteCommonName_JComboBox.removeAll ();
     __SiteCommonName_JComboBox.setData(siteCommonNameStrings);
+    //Message.printStatus(2,routine,"End populating site common name choices at " + new DateTime(DateTime.DATE_CURRENT));
     // Select first choice (may get reset from existing parameter values).
     __SiteCommonName_JComboBox.select ( null );
     if ( __SiteCommonName_JComboBox.getItemCount() > 0 ) {
@@ -2031,11 +2056,12 @@ private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
 Populate the site common name list based on the selected datastore.
 */
 private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateSiteDataTypeIDChoices";
+{   String routine = getClass().getSimpleName() + ".populateSiteDataTypeIDChoices";
     if ( (rdmi == null) || (__SiteDataTypeID_JComboBox == null) ) {
         // Initialization
         return;
     }
+    //Message.printStatus(2,routine,"Start populating site data type choices at " + new DateTime(DateTime.DATE_CURRENT));
     List<String> siteDataTypeIDStrings = new ArrayList<String>();
     List<String> sortStrings = new ArrayList<String>();
     siteDataTypeIDStrings.add ( "" );
@@ -2088,6 +2114,7 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
     }
     __SiteDataTypeID_JComboBox.removeAll ();
     __SiteDataTypeID_JComboBox.setData(siteDataTypeIDStrings);
+    //Message.printStatus(2,routine,"End populating site data type choices at " + new DateTime(DateTime.DATE_CURRENT));
     int max = siteDataTypeIDStrings.size();
     if ( max > 25 ) {
         max = 25;
@@ -2104,7 +2131,8 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
 Populate the time zone choices based on the selected datastore.
 */
 private void populateTimeZoneChoices ( ReclamationHDB_DMI rdmi )
-{
+{	String routine = getClass().getSimpleName() + ".populteTimeZoneChoices";
+	//Message.printStatus(2,routine,"Start populating time zone choices at " + new DateTime(DateTime.DATE_CURRENT));
     __TimeZone_JComboBox.removeAll ();
     List<String> timeZoneChoices = rdmi.getTimeZoneList();
     // Remove (blank) because can lead to errors loading data
@@ -2118,6 +2146,7 @@ private void populateTimeZoneChoices ( ReclamationHDB_DMI rdmi )
     // Command checks will force something other than blank to be selected
     timeZoneChoices.add(0,"");
     __TimeZone_JComboBox.setData(timeZoneChoices);
+    //Message.printStatus(2,routine,"End populating time zone choices at " + new DateTime(DateTime.DATE_CURRENT));
     // Select first choice (may get reset from existing parameter values).
     __TimeZone_JComboBox.select ( null );
     if ( __TimeZone_JComboBox.getItemCount() > 0 ) {
@@ -2138,12 +2167,13 @@ private void populateTimeZoneLabel ( ReclamationHDB_DMI rdmi )
 Populate the validation flag list based on the selected datastore.
 */
 private void populateValidationFlagChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateValidationFlagChoices";
+{   String routine = getClass().getSimpleName() + ".populateValidationFlagChoices";
     if ( (rdmi == null) || (__ValidationFlag_JComboBox == null) ) {
         // Initialization
         return;
     }
-    List<String> validationFlagStrings = new Vector();
+    //Message.printStatus(2,routine,"Start populating validation flag choices at " + new DateTime(DateTime.DATE_CURRENT));
+    List<String> validationFlagStrings = new ArrayList<String>();
     try {
         List<ReclamationHDB_Validation> validationList = rdmi.getHdbValidationList();
         validationFlagStrings.add(""); // No flag specified by parameter
@@ -2164,6 +2194,7 @@ private void populateValidationFlagChoices ( ReclamationHDB_DMI rdmi )
     }
     __ValidationFlag_JComboBox.removeAll ();
     __ValidationFlag_JComboBox.setData(validationFlagStrings);
+    //Message.printStatus(2,routine,"End populating validation flag choices at " + new DateTime(DateTime.DATE_CURRENT));
     // Select first choice (may get reset from existing parameter values).
     __ValidationFlag_JComboBox.select ( null );
     if ( __ValidationFlag_JComboBox.getItemCount() > 0 ) {
@@ -2207,7 +2238,7 @@ throws Exception
 Read the model run list for the selected model.
 */
 private void readModelRunListForSelectedModel ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".readModelRunList";
+{   String routine = getClass().getSimpleName() + ".readModelRunList";
     String selectedModelName = __ModelName_JComboBox.getSelected();
     List<ReclamationHDB_Model> modelList = rdmi.findModel(__modelList, selectedModelName);
     List<String> modelRunNameStrings = new Vector();
@@ -2237,7 +2268,7 @@ private void readModelRunListForSelectedModel ( ReclamationHDB_DMI rdmi )
 Read the site_datatype list and set for use in the editor.
 */
 private void readSiteDataTypeList ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".readSiteDataTypeIdList";
+{   String routine = getClass().getSimpleName() + ".readSiteDataTypeIdList";
     try {
         List<ReclamationHDB_SiteDataType> siteDataTypeList = rdmi.readHdbSiteDataTypeList();
         setSiteDataTypeList(siteDataTypeList);

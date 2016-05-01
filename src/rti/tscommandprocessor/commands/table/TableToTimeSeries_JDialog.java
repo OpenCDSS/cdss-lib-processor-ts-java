@@ -68,12 +68,14 @@ private JTextField __LocationColumn_JTextField = null;
 private JTextField __DataSourceColumn_JTextField = null;
 private JTextField __DataTypeColumn_JTextField = null;
 private JTextField __ScenarioColumn_JTextField = null;
+private JTextField __SequenceIDColumn_JTextField = null;
 private JTextField __UnitsColumn_JTextField = null;
 private JTextField __DataSource_JTextField = null;
 private JTextField __DataType_JTextField = null;
 private SimpleJComboBox __Interval_JComboBox = null;
 private SimpleJComboBox __IrregularIntervalPrecision_JComboBox = null;
 private JTextField __Scenario_JTextField = null;
+private JTextField __SequenceID_JTextField = null;
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
 private SimpleJComboBox __HandleDuplicatesHow_JComboBox = null;
@@ -180,6 +182,7 @@ private void checkInput () {
 	String DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
 	String DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
 	String ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
+	String SequenceIDColumn = __SequenceIDColumn_JTextField.getText().trim();
 	String UnitsColumn = __UnitsColumn_JTextField.getText().trim();
 	String LocationType = __LocationType_JTextField.getText().trim();
 	String LocationID = __LocationID_JTextField.getText().trim();
@@ -190,6 +193,7 @@ private void checkInput () {
 	String Interval = __Interval_JComboBox.getSelected();
 	String IrregularIntervalPrecision = __IrregularIntervalPrecision_JComboBox.getSelected();
 	String Scenario = __Scenario_JTextField.getText().trim();
+	String SequenceID = __SequenceID_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
@@ -236,6 +240,9 @@ private void checkInput () {
     if (ScenarioColumn.length() > 0) {
         props.set("ScenarioColumn", ScenarioColumn);
     }
+    if (SequenceIDColumn.length() > 0) {
+        props.set("SequenceIDColumn", SequenceIDColumn);
+    }
     if (UnitsColumn.length() > 0) {
         props.set("UnitsColumn", UnitsColumn);
     }
@@ -265,6 +272,9 @@ private void checkInput () {
     }
     if (Scenario.length() > 0) {
         props.set("Scenario", Scenario);
+    }
+    if (SequenceID.length() > 0) {
+        props.set("SequenceID", SequenceID);
     }
     if (Units.length() > 0) {
         props.set("Units", Units);
@@ -325,6 +335,7 @@ private void commitEdits() {
     String DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
     String DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
     String ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
+    String SequenceIDColumn = __SequenceIDColumn_JTextField.getText().trim();
     String UnitsColumn = __UnitsColumn_JTextField.getText().trim();
     String LocationType = __LocationType_JTextField.getText().trim();
     String LocationID = __LocationID_JTextField.getText().trim();
@@ -333,6 +344,7 @@ private void commitEdits() {
     String Interval = __Interval_JComboBox.getSelected();
     String IrregularIntervalPrecision = __IrregularIntervalPrecision_JComboBox.getSelected();
     String Scenario = __Scenario_JTextField.getText().trim();
+    String SequenceID = __SequenceID_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
@@ -355,6 +367,7 @@ private void commitEdits() {
     __command.setCommandParameter("DataSourceColumn", DataSourceColumn);
     __command.setCommandParameter("DataTypeColumn", DataTypeColumn);
     __command.setCommandParameter("ScenarioColumn", ScenarioColumn);
+    __command.setCommandParameter("SequenceIDColumn", SequenceIDColumn);
     __command.setCommandParameter("UnitsColumn", UnitsColumn);
     __command.setCommandParameter("LocationType", LocationType);
     __command.setCommandParameter("LocationID", LocationID);
@@ -365,6 +378,7 @@ private void commitEdits() {
 	__command.setCommandParameter("Interval", Interval);
 	__command.setCommandParameter("IrregularIntervalPrecision", IrregularIntervalPrecision);
 	__command.setCommandParameter("Scenario", Scenario);
+	__command.setCommandParameter("SequenceID", SequenceID);
 	__command.setCommandParameter("Units", Units);
 	__command.setCommandParameter("MissingValue", MissingValue);
 	__command.setCommandParameter("HandleDuplicatesHow", HandleDuplicatesHow);
@@ -574,6 +588,16 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         "Optional - column name for scenario if not provided as Scenario below."),
         3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Sequence ID column:"),
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SequenceIDColumn_JTextField = new JTextField (20);
+    __SequenceIDColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(singleTS_JPanel, __SequenceIDColumn_JTextField,
+        1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "Optional - column name sequence ID if not provided SequenceID below."),
+        3, ySingle, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data units column:"),
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __UnitsColumn_JTextField = new JTextField (20);
@@ -699,6 +723,17 @@ private void initialize(JFrame parent, TableToTimeSeries_Command command, List<S
         1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(tsid_JPanel, new JLabel (
         "Optional - scenario(s) for the time series, comma-separated (default=blank)."),
+        3, yTsid, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel ("Sequence ID:"),
+        0, ++yTsid, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SequenceID_JTextField = new JTextField (10);
+    __SequenceID_JTextField.setToolTipText("Sequence ID is used to identify time series in an ensemble and is shown in [SequenceID] part of time series identifier");
+    __SequenceID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(tsid_JPanel, __SequenceID_JTextField,
+        1, yTsid, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tsid_JPanel, new JLabel (
+        "Optional - sequence ID(s) for the time series, comma-separated (default=blank)."),
         3, yTsid, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(tsid_JPanel, new JLabel("Alias to assign:"),
@@ -973,6 +1008,7 @@ private void refresh()
     String DataSourceColumn = "";
     String DataTypeColumn = "";
     String ScenarioColumn = "";
+    String SequenceIDColumn = "";
     String UnitsColumn = "";
     String LocationType = "";
     String LocationID = "";
@@ -983,6 +1019,7 @@ private void refresh()
     String Interval = "";
     String IrregularIntervalPrecision = "";
     String Scenario = "";
+    String SequenceID = "";
     String Units = "";
     String MissingValue = "";
     String HandleDuplicatesHow = "";
@@ -1012,6 +1049,7 @@ private void refresh()
         DataSourceColumn = props.getValue("DataSourceColumn");
         DataTypeColumn = props.getValue("DataTypeColumn");
         ScenarioColumn = props.getValue("ScenarioColumn");
+        SequenceIDColumn = props.getValue("SequenceIDColumn");
         UnitsColumn = props.getValue("UnitsColumn");
         LocationType = props.getValue("LocationType");
         LocationID = props.getValue("LocationID");
@@ -1022,6 +1060,7 @@ private void refresh()
 	    Interval = props.getValue("Interval");
 	    IrregularIntervalPrecision = props.getValue("IrregularIntervalPrecision");
 	    Scenario = props.getValue("Scenario");
+	    SequenceID = props.getValue("SequenceID");
 	    Units = props.getValue("Units");
 	    MissingValue = props.getValue("MissingValue");
 	    HandleDuplicatesHow = props.getValue("HandleDuplicatesHow");
@@ -1099,6 +1138,9 @@ private void refresh()
         if (ScenarioColumn != null) {
             __ScenarioColumn_JTextField.setText(ScenarioColumn);
         }
+        if (SequenceIDColumn != null) {
+            __SequenceIDColumn_JTextField.setText(SequenceIDColumn);
+        }
         if (UnitsColumn != null) {
             __UnitsColumn_JTextField.setText(UnitsColumn);
         }
@@ -1155,6 +1197,9 @@ private void refresh()
         }
         if (Scenario != null) {
             __Scenario_JTextField.setText(Scenario);
+        }
+        if (SequenceID != null) {
+            __SequenceID_JTextField.setText(SequenceID);
         }
         if (Units != null) {
             __Units_JTextField.setText(Units);
@@ -1261,6 +1306,7 @@ private void refresh()
     DataSourceColumn = __DataSourceColumn_JTextField.getText().trim();
     DataTypeColumn = __DataTypeColumn_JTextField.getText().trim();
     ScenarioColumn = __ScenarioColumn_JTextField.getText().trim();
+    SequenceIDColumn = __SequenceIDColumn_JTextField.getText().trim();
     UnitsColumn = __UnitsColumn_JTextField.getText().trim();
     LocationType = __LocationType_JTextField.getText().trim();
     LocationID = __LocationID_JTextField.getText().trim();
@@ -1271,6 +1317,7 @@ private void refresh()
     Interval = __Interval_JComboBox.getSelected();
     IrregularIntervalPrecision = __IrregularIntervalPrecision_JComboBox.getSelected();
     Scenario = __Scenario_JTextField.getText().trim();
+    SequenceID = __SequenceID_JTextField.getText().trim();
     Units = __Units_JTextField.getText().trim();
     MissingValue = __MissingValue_JTextField.getText().trim();
     HandleDuplicatesHow = __HandleDuplicatesHow_JComboBox.getSelected();
@@ -1294,6 +1341,7 @@ private void refresh()
     props.add("DataSourceColumn=" + DataSourceColumn );
     props.add("DataTypeColumn=" + DataTypeColumn );
     props.add("ScenarioColumn=" + ScenarioColumn );
+    props.add("SequenceIDColumn=" + SequenceIDColumn );
     props.add("UnitsColumn=" + UnitsColumn );
     props.add("LocationType=" + LocationType );
     props.add("LocationID=" + LocationID );
@@ -1304,6 +1352,7 @@ private void refresh()
     props.add("Interval=" + Interval );
     props.add("IrregularIntervalPrecision=" + IrregularIntervalPrecision );
     props.add("Scenario=" + Scenario );
+    props.add("SequenceID=" + SequenceID );
     props.add("Units=" + Units );
     props.add("MissingValue=" + MissingValue );
     props.add("HandleDuplicatesHow=" + HandleDuplicatesHow );

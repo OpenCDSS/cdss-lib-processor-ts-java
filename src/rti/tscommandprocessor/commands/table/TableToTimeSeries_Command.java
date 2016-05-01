@@ -141,6 +141,11 @@ Scenario for each time series being processed.
 private List<String> __scenario = new ArrayList<String>();
 
 /**
+Sequence ID for each time series being processed.
+*/
+private List<String> __sequenceID = new ArrayList<String>();
+
+/**
 TODO SAM 2012-11-09 Currently not used
 Row ranges to skip (single rows will have same and start value.  Rows are 1+.
 */
@@ -210,12 +215,14 @@ throws InvalidCommandParameterException
     String DataSourceColumn = parameters.getValue("DataSourceColumn" );
     String DataTypeColumn = parameters.getValue("DataTypeColumn" );
     String ScenarioColumn = parameters.getValue("ScenarioColumn" );
+    String SequenceIDColumn = parameters.getValue("SequenceIDColumn" );
     String UnitsColumn = parameters.getValue("UnitsColumn" );
     String DataSource = parameters.getValue("DataSource" );
     String DataType = parameters.getValue("DataType" );
     String Interval = parameters.getValue("Interval" );
     String IrregularIntervalPrecision = parameters.getValue("IrregularIntervalPrecision" );
     String Scenario = parameters.getValue("Scenario" );
+    String SequenceID = parameters.getValue("SequenceID" );
     String Units = parameters.getValue("Units" );
     String MissingValue = parameters.getValue("MissingValue" );
     String HandleDuplicatesHow = parameters.getValue("HandleDuplicatesHow" );
@@ -623,6 +630,16 @@ throws InvalidCommandParameterException
                 message, "Specify Scenario or ScenarioColumn but not both." ) );
     }
     
+    if ( ((SequenceID != null) && !SequenceID.equals("")) &&
+        ((SequenceIDColumn != null) && !SequenceIDColumn.equals("")) ) {
+        // Can only specify sequence ID one way
+        message = "SequenceID and SequenceIDColumn cannot both be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify SequenceID or SequenceIDColumn but not both." ) );
+    }
+    
     if ( ((Units != null) && !Units.equals("")) &&
         ((UnitsColumn != null) && !UnitsColumn.equals("")) ) {
         // Can only specify units one way
@@ -795,6 +812,14 @@ throws InvalidCommandParameterException
     setScenario ( scenario );
     */
     
+    List<String> sequenceID = new ArrayList<String>();
+    setSequenceID ( sequenceID );
+    if ( (SequenceID != null) && !SequenceID.equals("") ) {
+        // Can have one value that is re-used, or Scenario for each time series
+        List<String>tokens = StringUtil.breakStringList(SequenceID, ",", 0);
+        setSequenceID ( tokens );
+    }
+    
     List<String> units = new Vector();
     setUnits ( units );
     if ( (Units != null) && !Units.equals("") ) {
@@ -930,7 +955,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(26);
+    List<String> validList = new ArrayList<String>(27);
     validList.add ( "TableID" );
     //valid_Vector.add ( "SkipRows" );
     validList.add ( "DateTimeColumn" );
@@ -942,6 +967,7 @@ throws InvalidCommandParameterException
     validList.add ( "DataSourceColumn" );
     validList.add ( "DataTypeColumn" );
     validList.add ( "ScenarioColumn" );
+    validList.add ( "SequenceIDColumn" );
     validList.add ( "UnitsColumn" );
     validList.add ( "LocationType" );
     validList.add ( "LocationID" );
@@ -952,6 +978,7 @@ throws InvalidCommandParameterException
     validList.add ( "Interval" );
     validList.add ( "IrregularIntervalPrecision" );
     validList.add ( "Scenario" );
+    validList.add ( "SequenceID" );
     validList.add ( "Units" );
     validList.add ( "MissingValue" );
     validList.add ( "HandleDuplicatesHow" );
@@ -1043,10 +1070,10 @@ throws Throwable
 Format the TSID from the table records, used as the key for the hash map to look up time series.
 */
 private String formatTSIDFromTableRecord ( TableRecord rec, int locationTypePos, int locationPos, int dataSourcePos,
-    int dataTypePos, TimeInterval interval, int scenarioPos, String locationTypeFromParam, String dataSourceFromParam,
-    String dataTypeFromParam, String scenarioFromParam )
+    int dataTypePos, TimeInterval interval, int scenarioPos, int sequenceIDPos, String locationTypeFromParam,
+    String dataSourceFromParam, String dataTypeFromParam, String scenarioFromParam, String sequenceIDFromParam )
 throws Exception
-{   String locationType = null, locationId = null, dataSource = null, dataType = null, scenario = null;
+{   String locationType = null, locationId = null, dataSource = null, dataType = null, scenario = null, sequenceID = null;
 	String periodReplacement = ""; // TODO SAM 2015-10-12 Evaluate whether to pass as command parameter
     StringBuffer tsidFromTable = new StringBuffer();
     locationId = rec.getFieldValueString(locationPos);
@@ -1101,6 +1128,17 @@ throws Exception
     if ( (scenario != null) && (scenario.length() > 0) ) {
         tsidFromTable.append(TSIdent.SEPARATOR);
         tsidFromTable.append(scenario);
+    }
+    if ( sequenceIDPos >= 0 ) {
+    	sequenceID = rec.getFieldValueString(sequenceIDPos);
+    }
+    else {
+    	sequenceID = sequenceIDFromParam;
+    }
+    if ( (sequenceID != null) && !sequenceID.isEmpty() ) {
+        tsidFromTable.append(TSIdent.SEQUENCE_NUMBER_LEFT);
+        tsidFromTable.append(sequenceID);
+        tsidFromTable.append(TSIdent.SEQUENCE_NUMBER_RIGHT);
     }
     return tsidFromTable.toString();
 }
@@ -1410,6 +1448,14 @@ private List<String> getScenario()
 }
 
 /**
+Return the sequence ID constant.
+*/
+private List<String> getSequenceID()
+{
+    return __sequenceID;
+}
+
+/**
 Return the number of rows to skip (ranges).
 */
 private int[][] getSkipRows()
@@ -1467,10 +1513,10 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
 	int layoutColumns, int layoutRows, YearType yearType,
 	String dateTimeColumn,
 	// The following are when parameters provide the values
-	String locationType, String locationID, String dataSource, String dataType, TimeInterval interval, String scenario, String units, String missing,
+	String locationType, String locationID, String dataSource, String dataType, TimeInterval interval, String scenario, String sequenceID, String units, String missing,
 	// The following are when columns provide the values
 	String locationTypeColumn, String locationColumn, String dataSourceColumn,
-    String dataTypeColumn, String scenarioColumn, String unitsColumn, String valueColumn,
+    String dataTypeColumn, String scenarioColumn, String sequenceIDColumn, String unitsColumn, String valueColumn,
 	boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
 {	String routine = getClass().getSimpleName() + ".readTimeSeriesListBlock";
 	List<TS> tslist = new ArrayList<TS>();
@@ -1492,6 +1538,7 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
     int dataSourcePos = -1;
     int dataTypePos = -1;
     int scenarioPos = -1;
+    int sequenceIDPos = -1;
     int unitsPos = -1;
     int valuePos = -1;
     // Determine column positions for metadata columns
@@ -1542,6 +1589,16 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
         catch ( Exception e ) {
             if ( commandPhase == CommandPhaseType.RUN ) {
                 errorMessages.add("Cannot determine column number for scenario column \"" + scenarioColumn + "\"" );
+            }
+        }
+    }
+    if ( (sequenceIDColumn != null) && !sequenceIDColumn.equals("") ) {
+        try {
+        	sequenceIDPos = table.getFieldIndex(sequenceIDColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for sequence ID column \"" + sequenceIDColumn + "\"" );
             }
         }
     }
@@ -1610,7 +1667,7 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
 	            // Determine the location identifier from the data.
 	            try {
 	                tsidFromTable = formatTSIDFromTableRecord ( rec, locationTypePos, locationPos, dataSourcePos,
-	                    dataTypePos, interval, scenarioPos, locationType, dataSource, dataType, scenario );
+	                    dataTypePos, interval, scenarioPos, sequenceIDPos, locationType, dataSource, dataType, scenario, sequenceID );
 	            }
 	            catch ( Exception e ) {
 	                // Should not happen
@@ -1735,7 +1792,7 @@ private List<TS> readTimeSeriesListBlock ( DataTable table,
 	            // Get the TSID string for the table record, used to look up the time series
 	            try {
 	                tsidFromTable = formatTSIDFromTableRecord ( rec, locationTypePos, locationPos, dataSourcePos,
-	                    dataTypePos, interval, scenarioPos, locationType, dataSource, dataType, scenario );
+	                    dataTypePos, interval, scenarioPos, sequenceIDPos, locationType, dataSource, dataType, scenario, sequenceID );
 	            }
 	            catch ( Exception e ) {
 	                // Should not happen - don't process the table record
@@ -2227,12 +2284,14 @@ Read a list of time series from a single column data table.
 @param dataSourceColumn the column to use for data sources, if single column data table
 @param dataTypeColumn the column to use for data types, if single column data table
 @param scenarioColumn the column to use for scenarios, if single column data table
+@param sequenceIDColumn the column to use for sequence ID, if single column data table
 @param unitsColumn the column to use for units, if single column data table
 @param locationType location type to use for time series
 @param dataSource data source (provider) to use for time series
 @param dataType data type to use for time series
 @param interval the data interval
 @param scenario scenario to use for time series
+@param sequenceID sequence ID to use for time series (constant)
 @param units data units to use for time series
 @param missing list of missing values in table to set to missing in time series (uses NaN in time series)
 @param handleDuplicatesHow indicate how to handle duplicate date/times
@@ -2245,9 +2304,9 @@ private List<TS> readTimeSeriesListSingle ( DataTable table,
     String dateTimeColumn, String dateTimeFormat,
     String dateColumn, String timeColumn, String valueColumn, String flagColumn,
     int[][] skipRows, String locationTypeColumn, String locationColumn, String dataSourceColumn,
-    String dataTypeColumn, String scenarioColumn, String unitsColumn, String locationType,
-    String dataSource, String dataType, TimeInterval interval,
-    String scenario, String units, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
+    String dataTypeColumn, String scenarioColumn, String sequenceIDColumn, String unitsColumn, String locationType,
+    String dataSource, String dataType, TimeInterval interval, TimeInterval irregularIntervalPrecision,
+    String scenario, String sequenceID, String units, List<String> missing, HandleDuplicatesHowType handleDuplicatesHow,
     DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, CommandPhaseType commandPhase, List<String> errorMessages )
 throws IOException
@@ -2334,6 +2393,7 @@ throws IOException
     int dataSourcePos = -1;
     int dataTypePos = -1;
     int scenarioPos = -1;
+    int sequenceIDPos = -1;
     int unitsPos = -1;
     // Determine column positions for metadata columns
     if ( (locationTypeColumn != null) && !locationTypeColumn.equals("") ) {
@@ -2373,6 +2433,16 @@ throws IOException
         catch ( Exception e ) {
             if ( commandPhase == CommandPhaseType.RUN ) {
                 errorMessages.add("Cannot determine column number for scenario column \"" + scenarioColumn + "\"" );
+            }
+        }
+    }
+    if ( (sequenceIDColumn != null) && !sequenceIDColumn.equals("") ) {
+        try {
+        	sequenceIDPos = table.getFieldIndex(sequenceIDColumn);
+        }
+        catch ( Exception e ) {
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                errorMessages.add("Cannot determine column number for sequence ID column \"" + sequenceIDColumn + "\"" );
             }
         }
     }
@@ -2423,7 +2493,7 @@ throws IOException
             // Determine the TSID from the data.
             try {
                 tsidFromTable = formatTSIDFromTableRecord ( rec, locationTypePos, locationPos, dataSourcePos,
-                    dataTypePos, interval, scenarioPos, locationType, dataSource, dataType, scenario );
+                    dataTypePos, interval, scenarioPos, sequenceIDPos, locationType, dataSource, dataType, scenario, sequenceID );
             }
             catch ( Exception e ) {
                 // Should not happen
@@ -2499,6 +2569,12 @@ throws IOException
                 }
                 ts.setDate1Original(dtMinFromTable);
                 ts.setDate2Original(dtMaxFromTable);
+                if ( (ts.getDataIntervalBase() == TimeInterval.IRREGULAR) && (irregularIntervalPrecision != null) ) {
+                	ts.setDate1(ts.getDate1().setPrecision(irregularIntervalPrecision.getBase()));
+                	ts.setDate2(ts.getDate2().setPrecision(irregularIntervalPrecision.getBase()));
+                	ts.setDate1Original(ts.getDate1Original().setPrecision(irregularIntervalPrecision.getBase()));
+                	ts.setDate2Original(ts.getDate2Original().setPrecision(irregularIntervalPrecision.getBase()));
+                }
             }
             catch ( Exception e ) {
                 // Set the TS to null to match the original list positions but won't be able to set data below
@@ -2552,6 +2628,10 @@ throws IOException
             if ( dt == null ) {
                 continue;
             }
+            if ( (ts.getDataIntervalBase() == TimeInterval.IRREGULAR) && (irregularIntervalPrecision != null) ) {
+            	// Set the precision on the date/time
+            	dt.setPrecision(irregularIntervalPrecision.getBase());
+            }
             // Get the value...
             o = rec.getFieldValue(valuePos);
             if ( o == null ) {
@@ -2584,7 +2664,8 @@ throws IOException
             // Get the TSID string for the table record, used to look up the time series
             try {
                 tsidFromTable = formatTSIDFromTableRecord ( rec, locationTypePos, locationPos, dataSourcePos,
-                    dataTypePos, interval, scenarioPos, locationType, dataSource, dataType, scenario );
+                    dataTypePos, interval, scenarioPos, sequenceIDPos, locationType, dataSource, dataType,
+                    scenario, sequenceID );
             }
             catch ( Exception e ) {
                 // Should not happen - don't process the table record
@@ -2767,6 +2848,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String DataSourceColumn = parameters.getValue("DataSourceColumn");
 	String DataTypeColumn = parameters.getValue("DataTypeColumn");
 	String ScenarioColumn = parameters.getValue("ScenarioColumn");
+	String SequenceIDColumn = parameters.getValue("SequenceIDColumn");
 	String UnitsColumn = parameters.getValue("UnitsColumn");
 	String DateTimeColumn = parameters.getValue("DateTimeColumn");
 	String DateTimeFormat = parameters.getValue("DateTimeFormat");
@@ -2936,10 +3018,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 dataType,
                 getInterval(),
                 (getScenario().size() == 1 ? getScenario().get(0) : null),
+                (getSequenceID().size() == 1 ? getSequenceID().get(0) : null),
                 (getUnits().size() == 1 ? getUnits().get(0) : null),
                 (getMissingValue().size() == 1 ? getMissingValue().get(0) : null),
         		// Metadata provided in columns  
-        		LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
+        		LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, SequenceIDColumn, UnitsColumn,
         		(getValueColumnsRuntime().size() == 1 ? getValueColumnsRuntime().get(0) : null),
         		readData, commandPhase, errorMessages );
         }
@@ -2952,11 +3035,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            tslist = readTimeSeriesListSingle ( table, getDateTimeColumnRuntime(),
 	                DateTimeFormat, getDateColumnRuntime(),
 	                getTimeColumnRuntime(), ValueColumn, FlagColumn, getSkipRows(),
-	                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, UnitsColumn,
+	                LocationTypeColumn, LocationColumn, DataSourceColumn, DataTypeColumn, ScenarioColumn, SequenceIDColumn, UnitsColumn,
 	                (getLocationType().size() == 1 ? getLocationType().get(0) : null),
 	                (getDataSource().size() == 1 ? getDataSource().get(0) : null),
-	                dataType, getInterval(),
+	                dataType, getInterval(), irregularIntervalPrecision,
 	                (getScenario().size() == 1 ? getScenario().get(0) : null),
+	                (getSequenceID().size() == 1 ? getSequenceID().get(0) : null),
 	                (getUnits().size() == 1 ? getUnits().get(0) : null), getMissingValue(), handleDuplicatesHow,
 	                InputStart_DateTime, InputEnd_DateTime, readData, commandPhase, errorMessages );
 	        }
@@ -3150,6 +3234,14 @@ private void setScenario ( List<String> scenario )
 }
 
 /**
+Set the sequence ID strings for each time series.
+*/
+private void setSequenceID ( List<String> sequenceID )
+{
+    __sequenceID = sequenceID;
+}
+
+/**
 Set the rows to skip (integer ranges).
 */
 private void setSkipRows ( int[][] skipRows )
@@ -3200,6 +3292,7 @@ public String toString ( PropList props )
     String DataSourceColumn = props.getValue("DataSourceColumn" );
     String DataTypeColumn = props.getValue("DataTypeColumn" );
     String ScenarioColumn = props.getValue("ScenarioColumn" );
+    String SequenceIDColumn = props.getValue("SequenceIDColumn" );
     String UnitsColumn = props.getValue("UnitsColumn" );
     String LocationType = props.getValue("LocationType" );
     String LocationID = props.getValue("LocationID" );
@@ -3211,6 +3304,7 @@ public String toString ( PropList props )
     String DataSource = props.getValue("DataSource" );
     String DataType = props.getValue("DataType" );
     String Scenario = props.getValue("Scenario" );
+    String SequenceID = props.getValue("SequenceID" );
     String Units = props.getValue("Units" );
     String MissingValue = props.getValue("MissingValue" );
     String HandleDuplicatesHow = props.getValue("HandleDuplicatesHow" );
@@ -3282,6 +3376,12 @@ public String toString ( PropList props )
         }
         b.append("ScenarioColumn=\"" + ScenarioColumn + "\"");
     }
+    if ((SequenceIDColumn != null) && (SequenceIDColumn.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("SequenceIDColumn=\"" + SequenceIDColumn + "\"");
+    }
     if ((UnitsColumn != null) && (UnitsColumn.length() > 0)) {
         if (b.length() > 0) {
             b.append(",");
@@ -3348,6 +3448,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("Scenario=\"" + Scenario + "\"");
+    }
+    if ((SequenceID != null) && (SequenceID.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("SequenceID=\"" + SequenceID + "\"");
     }
 	if ((Units != null) && (Units.length() > 0)) {
 		if (b.length() > 0) {

@@ -8,6 +8,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TS;
 import RTi.TS.TSData;
+import RTi.TS.TSEnsemble;
 import RTi.TS.TSIterator;
 import RTi.TS.TSUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -211,9 +212,11 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(12);
+	List<String> validList = new ArrayList<String>(14);
 	validList.add ( "TSID1" );
 	validList.add ( "TSID2" );
+	validList.add ( "EnsembleID1" );
+	validList.add ( "EnsembleID2" );
 	validList.add ( "MatchLocation" );
 	validList.add ( "MatchDataType" );
 	validList.add ( "Precision" );
@@ -281,7 +284,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
 	PropList parameters = getCommandParameters();
 	String TSID1 = parameters.getValue ( "TSID1" );
+	if ( (TSID1 != null) && (TSID1.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID1 = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID1);
+	}
 	String TSID2 = parameters.getValue ( "TSID2" );
+	if ( (TSID2 != null) && (TSID2.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID2 = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID2);
+	}
+	String EnsembleID1 = parameters.getValue ( "EnsembleID1" );
+	if ( (EnsembleID1 != null) && (EnsembleID1.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		EnsembleID1 = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID1);
+	}
+	String EnsembleID2 = parameters.getValue ( "EnsembleID2" );
+	if ( (EnsembleID2 != null) && (EnsembleID2.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		EnsembleID2 = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID2);
+	}
 	String MatchLocation = parameters.getValue ( "MatchLocation" );
 	String MatchDataType = parameters.getValue ( "MatchDataType" );
 	String Precision = parameters.getValue ( "Precision" ); // What to round data to before comparing.
@@ -374,9 +391,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 	
 	List<TS> tslist = new ArrayList<TS>();
-	boolean do2 = false;
+	List<TS> tslist2 = null; // Used when comparing 2 ensembles
+	boolean do2Ts = false;
+	boolean do2Ensembles = false;
 	if ( (TSID1 != null) && !TSID1.isEmpty() && (TSID2 != null) && !TSID2.isEmpty() ) {
-		do2 = true;
+		do2Ts = true;
 		TS ts = null;
 		try {	PropList request_params = new PropList ( "" );
 				request_params.set ( "CommandTag", command_tag );
@@ -477,6 +496,106 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			tslist.add(ts);
 		}
 	}
+	else if ( (EnsembleID1 != null) && !EnsembleID1.isEmpty() && (EnsembleID2 != null) && !EnsembleID2.isEmpty() ) {
+		// Get the two ensembles
+		TSEnsemble tsensemble1 = null, tsensemble2 = null;
+        PropList request_params = new PropList ( "" );
+        request_params.set ( "CommandTag", command_tag );
+        request_params.set ( "EnsembleID", EnsembleID1 );
+        CommandProcessorRequestResultsBean bean = null;
+        try {
+            bean = processor.processRequest( "GetEnsemble", request_params );
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID1 + "\") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+        }
+        PropList bean_PropList = bean.getResultsPropList();
+        Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
+        if ( o_TSEnsemble == null ) {
+            message = "Null ensemble requesting GetEnsemble(EnsembleID=\"" + EnsembleID1 + "\") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+        }
+        else {
+            tsensemble1 = (TSEnsemble)o_TSEnsemble;
+        }
+        if ( tsensemble1 == null ) {
+            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID1 + "\".";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+            throw new CommandWarningException ( message );
+        }
+        // Get the second ensemble
+        request_params.set ( "CommandTag", command_tag );
+        request_params.set ( "EnsembleID", EnsembleID2 );
+        try {
+            bean = processor.processRequest( "GetEnsemble", request_params );
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID2 + "\") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+        }
+        bean_PropList = bean.getResultsPropList();
+        o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
+        if ( o_TSEnsemble == null ) {
+            message = "Null ensemble requesting GetEnsemble(EnsembleID=\"" + EnsembleID2 + "\") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+        }
+        else {
+            tsensemble2 = (TSEnsemble)o_TSEnsemble;
+        }
+        
+        if ( tsensemble2 == null ) {
+            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID2 + "\".";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+            throw new CommandWarningException ( message );
+        }
+		// Add the time series from the ensemble - then iterate through the list and get the matching time series from the second ensemble
+		tslist = tsensemble1.getTimeSeriesList(false);
+		tslist2 = tsensemble2.getTimeSeriesList(false);
+		// Number of time series in ensembles must be the same
+		if ( tslist.size() != tslist2.size() ) {
+            message = "Number of time series in first ensemble \"" + EnsembleID1 + "\" (" + tslist.size() +
+            	") is different from the second ensemble \"" + EnsembleID2 + "\" (" + tslist2.size() + ").";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that ensembles have the same number of time series." ) );
+            throw new CommandWarningException ( message );
+		}
+		do2Ensembles = true;
+	}
 	else {
 		// Get all the time series
 		try {
@@ -504,7 +623,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new CommandException ( message );
 	}
 	// Check to make sure that the intervals are the same...
-	if ( !TSUtil.areIntervalsSame(tslist) ) {
+	List<TS> tslist2Check = new ArrayList<TS>();
+	tslist2Check.addAll(tslist);
+	if ( do2Ensembles ) {
+		tslist2Check.addAll(tslist2);
+	}
+	if ( !TSUtil.areIntervalsSame(tslist2Check) ) {
 		message = "Time series intervals are not consistent.  Not able to compare time series.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
@@ -541,7 +665,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		TS ts1, ts2;
 		TS diffts = null;	// Difference time series
 		TSIterator tsi;
-		if ( do2 ) {
+		if ( do2Ts ) {
 			// Directly comparing so only need to process one comparison
 			size = 1;
 		}
@@ -572,11 +696,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			ts2 = null;
 			loc1 = ts1.getLocation();
 			datatype1 = ts1.getDataType();
-			if ( do2 ) {
+			if ( do2Ts ) {
 				// Only have two time series so always a match
 				foundMatch = true;
 				ts1 = tslist.get(0);
 				ts2 = tslist.get(1);
+			}
+			else if ( do2Ensembles ) {
+				// Get one time series from each ensemble
+				foundMatch = true;
+				ts1 = tslist.get(i);
+				ts2 = tslist2.get(i);
 			}
 			else {
 				// Try to pair up time series based on location and data type
@@ -1069,6 +1199,8 @@ public String toString ( PropList props )
 	}
 	String TSID1 = props.getValue("TSID1");
 	String TSID2 = props.getValue("TSID2");
+	String EnsembleID1 = props.getValue("EnsembleID1");
+	String EnsembleID2 = props.getValue("EnsembleID2");
 	String MatchLocation = props.getValue("MatchLocation");
 	String MatchDataType = props.getValue("MatchDataType");
 	String Precision = props.getValue("Precision");
@@ -1091,6 +1223,18 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "TSID2=\"" + TSID2 + "\"" );
+	}
+	if ( (EnsembleID1 != null) && (EnsembleID1.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "EnsembleID1=\"" + EnsembleID1 + "\"" );
+	}
+	if ( (EnsembleID2 != null) && (EnsembleID2.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "EnsembleID2=\"" + EnsembleID2 + "\"" );
 	}
 	if ( (MatchLocation != null) && (MatchLocation.length() > 0) ) {
 		if ( b.length() > 0 ) {

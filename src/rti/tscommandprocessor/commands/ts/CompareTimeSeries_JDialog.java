@@ -24,6 +24,9 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.Document;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -37,13 +40,15 @@ import RTi.Util.Message.Message;
 Editor dialog for CompareTimeSeries() command.
 */
 public class CompareTimeSeries_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, WindowListener
+implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox	__TSID1_JComboBox = null;
 private SimpleJComboBox	__TSID2_JComboBox = null;
+private SimpleJComboBox	__EnsembleID1_JComboBox = null;
+private SimpleJComboBox	__EnsembleID2_JComboBox = null;
 private SimpleJComboBox	__MatchLocation_JComboBox = null;
 private SimpleJComboBox	__MatchDataType_JComboBox = null;
 private JTextField __Precision_JTextField = null;
@@ -92,6 +97,37 @@ public void actionPerformed( ActionEvent event )
 	}
 }
 
+//Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{
+	refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{
+	refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{
+	refresh();
+}
+
+//...End event handlers for DocumentListener
+
 /**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
@@ -101,6 +137,8 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String TSID1 = __TSID1_JComboBox.getSelected();
 	String TSID2 = __TSID2_JComboBox.getSelected();
+	String EnsembleID1 = __EnsembleID1_JComboBox.getSelected();
+	String EnsembleID2 = __EnsembleID2_JComboBox.getSelected();
 	String MatchLocation = __MatchLocation_JComboBox.getSelected();
 	String MatchDataType = __MatchDataType_JComboBox.getSelected();
 	String Precision = __Precision_JTextField.getText().trim();
@@ -117,6 +155,12 @@ private void checkInput ()
 	}
 	if ( TSID2.length() > 0 ) {
 		props.set ( "TSID2", TSID2 );
+	}
+	if ( EnsembleID1.length() > 0 ) {
+		props.set ( "EnsembleID1", EnsembleID1 );
+	}
+	if ( EnsembleID2.length() > 0 ) {
+		props.set ( "EnsembleID2", EnsembleID2 );
 	}
 	if ( MatchLocation.length() > 0 ) {
 		props.set ( "MatchLocation", MatchLocation );
@@ -164,6 +208,8 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TSID1 = __TSID1_JComboBox.getSelected();
 	String TSID2 = __TSID2_JComboBox.getSelected();
+	String EnsembleID1 = __EnsembleID1_JComboBox.getSelected();
+	String EnsembleID2 = __EnsembleID2_JComboBox.getSelected();
 	String MatchLocation = __MatchLocation_JComboBox.getSelected();
 	String MatchDataType = __MatchDataType_JComboBox.getSelected();
 	String Precision = __Precision_JTextField.getText().trim();
@@ -176,6 +222,8 @@ private void commitEdits ()
 	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSID1", TSID1 );
 	__command.setCommandParameter ( "TSID2", TSID2 );
+	__command.setCommandParameter ( "EnsembleID1", EnsembleID1 );
+	__command.setCommandParameter ( "EnsembleID2", EnsembleID2 );
 	__command.setCommandParameter ( "MatchLocation", MatchLocation );
 	__command.setCommandParameter ( "MatchDataType", MatchDataType );
 	__command.setCommandParameter ( "Precision", Precision );
@@ -186,28 +234,6 @@ private void commitEdits ()
 	__command.setCommandParameter ( "CreateDiffTS", CreateDiffTS );
 	__command.setCommandParameter ( "WarnIfDifferent", WarnIfDifferent );
 	__command.setCommandParameter ( "WarnIfSame", WarnIfSame );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__MatchLocation_JComboBox = null;
-	__MatchDataType_JComboBox = null;
-	__Precision_JTextField = null;
-	__Tolerance_JTextField = null;
-	__AnalysisStart_JTextField = null;
-	__AnalysisEnd_JTextField = null;
-	__DiffFlag_JTextField = null;
-	__CreateDiffTS_JComboBox = null;
-	__WarnIfDifferent_JComboBox = null;
-	__WarnIfSame_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -257,7 +283,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     JGUIUtil.addComponent(ts2_JPanel, new JLabel ( "First time series to compare:" ), 
 		0, ++yts2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID1_JComboBox = new SimpleJComboBox ( true ); // Allow edit
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     if ( tsids.size() == 0 ) {
     	tsids.add("");
@@ -267,16 +293,61 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     }
     __TSID1_JComboBox.setData ( tsids );
     __TSID1_JComboBox.addItemListener ( this );
+    __TSID1_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(ts2_JPanel, __TSID1_JComboBox,
         1, yts2, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(ts2_JPanel, new JLabel ( "Second time series compare:" ), 
 		0, ++yts2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TSID2_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    __TSID2_JComboBox = new SimpleJComboBox ( true ); // Allow edit
     __TSID2_JComboBox.setData ( tsids );
     __TSID2_JComboBox.addItemListener ( this );
+    __TSID2_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(ts2_JPanel, __TSID2_JComboBox,
         1, yts2, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel specifying two ensembles
+    int yEnsemble = -1;
+    JPanel ensemble_JPanel = new JPanel();
+    ensemble_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Ensembles (2)", ensemble_JPanel );
+    
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+		"Use these parameters to specify two ensembles to compare." ),
+		0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+	    "For example, compare two ensembles to validate software or a procedure." ),
+	    0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel (
+	    "The time series in the ensembles will be compared in sequence." ),
+	    0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yEnsemble, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JLabel ensemble1Label = new JLabel ( "First ensemble to compare:" );
+    JGUIUtil.addComponent(ensemble_JPanel, ensemble1Label, 
+		0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleID1_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID1_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
+    List<String> ensembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    ensembleIDs.add(0,""); // Always add default
+    __EnsembleID1_JComboBox.setData ( ensembleIDs );
+    __EnsembleID1_JComboBox.addItemListener ( this );
+    __EnsembleID1_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
+    JGUIUtil.addComponent(ensemble_JPanel, __EnsembleID1_JComboBox,
+        1, yEnsemble, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JLabel ensemble2Label = new JLabel ( "Second ensemble to compare:" );
+    JGUIUtil.addComponent(ensemble_JPanel, ensemble2Label, 
+		0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleID2_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID2_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
+    __EnsembleID2_JComboBox.setData ( ensembleIDs );
+    __EnsembleID2_JComboBox.addItemListener ( this );
+    __EnsembleID2_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
+    JGUIUtil.addComponent(ensemble_JPanel, __EnsembleID2_JComboBox,
+        1, yEnsemble, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Panel specifying many time series
     int yts = -1;
@@ -512,6 +583,8 @@ private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
 	String TSID1 = "";
 	String TSID2 = "";
+	String EnsembleID1 = "";
+	String EnsembleID2 = "";
 	String MatchLocation = "";
 	String MatchDataType = "";
 	String Precision = "";
@@ -527,6 +600,8 @@ private void refresh ()
 		__first_time = false;
 		TSID1 = props.getValue ( "TSID1" );
 		TSID2 = props.getValue ( "TSID2" );
+		EnsembleID1 = props.getValue ( "EnsembleID1" );
+		EnsembleID2 = props.getValue ( "EnsembleID2" );
 		MatchLocation = props.getValue ( "MatchLocation" );
 		MatchDataType = props.getValue ( "MatchDataType" );
 		Precision = props.getValue ( "Precision" );
@@ -571,6 +646,36 @@ private void refresh ()
                 if ( __TSID2_JComboBox.getItemCount() > 0 ) {
                     __TSID2_JComboBox.select ( 0 );
                 }
+            }
+        }
+        if ( EnsembleID1 == null ) {
+            // Select default...
+            __EnsembleID1_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID1_JComboBox, EnsembleID1, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID1_JComboBox.select ( EnsembleID1 );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID1 value \"" + EnsembleID1 +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( EnsembleID2 == null ) {
+            // Select default...
+            __EnsembleID2_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID2_JComboBox, EnsembleID2, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID2_JComboBox.select ( EnsembleID2 );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID2 value \"" + EnsembleID2 +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
             }
         }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__MatchLocation_JComboBox, MatchLocation,JGUIUtil.NONE, null, null ) ) {
@@ -669,6 +774,8 @@ private void refresh ()
 	// information that has not been committed in the command.
 	TSID1 = __TSID1_JComboBox.getSelected();
 	TSID2 = __TSID2_JComboBox.getSelected();
+	EnsembleID1 = __EnsembleID1_JComboBox.getSelected();
+	EnsembleID2 = __EnsembleID2_JComboBox.getSelected();
 	MatchLocation = __MatchLocation_JComboBox.getSelected();
 	MatchDataType = __MatchDataType_JComboBox.getSelected();
 	Precision = __Precision_JTextField.getText().trim();
@@ -682,6 +789,8 @@ private void refresh ()
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSID1=" + TSID1 );
 	props.add ( "TSID2=" + TSID2 );
+	props.add ( "EnsembleID1=" + EnsembleID1 );
+	props.add ( "EnsembleID2=" + EnsembleID2 );
 	props.add ( "MatchLocation=" + MatchLocation );
 	props.add ( "MatchDataType=" + MatchDataType );
 	props.add ( "Precision=" + Precision );

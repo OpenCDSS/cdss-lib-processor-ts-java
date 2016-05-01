@@ -898,6 +898,128 @@ public void open ( String systemLogin, String systemPassword )
 }
 
 /**
+Read an HDB ensemble given the ensemble name.
+@param sdi site data type ID corresponding to the ensemble
+@param ensembleID unique ensemble ID
+@param ensembleName unique ensemble name
+@param interval time interval for ensemble
+@param readStart starting date/time for read
+@param readEnd ending date/time for read
+@param nHourIntervalOffset if >= 0 indicates the hour for the first valid value,
+to allow for cases where the data do not align with hour zero (needed if a previous data load caused
+data to be loaded at more hours than appropriate)
+@param readData if true read the data; if false only read time series metadata
+*/
+public TSEnsemble readEnsemble ( int sdi, String ensembleID, String ensembleName, TimeInterval interval,
+    DateTime readStart, DateTime readEnd, int nHourIntervalOffset, boolean readData )
+throws Exception
+{
+    // First read the ensemble object(s) from the HDB database
+    List<ReclamationHDB_Ensemble> ensembleList = readRefEnsembleList(ensembleName,null,-1);
+    if ( ensembleList.size() != 1 ) {
+        throw new RuntimeException ( "Expecting exactly one ensemble from HDB.  Got " + ensembleList.size() );
+    }
+    ReclamationHDB_Ensemble hensemble = ensembleList.get(0);
+    // Get the list of traces that match the ensemble
+    List<ReclamationHDB_EnsembleTrace> ensembleTraceList = readRefEnsembleTraceList(hensemble.getEnsembleID(),-1,-1,null);
+    // Loop through the traces and read the model time series
+    List<TS> tslist = new ArrayList<TS>();
+    int itrace = -1;
+    int modelIDSave = -1;
+    Date runDateSave = null;
+    List<ReclamationHDB_EnsembleTrace> missingTraceList = new ArrayList<ReclamationHDB_EnsembleTrace>();
+    for ( ReclamationHDB_EnsembleTrace trace: ensembleTraceList ) {
+        // Read the model run for the trace and confirm that the model run and run_date are the same for all traces
+        ++itrace;
+        List<Integer> mriList = new ArrayList<Integer>(1);
+        mriList.add ( new Integer(trace.getModelRunID()));
+        List<ReclamationHDB_ModelRun> modelRunList = readHdbModelRunList(-1, mriList, null, null, null);
+        if ( modelRunList.size() != 1 ) {
+            throw new RuntimeException ( "Read " + modelRunList.size() + " model runs for trace[" + itrace +
+                "] and model run ID " + trace.getModelRunID() + ".  Expecting 1." );
+        }
+        if ( itrace == 0 ) {
+            // First trace's model run
+            modelIDSave = modelRunList.get(0).getModelID();
+            runDateSave = modelRunList.get(0).getRunDate();
+        }
+        else {
+            // Subsequent traces model run
+            if ( modelRunList.get(0).getModelID() != modelIDSave ) {
+                throw new RuntimeException ( "Trace [" + itrace + "] MODEL_ID (" + modelRunList.get(0).getModelID() +
+                    ") is different from first trace MODEL_ID (" + modelIDSave + ")." );
+            }
+            if ( !("" + modelRunList.get(0).getRunDate()).equals("" + runDateSave) ) {
+                throw new RuntimeException ( "Trace [" + itrace + "] RUN_DATE (" + modelRunList.get(0).getRunDate() +
+                    ") is different from first trace RUN_DATE (" + runDateSave + ")." );
+            }
+        }
+        // If here, OK to read the trace time series
+        try {
+            TS ts = readTimeSeries(sdi, mriList.get(0), true, interval, readStart, readEnd, nHourIntervalOffset, readData);
+            // Set the sequence number for TSTool
+            ts.setSequenceID("" + trace.getTraceNumeric() );
+            // TODO SAM 2013-10-02 Can set to the trace name if appropriate in the future
+            tslist.add(ts);
+        }
+        catch ( Exception e ) {
+            // It is possible that an ensemble had no data for a trace when written.  In this case the metadata will not be
+            // read because there are no records in the tables.  Keep track of these years and try to add a missing trace at
+            // the end
+            missingTraceList.add(trace);
+        }
+    }
+    // If any traces were missing (likely due to completely missing data), find a non-missing trace, copy the time series,
+    // and set to missing
+    if ( missingTraceList.size() > 0 ) {
+        // Find a leap and nonleapyear existing trace
+        TS tsLeap = null;
+        TS tsNonLeap = null;
+        for ( TS ts: tslist ) {
+            if ( TimeUtil.isLeapYear(Integer.parseInt(ts.getSequenceID())) ) {
+                tsLeap = ts;
+                break;
+            }
+        }
+        for ( TS ts: tslist ) {
+            if ( !TimeUtil.isLeapYear(Integer.parseInt(ts.getSequenceID())) ) {
+                tsNonLeap = ts;
+                break;
+            }
+        }
+        TS ts = null;
+        for ( ReclamationHDB_EnsembleTrace trace: missingTraceList ) {
+            if ( TimeUtil.isLeapYear(trace.getTraceNumeric()) ) {
+                ts = tsLeap;
+            }
+            else {
+                ts = tsNonLeap;
+            }
+            if ( ts != null ) {
+                TS tsCopy = (TS)ts.clone();
+                // Existing time series will SDI-MRI, for the old MRI.  Replace with the new
+                String loc = ts.getLocation().substring(0,ts.getLocation().indexOf("-"));
+                tsCopy.getIdentifier().setLocation(loc + "-" + trace.getModelRunID());
+                tsCopy.setSequenceID("" + trace.getTraceNumeric());
+                if ( readData ) {
+                    tsCopy.addToGenesis("Trace is being set as copy of another trace, with data set to missing, because HDB does not store empty time series.");
+                    tsCopy.addToGenesis("Some internal properties for the time series may be inaccurate due to the copy.");
+                    TSUtil.setConstant(tsCopy,tsCopy.getMissing());
+                }
+                tslist.add(tsCopy);
+            }
+        }
+    }
+    // Create a new ensemble
+    TSEnsemble ensemble = new TSEnsemble(ensembleID,ensembleName,tslist);
+    // Set ensemble properties
+    // DMIUtil.isMissing(tsm.getLatitude()) ? null : new Double(tsm.getLatitude())
+    ensemble.setProperty("ENSEMBLE_ID", new Integer(hensemble.getEnsembleID()) );
+    ensemble.setProperty("ENSEMBLE_NAME", (hensemble.getEnsembleName() == null) ? "" : hensemble.getEnsembleName());
+    return ensemble;
+}
+
+/**
 Read global data for the database, to keep in memory and improve performance.
 */
 @Override
@@ -1342,6 +1464,9 @@ throws SQLException
         where.insert(0, " WHERE ");
     }
     sqlCommand.append(where.toString());
+    if ( (hydrologicIndicator != null) && !hydrologicIndicator.isEmpty() ) {
+    	sqlCommand.append( " ORDER BY REF_MODEL_RUN.HYDROLOGIC_INDICATOR ASC" );
+    }
     Message.printStatus(2,routine,"Reading model run list with SQL:  " + sqlCommand );
     ResultSet rs = null;
     Statement stmt = null;
@@ -1890,7 +2015,7 @@ This procedure was written exclusively for TsTool use with the following Busines
 */
 public Long readModelRunIDForEnsembleTrace ( String ensembleName, int traceNumber,
     String ensembleModelName, DateTime ensembleModelRunDate, int agenID )
-{   String routine = getClass().getName() + ".readModelRunIDForEnsembleTrace";
+{   String routine = getClass().getSimpleName() + ".readModelRunIDForEnsembleTrace";
     CallableStatement cs = null;
     try {
         // Argument list includes output
@@ -2107,9 +2232,10 @@ throws SQLException
 Read the ensembles from the REF_ENSEMBLE table.
 @param ensembleName the name for the ensemble or null to ignore
 @param ensembleIDList list of ensemble identifiers to read, or null to ignore
+@param modelRunID model_run_id value to read, or -1 to ignore
 @return the list of ensembles
 */
-public List<ReclamationHDB_Ensemble> readRefEnsembleList ( String ensembleName, List<Integer> ensembleIDList )
+public List<ReclamationHDB_Ensemble> readRefEnsembleList ( String ensembleName, List<Integer> ensembleIDList, int modelRunID )
 throws SQLException
 {   String routine = getClass().getName() + ".readRefEnsembleList";
     List<ReclamationHDB_Ensemble> results = new ArrayList<ReclamationHDB_Ensemble>();
@@ -2132,6 +2258,12 @@ throws SQLException
             where.append("" + ensembleIDList.get(i));
         }
         where.append ( "))" );
+    }
+    if ( modelRunID >= 0 ) {
+        if ( where.length() > 0 ) {
+            where.append ( " AND ");
+        }
+        where.append (" (REF_ENSEMBLE_TRACE.MODEL_RUN_ID = " + modelRunID + ")");
     }
     if ( where.length() > 0 ) {
         // The keyword was not added above so add here
@@ -2441,7 +2573,7 @@ throws SQLException
             // Also read the ensemble data
             List<Integer> ensembleIDList = new ArrayList<Integer>(1);
             ensembleIDList.add(new Integer(t.getEnsembleID()));
-            List<ReclamationHDB_Ensemble> ensembleList = readRefEnsembleList(null, ensembleIDList);
+            List<ReclamationHDB_Ensemble> ensembleList = readRefEnsembleList(null, ensembleIDList, -1);
             if ( ensembleList.size() == 1 ) {
                 ReclamationHDB_Ensemble e = ensembleList.get(0);
                 result.setEnsembleID(e.getEnsembleID());
@@ -2765,122 +2897,6 @@ throws SQLException
     	}
     }
     return results;
-}
-
-/**
-Read an HDB ensemble given the ensemble name.
-@param sdi site data type ID corresponding to the ensemble
-@param ensembleName unique ensemble name
-@param interval time interval for ensemble
-@param readStart starting date/time for read
-@param readEnd ending date/time for read
-@param nHourIntervalOffset if >= 0 indicates the hour for the first valid value,
-to allow for cases where the data do not align with hour zero (needed if a previous data load caused
-data to be loaded at more hours than appropriate)
-@param readData if true read the data; if false only read time series metadata
-*/
-public TSEnsemble readEnsemble ( int sdi, String ensembleName, TimeInterval interval,
-    DateTime readStart, DateTime readEnd, int nHourIntervalOffset, boolean readData )
-throws Exception
-{
-    // First read the ensemble object(s) from the HDB database
-    List<ReclamationHDB_Ensemble> ensembleList = readRefEnsembleList(ensembleName,null);
-    if ( ensembleList.size() != 1 ) {
-        throw new RuntimeException ( "Expecting exactly one ensemble from HDB.  Got " + ensembleList.size() );
-    }
-    ReclamationHDB_Ensemble hensemble = ensembleList.get(0);
-    // Get the list of traces that match the ensemble
-    List<ReclamationHDB_EnsembleTrace> ensembleTraceList = readRefEnsembleTraceList(hensemble.getEnsembleID(),-1,-1,null);
-    // Loop through the traces and read the model time series
-    List<TS> tslist = new ArrayList<TS>();
-    int itrace = -1;
-    int modelIDSave = -1;
-    Date runDateSave = null;
-    List<ReclamationHDB_EnsembleTrace> missingTraceList = new ArrayList<ReclamationHDB_EnsembleTrace>();
-    for ( ReclamationHDB_EnsembleTrace trace: ensembleTraceList ) {
-        // Read the model run for the trace and confirm that the model run and run_date are the same for all traces
-        ++itrace;
-        List<Integer> mriList = new ArrayList<Integer>(1);
-        mriList.add ( new Integer(trace.getModelRunID()));
-        List<ReclamationHDB_ModelRun> modelRunList = readHdbModelRunList(-1, mriList, null, null, null);
-        if ( modelRunList.size() != 1 ) {
-            throw new RuntimeException ( "Read " + modelRunList.size() + " model runs for trace[" + itrace +
-                "] and model run ID " + trace.getModelRunID() + ".  Expecting 1." );
-        }
-        if ( itrace == 0 ) {
-            // First trace's model run
-            modelIDSave = modelRunList.get(0).getModelID();
-            runDateSave = modelRunList.get(0).getRunDate();
-        }
-        else {
-            // Subsequent traces model run
-            if ( modelRunList.get(0).getModelID() != modelIDSave ) {
-                throw new RuntimeException ( "Trace [" + itrace + "] MODEL_ID (" + modelRunList.get(0).getModelID() +
-                    ") is different from first trace MODEL_ID (" + modelIDSave + ")." );
-            }
-            if ( !("" + modelRunList.get(0).getRunDate()).equals("" + runDateSave) ) {
-                throw new RuntimeException ( "Trace [" + itrace + "] RUN_DATE (" + modelRunList.get(0).getRunDate() +
-                    ") is different from first trace RUN_DATE (" + runDateSave + ")." );
-            }
-        }
-        // If here, OK to read the trace time series
-        try {
-            TS ts = readTimeSeries(sdi, mriList.get(0), true, interval, readStart, readEnd, nHourIntervalOffset, readData);
-            // Set the sequence number for TSTool
-            ts.setSequenceID("" + trace.getTraceNumeric() );
-            // TODO SAM 2013-10-02 Can set to the trace name if appropriate in the future
-            tslist.add(ts);
-        }
-        catch ( Exception e ) {
-            // It is possible that an ensemble had no data for a trace when written.  In this case the metadata will not be
-            // read because there are no records in the tables.  Keep track of these years and try to add a missing trace at
-            // the end
-            missingTraceList.add(trace);
-        }
-    }
-    // If any traces were missing (likely due to completely missing data), find a non-missing trace, copy the time series,
-    // and set to missing
-    if ( missingTraceList.size() > 0 ) {
-        // Find a leap and nonleapyear existing trace
-        TS tsLeap = null;
-        TS tsNonLeap = null;
-        for ( TS ts: tslist ) {
-            if ( TimeUtil.isLeapYear(Integer.parseInt(ts.getSequenceID())) ) {
-                tsLeap = ts;
-                break;
-            }
-        }
-        for ( TS ts: tslist ) {
-            if ( !TimeUtil.isLeapYear(Integer.parseInt(ts.getSequenceID())) ) {
-                tsNonLeap = ts;
-                break;
-            }
-        }
-        TS ts = null;
-        for ( ReclamationHDB_EnsembleTrace trace: missingTraceList ) {
-            if ( TimeUtil.isLeapYear(trace.getTraceNumeric()) ) {
-                ts = tsLeap;
-            }
-            else {
-                ts = tsNonLeap;
-            }
-            if ( ts != null ) {
-                TS tsCopy = (TS)ts.clone();
-                // Existing time series will SDI-MRI, for the old MRI.  Replace with the new
-                String loc = ts.getLocation().substring(0,ts.getLocation().indexOf("-"));
-                tsCopy.getIdentifier().setLocation(loc + "-" + trace.getModelRunID());
-                tsCopy.setSequenceID("" + trace.getTraceNumeric());
-                if ( readData ) {
-                    tsCopy.addToGenesis("Trace is being set as copy of another trace, with data set to missing, because HDB does not store empty time series.");
-                    tsCopy.addToGenesis("Some internal properties for the time series may be inaccurate due to the copy.");
-                    TSUtil.setConstant(tsCopy,tsCopy.getMissing());
-                }
-                tslist.add(tsCopy);
-            }
-        }
-    }
-    // Create a new ensemble and return
-    return new TSEnsemble(ensembleName,ensembleName,tslist);
 }
 
 /**
@@ -3961,7 +3977,7 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
 
 //@param intervalOverride if true, then irregular time series will use this hourly interval to write the data
 /**
-Write a time series to the database.
+Write a single time series to the database.  A real, model, or single ensemble trace are written depending on input.
 @param ts time series to write
 @param loadingApp the application name - must match HDB_LOADING_APPLICATION (e.g., "TSTool")
 @param siteCommonName site common name, to determine site_datatype_id

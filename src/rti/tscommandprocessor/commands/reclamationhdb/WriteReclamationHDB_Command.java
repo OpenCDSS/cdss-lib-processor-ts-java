@@ -390,7 +390,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(27);
+	List<String> validList = new ArrayList<String>(28);
 	validList.add ( "DataStore" );
     validList.add ( "TSList" );
     validList.add ( "TSID" );
@@ -419,6 +419,7 @@ throws InvalidCommandParameterException
     validList.add ( "TimeZone" );
 	validList.add ( "OutputStart" );
 	validList.add ( "OutputEnd" );
+	validList.add ( "EnsembleIDProperty" );
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//valid_Vector.add ( "IntervalOverride" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -452,6 +453,7 @@ public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
+	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
@@ -542,6 +544,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
     String DataFlags = parameters.getValue ( "DataFlags" );
     String TimeZone = parameters.getValue ( "TimeZone" );
+    String EnsembleIDProperty = parameters.getValue ( "EnsembleIDProperty" );
+    if ( (EnsembleIDProperty != null) && (commandPhase == CommandPhaseType.RUN) && EnsembleIDProperty.indexOf("${") >= 0 ) {
+    	EnsembleIDProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleIDProperty);
+    }
     // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
     /*
     String IntervalOverride = parameters.getValue ( "IntervalOverride" );
@@ -695,7 +701,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 	}
 
-    // Write the time series
+    // Write the time series or ensemble
 
     try {
         // Find the data store to use...
@@ -727,16 +733,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printStatus ( 2, routine, "Writing ReclamationHDB time series to data store \"" + dataStore.getName() + "\"" );
         String loadingApp = "TSTool";
         boolean doWrite = true;
+        boolean doEnsemble = false; // Default is single time series
         int traceNumber = 0;
         int its = 0;
         if ( doWrite && (tslist != null) ) {
             // Update the progress
             for ( TS ts : tslist ) {
                 ++its;
-                message = "Writing ensemble time series " + its + " of " + tslist.size() + " to HDB";
-                notifyCommandProgressListeners ( (its - 1), tslist.size(), (float)-1.0, message );
                 // The following were set to null above if blank strings
                 if ( (EnsembleName != null) || (NewEnsembleName != null) || (ensembleModelRunID != null) ) {
+                	doEnsemble = true;
+                    message = "Writing ensemble time series " + its + " of " + tslist.size() + " to HDB";
+                    notifyCommandProgressListeners ( (its - 1), tslist.size(), (float)-1.0, message );
                     // Writing an ensemble so get the model_run_id for the specific trace using the ensemble information
                     // First get the trace number based on the EnsembleTrace parameter
                     // Retrieve from time series properties.
@@ -843,6 +851,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         continue;
                     }
                 }
+                else {
+                	message = "Writing single time series to HDB";
+                }
                 // Now write the trace time series using the model run ID
                 // The SDI will be used before using the site common name, etc. (which likely have not been specified)
                 String hydrologicIndicator = null;
@@ -852,6 +863,58 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     Agency, ValidationFlag, OverwriteFlag, DataFlags,
                     TimeZone, OutputStart_DateTime, OutputEnd_DateTime );//, intervalOverride );
                     // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+                // If the EnsembleIDProperty is set, also set as a processor property.
+                // This is a slight performance hit but likely will only be used in testing when the ensemble ID is used to read data directly
+                if ( doEnsemble && (EnsembleIDProperty != null) && !EnsembleIDProperty.isEmpty() ) {
+                	// First read the ensemble trace
+                	List<ReclamationHDB_EnsembleTrace> traceList = dmi.readRefEnsembleTraceList(-1, -1, modelRunID.intValue(), null);
+                	if ( traceList.size() == 1 ) {
+                    	// Read the ensemble for the ensemble ID in the trace
+                		ReclamationHDB_EnsembleTrace trace = traceList.get(0);
+                		List<Integer> ensembleIDList = new ArrayList<Integer>();
+                		ensembleIDList.add(new Integer(trace.getEnsembleID()));
+                		List<ReclamationHDB_Ensemble> ensembleList = dmi.readRefEnsembleList(null, ensembleIDList, -1);
+                		if ( ensembleList.size() == 1 ) {
+		                	// Set the processor property.
+                			ReclamationHDB_Ensemble ensemble = ensembleList.get(0);
+		                    request_params = new PropList ( "" );
+		                    request_params.setUsingObject ( "PropertyName", EnsembleIDProperty );
+		                    request_params.setUsingObject ( "PropertyValue", new Integer(ensemble.getEnsembleID()) );
+		                    try {
+		                        processor.processRequest( "SetProperty", request_params);
+		                    }
+		                    catch ( Exception e ) {
+		                        message = "Error requesting SetProperty(Property=\"" + EnsembleIDProperty + "\") from processor.";
+		                        Message.printWarning(log_level,
+		                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+		                            routine, message );
+		                        status.addToLog ( CommandPhaseType.RUN,
+		                            new CommandLogRecord(CommandStatusType.FAILURE,
+		                                message, "Determine why ensemble does not exist." ) );
+		                    }
+                		}
+                		else {
+                			message = "Expecting 1 REF_ENSEMBLE for esemble_id " +
+                				trace.getEnsembleID() + " but found " + traceList.size() + " - can't set EnsembleIDProperty";
+                            Message.printWarning(log_level,
+                                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                                routine, message );
+                            status.addToLog ( CommandPhaseType.RUN,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Determine why ensemble does not exist." ) );
+                		}
+                	}
+                	else {
+                		message = "Expecting 1 REF_ENSEMBLE_TRACE for model_id_id " +
+                			modelRunID + " but found " + traceList.size() + " - can't set EnsembleIDProperty";
+                        Message.printWarning(log_level,
+                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                            routine, message );
+                        status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Determine why ensemble does not exist." ) );
+                	}
+                }
             }
         }
     }
@@ -906,6 +969,7 @@ public String toString ( PropList parameters )
     String TimeZone = parameters.getValue( "TimeZone" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String EnsembleIDProperty = parameters.getValue ( "EnsembleIDProperty" );
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//String IntervalOverride = parameters.getValue ( "IntervalOverride" );
 	StringBuffer b = new StringBuffer ();
@@ -1078,6 +1142,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
+    }
+    if ( (EnsembleIDProperty != null) && (EnsembleIDProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleIDProperty=\"" + EnsembleIDProperty + "\"" );
     }
     // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
     /*

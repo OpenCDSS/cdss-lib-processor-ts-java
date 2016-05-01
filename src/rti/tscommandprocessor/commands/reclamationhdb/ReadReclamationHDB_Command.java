@@ -214,7 +214,7 @@ throws InvalidCommandParameterException
 	}
 
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(20+__numFilterGroups);
+    List<String> validList = new ArrayList<String>(21+__numFilterGroups);
     validList.add ( "DataStore" );
     validList.add ( "Interval" );
     validList.add ( "NHourIntervalOffset" );
@@ -231,6 +231,7 @@ throws InvalidCommandParameterException
     validList.add ( "ModelRunDate" );
     validList.add ( "ModelRunID" );
     validList.add ( "EnsembleName" );
+    validList.add ( "OutputEnsembleID" );
     //valid_Vector.add ( "EnsembleTraceID" );
     validList.add ( "EnsembleModelName" );
     validList.add ( "EnsembleModelRunDate" );
@@ -413,6 +414,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         modelRunID = Integer.parseInt(ModelRunID);
     }
     String EnsembleName = parameters.getValue("EnsembleName");
+    String OutputEnsembleID = parameters.getValue("OutputEnsembleID");
+    if ( (OutputEnsembleID == null) || OutputEnsembleID.isEmpty() ) {
+    	OutputEnsembleID = EnsembleName; // default
+    }
     String EnsembleModelName = parameters.getValue("EnsembleModelName");
     String EnsembleModelRunID = parameters.getValue("EnsembleModelRunID");
     int ensembleModelRunID = -1;
@@ -715,7 +720,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Reading an ensemble of model time series
 	        Message.printStatus(2,routine,"Reading time series ensemble for SDI=" + siteDataTypeID + ", ensemble name=\"" +
 	            EnsembleName + "\", interval=" + interval + ".");
-	        ensemble = dmi.readEnsemble ( siteDataTypeID, EnsembleName, interval,
+	        ensemble = dmi.readEnsemble ( siteDataTypeID, OutputEnsembleID, EnsembleName, interval,
 	        	InputStart_DateTime, InputEnd_DateTime, nHourIntervalOffset, readData );
             if ( ensemble != null ) {
                 tslist = ensemble.getTimeSeriesList (false);
@@ -933,7 +938,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             setDiscoveryTSList ( tslist );
             // Just want the identifier...
-            ensemble = new TSEnsemble ( EnsembleName, EnsembleName, null );
+            ensemble = new TSEnsemble ( OutputEnsembleID, EnsembleName, null );
             setDiscoveryEnsemble ( ensemble );
         }
         // Warn if nothing was retrieved (can be overridden to ignore).
@@ -1095,6 +1100,13 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
+    }
+    String OutputEnsembleID = props.getValue( "OutputEnsembleID" );
+    if ( (OutputEnsembleID != null) && (OutputEnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputEnsembleID=\"" + OutputEnsembleID + "\"" );
     }
     /*
     String EnsembleTraceID = props.getValue( "EnsembleTraceID" );

@@ -80,6 +80,8 @@ private JLabel __selectedModelID_JLabel = null;
 private JLabel __selectedModelRunID_JLabel = null;
 private SimpleJComboBox __ModelRunID_JComboBox = null;
 private SimpleJComboBox __EnsembleName_JComboBox = null;
+private JTextField __OutputEnsembleID_JTextField = null; // This is the output EnsembleID, not HDB REF_ENSEMBLE.ENSEMBLE_ID
+// TODO SAM 2016-04-29 Why are these disabled?
 //private TSFormatSpecifiersJPanel __EnsembleTraceID_JTextField = null;
 //private SimpleJComboBox __EnsembleModelName_JComboBox = null;
 //private SimpleJComboBox __EnsembleModelRunDate_JComboBox = null;
@@ -458,6 +460,10 @@ private void checkInput ()
     if ( (EnsembleName != null) && (EnsembleName.length() > 0) ) {
         props.set ( "EnsembleName", EnsembleName );
     }
+    String OutputEnsembleID = __OutputEnsembleID_JTextField.getText();
+    if ( (OutputEnsembleID != null) && (OutputEnsembleID.length() > 0) ) {
+        props.set ( "OutputEnsembleID", OutputEnsembleID );
+    }
     //String EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
     //if ( EnsembleTraceID.length() > 0 ) {
     //    props.set ( "EnsembleTraceID", EnsembleTraceID );
@@ -542,6 +548,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "ModelRunID", ModelRunID );
     String EnsembleName = __EnsembleName_JComboBox.getSelected();
     __command.setCommandParameter ( "EnsembleName", EnsembleName );
+    String OutputEnsembleID = __OutputEnsembleID_JTextField.getText();
+    __command.setCommandParameter ( "OutputEnsembleID", OutputEnsembleID );
     //String EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
     //__command.setCommandParameter ( "EnsembleTraceID", EnsembleTraceID );
     /*
@@ -1046,6 +1054,17 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
         "Required - used to determine the ensemble ID -> ensemble traces -> ensemble model_run_id -> model time series."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Output ensemble ID:"), 
+        0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputEnsembleID_JTextField = new JTextField (20);
+    __OutputEnsembleID_JTextField.setToolTipText("This ID is NOT used to query HDB.  It is purely to use for the output.");
+    __OutputEnsembleID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(ensemble_JPanel, __OutputEnsembleID_JTextField,
+        1, yEnsemble, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Optional - ensemble ID for output (default=ensemble name)."),
+        3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // TODO SAM 2016-04-29 Why are these commented out?
     /*
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Selected ensemble_id:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -1518,7 +1537,7 @@ private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
                 }
             }
         }
-        List<ReclamationHDB_Ensemble> ensembleList = rdmi.readRefEnsembleList(null,ensembleIDList);
+        List<ReclamationHDB_Ensemble> ensembleList = rdmi.readRefEnsembleList(null,ensembleIDList,-1);
         for ( ReclamationHDB_Ensemble ensemble: ensembleList ) {
             ensembleNameStrings.add ( ensemble.getEnsembleName() );
         }
@@ -2054,6 +2073,7 @@ private void refresh ()
     String ModelRunDate = "";
     String ModelRunID = "";
     String EnsembleName = "";
+    String OutputEnsembleID = "";
     String EnsembleTraceID = "";
     String EnsembleModelName = "";
     String EnsembleModelRunDate = "";
@@ -2080,6 +2100,7 @@ private void refresh ()
         ModelRunDate = props.getValue ( "ModelRunDate" );
         ModelRunID = props.getValue ( "ModelRunID" );
         EnsembleName = props.getValue ( "EnsembleName" );
+        OutputEnsembleID = props.getValue ( "OutputEnsembleID" );
         EnsembleTraceID = props.getValue ( "EnsembleTraceID" );
         EnsembleModelName = props.getValue ( "EnsembleModelName" );
         EnsembleModelRunDate = props.getValue ( "EnsembleModelRunDate" );
@@ -2416,6 +2437,9 @@ private void refresh ()
                   "EnsembleName parameter \"" + EnsembleName + "\".  Select a different value or Cancel." );
             }
         }
+		if ( OutputEnsembleID != null ) {
+			__OutputEnsembleID_JTextField.setText ( OutputEnsembleID );
+		}
         /*
         // First populate the choices...
         populateEnsembleModelRunIDChoices(getReclamationHDB_DMI() );
@@ -2529,18 +2553,21 @@ private void refresh ()
     if ( EnsembleName == null ) {
         EnsembleName = "";
     }
+    OutputEnsembleID = __OutputEnsembleID_JTextField.getText();
+    // TODO SAM 2016-04-29 Why are some of these commented out?
     //EnsembleTraceID = __EnsembleTraceID_JTextField.getText().trim();
-    /*
-    EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
+    //EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
     if ( EnsembleModelName == null ) {
         EnsembleModelName = "";
     }
-    EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
+    //EnsembleModelRunDate = __EnsembleModelRunDate_JComboBox.getSelected();
     if ( EnsembleModelRunDate == null ) {
         EnsembleModelRunDate = "";
     }
-    EnsembleModelRunID = getSelectedEnsembleModelRunID();
-    */
+    //EnsembleModelRunID = getSelectedEnsembleModelRunID();
+    if ( EnsembleModelRunID == null ) {
+        EnsembleModelRunID = "";
+    }
     props.add ( "SiteCommonName=" + SiteCommonName );
     props.add ( "DataTypeCommonName=" + DataTypeCommonName );
     props.add ( "SiteDataTypeID=" + SiteDataTypeID );
@@ -2550,6 +2577,7 @@ private void refresh ()
     props.add ( "HydrologicIndicator=" + HydrologicIndicator );
     props.add ( "ModelRunID=" + ModelRunID );
     props.add ( "EnsembleName=" + EnsembleName );
+    props.add ( "OutputEnsembleID=" + OutputEnsembleID );
     //props.add ( "EnsembleTraceID=" + EnsembleTraceID );
     props.add ( "EnsembleModelName=" + EnsembleModelName );
     props.add ( "EnsembleModelRunDate=" + EnsembleModelRunDate );

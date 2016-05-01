@@ -71,6 +71,7 @@ private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
 private WriteReclamationHDB_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private JTabbedPane __sdi_JTabbedPane = null;
@@ -107,7 +108,7 @@ private SimpleJComboBox __TimeZone_JComboBox = null;
 private JLabel __TimeZone_JLabel = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
-private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JTextField __EnsembleIDProperty_JTextField = null;
 //TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 //private SimpleJComboBox __IntervalOverride_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -441,6 +442,7 @@ private void checkInput ()
     String TimeZone = __TimeZone_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String EnsembleIDProperty = __EnsembleIDProperty_JTextField.getText().trim();
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//String IntervalOverride = __IntervalOverride_JComboBox.getSelected();
 
@@ -530,6 +532,9 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );
 	}
+	if ( EnsembleIDProperty.length() > 0 ) {
+		parameters.set ( "EnsembleIDProperty", EnsembleIDProperty );
+	}
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
     //if ( IntervalOverride.length() > 0 ) {
     //    parameters.set ( "IntervalOverride", IntervalOverride );
@@ -578,6 +583,7 @@ private void commitEdits ()
     String TimeZone = __TimeZone_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String EnsembleIDProperty = __EnsembleIDProperty_JTextField.getText().trim();
 	//String IntervalOverride = __IntervalOverride_JComboBox.getSelected();
 	__command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "TSList", TSList );
@@ -607,6 +613,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TimeZone", TimeZone );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
+	__command.setCommandParameter ( "EnsembleIDProperty", EnsembleIDProperty );
 	//__command.setCommandParameter ( "IntervalOverride", IntervalOverride );
 }
 
@@ -1179,7 +1186,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         "Optional - alternative to selecting above choices."),
         3, yEnsemble, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for other parameters (mainly needed to help with screen real estate problems)
+    // Panel for general parameters (mainly needed to help with screen real estate problems)
     int yGeneral = -1;
     JPanel general_JPanel = new JPanel();
     general_JPanel.setLayout( new GridBagLayout() );
@@ -1255,6 +1262,31 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(general_JPanel, new JLabel (
 		"Optional - override the global output end (default=write all data)."),
 		3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for output properties (mainly needed to help with screen real estate problems)
+    int yProp = -1;
+    JPanel prop_JPanel = new JPanel();
+    prop_JPanel.setLayout( new GridBagLayout() );
+    __sdi_JTabbedPane.addTab ( "Output properties", prop_JPanel );
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"Output properties can be used in other commands with ${Property}." ),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"The EnsembleIDProperty corresponds to HDB REF_ENSEMBLE.ENSEMBLE_ID and is used to facilitate automated testing when writing ensembles." ),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JSeparator (SwingConstants.HORIZONTAL ),
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ("EnsembleIDProperty:"), 
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleIDProperty_JTextField = new JTextField ( 15 );
+    __EnsembleIDProperty_JTextField.setToolTipText("This property will be set to the value of the HDB REF_ENSEMBLE.ENSEMBLE_ID for the output ensemble");
+    __EnsembleIDProperty_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(prop_JPanel, __EnsembleIDProperty_JTextField,
+        1, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ("Optional - name of property for ensemble ID."),
+        3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
     /*
@@ -2209,7 +2241,7 @@ private void readEnsembleList ( ReclamationHDB_DMI rdmi )
 throws Exception
 {
     try {
-        List<ReclamationHDB_Ensemble> modelList = rdmi.readRefEnsembleList(null,null);
+        List<ReclamationHDB_Ensemble> modelList = rdmi.readRefEnsembleList(null,null,-1);
         setEnsembleList(modelList);
     }
     catch ( Exception e ) {
@@ -2312,6 +2344,7 @@ private void refresh ()
     String DataFlags = "";
 	String OutputStart = "";
 	String OutputEnd = "";
+	String EnsembleIDProperty = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -2346,6 +2379,7 @@ private void refresh ()
         TimeZone = parameters.getValue ( "TimeZone" );
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
+		EnsembleIDProperty = parameters.getValue ( "EnsembleIDProperty" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( DataStore );
             if ( __ignoreEvents ) {
@@ -2832,6 +2866,9 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
+		if ( EnsembleIDProperty != null ) {
+			__EnsembleIDProperty_JTextField.setText (EnsembleIDProperty);
+		}
 		// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 		/*
         if ( JGUIUtil.isSimpleJComboBoxItem(__IntervalOverride_JComboBox, IntervalOverride, JGUIUtil.NONE, null, null ) ) {
@@ -2922,6 +2959,7 @@ private void refresh ()
     }
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
+	EnsembleIDProperty = __EnsembleIDProperty_JTextField.getText().trim();
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	/*
     IntervalOverride = __IntervalOverride_JComboBox.getSelected();
@@ -2958,6 +2996,7 @@ private void refresh ()
     parameters.add ( "TimeZone=" + TimeZone );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
+	parameters.add ( "EnsembleIDProperty=" + EnsembleIDProperty );
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//parameters.add ( "IntervalOverride=" + IntervalOverride );
 	__command_JTextArea.setText( __command.toString ( parameters ) );

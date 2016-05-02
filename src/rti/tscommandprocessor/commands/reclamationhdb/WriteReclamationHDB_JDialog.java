@@ -206,12 +206,12 @@ private void actionPerformedDataTypeCommonNameSelected ( )
 Refresh the query choices for the currently selected ReclamationHDB ensemble name.
 */
 private void actionPerformedEnsembleNameSelected ( )
-{
+{	//Message.printStatus(2, "", "EnsembleName selected:" + __EnsembleName_JComboBox.getSelected() );
     if ( __EnsembleName_JComboBox.getSelected() == null ) {
         // Startup initialization
         return;
     }
-    // No further action needed to populate choices but show selected ensemble_id those who
+    // No further action needed to populate choices but show selected ensemble_id for those who
     // are familiar with the database internals
     updateEnsembleIDTextFields ();
     // Now populate the model name name choices corresponding to the ensemble name, which will cascade to
@@ -692,6 +692,7 @@ Return the selected ensemble name, which can be from the choice or user-supplied
 private String getSelectedEnsembleName()
 {   String EnsembleName = __EnsembleName_JComboBox.getSelected();
     //Message.printStatus(2, "", "EnsembleName from choice is \"" + EnsembleName + "\"" );
+    // TODO SAM 2016-05-02 The following should not be needed?
     if ( (EnsembleName == null) || EnsembleName.equals("") ) {
         // See if user has specified by typing in the box.
         String text = __EnsembleName_JComboBox.getFieldText().trim();
@@ -700,7 +701,7 @@ private String getSelectedEnsembleName()
             return text;
         }
     }
-    return "";
+   	return EnsembleName;
 }
 
 /**
@@ -1081,7 +1082,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("Ensemble name:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __EnsembleName_JComboBox = new SimpleJComboBox (false); // New value is specified with separate text field for clarity
+    __EnsembleName_JComboBox = new SimpleJComboBox (false); // Not editable - new value is specified with separate text field for clarity
     __EnsembleName_JComboBox.addItemListener (this);
     __EnsembleName_JComboBox.addKeyListener (this);
     JGUIUtil.addComponent(ensemble_JPanel, __EnsembleName_JComboBox,
@@ -1101,7 +1102,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     
     JGUIUtil.addComponent(ensemble_JPanel, new JLabel ("OR new ensemble name:"), 
         0, ++yEnsemble, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NewEnsembleName_JTextField = new TSFormatSpecifiersJPanel(10);
+    __NewEnsembleName_JTextField = new TSFormatSpecifiersJPanel(25);
     __NewEnsembleName_JTextField.setToolTipText("%L for location, %T for data type, ${TS:property} to use property.");
     __NewEnsembleName_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(ensemble_JPanel, __NewEnsembleName_JTextField,
@@ -2315,7 +2316,7 @@ private void readSiteDataTypeList ( ReclamationHDB_DMI rdmi )
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WriteReclamationHDB_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String DataStore = "";
     String TSList = "";
     String TSID = "";
@@ -2890,10 +2891,17 @@ private void refresh ()
         */
 		// Select tabs based on specified parameters
 		if ( ((EnsembleName != null) && !EnsembleName.equals("")) ||
+			((EnsembleTrace != null) && !EnsembleTrace.equals("")) ||
+			((EnsembleModelRunDate != null) && !EnsembleModelRunDate.equals("")) ||
             ((NewEnsembleName != null) && !NewEnsembleName.equals("")) ||
             ((EnsembleModelRunID != null) && !EnsembleModelRunID.equals(""))) {
+			// Show ensemble tab
             __model_JTabbedPane.setSelectedIndex(1);
         }
+		// Make sure choices labels are also updated
+		updateEnsembleIDTextFields();
+		updateModelIDTextFields();
+		updateSiteIDTextFields();
 	}
 	// Regardless, reset the command from the fields...
 	DataStore = __DataStore_JComboBox.getSelected();
@@ -2937,6 +2945,9 @@ private void refresh ()
     }
     ModelRunID = getSelectedModelRunID();
     EnsembleName = getSelectedEnsembleName();
+    if ( EnsembleName == null ) {
+        EnsembleName = "";
+    }
     NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
     EnsembleTrace = __EnsembleTrace_JTextField.getText().trim();
     EnsembleModelName = __EnsembleModelName_JComboBox.getSelected();
@@ -2983,6 +2994,7 @@ private void refresh ()
     parameters.add ( "HydrologicIndicator=" + HydrologicIndicator );
     parameters.add ( "ModelRunID=" + ModelRunID );
     parameters.add ( "EnsembleName=" + EnsembleName );
+    Message.printStatus(2,routine,"Got EnsembleName from UI: \"" + EnsembleName + "\"");
     parameters.add ( "NewEnsembleName=" + NewEnsembleName );
     parameters.add ( "EnsembleTrace=" + EnsembleTrace );
     parameters.add ( "EnsembleModelName=" + EnsembleModelName );
@@ -3071,19 +3083,27 @@ Update the ensemble information text fields.
 */
 private void updateEnsembleIDTextFields ()
 {   // Ensemble information...
+	//Message.printStatus(2,"","in updateEnsembleIDTextFields");
     List<ReclamationHDB_Ensemble> ensembleList = null;
     try {
-        ensembleList = __dmi.findEnsemble(__ensembleList, __EnsembleName_JComboBox.getSelected() );
+        ensembleList = __dmi.findEnsemble(__ensembleList, getSelectedEnsembleName() );
     }
     catch ( Exception e ) {
         // Generally due to startup with bad datastore
+    	Message.printWarning(3,"",e);
         ensembleList = null;
     }
     if ( (ensembleList == null) || (ensembleList.size() == 0) ) {
         __selectedEnsembleID_JLabel.setText ( "No matches" );
     }
     else if ( ensembleList.size() == 1 ) {
-        __selectedEnsembleID_JLabel.setText ( "" + ensembleList.get(0).getEnsembleID() );
+    	String ensembleIDText = "" + ensembleList.get(0).getEnsembleID();
+        if ( (ensembleIDText == null) || ensembleIDText.isEmpty() ) {
+        	__selectedEnsembleID_JLabel.setText ( "No matches" );
+        }
+        else {
+        	__selectedEnsembleID_JLabel.setText ( ensembleIDText );
+        }
     }
     else {
         __selectedEnsembleID_JLabel.setText ( "" + ensembleList.size() + " matches" );

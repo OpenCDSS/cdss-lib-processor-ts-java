@@ -138,7 +138,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
-		!AnalysisStart.equalsIgnoreCase("OutputStart") ) {
+		!AnalysisStart.equalsIgnoreCase("OutputStart") && (AnalysisStart.indexOf("${") < 0) ) {
 		try {
 		    DateTime.parse(AnalysisStart);
 		}
@@ -150,7 +150,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") && (AnalysisEnd.indexOf("${") < 0)) {
 		try {
 		    DateTime.parse( AnalysisEnd);
 		}

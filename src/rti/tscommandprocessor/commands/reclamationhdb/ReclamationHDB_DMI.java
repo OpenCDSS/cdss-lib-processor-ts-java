@@ -928,6 +928,7 @@ throws Exception
     int modelIDSave = -1;
     Date runDateSave = null;
     List<ReclamationHDB_EnsembleTrace> missingTraceList = new ArrayList<ReclamationHDB_EnsembleTrace>();
+    String hydrologicIndicator = null;
     for ( ReclamationHDB_EnsembleTrace trace: ensembleTraceList ) {
         // Read the model run for the trace and confirm that the model run and run_date are the same for all traces
         ++itrace;
@@ -3284,6 +3285,12 @@ throws Exception
         DateTime date1 = ts.getDate1();
         int badAlignmentCount = 0;
         boolean badAlignment = false; // Whether there are issues with HDB date/time and time series
+        // Date formats for logging
+        DateFormat timeZoneDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+        timeZoneDateFormat.setTimeZone(TimeZone.getTimeZone(hdbTimeZone));
+        DateFormat gmtDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+        gmtDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        DateFormat localDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z"); // Don't set the time zone
         try {
             stmt = __hdbConnection.ourConn.createStatement();
             if ( __readTimeout >= 0 ) {
@@ -3298,7 +3305,7 @@ throws Exception
             sw.stop();
             Message.printStatus(2,routine,"Query of \"" + tsidentString + "\" data took " + sw.getSeconds() + " seconds.");
             sw.clearAndStart();
-            Date dt;
+            Date hdbSampleStart = null, hdbSampleEnd = null;
             double value = 0.0;
             String validation;
             String overwriteFlag;
@@ -3340,11 +3347,11 @@ throws Exception
                     // Also get Date for debugging
                     if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
                     	// Will contain nonoseconds and time zone
-                        dt = rs.getTimestamp(col);
+                        hdbSampleStart = rs.getTimestamp(col);
                     }
                     else {
                     	// Will only contain to date
-                        dt = rs.getDate(col);
+                        hdbSampleStart = rs.getDate(col);
                     }
                     ++col; // Increment after the above since retrieved for troubleshooting
                     // End 
@@ -3354,9 +3361,23 @@ throws Exception
                     // Get value inside if block so can use in debugging
                     value = rs.getDouble(col++);
                     if ( Message.isDebugOn ) {
-	                    Message.printStatus(2,routine,"Sample start string from HDB=" + sampleStartString + " read start=" + startDateTime + " start Timestamp/Date=" + dt +
+	                    Message.printStatus(2,routine,"Sample start string from HDB=" + sampleStartString + " read start=" + startDateTime + 
 	                    	" sample end string=" + sampleEndString + " end=" + endDateTime + " value=" + value);
                     }
+                    // Make sure the string has the time zone that is expected from the database - NOPE CAN'T DO THIS BECAUSE STRING DOES NOT CONTAIN TIME ZONE
+                    // TODO SAM 2016-05-01 could automatically convert to database time zone but should not have to do
+                    //if ( !sampleStartString.endsWith(hdbTimeZone) ) {
+                    //	String message = "Sample start as text (" + sampleStartString + ") time zone does not match HDB time zone " + hdbTimeZone + " - ignoring value";
+                    //	Message.printWarning(3,routine,message);
+                    //	problems.add(message);
+                    //	continue;
+                    //}
+                    //if ( !sampleEndString.endsWith(hdbTimeZone) ) {
+                    //	String message = "Sample end as text (" + sampleEndString + ") time zone does not match HDB time zone " + hdbTimeZone + " - ignoring value";
+                    //	Message.printWarning(3,routine,message);
+                    //	problems.add(message);
+                    //	continue;
+                    //}
                 }
                 /* Comment out to avoid using - above works and is tested
                 else {
@@ -3429,9 +3450,14 @@ throws Exception
                     */
                 }
                 // If hourly data, make sure the end hour is not the same as the start hour - this was detected at daylight savings change
+                // Actually this may mainly be an issue due to TSTool/Oracle bug
+                // and if continue is used below the value after the missing DS interval
+                // is often wrong.  Without continue only the DS value being missing in the spring
+                // seems to be the issue.
                 if ( (intervalBase == TimeInterval.HOUR) && sampleStartString.equals(sampleEndString) ) {
-            		Message.printWarning(3,routine,"Sample start and end for hourly data are equal \"" + sampleStartString + "\" - bad data in database (ignoring)." );
-                 	continue;
+            		Message.printWarning(3,routine,"Sample start and end for hourly data are equal \"" + sampleStartString +
+            			"\" - bad data in database due to time change? (using in order returned)." );
+                 	//continue;
                 }
                 // Make sure that the start and end hour are evenly divisible by the hour in the database
                 badAlignment = false;
@@ -3492,8 +3518,19 @@ throws Exception
                     ++countHourForNHour[dateTime.getHour()];
                 }
                 if ( Message.isDebugOn ) {
-                    Message.printStatus(2,routine,"Read HDB startDateTime=\"" + startDateTime +
-                        "\" endDateTime=" + endDateTime + " internal dataTime=\"" + dateTime + "\" value=" + value);
+                    Message.printStatus(2,routine,
+                    	"Read HDB sample start string \"" + sampleStartString + "\"" +
+                    	" internal start \"" + startDateTime + "\"" +
+                    	" HDB sample end string \"" + sampleEndString + "\"" +
+                    	" internal end \"" + endDateTime + "\"" +
+                    	" startDateTime(GMT)=" + gmtDateFormat.format(hdbSampleStart) +
+                    	" startDateTime(" + hdbTimeZone + ")=" + timeZoneDateFormat.format(hdbSampleStart) +
+                    	" startDateTime(Locale)=" + localDateFormat.format(hdbSampleStart) +
+                        " endDateTime(GMT)=" + (hdbSampleEnd == null ? null : gmtDateFormat.format(hdbSampleEnd)) +
+                        " endDateTime(" + hdbTimeZone + ")=" + (hdbSampleEnd == null ? null : timeZoneDateFormat.format(hdbSampleEnd)) +
+                        " endDateTime(Locale)=" + (hdbSampleEnd == null ? null : localDateFormat.format(hdbSampleEnd)) +
+                        " internal dataTime=\"" + dateTime + "\"" +
+                        " value=" + value);
                 }
                 if ( !badAlignment ) {
                     ts.setDataValue( dateTime, value );
@@ -3506,7 +3543,9 @@ throws Exception
             	// Create a warning unless nHourIntervalOffset was specified - specifying indicates user is purposefully ignoring bad data
             	String message = "There were " + badAlignmentCount +
                     " data values with date/times that did not align as expected with data interval and hour (" +
-            			date1.getHour() + ") time zone " + hdbTimeZone + " of the first data value from query (bad data loaded previously?).";
+            			date1.getHour() + ") time zone " + hdbTimeZone +
+            			" of the first data value from query (bad data loaded previously?  time zone alignment issue?).  "
+            			+ "Use NHourIntervalOffset feature in TSTool ReadReclamationHDB command.";
                 Message.printWarning(3, routine, message);
                 problems.add(message);
                 // Check to see that data values were on expected hours

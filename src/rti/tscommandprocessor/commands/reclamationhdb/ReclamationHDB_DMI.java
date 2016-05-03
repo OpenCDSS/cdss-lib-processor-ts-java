@@ -4050,6 +4050,10 @@ throws SQLException
     }
     // Interval override can only be used with irregular time series
     TimeInterval outputInterval = new TimeInterval(ts.getDataIntervalBase(),ts.getDataIntervalMult());
+    if ( (ts.getDataIntervalBase() == TimeInterval.HOUR) && (ts.getDataIntervalMult() == 24) ) {
+   	 	throw new IllegalArgumentException("Cannot write 24Hour time series \"" +
+   	 		ts.getIdentifierString() + "\" to HDB. Instead, convert to Day interval and then write as day interval time series.");
+    }
     // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
     /*
     if ( intervalOverride == null ) {
@@ -4155,14 +4159,27 @@ throws SQLException
     }
     DateTime outputStart = new DateTime(ts.getDate1());
     if ( outputStartReq != null ) {
+        // Make sure that the requested time aligns with time series period
+        if ( outputInterval.isRegularInterval() && !TimeUtil.dateTimeIntervalsAlign(outputStartReq,ts.getDate1(),outputInterval) ) {
+        	 throw new IllegalArgumentException("Requested output start \"" + outputStartReq +
+        		"\" does not align with time series start \"" + ts.getDate1() + "\" data interval - cannot write.  Change the requested start.");
+        }
         outputStart = new DateTime(outputStartReq);
     }
     DateTime outputEnd = new DateTime(ts.getDate2());
     if ( outputEndReq != null ) {
+    	// Make sure that the requested time aligns with time series period
+        if ( outputInterval.isRegularInterval() && !TimeUtil.dateTimeIntervalsAlign(outputEndReq,ts.getDate2(),outputInterval) ) {
+          	 throw new IllegalArgumentException("Requested output end \"" + outputStartReq +
+          		"\" does not align with time series end \"" + ts.getDate2() + "\" data interval - cannot write.  Change the requested start.");
+          }
         outputEnd = new DateTime(outputEndReq);
     }
     TSIterator tsi = null;
     try {
+    	// TODO SAM 2016-05-02 The following checks are redundant with the above (were in place before above)
+    	// but use the above for now to force users to understand how they are dealing with offsets.
+    	// There is too much potential for issues.
         // Make sure that for NHour data the output start and end align with the time series period
     	// If 1 hour it should not matter because any hour will align
         if ( (outputInterval.getBase() == TimeInterval.HOUR) && (outputInterval.getMultiplier() > 1) ) {

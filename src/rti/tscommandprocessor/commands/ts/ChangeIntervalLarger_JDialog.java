@@ -65,8 +65,6 @@ private JLabel __NewEnsembleName_JLabel = null;
 private JTextField __NewEnsembleName_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox	__NewInterval_JComboBox = null;
-private SimpleJComboBox	__OldTimeScale_JComboBox = null;
-private SimpleJComboBox	__NewTimeScale_JComboBox = null;
 private JLabel __Statistic_JLabel = null;
 private SimpleJComboBox __Statistic_JComboBox = null;
 private JLabel  __OutputYearType_JLabel = null;
@@ -229,52 +227,12 @@ private void checkGUIState ()
         // Should not happen because choices are valid
         Message.printWarning ( 3, routine, e );
     }
-    String newTimeScale = __NewTimeScale_JComboBox.getSelected();
-    TimeScaleType newTimeScaleType = TimeScaleType.valueOfIgnoreCase(newTimeScale);
     String statistic = __Statistic_JComboBox.getSelected().trim();
     String outputYearType0 = __OutputYearType_JComboBox.getSelected();
     YearType outputYearType = null;
     if ( (outputYearType0 != null) && !outputYearType0.equals("") ) {
         outputYearType = YearType.valueOfIgnoreCase(outputYearType0);
     }
-
-    /*
-    if ( (oldTimeScaleType == TimeScaleType.MEAN) && (newTimeScaleType == TimeScaleType.INST) ) {
-        __Tolerance_JLabel.setEnabled( true );
-        __Tolerance_JTextField.setEnabled( true );
-        __HandleMissingInputHow_JLabel.setEnabled ( true );
-        __HandleMissingInputHow_JComboBox.setEnabled ( true );
-    }
-    else if (( (oldTimeScaleType == TimeScaleType.MEAN) || (oldTimeScaleType == TimeScaleType.ACCM)) &&
-        (newTimeScaleType == TimeScaleType.MEAN) || (newTimeScaleType == TimeScaleType.ACCM)) {
-        __AllowMissingCount_JLabel.setEnabled ( true );
-        __AllowMissingCount_JTextField.setEnabled ( true );
-        __AllowMissingConsecutive_JLabel.setEnabled ( true );
-        __AllowMissingConsecutive_JTextField.setEnabled ( true );
-        __HandleMissingInputHow_JLabel.setEnabled ( true );
-        __HandleMissingInputHow_JComboBox.setEnabled ( true );
-        __OutputFillMethod_JLabel.setEnabled ( true );
-        __OutputFillMethod_JComboBox.setEnabled ( true );
-        __HandleEndpointsHow_JLabel.setEnabled ( true );
-        __HandleEndpointsHow_JComboBox.setEnabled ( true );
-    }
-    else if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.INST) ) {
-        __HandleMissingInputHow_JLabel.setEnabled ( true );
-        __HandleMissingInputHow_JComboBox.setEnabled ( true );
-    }
-    else if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) ) {
-        __AllowMissingCount_JLabel.setEnabled ( true );
-        __AllowMissingCount_JTextField.setEnabled ( true );
-        __AllowMissingConsecutive_JLabel.setEnabled ( true );
-        __AllowMissingConsecutive_JTextField.setEnabled ( true );
-        __HandleMissingInputHow_JLabel.setEnabled ( true );
-        __HandleMissingInputHow_JComboBox.setEnabled ( true );
-        __OutputFillMethod_JLabel.setEnabled ( true );
-        __OutputFillMethod_JComboBox.setEnabled ( true );
-        __HandleEndpointsHow_JLabel.setEnabled ( true );
-        __HandleEndpointsHow_JComboBox.setEnabled ( true );
-    }
-    */
     
     // Converting to yearly time series has some special handling
     if ( newInterval.equalsIgnoreCase("Year") ) {
@@ -300,36 +258,7 @@ private void checkGUIState ()
     
     // More specific handling of the HandleEndPointsHow parameter...
 
-    /*
-    if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) &&
-        (newIntervalObj.getBase() <= TimeInterval.DAY)  ) {
-        // Would also like to check the following but it is not available until runtime...
-        // && (oldIntervalBase < TimeInterval.DAY)
-        __HandleEndpointsHow_JLabel.setEnabled ( true );
-        __HandleEndpointsHow_JComboBox.setEnabled ( true );
-    }
-    else {
-        // Need to disable
-        __HandleEndpointsHow_JLabel.setEnabled ( false );
-        __HandleEndpointsHow_JComboBox.setEnabled ( false );
-    }
-    */
-    
     // More specific handling of the OutputFillMethod parameter...
-    
-    /*
-    if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) ) {
-        // Would also like to check the following but it is not available until runtime...
-        // && long to short
-        __OutputFillMethod_JLabel.setEnabled ( true );
-        __OutputFillMethod_JComboBox.setEnabled ( true );
-    }
-    else {
-        // Need to disable
-        __OutputFillMethod_JLabel.setEnabled ( false );
-        __OutputFillMethod_JComboBox.setEnabled ( false );
-    }
-    */
     
     /*
     // Statistic is only implemented for instantaneous to instantaneous time scale and impacts some parameters.
@@ -366,8 +295,6 @@ private void checkInput ()
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 	String NewInterval  = __NewInterval_JComboBox.getSelected();
-	String OldTimeScale = StringUtil.getToken( __OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
-	String NewTimeScale  = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
     String Statistic = __Statistic_JComboBox.getSelected();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
 	String NewDataType = __NewDataType_JTextField.getText().trim();
@@ -404,12 +331,6 @@ private void checkInput ()
 	}
 	if ( NewInterval != null && NewInterval.length() > 0 ) {
 		props.set( "NewInterval", NewInterval );
-	}
-	if ( OldTimeScale != null && OldTimeScale.length() > 0 ) {
-		props.set( "OldTimeScale", OldTimeScale );
-	}
-	if ( NewTimeScale != null && NewTimeScale.length() > 0 ) {
-		props.set( "NewTimeScale", NewTimeScale );
 	}
     if ( Statistic.length() > 0 ) {
         props.set ( "Statistic", Statistic );
@@ -478,8 +399,6 @@ private void commitEdits ()
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 	String NewInterval = __NewInterval_JComboBox.getSelected();
-	String OldTimeScale = StringUtil.getToken( __OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
-	String NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
     String Statistic = __Statistic_JComboBox.getSelected();
 	String OutputYearType = __OutputYearType_JComboBox.getSelected();
 	String NewDataType = __NewDataType_JTextField.getText().trim();
@@ -502,8 +421,6 @@ private void commitEdits ()
     __command.setCommandParameter ( "NewEnsembleName", NewEnsembleName );
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "NewInterval", NewInterval );
-	__command.setCommandParameter ( "OldTimeScale", OldTimeScale );
-	__command.setCommandParameter ( "NewTimeScale", NewTimeScale );
     __command.setCommandParameter ( "Statistic", Statistic );
 	__command.setCommandParameter ( "OutputYearType", OutputYearType );
 	__command.setCommandParameter ( "NewDataType", NewDataType );
@@ -914,8 +831,6 @@ private void refresh ()
     String NewEnsembleName = "";
 	String Alias = "";
 	String NewInterval = "";
-	String OldTimeScale = "";
-	String NewTimeScale = "";
     String Statistic = "";
 	String OutputYearType = "";
 	String NewDataType = "";
@@ -943,8 +858,6 @@ private void refresh ()
         NewEnsembleName = props.getValue ( "NewEnsembleName" );
 		Alias = props.getValue( "Alias" );
 		NewInterval = props.getValue( "NewInterval" );
-	    OldTimeScale = props.getValue( "OldTimeScale" );
-	    NewTimeScale = props.getValue( "NewTimeScale" );
 	    Statistic = props.getValue ( "Statistic" );
 		OutputYearType = props.getValue ( "OutputYearType" );
 		NewDataType = props.getValue( "NewDataType" );
@@ -1030,41 +943,6 @@ private void refresh ()
 			}
 		}
 		
-		// Update OldTimeScale text field
-		// Select the item in the list.  If not a match, print a warning.
-		if ( OldTimeScale == null || OldTimeScale.equals("") ) {
-			// Select default...
-			__OldTimeScale_JComboBox.select ( 0 );
-		}
-		else {
-			try {	
-				JGUIUtil.selectTokenMatches ( __OldTimeScale_JComboBox, true, " ", 0, 0, OldTimeScale, null );
-			}
-			catch ( Exception e ) {
-				mssg = "Existing command references an unrecognized\nOldTimeScale value \""
-					+ OldTimeScale + "\".  Using the user value.";
-				Message.printWarning ( 2, mthd, mssg );
-				__OldTimeScale_JComboBox.setText (OldTimeScale);
-			}
-		}
-		
-		// Update NewTimeScale text field
-		// Select the item in the list.  If not a match, print a warning.
-		if ( NewTimeScale == null || NewTimeScale.equals("") ) {
-			// Select default...
-			__NewTimeScale_JComboBox.select ( 0 );
-		}
-		else {
-			try {	
-				JGUIUtil.selectTokenMatches ( __NewTimeScale_JComboBox, true, " ", 0, 0, NewTimeScale, null );
-			}
-			catch ( Exception e ) {
-				mssg = "Existing command references an unrecognized\nNewTimeScale value \""
-					+ NewTimeScale + "\".  Using the user value.";
-				Message.printWarning ( 2, mthd, mssg );
-				__NewTimeScale_JComboBox.setText (NewTimeScale);
-			}
-		}
         if ( Statistic == null ) {
             // Select default...
             __Statistic_JComboBox.select ( 0 );
@@ -1117,12 +995,12 @@ private void refresh ()
 			}
 			catch ( Exception e ) {
 			    // Only an issue when going from INST to MEAN
-			    if ( OldTimeScale.equalsIgnoreCase("" + TimeScaleType.INST) &&
-			        NewTimeScale.equalsIgnoreCase("" + TimeScaleType.MEAN) ) {
-    				mssg = "Existing command references an unrecognized HandleEndpointsHow value \""
-    					+ HandleEndpointsHow + "\".  Using the user value.";
-    				Message.printWarning ( 2, mthd, mssg );
-			    }
+			    //if ( OldTimeScale.equalsIgnoreCase("" + TimeScaleType.INST) &&
+			    //    NewTimeScale.equalsIgnoreCase("" + TimeScaleType.MEAN) ) {
+    			//	mssg = "Existing command references an unrecognized HandleEndpointsHow value \""
+    			//		+ HandleEndpointsHow + "\".  Using the user value.";
+    			//	Message.printWarning ( 2, mthd, mssg );
+			    //}
 				__HandleEndpointsHow_JComboBox.setText ( HandleEndpointsHow );
 			}
 		}
@@ -1205,8 +1083,6 @@ private void refresh ()
     NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
 	NewInterval = __NewInterval_JComboBox.getSelected();
-	OldTimeScale = StringUtil.getToken(	__OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
-	NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
     Statistic = __Statistic_JComboBox.getSelected();
 	OutputYearType = __OutputYearType_JComboBox.getSelected();
 	NewDataType = __NewDataType_JTextField.getText().trim();
@@ -1230,9 +1106,7 @@ private void refresh ()
     props.add ( "NewEnsembleName=" + NewEnsembleName );
 	props.add ( "Alias=" + Alias );
 	props.add ( "NewInterval=" + NewInterval );
-	props.add ( "OldTimeScale=" + OldTimeScale );
 	props.add ( "OutputYearType=" + OutputYearType );
-	props.add ( "NewTimeScale=" + NewTimeScale );
 	if ( __Statistic_JComboBox.isEnabled() ) {
 	    props.add ( "Statistic=" + Statistic );
 	}

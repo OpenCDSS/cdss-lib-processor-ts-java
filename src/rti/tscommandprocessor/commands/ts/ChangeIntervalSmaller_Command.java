@@ -107,7 +107,7 @@ Command constructor.
 public ChangeIntervalSmaller_Command ()
 {	
 	super();
-	setCommandName ( "ChangeIntervalLarger" );
+	setCommandName ( "ChangeIntervalSmaller" );
 }
 
 /**

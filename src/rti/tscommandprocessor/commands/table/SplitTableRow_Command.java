@@ -26,6 +26,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
 import RTi.Util.Table.TableRecord;
+import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the SplitTableRow() command.
@@ -58,7 +59,8 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
-	String ColumnTuples = parameters.getValue ( "ColumnTuples" );
+	String TupleColumns = parameters.getValue ( "TupleColumns" );
+	String NewTupleColumns = parameters.getValue ( "NewTupleColumns" );
 	String MeasureStartColumn = parameters.getValue ( "MeasureStartColumn" );
 	String MeasureEndColumn = parameters.getValue ( "MeasureEndColumn" );
 	String MeasureIncrement = parameters.getValue ( "MeasureIncrement" );
@@ -78,19 +80,33 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
     }
-    
-    if ( (ColumnTuples != null) && !ColumnTuples.isEmpty() ) {
-    	
+
+    if ( ((TupleColumns == null) || TupleColumns.isEmpty()) &&
+    	((MeasureStartColumn == null) || MeasureStartColumn.isEmpty()) ) {
+    	message = "The tuple or measure parameters must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the tuple or measure parameters." ) );
     }
-    else {
-    	if ( (MeasureStartColumn == null) || (MeasureStartColumn.length() == 0) ) {
-	        message = "The measure start column must be specified.";
+    else if ( (TupleColumns != null) && !TupleColumns.isEmpty() &&
+    	(MeasureStartColumn != null) && !MeasureStartColumn.isEmpty() ) {
+    	message = "The tuple or measure parameters must be specified (but not both).";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the tuple or measure parameters." ) );
+    }
+    else if ( (TupleColumns != null) && !TupleColumns.isEmpty() ) {
+    	if ( (NewTupleColumns == null) || NewTupleColumns.isEmpty()) {
+	        message = "The new tuple column(s) must be specified.";
 	        warning += "\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
 	            new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Specify the measure start column." ) );
+	                message, "Specify the new tuple column(s)." ) );
 	    }
-	    
+    }
+    else if ( (MeasureStartColumn != null) && !MeasureStartColumn.isEmpty() ) {
 	    if ( (MeasureEndColumn == null) || (MeasureEndColumn.length() == 0) ) {
 	        message = "The measure end column must be specified.";
 	        warning += "\n" + message;
@@ -146,10 +162,13 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(9);
+	List<String> validList = new ArrayList<String>(12);
     validList.add ( "TableID" );
-    validList.add ( "ColumnTuples" );
-    validList.add ( "NewColumnTuple" );
+    validList.add ( "TupleColumns" );
+    validList.add ( "TupleDateTimes" );
+    validList.add ( "NewTupleColumns" );
+    validList.add ( "NewTupleDateTimeColumn" );
+    validList.add ( "InsertBeforeColumn" );
     validList.add ( "MeasureStartColumn" );
     validList.add ( "MeasureEndColumn" );
     validList.add ( "MeasureIncrement" );
@@ -224,26 +243,54 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	}
 	// Do the new column tuples first because it controls the number
-	String NewColumnTuple = parameters.getValue ( "NewColumnTuple" );
-	String [] newColumnTuple = new String[0];
-	if ( (NewColumnTuple != null) && !NewColumnTuple.isEmpty() ) {
-		newColumnTuple = NewColumnTuple.split(",");
-		for ( int i = 0; i < newColumnTuple.length; i++ ) {
-			newColumnTuple[i] = newColumnTuple[i].trim();
+	String NewTupleColumns = parameters.getValue ( "NewTupleColumns" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (NewTupleColumns != null) && (NewTupleColumns.indexOf("${") >= 0) ) {
+		NewTupleColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTupleColumns);
+	}
+	String [] newTupleColumns = new String[0];
+	if ( (NewTupleColumns != null) && !NewTupleColumns.isEmpty() ) {
+		newTupleColumns = NewTupleColumns.split(","); // Single tuple
+		for ( int i = 0; i < newTupleColumns.length; i++ ) {
+			newTupleColumns[i] = newTupleColumns[i].trim();
 		}
 	}
-	String ColumnTuples = parameters.getValue ( "ColumnTuples" );
-	String [][] columnTuples = new String[0][0];
+	String NewTupleDateTimeColumn = parameters.getValue ( "NewTupleDateTimeColumn" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (NewTupleDateTimeColumn != null) && (NewTupleDateTimeColumn.indexOf("${") >= 0) ) {
+		NewTupleDateTimeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTupleDateTimeColumn);
+	}
+	String TupleColumns = parameters.getValue ( "TupleColumns" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TupleColumns != null) && (TupleColumns.indexOf("${") >= 0) ) {
+		TupleColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, TupleColumns);
+	}
+	String [][] tupleColumns = new String[0][0];
 	// Limit to the number of new columns
-	if ( (ColumnTuples != null) && !ColumnTuples.isEmpty() ) {
-		String [] temp = ColumnTuples.split(";");
-		columnTuples = new String [temp.length][newColumnTuple.length];
+	if ( (TupleColumns != null) && !TupleColumns.isEmpty() ) {
+		String [] temp = TupleColumns.split(";");
+		tupleColumns = new String [temp.length][newTupleColumns.length];
 		for ( int i = 0; i < temp.length; i++ ) {
-			columnTuples[i] = temp[i].split(",");
-			for ( int j = 0; j < newColumnTuple.length; j++ ) {
-				columnTuples[i][j] = columnTuples[i][j].trim();
+			tupleColumns[i] = temp[i].split(",");
+			for ( int j = 0; j < tupleColumns[i].length; j++ ) {
+				tupleColumns[i][j] = tupleColumns[i][j].trim();
 			}
 		}
+	}
+	String TupleDateTimes = parameters.getValue ( "TupleDateTimes" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TupleDateTimes != null) && (TupleDateTimes.indexOf("${") >= 0) ) {
+		TupleDateTimes = TSCommandProcessorUtil.expandParameterValue(processor, this, TupleDateTimes);
+	}
+	String [] tupleDateTimeStrings = new String[0];
+	DateTime [] tupleDateTimes = new DateTime[0];
+	if ( (TupleDateTimes != null) && !TupleDateTimes.isEmpty() ) {
+		tupleDateTimeStrings = TupleDateTimes.split(",");
+		tupleDateTimes = new DateTime[tupleDateTimeStrings.length];
+		for ( int i = 0; i < tupleDateTimeStrings.length; i++ ) {
+			tupleDateTimeStrings[i] = tupleDateTimeStrings[i].trim();
+			tupleDateTimes[i] = DateTime.parse(tupleDateTimeStrings[i]);
+		}
+	}
+	String InsertBeforeColumn = parameters.getValue ( "InsertBeforeColumn" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (InsertBeforeColumn != null) && (InsertBeforeColumn.indexOf("${") >= 0) ) {
+		InsertBeforeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, InsertBeforeColumn);
 	}
     String MeasureStartColumn = parameters.getValue ( "MeasureStartColumn" );
     String MeasureEndColumn = parameters.getValue ( "MeasureEndColumn" );
@@ -312,29 +359,166 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 
 	try {
-		if ( (ColumnTuples != null) && !ColumnTuples.isEmpty() ) {
-			// Process the tuples - first add the output columns so that lookup of input will be correct
-			int [] newColNum = new int[newColumnTuple.length];
-			int oldCol;
-			for ( int inew = 0; inew < newColumnTuple.length; inew++ ) {
+		if ( (TupleColumns != null) && !TupleColumns.isEmpty() ) {
+			// Process the tuples - first add the new columns so that lookup of input will be correct
+			int [] newTupleColNum = new int[newTupleColumns.length];
+			int [][] tupleColNum = null;
+			int newTupleDateTimeColNum = -1;
+			int insertBeforeColNum = -1;
+			int oldCol = -1;
+			boolean canProcess = true;
+			boolean doSetDateTime = false;
+			if ( tupleDateTimeStrings.length > 0 ) {
+				doSetDateTime = true;
+			}
+			// If an insert column was requested, get the column number
+			if ( (InsertBeforeColumn != null) && !InsertBeforeColumn.isEmpty() ) {
 				try {
-					newColNum[inew] = table.getFieldIndex(newColumnTuple[inew]);
+					insertBeforeColNum = table.getFieldIndex(InsertBeforeColumn);
 				}
 				catch ( Exception e ) {
-		            message = "Table \"" + TableID + "\" does not contain new column \"" + newColumnTuple[inew] + "\" - adding";
+					insertBeforeColNum = -1;
+		            message = "Table \"" + TableID + "\" does not contain InsertBeforeColumn \"" + InsertBeforeColumn + "\" - adding at end";
+		            Message.printWarning ( warning_level,
+	    	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+    	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+    	                message, "Verify that the table contains the requested column \"" + InsertBeforeColumn + "\"" ) );
+				}
+			}
+			// Add the new date/time column if requested - put this before new tuple columns
+			// TODO SAM 2016-05-08 may need a separate insert column to position the date
+			if ( (NewTupleDateTimeColumn != null) && !NewTupleDateTimeColumn.isEmpty() ) {
+				try {
+					newTupleDateTimeColNum = table.getFieldIndex(NewTupleDateTimeColumn);
+				}
+				catch ( Exception e ) {
+		            message = "Table \"" + TableID + "\" does not contain NewTupleDateTimeColumn \"" + NewTupleDateTimeColumn + "\" - adding";
 		            Message.printStatus ( 2, routine, message );
-		            // Add the column with the same type as the matched column of the first existing tuple
+		            // Add the column of type date/time
 					try {
-						oldCol = table.getFieldIndex(columnTuples[0][inew]);
-						TableField oldField = table.getTableField(oldCol);
-						table.addField(new TableField(oldField.getDataType(), newColumnTuple[inew], oldField.getWidth(), oldField.getPrecision()), null);
+						newTupleDateTimeColNum = table.addField(insertBeforeColNum,new TableField(TableField.DATA_TYPE_DATETIME, NewTupleDateTimeColumn, -1, -1), null);
+						if ( insertBeforeColNum >= 0 ) {
+							// Increment so columns are added left to right
+							++insertBeforeColNum;
+						}
 					}
 					catch ( Exception e2 ) {
-			            message = "Table \"" + TableID + "\" does not contain column \"" + columnTuples[0][inew] + "\" - cannot process";
+			            message = "Error adding column \"" + NewTupleDateTimeColumn + "\" - cannot process (" + e + ")";
 			            Message.printWarning ( warning_level,
 		    	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+			            Message.printWarning(3,routine, e2);
+	    	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	    	                message, "Check the input" ) );
+		    	        canProcess = false;
+					}
+				}
+			}
+			// Now add new tuple columns
+			for ( int inew = 0; inew < newTupleColumns.length; inew++ ) {
+				try {
+					newTupleColNum[inew] = table.getFieldIndex(newTupleColumns[inew]);
+				}
+				catch ( Exception e ) {
+		            message = "Table \"" + TableID + "\" does not contain NewTupleColumns \"" + newTupleColumns[inew] + "\" - adding";
+		            Message.printStatus ( 2, routine, message );
+		            // Add the column with the same type as the matched column of the first existing tuple
+		            // Have to look up the column since it is normally only determined later
+					try {
+						oldCol = table.getFieldIndex(tupleColumns[0][inew]);
+					}
+					catch ( Exception e2 ) {
+			            message = "Table \"" + TableID + "\" does not contain TupleColumns \"" + tupleColumns[0][inew] +
+			            	"\" to determine NewTupleColumns column type - cannot process (" + e2 + ")";
+			            Message.printWarning ( warning_level,
+		    	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+			            Message.printWarning(3,routine, e2);
+	    	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	    	                message, "Verify that the table contains the requested input column \"" + tupleColumns[0][0] + "\"" ) );
+	    	            canProcess = false;
+					}
+					if ( canProcess ) {
+						try {
+							TableField oldField = table.getTableField(oldCol);
+							newTupleColNum[inew] = table.addField(insertBeforeColNum,
+								new TableField(oldField.getDataType(), newTupleColumns[inew], oldField.getWidth(), oldField.getPrecision()), null);
+							if ( insertBeforeColNum >= 0 ) {
+								// Increment so columns are added left to right
+								++insertBeforeColNum;
+							}
+						}
+						catch ( Exception e2 ) {
+				            message = "Table \"" + TableID + "\" error adding NewTupleColumns \"" + newTupleColumns[inew] + "\" - cannot process (" + e2 + ")";
+				            Message.printWarning ( warning_level,
+			    	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+				            Message.printWarning(3,routine, e2);
 		    	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-		    	                message, "Verify that the table contains the requested input column \"" + columnTuples[0][inew] + "\"" ) );
+		    	                message, "Verify command parameters" ) );
+		    	            canProcess = false;
+						}
+					}
+				}
+			}
+			// All new columns have been added so get the columns for the old tuples
+			tupleColNum = new int[tupleColumns.length][tupleColumns[0].length];
+			for ( int ituple = 0; ituple < tupleColumns.length; ituple++ ) {
+				for ( int ituplePart = 0; ituplePart < tupleColumns[ituple].length; ituplePart++ ) {
+					try {
+						tupleColNum[ituple][ituplePart] = table.getFieldIndex(tupleColumns[ituple][ituplePart]);
+					}
+					catch ( Exception e ) {
+			            message = "Table \"" + TableID + "\" does not contain TupleColumns \"" + tupleColumns[ituple][ituplePart] + "\" - cannot process (" + e + ")";
+			            Message.printWarning ( warning_level,
+		    	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	    	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	    	                message, "Verify that the table contains the requested input column \"" + tupleColumns[ituple][ituplePart] + "\"" ) );
+	    	            canProcess = false;
+					}
+				}
+			}
+			if ( canProcess ) {
+				// If here can continue with processing
+				int nrec = table.getNumberOfRecords();
+				int [] rowsToDelete = new int[nrec]; // Rows to delete (may add functionality later that makes this more necessary)
+				for ( int i = 0; i < nrec; i++ ) {
+					rowsToDelete[i] = -1;
+				}
+				for ( int irec = 0; irec < nrec; irec++ ) {
+					Message.printStatus(2, routine, "Processing record " + irec );
+					// Loop through the tuples
+					for ( int ituple = 0; ituple < tupleColumns.length; ituple++ ) {
+						// Add a new row to the table for each tuple.
+						// For now add at the end (TODO SAM 2016-05-09) evaluate whether to interleave (complicates iteration and deletes)
+						TableRecord rec = table.getRecord(irec);
+						TableRecord newRec = new TableRecord(rec);
+						// Copy from the old tuples to new
+						for ( int ituplePart = 0; ituplePart < tupleColumns[ituple].length; ituplePart++ ) {
+							// Next set the values in the new record
+							newRec.setFieldValue(newTupleColNum[ituplePart], rec.getFieldValue(tupleColNum[ituple][ituplePart]));
+							if ( newTupleDateTimeColNum >= 0 ) {
+								// Also set the date/time for the data
+								newRec.setFieldValue(newTupleDateTimeColNum, tupleDateTimes[ituple]);
+							}
+						}
+						// Clear out the original tuples to avoid confusion - have to do for all tuples
+						/* TODO SAM 2016-05-09 Leave in for now for bread crumb trail - add parameter to delete
+						for ( int itupleClear = 0; itupleClear < tupleColumns.length; itupleClear++ ) {
+							for ( int ituplePartClear = 0; ituplePartClear < tupleColumns[ituple].length; ituplePartClear++ ) {
+								newRec.setFieldValue(tupleColNum[itupleClear][ituplePartClear], null);
+							}
+						}
+						*/
+						// Now add the record to the table
+						table.addRecord(newRec);
+					}
+					// Keep track of rows to delete
+					if ( deleteOriginalRow ) {
+						rowsToDelete[irec] = irec;
+					}
+				}
+				// Now delete table rows, from largest to smallest
+				for ( int irec = (nrec - 1); irec >= 0; irec-- ) {
+					if ( rowsToDelete[irec] >= 0 ) {
+						table.deleteRecord(irec);
 					}
 				}
 			}
@@ -485,14 +669,17 @@ public String toString ( PropList props )
 		return getCommandName() + "()";
 	}
     String TableID = props.getValue( "TableID" );
-    String ColumnTuples = props.getValue( "ColumnTuples" );
-    String NewColumnTuple = props.getValue( "NewColumnTuple" );
+	String DeleteOriginalRow = props.getValue( "DeleteOriginalRow" );
+    String TupleColumns = props.getValue( "TupleColumns" );
+    String TupleDateTimes = props.getValue( "TupleDateTimes" );
+    String NewTupleColumns = props.getValue( "NewTupleColumns" );
+    String NewTupleDateTimeColumn = props.getValue( "NewTupleDateTimeColumn" );
+    String InsertBeforeColumn = props.getValue( "InsertBeforeColumn" );
     String MeasureStartColumn = props.getValue( "MeasureStartColumn" );
     String MeasureEndColumn = props.getValue( "MeasureEndColumn" );
 	String MeasureIncrement = props.getValue( "MeasureIncrement" );
 	String MinimumStartSegmentLength = props.getValue( "MinimumStartSegmentLength" );
 	String MinimumEndSegmentLength = props.getValue( "MinimumEndSegmentLength" );
-	String DeleteOriginalRow = props.getValue( "DeleteOriginalRow" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -500,17 +687,35 @@ public String toString ( PropList props )
         }
         b.append ( "TableID=\"" + TableID + "\"" );
     }
-    if ( (ColumnTuples != null) && (ColumnTuples.length() > 0) ) {
+    if ( (TupleColumns != null) && (TupleColumns.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "ColumnTuples=\"" + ColumnTuples + "\"" );
+        b.append ( "TupleColumns=\"" + TupleColumns + "\"" );
     }
-    if ( (NewColumnTuple != null) && (NewColumnTuple.length() > 0) ) {
+    if ( (TupleDateTimes != null) && (TupleDateTimes.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "NewColumnTuple=\"" + NewColumnTuple + "\"" );
+        b.append ( "TupleDateTimes=\"" + TupleDateTimes + "\"" );
+    }
+    if ( (NewTupleColumns != null) && (NewTupleColumns.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewTupleColumns=\"" + NewTupleColumns + "\"" );
+    }
+    if ( (NewTupleDateTimeColumn != null) && (NewTupleDateTimeColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewTupleDateTimeColumn=\"" + NewTupleDateTimeColumn + "\"" );
+    }
+    if ( (InsertBeforeColumn != null) && (InsertBeforeColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InsertBeforeColumn=\"" + InsertBeforeColumn + "\"" );
     }
     if ( (MeasureStartColumn != null) && (MeasureStartColumn.length() > 0) ) {
         if ( b.length() > 0 ) {

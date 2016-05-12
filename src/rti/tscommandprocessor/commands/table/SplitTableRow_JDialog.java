@@ -41,14 +41,17 @@ private boolean __first_time = true; // Indicate first time display
 private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
-private JTextField __ColumnTuples_JTextField = null;
-private JTextField __NewColumnTuple_JTextField = null;
+private SimpleJComboBox __DeleteOriginalRow_JComboBox = null;
+private JTextField __TupleColumns_JTextField = null;
+private JTextField __TupleDateTimes_JTextField = null;
+private JTextField __NewTupleColumns_JTextField = null;
+private JTextField __NewTupleDateTimeColumn_JTextField = null;
+private JTextField __InsertBeforeColumn_JTextField = null;
 private JTextField __MeasureStartColumn_JTextField = null;
 private JTextField __MeasureEndColumn_JTextField = null;
 private JTextField __MeasureIncrement_JTextField = null;
 private JTextField __MinimumStartSegmentLength_JTextField = null;
 private JTextField __MinimumEndSegmentLength_JTextField = null;
-private SimpleJComboBox __DeleteOriginalRow_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SplitTableRow_Command __command = null;
@@ -94,8 +97,11 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String TableID = __TableID_JComboBox.getSelected();
-	String ColumnTuples = __ColumnTuples_JTextField.getText().trim();
-	String NewColumnTuple = __NewColumnTuple_JTextField.getText().trim();
+	String TupleColumns = __TupleColumns_JTextField.getText().trim();
+	String TupleDateTimes = __TupleDateTimes_JTextField.getText().trim();
+	String NewTupleColumns = __NewTupleColumns_JTextField.getText().trim();
+	String NewTupleDateTimeColumn = __NewTupleDateTimeColumn_JTextField.getText().trim();
+	String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
 	String MeasureStartColumn = __MeasureStartColumn_JTextField.getText().trim();
     String MeasureEndColumn = __MeasureEndColumn_JTextField.getText().trim();
 	String MeasureIncrement = __MeasureIncrement_JTextField.getText().trim();
@@ -107,11 +113,20 @@ private void checkInput ()
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
     }
-    if ( ColumnTuples.length() > 0 ) {
-        props.set ( "ColumnTuples", ColumnTuples );
+    if ( TupleColumns.length() > 0 ) {
+        props.set ( "TupleColumns", TupleColumns );
     }
-    if ( NewColumnTuple.length() > 0 ) {
-        props.set ( "NewColumnTuple", NewColumnTuple );
+    if ( TupleDateTimes.length() > 0 ) {
+        props.set ( "TupleDateTimes", TupleDateTimes );
+    }
+    if ( NewTupleColumns.length() > 0 ) {
+        props.set ( "NewTupleColumns", NewTupleColumns );
+    }
+    if ( NewTupleDateTimeColumn.length() > 0 ) {
+        props.set ( "NewTupleDateTimeColumn", NewTupleDateTimeColumn );
+    }
+    if ( InsertBeforeColumn.length() > 0 ) {
+        props.set ( "InsertBeforeColumn", InsertBeforeColumn );
     }
     if ( MeasureStartColumn.length() > 0 ) {
         props.set ( "MeasureStartColumn", MeasureStartColumn );
@@ -148,8 +163,11 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
-	String ColumnTuples = __ColumnTuples_JTextField.getText().trim();
-	String NewColumnTuple = __NewColumnTuple_JTextField.getText().trim();
+	String TupleColumns = __TupleColumns_JTextField.getText().trim();
+	String TupleDateTimes = __TupleDateTimes_JTextField.getText().trim();
+	String NewTupleColumns = __NewTupleColumns_JTextField.getText().trim();
+	String NewTupleDateTimeColumn = __NewTupleDateTimeColumn_JTextField.getText().trim();
+	String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
 	String MeasureStartColumn = __MeasureStartColumn_JTextField.getText().trim();
 	String MeasureEndColumn = __MeasureEndColumn_JTextField.getText().trim();
 	String MeasureIncrement = __MeasureIncrement_JTextField.getText().trim();
@@ -157,8 +175,11 @@ private void commitEdits ()
 	String MinimumEndSegmentLength = __MinimumEndSegmentLength_JTextField.getText().trim();
 	String DeleteOriginalRow = __DeleteOriginalRow_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
-    __command.setCommandParameter ( "ColumnTuples", ColumnTuples );
-    __command.setCommandParameter ( "NewColumnTuple", NewColumnTuple );
+    __command.setCommandParameter ( "TupleColumns", TupleColumns );
+    __command.setCommandParameter ( "TupleDateTimes", TupleDateTimes );
+    __command.setCommandParameter ( "NewTupleColumns", NewTupleColumns );
+    __command.setCommandParameter ( "NewTupleDateTimeColumn", NewTupleDateTimeColumn );
+    __command.setCommandParameter ( "InsertBeforeColumn", InsertBeforeColumn );
     __command.setCommandParameter ( "MeasureStartColumn", MeasureStartColumn );
 	__command.setCommandParameter ( "MeasureEndColumn", MeasureEndColumn );
 	__command.setCommandParameter ( "MeasureIncrement", MeasureIncrement );
@@ -210,30 +231,41 @@ private void initialize ( JFrame parent, SplitTableRow_Command command, List<Str
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - original table."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - table to process."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delete original row:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DeleteOriginalRow_JComboBox = new SimpleJComboBox ( 12, false );
+    List<String> choices = new ArrayList<String>();
+    choices.add("");
+    choices.add("" + __command._False);
+    choices.add("" + __command._True);
+    __DeleteOriginalRow_JComboBox.setData ( choices );
+    __DeleteOriginalRow_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DeleteOriginalRow_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - delete original row (default=" + __command._False + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    // Panel for measure
+    // Panel for tuples
     int yTuple = -1;
     JPanel tuple_JPanel = new JPanel();
     tuple_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "Column Tuples", tuple_JPanel );
 
    	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
-        "<html><b>These features are under development</b></html>."),
-        0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
-        "Column tuples are groups of related columns that can be overlapped in more general column names."),
+        "Tuples are groups of related columns that can be reorganized into more general column names."),
         0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
         "For example, specify column tuples as Column1,ColumnA;Column2,ColumnB;Column3,ColumnC"),
         0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
-        "and specify ew column tuples as NewColumn1,NewColumnA."),
+        "and specify new column tuples as NewColumn1,NewColumnA."),
         0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
         "Column1, Column2, and Column3 values will then be aligned under new NewColumn1"),
@@ -241,28 +273,62 @@ private void initialize ( JFrame parent, SplitTableRow_Command command, List<Str
    	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
         "and ColumnA, ColumnB, and ColumnC values will be aligned under new NewColumnA."),
         0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(tuple_JPanel, new JLabel (
+        "If transposing multiple columns into a single column the TupleColumns will list original "
+        + "columns and the NewTupleColumns will list the single new column."),
+        0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(tuple_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yTuple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	
-    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Column tuples:"), 
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Tuple columns:"), 
         0, ++yTuple, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ColumnTuples_JTextField = new JTextField (35);
-    __ColumnTuples_JTextField.setToolTipText("Specify as ColumnName1,ColumnNameA;ColumnName2,ColumnNameB");
-    __ColumnTuples_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(tuple_JPanel, __ColumnTuples_JTextField,
+    __TupleColumns_JTextField = new JTextField (35);
+    __TupleColumns_JTextField.setToolTipText("Specify as Column1,ColumnA;Column2,ColumnB - can use ${Property}");
+    __TupleColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tuple_JPanel, __TupleColumns_JTextField,
         1, yTuple, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Required - names of columns in each tuple."),
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Required - names of columns in each input tuple."),
         3, yTuple, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("New column tuples:"), 
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Tuple date/times:"), 
         0, ++yTuple, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NewColumnTuple_JTextField = new JTextField (35);
-    __NewColumnTuple_JTextField.setToolTipText("Specify as ColumnName1,ColumnNameA");
-    __NewColumnTuple_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(tuple_JPanel, __NewColumnTuple_JTextField,
+    __TupleDateTimes_JTextField = new JTextField (35);
+    __TupleDateTimes_JTextField.setToolTipText("The date/times that correspond to each input tuple - can use ${Property}");
+    __TupleDateTimes_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tuple_JPanel, __TupleDateTimes_JTextField,
         1, yTuple, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Required - names of columns in new column tuple."),
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Optional - date/times for each input tuple."),
         3, yTuple, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("New tuple columns:"), 
+        0, ++yTuple, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewTupleColumns_JTextField = new JTextField (35);
+    __NewTupleColumns_JTextField.setToolTipText("Specify as NewColumn1,NewColumnA - can use ${Property}");
+    __NewTupleColumns_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tuple_JPanel, __NewTupleColumns_JTextField,
+        1, yTuple, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Required - names of columns in new general tuple."),
+        3, yTuple, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("New tuple date/time column:"), 
+        0, ++yTuple, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewTupleDateTimeColumn_JTextField = new JTextField (20);
+    __NewTupleDateTimeColumn_JTextField.setToolTipText("New date/time column that will be filled with TupleDateTimes values, can use ${Property}");
+    __NewTupleDateTimeColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tuple_JPanel, __NewTupleDateTimeColumn_JTextField,
+        1, yTuple, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ("Optional - name of general column to add for tuple date/time."),
+        3, yTuple, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel("Column to insert before:"),
+        0, ++yTuple, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InsertBeforeColumn_JTextField = new JTextField ( "", 20 );
+    __InsertBeforeColumn_JTextField.setToolTipText("Specify the table column to insert before or use ${Property} notation");
+    __InsertBeforeColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tuple_JPanel, __InsertBeforeColumn_JTextField,
+        1, yTuple, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tuple_JPanel, new JLabel ( "Optional - column to insert before (default=insert at end)." ),
+        3, yTuple, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for measure
     int yMeasure = -1;
@@ -326,20 +392,6 @@ private void initialize ( JFrame parent, SplitTableRow_Command command, List<Str
         1, yMeasure, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(measure_JPanel, new JLabel ("Optional - minimum segment length (default=include end segment)."),
         3, yMeasure, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(measure_JPanel, new JLabel ( "Delete original row:" ), 
-        0, ++yMeasure, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DeleteOriginalRow_JComboBox = new SimpleJComboBox ( 12, false );
-    List<String> choices = new ArrayList<String>();
-    choices.add("");
-    choices.add("" + __command._False);
-    choices.add("" + __command._True);
-    __DeleteOriginalRow_JComboBox.setData ( choices );
-    __DeleteOriginalRow_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(measure_JPanel, __DeleteOriginalRow_JComboBox,
-        1, yMeasure, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(measure_JPanel, new JLabel( "Optional - delete original row (default=" + __command._False + ")."), 
-        3, yMeasure, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -417,8 +469,11 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
-    String ColumnTuples = "";
-    String NewColumnTuple = "";
+    String TupleColumns = "";
+    String TupleDateTimes = "";
+    String NewTupleColumns = "";
+    String NewTupleDateTimeColumn = "";
+    String InsertBeforeColumn = "";
     String MeasureStartColumn = "";
     String MeasureEndColumn = "";
     String MeasureIncrement = "";
@@ -429,8 +484,11 @@ private void refresh ()
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
-        ColumnTuples = props.getValue ( "ColumnTuples" );
-        NewColumnTuple = props.getValue ( "NewColumnTuple" );
+        TupleColumns = props.getValue ( "TupleColumns" );
+        TupleDateTimes = props.getValue ( "TupleDateTimes" );
+        NewTupleColumns = props.getValue ( "NewTupleColumns" );
+        NewTupleDateTimeColumn = props.getValue ( "NewTupleDateTimeColumn" );
+        InsertBeforeColumn = props.getValue ( "InsertBeforeColumn" );
         MeasureEndColumn = props.getValue ( "MeasureEndColumn" );
         MeasureStartColumn = props.getValue ( "MeasureStartColumn" );
         MeasureIncrement = props.getValue ( "MeasureIncrement" );
@@ -452,14 +510,23 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( ColumnTuples != null ) {
-            __ColumnTuples_JTextField.setText ( ColumnTuples );
+        if ( (TupleColumns != null) && !TupleColumns.isEmpty() ) {
+            __TupleColumns_JTextField.setText ( TupleColumns );
             __main_JTabbedPane.setSelectedIndex(0);
         }
-        if ( NewColumnTuple != null ) {
-            __NewColumnTuple_JTextField.setText ( NewColumnTuple );
+        if ( TupleDateTimes != null ) {
+            __TupleDateTimes_JTextField.setText ( TupleDateTimes );
         }
-        if ( MeasureStartColumn != null ) {
+        if ( NewTupleColumns != null ) {
+            __NewTupleColumns_JTextField.setText ( NewTupleColumns );
+        }
+        if ( NewTupleDateTimeColumn != null ) {
+            __NewTupleDateTimeColumn_JTextField.setText ( NewTupleDateTimeColumn );
+        }
+        if ( InsertBeforeColumn != null ) {
+            __InsertBeforeColumn_JTextField.setText ( InsertBeforeColumn );
+        }
+        if ( (MeasureStartColumn != null) && !MeasureStartColumn.isEmpty() ) {
             __MeasureStartColumn_JTextField.setText ( MeasureStartColumn );
             __main_JTabbedPane.setSelectedIndex(1);
         }
@@ -493,8 +560,11 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
-	ColumnTuples = __ColumnTuples_JTextField.getText().trim();
-	NewColumnTuple = __NewColumnTuple_JTextField.getText().trim();
+	TupleColumns = __TupleColumns_JTextField.getText().trim();
+	TupleDateTimes = __TupleDateTimes_JTextField.getText().trim();
+	NewTupleColumns = __NewTupleColumns_JTextField.getText().trim();
+	NewTupleDateTimeColumn = __NewTupleDateTimeColumn_JTextField.getText().trim();
+	InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
 	MeasureStartColumn = __MeasureStartColumn_JTextField.getText().trim();
 	MeasureEndColumn = __MeasureEndColumn_JTextField.getText().trim();
 	MeasureIncrement = __MeasureIncrement_JTextField.getText().trim();
@@ -503,8 +573,11 @@ private void refresh ()
 	DeleteOriginalRow = __DeleteOriginalRow_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
-    props.add ( "ColumnTuples=" + ColumnTuples );
-    props.add ( "NewColumnTuple=" + NewColumnTuple );
+    props.add ( "TupleColumns=" + TupleColumns );
+    props.add ( "TupleDateTimes=" + TupleDateTimes );
+    props.add ( "NewTupleColumns=" + NewTupleColumns );
+    props.add ( "NewTupleDateTimeColumn=" + NewTupleDateTimeColumn );
+    props.add ( "InsertBeforeColumn=" + InsertBeforeColumn );
 	props.add ( "MeasureStartColumn=" + MeasureStartColumn );
     props.add ( "MeasureEndColumn=" + MeasureEndColumn );
 	props.add ( "MeasureIncrement=" + MeasureIncrement );

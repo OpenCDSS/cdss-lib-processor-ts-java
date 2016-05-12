@@ -31,7 +31,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.Table.DataTableStringManipulation;
+import RTi.Util.Table.DataTableStringManipulator;
 import RTi.Util.Table.DataTableStringOperatorType;
 
 public class ManipulateTableString_JDialog extends JDialog
@@ -343,7 +343,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "String operator:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Operator_JComboBox = new SimpleJComboBox ( 12, false );// Do not allow edit
-    __Operator_JComboBox.setData ( DataTableStringManipulation.getOperatorChoicesAsStrings() );
+    __Operator_JComboBox.setData ( DataTableStringManipulator.getOperatorChoicesAsStrings() );
     __Operator_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Operator_JComboBox,

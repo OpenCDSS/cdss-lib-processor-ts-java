@@ -26,7 +26,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringDictionary;
 import RTi.Util.Table.DataTable;
-import RTi.Util.Table.DataTableStringManipulation;
+import RTi.Util.Table.DataTableStringManipulator;
 import RTi.Util.Table.DataTableStringOperatorType;
 
 /**
@@ -105,7 +105,7 @@ throws InvalidCommandParameterException
         
         if ( supported ) {
             supported = false;
-            List<DataTableStringOperatorType> operators = DataTableStringManipulation.getOperatorChoices();
+            List<DataTableStringOperatorType> operators = DataTableStringManipulator.getOperatorChoices();
             for ( int i = 0; i < operators.size(); i++ ) {
                 if ( operatorType == operators.get(i) ) {
                     supported = true;
@@ -400,7 +400,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     List<String> problems = new ArrayList();
     try {
-        DataTableStringManipulation dtm = new DataTableStringManipulation ( table, columnIncludeFilters, columnExcludeFilters );
+        DataTableStringManipulator dtm = new DataTableStringManipulator ( table, columnIncludeFilters, columnExcludeFilters );
         dtm.manipulate ( InputColumn1, operator, InputColumn2, InputValue2, InputValue3, OutputColumn, problems );
     }
     catch ( Exception e ) {

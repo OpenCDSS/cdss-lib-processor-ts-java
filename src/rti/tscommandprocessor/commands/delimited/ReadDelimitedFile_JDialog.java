@@ -729,7 +729,6 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     super.setVisible( true );
 }
 
-
 /**
 Handle ItemEvent events.
 @param e ItemEvent to handle.

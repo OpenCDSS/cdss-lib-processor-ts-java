@@ -159,7 +159,7 @@ Creates a Property List with information needed to fill a Time Series with a con
 @param fillFlagDesc description for the fill flag
 @return PropList List that contains information on filling a constant value for the given Time Series and dates.
  */
-public static PropList createFillConstantPropList( TS inputTS, String fillFlag, String fillFlagDesc)
+private PropList createFillConstantPropList( TS inputTS, String fillFlag, String fillFlagDesc)
 {
 	if( inputTS == null ) {
 		return null;

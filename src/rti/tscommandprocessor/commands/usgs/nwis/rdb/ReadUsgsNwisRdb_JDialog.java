@@ -6,11 +6,15 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -18,44 +22,48 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.TimeInterval;
 
 /**
 Editor dialog for the ReadUsgsNwis() command.
 */
 public class ReadUsgsNwisRdb_JDialog extends JDialog
-implements ActionListener, DocumentListener, KeyListener, WindowListener
+implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
     
-private final String
-    __RemoveWorkingDirectory = "Remove Working Directory",
-    __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Add Working Directory";
     
-private SimpleJButton	__browse_JButton = null,// File browse button
-			__path_JButton = null,	// Convert between relative and absolute path.
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private ReadUsgsNwisRdb_Command __command = null;// Command to edit
 private String __working_dir = null; // Working directory.
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-private JTextField
-			__InputStart_JTextField,
-			__InputEnd_JTextField,
-			__InputFile_JTextField = null;
+private JTextField __DataType_JTextField = null;
+private SimpleJComboBox __Interval_JComboBox = null;
+private JTextField __Units_JTextField = null;
+private JTextField __InputStart_JTextField = null;
+private JTextField __InputEnd_JTextField = null;
+private JTextField __InputFile_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -168,6 +176,14 @@ public void removeUpdate ( DocumentEvent e )
 // ...End event handlers for DocumentListener
 
 /**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    // Add to this as more functionality is added
+}
+
+/**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
@@ -175,6 +191,9 @@ private void checkInput ()
 {
     // Put together a list of parameters to check...
     PropList props = new PropList ( "" );
+    String DataType = __DataType_JTextField.getText().trim();
+	String Interval = __Interval_JComboBox.getSelected();
+	String Units = __Units_JTextField.getText().trim();
     String InputFile = __InputFile_JTextField.getText().trim();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -185,6 +204,15 @@ private void checkInput ()
     
     if (InputFile.length() > 0) {
         props.set("InputFile", InputFile);
+    }
+    if (DataType.length() > 0) {
+        props.set("DataType", DataType);
+    }
+    if (Interval.length() > 0) {
+        props.set("Interval", Interval);
+    }
+    if (Units.length() > 0) {
+        props.set("Units", Units);
     }
     if (InputStart.length() > 0 && !InputStart.equals("*")) {
         props.set("InputStart", InputStart);
@@ -218,31 +246,21 @@ already been checked and no errors were detected.
 private void commitEdits()
 {   String Alias = __Alias_JTextField.getText().trim();
     String InputFile = __InputFile_JTextField.getText().trim();
+    String DataType = __DataType_JTextField.getText().trim();
+	String Interval = __Interval_JComboBox.getSelected();
+	String Units = __Units_JTextField.getText().trim();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
     //String NewUnits = __NewUnits_JTextField.getText().trim();
 
     __command.setCommandParameter("InputFile", InputFile);
+    __command.setCommandParameter("DataType", DataType);
+	__command.setCommandParameter("Interval", Interval);
+	__command.setCommandParameter("Units", Units);
     __command.setCommandParameter("InputStart", InputStart);
     __command.setCommandParameter("InputEnd", InputEnd);
     //__command.setCommandParameter("NewUnits", NewUnits);
     __command.setCommandParameter("Alias", Alias);
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Alias_JTextField = null;
-	__browse_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__InputFile_JTextField = null;
-	__ok_JButton = null;
-	__working_dir = null;
-	super.finalize ();
 }
 
 /**
@@ -264,13 +282,8 @@ private void initialize ( JFrame parent, ReadUsgsNwisRdb_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from a USGS NWIS RDB format file.  " +
-		"Currently only daily streamflow is supported." ), 
+		"Read a single time series from a USGS NWIS RDB format file (only first data value and accompanying flag will be read)." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full path or relative path (relative to working " +
-		"directory) for a USGS NWIS RDB file to read." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the period will limit data that are available " +
 		"for fill commands but can increase performance." ), 
@@ -284,10 +297,14 @@ private void initialize ( JFrame parent, ReadUsgsNwisRdb_Command command )
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+	
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "USGS NWIS RDB file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
+	__InputFile_JTextField.setToolTipText("Specify the path to the input file or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -304,10 +321,47 @@ private void initialize ( JFrame parent, ReadUsgsNwisRdb_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Data type:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__DataType_JTextField = new JTextField ( 10 );
+	__DataType_JTextField.addKeyListener ( this );
+	JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - data type (default=column heading from file)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Data interval:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Interval_JComboBox = new SimpleJComboBox ( false );
+    List<String> intervals = new ArrayList<String>();
+    intervals.add(""+TimeInterval.getName(TimeInterval.DAY, 0));
+    intervals.add("15"+TimeInterval.getName(TimeInterval.MINUTE, 0));
+    intervals.add(""+TimeInterval.getName(TimeInterval.IRREGULAR, 0));
+    __Interval_JComboBox.setData ( intervals );
+    // Select a default...
+    __Interval_JComboBox.select ( 0 );
+    __Interval_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval for time series."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Data units:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Units_JTextField = new JTextField ( 10 );
+	__Units_JTextField.addKeyListener ( this );
+	JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - units for data (default=blank)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -317,6 +371,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisRdb_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -357,6 +412,15 @@ private void initialize ( JFrame parent, ReadUsgsNwisRdb_Command command )
 }
 
 /**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed(KeyEvent event) {
@@ -393,7 +457,11 @@ public boolean ok() {
 Refresh the command from the other text field contents.
 */
 private void refresh() {
+	String message, routine = getClass().getSimpleName() + ".refresh";
     String InputFile = "";
+    String DataType = "";
+    String Interval = "";
+    String Units = "";
     String InputStart = "";
     String InputEnd = "";
     //String NewUnits = "";
@@ -407,6 +475,9 @@ private void refresh() {
         // Get the properties from the command
         props = __command.getCommandParameters();
         InputFile = props.getValue("InputFile");
+        DataType = props.getValue("DataType");
+        Interval = props.getValue("Interval");
+        Units = props.getValue("Units");
         InputStart = props.getValue("InputStart");
         InputEnd = props.getValue("InputEnd");
         //NewUnits = props.getValue("NewUnits");
@@ -418,6 +489,26 @@ private void refresh() {
         }
         if (InputFile != null) {
             __InputFile_JTextField.setText(InputFile);
+        }
+        if (DataType != null) {
+            __DataType_JTextField.setText(DataType);
+        }
+        if ( Interval == null || Interval.equals("") ) {
+            // Select a default...
+            __Interval_JComboBox.select ( 0 );
+        } 
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
+                __Interval_JComboBox.select ( Interval );
+            }
+            else {
+                message = "Existing command references an invalid\nInterval \"" + Interval + "\".  "
+                    +"Select a different choice or Cancel.";
+                Message.printWarning ( 1, routine, message );
+            }
+        }
+        if (Units != null) {
+            __Units_JTextField.setText(Units);
         }
         if (InputStart != null) {
             __InputStart_JTextField.setText(InputStart);
@@ -434,12 +525,18 @@ private void refresh() {
     // Regardless, reset the command from the fields.  This is only  visible
     // information that has not been committed in the command.
     InputFile = __InputFile_JTextField.getText().trim();
+    DataType = __DataType_JTextField.getText().trim();
+    Interval = __Interval_JComboBox.getSelected();
+    Units = __Units_JTextField.getText().trim();
     InputStart = __InputStart_JTextField.getText().trim();
     InputEnd = __InputEnd_JTextField.getText().trim();
     //NewUnits = __NewUnits_JTextField.getText().trim();
     Alias = __Alias_JTextField.getText().trim();
     props = new PropList(__command.getCommandName());
     props.add("InputFile=" + InputFile);
+    props.add("DataType=" + DataType );
+    props.add("Interval=" + Interval );
+    props.add("Units=" + Units );
     props.add("InputStart=" + InputStart);
     props.add("InputEnd=" + InputEnd);
     //props.add("NewUnits=" + NewUnits);

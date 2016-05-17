@@ -575,6 +575,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	if ( tslist.size() > 0 ) {
         		TS ts = tslist.get(0);
         		// Set properties that are relevant to an ensemble - mostly at station level since time series hold time series properties
+        		//
+        		// Allow the ensemble ID and name to be reset using time series properties
+        		// - this is OK because it has not yet been added to the processor for management
+        		/* TODO SAM 2016-05-16 Don't seem to need this because ${ts:locationId} is already recognized for EnsembleID
+        		if ( ensemble.getEnsembleID().indexOf("${") >= 0 ) {
+        			String ensembleID = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, ensemble.getEnsembleID(), status, commandPhase);
+        			
+        			ensemble.setEnsembleID(ensembleID);
+        		}
+        		if ( ensemble.getEnsembleName().indexOf("${") >= 0 ) {
+        			String ensembleName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, ensemble.getEnsembleName(), status, commandPhase);
+        			ensemble.setEnsembleName(ensembleName);
+        		}*/
         		Object o = ts.getProperty("ensembleId");
         		if ( o != null) {
         			ensemble.setProperty("ensembleId",ts.getProperty("ensembleId")); 

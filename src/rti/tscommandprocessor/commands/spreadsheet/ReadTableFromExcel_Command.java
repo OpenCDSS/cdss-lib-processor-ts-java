@@ -16,14 +16,12 @@ import org.apache.poi.ss.util.AreaReference;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -43,6 +41,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.String.StringFilterList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
@@ -298,8 +297,8 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 @param excelNamedRange a named range
 @param excelTableName a table name
 @param excelColumnNames indicate how to determine column names from the Excel worksheet
-@param columnIncludeFiltersMap a map indicating patterns for column values, to include rows
-@param columnExcludeFiltersMap a map indicating patterns for column values, to exclude rows
+@param columnIncludeFilterList a map indicating patterns for column values, to include rows
+@param columnExcludeFilterList a map indicating patterns for column values, to exclude rows
 @param comment character that if at start of first column indicates row is a comment
 @param excelIntegerColumns names of columns that should be treated as integers, or null if none
 @param numberPrecision digits after decimal for floating point numbers (can't yet determine from Excel)
@@ -309,12 +308,12 @@ by one of the parameters excelAddress, excelNamedRange, excelTableName.
 */
 private DataTable readTableFromExcelFile ( String workbookFile, String sheetName, boolean keepOpen,
     String excelAddress, String excelNamedRange, String excelTableName, ExcelColumnNameRowType excelColumnNames,
-    Hashtable columnIncludeFiltersMap, Hashtable columnExcludeFiltersMap,
+    StringFilterList columnIncludeFilterList, StringFilterList columnExcludeFilterList,
     String comment,
     String [] excelDoubleColumns, String [] excelIntegerColumns, String [] excelDateTimeColumns, String [] excelTextColumns,
     int numberPrecision, boolean readAllAsText, List<String> problems )
 throws FileNotFoundException, IOException
-{   String routine = "ReadTableFromExcel_Command.readTableFromExcelFile", message;
+{   String routine = getClass().getSimpleName() + ".readTableFromExcelFile", message;
     DataTable table = new DataTable();
     if ( (comment != null) && (comment.trim().length() == 0) ) {
         // Set to null to simplify logic below
@@ -396,7 +395,7 @@ throws FileNotFoundException, IOException
         CellValue formulaCellValue = null; // Cell value after formula evaluation
         DateTime dt;
         boolean cellIsFormula; // Used to know when the evaluate cell formula to get output object
-        boolean needToSkipRow = false; // Whether a row should be skipped
+        boolean needToSkipRow = false; // Whether a row should be skipped when reading (depends on columnIncludeFilterList and columnExcludeFilterList)
         int nRowsToRead = rowEnd - rowStart + 1;
         for ( int iRow = rowStart; iRow <= rowEnd; iRow++ ) {
             row = sheet.getRow(iRow);
@@ -428,28 +427,33 @@ throws FileNotFoundException, IOException
             for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
                 ++iColOut;
                 cell = row.getCell(iCol);
+                if ( Message.isDebugOn ) {
+                    Message.printDebug(1, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\" - types determined below" );
+                }
                 try {
                     if ( cell == null ) {
-                        if ( Message.isDebugOn ) {
-                            Message.printDebug(1, routine, "Cell [" + iRow + "][" + iCol + "]= \"" + cell + "\"" );
-                        }
+                    	// Handle null cells specifically - might cause row to be ignored
                         String cellValue = null;
                         if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
                             cellValue = "";
                         }
                         table.setFieldValue(iRowOut, iColOut, cellValue, true);
-                        if ( (tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING) &&
-                            !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], cellValue, columnIncludeFiltersMap) ) {
+                        if ( !needToSkipRow && (tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING) &&
+                            !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], cellValue, columnIncludeFilterList, true, true) ) {
                             // Row was added but will remove at the end after all columns are processed
-                            needToSkipRow = true;
+                        	// Only change from false to true to handle previous columns setting to true
+                        	needToSkipRow = true;
                         }
-                        if ( (tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING) &&
-                            tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], cellValue, columnExcludeFiltersMap) ) {
+                        if ( !needToSkipRow && (tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING) &&
+                            tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], cellValue, columnExcludeFilterList, true, true) ) {
                             // Row was added but will remove at the end after all columns are processed
-                            needToSkipRow = true;
+                        	// Only change from false to true since include takes precedence
+                        	// In other words, if the include has set to true then the row is already excluded so don't undo that setting.
+                    		needToSkipRow = true;
                         }
                         continue;
                     }
+                    // If here the cell is not null.
                     // First get the data using the type indicated for the cell.  Then translate to
                     // the appropriate type in the data table.  Handling at cell level is needed because
                     // the Excel worksheet might have cell values that are mixed type in the column.
@@ -490,13 +494,16 @@ throws FileNotFoundException, IOException
                             cellValueString = cell.getStringCellValue();
                         }
                         cellValueObject = cellValueString; // For try/catch
-                        if ( !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], cellValueString,columnIncludeFiltersMap) ) {
-                             // Add the row but will remove at the end after all columns are processed
-                             needToSkipRow = true;
-                        }
-                        if ( tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], cellValueString,columnExcludeFiltersMap) ) {
+                        if ( !needToSkipRow && !tk.cellMatchesIncludeFilter(columnNames[iCol - colStart], cellValueString, columnIncludeFilterList, true, true) ) {
                             // Add the row but will remove at the end after all columns are processed
-                            needToSkipRow = true;
+                        	// Only change from false to true to handle previous columns setting to true
+                        	needToSkipRow = true;
+                        }
+                        if ( !needToSkipRow && tk.cellMatchesExcludeFilter(columnNames[iCol - colStart], cellValueString, columnExcludeFilterList, true, true) ) {
+                            // Add the row but will remove at the end after all columns are processed
+                        	// Only change from false to true since include takes precedence
+                        	// In other words, if the include has set to true then the row is already excluded so don't undo that setting.
+                        	needToSkipRow = true;
                         }
                         if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
                             // Just set
@@ -647,13 +654,16 @@ throws FileNotFoundException, IOException
                     }
                     else if ( cellType == Cell.CELL_TYPE_BLANK ) {
                         // Null works for all object types.  If truly a blank string in text cell, use "" as text
-                        if ( !tk.cellMatchesIncludeFilter(columnNames[iColOut],"",columnIncludeFiltersMap) ) {
+                        if ( !needToSkipRow && !tk.cellMatchesIncludeFilter(columnNames[iColOut],"",columnIncludeFilterList, true, true) ) {
                             // Add the row but will remove at the end after all columns are processed
-                            needToSkipRow = true;
+                        	// Only change from false to true to handle previous columns setting to true
+                        	needToSkipRow = true;
                         }
-                        if ( tk.cellMatchesExcludeFilter(columnNames[iColOut],"",columnExcludeFiltersMap) ) {
+                        if ( !needToSkipRow && tk.cellMatchesExcludeFilter(columnNames[iColOut],"",columnExcludeFilterList, true, true) ) {
                             // Add the row but will remove at the end after all columns are processed
-                            needToSkipRow = true;
+                        	// Only change from false to true since include takes precedence
+                        	// In other words, if the include has set to true then the row is already excluded so don't undo that setting.
+                        	needToSkipRow = true;
                         }
                         cellValueObject = "blank"; // For try/catch
                         if ( tableColumnTypes[iColOut] == TableField.DATA_TYPE_STRING ) {
@@ -681,6 +691,12 @@ throws FileNotFoundException, IOException
                         cellValueObject + " (as string) skipping cell (" + e + ")." );
                     Message.printWarning(3,routine,e);
                 }
+                if ( Message.isDebugOn ) {
+                	Message.printDebug(1,routine,"At end of processing column \"" + columnNames[iColOut] + "\", needToSkipRow="+needToSkipRow);
+                }
+            } // end of column loop
+            if ( Message.isDebugOn ) {
+            	Message.printDebug(1,routine,"At end of processing row, needToSkipRow="+needToSkipRow);
             }
             if ( needToSkipRow ) {
                 // Because columns are added individually, need to remove rows that were added but should not have because
@@ -793,39 +809,40 @@ CommandWarningException, CommandException
 	    excelColumnNames = ExcelColumnNameRowType.valueOfIgnoreCase(ExcelColumnNames);  
 	}
     String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
-    Hashtable<String,String> columnIncludeFiltersMap = null;
+    StringFilterList columnIncludeFilterList = null;
     if ( (ColumnIncludeFilters != null) && (ColumnIncludeFilters.length() > 0) && (ColumnIncludeFilters.indexOf(":") > 0) ) {
-        columnIncludeFiltersMap = new Hashtable<String,String>();
+        columnIncludeFilterList = new StringFilterList();
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(ColumnIncludeFilters, ",", 0 );
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in list
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
-            String tableColumn = parts[0].trim().toUpperCase();
+            String tableColumn = parts[0].trim();
             String pattern = "";
             if ( parts.length > 1 ) {
                 // Use upper-case to facilitate case-independent comparisons, and replace * globbing with internal Java notation
-                pattern = parts[1].trim().toUpperCase().replace("*", ".*");
+                pattern = parts[1].trim().replace("*", ".*");
             }
-            columnIncludeFiltersMap.put(tableColumn, pattern );
+            columnIncludeFilterList.add(tableColumn, pattern );
         }
     }
     String ColumnExcludeFilters = parameters.getValue ( "ColumnExcludeFilters" );
-    Hashtable<String,String> columnExcludeFiltersMap = null;
+    StringFilterList columnExcludeFilterList = null;
     if ( (ColumnExcludeFilters != null) && (ColumnExcludeFilters.length() > 0) && (ColumnExcludeFilters.indexOf(":") > 0) ) {
-        columnExcludeFiltersMap = new Hashtable<String,String>();
+        columnExcludeFilterList = new StringFilterList();
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(ColumnExcludeFilters, ",", 0 );
         // Now break pairs and put in hashtable
+        // Case is checked when processing the filter
         for ( String pair : pairs ) {
             String [] parts = pair.split(":");
-            String tableColumn = parts[0].trim().toUpperCase();
+            String tableColumn = parts[0].trim();
             String pattern = "";
             if ( parts.length > 1 ) {
-                // Use upper-case to facilitate case-independent comparisons, and replace * globbing with internal Java notation
-                pattern = parts[1].trim().toUpperCase().replace("*", ".*");
+                // Replace * globbing with internal Java notation
+                pattern = parts[1].trim().replace("*", ".*");
             }
-            columnExcludeFiltersMap.put(tableColumn, pattern );
+            columnExcludeFilterList.add(tableColumn, pattern );
         }
     }
 	String Comment = parameters.getValue ( "Comment" );
@@ -925,7 +942,7 @@ CommandWarningException, CommandException
 	    if ( commandPhase == CommandPhaseType.RUN ) {
             table = readTableFromExcelFile ( InputFile_full, Worksheet, keepOpen,
                 ExcelAddress, ExcelNamedRange, ExcelTableName, excelColumnNames,
-                columnIncludeFiltersMap, columnExcludeFiltersMap, comment,
+                columnIncludeFilterList, columnExcludeFilterList, comment,
                 excelDoubleColumns, excelIntegerColumns, excelDateTimeColumns, excelTextColumns,
                 numberPrecision, readAllAsText, problems );
             for ( String problem: problems ) {

@@ -34,7 +34,7 @@ import org.apache.poi.ss.util.AreaReference;
 import org.apache.poi.ss.util.CellReference;
 
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringDictionary;
+import RTi.Util.String.StringFilterList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableColumnType;
@@ -286,39 +286,42 @@ public String [] createTableColumns ( DataTable table, Workbook wb, Sheet sheet,
 */
 
 /**
+Determine if the cell content matches the exclude filter,
+which will have a column name and filter pattern.
+If multiple filters for the column are specified, the conditions are treated as OR (matching any will indicate a match).
+The column name will be compared case-independent but the values will be checked case-dependent.
 @param columnName name of Excel column being checked
 @param cellValue cell value as string, to check
-@param filtersMap map of column 
+@param filterList map of column name and filter pattern
 @return true if the cell matches the exclude filter and should be excluded
 */
-public boolean cellMatchesExcludeFilter ( String columnName, String cellValue, Hashtable<String,String> filtersMap )
+public boolean cellMatchesExcludeFilter ( String columnName, String cellValue,
+	StringFilterList filterList, boolean columnNameIgnoreCase, boolean cellValueIgnoreCase )
 {
-    if ( (filtersMap == null) || (filtersMap.size() == 0) ) {
+    if ( (filterList == null) || (filterList.size() == 0) ) {
     	// Include (don't exclude if no filter)
    		return false;
     }
-    Enumeration keys = filtersMap.keys();
     String filterColumn = null;
-    // Compare as upper case to treat as case insensitive
-    String cellValueUpper = null;
-    if ( cellValue != null ) {
-        cellValueUpper = cellValue.toUpperCase();
-    }
-    String columnNameUpper = columnName.toUpperCase();
     String filterPattern;
-    while ( keys.hasMoreElements() ) {
-        filterColumn = (String)keys.nextElement();
-        filterPattern = filtersMap.get(filterColumn);
-        //Message.printStatus(2,"","Checking column \"" + columnNameUpper + "\" against key \"" + key +
-        //    "\" for cell value \"" + cellValueUpper + "\" and pattern \"" + pattern + "\"" );
-        if ( columnNameUpper.equals(filterColumn) ) {
+    int nFilters = filterList.size();
+    for ( int i = 0; i < nFilters; i++ ) {
+        filterColumn = filterList.getKey(i);
+        filterPattern = filterList.getPattern(i);
+        //Message.printStatus(2,"","Checking column \"" + columnName + "\" against filter column \"" + filterColumn +
+        //    "\" ignore case =" + columnNameIgnoreCase + " for cell value \"" + cellValue + "\" and pattern \""
+        //    + filterPattern + "\" ignore case = " + cellValueIgnoreCase );
+        if ( (columnNameIgnoreCase && columnName.equalsIgnoreCase(filterColumn)) ||
+        	(!columnNameIgnoreCase && columnName.equals(filterColumn)) ) {
         	// Only check the filter if the column matches
-            if ( ((cellValue == null) || (cellValue.length() == 0)) &&
-                ((filterPattern == null) || (filterPattern.length() == 0)) ) {
+            if ( ((cellValue == null) || cellValue.isEmpty()) &&
+                ((filterPattern == null) || filterPattern.isEmpty()) ) {
                 // Matched blank cell and empty pattern
                 return true;
             }
-            else if ( (cellValueUpper != null) && cellValueUpper.matches(filterPattern) ) {
+            else if ( (cellValue != null) &&
+            	( (cellValueIgnoreCase && cellValue.toUpperCase().matches(filterPattern.toUpperCase())) ||
+            	(!cellValueIgnoreCase && cellValue.matches(filterPattern))) ) {
             	// Matched non-blank cell
                 return true;
             }
@@ -334,41 +337,60 @@ Evaluate whether a cell values matches an include filter
 @param filtersMap map of column 
 @return true if the cell matches a filter and the cell should be included
 */
-public boolean cellMatchesIncludeFilter ( String columnName, String cellValue, Hashtable<String,String> filtersMap )
-{
-    if ( (filtersMap == null) || (filtersMap.size() == 0) ) {
+public boolean cellMatchesIncludeFilter ( String columnName, String cellValue, StringFilterList filterList,
+	boolean columnNameIgnoreCase, boolean cellValueIgnoreCase )
+{	String routine = getClass().getSimpleName() + ".cellMatchesIncludeFilter";
+    if ( (filterList == null) || (filterList.size() == 0) ) {
     	// Include if no filter.
    		return true;
     }
-    Enumeration keys = filtersMap.keys();
     String filterColumn = null;
-    // Compare as upper case to treat as case insensitive
-    String cellValueUpper = null;
-    if ( cellValue != null ) {
-        cellValueUpper = cellValue.toUpperCase();
-    }
-    String columnNameUpper = columnName.toUpperCase();
     String filterPattern;
-    while ( keys.hasMoreElements() ) {
-        filterColumn = (String)keys.nextElement();
-        filterPattern = filtersMap.get(filterColumn);
-        //Message.printStatus(2,"","Checking column \"" + columnNameUpper + "\" against key \"" + key +
-        //    "\" for cell value \"" + cellValueUpper + "\" and pattern \"" + pattern + "\"" );
-        if ( columnNameUpper.equals(filterColumn) ) {
+    int nFilters = filterList.size();
+    int nColumnNamesMatched = 0;
+    for ( int i = 0; i < nFilters; i++ ) {
+        filterColumn = filterList.getKey(i);
+        filterPattern = filterList.getPattern(i);
+        if ( (columnNameIgnoreCase && columnName.equalsIgnoreCase(filterColumn)) ||
+        	(!columnNameIgnoreCase && columnName.equals(filterColumn)) ) {
+        	++nColumnNamesMatched;
+        	if ( Message.isDebugOn ) {
+	            Message.printStatus(2,routine,"Checking column \"" + columnName + "\" against filter column \"" + filterColumn +
+	                "\" ignore case =" + columnNameIgnoreCase + " for cell value \"" + cellValue + "\" and pattern \""
+	                + filterPattern + "\" ignore case = " + cellValueIgnoreCase );
+        	}
         	// Only check the filter if the column matches
-            if ( ((cellValue == null) || (cellValue.length() == 0)) &&
-                ((filterPattern == null) || (filterPattern.length() == 0)) ) {
+            if ( ((cellValue == null) || cellValue.isEmpty()) &&
+                ((filterPattern == null) || filterPattern.isEmpty()) ) {
                 // Matched blank cell and empty pattern
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2,routine,"Returning true because all null/blank");
+            	}
                 return true;
             }
-            else if ( (cellValueUpper != null) && !cellValueUpper.matches(filterPattern) ) {
-            	// Did not match non-blank cell
-                return false;
+            else if ( (cellValue != null) &&
+            	( (cellValueIgnoreCase && cellValue.toUpperCase().matches(filterPattern.toUpperCase())) ||
+            	(!cellValueIgnoreCase && cellValue.matches(filterPattern))) ) {
+            	// Matched non-blank cell
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2,routine,"Returning true because filter matched");
+            	}
+                return true;
             }
         }
     }
-    // Default is to include until cell value does not match above
-    return true;
+    // Default is to not include until cell value matches above
+    if ( nColumnNamesMatched == 0 ) {
+    	// This prevents the case where the column being studied is not matched
+    	// in the above if() statement, so treat as if no filters.
+    	return true;
+    }
+    else {
+    	if ( Message.isDebugOn ) {
+    		Message.printStatus(2,routine,"Returning false because no filter matched");
+    	}
+    	return false;
+    }
 }
 
 /**
@@ -499,7 +521,24 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
                     columnNames[columnIndex] = "Column" + (columnIndex + 1);
                 }
                 else {
-                    columnNames[columnIndex] = "" + cell;
+                	// Column name is the cell value.
+                	// Have to take care because if the heading is actually a number (for example year),
+                	// then the cell value may have decimal points
+                	if ( (cellType == Cell.CELL_TYPE_NUMERIC) && !DateUtil.isCellDateFormatted(cell) ) {
+                		double cellValueDouble = cell.getNumericCellValue();
+                		// Assume column headings are integers
+                        // Double to integer - use an offset to help make sure integer value is correct
+                        if ( cellValueDouble >= 0.0 ) {
+                        	columnNames[columnIndex] = "" + new Integer((int)(cellValueDouble + .0001));
+                        }
+                        else {
+                        	columnNames[columnIndex] = "" + new Integer((int)(cellValueDouble - .0001));
+                        }
+                	}
+                	else {
+                		// Assume it is OK as a string, unless have examples that need more attention
+                		columnNames[columnIndex] = "" + cell;
+                	}
                 }
             }
         }

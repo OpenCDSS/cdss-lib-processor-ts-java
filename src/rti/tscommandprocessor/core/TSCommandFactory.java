@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-import RTi.Util.GUI.SimpleJMenuItem;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;
 import RTi.Util.IO.UnknownCommand;
@@ -148,6 +147,7 @@ import rti.tscommandprocessor.commands.table.CopyPropertiesToTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
 import rti.tscommandprocessor.commands.table.CreateTimeSeriesEventTable_Command;
+import rti.tscommandprocessor.commands.table.DeleteTableColumns_Command;
 import rti.tscommandprocessor.commands.table.FormatTableDateTime_Command;
 import rti.tscommandprocessor.commands.table.FormatTableString_Command;
 import rti.tscommandprocessor.commands.table.FreeTable_Command;
@@ -547,8 +547,10 @@ throws UnknownCommandException
     // "D" commands...
 
     else if ( commandName.equalsIgnoreCase("DeleteDataStoreTableRows") ) {
-        // Automatically change the name
         return new DeleteDataStoreTableRows_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("DeleteTableColumns") ) {
+        return new DeleteTableColumns_Command ();
     }
     else if ( commandName.equalsIgnoreCase("Delta") ) {
         return new Delta_Command ();

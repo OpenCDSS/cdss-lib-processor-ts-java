@@ -1153,6 +1153,8 @@ throws FileNotFoundException, IOException
                     }
                     else if ( isDateTime ) {
                     	try {
+                    		// The cell needs to be formatted as text to ensure proper formatting
+                    		// If dates are shown as floating point numbers, check the string value printed to the log file and troubleshoot
                     		DateTime dt = DateTime.parse(cellValueString);
                     		map.put(propertyName, dt);
                     	}

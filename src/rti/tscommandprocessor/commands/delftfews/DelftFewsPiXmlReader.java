@@ -336,7 +336,7 @@ public class DelftFewsPiXmlReader {
 	 * @param inputFile path to input file to read
 	 * @param inputStart start of period to read or null to read all
 	 * @param inputEnd end of period to read or null to read all
-	 * @param timeZoneOffset requested hour offset from GMT (0) for output
+	 * @param timeZoneOffset requested hour offset from GMT (0) for output (final offset)
 	 * @param timeZone string time zone to use for output date/time
 	 * @param dataSource data source to override default ("FEWS")
 	 * @param dataType data type to override internal type
@@ -435,16 +435,18 @@ public class DelftFewsPiXmlReader {
 		}
     	int timeZoneFile = (int)(timeZoneDouble + .01);
     	int timeZoneShift = 0; // Hour to add to times in the file
-    	if ( timeZoneOffset != null ) {
-    		// Time zone is requested as an hour offset from GMT
-    		// Compute an actual shift
-    		timeZoneShift = timeZoneOffset - timeZoneFile;
+    	if ( timeZoneOffset == null ) {
+    		// Default to file time zone
+    		timeZoneOffset = new Integer(timeZoneFile);
     	}
+		// Time zone is requested as an hour offset from GMT
+		// Compute an actual shift
+		timeZoneShift = timeZoneOffset - timeZoneFile;
     	// Also reset the time zone used for output to be relative to GMT as default
     	if ( (timeZone == null) || timeZone.isEmpty() ) {
     		// Set the time zone to reflect the actual offset
     		if ( timeZoneOffset == 0 ) {
-    			// No shift from GMT
+    			// Output time zone is GMT
     			timeZone = "GMT";
     		}
     		else {

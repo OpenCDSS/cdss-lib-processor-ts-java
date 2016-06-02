@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -161,18 +162,18 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "Operator" );
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "TableTSIDColumn" );
-    valid_Vector.add ( "TableTSIDFormat" );
-    valid_Vector.add ( "TableInputColumn" );
-    valid_Vector.add ( "IfTableInputIsBlank" );
-    valid_Vector.add ( "IfTSListIsEmpty" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(10);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "Operator" );
+    validList.add ( "TableID" );
+    validList.add ( "TableTSIDColumn" );
+    validList.add ( "TableTSIDFormat" );
+    validList.add ( "TableInputColumn" );
+    validList.add ( "IfTableInputIsBlank" );
+    validList.add ( "IfTSListIsEmpty" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
@@ -232,9 +233,8 @@ Method to execute the command.
 @exception Exception if there is an error processing the command.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{   String message, routine = getCommandName() + "_Command.runCommand";
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   String message, routine = getClass().getSimpleName() + ".runCommand";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
@@ -243,7 +243,20 @@ CommandWarningException, CommandException
     
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     PropList parameters = getCommandParameters();
     
     // Get the input parameters...
@@ -253,13 +266,31 @@ CommandWarningException, CommandException
         TSList = TSListType.ALL_TS.toString();
     }
     String TSID = parameters.getValue ( "TSID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String Operator = parameters.getValue ( "Operator" );
     DataTableMathOperatorType operator = DataTableMathOperatorType.valueOfIgnoreCase(Operator);
     String TableID = parameters.getValue ( "TableID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TableID != null) && (TableID.indexOf("${") >= 0) ) {
+		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+	}
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TableTSIDColumn != null) && (TableTSIDColumn.indexOf("${") >= 0) ) {
+		TableTSIDColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDColumn);
+	}
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TableTSIDFormat != null) && (TableTSIDFormat.indexOf("${") >= 0) ) {
+		TableTSIDFormat = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDFormat);
+	}
     String TableInputColumn = parameters.getValue ( "TableInputColumn" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TableInputColumn != null) && (TableInputColumn.indexOf("${") >= 0) ) {
+		TableInputColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableInputColumn);
+	}
     String IfTableInputIsBlank = parameters.getValue ( "IfTableInputIsBlank" );
     if ( (IfTableInputIsBlank == null) || IfTableInputIsBlank.equals("") ) {
         IfTableInputIsBlank = _Warn;

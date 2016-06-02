@@ -158,12 +158,12 @@ throws InvalidCommandParameterException
 	
     if ( (PropertyName != null) && !PropertyName.equals("") ) {
         // Check for allowed characters...
-        if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
-            message = "The property name contains invalid characters ${}() space, tab.";
+        if ( StringUtil.containsAny(PropertyName,"() \t", true)) {
+            message = "The property name contains invalid characters () space, tab.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE, message,
-                    "Specify a property name that does not include the characters $(){}, space, or tab." ) );
+                    "Specify a property name that does not include the characters (), space, or tab." ) );
         }
         if ( (PropertyCriterion == null) || PropertyCriterion.equals("") ) {
             message = "The property condition must be specified.";
@@ -292,8 +292,7 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
@@ -347,6 +346,9 @@ CommandWarningException, CommandException
 		SelectCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, SelectCountProperty);
 	}
     String PropertyName = parameters.getValue ( "PropertyName" );
+	if ( (PropertyName != null) && (PropertyName.indexOf("${") >= 0) ) {
+		PropertyName = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyName);
+	}
     String PropertyCriterion = parameters.getValue ( "PropertyCriterion" );
     // TODO SAM 2010-09-21 Need to enable numeric property checks
     InputFilterStringCriterionType propertyStringConditionType = null;

@@ -342,6 +342,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property name:" ), 
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField ( 20 );
+    __PropertyName_JTextField.setToolTipText("Specify the property name to compare, can use ${Property} notation");
     __PropertyName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __PropertyName_JTextField,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

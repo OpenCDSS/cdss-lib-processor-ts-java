@@ -20,8 +20,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -41,13 +43,13 @@ public class Multiply_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton   __cancel_JButton = null,// Cancel Button
-            __ok_JButton = null;    // Ok Button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private Multiply_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private SimpleJComboBox __MultiplierTSID_JComboBox = null;
-private JTextField __NewUnits_JTextField = null;// Field for new units
+private JTextField __NewUnits_JTextField = null; // Field for new units
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -127,19 +129,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{   __TSID_JComboBox = null;
-    __cancel_JButton = null;
-    __command_JTextArea = null;
-    __command = null;
-    __ok_JButton = null;
-    super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -154,18 +143,21 @@ private void initialize ( JFrame parent, Command command )
     JPanel main_JPanel = new JPanel();
     main_JPanel.setLayout( new GridBagLayout() );
     getContentPane().add ( "North", main_JPanel );
-    int y = 0;
+    int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Multiply one time series by another (the first time series is modified)"),
-        0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Missing data in either time series sets the result to missing."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to modify:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __TSID_JComboBox.setData ( tsids );
@@ -175,7 +167,8 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to multiply by:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MultiplierTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    __MultiplierTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+    __MultiplierTSID_JComboBox.setToolTipText("Select a multiplier time series TSID/alias from the list or specify with ${Property} notation");
     __MultiplierTSID_JComboBox.setData ( tsids );
     __MultiplierTSID_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __MultiplierTSID_JComboBox,
@@ -184,6 +177,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New units:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewUnits_JTextField = new JTextField ( 10 );
+    __NewUnits_JTextField.setToolTipText("Specify new units or specify with ${Property} notation");
     __NewUnits_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

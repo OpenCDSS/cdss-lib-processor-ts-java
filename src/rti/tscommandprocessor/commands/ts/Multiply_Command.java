@@ -4,12 +4,11 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -29,9 +28,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the Multiply() command.
-</p>
 */
 public class Multiply_Command extends AbstractCommand implements Command
 {
@@ -80,11 +77,11 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "MultiplierTSID" );
-    valid_Vector.add ( "NewUnits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "TSID" );
+    validList.add ( "MultiplierTSID" );
+    validList.add ( "NewUnits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -167,17 +164,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "Multiply_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -188,11 +181,33 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
 	String MultiplierTSID = parameters.getValue ( "MultiplierTSID" );
+	if ( (MultiplierTSID != null) && (MultiplierTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		MultiplierTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, MultiplierTSID);
+	}
 	String NewUnits = parameters.getValue ( "NewUnits" );
+	if ( (NewUnits != null) && (NewUnits.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		NewUnits = TSCommandProcessorUtil.expandParameterValue(processor, this, NewUnits);
+	}
 
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...

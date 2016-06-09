@@ -4,12 +4,11 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -29,9 +28,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the Divide() command.
-</p>
 */
 public class Divide_Command extends AbstractCommand implements Command
 {
@@ -80,11 +77,11 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "DivisorTSID" );
-    valid_Vector.add ( "NewUnits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "TSID" );
+    validList.add ( "DivisorTSID" );
+    validList.add ( "NewUnits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -184,11 +181,33 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
 	String DivisorTSID = parameters.getValue ( "DivisorTSID" );
+	if ( (DivisorTSID != null) && (DivisorTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		DivisorTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, DivisorTSID);
+	}
 	String NewUnits = parameters.getValue ( "NewUnits" );
+	if ( (NewUnits != null) && (NewUnits.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		NewUnits = TSCommandProcessorUtil.expandParameterValue(processor, this, NewUnits);
+	}
 
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...

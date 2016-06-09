@@ -311,19 +311,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
 	String ScaleValue = parameters.getValue ( "ScaleValue" );
-	if ( (ScaleValue != null) && (ScaleValue.indexOf("${") >= 0) ) {
+	if ( (ScaleValue != null) && (ScaleValue.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
 		ScaleValue = TSCommandProcessorUtil.expandParameterValue(processor, this, ScaleValue);
 	}
     String MonthValues = parameters.getValue("MonthValues");
-	if ( (MonthValues != null) && (MonthValues.indexOf("${") >= 0) ) {
+	if ( (MonthValues != null) && (MonthValues.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
 		MonthValues = TSCommandProcessorUtil.expandParameterValue(processor, this, MonthValues);
 	}
     double [] MonthValues_double = null;
@@ -349,7 +349,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // ${Property} is handled below
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String NewUnits = parameters.getValue ( "NewUnits" );
-	if ( (NewUnits != null) && (NewUnits.indexOf("${") >= 0) ) {
+	if ( (NewUnits != null) && (NewUnits.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
 		NewUnits = TSCommandProcessorUtil.expandParameterValue(processor, this, NewUnits);
 	}
 

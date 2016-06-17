@@ -637,8 +637,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                table.setTableID ( TableID );
 	                // Only set discovery if creating here because if table was found a previous
 	                // command supplies in discovery mode
-	                setDiscoveryTable ( table );
 	            }
+                setDiscoveryTable ( table );
         	}
         }
         else if ( commandPhase == CommandPhaseType.RUN ) {

@@ -208,7 +208,20 @@ throws CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
@@ -218,7 +231,7 @@ throws CommandWarningException, CommandException
 	try {
 		// If the parameters start with ${ get from the utility code
 		if ( (OutputStart != null) && !OutputStart.isEmpty() ) {
-			if ( OutputStart.startsWith("${") ) {
+			if ( OutputStart.indexOf("${") >= 0 ) {
 			    // Otherwise parse the date/times to take advantage of run-time data values...
 				try {
 					OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
@@ -251,7 +264,7 @@ throws CommandWarningException, CommandException
 			}
 		}
 		if ( (OutputEnd != null) && !OutputEnd.isEmpty() ) {
-			if ( OutputEnd.startsWith("${") ) {
+			if ( OutputEnd.indexOf("${") >= 0 ) {
 			    // Otherwise parse the date/times to take advantage of run-time data values...
 				try {
 					OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,

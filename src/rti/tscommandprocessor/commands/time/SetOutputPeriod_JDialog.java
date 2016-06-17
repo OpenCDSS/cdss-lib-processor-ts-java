@@ -172,6 +172,15 @@ private void initialize ( JFrame parent, SetOutputPeriod_Command command )
 		"    CurrentToMinute + 7Day = current date/time plus 7 days"),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    The above Current* values can have modifiers as shown in the following examples (can chain multiple modifiers):"),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"            CurrentToMinute.Round(5Min).RoundDirection(>) - round to the next even 5min"),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"            CurrentToMinute.Round(6hour).TimeZone() - round to the pervious even 6hour and set time zone to blank"),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    ${Property} = processor property as DateTime object or date/time string"),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -182,7 +191,7 @@ private void initialize ( JFrame parent, SetOutputPeriod_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output period start:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputStart_JTextField = new JTextField ( 20 );
+	__OutputStart_JTextField = new JTextField ( 40 );
 	__OutputStart_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -191,7 +200,7 @@ private void initialize ( JFrame parent, SetOutputPeriod_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output period end:" ),
 		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputEnd_JTextField = new JTextField ( 20 );
+	__OutputEnd_JTextField = new JTextField ( 40 );
 	__OutputEnd_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

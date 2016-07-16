@@ -26,6 +26,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -54,6 +55,8 @@ private SimpleJButton __ok_JButton = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextField __InputFile_JTextField = null;
 private JTextArea __InputText_JTextArea = null;
+private JTextArea __StringProperties_JTextArea = null;
+private JTextArea __TableColumnProperties_JTextArea = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __OutputProperty_JTextField = null;
 private SimpleJComboBox __UseTables_JComboBox = null;
@@ -65,6 +68,7 @@ private boolean __error_wait = false;
 private boolean __first_time = true;
 private ExpandTemplateFile_Command __command = null; // Command to edit
 private boolean __ok = false; // Indicates whether the user has pressed OK.
+private JFrame __parent = null;
 
 /**
 Command editor constructor.
@@ -81,7 +85,7 @@ Responds to ActionEvents.
 @param event ActionEvent object
 */
 public void actionPerformed( ActionEvent event )
-{	String routine = getClass().getName() + ".actionPerformed";
+{	String routine = getClass().getSimpleName() + ".actionPerformed";
     Object o = event.getSource();
 
 	if ( o == __browseInput_JButton ) {
@@ -141,6 +145,19 @@ public void actionPerformed( ActionEvent event )
 	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
+    else if ( event.getActionCommand().equalsIgnoreCase("EditStringProperties") ) {
+        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
+        String StringProperties = __StringProperties_JTextArea.getText().trim();
+        String [] notes = {
+            "Specify string properties to use in the template expansion."
+        };
+        String dict = (new DictionaryJDialog ( __parent, true, StringProperties,
+            "Edit StringProperties Parameter", notes, "Property Name", "Property Value",10)).response();
+        if ( dict != null ) {
+            __StringProperties_JTextArea.setText ( dict );
+            refresh();
+        }
+    }
 	else if ( o == __ok_JButton ) {
 		refresh ();
 		checkInput();
@@ -191,6 +208,8 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String InputText = __InputText_JTextArea.getText().trim();
+	String StringProperties = __StringProperties_JTextArea.getText().trim();
+	String TableColumnProperties = __TableColumnProperties_JTextArea.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputProperty = __OutputProperty_JTextField.getText().trim();
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
@@ -202,6 +221,12 @@ private void checkInput ()
 	}
     if ( InputText.length() > 0 ) {
         props.set ( "InputText", InputText );
+    }
+    if ( StringProperties.length() > 0 ) {
+        props.set ( "StringProperties", StringProperties );
+    }
+    if ( TableColumnProperties.length() > 0 ) {
+        props.set ( "TableColumnProperties", TableColumnProperties );
     }
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
@@ -235,6 +260,8 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
     String InputText = __InputText_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
+	String StringProperties = __StringProperties_JTextArea.getText().trim();
+	String TableColumnProperties = __TableColumnProperties_JTextArea.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String OutputProperty = __OutputProperty_JTextField.getText().trim();
     String UseTables = __UseTables_JComboBox.getSelected();
@@ -242,6 +269,8 @@ private void commitEdits ()
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "InputText", InputText );
+	__command.setCommandParameter ( "StringProperties", StringProperties );
+	__command.setCommandParameter ( "TableColumnProperties", TableColumnProperties );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "OutputProperty", OutputProperty );
 	__command.setCommandParameter ( "UseTables", UseTables );
@@ -255,7 +284,8 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
-{	__command = command;
+{	__parent = parent;
+	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -299,11 +329,11 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
      
-    // Panel for input
+    // Panel for input template
     int yIn = -1;
     JPanel in_JPanel = new JPanel();
     in_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Template Input", in_JPanel );
+    __main_JTabbedPane.addTab ( "Input Template", in_JPanel );
     
     JGUIUtil.addComponent(in_JPanel, new JLabel (
         "The template to be expanded can be specified with a file or text."),
@@ -311,6 +341,8 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(in_JPanel, new JLabel (
         "Use a file when the template text conflicts with normal command syntax (quotes, etc.)."),
         0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(in_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(in_JPanel, new JLabel ("Template file:" ), 
 		0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -332,28 +364,92 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(in_JPanel, new JScrollPane(__InputText_JTextArea),
         1, yIn, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(in_JPanel, new JLabel ( "Use tables as input?:" ), 
-        0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Panel for input properties
+    int yProp = -1;
+    JPanel prop_JPanel = new JPanel();
+    prop_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Input Properties", prop_JPanel );
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+        "TSTool processor properties accessible with ${Property} are automatically passed to the template processor."),
+        0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+        "The following allows additional string properties to be defined only for this command.  Use the following syntax:"),
+        0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel (
+        "   Property1Name:Property1Value,Property2Name:Property2Value"),
+        0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ("String properties:"),
+        0, ++yProp, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StringProperties_JTextArea = new JTextArea (6,35);
+    __StringProperties_JTextArea.setLineWrap ( true );
+    __StringProperties_JTextArea.setWrapStyleWord ( true );
+    __StringProperties_JTextArea.setToolTipText("Property1Name:Property1Value,Property2Name:Property2Value");
+    __StringProperties_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(prop_JPanel, new JScrollPane(__StringProperties_JTextArea),
+        1, yProp, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ("Optional - additional properties for template."),
+        3, yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(prop_JPanel, new SimpleJButton ("Edit","EditStringProperties",this),
+        3, ++yProp, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for input properties (tables)
+    int yTableProp = -1;
+    JPanel tableProp_JPanel = new JPanel();
+    tableProp_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Input Properties (Table)", tableProp_JPanel );
+    
+    JGUIUtil.addComponent(tableProp_JPanel, new JLabel (
+        "One column tables can be passed to the template processor to use as lists."),
+        0, ++yTableProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tableProp_JPanel, new JLabel (
+        "These one-column tables can be created with TSTool commands prior to this command, or created dynamically using information below."),
+        0, ++yTableProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tableProp_JPanel, new JLabel (
+        "Table column properties specified below should use the following syntax.  ${Property} will be replaced with the matching TSTool property:"),
+        0, ++yTableProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tableProp_JPanel, new JLabel (
+        "    Table1Name,Column1Name,ListProperty1Name;Table2Name,Column2Name,ListProperty2Name"),
+        0, ++yTableProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tableProp_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTableProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(tableProp_JPanel, new JLabel ( "Use tables as input?:" ), 
+        0, ++yTableProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __UseTables_JComboBox = new SimpleJComboBox ( false );
     __UseTables_JComboBox.add ( "" );
     __UseTables_JComboBox.add ( __command._False );
     __UseTables_JComboBox.add ( __command._True );
     __UseTables_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(in_JPanel, __UseTables_JComboBox,
-        1, yIn, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(in_JPanel,
+    JGUIUtil.addComponent(tableProp_JPanel, __UseTables_JComboBox,
+        1, yTableProp, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tableProp_JPanel,
         new JLabel ( "Optional - use 1-column tables as input lists (default=" + __command._True + ")." ), 
-        2, yIn, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        2, yTableProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(tableProp_JPanel, new JLabel ("Table column properties:"), 
+        0, ++yTableProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableColumnProperties_JTextArea = new JTextArea (9,50);
+    __TableColumnProperties_JTextArea.setLineWrap ( true );
+    __TableColumnProperties_JTextArea.setWrapStyleWord ( true );
+    __TableColumnProperties_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(tableProp_JPanel, new JScrollPane(__TableColumnProperties_JTextArea),
+        1, yTableProp, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Panel for output
     int yOut = -1;
     JPanel out_JPanel = new JPanel();
     out_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Template Output", out_JPanel );
+    __main_JTabbedPane.addTab ( "Expanded Output", out_JPanel );
     
     JGUIUtil.addComponent(out_JPanel, new JLabel (
         "The expanded output can be saved to a file and/or set to a processor property (access later with ${Property})."),
         0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(out_JPanel, new JLabel ("Expanded file:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -480,9 +576,11 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String InputFile = "";
 	String InputText = "";
+	String StringProperties = "";
+	String TableColumnProperties = "";
 	String OutputFile = "";
 	String OutputProperty = "";
 	String UseTables = "";
@@ -494,6 +592,8 @@ private void refresh ()
         parameters = __command.getCommandParameters();
 		InputFile = parameters.getValue ( "InputFile" );
 		InputText = parameters.getValue ( "InputText" );
+		StringProperties = parameters.getValue ( "StringProperties" );
+		TableColumnProperties = parameters.getValue ( "TableColumnProperties" );
 		OutputFile = parameters.getValue ( "OutputFile" );
 		OutputProperty = parameters.getValue ( "OutputProperty" );
 		UseTables = parameters.getValue ( "UseTables" );
@@ -504,6 +604,12 @@ private void refresh ()
 		}
         if ( InputText != null ) {
             __InputText_JTextArea.setText ( InputText );
+        }
+        if ( StringProperties != null ) {
+            __StringProperties_JTextArea.setText ( StringProperties );
+        }
+        if ( TableColumnProperties != null ) {
+            __TableColumnProperties_JTextArea.setText ( TableColumnProperties );
         }
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText ( OutputFile );
@@ -563,6 +669,8 @@ private void refresh ()
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
 	InputText = __InputText_JTextArea.getText().trim();
+	StringProperties = __StringProperties_JTextArea.getText().trim();
+	TableColumnProperties = __TableColumnProperties_JTextArea.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	OutputProperty = __OutputProperty_JTextField.getText().trim();
 	UseTables = __UseTables_JComboBox.getSelected();
@@ -571,6 +679,8 @@ private void refresh ()
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "InputText=" + InputText );
+	props.add ( "StringProperties=" + StringProperties );
+	props.add ( "TableColumnProperties=" + TableColumnProperties );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "OutputProperty=" + OutputProperty );
 	props.add ( "UseTables=" + UseTables );

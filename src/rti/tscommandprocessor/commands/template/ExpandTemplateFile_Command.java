@@ -8,8 +8,10 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -27,6 +29,7 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
@@ -234,9 +237,11 @@ throws InvalidCommandParameterException
 	}
 	*/
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(6);
+	List<String> validList = new ArrayList<String>(8);
 	validList.add ( "InputFile" );
 	validList.add ( "InputText" );
+	validList.add ( "StringProperties" );
+	validList.add ( "TableColumnProperties" );
 	validList.add ( "OutputFile" );
 	validList.add ( "OutputProperty" );
 	validList.add ( "UseTables" );
@@ -387,9 +392,43 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		status.clearLog(CommandPhaseType.RUN);
 	}
 	
-	String InputFile = parameters.getValue ( "InputFile" );
+	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below
 	String InputText = parameters.getValue ( "InputText" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
+    String StringProperties = parameters.getValue ( "StringProperties" );
+    if ( (StringProperties != null) && !StringProperties.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StringProperties.indexOf("${") >= 0 ) {
+    	StringProperties = TSCommandProcessorUtil.expandParameterValue(processor, this, StringProperties);
+    }
+    Hashtable stringProperties = new Hashtable();
+    if ( (StringProperties != null) && (StringProperties.length() > 0) && (StringProperties.indexOf(":") > 0) ) {
+        // First break map pairs by comma
+        List<String>pairs = StringUtil.breakStringList(StringProperties, ",", 0 );
+        // Now break pairs and put in hashtable
+        for ( String pair : pairs ) {
+            String [] parts = pair.split(":");
+            stringProperties.put(parts[0].trim(), parts[1].trim() );
+        }
+    }
+    String TableColumnProperties = parameters.getValue ( "TableColumnProperties" );
+    if ( (TableColumnProperties != null) && !TableColumnProperties.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableColumnProperties.indexOf("${") >= 0 ) {
+    	TableColumnProperties = TSCommandProcessorUtil.expandParameterValue(processor, this, TableColumnProperties);
+    }
+    List<String> tablePropertiesTableName = new ArrayList<String>();
+    List<String> tablePropertiesColumn = new ArrayList<String>();
+    List<String> tablePropertiesName = new ArrayList<String>();
+    if ( (TableColumnProperties != null) && !TableColumnProperties.isEmpty() ) {
+        // First break map pairs by comma
+        List<String>triplets = StringUtil.breakStringList(TableColumnProperties, ";", 0 );
+        // Now break triplets and put in lists
+        for ( String triplet : triplets ) {
+            String [] parts = triplet.trim().split(",");
+            if ( parts.length == 3 ) {
+            	tablePropertiesTableName.add(parts[0].trim());
+            	tablePropertiesColumn.add(parts[1].trim());
+            	tablePropertiesName.add(parts[2].trim());
+            }
+        }
+    }
+	String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
 	String OutputProperty = parameters.getValue ( "OutputProperty" );
 	String UseTables = parameters.getValue ( "UseTables" );
     boolean UseTables_boolean = true;
@@ -548,6 +587,83 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                     }
                 }
+                if ( (StringProperties != null) && !StringProperties.isEmpty() ) {
+                	// Have additional properties from parameter
+                	Set<String> keys = stringProperties.keySet();
+                	for ( String key: keys ) {
+                		model.put(key, stringProperties.get(key) );
+                	}
+                }
+                if ( (TableColumnProperties != null) && !TableColumnProperties.isEmpty() ) {
+                	// Have additional table columns to use as a list from parameter
+                	for ( int iTable = 0; iTable < tablePropertiesTableName.size(); iTable++ ) {
+                		String tableName = tablePropertiesTableName.get(iTable);
+                		String columnName = tablePropertiesColumn.get(iTable);
+                		String propertyName = tablePropertiesName.get(iTable);
+                		int columnNumber = -1;
+                		// Get the table
+                		PropList request_params = null;
+            	        CommandProcessorRequestResultsBean bean = null;
+            	        DataTable table = null;
+            	        if ( (tableName != null) && !tableName.isEmpty() ) {
+            	            // Get the table to be updated
+            	            request_params = new PropList ( "" );
+            	            request_params.set ( "TableID", tableName );
+            	            try {
+            	                bean = processor.processRequest( "GetTable", request_params);
+            	            }
+            	            catch ( Exception e ) {
+            	                message = "Error requesting GetTable(TableID=\"" + tableName + "\") from processor.";
+            	                Message.printWarning(warning_level,
+            	                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            	                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            	                    message, "Report problem to software support." ) );
+            	            }
+            	            PropList bean_PropList = bean.getResultsPropList();
+            	            Object o_Table = bean_PropList.getContents ( "Table" );
+            	            if ( o_Table == null ) {
+            	                message = "Unable to find table to process using TableID=\"" + tableName + "\".";
+            	                Message.printWarning ( warning_level,
+            	                MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+            	                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            	                    message, "Verify that a table exists with the requested ID." ) );
+            	            }
+            	            else {
+            	                table = (DataTable)o_Table;
+            	                // Also get the column that is used for the data
+            	                try {
+            	                	columnNumber = table.getFieldIndex(columnName);
+            	                }
+            	                catch ( Exception e ) {
+                	                message = "Unable to find column \"" + columnName + "\" in table \"" + tableName + "\".";
+                	                Message.printWarning ( warning_level,
+                	                MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                	                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                	                    message, "Verify that the column exists in the table." ) );
+            	                	table = null;
+            	                }
+            	            }
+            	        }
+                		// Process the column out of the table
+            	        if ( table != null ) {
+	                		int numRecords = table.getNumberOfRecords();
+	                        SimpleSequence list = new SimpleSequence();
+	                        for ( int irec = 0; irec < numRecords; irec++ ) {
+	                            // Check for null because this fouls up the template
+	                            Object tableVal = table.getFieldValue(irec, columnNumber);
+	                            if ( tableVal == null ) {
+	                                tableVal = "";
+	                            }
+	                            list.add ( tableVal );
+	                        }
+	                        if ( Message.isDebugOn ) {
+	                            Message.printStatus(2, routine, "Passing 1-column table \"" + propertyName +
+	                                "\" (" + numRecords + " rows) to template model.");
+	                        }
+	                		model.put(propertyName, list );
+            	        }
+                	}
+                }
                 if ( OutputFile_full != null ) {
                     // Expand the template to the output file
                     FileOutputStream fos = new FileOutputStream( OutputFile_full );
@@ -660,6 +776,8 @@ public String toString ( PropList parameters )
 	}
 	String InputFile = parameters.getValue("InputFile");
 	String InputText = parameters.getValue("InputText");
+	String StringProperties = parameters.getValue("StringProperties");
+	String TableColumnProperties = parameters.getValue("TableColumnProperties");
 	String OutputFile = parameters.getValue("OutputFile");
 	String OutputProperty = parameters.getValue("OutputProperty");
 	String UseTables = parameters.getValue("UseTables");
@@ -674,6 +792,18 @@ public String toString ( PropList parameters )
             b.append(",");
         }
         b.append ( "InputText=\"" + InputText + "\"" );
+    }
+    if ( (StringProperties != null) && (StringProperties.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append(",");
+        }
+        b.append ( "StringProperties=\"" + StringProperties + "\"" );
+    }
+    if ( (TableColumnProperties != null) && (TableColumnProperties.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append(",");
+        }
+        b.append ( "TableColumnProperties=\"" + TableColumnProperties + "\"" );
     }
     if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
         if ( b.length() > 0 ) {

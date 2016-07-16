@@ -28,6 +28,7 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the Add() command.
@@ -69,10 +70,10 @@ throws InvalidCommandParameterException
 {	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     //String AddTSList = parameters.getValue ( "AddTSList" );
-	//String SetStart = parameters.getValue ( "SetStart" );
-	//String SetEnd = parameters.getValue ( "SetEnd" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
     String IfTSListToAddIsEmpty = parameters.getValue ( "IfTSListToAddIsEmpty" );
+	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
+	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String warning = "";
     String message;
     
@@ -168,17 +169,40 @@ throws InvalidCommandParameterException
                 message, "Specify as " + _Ignore + ", " + _Warn + ", or " + _Fail + "." ) );   
     }
     
+	if ( (AnalysisStart != null) && !AnalysisStart.isEmpty() && (AnalysisStart.indexOf("${") < 0) ) {
+		try {
+		    DateTime.parse(AnalysisStart);
+		}
+		catch ( Exception e ) {
+            message = "The analysis start date/time \"" + AnalysisStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid date/time." ) );
+		}
+	}
+	if ( (AnalysisEnd != null) && !AnalysisEnd.isEmpty() && (AnalysisEnd.indexOf("${") < 0) ) {
+		try {
+		    DateTime.parse( AnalysisEnd );
+		}
+		catch ( Exception e ) {
+            message = "The analysis end date/time \"" + AnalysisEnd + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid date/time." ) );
+		}
+	}
+    
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(7);
+    List<String> validList = new ArrayList<String>(9);
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
     validList.add ( "AddTSList" );
     validList.add ( "AddTSID" );
     validList.add ( "AddEnsembleID" );
-    //valid_Vector.add ( "SetStart" );
-    //valid_Vector.add ( "SetEnd" );
     validList.add ( "HandleMissingHow" );
     validList.add ( "IfTSListToAddIsEmpty" );
+    validList.add ( "AnalysisStart" );
+    validList.add ( "AnalysisEnd" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -369,8 +393,7 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
@@ -431,6 +454,31 @@ CommandWarningException, CommandException
         request_params.set ( "TSList", TSList );
         request_params.set ( "EnsembleID", EnsembleID );
     }
+	String AnalysisStart = parameters.getValue ( "AnalysisStart" ); // ${Property} is handled below
+	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" ); // ${Property} is handled below
+	
+	// Figure out the dates to use for the analysis.
+	// Default of null means to analyze the full period.
+	DateTime AnalysisStart_DateTime = null;
+	DateTime AnalysisEnd_DateTime = null;
+	
+	try {
+		AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
+			status, warning_level, command_tag );
+	}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
+	}
+	try {
+		AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
+			status, warning_level, command_tag );
+	}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
+	}
+	
 	CommandProcessorRequestResultsBean bean = null;
 	try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
@@ -784,7 +832,7 @@ CommandWarningException, CommandException
         // Finally do the add...
         
         try {
-            TSUtil.add ( ts, tstoadd_list, HandleMissingHow_int );
+            TSUtil.add ( ts, tstoadd_list, HandleMissingHow_int, AnalysisStart_DateTime, AnalysisEnd_DateTime );
         }
         catch ( Exception e ) {
             message = "Unexpected error adding to time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -823,8 +871,8 @@ public String toString ( PropList props )
     String AddEnsembleID = props.getValue( "AddEnsembleID" );
     String HandleMissingHow = props.getValue( "HandleMissingHow" );
     String IfTSListToAddIsEmpty = props.getValue ( "IfTSListToAddIsEmpty" );
-	//String SetStart = props.getValue("SetStart");
-	//String SetEnd = props.getValue("SetEnd");
+	String AnalysisStart = props.getValue("AnalysisStart");
+	String AnalysisEnd = props.getValue("AnalysisEnd");
     //String TransferHow = props.getValue( "TransferHow" );
 	StringBuffer b = new StringBuffer ();
     if ( (TSID != null) && (TSID.length() > 0) ) {
@@ -870,18 +918,6 @@ public String toString ( PropList props )
         b.append ( "IfTSListToAddIsEmpty=" + IfTSListToAddIsEmpty );
     }
     /*
-	if ( (SetStart != null) && (SetStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetStart=\"" + SetStart + "\"" );
-	}
-	if ( (SetEnd != null) && (SetEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetEnd=\"" + SetEnd + "\"" );
-	}
     if ( (TransferHow != null) && (TransferHow.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -889,6 +925,18 @@ public String toString ( PropList props )
         b.append ( "TransferHow=" + TransferHow );
     }
     */
+	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
+	}
+	if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
+	}
 
 	return getCommandName() + "(" + b.toString() + ")";
 }

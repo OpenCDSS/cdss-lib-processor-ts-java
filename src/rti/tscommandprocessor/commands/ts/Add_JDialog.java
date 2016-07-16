@@ -25,6 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 
@@ -67,6 +68,8 @@ private DefaultListModel __AddSpecifiedTSID_JListModel = null;
 private JList __AddSpecifiedTSID_JList= null;
 private SimpleJComboBox	__HandleMissingHow_JComboBox = null; // How to handle missing data in time series.
 private SimpleJComboBox __IfTSListToAddIsEmpty_JComboBox = null;
+private JTextField __AnalysisStart_JTextField = null;
+private JTextField __AnalysisEnd_JTextField = null;
 private boolean	__error_wait = false;
 private boolean	__first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -146,10 +149,10 @@ private void checkInput ()
     String AddTSID = __AddTSID_JComboBox.getSelected();
     String AddSpecifiedTSID = getAddSpecifiedTSIDFromList();
     String AddEnsembleID = __AddEnsembleID_JComboBox.getSelected();
-    //String SetStart = __SetStart_JTextField.getText().trim();
-   // String SetEnd = __SetEnd_JTextField.getText().trim();
     String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
     String IfTSListToAddIsEmpty = __IfTSListToAddIsEmpty_JComboBox.getSelected();
+	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     __error_wait = false;
     
     // AddTSID is used for several variations of AddTSList
@@ -172,20 +175,18 @@ private void checkInput ()
     if ( AddEnsembleID.length() > 0 ) {
         props.set ( "AddEnsembleID", AddEnsembleID );
     }
-    /*
-    if ( SetStart.length() > 0 ) {
-        props.set ( "SetStart", SetStart );
-    }
-    if ( SetEnd.length() > 0 ) {
-        props.set ( "SetEnd", SetEnd );
-    }
-    */
     if ( HandleMissingHow.length() > 0 ) {
         props.set ( "HandleMissingHow", HandleMissingHow );
     }
     if ( IfTSListToAddIsEmpty.length() > 0 ) {
         props.set ( "IfTSListToAddIsEmpty", IfTSListToAddIsEmpty );
     }
+	if ( AnalysisStart.length() > 0 ) {
+		props.set ( "AnalysisStart", AnalysisStart );
+	}
+	if ( AnalysisEnd.length() > 0 ) {
+		props.set ( "AnalysisEnd", AnalysisEnd );
+	}
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -208,10 +209,10 @@ private void commitEdits ()
     String AddSpecifiedTSID = getAddSpecifiedTSIDFromList();
     String AddEnsembleID = __AddEnsembleID_JComboBox.getSelected();
     String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
-    //String SetStart = __SetStart_JTextField.getText().trim();
-    //String SetEnd = __SetEnd_JTextField.getText().trim();
     //String TransferHow = __TransferHow_JComboBox.getSelected();
     String IfTSListToAddIsEmpty = __IfTSListToAddIsEmpty_JComboBox.getSelected();
+	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     
     // AddTSID is used for several variations of AddTSList
     if ( TSListType.SPECIFIED_TSID.equals(AddTSList) ) {
@@ -224,10 +225,10 @@ private void commitEdits ()
     __command.setCommandParameter ( "AddTSID", AddTSID );
     __command.setCommandParameter ( "AddEnsembleID", AddEnsembleID );
     __command.setCommandParameter ( "HandleMissingHow", HandleMissingHow );
-    //__command.setCommandParameter ( "SetStart", SetStart );
-    //__command.setCommandParameter ( "SetEnd", SetEnd );
     //__command.setCommandParameter ( "TransferHow", TransferHow );
     __command.setCommandParameter ( "IfTSListToAddIsEmpty", IfTSListToAddIsEmpty );
+	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
+	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 }
 
 /**
@@ -373,6 +374,28 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - action if time series list to add is empty (default=" + __command._Fail + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
+    __AnalysisStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - analysis start date/time (default=full time series period)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
+    __AnalysisEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - analysis end date/time (default=full time series period)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -457,6 +480,8 @@ private void refresh ()
     String AddEnsembleID = "";
     String HandleMissingHow = "";
     String IfTSListToAddIsEmpty = "";
+	String AnalysisStart = "";
+	String AnalysisEnd = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -468,6 +493,8 @@ private void refresh ()
         AddEnsembleID = props.getValue ( "AddEnsembleID" );
         HandleMissingHow = props.getValue ( "HandleMissingHow" );
         IfTSListToAddIsEmpty = props.getValue ( "IfTSListToAddIsEmpty" );
+		AnalysisStart = props.getValue ( "AnalysisStart" );
+		AnalysisEnd = props.getValue ( "AnalysisEnd" );
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
             __TSID_JComboBox.select ( TSID );
         }
@@ -582,6 +609,12 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+		if ( AnalysisStart != null ) {
+			__AnalysisStart_JTextField.setText( AnalysisStart );
+		}
+		if ( AnalysisEnd != null ) {
+			__AnalysisEnd_JTextField.setText ( AnalysisEnd );
+		}
 	}
     // Regardless, reset the command from the fields...
     TSID = __TSID_JComboBox.getSelected();
@@ -590,10 +623,10 @@ private void refresh ()
     AddTSID = __AddTSID_JComboBox.getSelected();
     String AddSpecifiedTSID = getAddSpecifiedTSIDFromList();
     AddEnsembleID = __AddEnsembleID_JComboBox.getSelected();
-    //FillStart = __FillStart_JTextField.getText().trim();
-    //FillEnd = __FillEnd_JTextField.getText().trim();
     HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
     IfTSListToAddIsEmpty = __IfTSListToAddIsEmpty_JComboBox.getSelected();
+	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     // Use the list of specified TSID instead of the __AddTSID_JComboBox above
     if ( TSListType.SPECIFIED_TSID.equals(AddTSList) ) {
         AddTSID = AddSpecifiedTSID;
@@ -605,10 +638,10 @@ private void refresh ()
     props.add ( "AddTSID=" + AddTSID );
     //props.add ( "AddSpecifiedTSID=" + AddSpecifiedTSID );
     props.add ( "AddEnsembleID=" + AddEnsembleID );
-    //props.add ( "FillStart=" + FillStart );
-    //props.add ( "FillEnd=" + FillEnd );
     props.add ( "HandleMissingHow=" + HandleMissingHow );
     props.add ( "IfTSListToAddIsEmpty=" + IfTSListToAddIsEmpty );
+	props.add ( "AnalysisStart=" + AnalysisStart );
+	props.add ( "AnalysisEnd=" + AnalysisEnd );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

@@ -27,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 
@@ -67,6 +68,8 @@ private JLabel __SubtractSpecifiedTSID_JLabel = null;
 private DefaultListModel __SubtractSpecifiedTSID_JListModel = null;
 private JList __SubtractSpecifiedTSID_JList = null;
 private SimpleJComboBox	__HandleMissingHow_JComboBox = null;
+private JTextField __AnalysisStart_JTextField = null;
+private JTextField __AnalysisEnd_JTextField = null;
 private boolean	__error_wait = false;
 private boolean	__first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -144,9 +147,9 @@ private void checkInput ()
     String SubtractTSID = __SubtractTSID_JComboBox.getSelected();
     String SubtractSpecifiedTSID = getSubtractSpecifiedTSIDFromList();
     String SubtractEnsembleID = __SubtractEnsembleID_JComboBox.getSelected();
-    //String SetStart = __SetStart_JTextField.getText().trim();
-   // String SetEnd = __SetEnd_JTextField.getText().trim();
     String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     __error_wait = false;
     
     // TSID is used for several variations of SubtractTSList
@@ -169,17 +172,15 @@ private void checkInput ()
     if ( SubtractEnsembleID.length() > 0 ) {
         props.set ( "SubtractEnsembleID", SubtractEnsembleID );
     }
-    /*
-    if ( SetStart.length() > 0 ) {
-        props.set ( "SetStart", SetStart );
-    }
-    if ( SetEnd.length() > 0 ) {
-        props.set ( "SetEnd", SetEnd );
-    }
-    */
     if ( HandleMissingHow.length() > 0 ) {
         props.set ( "HandleMissingHow", HandleMissingHow );
     }
+	if ( AnalysisStart.length() > 0 ) {
+		props.set ( "AnalysisStart", AnalysisStart );
+	}
+	if ( AnalysisEnd.length() > 0 ) {
+		props.set ( "AnalysisEnd", AnalysisEnd );
+	}
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -202,9 +203,9 @@ private void commitEdits ()
     String SubtractSpecifiedTSID = getSubtractSpecifiedTSIDFromList();
     String SubtractEnsembleID = __SubtractEnsembleID_JComboBox.getSelected();
     String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
-    //String SetStart = __SetStart_JTextField.getText().trim();
-    //String SetEnd = __SetEnd_JTextField.getText().trim();
     //String TransferHow = __TransferHow_JComboBox.getSelected();
+	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     
     // TSID is used for several variations of SubtractTSList
     if ( TSListType.SPECIFIED_TSID.equals(SubtractTSList) ) {
@@ -217,9 +218,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "SubtractTSID", SubtractTSID );
     __command.setCommandParameter ( "SubtractEnsembleID", SubtractEnsembleID );
     __command.setCommandParameter ( "HandleMissingHow", HandleMissingHow );
-    //__command.setCommandParameter ( "SetStart", SetStart );
-    //__command.setCommandParameter ( "SetEnd", SetEnd );
     //__command.setCommandParameter ( "TransferHow", TransferHow );
+	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
+	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 }
 
 /**
@@ -355,8 +356,30 @@ private void initialize ( JFrame parent, Subtract_Command command )
 	__HandleMissingHow_JComboBox.addItem ( __command._SetMissingIfOtherMissing );
 	__HandleMissingHow_JComboBox.addItem ( __command._SetMissingIfAnyMissing );
 	__HandleMissingHow_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
+    __AnalysisStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - analysis start date/time (default=full time series period)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
+    __AnalysisEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - analysis end date/time (default=full time series period)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -480,6 +503,8 @@ private void refresh ()
     String SubtractEnsembleID = "";
     //String SubtractSpecifiedTSID = "";
     String HandleMissingHow = "";
+	String AnalysisStart = "";
+	String AnalysisEnd = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -491,6 +516,8 @@ private void refresh ()
         //SubtractSpecifiedTSID = props.getValue ( "SubtractSpecifiedTSID" );
         SubtractEnsembleID = props.getValue ( "SubtractEnsembleID" );
         HandleMissingHow = props.getValue ( "HandleMissingHow" );
+		AnalysisStart = props.getValue ( "AnalysisStart" );
+		AnalysisEnd = props.getValue ( "AnalysisEnd" );
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
             __TSID_JComboBox.select ( TSID );
         }
@@ -594,6 +621,12 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+		if ( AnalysisStart != null ) {
+			__AnalysisStart_JTextField.setText( AnalysisStart );
+		}
+		if ( AnalysisEnd != null ) {
+			__AnalysisEnd_JTextField.setText ( AnalysisEnd );
+		}
 	}
     // Regardless, reset the command from the fields...
     TSID = __TSID_JComboBox.getSelected();
@@ -602,9 +635,9 @@ private void refresh ()
     SubtractTSID = __SubtractTSID_JComboBox.getSelected();
     String SubtractSpecifiedTSID = getSubtractSpecifiedTSIDFromList();
     SubtractEnsembleID = __SubtractEnsembleID_JComboBox.getSelected();
-    //FillStart = __FillStart_JTextField.getText().trim();
-    //FillEnd = __FillEnd_JTextField.getText().trim();
     HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     // Use the list of specified TSID instead of the __SubtractTSID_JComboBox above
     if ( TSListType.SPECIFIED_TSID.equals(SubtractTSList) ) {
         SubtractTSID = SubtractSpecifiedTSID;
@@ -615,9 +648,9 @@ private void refresh ()
     props.add ( "SubtractTSList=" + SubtractTSList );
     props.add ( "SubtractTSID=" + SubtractTSID );
     props.add ( "SubtractEnsembleID=" + SubtractEnsembleID );
-    //props.add ( "FillStart=" + FillStart );
-    //props.add ( "FillEnd=" + FillEnd );
     props.add ( "HandleMissingHow=" + HandleMissingHow );
+	props.add ( "AnalysisStart=" + AnalysisStart );
+	props.add ( "AnalysisEnd=" + AnalysisEnd );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

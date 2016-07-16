@@ -142,7 +142,7 @@ private void checkGUIState ()
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.SUBSTRING) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have a substring extracted - see also InputValue2 and InputValue3");
     	__InputValue2_JTextField.setToolTipText("Specify the starting character position 1+ for the extracted substring - see also InputValue3");
-    	__InputValue3_JTextField.setToolTipText("Specify the ending character position 1+ for the extracted substring");
+    	__InputValue3_JTextField.setToolTipText("Specify the ending character position 1+ for the extracted substring or blank for end of input string");
     }
     // TODO SAM 2015-04-29 Need to enable boolean
     //choices.add ( DataTableStringOperatorType.TO_BOOLEAN );

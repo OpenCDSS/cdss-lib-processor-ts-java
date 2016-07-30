@@ -64,6 +64,9 @@ private JTextField __LongitudeColumn_JTextField = null;
 private JTextField __LatitudeColumn_JTextField = null;
 private JTextField __ElevationColumn_JTextField = null;
 private JTextField __WKTGeometryColumn_JTextField = null;
+private JTextArea __CRSText_JTextArea = null;
+private SimpleJComboBox __IncludeBBox_JComboBox = null;
+private SimpleJComboBox __IncludeFeatureBBox_JComboBox = null;
 private JTextField __IncludeColumns_JTextField = null;
 private JTextField __ExcludeColumns_JTextField = null;
 private JTextField __JavaScriptVar_JTextField = null;
@@ -170,6 +173,9 @@ private void checkInput ()
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText().trim();
     String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
+	String CRSText = __CRSText_JTextArea.getText().trim();
+	String IncludeBBox = __IncludeBBox_JComboBox.getSelected();
+	String IncludeFeatureBBox = __IncludeFeatureBBox_JComboBox.getSelected();
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     String ExcludeColumns = __IncludeColumns_JTextField.getText().trim();
     String JavaScriptVar = __JavaScriptVar_JTextField.getText().trim();
@@ -198,6 +204,15 @@ private void checkInput ()
     }
     if ( WKTGeometryColumn.length() > 0 ) {
         parameters.set ( "WKTGeometryColumn", WKTGeometryColumn );
+    }
+    if ( CRSText.length() > 0 ) {
+    	parameters.set ( "CRSText", CRSText );
+    }
+    if ( IncludeBBox.length() > 0 ) {
+    	parameters.set ( "IncludeBBox", IncludeBBox );
+    }
+    if ( IncludeFeatureBBox.length() > 0 ) {
+    	parameters.set ( "IncludeFeatureBBox", IncludeFeatureBBox );
     }
     if ( IncludeColumns.length() > 0 ) {
         parameters.set ( "IncludeColumns", IncludeColumns );
@@ -237,6 +252,12 @@ private void commitEdits ()
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText();
     String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText();
+    String CRSText = __CRSText_JTextArea.getText().trim();
+    if ( CRSText != null ) {
+    	CRSText = CRSText.replace("\"", "\\\"");
+    }
+	String IncludeBBox = __IncludeBBox_JComboBox.getSelected();
+	String IncludeFeatureBBox = __IncludeFeatureBBox_JComboBox.getSelected();
     String IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     String ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     String JavaScriptVar = __JavaScriptVar_JTextField.getText().trim();
@@ -249,6 +270,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "LatitudeColumn", LatitudeColumn );
     __command.setCommandParameter ( "ElevationColumn", ElevationColumn );
     __command.setCommandParameter ( "WKTGeometryColumn", WKTGeometryColumn );
+    __command.setCommandParameter ( "CRSText", CRSText );
+    __command.setCommandParameter ( "IncludeBBox", IncludeBBox );
+    __command.setCommandParameter ( "IncludeFeatureBBox", IncludeFeatureBBox );
     __command.setCommandParameter ( "IncludeColumns", IncludeColumns );
     __command.setCommandParameter ( "ExcludeColumns", ExcludeColumns );
     __command.setCommandParameter ( "JavaScriptVar", JavaScriptVar );
@@ -405,6 +429,77 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     JGUIUtil.addComponent(geom_JPanel, new JLabel ( "Required for geometry data - column containing WKT strings."),
         3, yGeom, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    // Panel for coordinate reference system (CRS)
+    int ycrs = -1;
+    JPanel crs_JPanel = new JPanel();
+    crs_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Coordinate Reference System", crs_JPanel );
+    
+    JGUIUtil.addComponent(crs_JPanel, new JLabel (
+        "Coordinate reference system text can be specified using one-line syntax similar to the following (in this case for geographic coordinates)."),
+        0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(crs_JPanel, new JLabel (
+        "The double quotes in the text will be replaced with \\s in the command parameter value to escape from normal command quotes."),
+        0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(crs_JPanel, new JLabel (
+        "\"crs\": { \"type\": \"name\", \"properties\": { \"name\": \"urn:ogc:def:crs:OGC:1.3:CRS84\" } },"),
+        0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(crs_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(crs_JPanel, new JLabel ("CRS text:"), 
+        0, ++ycrs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CRSText_JTextArea = new JTextArea (6,30);
+    __CRSText_JTextArea.setLineWrap ( true );
+    __CRSText_JTextArea.setWrapStyleWord ( true );
+    __CRSText_JTextArea.addKeyListener(this);
+    JGUIUtil.addComponent(crs_JPanel, new JScrollPane(__CRSText_JTextArea),
+        1, ycrs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(crs_JPanel, new JLabel ( "Optional - CRS text to insert (default=no CRS data=geographic)."),
+        3, ycrs, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for bounding box
+    int yBbox = -1;
+    JPanel bbox_JPanel = new JPanel();
+    bbox_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Bounding Box", bbox_JPanel );
+    
+    JGUIUtil.addComponent(bbox_JPanel, new JLabel (
+        "The bounding box is by default output at the layer (FeatureCollection) and Feature level."),
+        0, ++yBbox, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(bbox_JPanel, new JLabel (
+        "This allows visualization software to quickly zoom to the bounding box."),
+        0, ++yBbox, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(bbox_JPanel, new JLabel (
+        "Parameters are provided to turn off this feature if necessary."),
+        0, ++yBbox, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(bbox_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yBbox, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(bbox_JPanel, new JLabel ( "Include layer bounding box?:" ), 
+        0, ++yBbox, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeBBox_JComboBox = new SimpleJComboBox ( false ); // Allow edit
+    __IncludeBBox_JComboBox.add ( "" );
+    __IncludeBBox_JComboBox.add ( __command._False );
+    __IncludeBBox_JComboBox.add ( __command._True );
+    __IncludeBBox_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(bbox_JPanel, __IncludeBBox_JComboBox,
+        1, yBbox, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(bbox_JPanel, new JLabel( "Optional - include layer bbox? (default=" + __command._True + ")."), 
+        3, yBbox, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(bbox_JPanel, new JLabel ( "Include feature bounding box?:" ), 
+        0, ++yBbox, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeFeatureBBox_JComboBox = new SimpleJComboBox ( false ); // Allow edit
+    __IncludeFeatureBBox_JComboBox.add ( "" );
+    __IncludeFeatureBBox_JComboBox.add ( __command._False );
+    __IncludeFeatureBBox_JComboBox.add ( __command._True );
+    __IncludeFeatureBBox_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(bbox_JPanel, __IncludeFeatureBBox_JComboBox,
+        1, yBbox, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(bbox_JPanel, new JLabel( "Optional - include feature bbox? (default=" + __command._True + ")."), 
+        3, yBbox, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     // Panel for properties
     int yProp = -1;
     JPanel prop_JPanel = new JPanel();
@@ -426,6 +521,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Optional - columns to include (default=include all)."),
         3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Exclude columns:" ),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -467,7 +563,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
         0, ++yJs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(js_JPanel, new JLabel (
         "However, if a JavaScript variable is specified, the object will be assigned to a JavaScript variable.  "
-        + "This allows direct use of the file in a website"),
+        + "This allows direct use of the file in a website."),
         0, ++yJs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(js_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++yJs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -486,7 +582,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     int yInsert = -1;
     JPanel insert_JPanel = new JPanel();
     insert_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Inserts", insert_JPanel );
+    __main_JTabbedPane.addTab ( "Text Inserts", insert_JPanel );
     
     JGUIUtil.addComponent(insert_JPanel, new JLabel (
         "Specify text to insert before and after the GeoJSON.  For example, use the following to initialize the object in an array:"),
@@ -607,6 +703,9 @@ private void refresh ()
     String LatitudeColumn = "";
     String ElevationColumn = "";
     String WKTGeometryColumn = "";
+    String CRSText = "";
+    String IncludeBBox = "";
+    String IncludeFeatureBBox = "";
     String IncludeColumns = "";
     String ExcludeColumns = "";
     String JavaScriptVar = "";
@@ -625,6 +724,12 @@ private void refresh ()
         LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
         ElevationColumn = parameters.getValue ( "ElevationColumn" );
         WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
+        CRSText = parameters.getValue ( "CRSText" );
+        if ( CRSText != null ) {
+        	CRSText = CRSText.replace("\\\"","\""); // For display, don't escape
+        }
+        IncludeBBox = parameters.getValue ( "IncludeBBox" );
+        IncludeFeatureBBox = parameters.getValue ( "IncludeFeatureBBox" );
         IncludeColumns = parameters.getValue ( "IncludeColumns" );
         ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
         JavaScriptVar = parameters.getValue ( "JavaScriptVar" );
@@ -675,6 +780,39 @@ private void refresh ()
         if ( WKTGeometryColumn != null ) {
             __WKTGeometryColumn_JTextField.setText (WKTGeometryColumn);
         }
+        if ( CRSText != null ) {
+            __CRSText_JTextArea.setText (CRSText);
+        }
+        if ( IncludeBBox == null ) {
+            // Select default...
+            __IncludeBBox_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IncludeBBox_JComboBox, IncludeBBox, JGUIUtil.NONE, null, null ) ) {
+                __IncludeBBox_JComboBox.select ( IncludeBBox );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nIncludeBBox value \"" + IncludeBBox +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( IncludeFeatureBBox == null ) {
+            // Select default...
+            __IncludeFeatureBBox_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IncludeFeatureBBox_JComboBox, IncludeFeatureBBox, JGUIUtil.NONE, null, null ) ) {
+                __IncludeFeatureBBox_JComboBox.select ( IncludeFeatureBBox );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nIncludeFeatureBBox value \"" + IncludeFeatureBBox +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( IncludeColumns != null ) {
             __IncludeColumns_JTextField.setText (IncludeColumns);
         }
@@ -699,6 +837,9 @@ private void refresh ()
     LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
     ElevationColumn = __ElevationColumn_JTextField.getText().trim();
     WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
+    CRSText = __CRSText_JTextArea.getText().trim().replace("\"", "\\\""); // Escape double quotes for internal
+    IncludeBBox = __IncludeBBox_JComboBox.getSelected();
+    IncludeFeatureBBox = __IncludeFeatureBBox_JComboBox.getSelected();
     IncludeColumns = __IncludeColumns_JTextField.getText().trim();
     ExcludeColumns = __ExcludeColumns_JTextField.getText().trim();
     JavaScriptVar = __JavaScriptVar_JTextField.getText().trim();
@@ -712,6 +853,9 @@ private void refresh ()
     parameters.add ( "LatitudeColumn=" + LatitudeColumn );
     parameters.add ( "ElevationColumn=" + ElevationColumn );
     parameters.add ( "WKTGeometryColumn=" + WKTGeometryColumn );
+    parameters.add ( "CRSText=" + CRSText );
+    parameters.add ( "IncludeBBox=" + IncludeBBox );
+    parameters.add ( "IncludeFeatureBBox=" + IncludeFeatureBBox );
     parameters.add ( "IncludeColumns=" + IncludeColumns );
     parameters.add ( "ExcludeColumns=" + ExcludeColumns );
     parameters.add ( "JavaScriptVar=" + JavaScriptVar );

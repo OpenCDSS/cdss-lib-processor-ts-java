@@ -79,6 +79,8 @@ throws InvalidCommandParameterException
     String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
     String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
+    String IncludeBBox = parameters.getValue ( "IncludeBBox" );
+    String IncludeFeatureBBox = parameters.getValue ( "IncludeFeatureBBox" );
     String warning = "";
     String routine = getCommandName() + ".checkCommandParameters";
     String message;
@@ -182,8 +184,26 @@ throws InvalidCommandParameterException
             message, "Specify the latitude column OR WKT geometry column." ) );
     }
     
+    if ( IncludeBBox != null && !IncludeBBox.equalsIgnoreCase(_True) && 
+        !IncludeBBox.equalsIgnoreCase(_False) && !IncludeBBox.isEmpty() ) {
+        message = "IncludeBBox is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "IncludeBBox must be specified as " + _False + " or " + _True + " (default)") );
+    }
+    
+    if ( IncludeFeatureBBox != null && !IncludeFeatureBBox.equalsIgnoreCase(_True) && 
+        !IncludeFeatureBBox.equalsIgnoreCase(_False) && !IncludeFeatureBBox.isEmpty() ) {
+        message = "IncludeFeatureBBox is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "IncludeFeatureBBox must be specified as " + _False + " or " + _True + " (default)") );
+    }
+    
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(14);
+    List<String> validList = new ArrayList<String>(15);
     validList.add ( "TableID" );
     validList.add ( "OutputFile" );
     validList.add ( "Append" );
@@ -191,6 +211,9 @@ throws InvalidCommandParameterException
     validList.add ( "LatitudeColumn" );
     validList.add ( "ElevationColumn" );
     validList.add ( "WKTGeometryColumn" );
+    validList.add ( "CRSText" );
+    validList.add ( "IncludeBBox" );
+    validList.add ( "IncludeFeatureBBox" );
     validList.add ( "IncludeColumns" );
     validList.add ( "ExcludeColumns" );
     validList.add ( "JavaScriptVar" );
@@ -307,6 +330,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (WKTGeometryColumn != null) && (WKTGeometryColumn.indexOf("${") >= 0) ) {
 		WKTGeometryColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, WKTGeometryColumn);
 	}
+    String CRSText = parameters.getValue ( "CRSText" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (CRSText != null) && (CRSText.indexOf("${") >= 0) ) {
+		CRSText = TSCommandProcessorUtil.expandParameterValue(processor, this, CRSText);
+	}
+	if ( CRSText != null ) {
+		// Replace literal \" with double quote for output
+		CRSText = CRSText.replace("\\\"","\"");
+		// Make sure there is a comma at the end
+		if ( !CRSText.endsWith(",") ) {
+			CRSText = CRSText + ",";
+		}
+	}
+    String IncludeBBox = parameters.getValue ( "IncludeBBox" );
+    boolean includeBBox = true; // Default
+    if ( (IncludeBBox != null) && IncludeBBox.equalsIgnoreCase(_False) ) {
+    	includeBBox = false;
+    }
+    String IncludeFeatureBBox = parameters.getValue ( "IncludeFeatureBBox" );
+    boolean includeFeatureBBox = true; // Default
+    if ( (IncludeFeatureBBox != null) && IncludeFeatureBBox.equalsIgnoreCase(_False) ) {
+    	includeFeatureBBox = false;
+    }
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
 	if ( (commandPhase == CommandPhaseType.RUN) && (IncludeColumns != null) && (IncludeColumns.indexOf("${") >= 0) ) {
 		IncludeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IncludeColumns);
@@ -397,7 +442,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printStatus ( 2, routine, "Writing GeoJSON file \"" + OutputFile_full + "\"" );
         List<String> errors = new ArrayList<String>();
         writeTableToGeoJSON ( table, OutputFile_full, append, includeColumns, excludeColumns,
-            LongitudeColumn, LatitudeColumn, ElevationColumn, WKTGeometryColumn, JavaScriptVar, PrependText, AppendText, errors );
+            LongitudeColumn, LatitudeColumn, ElevationColumn, WKTGeometryColumn, CRSText, includeBBox, includeFeatureBBox,
+            JavaScriptVar, PrependText, AppendText, errors );
         for ( String error : errors ) {
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, error );
@@ -445,6 +491,9 @@ public String toString ( PropList parameters )
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
     String ElevationColumn = parameters.getValue ( "ElevationColumn" );
     String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
+    String CRSText = parameters.getValue ( "CRSText" );
+    String IncludeBBox = parameters.getValue ( "IncludeBBox" );
+    String IncludeFeatureBBox = parameters.getValue ( "IncludeFeatureBBox" );
     String IncludeColumns = parameters.getValue ( "IncludeColumns" );
     String ExcludeColumns = parameters.getValue ( "ExcludeColumns" );
     String JavaScriptVar = parameters.getValue ( "JavaScriptVar" );
@@ -493,6 +542,24 @@ public String toString ( PropList parameters )
         }
         b.append ( "WKTGeometryColumn=\"" + WKTGeometryColumn + "\"" );
     }
+    if ( (CRSText != null) && (CRSText.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CRSText=\"" + CRSText + "\"" );
+    }
+    if ( (IncludeBBox != null) && (IncludeBBox.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IncludeBBox=" + IncludeBBox );
+    }
+    if ( (IncludeFeatureBBox != null) && (IncludeFeatureBBox.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IncludeFeatureBBox=" + IncludeFeatureBBox );
+    }
     if ( (IncludeColumns != null) && (IncludeColumns.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -531,10 +598,13 @@ public String toString ( PropList parameters )
 Write the table to a GeoJSON file.  This uses simple print statements.
 @param fout open PrintWriter to write to
 @param table data table to write
+@param crsText text for full "crs" data in GeoJSON, to insert in the output
+@param includeBBox whether or not to include "bbox" in output at main level
 @param errors list of error strings to be propagated to calling code
 */
 private void writeTableToGeoJSON ( DataTable table, String outputFile, boolean append, String [] includeColumns, String [] excludeColumns,
-    String longitudeColumn, String latitudeColumn, String elevationColumn, String wktGeometryColumn, String javaScriptVar,
+    String longitudeColumn, String latitudeColumn, String elevationColumn, String wktGeometryColumn, String crsText,
+    boolean includeBBox, boolean includeFeatureBBox, String javaScriptVar,
     String prependText, String appendText, List<String> errors )
 throws IOException
 {   PrintWriter fout = null;
@@ -712,13 +782,21 @@ throws IOException
 	     	fout.print("{\n" );
 	    }
 	    fout.print( i1 + "\"type\": \"FeatureCollection\",\n");
-	    fout.print( i1 + "\"features\": [\n");
+	    if ( (crsText != null) && !crsText.isEmpty() ) {
+	    	// TODO SAM 2016-07-19 Improve indentation when on multiple lines
+	    	fout.print ( i1 + crsText + "\n");
+	    }
+	    GeoJSONGeometryFormatter geoJSONFormatter = new GeoJSONGeometryFormatter(2);
+	    StringBuilder buffer = new StringBuilder(); // Need if "bbox" is requested to process all data
+	    if ( !includeBBox ) {
+	    	// Can print directly
+	    	fout.print( i1 + "\"features\": [\n");
+	    }
 	
 	    int nRows = table.getNumberOfRecords();
 	    TableRecord rec;
 	    Object latitudeO, longitudeO, elevationO = null; // Can be double, int, or string
 	    WKTGeometryParser wktParser = null;
-	    GeoJSONGeometryFormatter geoJSONFormatter = new GeoJSONGeometryFormatter(2);
 	    Gson gson = new Gson();
 	    String wkt = null;
 	    if ( doWkt ) {
@@ -730,6 +808,13 @@ throws IOException
 	    Double x = 0.0, y = 0.0, z = 0.0;
 	    int nRows0 = nRows - 1;
 	    Object o = null; // Object from table
+	    double xminAll = Double.MAX_VALUE;
+	    double xmaxAll = -Double.MAX_VALUE;
+	    double yminAll = Double.MAX_VALUE;
+	    double ymaxAll = -Double.MAX_VALUE;
+	    double zminAll = 0.0;
+	    double zmaxAll = 0.0;
+	    int dim = 2; // Dimension for shape
 	    for ( int iRow = 0; iRow < nRows; iRow++ ) {
 	        try {
 	            rec = table.getRecord(iRow);
@@ -764,6 +849,7 @@ throws IOException
 	                	y = 0.0 + (Integer)latitudeO;
 	                }
 	                if ( doElevation ) {
+	                	dim = 3;
 	                    elevationO = rec.getFieldValue(elevationColNum);
 	                    if ( latitudeO instanceof Double ) {
 	                    	z = (Double)elevationO;
@@ -777,14 +863,11 @@ throws IOException
 	                }
 	                if ( elevationColNum >= 0 ) {
 	                	shape = pointzm = new GRPointZM();
-	                	pointzm.x = x;
-	                	pointzm.y = y;
-	                	pointzm.z = z;
+	                	pointzm.setXYZ(x,y,z);
 	                }
 	                else {
 	                	shape = point = new GRPoint ();
-	                	point.x = x;
-	                	point.y = y;
+	                	point.setXY(x,y);
 	                }
 	            }
 	            if ( doWkt ) {
@@ -810,9 +893,39 @@ throws IOException
 	                }
 	            }
 	            // If get to here it is OK to output the feature and table columns as related properties.
-	    	    fout.print( i2 + "{\n");
-	    	    fout.print( i3 + "\"type\": \"Feature\",\n");
-	    	    fout.print( i3 + "\"properties\": {\n");
+	            if ( includeBBox ) {
+	            	buffer.append( i2 + "{\n");
+	            	buffer.append( i3 + "\"type\": \"Feature\",\n");
+	            	if ( includeFeatureBBox ) {
+	        	    	if ( dim == 2 ) {
+	        	    		buffer.append ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
+	        	    	}
+	        	    	else {
+	        	    		// TODO SAM 2016-07-20 - need to enable Z
+	        	    		fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", 0" + // shape.zmin + ", "
+	        	    				+ shape.xmax + ", " + shape.ymax + ", " // + shape.zmax
+	        	    				+ "0],\n" );
+	        	    	}
+	        	    }
+	            	buffer.append( i3 + "\"properties\": {\n");
+	            }
+	            else {
+		    	    fout.print( i2 + "{\n");
+		    	    fout.print( i3 + "\"type\": \"Feature\",\n");
+		    	    if ( includeFeatureBBox ) {
+	        	    	if ( dim == 2 ) {
+	        	    		fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
+	        	    	}
+	        	    	else {
+	        	    		// TODO SAM 2016-07-20 - need to enable Z
+	        	    		fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + // shape.zmin +
+	        	    		"0, " + shape.xmax + ", " + shape.ymax + ", " +
+	        	    		//shape.zmax +
+	        	    		"0],\n" );
+	        	    	}
+	        	    }
+		    	    fout.print( i3 + "\"properties\": {\n");
+	            }
 	    	    // Loop through the columns in the table and output as properties
 	    	    // - Do not output WKT property but do output latitude and longitude
 	    	    int iCol0 = includeColumnNumbers.length - 1;
@@ -820,26 +933,73 @@ throws IOException
 	    	    	try {
 	    	    		// Gson will properly output with quotes, etc.
 	    	    		o = table.getFieldValue(iRow, includeColumnNumbers[iCol]);
-		    	    	fout.print( i4 + "\"" + includeColumns2[iCol] + "\": " + gson.toJson(o) );
+	    	    		if ( includeBBox ) {
+	    	    			buffer.append( i4 + "\"" + includeColumns2[iCol] + "\": " + gson.toJson(o) );
+	    	    		}
+	    	    		else {
+	    	    			fout.print( i4 + "\"" + includeColumns2[iCol] + "\": " + gson.toJson(o) );
+	    	    		}
 			    	    if ( iCol != iCol0 ) {
-			    	    	fout.print ( ",\n" );
+			    	    	if ( includeBBox ) {
+			    	    		buffer.append ( ",\n" );
+		    	    		}
+		    	    		else {
+		    	    			fout.print ( ",\n" );
+		    	    		}
 			    	    }
 			    	    else {
-			    	    	fout.print ( "\n" );
+			    	    	if ( includeBBox ) {
+			    	    		buffer.append ( "\n" );
+		    	    		}
+		    	    		else {
+		    	    			fout.print ( "\n" );
+		    	    		}
 			    	    }
 	    	    	}
 	    	    	catch ( Exception e ) {
 	    	    		continue;
 	    	    	}
 	    	    }
-	    	    fout.print( i3 + "},\n");
+	    	    if ( includeBBox ) {
+	    	    	buffer.append( i3 + "},\n");
+	    		}
+	    		else {
+	    			fout.print( i3 + "},\n");
+	    		}
 	    	    // Output the geometry based on the shape type
-	    	    fout.print( i3 + "\"geometry\": " + geoJSONFormatter.format(shape, true, i3) );
+	    	    if ( includeBBox ) {
+	    	    	buffer.append( i3 + "\"geometry\": " + geoJSONFormatter.format(shape, true, i3) );
+	    	    	if ( shape.xmax > xmaxAll ) {
+	    	    		xmaxAll = shape.xmax;
+	    	    	}
+	    	    	if ( shape.xmin < xminAll ) {
+	    	    		xminAll = shape.xmin;
+	    	    	}
+	    	    	if ( shape.ymax > ymaxAll ) {
+	    	    		ymaxAll = shape.ymax;
+	    	    	}
+	    	    	if ( shape.ymin < yminAll ) {
+	    	    		yminAll = shape.ymin;
+	    	    	}
+	    		}
+	    		else {
+	    			fout.print( i3 + "\"geometry\": " + geoJSONFormatter.format(shape, true, i3) );
+	    		}
 	    	    if ( iRow == nRows0 ) {
-	    	    	fout.print( i2 + "}\n");
+	    	    	if ( includeBBox ) {
+	    	    		buffer.append( i2 + "}\n");
+    	    		}
+    	    		else {
+    	    			fout.print( i2 + "}\n");
+    	    		}
 	    	    }
 	    	    else {
-	    	    	fout.print( i2 + "},\n");
+	    	    	if ( includeBBox ) {
+	    	    		buffer.append( i2 + "},\n");
+    	    		}
+    	    		else {
+    	    			fout.print( i2 + "},\n");
+    	    		}
 	    	    }
 	        }
 	        catch ( Exception e ) {
@@ -847,6 +1007,17 @@ throws IOException
 	            Message.printWarning(3, "", e);
 	            continue;
 	        }
+	    }
+	    if ( includeBBox ) {
+		    // Had to buffer so finish printing
+	    	if ( dim == 2 ) {
+	    		fout.print ( i1 + "\"bbox\": [" + xminAll + ", " + yminAll + ", " + xmaxAll + ", " + ymaxAll + "],\n" );
+	    	}
+	    	else {
+	    		fout.print ( i1 + "\"bbox\": [" + xminAll + ", " + yminAll + ", " + zminAll + ", " + xmaxAll + ", " + ymaxAll + ", " + zmaxAll + "],\n" );
+	    	}
+		    fout.print( i1 + "\"features\": [\n");
+		    fout.print( i1 + buffer);
 	    }
 	    fout.print( i1 + "]\n"); // End features
 	    if ( (javaScriptVar != null) && !javaScriptVar.isEmpty() ) {

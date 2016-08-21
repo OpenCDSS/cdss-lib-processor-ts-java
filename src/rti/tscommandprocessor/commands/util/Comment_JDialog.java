@@ -16,7 +16,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 
 import java.util.List;
 
@@ -132,7 +134,7 @@ private void initialize ( JFrame parent, List<String> comments )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	// Main contents...
 
@@ -140,10 +142,12 @@ private void initialize ( JFrame parent, List<String> comments )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Enter one or more comments (leading # will be added automatically if not shown)." ), 
-		0, y, 7, 1, 0, 0, insets2, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insets2, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "See also the /* and */ commands for multi-line comments, which are useful for commenting out multiple commands." ), 
         0, ++y, 7, 1, 0, 0, insets2, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL ), 
+        0, ++y, 7, 1, 0, 0, insets2, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JTextArea ref_JTextArea = new JTextArea (2, 80);
     // Add a string buffer with reference positions (similar to UltraEdit Editor)

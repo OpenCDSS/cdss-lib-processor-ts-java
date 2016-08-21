@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.hydrobase;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -8,10 +9,8 @@ import javax.swing.JFrame;
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
-
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
@@ -37,7 +36,6 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.InvalidTimeIntervalException;
 import RTi.Util.Time.TimeInterval;
-
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import DWR.DMI.HydroBaseDMI.HydroBaseDataStore;
 import DWR.DMI.HydroBaseDMI.HydroBase_AgriculturalCASSCropStats;
@@ -503,20 +501,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "ReadHydroBase_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
+	TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
     CommandStatus status = getCommandStatus();
     status.clearLog(command_phase);
     
@@ -778,15 +775,16 @@ CommandWarningException, CommandException
 			if ( InputName == null ) {
 				InputName = "";
 			}
-			List<String> whereNList = new Vector ( 6 );
+			List<String> whereNList = new ArrayList<String> ( 6 );
 			String WhereN;
-			int nfg = 0;	// Used below.
-			for ( nfg = 0; nfg < 1000; nfg++ ) {
-				WhereN = parameters.getValue ( "Where" + (nfg + 1) );
-				if ( WhereN == null ) {
-					break; // No more where clauses
+			int nfg = 0; // Used below.
+			// User may have skipped where and left a blank so loop over a sufficiently large number of where parameters
+			for ( int ifg = 0; ifg < 25; ifg++ ) {
+				WhereN = parameters.getValue ( "Where" + (ifg + 1) );
+				if ( WhereN != null ) {
+					++nfg;
+					whereNList.add ( WhereN );
 				}
-				whereNList.add ( WhereN );
 			}
 		
 			// Find the HydroBaseDMI to use...
@@ -1010,6 +1008,14 @@ CommandWarningException, CommandException
     			}
 			}
 			for ( int i = 0; i < size; i++ ) {
+				// Check to see if reading time series should be canceled because the command has
+				// been canceled.
+				if ( tsprocessor.getCancelProcessingRequested() ) {
+					// The user has requested that command processing should be canceled.
+					// Check here in this command because a very large query could take a long time before a single command finishes.
+					Message.printStatus(2, routine, "Cancel processing based on user request.");
+					break;
+				}
 				// List in order of likelihood to improve performance...
 				if ( is_Station ) {
 					// Station TS...

@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.hydrobase;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -30,10 +31,8 @@ import javax.swing.event.DocumentListener;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
-
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -42,7 +41,6 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
-
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import DWR.DMI.HydroBaseDMI.HydroBaseDataStore;
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel;
@@ -516,7 +514,7 @@ private String getSelectedDataType()
 Get the datastore that matches the selected input name, or return null if not matched/available.
 */
 private HydroBaseDataStore getSelectedDataStoreFromInputName ()
-{   String routine = getClass().getName() + ".getSelectedDataStoreFromInputName";
+{   String routine = getClass().getSimpleName() + ".getSelectedDataStoreFromInputName";
     String inputName = __InputName_JComboBox.getSelected();
     HydroBaseDMI dmi = null;
     try {
@@ -538,6 +536,7 @@ private HydroBaseDataStore getSelectedDataStoreFromInputName ()
         }
     }
     catch ( Exception e ){
+    	Message.printWarning(3,routine,e);
         dmi = null;
     }
     if ( dmi != null ) {
@@ -564,6 +563,7 @@ private InputFilter_JPanel getVisibleInputFilterPanel()
             continue;
         }
         if ( panel.isVisible() ) {
+        	Message.printStatus(2,"","Visible filter panel name is \"" + panelName + "\"");
             return panel;
         }
     }
@@ -592,7 +592,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, ReadHydroBase_Command command )
-{	String routine = "readHydroBase_JDialog.initialize";
+{	String routine = getClass().getSimpleName() + ".initialize";
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	addWindowListener( this );
@@ -609,6 +609,9 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>The datastore design is being phased in and the legacy input name " +
         "parameter will be phased out in the future.</b></html>"),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "<html><b>If the Where parameter values do not properly display, resize the dialog larger - this is a display bug.</b></html>"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Refer to the HydroBase documentation for information about data types." ), 
@@ -900,7 +903,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     setPreferredSize(getSize()); // Will reflect all filters being visible
     __multipleTS_JPanel.setPreferredSize(__multipleTS_JPanel.getSize()); // So initial height is maximum height
     selectInputFilter( getDataStore()); // Now go back to the filter for the selected input type and intern
-    //setSize(700,720); // TODO SAM 2012-09-25 Need to not hard-code size.  However, in order to properly initialize the
+    //setSize(810,740); // TODO SAM 2012-09-25 Need to not hard-code size.  However, in order to properly initialize the
     // input filter have to select the correct one at initialization - this may lead to NOT the biggest one being
     // selected - needs more TLC - DivTotal is likely the biggest filter panel
     JGUIUtil.center( this );
@@ -960,7 +963,7 @@ Initialize input filters for one HydroBase datastore.
 @param dataStore datastore to use with the filter
 */
 private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, HydroBaseDataStore dataStore )
-{   String routine = getClass().getName() + ".initializeInputFilters_OneFilter";
+{   String routine = getClass().getSimpleName() + ".initializeInputFilters_OneFilter";
     int buffer = 3;
     Insets insets = new Insets(1,buffer,1,buffer);
     List<InputFilter_JPanel> inputFilterJPanelList = getInputFilterJPanelList();
@@ -972,6 +975,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         // Stations...
         HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel panel = new
             HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel ( dataStore );
+        panel.setName(dataStore.getName() + "_Stations" );
         JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
         inputFilterJPanelList.add ( panel );
@@ -991,6 +995,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel panel = new
             HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
             dataStore, enableSFUT, __numWhere, numVisibleChoices );
+        panel.setName(dataStore.getName() + "_StructureWithSFUT" );
         JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
             GridBagConstraints.WEST );
@@ -1010,7 +1015,8 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel panel = new
             HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel ( dataStore, enableSFUT, __numWhere,
                 numVisibleChoices );
-            JGUIUtil.addComponent(parent_JPanel, panel,
+        panel.setName(dataStore.getName() + "_Structure" );
+        JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
             GridBagConstraints.WEST );
         inputFilterJPanelList.add ( panel );
@@ -1028,6 +1034,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
 
         HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel panel = new
             HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel ( dataStore );
+        panel.setName(dataStore.getName() + "_CASS" );
         JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
         inputFilterJPanelList.add ( panel );
@@ -1046,6 +1053,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
 
         HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel panel = new
             HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel ( dataStore );
+        panel.setName(dataStore.getName() + "_CASSLivestock" );
         JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
         inputFilterJPanelList.add ( panel );
@@ -1062,6 +1070,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
     try {
         HydroBase_GUI_CUPopulation_InputFilter_JPanel panel = new
             HydroBase_GUI_CUPopulation_InputFilter_JPanel( dataStore );
+        panel.setName(dataStore.getName() + "_CUPopulation" );
         JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 1.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
             GridBagConstraints.WEST );
@@ -1082,6 +1091,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
     try {
         HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel panel = new
             HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel ( dataStore );
+        panel.setName(dataStore.getName() + "_NASS" );
         JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
             GridBagConstraints.WEST );
@@ -1100,6 +1110,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         // Structure irrig summary TS...
         HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel panel = new
             HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel ( dataStore );
+        panel.setName(dataStore.getName() + "_IrrigSummary" );
         JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
             GridBagConstraints.WEST );
@@ -1116,6 +1127,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
     try {
         HydroBase_GUI_GroundWater_InputFilter_JPanel panel =
             new HydroBase_GUI_GroundWater_InputFilter_JPanel ( dataStore, null, true);
+        panel.setName(dataStore.getName() + "_Groundwater" );
         JGUIUtil.addComponent(parent_JPanel,panel,
             x, y, 7, 1, 1.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
             GridBagConstraints.WEST);
@@ -1134,7 +1146,8 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Hyd
         // Water information sheets...
         HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel panel = new
             HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel ( dataStore );
-            JGUIUtil.addComponent(parent_JPanel, panel,
+        panel.setName(dataStore.getName() + "_WIS" );
+        JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
         inputFilterJPanelList.add ( panel );
         panel.addEventListeners ( this );
@@ -1260,7 +1273,7 @@ private void populateIntervalChoices ( HydroBaseDMI dmi )
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	String routine = "readHydroBase_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String Alias = "";
 	__error_wait = false;
 	String DataStore = "";
@@ -1410,7 +1423,10 @@ private void refresh ()
 		// Selecting the data type and interval will result in the corresponding filter group being selected.
 		selectInputFilter(getDataStore());
 		InputFilter_JPanel filterPanel = getVisibleInputFilterPanel();
-		if ( filterPanel != null ) {
+		if ( filterPanel == null ) {
+			Message.printWarning(1, routine, "Trouble finding visible input filter panel for selected HydroBase - contact software support." );
+		}
+		else {
     		int nfg = filterPanel.getNumFilterGroups();
     		String where;
     		for ( int ifg = 0; ifg < nfg; ifg++ ) {
@@ -1418,8 +1434,7 @@ private void refresh ()
     			if ( (where != null) && (where.length() > 0) ) {
     				// Set the filter...
     				try {
-    				    //Message.printStatus(2,routine,"Setting filter Where" + (ifg + 1) + "=\"" + where + "\" from panel " +
-    				    //    filterPanel );
+    				    Message.printStatus(2,routine,"Setting filter Where" + (ifg + 1) + "=\"" + where + "\" from panel " + filterPanel );
     				    filterPanel.setInputFilter (ifg, where, filterDelim );
     				}
     				catch ( Exception e ) {
@@ -1429,6 +1444,11 @@ private void refresh ()
     				}
     			}
     		}
+		    // For some reason the values do not always show up so invalidate the component to force redraw
+		    // TODO SAM 2016-08-20 This still does not work
+    		Message.printStatus(2,routine,"Revalidating component to force redraw.");
+		    filterPanel.revalidate();
+		    //filterPanel.repaint();
 		}
 		if ( InputStart != null ) {
 			__InputStart_JTextField.setText ( InputStart );
@@ -1602,7 +1622,7 @@ Select (set visible) the appropriate input filter based on the other data choice
 @param dataStore the data store from the DataStore and InputName parameters. 
 */
 private void selectInputFilter ( HydroBaseDataStore dataStore )
-{   String routine = getClass().getName() + ".selectInputFilter";
+{   String routine = getClass().getSimpleName() + ".selectInputFilter";
     // Selected datastore name...
     if ( dataStore == null ) {
         return;
@@ -1620,7 +1640,7 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
     boolean matched;
     int matchCount = 0;
     HydroBaseDMI hbdmi;
-    Message.printStatus(2, routine, "Trying to match selected datastore name \"" + dataStoreName +
+    Message.printStatus(2, routine, "Trying to set visible the input filter given selected datastore name \"" + dataStoreName +
         "\" selectedDataType=\"" + selectedDataType + "\" hbMeasType=\"" + hbMeasType + "\" selectedTimeStep=\"" +
         selectedTimeStep + "\"" );
     for ( InputFilter_JPanel panel : inputFilterJPanelList ) {
@@ -1647,7 +1667,7 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
                 (HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel)panel;
             hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
             if ( hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) ) {
-                Message.printStatus(2, routine, "Panel includSFUT=" + hbpanel.getIncludeSFUT());
+                //Message.printStatus(2, routine, "Panel includeSFUT=" + hbpanel.getIncludeSFUT());
                 if ( !hbpanel.getIncludeSFUT() && HydroBase_Util.isStructureTimeSeriesDataType ( hbdmi, hbMeasType) &&
                     !HydroBase_Util.isStructureSFUTTimeSeriesDataType ( hbdmi, hbMeasType) ) {
                     // Normal structure time series (not SFUT)
@@ -1745,14 +1765,14 @@ private void selectInputFilter ( HydroBaseDataStore dataStore )
             ++matchCount;
         }
     }
-    // No normal panels were matched so enable the generic panel, which will be last panel in list
-    InputFilter_JPanel panel = inputFilterJPanelList.get(inputFilterJPanelList.size() - 1);
+    // No normal panels were matched enable the generic panel, which will be last panel in list
+    InputFilter_JPanel defaultPanel = inputFilterJPanelList.get(inputFilterJPanelList.size() - 1);
     if ( matchCount == 0 ) {
-        panel.setVisible(true);
+        defaultPanel.setVisible(true);
         Message.printStatus(2, routine, "Setting default input filter panel visible.");
     }
     else {
-        panel.setVisible(false);
+        defaultPanel.setVisible(false);
     }
 }
 

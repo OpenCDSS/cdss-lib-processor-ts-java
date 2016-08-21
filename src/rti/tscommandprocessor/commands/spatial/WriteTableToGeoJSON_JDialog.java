@@ -439,7 +439,7 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
         "Coordinate reference system text can be specified using one-line syntax similar to the following (in this case for geographic coordinates)."),
         0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(crs_JPanel, new JLabel (
-        "The double quotes in the text will be replaced with \\s in the command parameter value to escape from normal command quotes."),
+        "The double quotes in the text will automatically be replaced with \\s in the command parameter value to escape from normal command quotes."),
         0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(crs_JPanel, new JLabel (
         "\"crs\": { \"type\": \"name\", \"properties\": { \"name\": \"urn:ogc:def:crs:OGC:1.3:CRS84\" } },"),

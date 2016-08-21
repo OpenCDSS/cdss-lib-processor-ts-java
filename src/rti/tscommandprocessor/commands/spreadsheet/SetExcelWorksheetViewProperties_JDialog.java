@@ -221,7 +221,7 @@ private void initialize ( JFrame parent, SetExcelWorksheetViewProperties_Command
 	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-    	"This command sets view properties for a worksheet in a Microsoft Excel workbook file (*.xls, *.xlsx)."),
+    	"This command sets view properties for one or more worksheets in a Microsoft Excel workbook file (*.xls, *.xlsx)."),
     	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
 		"The Excel workbook file must already be open from a previous command."),
@@ -256,13 +256,27 @@ private void initialize ( JFrame parent, SetExcelWorksheetViewProperties_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Worksheet:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Worksheet_JTextField = new JTextField (30);
-    __Worksheet_JTextField.setToolTipText("Specify the name of the worksheet or use ${Property} notation");
+    __Worksheet_JTextField.setToolTipText("Specify the name(s) of worksheet, separted by commas, can use * for wildcards and ${Property} notation");
     __Worksheet_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Worksheet_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Optional - worksheet name (default=first sheet)."),
+        new JLabel ("Optional - worksheet name(s) (default=first sheet)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Keep file open?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __KeepOpen_JComboBox = new SimpleJComboBox ( false );
+    __KeepOpen_JComboBox.setPrototypeDisplayValue(__command._False + "MMMM"); // to fix some issues with layout of dynamic components
+    __KeepOpen_JComboBox.add("");
+    __KeepOpen_JComboBox.add(__command._False);
+    __KeepOpen_JComboBox.add(__command._True);
+    __KeepOpen_JComboBox.select ( 0 );
+    __KeepOpen_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __KeepOpen_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - keep Excel file open? (default=" + __command._False + ")."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
@@ -278,6 +292,8 @@ private void initialize ( JFrame parent, SetExcelWorksheetViewProperties_Command
     JGUIUtil.addComponent(freeze_JPanel, new JLabel (
 		"Specify the freeze pane using the column A+ and row number 1+ as per Excel standards."),
 		0, ++yFreeze, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(freeze_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yFreeze, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(freeze_JPanel, new JLabel ("Column to right of split:"),
         0, ++yFreeze, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -296,20 +312,6 @@ private void initialize ( JFrame parent, SetExcelWorksheetViewProperties_Command
         1, yFreeze, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(freeze_JPanel, new JLabel ("Optional - row (1+) below the split."),
         3, yFreeze, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Keep file open?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __KeepOpen_JComboBox = new SimpleJComboBox ( false );
-    __KeepOpen_JComboBox.setPrototypeDisplayValue(__command._False + "MMMM"); // to fix some issues with layout of dynamic components
-    __KeepOpen_JComboBox.add("");
-    __KeepOpen_JComboBox.add(__command._False);
-    __KeepOpen_JComboBox.add(__command._True);
-    __KeepOpen_JComboBox.select ( 0 );
-    __KeepOpen_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __KeepOpen_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - keep Excel file open? (default=" + __command._False + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

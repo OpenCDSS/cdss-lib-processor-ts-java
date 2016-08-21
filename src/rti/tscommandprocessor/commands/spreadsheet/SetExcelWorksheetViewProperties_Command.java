@@ -152,15 +152,22 @@ CommandWarningException, CommandException
 
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Worksheet = parameters.getValue ( "Worksheet" );
-    if ( (Worksheet != null) && !Worksheet.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Worksheet.indexOf("${") >= 0 ) {
-    	Worksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheet);
+    List<String> worksheetList = new ArrayList<String>();
+    if ( (Worksheet != null) && !Worksheet.isEmpty() ) {
+    	if ( (commandPhase == CommandPhaseType.RUN) && Worksheet.indexOf("${") >= 0 ) {
+    		Worksheet = TSCommandProcessorUtil.expandParameterValue(processor, this, Worksheet);
+    	}
+    	String [] parts = Worksheet.split(",");
+    	for ( int i = 0; i < parts.length; i++ ) {
+    		worksheetList.add(parts[i].trim());
+    	}
     }
 	String FreezePaneColumnRightOfSplit = parameters.getValue ( "FreezePaneColumnRightOfSplit" );
 	if ( (FreezePaneColumnRightOfSplit != null) && FreezePaneColumnRightOfSplit.equals("") ) {
 		FreezePaneColumnRightOfSplit = null; // Easier to check below
 	}
 	String FreezePaneRowBelowSplit = parameters.getValue ( "FreezePaneRowBelowSplit" );
-	int freezePaneRowBelowSplit = 0;
+	int freezePaneRowBelowSplit = -1; // Means don't do it
 	if ( (FreezePaneRowBelowSplit != null) && !FreezePaneRowBelowSplit.equals("") ) {
 		freezePaneRowBelowSplit = Integer.parseInt(FreezePaneRowBelowSplit);
 	}
@@ -212,45 +219,92 @@ CommandWarningException, CommandException
                 message, "Report problem to software support." ) );
         }
         else {
-        	// Get the worksheet to be modified
-            Sheet ws = null;
-            if ( (Worksheet == null) || (Worksheet.length() == 0) ) {
-                // Default is to use the first sheet
-                ws = wb.getSheetAt(0);
-                if ( ws == null ) {
-                    message = "The Excel workbook \"" + OutputFile_full + "\" does not include any worksheets.";
-                    Message.printWarning(warning_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                    status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Add worksheets to the workbook." ) );
-                }
-            }
-            else {
-                ws = wb.getSheet(Worksheet);
-                if ( ws == null ) {
-                    message = "The Excel workbook \"" + OutputFile_full + "\" does not include worksheet named \"" + Worksheet + "\"";
-                    Message.printWarning(warning_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                    status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the specified worksheet exists in the workbook." ) );
-                }
-            }
-            if ( ws != null ) {
-            	if ( (FreezePaneColumnRightOfSplit != null) || (FreezePaneRowBelowSplit != null) ) {
-	            	// Create the freeze pane.  Need to convert the command parameters to the internal values.
-            		int freezePaneColumnRightOfSplit = 0;
-            		if ( (FreezePaneColumnRightOfSplit != null) && !FreezePaneColumnRightOfSplit.equals("") ) {
-            			 // Convert the Excel column letter to 0+ column number
-            			 CellReference ref = new CellReference(FreezePaneColumnRightOfSplit + "1");
-            			 freezePaneColumnRightOfSplit = ref.getCol();
-            		}
-            		// Row needs to be converted from 1+ to 0+ (initial 0 means no freeze)
-            		if ( freezePaneRowBelowSplit > 0 ) {
-            			--freezePaneRowBelowSplit;
-            		}
-	            	ws.createFreezePane(freezePaneColumnRightOfSplit, freezePaneRowBelowSplit);
+    		// Convert the command parameters (1+) to the internal values (0+) - only do once if looping.
+    		int freezePaneColumnRightOfSplit = -1;
+    		if ( (FreezePaneColumnRightOfSplit != null) && !FreezePaneColumnRightOfSplit.isEmpty() ) {
+    			 // Convert the Excel column letter column number.  Add a "1" below to convert "A" to "A1" for address conversion.
+    			 CellReference ref = new CellReference(FreezePaneColumnRightOfSplit + "1");
+    			 freezePaneColumnRightOfSplit = ref.getCol();
+    		}
+    		// Row needs to be converted from 1+ to 0+ (initial 0 means no freeze)
+    		if ( freezePaneRowBelowSplit >= 0 ) {
+    			--freezePaneRowBelowSplit;
+    		}
+        	if ( (Worksheet != null) && (Worksheet.indexOf("*") >= 0) ) {
+            	// At least one worksheet name contains a wildcard, so get the list of all available worksheets
+            	// and then expand wildcards if necessary
+            	int numSheets = wb.getNumberOfSheets();	
+            	List<String> worksheetMatchList = new ArrayList<String>(); // For matched sheets
+            	List<String> worksheetPatternList = new ArrayList<String>(); // Convert * to .* and uppercase for pattern checks
+            	for ( String worksheet : worksheetList ) {
+            		worksheetPatternList.add(worksheet.replace("*", ".*").toUpperCase());
             	}
-            }
+            	for ( int iwb = 0; iwb < numSheets; iwb++ ) {
+            		Sheet ws = wb.getSheetAt(iwb);
+            		for ( String worksheetPattern : worksheetPatternList ) {
+            			String sheetName = ws.getSheetName();
+	            		if ( sheetName.toUpperCase().matches(worksheetPattern) ) {
+	            			// Sheet matches
+	            			worksheetMatchList.add(sheetName);
+	            		}
+            		}
+            	}
+            	// Replace previous list of sheets with fully-expanded matching list
+            	worksheetList = worksheetMatchList;
+        	}
+        	else {
+        		// No wildcards so might need to default to first worksheet
+        	    if ( worksheetList.size() == 0 ) {
+        	    	// Add a blank worksheet to trigger using default below
+        	    	worksheetList.add("");
+        	    }
+        	}
+        	for ( String worksheet : worksheetList ) {
+	        	// Get the worksheet to be modified
+	            Sheet ws = null;
+	            if ( (worksheet == null) || (worksheet.length() == 0) ) {
+	                // Default is to use the first sheet
+	                ws = wb.getSheetAt(0);
+	                if ( ws == null ) {
+	                    message = "The Excel workbook \"" + OutputFile_full + "\" does not include any worksheets.";
+	                    Message.printWarning(warning_level,
+	                        MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	                    status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Add worksheets to the workbook." ) );
+	                }
+	                else {
+	                	worksheet = ws.getSheetName();
+	                	Message.printStatus(2,routine,"No worksheet requested so operating on first sheet \"" + worksheet + "\" " + ws );
+	                }
+	                // Worksheet will not be null below so process
+	            }
+	            else {
+	            	// Get the worksheet matching the worksheet name
+	                ws = wb.getSheet(worksheet);
+	                if ( ws == null ) {
+	                    message = "The Excel workbook \"" + OutputFile_full + "\" does not include worksheet named \"" + worksheet + "\"";
+	                    Message.printWarning(warning_level,
+	                        MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	                    status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Verify that the specified worksheet exists in the workbook." ) );
+	                }
+	            }
+	            if ( ws != null ) {
+	            	if ( (freezePaneColumnRightOfSplit >= 0) || (freezePaneRowBelowSplit >= 0) ) {
+	            		if ( freezePaneColumnRightOfSplit < 0 ) {
+	            			freezePaneColumnRightOfSplit = 0;
+	            		}
+	            		if ( freezePaneRowBelowSplit < 0 ) {
+	            			freezePaneRowBelowSplit = 0;
+	            		}
+		            	// Create the freeze pane.
+		            	//Message.printStatus(2,routine,"Setting freeze pane for requested worksheet \"" + worksheet +
+		            	//	"\" freezePaneColumnRightOfSplit=" + freezePaneColumnRightOfSplit +
+		            	//	" freezePaneRowBelowSplit=" + freezePaneRowBelowSplit + " " + ws );
+		            	ws.createFreezePane(freezePaneColumnRightOfSplit, freezePaneRowBelowSplit);
+	            	}
+	            }
+        	}
             // If keeping open skip because it will be written by a later command.
             if ( !keepOpen ) {
                 // Close the workbook and remove from the cache
@@ -306,6 +360,12 @@ public String toString ( PropList props )
         }
         b.append ( "Worksheet=\"" + Worksheet + "\"" );
     }
+    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "KeepOpen=" + KeepOpen );
+    }
     if ( (FreezePaneColumnRightOfSplit != null) && (FreezePaneColumnRightOfSplit.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -317,12 +377,6 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "FreezePaneRowBelowSplit=" + FreezePaneRowBelowSplit );
-    }
-    if ( (KeepOpen != null) && (KeepOpen.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "KeepOpen=" + KeepOpen );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

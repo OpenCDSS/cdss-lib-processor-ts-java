@@ -447,7 +447,7 @@ CommandWarningException, CommandException
         }
     }
     String [] compareColumns2 = null;
-    if ( (compareColumns2 != null) && !compareColumns2.equals("") ) {
+    if ( (CompareColumns2 != null) && !CompareColumns2.equals("") ) {
         compareColumns2 = CompareColumns2.split(",");
         for ( int i = 0; i < compareColumns2.length; i++ ) {
             compareColumns2[i] = compareColumns2[i].trim();

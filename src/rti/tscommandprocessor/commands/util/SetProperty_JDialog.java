@@ -152,7 +152,10 @@ private void initialize ( JFrame parent, SetProperty_Command command )
         "Specify date/times using standard notations to appropriate precision (e.g., YYYY-MM-DD hh:mm:ss)." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Special values also are recognized for date/times (for all precisions):"),
+        "Special values also are recognized for date/times (for all precisions)."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "See also the SetInputPeriod() command for examples of date/time modifiers, such as .Timezone(), which sets the time zone."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "    CurrentToYear = the current date to year precision"),

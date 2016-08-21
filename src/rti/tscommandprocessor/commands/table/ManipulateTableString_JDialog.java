@@ -136,8 +136,12 @@ private void checkGUIState ()
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.REPLACE) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have substrings replaced - see also InputValue2 and InputValue3");
-    	__InputValue2_JTextField.setToolTipText("Specify the substring from the input to be replaced (^=start of line, $=end of line, \\s=space, see also InputValue3");
+    	__InputValue2_JTextField.setToolTipText("Specify the substring from the input to be replaced (^=start of line, $=end of line, \\s=space, see also InputValue3)");
     	__InputValue3_JTextField.setToolTipText("Specify the substring to be inserted as the replacement for InputValue2 (^=start of line, $=end of line, \\s=space,)");
+    }
+    else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.SPLIT) ) {
+    	__InputValue2_JTextField.setToolTipText("Specify the delimiter character for the split (\\n=newline, \\s=space).");
+    	__InputValue3_JTextField.setToolTipText("Specify the part to output, 1+");
     }
     else if ( operator.equalsIgnoreCase( "" + DataTableStringOperatorType.SUBSTRING) ) {
     	__InputColumn1_JComboBox.setToolTipText("Specify an input column that will have a substring extracted - see also InputValue2 and InputValue3");

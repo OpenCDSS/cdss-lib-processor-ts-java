@@ -214,7 +214,7 @@ CommandWarningException, CommandException
     
     // Now process...
 
-    List<String> problems = new Vector<String>();
+    List<String> problems = new ArrayList<String>();
     try {
         DataTableStringFormatter dtm = new DataTableStringFormatter ( table );
         dtm.format ( inputColumnNames, Format, OutputColumn, InsertBeforeColumn, problems );

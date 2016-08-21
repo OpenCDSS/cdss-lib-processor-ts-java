@@ -1,13 +1,14 @@
 package rti.tscommandprocessor.commands.ts;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import riverside.ts.routing.lagk.LagKBuilder;
 import riverside.ts.util.Table;
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TS;
 import RTi.TS.TSData;
@@ -34,6 +35,8 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
@@ -52,7 +55,7 @@ private double __BIG_DATA_VALUE = Double.MAX_VALUE;
 /**
 List of time series created during discovery.  This is the routed time series.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discoveryTSList = null;
     
 /**
 LagInterval as a TimeInterval.
@@ -103,6 +106,14 @@ throws InvalidCommandParameterException
 	String K = parameters.getValue( "K" );
 	String InflowStates = parameters.getValue( "InflowStates" );
 	String OutflowStates = parameters.getValue( "OutflowStates" );
+	String TableID = parameters.getValue( "TableID" );
+	String TableTSIDColumn = parameters.getValue( "TableTSIDColumn" );
+	String TableTSIDFormat = parameters.getValue( "TableTSIDFormat" );
+	String TableStateDateTimeColumn = parameters.getValue( "TableStateDateTimeColumn" );
+	String TableStateNameColumn = parameters.getValue( "TableStateNameColumn" );
+	String TableStateValueColumn = parameters.getValue( "TableStateValueColumn" );
+	String TableInflowStateName = parameters.getValue( "TableInflowStateName" );
+	String TableOutflowStateName = parameters.getValue( "TableOutflowStateName" );;
 	//String Alias = parameters.getValue( "Alias" );
 	
 	// TSID - TSID will always be set from the lagK_JDialog when
@@ -197,150 +208,15 @@ throws InvalidCommandParameterException
     // Lag is not required - can attenuate without
 
     __Lag_Table = null;
-    int countLagPositive = 0;
-    int countLagNegative = 0;
-	if ( (Lag != null) && !Lag.equals("") ) {
-		// If pair values are specified, make sure they are a sequence of numbers.  Save the results
-	    // for use when running the command.
-		List tokens = StringUtil.breakStringList(Lag, " ,;", StringUtil.DELIM_SKIP_BLANKS);
-		int size = 0;
-		if ( tokens != null ) {
-			size = tokens.size();
-		}
-		if ( (size%2) != 0 ) {
-            message = "The Lag values (" + Lag + ") are not specified as pairs.";
-            warning += "\n" + message;
-            status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE, message,
-                "Provide a value,Lag as pairs."));
-		}
-		else {
-		    // Verify that each value in the pair is a number and set the pair in the table.
-		    // Also verify that the flow values are in increasing order.
-		    __Lag_Table = new Table();
-		    __Lag_Table.allocateDataSpace(size/2);
-    		String token;
-            double flowValue = 0.0, lag = 0.0; // "value" needs to stick around because it is saved with lag
-            double value_prev = 0.0;
-    		for ( int i = 0; i < size; i++ ) {
-    			token = ((String)tokens.get(i)).trim();
-    			if ( !StringUtil.isDouble(token) ) {
-    			    if ( (i%2) == 0 ) {
-                        message = "Lag table flow value (" + token + ") is not a number.";
-                        warning += "\n" + message;
-                        status.addToLog(CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a valid number."));
-                    }
-    			    else {
-                        message = "Lag value (" + token + ") is not a number.";
-                        warning += "\n" + message;
-                        status.addToLog(CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a valid number."));
-                    }
-                }
-    			else {
-    			    if ( (i%2) == 0 ) {
-    			        flowValue = Double.parseDouble(token);
-    			    }
-    			    else {
-    			        lag = Double.parseDouble(token);
-                        if ( lag > 0.0 ) {
-                            ++countLagPositive;
-                        }
-                        else if ( lag < 0.0 ) {
-                            ++countLagNegative;
-                        }
-    			        // Have processed the value and lag so set in the table.
-    			        __Lag_Table.set(i/2, flowValue, lag);
-                        if ( (i > 1) && (flowValue <= value_prev) ) {
-                            // Verify that the flow value is larger than the previous value
-                            message = "Flow value (" + StringUtil.formatString(flowValue,"%.4f") +
-                                ") is <= previous flow value in the Lag table.";
-                            warning += "\n" + message;
-                            status.addToLog(CommandPhaseType.INITIALIZATION,
-                                new CommandLogRecord(CommandStatusType.FAILURE, message,
-                                "Verify that flow values are in increasing order in the Lag table."));
-                        }
-                        value_prev = flowValue;
-    			    }
-    			}
-    		}
-		}
-		// Make sure that lag values are either all positive or all negative
-		if ( (countLagNegative > 0) && (countLagPositive > 0) ) {
-            message = "Negative and positive lag values cannot be used together.";
-            warning += "\n" + message;
-            status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE, message,
-                "Specify lag values as all <= 0 or all >= 0."));
-		}
+	if ( (Lag != null) && !Lag.isEmpty() && (Lag.indexOf("${") < 0) ) {
+		warning = parseLagParameter(Lag,warning,status);
 	}
 	
 	// K is not required - can lag without attenuating
 
 	__K_Table = null;
-    if ( (K != null) && !K.equals("") ) {
-        // If pair values are specified, make sure they are a sequence of numbers.  Save the results
-        // for use when running the command.
-        List tokens = StringUtil.breakStringList(K, " ,;", StringUtil.DELIM_SKIP_BLANKS);
-        int size = 0;
-        if ( tokens != null ) {
-            size = tokens.size();
-        }
-        if ( (size%2) != 0 ) {
-            message = "The K values (" + K + ") are not specified as pairs.";
-            warning += "\n" + message;
-            status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a value,K as pairs."));
-        }
-        else {
-            // Verify that each value in the pair is a number and set the pair in the table
-            // Also verify that the flow values are in increasing order.
-            __K_Table = new Table();
-            __K_Table.allocateDataSpace(size/2);
-            String token;
-            double value = 0.0, k = 0.0; // "value" needs to stick around because it is saved with lag
-            double value_prev = 0.0;
-            for ( int i = 0; i < size; i++ ) {
-                token = ((String)tokens.get(i)).trim();
-                if ( !StringUtil.isDouble(token) ) {
-                    if ( (i%2) == 0 ) {
-                        message = "K table flow value (" + token + ") is not a number.";
-                        warning += "\n" + message;
-                        status.addToLog(CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a valid number."));
-                    }
-                    else {
-                        message = "K value (" + token + ") is not a number.";
-                        warning += "\n" + message;
-                        status.addToLog(CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(
-                            CommandStatusType.FAILURE, message,
-                            "Provide a valid number."));
-                    }
-                }
-                else {
-                    if ( (i%2) == 0 ) {
-                        value = Double.parseDouble(token);
-                    }
-                    else {
-                        k = Double.parseDouble(token);
-                        // Have processed the value and k so set in the table.
-                        __K_Table.set(i/2, value, k);
-                        if ( (i > 1) && (value <= value_prev) ) {
-                            // Verify that the flow value is larger than the previous value
-                            message = "Flow value (" + StringUtil.formatString(value,"%.4f") +
-                                ") is <= previous flow value in the K table.";
-                            warning += "\n" + message;
-                            status.addToLog(CommandPhaseType.INITIALIZATION,
-                                new CommandLogRecord(CommandStatusType.FAILURE, message,
-                                "Verify that flow values are in increasing order in the K table."));
-                        }
-                        value_prev = value;
-                    }
-                }
-            }
-        }
+    if ( (K != null) && !K.equals("") && (K.indexOf("${") < 0) ) {
+    	warning = parseKParameter(K,warning,status);
     }
 
 	// TODO SAM 2008-10-06 Do more checks for the states in the 'runCommand' method. At this time, only
@@ -376,11 +252,59 @@ throws InvalidCommandParameterException
             }
         }
     }
+    
+    // If a state table is specified, make sure all the other necessary parameters are also specified
+    
+    if ( (TableID != null) && !TableID.isEmpty() ) {
+    	if ( (TableTSIDColumn == null) || TableID.isEmpty() ) {
+	        message = "The TableTSIDColumn must be specified.";
+	        warning +="\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "TableTSIDColumn must be specified." ) );
+    	}
+    	/*
+    	if ( (TableTSIDFormat == null) || TableTSIDFormat.isEmpty() ) {
+	        message = "The TableTSIDFormat must be specified.";
+	        warning +="\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "TableTSIDFormat must be specified." ) );
+    	}*/
+    	if ( (TableStateDateTimeColumn == null) || TableStateDateTimeColumn.isEmpty() ) {
+	        message = "The TableStateDateTimeColumn must be specified.";
+	        warning +="\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "TableStateDateTimeColumn must be specified." ) );
+    	}
+    	if ( (TableStateNameColumn == null) || TableStateNameColumn.isEmpty() ) {
+	        message = "The TableStateNameColumn must be specified.";
+	        warning +="\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "TableStateNameColumn must be specified." ) );
+    	}
+    	if ( (TableStateValueColumn == null) || TableStateValueColumn.isEmpty() ) {
+	        message = "The TableStateValueColumn must be specified.";
+	        warning +="\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "TableStateValueColumn must be specified." ) );
+    	}
+    	if ( (TableInflowStateName == null) || TableInflowStateName.isEmpty() ) {
+	        message = "The TableInflowStateName must be specified.";
+	        warning +="\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "TableInflowStateName must be specified." ) );
+    	}
+    	if ( (TableOutflowStateName == null) || TableOutflowStateName.isEmpty() ) {
+	        message = "The TableOutflowStateName must be specified.";
+	        warning +="\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "TableOutflowStateName must be specified." ) );
+    	}
+    }
 
 	// Throw an InvalidCommandParameterException in case of errors.
     
     // Check for invalid parameters...
-    List validList = new ArrayList<String>(9);
+    List validList = new ArrayList<String>(17);
     validList.add ( "TSID" );
     validList.add ( "NewTSID" );
     validList.add ( "Lag" );
@@ -389,6 +313,14 @@ throws InvalidCommandParameterException
     validList.add ( "LagInterval" );
     validList.add ( "InflowStates" );
     validList.add ( "OutflowStates" );
+    validList.add ( "TableID" );
+    validList.add ( "TableTSIDColumn" );
+    validList.add ( "TableTSIDFormat" );
+    validList.add ( "TableStateDateTimeColumn" );
+    validList.add ( "TableStateNameColumn" );
+    validList.add ( "TableStateValueColumn" );
+    validList.add ( "TableInflowStateName" );
+    validList.add ( "TableOutflowStateName" );
     validList.add ( "Alias" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -408,17 +340,10 @@ Edit the command.
 not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
-{	
-	return ( new VariableLagK_JDialog ( parent, this ) ).ok();
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	
-	super.finalize ();
+{	List<String> tableIDChoices =
+        TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)getCommandProcessor(), this);
+	return ( new VariableLagK_JDialog ( parent, this, tableIDChoices ) ).ok();
 }
 
 /**
@@ -426,7 +351,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discoveryTSList;
 }
 
 /**
@@ -566,18 +491,79 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
-    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+    List<TS> discoveryTSList = getDiscoveryTSList ();
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
-    TS datats = discovery_TS_Vector.get(0);
+    TS datats = discoveryTSList.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return discoveryTSList;
     }
     else {
         return null;
     }
+}
+
+// TODO SAM 2016-07-31 This code code be moved to a more generic package and shared once vetted.
+/**
+ * Get the states from the state table.
+ */
+private double [] getStatesFromTable(DataTable table,int tableTSIDColumnNum,int tableStateDateTimeColumnNum,
+	int tableStateNameColumnNum, int tableStateValueColumnNum,
+	DateTime reqStateDate, String reqStateName ) {
+	double [] states = null;
+	// Loop through the states table and find matching criteria
+	TableRecord rec;
+	DateTime stateDate = null;
+	String stateName, stateValue;
+	Object o;
+	for ( int irec = 0; irec < table.getNumberOfRecords(); irec++ ) {
+		try {
+			rec = table.getRecord(irec);
+			// TODO SAM 2016-07-31 Need to check the TSID if that is what is used
+			stateName = rec.getFieldValueString(tableStateNameColumnNum);
+			if ( !stateName.equalsIgnoreCase(reqStateName) ) {
+				continue;
+			}
+			o = rec.getFieldValueString(tableStateDateTimeColumnNum);
+			if ( o instanceof DateTime ) {
+				stateDate = (DateTime)o;
+			}
+			else if ( o instanceof Date ) {
+				stateDate = new DateTime((Date)o);
+			}
+			else if ( o instanceof String ) {
+				stateDate = DateTime.parse((String)o);
+			}
+			else {
+				// TODO SAM 2016-07-31 need to handle other representations
+			}
+			if ( !reqStateDate.equals(stateDate) ) {
+				// Use precision of the requested state date/time since that should be correct
+				continue;
+			}
+			// If here the state identifier and date/time have matched so get the value
+			o = rec.getFieldValue(tableStateValueColumnNum);
+			if ( o instanceof String ) {
+				// Parse out the array
+				stateValue = (String)o;
+				stateValue = stateValue.replace("[","").trim();
+				stateValue = stateValue.replace("]","").trim();
+				String [] parts = stateValue.split(",");
+				states = new double[parts.length];
+				for ( int i = 0; i < parts.length; i++ ) {
+					states[i] = Double.parseDouble(parts[i]);
+					// TODO SAM 2016-07-31 need to add more error-handling
+				}
+			}
+		}
+		catch ( Exception e ) {
+			Message.printWarning(3,"",e);
+			continue;
+		}
+	}
+	return states;
 }
 
 /**
@@ -601,6 +587,160 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         parameters.set("FlowUnits", DataUnits);
         parameters.unSet(DataUnits);
     }
+}
+
+private String parseKParameter ( String K, String warning, CommandStatus status ) {
+	String message;
+    // If pair values are specified, make sure they are a sequence of numbers.  Save the results
+    // for use when running the command.
+    List<String> tokens = StringUtil.breakStringList(K, " ,;", StringUtil.DELIM_SKIP_BLANKS);
+    int size = 0;
+    if ( tokens != null ) {
+        size = tokens.size();
+    }
+    if ( (size%2) != 0 ) {
+        message = "The K values (" + K + ") are not specified as pairs.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE, message,
+            	"Provide lag pairs as:  flow1,k1;flow2,k2;flow3,k3 as pairs"));
+    }
+    else {
+        // Verify that each value in the pair is a number and set the pair in the table
+        // Also verify that the flow values are in increasing order.
+        __K_Table = new Table();
+        __K_Table.allocateDataSpace(size/2);
+        String token;
+        double value = 0.0, k = 0.0; // "value" needs to stick around because it is saved with lag
+        double value_prev = 0.0;
+        for ( int i = 0; i < size; i++ ) {
+            token = tokens.get(i).trim();
+            if ( !StringUtil.isDouble(token) ) {
+                if ( (i%2) == 0 ) {
+                    message = "K table flow value (" + token + ") is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a valid number."));
+                }
+                else {
+                    message = "K value (" + token + ") is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(
+                        CommandStatusType.FAILURE, message,
+                        "Provide a valid number."));
+                }
+            }
+            else {
+                if ( (i%2) == 0 ) {
+                    value = Double.parseDouble(token);
+                }
+                else {
+                    k = Double.parseDouble(token);
+                    // Have processed the value and k so set in the table.
+                    __K_Table.set(i/2, value, k);
+                    if ( (i > 1) && (value <= value_prev) ) {
+                        // Verify that the flow value is larger than the previous value
+                        message = "Flow value (" + StringUtil.formatString(value,"%.4f") +
+                            ") is <= previous flow value in the K table.";
+                        warning += "\n" + message;
+                        status.addToLog(CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE, message,
+                            "Verify that flow values are in increasing order in the K table."));
+                    }
+                    value_prev = value;
+                }
+            }
+        }
+    }
+    return warning;
+}
+
+/**
+ * Parse the lag parameter.
+ * @param Lag the Lag parameter value
+ * @param warning the cumulative warning string when initializing
+ * @param status command status
+ */
+private String parseLagParameter ( String Lag, String warning, CommandStatus status ) {
+	String message;
+    int countLagPositive = 0;
+    int countLagNegative = 0;
+	// If pair values are specified, make sure they are a sequence of numbers.  Save the results
+    // for use when running the command.
+	List<String> tokens = StringUtil.breakStringList(Lag, " ,;", StringUtil.DELIM_SKIP_BLANKS);
+	int size = 0;
+	if ( tokens != null ) {
+		size = tokens.size();
+	}
+	if ( (size%2) != 0 ) {
+        message = "The Lag values (" + Lag + ") are not specified as pairs.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE, message,
+            "Provide lag pairs as:  flow1,lag1;flow2,lag2;flow3,lag3 as pairs."));
+	}
+	else {
+	    // Verify that each value in the pair is a number and set the pair in the table.
+	    // Also verify that the flow values are in increasing order.
+	    __Lag_Table = new Table();
+	    __Lag_Table.allocateDataSpace(size/2);
+		String token;
+        double flowValue = 0.0, lag = 0.0; // "value" needs to stick around because it is saved with lag
+        double value_prev = 0.0;
+		for ( int i = 0; i < size; i++ ) {
+			token = tokens.get(i).trim();
+			if ( !StringUtil.isDouble(token) ) {
+			    if ( (i%2) == 0 ) {
+                    message = "Lag table flow value (" + token + ") is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a valid number."));
+                }
+			    else {
+                    message = "Lag value (" + token + ") is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a valid number."));
+                }
+            }
+			else {
+			    if ( (i%2) == 0 ) {
+			        flowValue = Double.parseDouble(token);
+			    }
+			    else {
+			        lag = Double.parseDouble(token);
+                    if ( lag > 0.0 ) {
+                        ++countLagPositive;
+                    }
+                    else if ( lag < 0.0 ) {
+                        ++countLagNegative;
+                    }
+			        // Have processed the value and lag so set in the table.
+			        __Lag_Table.set(i/2, flowValue, lag);
+                    if ( (i > 1) && (flowValue <= value_prev) ) {
+                        // Verify that the flow value is larger than the previous value
+                        message = "Flow value (" + StringUtil.formatString(flowValue,"%.4f") +
+                            ") is <= previous flow value in the Lag table.";
+                        warning += "\n" + message;
+                        status.addToLog(CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE, message,
+                            "Verify that flow values are in increasing order in the Lag table."));
+                    }
+                    value_prev = flowValue;
+			    }
+			}
+		}
+	}
+	// Make sure that lag values are either all positive or all negative
+	if ( (countLagNegative > 0) && (countLagPositive > 0) ) {
+        message = "Negative and positive lag values cannot be used together.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE, message,
+            "Specify lag values as all <= 0 or all >= 0."));
+	}
+	return warning;
 }
 
 /**
@@ -646,7 +786,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 	
 	String TSID = parameters.getValue( "TSID"  );
 	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
@@ -661,11 +813,89 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		FlowUnits = TSCommandProcessorUtil.expandParameterValue(processor, this, FlowUnits);
 	}
 	String Lag = parameters.getValue( "Lag" );
+	if ( (Lag != null) && (Lag.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		Lag = TSCommandProcessorUtil.expandParameterValue(processor, this, Lag);
+		// Have to reparse the array at runtime
+		String warning = "";
+		parseLagParameter(Lag,warning,status);
+	}
     String K = parameters.getValue( "K" );
+	if ( (K != null) && (K.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		K = TSCommandProcessorUtil.expandParameterValue(processor, this, K);
+		// Have to reparse the array at runtime
+		String warning = "";
+		parseKParameter(K,warning,status);
+	}
+    String TableID = parameters.getValue ( "TableID" );
+    boolean doTable = false;
+    if ( (TableID != null) && !TableID.isEmpty() ) {
+    	doTable = true;
+    	if ( (commandPhase == CommandPhaseType.RUN) && (TableID.indexOf("${") >= 0) ) {
+    		// In discovery mode want lists of tables to include ${Property}
+    		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    	}
+    }
+    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    if ( (TableTSIDColumn != null) && (TableTSIDColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableTSIDColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDColumn);
+	}
+    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    if ( (TableTSIDFormat != null) && (TableTSIDFormat.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableTSIDFormat = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDFormat);
+	}
+    String TableStateDateTimeColumn = parameters.getValue ( "TableStateDateTimeColumn" );
+    if ( (TableStateDateTimeColumn != null) && (TableStateDateTimeColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableStateDateTimeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableStateDateTimeColumn);
+	}
+    String TableStateNameColumn = parameters.getValue ( "TableStateNameColumn" );
+    if ( (TableStateNameColumn != null) && (TableStateNameColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableStateNameColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableStateNameColumn);
+	}
+    String TableStateValueColumn = parameters.getValue ( "TableStateValueColumn" );
+    if ( (TableStateValueColumn != null) && (TableStateValueColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableStateValueColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableStateValueColumn);
+	}
+    String TableInflowStateName = parameters.getValue ( "TableInflowStateName" );
+    if ( (TableInflowStateName != null) && (TableInflowStateName.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableInflowStateName = TSCommandProcessorUtil.expandParameterValue(processor, this, TableInflowStateName);
+	}
+    String TableOutflowStateName = parameters.getValue ( "TableOutflowStateName" );
+    if ( (TableOutflowStateName != null) && (TableOutflowStateName.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	TableOutflowStateName = TSCommandProcessorUtil.expandParameterValue(processor, this, TableOutflowStateName);
+	}
 	String Alias = parameters.getValue( "Alias" );
 	
 	TS original_ts = null; // Original time series
 	TS result_ts = null; // Result (lagged) time series
+	
+    // Get the table to process.
+
+    DataTable table = null;
+    if ( doTable ) {
+	    PropList request_params = null;
+	    CommandProcessorRequestResultsBean bean = null;
+	    if ( (TableID != null) && !TableID.isEmpty() ) {
+	        // Get the table to be updated/created
+	        request_params = new PropList ( "" );
+	        request_params.set ( "TableID", TableID );
+	        try {
+	            bean = processor.processRequest( "GetTable", request_params);
+	            PropList bean_PropList = bean.getResultsPropList();
+	            Object o_Table = bean_PropList.getContents ( "Table" );
+	            if ( o_Table != null ) {
+	                // Found the table so no need to create it
+	                table = (DataTable)o_Table;
+	            }
+	        }
+	        catch ( Exception e ) {
+	            message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
+	            Message.printWarning(warning_level,
+	                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Report problem to software support." ) );
+	        }
+	    }
+    }
 	
     // The final check on input errors.
 
@@ -680,7 +910,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message, "Correct command parameters/input." ) );
         throw new InvalidCommandParameterException ( message );
     }
-
+    
 	// Lag the time series...
 	try {
 		// Create the output time series. It should have the same units and interval as the input time series.
@@ -692,8 +922,47 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    result_ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
                 processor, result_ts, Alias, status, commandPhase) );
 		}
-        if ( commandPhase == CommandPhaseType.RUN ){
+        if ( commandPhase == CommandPhaseType.RUN ) {
             boolean canRun = true; // Use to help with graceful error handling
+            int tableTSIDColumnNum = -1;
+        	int tableStateDateTimeColumnNum = -1;
+        	int tableStateNameColumnNum = -1;
+        	int tableStateValueColumnNum = -1;
+	    	if ( doTable ) {
+	    	    // Get the table columns and other needed data
+                try {
+                    tableTSIDColumnNum = table.getFieldIndex(TableTSIDColumn);
+                }
+                catch ( Exception e2 ) {
+                    Message.printStatus(2, routine, "Did not match TableTSIDColumn \"" + TableTSIDColumn +
+                        "\" as table column - cannot run." );
+                    canRun = false;
+                }
+                try {
+                    tableStateDateTimeColumnNum = table.getFieldIndex(TableStateDateTimeColumn);
+                }
+                catch ( Exception e2 ) {
+                    Message.printStatus(2, routine, "Did not match TableStateDateTimeColumn \"" + TableStateDateTimeColumn +
+                        "\" as table column - cannot run." );
+                    canRun = false;
+                }
+                try {
+                    tableStateNameColumnNum = table.getFieldIndex(TableStateNameColumn);
+                }
+                catch ( Exception e2 ) {
+                    Message.printStatus(2, routine, "Did not match TableStateNameColumn \"" + TableStateNameColumn +
+                        "\" as table column - cannot run." );
+                    canRun = false;
+                }
+                try {
+                    tableStateValueColumnNum = table.getFieldIndex(TableStateValueColumn);
+                }
+                catch ( Exception e2 ) {
+                    Message.printStatus(2, routine, "Did not match TableStateValueColumn \"" + TableStateValueColumn +
+                        "\" as table column - cannot run." );
+                    canRun = false;
+                }
+	    	}
             //Get the reference (original_ts) to the time series to route
             
             PropList request_params = new PropList ( "" );
@@ -820,6 +1089,36 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 catch ( Exception e ) {
                     canRun = false;
                 }
+                if ( canRun && doTable ) {
+                	// Try to get the states from the table
+                	DateTime stateDate = new DateTime(DateTime.DATE_CURRENT);
+                	double [] inflowStates = getStatesFromTable(table,tableTSIDColumnNum,tableStateDateTimeColumnNum,
+                		tableStateNameColumnNum,tableStateValueColumnNum,
+                		stateDate,TableInflowStateName);
+                	if ( inflowStates == null ) {
+                        message = "Inflow states were not found for " + TableInflowStateName + " date/time=" + stateDate;  
+                        Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                        // This is just a warning
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Confirm that the state table \"" + TableID + "\" contains matching states." ) );
+                        canRun = false;
+                	}
+                	double [] outflowStates = getStatesFromTable(table,tableTSIDColumnNum,tableStateDateTimeColumnNum,
+                		tableStateNameColumnNum,tableStateValueColumnNum,
+                		stateDate,TableOutflowStateName);
+                	if ( outflowStates == null ) {
+                        message = "Outflow states were not found for " + TableOutflowStateName + " date/time=" + stateDate;  
+                        Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                        // This is just a warning
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Confirm that the state table \"" + TableID + "\" contains matching states." ) );
+                        canRun = false;
+                	}
+                }
                 // Make sure that the K table is in the same base interval as the time series being lagged
                 Table K_Table = null;
                 try {
@@ -929,7 +1228,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             
                     // Further process the time series...
                     // This makes sure the period is at least as long as the output period, and computes the historical averages.
-                    List tslist = new Vector();
+                    List tslist = new ArrayList<TS>();
                     tslist.add ( result_ts );
                     request_params = new PropList ( "" );
                     request_params.setUsingObject ( "TSList", tslist );
@@ -967,7 +1266,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            List tslist = new Vector();
+            List tslist = new ArrayList<TS>();
             tslist.add ( result_ts );
             setDiscoveryTSList ( tslist );
         }
@@ -998,9 +1297,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List discoveryTSList )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discoveryTSList = discoveryTSList;
 }
 
 /**
@@ -1015,23 +1314,25 @@ public String toString ( PropList props )
 
 	// Get the properties from the command; 
 	String TSID = props.getValue( "TSID" );
-	String NewTSID = props.getValue("NewTSID");
     String FlowUnits = props.getValue("FlowUnits");
     String LagInterval = props.getValue("LagInterval");
 	String Lag = props.getValue("Lag");
 	String K = props.getValue("K");
 	String InflowStates = props.getValue("InflowStates");
 	String OutflowStates = props.getValue("OutflowStates");
+	String TableID = props.getValue ( "TableID" );
+	String TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
+	String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
+	String TableStateDateTimeColumn = props.getValue ( "TableStateDateTimeColumn" );
+	String TableStateNameColumn = props.getValue ( "TableStateNameColumn" );
+	String TableStateValueColumn = props.getValue ( "TableStateValueColumn" );
+	String TableInflowStateName = props.getValue ( "TableInflowStateName" );
+	String TableOutflowStateName = props.getValue ( "TableOutflowStateName" );
+	String NewTSID = props.getValue("NewTSID");
 	String Alias = props.getValue( "Alias" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "NewTSID=\"" + NewTSID + "\"" );
 	}
     if ( (FlowUnits != null) && (FlowUnits.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -1068,6 +1369,60 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "OutflowStates=\"" + OutflowStates + "\"" );
+	}
+    if ( (TableID != null) && (TableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (TableTSIDColumn != null) && (TableTSIDColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
+    }
+    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
+    }
+    if ( (TableStateDateTimeColumn != null) && !TableStateDateTimeColumn.isEmpty() ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableStateDateTimeColumn=\"" + TableStateDateTimeColumn + "\"" );
+    }
+    if ( (TableStateNameColumn != null) && (TableStateNameColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableStateNameColumn=\"" + TableStateNameColumn + "\"" );
+    }
+    if ( (TableStateValueColumn != null) && (TableStateValueColumn.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableStateValueColumn=\"" + TableStateValueColumn + "\"" );
+    }
+    if ( (TableInflowStateName != null) && (TableInflowStateName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableInflowStateName=\"" + TableInflowStateName + "\"" );
+    }
+    if ( (TableOutflowStateName != null) && (TableOutflowStateName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableOutflowStateName=\"" + TableOutflowStateName + "\"" );
+    }
+	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "NewTSID=\"" + NewTSID + "\"" );
 	}
 	if ( (Alias != null) && (Alias.length() > 0) ) {
 		if ( b.length() > 0 ) {

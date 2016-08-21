@@ -5,8 +5,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -244,10 +246,13 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
 		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID for the table to modify or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -260,6 +265,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to join ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableToJoinID_JComboBox = new SimpleJComboBox ( 12, false );
+    __TableToJoinID_JComboBox.setToolTipText("Specify the second table ID or use ${Property} notation");
     __TableToJoinID_JComboBox.setData ( tableIDChoices );
     __TableToJoinID_JComboBox.addItemListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
@@ -273,7 +279,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     __JoinColumns_JTextArea = new JTextArea (3,35);
     __JoinColumns_JTextArea.setLineWrap ( true );
     __JoinColumns_JTextArea.setWrapStyleWord ( true );
-    __JoinColumns_JTextArea.setToolTipText("Table1Column1:Table2Column1,Table1Column2:Table2Column2");
+    __JoinColumns_JTextArea.setToolTipText("Table1Column1:Table2Column1,Table1Column2:Table2Column2, can use ${Property}");
     __JoinColumns_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__JoinColumns_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -285,6 +291,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column names to copy:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeColumns_JTextField = new JTextField (10);
+    __IncludeColumns_JTextField.setToolTipText("Specify the column names to copy, can use ${Property}");
     __IncludeColumns_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IncludeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -296,7 +303,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     __ColumnMap_JTextArea = new JTextArea (6,35);
     __ColumnMap_JTextArea.setLineWrap ( true );
     __ColumnMap_JTextArea.setWrapStyleWord ( true );
-    __ColumnMap_JTextArea.setToolTipText("OriginalColumn1:NewColumn1,OriginalColumn2:NewColumn2");
+    __ColumnMap_JTextArea.setToolTipText("OriginalColumn1:NewColumn1,OriginalColumn2:NewColumn2, can use ${Property}");
     __ColumnMap_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnMap_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -310,7 +317,7 @@ private void initialize ( JFrame parent, JoinTables_Command command, List<String
     __ColumnFilters_JTextArea = new JTextArea (3,35);
     __ColumnFilters_JTextArea.setLineWrap ( true );
     __ColumnFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnFilters_JTextArea.setToolTipText("JoinTableColumnName1:FilterPattern1,JoinTableColumnName2:FilterPattern2");
+    __ColumnFilters_JTextArea.setToolTipText("JoinTableColumnName1:FilterPattern1,JoinTableColumnName2:FilterPattern2, can use ${Property}");
     __ColumnFilters_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnFilters_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

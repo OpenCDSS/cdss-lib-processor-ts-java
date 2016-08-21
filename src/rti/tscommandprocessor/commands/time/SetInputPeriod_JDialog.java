@@ -171,8 +171,20 @@ private void initialize ( JFrame parent, SetInputPeriod_Command command )
 		"    CurrentToMinute + 7Day = current date/time plus 7 days"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    The above Current* values can have modifiers as shown in the following examples (can chain multiple modifiers):"),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"            CurrentToMinute.Round(5Min).RoundDirection(>) - round to the next even 5min"),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"            CurrentToMinute.Round(6hour).TimeZone() - round to the previous even 6hour and set time zone to blank"),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    ${Property} = processor property as DateTime object or date/time string"),
-		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The time zone is by default the computer time zone for hour or smaller interval and blank otherwise - if necessary, specify in date/time string or use .Timezone()."),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Leave blank to read all available data (default if SetInputPeriod() command is not used)."), 
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -181,14 +193,14 @@ private void initialize ( JFrame parent, SetInputPeriod_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input period start:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputStart_JTextField = new JTextField ( 20 );
+	__InputStart_JTextField = new JTextField ( 40 );
 	__InputStart_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input period end:" ),
 		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputEnd_JTextField = new JTextField ( 20 );
+	__InputEnd_JTextField = new JTextField ( 40 );
 	__InputEnd_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

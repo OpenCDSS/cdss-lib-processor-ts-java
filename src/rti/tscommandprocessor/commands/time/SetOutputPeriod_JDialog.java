@@ -178,10 +178,13 @@ private void initialize ( JFrame parent, SetOutputPeriod_Command command )
 		"            CurrentToMinute.Round(5Min).RoundDirection(>) - round to the next even 5min"),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"            CurrentToMinute.Round(6hour).TimeZone() - round to the pervious even 6hour and set time zone to blank"),
+		"            CurrentToMinute.Round(6hour).TimeZone() - round to the previous even 6hour and set time zone to blank"),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    ${Property} = processor property as DateTime object or date/time string"),
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"The time zone is by default the computer time zone for hour or smaller interval and blank otherwise - if necessary, specify in date/time string or use .Timezone()."),
 		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"See also the SetInputPeriod() command, which will constrain the period that is read."), 

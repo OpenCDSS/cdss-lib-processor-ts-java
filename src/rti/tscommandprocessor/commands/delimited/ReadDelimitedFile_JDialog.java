@@ -410,12 +410,10 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         "2+ will be read from the file." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "If \"FC[\" does NOT appear in any parameters, then a column heading line is NOT automatically read" +
-        " after comments." ), 
+        "If \"FC[\" does NOT appear in any parameters, then a column heading line is NOT automatically read after comments." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full path or relative path (relative to working " +
-		"directory) for a delimited file to read." ), 
+		"Specify a full path or relative path (relative to working directory) for a delimited file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -435,13 +433,15 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     data_JPanel.setLayout( new GridBagLayout() );
     main_JTabbedPane.addTab ( "Map File to Time Series", data_JPanel );
     JGUIUtil.addComponent(data_JPanel, new JLabel (
-        "Specify how the delimitd file contents are mapped to time series."),
+        "Specify how the delimited file contents are mapped to time series."),
         0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(data_JPanel, new JLabel (	"Delimited file to read:" ), 
 		0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
-	//__InputFile_JTextField.setToolTipText("Specify the path to the input file or use ${Property} notation");
+	__InputFile_JTextField.setToolTipText("Specify the path to the input file or use ${Property} notation");
 	__InputFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(data_JPanel, __InputFile_JTextField,
 		1, yData, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -451,7 +451,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Delimiter:"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Delimiter_JTextField = new JTextField (10);
+    __Delimiter_JTextField = new JTextField (15);
+    __Delimiter_JTextField.setToolTipText("Specify the delimiter character or use ${Property} notation");
     __Delimiter_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __Delimiter_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -473,7 +474,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Comment character(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Comment_JTextField = new JTextField (10);
+    __Comment_JTextField = new JTextField (15);
+    __Comment_JTextField.setToolTipText("Specify the comment, can use ${Property} notation");
     __Comment_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __Comment_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -483,7 +485,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Rows to skip (by row number):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SkipRows_JTextField = new JTextField (10);
+    __SkipRows_JTextField = new JTextField (15);
     __SkipRows_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __SkipRows_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -493,7 +495,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Rows to skip (after header comments):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SkipRowsAfterComments_JTextField = new JTextField (10);
+    __SkipRowsAfterComments_JTextField = new JTextField (15);
     __SkipRowsAfterComments_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __SkipRowsAfterComments_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -504,6 +506,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Column name(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnNames_JTextField = new JTextField (30);
+    __ColumnNames_JTextField.setToolTipText("Specify the column names for the file separated by commas, can use ${Property} notation");
     __ColumnNames_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __ColumnNames_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -512,7 +515,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Date/time column:"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DateTimeColumn_JTextField = new JTextField (10);
+    __DateTimeColumn_JTextField = new JTextField (15);
+    __DateTimeColumn_JTextField.setToolTipText("Specify the date/time column name, can use ${Property} notation");
     __DateTimeColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __DateTimeColumn_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -524,6 +528,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, DateTimeFormat_JLabel,
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel(20,true,true,null,false,false);
+    __DateTimeFormat_JPanel.getTextField().setToolTipText("Specify the date/time format, can use ${Property} notation");
     __DateTimeFormat_JPanel.addKeyListener (this);
     __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
     __DateTimeFormat_JPanel.getDocument().addDocumentListener(this); // Respond to changes in text field contents
@@ -535,7 +540,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Date column:"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DateColumn_JTextField = new JTextField (10);
+    __DateColumn_JTextField = new JTextField (15);
+    __DateColumn_JTextField.setToolTipText("Specify the date column name, can use ${Property} notation");
     __DateColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __DateColumn_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -545,7 +551,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Time column:"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TimeColumn_JTextField = new JTextField (10);
+    __TimeColumn_JTextField = new JTextField (15);
+    __TimeColumn_JTextField.setToolTipText("Specify the time column name, can use ${Property} notation");
     __TimeColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __TimeColumn_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -556,6 +563,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Value column(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueColumn_JTextField = new JTextField (20);
+    __ValueColumn_JTextField.setToolTipText("Specify the value column names separated by commas, can use ${Property} notation");
     __ValueColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __ValueColumn_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -566,6 +574,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Flag column(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FlagColumn_JTextField = new JTextField (20);
+    __FlagColumn_JTextField.setToolTipText("Specify the flag column names separated by commas, can use ${Property} notation");
     __FlagColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __FlagColumn_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -575,7 +584,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Location ID(s):"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __LocationID_JTextField = new JTextField (10);
+    __LocationID_JTextField = new JTextField (15);
+    __LocationID_JTextField.setToolTipText("Specify the location identifiers separated by commas, can use ${Property} notation");
     __LocationID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data_JPanel, __LocationID_JTextField,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -594,10 +604,13 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data2_JPanel, new JLabel (
         "If used, specify input start and end to a precision appropriate for the data." ), 
         0, ++yData2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(data2_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yData2, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Data provider:"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Provider_JTextField = new JTextField (10);
+    __Provider_JTextField.setToolTipText("Specify the data provider, can use ${Property} notation");
     __Provider_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data2_JPanel, __Provider_JTextField,
         1, yData2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -607,7 +620,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Data type(s):"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataType_JTextField = new JTextField (10);
+    __DataType_JTextField = new JTextField (15);
+    __DataType_JTextField.setToolTipText("Specify the data type, single value or multiple values separated by commas, can use ${Property} notation");
     __DataType_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data2_JPanel, __DataType_JTextField,
         1, yData2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -632,7 +646,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Scenario:"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Scenario_JTextField = new JTextField (10);
+    __Scenario_JTextField = new JTextField (15);
+    __Scenario_JTextField.setToolTipText("Specify the scenario, single value or multiple values separated by commas, can use ${Property} notation");
     __Scenario_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data2_JPanel, __Scenario_JTextField,
         1, yData2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -642,7 +657,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     
     JGUIUtil.addComponent(data2_JPanel, new JLabel("Data units:"),
 		0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Units_JTextField = new JTextField ( "", 10 );
+	__Units_JTextField = new JTextField ( "", 15 );
+	__Units_JTextField.setToolTipText("Specify the units, single value or multiple values separated by commas, can use ${Property} notation");
 	__Units_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(data2_JPanel, __Units_JTextField,
 		1, yData2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -652,7 +668,8 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Missing value(s):"),
         0, ++yData2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MissingValue_JTextField = new JTextField (10);
+    __MissingValue_JTextField = new JTextField (15);
+    __MissingValue_JTextField.setToolTipText("Specify the missing value, single value or multiple values separated by commas, can use ${Property} notation");
     __MissingValue_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(data2_JPanel, __MissingValue_JTextField,
         1, yData2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

@@ -144,7 +144,7 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
-{	String routine = "If_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -152,7 +152,20 @@ throws CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	//String Name = parameters.getValue ( "Name" );
 	String Condition = parameters.getValue ( "Condition" );
@@ -162,6 +175,9 @@ throws CommandWarningException, CommandException
 		compareAsStrings = true;
 	}
 	String TSExists = parameters.getValue ( "TSExists" );
+	if ( (TSExists != null) && (TSExists.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		TSExists = TSCommandProcessorUtil.expandParameterValue(processor, this, TSExists);
+	}
 
 	try {
 	    boolean conditionEval = false;

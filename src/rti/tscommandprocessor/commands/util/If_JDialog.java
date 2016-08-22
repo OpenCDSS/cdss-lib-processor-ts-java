@@ -18,9 +18,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -150,6 +152,8 @@ private void initialize ( JFrame parent, If_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The evaluation can check an expression or whether a time series exists."),
         0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -186,6 +190,8 @@ private void initialize ( JFrame parent, If_Command command )
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
         "In the future the ability to evaluate more complex conditions will be enabled."),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Condition:" ), 
         0, ++yCond, 1, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -220,10 +226,13 @@ private void initialize ( JFrame parent, If_Command command )
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "The TSExists parameter, if specified, checks whether a time series with the specified TSID or alias exists."),
         0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(ts_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yTs, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "If TSID exists:" ), 
         0, ++yTs, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSExists_JTextField = new JTextField ( 40 );
+    __TSExists_JTextField.setToolTipText("Specify a TSID or alias to match or use ${Property}.");
     __TSExists_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(ts_JPanel, __TSExists_JTextField,
         1, yTs, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -320,6 +329,9 @@ private void refresh ()
 		}
         if ( Condition != null ) {
             __Condition_JTextArea.setText( Condition );
+            if ( !Condition.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(0);
+            }
         }
         if ( CompareAsStrings == null ) {
             // Select default...
@@ -338,6 +350,9 @@ private void refresh ()
         }
         if ( TSExists != null ) {
             __TSExists_JTextField.setText( TSExists );
+            if ( !TSExists.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(1);
+            }
         }
 	}
 	// Regardless, reset the command from the fields...

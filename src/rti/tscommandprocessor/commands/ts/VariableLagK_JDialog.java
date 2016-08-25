@@ -61,18 +61,23 @@ private SimpleJButton __edit_JButton = null;
 private SimpleJButton __clear_JButton = null;
 private JTextArea __Lag_JTextArea = null;
 private JTextArea __K_JTextArea = null;
+private JTextField __AnalysisStart_JTextField = null;
+private JTextField __AnalysisEnd_JTextField = null;
 private JTextField __FlowUnits_JTextField = null;
 private SimpleJComboBox __LagInterval_JComboBox = null;
-private JTextArea __InflowStates_JTextArea = null;
-private JTextArea __OutflowStates_JTextArea = null;
-private SimpleJComboBox __TableID_JComboBox = null;
-private JTextField __TableTSIDColumn_JTextField = null;
-private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers
-private JTextField __TableStateDateTimeColumn_JTextField = null;
-private JTextField __TableStateNameColumn_JTextField = null;
-private JTextField __TableStateValueColumn_JTextField = null;
-private JTextField __TableInflowStateName_JTextField = null;
-private JTextField __TableOutflowStateName_JTextField = null;
+private JTextField __InflowStateValueDefault_JTextField = null;
+private JTextField __OutflowStateValueDefault_JTextField = null;
+private JTextArea __InflowStateValues_JTextArea = null;
+private JTextArea __OutflowStateValues_JTextArea = null;
+private SimpleJComboBox __StateTableID_JComboBox = null;
+private JTextField __StateTableObjectIDColumn_JTextField = null;
+private JTextField __StateTableDateTimeColumn_JTextField = null;
+private JTextField __StateTableNameColumn_JTextField = null;
+private JTextField __StateTableValueColumn_JTextField = null;
+private JTextField __StateTableInflowStateName_JTextField = null;
+private JTextField __StateTableOutflowStateName_JTextField = null;
+private JTextField __StateSaveDateTime_JTextField = null;
+private SimpleJComboBox __StateSaveInterval_JComboBox = null;
 
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -82,11 +87,11 @@ private boolean __ok = false; // Whether OK has been pressed.
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
-@param tableIDChoices choices for TableID value.
+@param StateTableIDChoices choices for StateTableID value.
 */
-public VariableLagK_JDialog ( JFrame parent, VariableLagK_Command command, List<String> tableIDChoices )
+public VariableLagK_JDialog ( JFrame parent, VariableLagK_Command command, List<String> StateTableIDChoices )
 {	super(parent, true);
-	initialize ( parent, command, tableIDChoices );
+	initialize ( parent, command, StateTableIDChoices );
 }
 
 /**
@@ -187,18 +192,23 @@ private void checkInput ()
     String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Lag = __Lag_JTextArea.getText().trim();
 	String K = __K_JTextArea.getText().trim();
+	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String FlowUnits = __FlowUnits_JTextField.getText().trim();
     String LagInterval = __LagInterval_JComboBox.getSelected().trim();
-	String InflowStates = __InflowStates_JTextArea.getText().trim();
-	String OutflowStates = __OutflowStates_JTextArea.getText().trim();
-	String TableID = __TableID_JComboBox.getSelected();
-	String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
-	String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
-	String TableStateDateTimeColumn = __TableStateDateTimeColumn_JTextField.getText().trim();
-	String TableStateNameColumn = __TableStateNameColumn_JTextField.getText().trim();
-	String TableStateValueColumn = __TableStateValueColumn_JTextField.getText().trim();
-	String TableInflowStateName = __TableInflowStateName_JTextField.getText().trim();
-	String TableOutflowStateName = __TableOutflowStateName_JTextField.getText().trim();
+    String InflowStateValueDefault = __InflowStateValueDefault_JTextField.getText().trim();
+	String OutflowStateValueDefault = __OutflowStateValueDefault_JTextField.getText().trim();
+	String InflowStateValues = __InflowStateValues_JTextArea.getText().trim();
+	String OutflowStateValues = __OutflowStateValues_JTextArea.getText().trim();
+	String StateTableID = __StateTableID_JComboBox.getSelected();
+	String StateTableObjectIDColumn = __StateTableObjectIDColumn_JTextField.getText().trim();
+	String StateTableDateTimeColumn = __StateTableDateTimeColumn_JTextField.getText().trim();
+	String StateTableNameColumn = __StateTableNameColumn_JTextField.getText().trim();
+	String StateTableValueColumn = __StateTableValueColumn_JTextField.getText().trim();
+	String StateTableInflowStateName = __StateTableInflowStateName_JTextField.getText().trim();
+	String StateTableOutflowStateName = __StateTableOutflowStateName_JTextField.getText().trim();
+	String StateSaveDateTime = __StateSaveDateTime_JTextField.getText().trim();
+	String StateSaveInterval = __StateSaveInterval_JComboBox.getSelected();
 	__error_wait = false;
 
 	if ( Alias.length() > 0 ) {
@@ -216,41 +226,56 @@ private void checkInput ()
 	if ( (K != null) && (K.length() > 0) ) {
 		props.set ( "K", K );
 	}
+	if ( AnalysisStart.length() > 0 ) {
+		props.set ( "AnalysisStart", AnalysisStart );
+	}
+	if ( AnalysisEnd.length() > 0 ) {
+		props.set ( "AnalysisEnd", AnalysisEnd );
+	}
 	if ( (FlowUnits != null) && (FlowUnits.length() > 0) ) {
 		props.set ( "FlowUnits", FlowUnits );
 	}
 	if ( (LagInterval != null) && (LagInterval.length() > 0) ) {
 		props.set ( "LagInterval", LagInterval );
 	}
-	if ( (InflowStates != null) && (InflowStates.length() > 0) ) {
-		props.set ( "InflowStates", InflowStates );
+	if ( (InflowStateValueDefault != null) && (InflowStateValueDefault.length() > 0) ) {
+		props.set ( "InflowStateValueDefault", InflowStateValueDefault );
 	}
-	if ( (OutflowStates != null) && (OutflowStates.length() > 0) ) {
-	    props.set ( "OutflowStates", OutflowStates );
+	if ( (OutflowStateValueDefault != null) && (OutflowStateValueDefault.length() > 0) ) {
+		props.set ( "OutflowStateValueDefault", OutflowStateValueDefault );
 	}
-    if ( TableID.length() > 0 ) {
-    	props.set ( "TableID", TableID );
+	if ( (InflowStateValues != null) && (InflowStateValues.length() > 0) ) {
+		props.set ( "InflowStateValues", InflowStateValues );
+	}
+	if ( (OutflowStateValues != null) && (OutflowStateValues.length() > 0) ) {
+	    props.set ( "OutflowStateValues", OutflowStateValues );
+	}
+    if ( StateTableID.length() > 0 ) {
+    	props.set ( "StateTableID", StateTableID );
     }
-    if ( TableTSIDColumn.length() > 0 ) {
-    	props.set ( "TableTSIDColumn", TableTSIDColumn );
+    if ( StateTableObjectIDColumn.length() > 0 ) {
+    	props.set ( "StateTableObjectIDColumn", StateTableObjectIDColumn );
     }
-    if ( TableTSIDFormat.length() > 0 ) {
-    	props.set ( "TableTSIDFormat", TableTSIDFormat );
+    if ( StateTableDateTimeColumn.length() > 0 ) {
+    	props.set ( "StateTableDateTimeColumn", StateTableDateTimeColumn );
     }
-    if ( TableStateDateTimeColumn.length() > 0 ) {
-    	props.set ( "TableStateDateTimeColumn", TableStateDateTimeColumn );
+    if ( StateTableNameColumn.length() > 0 ) {
+    	props.set ( "StateTableNameColumn", StateTableNameColumn );
     }
-    if ( TableStateNameColumn.length() > 0 ) {
-    	props.set ( "TableStateNameColumn", TableStateNameColumn );
+    if ( StateTableValueColumn.length() > 0 ) {
+    	props.set ( "StateTableValueColumn", StateTableValueColumn );
     }
-    if ( TableStateValueColumn.length() > 0 ) {
-    	props.set ( "TableStateValueColumn", TableStateValueColumn );
+    if ( StateTableInflowStateName.length() > 0 ) {
+    	props.set ( "StateTableInflowStateName", StateTableInflowStateName );
     }
-    if ( TableInflowStateName.length() > 0 ) {
-    	props.set ( "TableInflowStateName", TableInflowStateName );
+    if ( StateTableOutflowStateName.length() > 0 ) {
+    	props.set ( "StateTableOutflowStateName", StateTableOutflowStateName );
     }
-    if ( TableOutflowStateName.length() > 0 ) {
-    	props.set ( "TableOutflowStateName", TableOutflowStateName );
+    if ( StateSaveDateTime.length() > 0 ) {
+    	props.set ( "StateSaveDateTime", StateSaveDateTime );
+    }
+    if ( StateSaveInterval.length() > 0 ) {
+    	props.set ( "StateSaveInterval", StateSaveInterval );
     }
 	try {
 	    // This will warn the user...
@@ -272,35 +297,45 @@ private void commitEdits ()
     String NewTSID = __NewTSID_JTextArea.getText().trim();
     String Lag = __Lag_JTextArea.getText().trim();
     String K = __K_JTextArea.getText().trim();
+	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String FlowUnits = __FlowUnits_JTextField.getText().trim();
     String LagInterval = __LagInterval_JComboBox.getSelected().trim();
-    String InflowStates = __InflowStates_JTextArea.getText().trim();
-    String OutflowStates = __OutflowStates_JTextArea.getText().trim();
-	String TableID = __TableID_JComboBox.getSelected();
-	String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
-	String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
-	String TableStateDateTimeColumn = __TableStateDateTimeColumn_JTextField.getText().trim();
-	String TableStateNameColumn = __TableStateNameColumn_JTextField.getText().trim();
-	String TableStateValueColumn = __TableStateValueColumn_JTextField.getText().trim();
-	String TableInflowStateName = __TableInflowStateName_JTextField.getText().trim();
-	String TableOutflowStateName = __TableOutflowStateName_JTextField.getText().trim();
+    String InflowStateValueDefault = __InflowStateValueDefault_JTextField.getText().trim();
+	String OutflowStateValueDefault = __OutflowStateValueDefault_JTextField.getText().trim();
+    String InflowStateValues = __InflowStateValues_JTextArea.getText().trim();
+    String OutflowStateValues = __OutflowStateValues_JTextArea.getText().trim();
+	String StateTableID = __StateTableID_JComboBox.getSelected();
+	String StateTableObjectIDColumn = __StateTableObjectIDColumn_JTextField.getText().trim();
+	String StateTableDateTimeColumn = __StateTableDateTimeColumn_JTextField.getText().trim();
+	String StateTableNameColumn = __StateTableNameColumn_JTextField.getText().trim();
+	String StateTableValueColumn = __StateTableValueColumn_JTextField.getText().trim();
+	String StateTableInflowStateName = __StateTableInflowStateName_JTextField.getText().trim();
+	String StateTableOutflowStateName = __StateTableOutflowStateName_JTextField.getText().trim();
+	String StateSaveDateTime = __StateSaveDateTime_JTextField.getText().trim();
+	String StateSaveInterval = __StateSaveInterval_JComboBox.getSelected();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Lag", Lag);
 	__command.setCommandParameter ( "K", K );
+	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
+	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "FlowUnits", FlowUnits );
 	__command.setCommandParameter ( "LagInterval", LagInterval );
-	__command.setCommandParameter ( "InflowStates", InflowStates );
-	__command.setCommandParameter ( "OutflowStates", OutflowStates );
-    __command.setCommandParameter ( "TableID", TableID );
-    __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
-    __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
-    __command.setCommandParameter ( "TableStateDateTimeColumn", TableStateDateTimeColumn );
-    __command.setCommandParameter ( "TableStateNameColumn", TableStateNameColumn );
-    __command.setCommandParameter ( "TableStateValueColumn", TableStateValueColumn );
-    __command.setCommandParameter ( "TableInflowStateName", TableInflowStateName );
-    __command.setCommandParameter ( "TableOutflowStateName", TableOutflowStateName );
+	__command.setCommandParameter ( "InflowStateValueDefault", InflowStateValueDefault );
+	__command.setCommandParameter ( "OutflowStateValueDefault", OutflowStateValueDefault );
+	__command.setCommandParameter ( "InflowStateValues", InflowStateValues );
+	__command.setCommandParameter ( "OutflowStateValues", OutflowStateValues );
+    __command.setCommandParameter ( "StateTableID", StateTableID );
+    __command.setCommandParameter ( "StateTableObjectIDColumn", StateTableObjectIDColumn );
+    __command.setCommandParameter ( "StateTableDateTimeColumn", StateTableDateTimeColumn );
+    __command.setCommandParameter ( "StateTableNameColumn", StateTableNameColumn );
+    __command.setCommandParameter ( "StateTableValueColumn", StateTableValueColumn );
+    __command.setCommandParameter ( "StateTableInflowStateName", StateTableInflowStateName );
+    __command.setCommandParameter ( "StateTableOutflowStateName", StateTableOutflowStateName );
+    __command.setCommandParameter ( "StateSaveDateTime", StateSaveDateTime );
+    __command.setCommandParameter ( "StateSaveInterval", StateSaveInterval );
 }
 
 /**
@@ -308,9 +343,9 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param title Dialog title.
 @param command Command to edit.
-@param tableIDChoices choices for TableID value.
+@param StateTableIDChoices choices for StateTableID value.
 */
-private void initialize ( JFrame parent, VariableLagK_Command command, List<String> tableIDChoices )
+private void initialize ( JFrame parent, VariableLagK_Command command, List<String> StateTableIDChoices )
 {	__parent_JFrame = parent;
     __command = command;
 
@@ -396,10 +431,10 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(analysis_JPanel, new JLabel("Lag interval: "),
         0, ++yAnalysis, 1, 1, 0, 0, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LagInterval_JComboBox = new SimpleJComboBox(false);
-    List<String> intervalList = TimeInterval.getTimeIntervalBaseChoices(
+    List<String> lagIntervalList = TimeInterval.getTimeIntervalBaseChoices(
         TimeInterval.MINUTE, TimeInterval.YEAR, 1, false);
-    intervalList.add ( 0, "" );
-    __LagInterval_JComboBox.setData ( intervalList );
+    lagIntervalList.add ( 0, "" );
+    __LagInterval_JComboBox.setData ( lagIntervalList );
     __LagInterval_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __LagInterval_JComboBox,
         1, yAnalysis, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -432,134 +467,215 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
         "Optional - flow,K;flow,K pairs."),
         3, yAnalysis, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for states
-    int yStates = -1;
-    JPanel states_JPanel = new JPanel();
-    states_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "States", states_JPanel );
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.setToolTipText("Specify the analysis start using a date/time string or ${Property} notation");
+    __AnalysisStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisStart_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
+        "Optional - analysis start date/time (default=full time series period)."),
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __AnalysisStart_JTextField.setEnabled(false);
 
-	JGUIUtil.addComponent(states_JPanel, new JLabel (
-       "States for the input and output time series can be specified to ensure continuity with previous processing runs." ),
-       0, ++yStates, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(states_JPanel, new JLabel (
-       "The InflowStates and OutputStates parameters are currently ignored - states default to zero." ),
-       0, ++yStates, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(states_JPanel, new JLabel (
-       "The states can be specified using a table - see States (Table) tab." ),
-       0, ++yStates, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(states_JPanel, new JLabel (
-       "<html><b>Need to decide whether to include dates for StateStart/StateEnd or AnalysisStart/AnalysisEnd</b></html>" ),
-       0, ++yStates, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(states_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-        0, ++yStates, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.setToolTipText("Specify the analysis end using a date/time string or ${Property} notation");
+    __AnalysisEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(analysis_JPanel, __AnalysisEnd_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(analysis_JPanel, new JLabel(
+        "Optional - analysis end date/time (default=full time series period)."),
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __AnalysisEnd_JTextField.setEnabled(false);
+    
+    // Panel for input states
+    int yStatesIn = -1;
+    JPanel statesIn_JPanel = new JPanel();
+    statesIn_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "States (Input)", statesIn_JPanel );
 
-    JGUIUtil.addComponent(states_JPanel, new JLabel ( "Input time series states:" ),
-            0, ++yStates, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InflowStates_JTextArea = new JTextArea ( 3, 40 );
-    __InflowStates_JTextArea.setLineWrap ( true );
-    __InflowStates_JTextArea.setWrapStyleWord ( true );
-    __InflowStates_JTextArea.addKeyListener ( this );
-    // Make 3-high
-    JGUIUtil.addComponent(states_JPanel, new JScrollPane(__InflowStates_JTextArea),
-        1, yStates, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(states_JPanel, new JLabel(
-        "Optional - separate values by commas (default=0 for all)."), 
-        3, yStates, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(statesIn_JPanel, new JLabel (
+        "States for the input (inflow) and output (outflow) time series can be specified to ensure continuity with previous processing runs." ),
+        0, ++yStatesIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(statesIn_JPanel, new JLabel (
+        "Specify the states as an array of values, read from the state table, or (future enhancement) "
+        + "calculate as an average of the previous time series values on and after the analysis start." ),
+        0, ++yStatesIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(statesIn_JPanel, new JLabel (
+        "Specify values below in order t-n,...,t0 where t0 is date/time for analysis start (when states were previously saved) and intervals proceed backward from t0." ),
+        0, ++yStatesIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statesIn_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yStatesIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(states_JPanel, new JLabel ( "Output time series states:" ),
-            0, ++yStates, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutflowStates_JTextArea = new JTextArea ( 3, 40 );
-    __OutflowStates_JTextArea.setLineWrap ( true );
-    __OutflowStates_JTextArea.setWrapStyleWord ( true );
-    __OutflowStates_JTextArea.addKeyListener ( this );
-    // Make 3-high
-    JGUIUtil.addComponent(states_JPanel, new JScrollPane(__OutflowStates_JTextArea),
-        1, yStates, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(states_JPanel, new JLabel(
-        "Optional - separate values by commas (default=0 for all)."), 
-        3, yStates, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statesIn_JPanel, new JLabel ("Inflow state value default:"),
+        0, ++yStatesIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InflowStateValueDefault_JTextField = new JTextField (10);
+    __InflowStateValueDefault_JTextField.setToolTipText("Specify inflow state default as single number.");
+    __InflowStateValueDefault_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(statesIn_JPanel, __InflowStateValueDefault_JTextField,
+        1, yStatesIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statesIn_JPanel, new JLabel (
+        "Optional - default inflow state (default=0)."),
+        3, yStatesIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Panel for states table
+    JGUIUtil.addComponent(statesIn_JPanel, new JLabel ("Outflow state value default:"),
+        0, ++yStatesIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutflowStateValueDefault_JTextField = new JTextField (10);
+    __OutflowStateValueDefault_JTextField.setToolTipText("Specify outflow state default as single number.");
+    __OutflowStateValueDefault_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(statesIn_JPanel, __OutflowStateValueDefault_JTextField,
+        1, yStatesIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statesIn_JPanel, new JLabel (
+        "Optional - default outflow state (default=0)."),
+        3, yStatesIn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(statesIn_JPanel, new JLabel ( "Input time series states:" ),
+        0, ++yStatesIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InflowStateValues_JTextArea = new JTextArea ( 3, 40 );
+    __InflowStateValues_JTextArea.setLineWrap ( true );
+    __InflowStateValues_JTextArea.setWrapStyleWord ( true );
+    __InflowStateValues_JTextArea.addKeyListener ( this );
+    // Make 3-high
+    JGUIUtil.addComponent(statesIn_JPanel, new JScrollPane(__InflowStateValues_JTextArea),
+        1, yStatesIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statesIn_JPanel, new JLabel(
+        "Optional - separate values by commas (default=0 for all)."), 
+        3, yStatesIn, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(statesIn_JPanel, new JLabel ( "Output time series states:" ),
+            0, ++yStatesIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutflowStateValues_JTextArea = new JTextArea ( 3, 40 );
+    __OutflowStateValues_JTextArea.setLineWrap ( true );
+    __OutflowStateValues_JTextArea.setWrapStyleWord ( true );
+    __OutflowStateValues_JTextArea.addKeyListener ( this );
+    // Make 3-high
+    JGUIUtil.addComponent(statesIn_JPanel, new JScrollPane(__OutflowStateValues_JTextArea),
+        1, yStatesIn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statesIn_JPanel, new JLabel(
+        "Optional - separate values by commas (default=0 for all)."), 
+        3, yStatesIn, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for output states
+    int yStatesOut = -1;
+    JPanel statesOut_JPanel = new JPanel();
+    statesOut_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "States (Output)", statesOut_JPanel );
+
+	JGUIUtil.addComponent(statesOut_JPanel, new JLabel (
+       "Output states can be written to the state table by this command to allow a future restart of a run." ),
+       0, ++yStatesOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(statesOut_JPanel, new JLabel (
+       "Output states will be written at date/times as specified by the following parameters." ),
+       0, ++yStatesOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(statesOut_JPanel, new JLabel (
+       "Any matching date/time, when compared to the processing date/time, will trigger saving states to the state table." ),
+       0, ++yStatesOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statesOut_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yStatesOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(statesOut_JPanel, new JLabel ( "State save date/time:" ), 
+        0, ++yStatesOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StateSaveDateTime_JTextField = new JTextField ( 20 );
+    __StateSaveDateTime_JTextField.setToolTipText("Specify the date/time when states should be saved, can use ${Property} notation");
+    __StateSaveDateTime_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(statesOut_JPanel, __StateSaveDateTime_JTextField,
+        1, yStatesOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statesOut_JPanel, new JLabel( "Optional (default=no states saved)."), 
+        3, yStatesOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(statesOut_JPanel, new JLabel ( "State save interval:" ), 
+        0, ++yStatesOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StateSaveInterval_JComboBox = new SimpleJComboBox ( false );
+    boolean padZeroes = true;
+    boolean includeIrregular = false;
+    List stateSaveIntervalList = TimeInterval.getTimeIntervalChoices(
+        TimeInterval.MINUTE, TimeInterval.YEAR, padZeroes, 1, includeIrregular);
+    // Add a blank
+    stateSaveIntervalList.add(0,"");
+    __StateSaveInterval_JComboBox.setData ( stateSaveIntervalList );
+    __StateSaveInterval_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(statesOut_JPanel, __StateSaveInterval_JComboBox,
+        1, yStatesOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(statesOut_JPanel, new JLabel("Optional (default=save only on StateSaveDateTime)."),
+        3, yStatesOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for state table
     int yStatesTable = -1;
     JPanel statesTable_JPanel = new JPanel();
     statesTable_JPanel.setLayout( new GridBagLayout() );
     __main_JTabbedPane.addTab ( "States (Table)", statesTable_JPanel );
     
 	JGUIUtil.addComponent(statesTable_JPanel, new JLabel (
-        "<html>States for inflow and outflow time series can be provided using a table (<b>not currently functional</b>)</html>." ),
+        "States for inflow and outflow time series can be provided using a table, and the table can be written to when saving states." ),
         0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(statesTable_JPanel, new JLabel (
-        "The table should include columns for TSID to match, date/time for states, state name, and state value." ),
+        "The table should include columns for object ID to match, date/time for states, state name, and state value." ),
         0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(statesTable_JPanel, new JLabel (
-        "State value is specified in array form:  [ inflow1, inflow2, inflow3 ] for example [ 10.0, 11.5, 13.1 ]" ),
+        "The object ID, date/time, and state name provide a unique key to look up the state values." ),
+        0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(statesTable_JPanel, new JLabel (
+        "State values in the table are specified in array form:  [ inflow1, inflow2, inflow3 ] for example [ 10.0, 11.5, 13.1 ], "
+        + "where the last value corresponds to state save date/time." ),
         0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Table ID for states:" ), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State table ID:" ), 
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
-    __TableID_JComboBox.setToolTipText("Specify the table ID for states or use ${Property} notation");
-    tableIDChoices.add(0,""); // Add blank to ignore table
-    __TableID_JComboBox.setData ( tableIDChoices );
-    __TableID_JComboBox.addItemListener ( this );
-    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
-    JGUIUtil.addComponent(statesTable_JPanel, __TableID_JComboBox,
+    __StateTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __StateTableID_JComboBox.setToolTipText("Specify the table ID for states or use ${Property} notation");
+    StateTableIDChoices.add(0,""); // Add blank to ignore table
+    __StateTableID_JComboBox.setData ( StateTableIDChoices );
+    __StateTableID_JComboBox.addItemListener ( this );
+    //__StateTableID_JComboBox.setMaximumRowCount(StateTableIDChoices.size());
+    JGUIUtil.addComponent(statesTable_JPanel, __StateTableID_JComboBox,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
         "Optional - use if are read from table."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Table TSID column:" ), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Object ID column:" ), 
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableTSIDColumn_JTextField = new JTextField ( 20 );
-    __TableTSIDColumn_JTextField.setToolTipText("Specify the table TSID column or use ${Property} notation");
-    __TableTSIDColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(statesTable_JPanel, __TableTSIDColumn_JTextField,
+    __StateTableObjectIDColumn_JTextField = new JTextField ( 20 );
+    __StateTableObjectIDColumn_JTextField.setToolTipText("Specify the object ID column or use ${Property} notation");
+    __StateTableObjectIDColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(statesTable_JPanel, __StateTableObjectIDColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Required if using table - column name for TSID."), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Required if using table - column name for object ID."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel("Format of TSID:"),
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Date/time column:" ),
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
-    __TableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
-    __TableTSIDFormat_JTextField.addKeyListener ( this );
-    __TableTSIDFormat_JTextField.setToolTipText("%L for location, %T for data type.");
-    JGUIUtil.addComponent(statesTable_JPanel, __TableTSIDFormat_JTextField,
-        1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
-        3, yStatesTable, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Table state date/time column:" ), 
-        0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableStateDateTimeColumn_JTextField = new JTextField ( 20 );
-    __TableStateDateTimeColumn_JTextField.setToolTipText("Specify the table state date/time column or use ${Property} notation");
-    __TableStateDateTimeColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(statesTable_JPanel, __TableStateDateTimeColumn_JTextField,
+    __StateTableDateTimeColumn_JTextField = new JTextField ( 20 );
+    __StateTableDateTimeColumn_JTextField.setToolTipText("Specify the date/time column or use ${Property} notation");
+    __StateTableDateTimeColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(statesTable_JPanel, __StateTableDateTimeColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
         "Required if using table - column name for state date/time."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Table state name column:" ), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State name column:" ), 
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableStateNameColumn_JTextField = new JTextField ( 20 );
-    __TableStateNameColumn_JTextField.setToolTipText("Specify the table statistic column or use ${Property} notation");
-    __TableStateNameColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(statesTable_JPanel, __TableStateNameColumn_JTextField,
+    __StateTableNameColumn_JTextField = new JTextField ( 20 );
+    __StateTableNameColumn_JTextField.setToolTipText("Specify the state name column or use ${Property} notation");
+    __StateTableNameColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(statesTable_JPanel, __StateTableNameColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-        "Required if using table - column name(s) for states(s)."), 
+        "Required if using table - column name for state name."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Table state value column:" ), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State value column:" ), 
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableStateValueColumn_JTextField = new JTextField ( 20 );
-    __TableStateValueColumn_JTextField.setToolTipText("Specify the table statistic value column or use ${Property} notation");
-    __TableStateValueColumn_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(statesTable_JPanel, __TableStateValueColumn_JTextField,
+    __StateTableValueColumn_JTextField = new JTextField ( 20 );
+    __StateTableValueColumn_JTextField.setToolTipText("Specify the state value column or use ${Property} notation");
+    __StateTableValueColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(statesTable_JPanel, __StateTableValueColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
         "Required if using table - column name for state value."), 
@@ -567,24 +683,24 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Inflow state name:" ), 
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableInflowStateName_JTextField = new JTextField ( 20 );
-    __TableInflowStateName_JTextField.setToolTipText("Specify the name of the state for inflow time series values ${Property} notation");
-    __TableInflowStateName_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(statesTable_JPanel, __TableInflowStateName_JTextField,
+    __StateTableInflowStateName_JTextField = new JTextField ( 20 );
+    __StateTableInflowStateName_JTextField.setToolTipText("Specify the name of the state for inflow time series values ${Property} notation");
+    __StateTableInflowStateName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(statesTable_JPanel, __StateTableInflowStateName_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-        "Required if using table - name of input states."), 
+        "Required if using table - name of inflow state."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Outflow state name:" ), 
         0, ++yStatesTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableOutflowStateName_JTextField = new JTextField ( 20 );
-    __TableOutflowStateName_JTextField.setToolTipText("Specify the name of the state for outflow time series values ${Property} notation");
-    __TableOutflowStateName_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(statesTable_JPanel, __TableOutflowStateName_JTextField,
+    __StateTableOutflowStateName_JTextField = new JTextField ( 20 );
+    __StateTableOutflowStateName_JTextField.setToolTipText("Specify the name of the state for outflow time series values ${Property} notation");
+    __StateTableOutflowStateName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(statesTable_JPanel, __StateTableOutflowStateName_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-        "Required if using table - name of output states."), 
+        "Required if using table - name of outflow state."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for output time series
@@ -711,18 +827,23 @@ private void refresh ()
     String NewTSID = "";
 	String Lag = "";
 	String K = "";
+	String AnalysisStart = "";
+	String AnalysisEnd = "";
 	String FlowUnits = "";
 	String LagInterval = "";
-	String InflowStates = "";
-	String OutflowStates = "";
-	String TableID = "";
-	String TableTSIDColumn = "";
-	String TableTSIDFormat = "";
-	String TableStateDateTimeColumn = "";
-	String TableStateNameColumn = "";
-	String TableStateValueColumn = "";
-	String TableInflowStateName = "";
-	String TableOutflowStateName = "";
+	String InflowStateValueDefault = "";
+	String OutflowStateValueDefault = "";
+	String InflowStateValues = "";
+	String OutflowStateValues = "";
+	String StateTableID = "";
+	String StateTableObjectIDColumn = "";
+	String StateTableDateTimeColumn = "";
+	String StateTableNameColumn = "";
+	String StateTableValueColumn = "";
+	String StateTableInflowStateName = "";
+	String StateTableOutflowStateName = "";
+	String StateSaveDateTime = "";
+	String StateSaveInterval = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -732,18 +853,23 @@ private void refresh ()
         NewTSID = props.getValue ( "NewTSID" );
 		Lag = props.getValue ( "Lag" );
 		K = props.getValue ( "K" );
+		AnalysisStart = props.getValue ( "AnalysisStart" );
+		AnalysisEnd = props.getValue ( "AnalysisEnd" );
 		FlowUnits = props.getValue ( "FlowUnits" );
 		LagInterval = props.getValue ( "LagInterval" );
-	    InflowStates = props.getValue ( "InflowStates" );
-	    OutflowStates = props.getValue ( "OutflowStates" );
-		TableID = props.getValue ( "TableID" );
-		TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
-		TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
-		TableStateDateTimeColumn = props.getValue ( "TableStateDateTimeColumn" );
-		TableStateNameColumn = props.getValue ( "TableStateNameColumn" );
-		TableStateValueColumn = props.getValue ( "TableStateValueColumn" );
-		TableInflowStateName = props.getValue ( "TableInflowStateName" );
-		TableOutflowStateName = props.getValue ( "TableOutflowStateName" );
+		InflowStateValueDefault = props.getValue ( "InflowStateValueDefault" );
+	    OutflowStateValueDefault = props.getValue ( "OutflowStateValueDefault" );
+	    InflowStateValues = props.getValue ( "InflowStateValues" );
+	    OutflowStateValues = props.getValue ( "OutflowStateValues" );
+		StateTableID = props.getValue ( "StateTableID" );
+		StateTableObjectIDColumn = props.getValue ( "StateTableObjectIDColumn" );
+		StateTableDateTimeColumn = props.getValue ( "StateTableDateTimeColumn" );
+		StateTableNameColumn = props.getValue ( "StateTableNameColumn" );
+		StateTableValueColumn = props.getValue ( "StateTableValueColumn" );
+		StateTableInflowStateName = props.getValue ( "StateTableInflowStateName" );
+		StateTableOutflowStateName = props.getValue ( "StateTableOutflowStateName" );
+		StateSaveDateTime = props.getValue ( "StateSaveDateTime" );
+		StateSaveInterval = props.getValue ( "StateSaveInterval" );
 		// Now select the item in the list.  If not a match, print a warning.
 		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
 			__TSID_JComboBox.select ( TSID );
@@ -788,51 +914,77 @@ private void refresh ()
 		if ( K != null ) {
 			__K_JTextArea.setText ( K );
 		}
-        if ( InflowStates != null ) {
-            __InflowStates_JTextArea.setText ( InflowStates );
+		if ( AnalysisStart != null ) {
+			__AnalysisStart_JTextField.setText( AnalysisStart );
+		}
+		if ( AnalysisEnd != null ) {
+			__AnalysisEnd_JTextField.setText ( AnalysisEnd );
+		}
+        if ( InflowStateValueDefault != null ) {
+            __InflowStateValueDefault_JTextField.setText ( InflowStateValueDefault );
         }
-        if ( OutflowStates != null ) {
-            __OutflowStates_JTextArea.setText ( OutflowStates );
+        if ( OutflowStateValueDefault != null ) {
+            __OutflowStateValueDefault_JTextField.setText ( OutflowStateValueDefault );
         }
-        if ( TableID == null ) {
+        if ( InflowStateValues != null ) {
+            __InflowStateValues_JTextArea.setText ( InflowStateValues );
+        }
+        if ( OutflowStateValues != null ) {
+            __OutflowStateValues_JTextArea.setText ( OutflowStateValues );
+        }
+        if ( StateTableID == null ) {
             // Select default...
-            __TableID_JComboBox.select ( 0 );
+            __StateTableID_JComboBox.select ( 0 );
         }
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __TableID_JComboBox,TableID, JGUIUtil.NONE, null, null ) ) {
-                __TableID_JComboBox.select ( TableID );
+            if ( JGUIUtil.isSimpleJComboBoxItem( __StateTableID_JComboBox,StateTableID, JGUIUtil.NONE, null, null ) ) {
+                __StateTableID_JComboBox.select ( StateTableID );
             }
             else {
                 // Creating new table so add in the first position
-                if ( __TableID_JComboBox.getItemCount() == 0 ) {
-                    __TableID_JComboBox.add(TableID);
+                if ( __StateTableID_JComboBox.getItemCount() == 0 ) {
+                    __StateTableID_JComboBox.add(StateTableID);
                 }
                 else {
-                    __TableID_JComboBox.insert(TableID, 0);
+                    __StateTableID_JComboBox.insert(StateTableID, 0);
                 }
-                __TableID_JComboBox.select(0);
+                __StateTableID_JComboBox.select(0);
             }
         }
-        if ( TableTSIDColumn != null ) {
-            __TableTSIDColumn_JTextField.setText ( TableTSIDColumn );
+        if ( StateTableObjectIDColumn != null ) {
+            __StateTableObjectIDColumn_JTextField.setText ( StateTableObjectIDColumn );
         }
-        if (TableTSIDFormat != null ) {
-            __TableTSIDFormat_JTextField.setText(TableTSIDFormat.trim());
+        if ( StateTableDateTimeColumn != null ) {
+            __StateTableDateTimeColumn_JTextField.setText ( StateTableDateTimeColumn );
         }
-        if ( TableStateDateTimeColumn != null ) {
-            __TableStateDateTimeColumn_JTextField.setText ( TableStateDateTimeColumn );
+        if ( StateTableNameColumn != null ) {
+            __StateTableNameColumn_JTextField.setText ( StateTableNameColumn );
         }
-        if ( TableStateNameColumn != null ) {
-            __TableStateNameColumn_JTextField.setText ( TableStateNameColumn );
+        if ( StateTableValueColumn != null ) {
+            __StateTableValueColumn_JTextField.setText ( StateTableValueColumn );
         }
-        if ( TableStateValueColumn != null ) {
-            __TableStateValueColumn_JTextField.setText ( TableStateValueColumn );
+        if ( StateTableInflowStateName != null ) {
+            __StateTableInflowStateName_JTextField.setText ( StateTableInflowStateName );
         }
-        if ( TableInflowStateName != null ) {
-            __TableInflowStateName_JTextField.setText ( TableInflowStateName );
+        if ( StateTableOutflowStateName != null ) {
+            __StateTableOutflowStateName_JTextField.setText ( StateTableOutflowStateName );
         }
-        if ( TableOutflowStateName != null ) {
-            __TableOutflowStateName_JTextField.setText ( TableOutflowStateName );
+        if ( StateSaveDateTime != null ) {
+            __StateSaveDateTime_JTextField.setText ( StateSaveDateTime );
+        }
+        if ( StateSaveInterval == null ) {
+            // Select default...
+            __StateSaveInterval_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __StateSaveInterval_JComboBox, StateSaveInterval, JGUIUtil.NONE, null, null )) {
+                __StateSaveInterval_JComboBox.select ( StateSaveInterval );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n" +
+                "StateSaveInterval value \"" + StateSaveInterval + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
         }
 	}
 	// Regardless, reset the command from the fields...
@@ -842,16 +994,21 @@ private void refresh ()
     LagInterval = __LagInterval_JComboBox.getSelected();
 	Lag = __Lag_JTextArea.getText().trim();
 	K = __K_JTextArea.getText().trim();
-    InflowStates = __InflowStates_JTextArea.getText().trim();
-    OutflowStates = __OutflowStates_JTextArea.getText().trim();
-	TableID = __TableID_JComboBox.getSelected();
-    TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
-    TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
-    TableStateDateTimeColumn = __TableStateDateTimeColumn_JTextField.getText().trim();
-    TableStateNameColumn = __TableStateNameColumn_JTextField.getText().trim();
-    TableStateValueColumn = __TableStateValueColumn_JTextField.getText().trim();
-    TableInflowStateName = __TableInflowStateName_JTextField.getText().trim();
-    TableOutflowStateName = __TableOutflowStateName_JTextField.getText().trim();
+	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
+    InflowStateValueDefault = __InflowStateValueDefault_JTextField.getText().trim();
+    OutflowStateValueDefault = __OutflowStateValueDefault_JTextField.getText().trim();
+    InflowStateValues = __InflowStateValues_JTextArea.getText().trim();
+    OutflowStateValues = __OutflowStateValues_JTextArea.getText().trim();
+	StateTableID = __StateTableID_JComboBox.getSelected();
+    StateTableObjectIDColumn = __StateTableObjectIDColumn_JTextField.getText().trim();
+    StateTableDateTimeColumn = __StateTableDateTimeColumn_JTextField.getText().trim();
+    StateTableNameColumn = __StateTableNameColumn_JTextField.getText().trim();
+    StateTableValueColumn = __StateTableValueColumn_JTextField.getText().trim();
+    StateTableInflowStateName = __StateTableInflowStateName_JTextField.getText().trim();
+    StateTableOutflowStateName = __StateTableOutflowStateName_JTextField.getText().trim();
+    StateSaveDateTime = __StateSaveDateTime_JTextField.getText().trim();
+    StateSaveInterval = __StateSaveInterval_JComboBox.getSelected();
     Alias = __Alias_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSID=" + TSID );
@@ -860,16 +1017,17 @@ private void refresh ()
     props.add ( "LagInterval=" + LagInterval );
 	props.add ( "Lag=" + Lag );
 	props.add ( "K=" + K );
-	props.add ( "InflowStates=" + InflowStates );
-	props.add ( "OutflowStates=" + OutflowStates );
-    props.add ( "TableID=" + TableID );
-    props.add ( "TableTSIDColumn=" + TableTSIDColumn );
-    props.add ( "TableTSIDFormat=" + TableTSIDFormat );
-    props.add ( "TableStateDateTimeColumn=" + TableStateDateTimeColumn );
-    props.add ( "TableStateNameColumn=" + TableStateNameColumn );
-    props.add ( "TableStateValueColumn=" + TableStateValueColumn );
-    props.add ( "TableInflowStateName=" + TableInflowStateName );
-    props.add ( "TableOutflowStateName=" + TableOutflowStateName );
+	props.add ( "AnalysisStart=" + AnalysisStart );
+	props.add ( "AnalysisEnd=" + AnalysisEnd );
+	props.add ( "InflowStateValues=" + InflowStateValues );
+	props.add ( "OutflowStateValues=" + OutflowStateValues );
+    props.add ( "StateTableID=" + StateTableID );
+    props.add ( "StateTableObjectIDColumn=" + StateTableObjectIDColumn );
+    props.add ( "StateTableDateTimeColumn=" + StateTableDateTimeColumn );
+    props.add ( "StateTableNameColumn=" + StateTableNameColumn );
+    props.add ( "StateTableValueColumn=" + StateTableValueColumn );
+    props.add ( "StateTableInflowStateName=" + StateTableInflowStateName );
+    props.add ( "StateTableOutflowStateName=" + StateTableOutflowStateName );
 	props.add ( "Alias=" + Alias );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }

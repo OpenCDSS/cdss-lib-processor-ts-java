@@ -323,7 +323,7 @@ determine the column name
 */
 private List<String> determineValueColumnNames ( List<TS> tslist, String tableTSIDColumn, String tableColumn )
 {
-    List<String> tableColumnNames = new Vector<String>();
+    List<String> tableColumnNames = new ArrayList<String>();
     if ( (tableTSIDColumn != null) && !tableTSIDColumn.equals("") ) {
         // Single column output
         tableColumnNames.add ( tableColumn );
@@ -440,8 +440,7 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
@@ -484,6 +483,9 @@ CommandWarningException, CommandException
     int [] ValueColumn_int = null; // Determined below.  Columns 0+ for each time series data
     int [] FlagColumn_int = null; // Determined below.  Columns 0+ for each time series data
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    if ( (TableTSIDColumn != null) && !TableTSIDColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableTSIDColumn.indexOf("${") >= 0 ) {
+    	TableTSIDColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDColumn);
+    }
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     int TableTSIDColumn_int = -1; // Determined below.
     String IncludeMissingValues = parameters.getValue ( "IncludeMissingValues" );
@@ -718,16 +720,25 @@ CommandWarningException, CommandException
         }
     	
         String DateTimeColumn = parameters.getValue("DateTimeColumn");
+        if ( (DateTimeColumn != null) && !DateTimeColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DateTimeColumn.indexOf("${") >= 0 ) {
+        	DateTimeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeColumn);
+        }
         String ValueColumn = parameters.getValue("ValueColumn");
+        if ( (ValueColumn != null) && !ValueColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ValueColumn.indexOf("${") >= 0 ) {
+        	ValueColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, ValueColumn);
+        }
         String OutputPrecision = parameters.getValue("OutputPrecision");
         int outputPrecision = 2;
         if ( (OutputPrecision != null) && !OutputPrecision.equals("") ) {
             outputPrecision = Integer.parseInt(OutputPrecision);
         }
         String FlagColumn = parameters.getValue("FlagColumn");
+        if ( (FlagColumn != null) && !FlagColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN) && FlagColumn.indexOf("${") >= 0 ) {
+        	FlagColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, FlagColumn);
+        }
         // Determine the column names for values and flags
         List<String> valueColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, ValueColumn);
-        List<String> flagColumnNames = new Vector<String>(); 
+        List<String> flagColumnNames = new ArrayList<String>(); 
         if ( (FlagColumn != null) && !FlagColumn.equals("") ) {
             flagColumnNames = determineValueColumnNames(tslist, TableTSIDColumn, FlagColumn);
         }

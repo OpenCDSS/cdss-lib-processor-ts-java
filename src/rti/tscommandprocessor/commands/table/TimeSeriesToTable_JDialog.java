@@ -420,7 +420,8 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Date/time column in table:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DateTimeColumn_JTextField = new JTextField ( "", 10 );
+    __DateTimeColumn_JTextField = new JTextField ( "", 20 );
+    __DateTimeColumn_JTextField.setToolTipText("Specify the table column containing date/time or use ${Property} notation");
     __DateTimeColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DateTimeColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -441,6 +442,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(singleColumn_JPanel, new JLabel ( "Table TSID column:" ), 
         0, ++ySingleColumn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TableTSIDColumn_JTextField = new JTextField ( 20 );
+    __TableTSIDColumn_JTextField.setToolTipText("Specify the table column containing TSID or use ${Property} notation");
     __TableTSIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(singleColumn_JPanel, __TableTSIDColumn_JTextField,
         1, ySingleColumn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -475,7 +477,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Data value column(s) in table:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueColumn_JTextField = new TSFormatSpecifiersJPanel(10);
-    __ValueColumn_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __ValueColumn_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, ${ts:Property}, ${Property}.");
     __ValueColumn_JTextField.addKeyListener ( this );
     __ValueColumn_JTextField.getDocument().addDocumentListener(this);
     JGUIUtil.addComponent(main_JPanel, __ValueColumn_JTextField,
@@ -496,7 +498,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FlagColumn_JTextField = new TSFormatSpecifiersJPanel(10);
     __FlagColumn_JTextField.setToolTipText("If specified, the number of columns much match the data columns, " +
-        "but column names can be blank to ignore.");
+        "but column names can be blank to ignore, can use ${Property}.");
     __FlagColumn_JTextField.addKeyListener ( this );
     __FlagColumn_JTextField.getDocument().addDocumentListener(this);
     JGUIUtil.addComponent(main_JPanel, __FlagColumn_JTextField,
@@ -548,7 +550,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
         "Optional - output window within each year (default=full year)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel,new JLabel( "Output window start ${Property}:"),
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Output window start as ${Property}:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputWindowStart_JTextField = new JTextField ( "", 20 );
     __OutputWindowStart_JTextField.setToolTipText("Specify the output window start ${Property} - will override the above.");
@@ -558,7 +560,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=full year)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel,new JLabel("Output window end ${Property}:"),
+    JGUIUtil.addComponent(main_JPanel,new JLabel("Output window end as ${Property}:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputWindowEnd_JTextField = new JTextField ( "", 20 );
     __OutputWindowEnd_JTextField.setToolTipText("Specify the output window end ${Property} - will override the above.");

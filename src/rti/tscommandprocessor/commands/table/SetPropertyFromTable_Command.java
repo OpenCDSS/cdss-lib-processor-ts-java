@@ -332,27 +332,43 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommandInternal",message = "";
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message = "";
 	int warning_level = 2;
 	int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    Boolean clearStatus = new Boolean(true); // default
+	CommandProcessor processor = getCommandProcessor();
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryProp ( null );
     }
 
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
     String TableID = parameters.getValue ( "TableID" );
+    if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) && TableID.indexOf("${") >= 0 ) {
+   		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+    }
     String Column = parameters.getValue ( "Column" );
-    String column = TSCommandProcessorUtil.expandParameterValue(processor,this,Column);
+    if ( (Column != null) && !Column.isEmpty() && (commandPhase == CommandPhaseType.RUN) && Column.indexOf("${") >= 0 ) {
+   		Column = TSCommandProcessorUtil.expandParameterValue(processor, this, Column);
+    }
     String ColumnIncludeFilters = parameters.getValue ( "ColumnIncludeFilters" );
     StringDictionary columnIncludeFilters = new StringDictionary(ColumnIncludeFilters,":",",");
     // Expand the filter information
@@ -387,12 +403,18 @@ CommandWarningException, CommandException
         }
     }
     String PropertyName = parameters.getValue ( "PropertyName" );
+    if ( (PropertyName != null) && !PropertyName.isEmpty() && (commandPhase == CommandPhaseType.RUN) && PropertyName.indexOf("${") >= 0 ) {
+    	PropertyName = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyName);
+    }
     String DefaultValue = parameters.getValue ( "DefaultValue" );
+    if ( (DefaultValue != null) && !DefaultValue.isEmpty() && (commandPhase == CommandPhaseType.RUN) && DefaultValue.indexOf("${") >= 0 ) {
+    	DefaultValue = TSCommandProcessorUtil.expandParameterValue(processor, this, DefaultValue);
+    }
     
     // Get the table to process.
 
     DataTable table = null;
-    if ( command_phase == CommandPhaseType.RUN ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (TableID != null) && !TableID.equals("") ) {
@@ -434,7 +456,7 @@ CommandWarningException, CommandException
 
 	try {
 	    Prop prop = null;
-	    if ( command_phase == CommandPhaseType.RUN ) {
+	    if ( commandPhase == CommandPhaseType.RUN ) {
 		    String propertyName = TSCommandProcessorUtil.expandParameterValue(processor,this,PropertyName);
 	    	// Match 1+ rows so first match can be used 
 	    	List<String> errors = new ArrayList<String>();
@@ -464,10 +486,10 @@ CommandWarningException, CommandException
 	        }
 	        else {
 	        	// Have a matching record so set the property based on the column value
-	        	int col = table.getFieldIndex(column);
+	        	int col = table.getFieldIndex(Column);
 	        	if ( col < 0 ) {
 		        	message = "Table with TableID=\"" + TableID + "\" does not contain Column=\"" +
-		        		column + "\". Can't set property.";
+		        		Column + "\". Can't set property.";
 	                Message.printWarning(warning_level,
 	                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
 	                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -476,7 +498,7 @@ CommandWarningException, CommandException
 	        	}
 	        	else {
 		        	Object o = records.get(0).getFieldValue(col);
-		        	Message.printStatus(2,routine,"Column \"" + column + "\" col=" + col + " value="+ o);
+		        	Message.printStatus(2,routine,"Column \"" + Column + "\" col=" + col + " value="+ o);
 		        	if ( o == null ) {
 		        		prop = new Prop(propertyName, o, "", Prop.SET_AT_RUNTIME_BY_USER);
 		        	}
@@ -508,7 +530,7 @@ CommandWarningException, CommandException
                         message, "Report the problem to software support." ) );
 	    	}
         }
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Create an empty property
             prop = new Prop();
             prop.setKey ( PropertyName ); // OK if property name includes ${} in discovery mode
@@ -520,7 +542,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error setting property (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
@@ -532,7 +554,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

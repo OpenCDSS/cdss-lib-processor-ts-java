@@ -219,7 +219,8 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -232,6 +233,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column to supply property:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Column_JTextField = new JTextField (20);
+    __Column_JTextField.setToolTipText("Specify the column to provide the property or use ${Property} notation");
     __Column_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Column_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -243,7 +245,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     __ColumnIncludeFilters_JTextArea = new JTextArea (3,35);
     __ColumnIncludeFilters_JTextArea.setLineWrap ( true );
     __ColumnIncludeFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnIncludeFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnIncludeFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2, can use ${Property}.");
     __ColumnIncludeFilters_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnIncludeFilters_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -257,7 +259,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     __ColumnExcludeFilters_JTextArea = new JTextArea (3,35);
     __ColumnExcludeFilters_JTextArea.setLineWrap ( true );
     __ColumnExcludeFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnExcludeFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnExcludeFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2, can use ${Property}");
     __ColumnExcludeFilters_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnExcludeFilters_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -269,6 +271,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Property name:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField (20);
+    __PropertyName_JTextField.setToolTipText("Specify the property name to set or use ${Property} notation");
     __PropertyName_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -278,6 +281,7 @@ private void initialize ( JFrame parent, SetPropertyFromTable_Command command, L
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Default value:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DefaultValue_JTextField = new JTextField (20);
+    __DefaultValue_JTextField.setToolTipText("Specify the property default value or use ${Property} notation");
     __DefaultValue_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __DefaultValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

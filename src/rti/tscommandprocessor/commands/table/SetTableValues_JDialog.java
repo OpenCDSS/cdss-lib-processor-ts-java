@@ -187,7 +187,8 @@ private void initialize ( JFrame parent, SetTableValues_Command command, List<St
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID or use ${Property} notation");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
@@ -202,7 +203,7 @@ private void initialize ( JFrame parent, SetTableValues_Command command, List<St
     __ColumnFilters_JTextArea = new JTextArea (3,35);
     __ColumnFilters_JTextArea.setLineWrap ( true );
     __ColumnFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
+    __ColumnFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2, can use ${Property}");
     __ColumnFilters_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnFilters_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -216,7 +217,7 @@ private void initialize ( JFrame parent, SetTableValues_Command command, List<St
     __ColumnValues_JTextArea = new JTextArea (6,35);
     __ColumnValues_JTextArea.setLineWrap ( true );
     __ColumnValues_JTextArea.setWrapStyleWord ( true );
-    __ColumnValues_JTextArea.setToolTipText("Column1:Value1,Column2:Value2");
+    __ColumnValues_JTextArea.setToolTipText("Column1:Value1,Column2:Value2, can use ${Property}");
     __ColumnValues_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnValues_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

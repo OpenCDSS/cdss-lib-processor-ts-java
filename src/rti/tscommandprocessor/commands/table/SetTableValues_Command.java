@@ -5,10 +5,10 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -68,11 +68,11 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "ColumnFilters" );
-    valid_Vector.add ( "ColumnValues" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List<String> validList = new ArrayList<String>(3);
+    validList.add ( "TableID" );
+    validList.add ( "ColumnFilters" );
+    validList.add ( "ColumnValues" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -150,6 +150,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String ColumnValues = parameters.getValue ( "ColumnValues" );
+    if ( (ColumnValues != null) && !ColumnValues.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnValues.indexOf("${") >= 0 ) {
+    	ColumnValues = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnValues);
+    }
     // Used LinkedHashMap because want insert order to be retained in new columns, if columns are created
     LinkedHashMap<String,String> columnValues = new LinkedHashMap<String,String>();
     if ( (ColumnValues != null) && (ColumnValues.length() > 0) && (ColumnValues.indexOf(":") > 0) ) {
@@ -206,9 +209,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
     	// Set values in the table...
 		final Command thisCommand = this; // for anonymous class below
+		// TODO SAM 2016-08-25 Why is the DataTableValueStringProvider needed?  The ColumnValues parameter
+		// is expanded above before parsing the parameter to allow ${xx:Property} to be expanded
 		DataTableValueStringProvider tableValueGetter = new DataTableValueStringProvider () {
 			public String getTableCellValueAsString ( String valueFormat ) {
-				return TSCommandProcessorUtil.expandParameterValue(processor, thisCommand, valueFormat);
+				// The value in the table can actually contain ${Property}
+				if ( (valueFormat == null) || valueFormat.isEmpty() || valueFormat.indexOf("${") < 0 ) {
+					return valueFormat;
+				}
+				else {
+					return TSCommandProcessorUtil.expandParameterValue(processor, thisCommand, valueFormat);
+				}
 			}
 		};
 	    table.setTableValues ( columnFilters, columnValues, tableValueGetter, true );

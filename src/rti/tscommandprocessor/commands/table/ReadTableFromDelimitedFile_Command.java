@@ -169,7 +169,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List validList = new ArrayList<String>(9);
+	List validList = new ArrayList<String>(11);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
     validList.add ( "Delimiter" );
@@ -177,6 +177,8 @@ throws InvalidCommandParameterException
     validList.add ( "SkipColumns" );
     validList.add ( "HeaderLines" );
     validList.add ( "DateTimeColumns" );
+    validList.add ( "DoubleColumns" );
+    validList.add ( "IntegerColumns" );
     validList.add ( "TextColumns" );
     validList.add ( "Top" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
@@ -257,8 +259,7 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
@@ -291,8 +292,11 @@ CommandWarningException, CommandException
 	if ( (TableID != null) && (TableID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	}
-	String InputFile = parameters.getValue ( "InputFile" );
+	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below
 	String Delimiter = parameters.getValue ( "Delimiter" );
+	if ( (Delimiter != null) && (Delimiter.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		Delimiter = TSCommandProcessorUtil.expandParameterValue(processor, this, Delimiter);
+	}
 	String delimiter = ","; // default
 	if ( (Delimiter != null) && !Delimiter.isEmpty() ) {
 		delimiter = Delimiter;
@@ -304,18 +308,22 @@ CommandWarningException, CommandException
 	Message.printStatus( 2, routine, "parameter SkipLines=\"" + SkipLines + "\"");
 	Message.printStatus( 2, routine, "parameter HeaderLines=\"" + HeaderLines + "\"");
 	String DateTimeColumns = parameters.getValue ( "DateTimeColumns" );
-	String TextColumns = parameters.getValue ( "TextColumns" );
-	String Top = parameters.getValue ( "Top" );
-
-	String InputFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
-	if ( !IOUtil.fileExists(InputFile_full) ) {
-		message += "\nThe delimited table file \"" + InputFile_full + "\" does not exist.";
-		++warning_count;
-        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Verify that the delimited table file exists." ) );
+	if ( (DateTimeColumns != null) && (DateTimeColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		DateTimeColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DateTimeColumns);
 	}
+	String DoubleColumns = parameters.getValue ( "DoubleColumns" );
+	if ( (DoubleColumns != null) && (DoubleColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		DoubleColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, DoubleColumns);
+	}
+	String IntegerColumns = parameters.getValue ( "IntegerColumns" );
+	if ( (IntegerColumns != null) && (IntegerColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		IntegerColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, IntegerColumns);
+	}
+	String TextColumns = parameters.getValue ( "TextColumns" );
+	if ( (TextColumns != null) && (TextColumns.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TextColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, TextColumns);
+	}
+	String Top = parameters.getValue ( "Top" );
 
     /* FIXME enable the code
  	if ((__Columns_intArray == null) || (__Columns_intArray.length == 0)) {
@@ -382,6 +390,15 @@ CommandWarningException, CommandException
 	// Now process the file...
 
     if ( commandPhase == CommandPhaseType.RUN ) {
+    	String InputFile_full = IOUtil.verifyPathForOS(
+	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
+		if ( !IOUtil.fileExists(InputFile_full) ) {
+			message += "\nThe delimited table file \"" + InputFile_full + "\" does not exist.";
+			++warning_count;
+	        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Verify that the delimited table file exists." ) );
+		}
     	DataTable table = null;
     	PropList props = new PropList ( "DataTable" );
     	props.set ( "Delimiter", delimiter );
@@ -397,6 +414,12 @@ CommandWarningException, CommandException
         }
         if ( (DateTimeColumns != null) && !DateTimeColumns.isEmpty() ) {
             props.set ( "DateTimeColumns=" + DateTimeColumns);
+        }
+        if ( (DoubleColumns != null) && !DoubleColumns.isEmpty() ) {
+            props.set ( "DoubleColumns=" + DoubleColumns);
+        }
+        if ( (IntegerColumns != null) && !IntegerColumns.isEmpty() ) {
+            props.set ( "IntegerColumns=" + IntegerColumns);
         }
         if ( (TextColumns != null) && !TextColumns.isEmpty() ) {
             props.set ( "TextColumns=" + TextColumns);
@@ -480,6 +503,8 @@ public String toString ( PropList props )
 	String SkipColumns = props.getValue("SkipColumns");
 	String HeaderLines = props.getValue("HeaderLines");
 	String DateTimeColumns = props.getValue("DateTimeColumns");
+	String DoubleColumns = props.getValue("DoubleColumns");
+	String IntegerColumns = props.getValue("IntegerColumns");
 	String TextColumns = props.getValue("TextColumns");
 	String Top = props.getValue("Top");
 	StringBuffer b = new StringBuffer ();
@@ -524,6 +549,18 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "DateTimeColumns=\"" + DateTimeColumns + "\"" );
+	}
+	if ( (DoubleColumns != null) && (DoubleColumns.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "DoubleColumns=\"" + DoubleColumns + "\"" );
+	}
+	if ( (IntegerColumns != null) && (IntegerColumns.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "IntegerColumns=\"" + IntegerColumns + "\"" );
 	}
 	if ( (TextColumns != null) && (TextColumns.length() > 0) ) {
 		if ( b.length() > 0 ) {

@@ -57,6 +57,8 @@ private JTextField __SkipLines_JTextField = null;
 //private JTextField __SkipColumns_JTextField = null;
 private JTextField __HeaderLines_JTextField = null;
 private JTextField __DateTimeColumns_JTextField = null;
+private JTextField __DoubleColumns_JTextField = null;
+private JTextField __IntegerColumns_JTextField = null;
 private JTextField __TextColumns_JTextField = null;
 private JTextField __Top_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
@@ -151,6 +153,8 @@ private void checkInput ()
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
 	String DateTimeColumns  = __DateTimeColumns_JTextField.getText().trim();
+	String DoubleColumns  = __DoubleColumns_JTextField.getText().trim();
+	String IntegerColumns  = __IntegerColumns_JTextField.getText().trim();
 	String TextColumns  = __TextColumns_JTextField.getText().trim();
 	String Top  = __Top_JTextField.getText().trim();
 	__error_wait = false;
@@ -175,6 +179,12 @@ private void checkInput ()
 	}
     if ( DateTimeColumns.length() > 0 ) {
         props.set ( "DateTimeColumns", DateTimeColumns );
+    }
+    if ( DoubleColumns.length() > 0 ) {
+        props.set ( "DoubleColumns", DoubleColumns );
+    }
+    if ( IntegerColumns.length() > 0 ) {
+        props.set ( "IntegerColumns", IntegerColumns );
     }
     if ( TextColumns.length() > 0 ) {
         props.set ( "TextColumns", TextColumns );
@@ -205,6 +215,8 @@ private void commitEdits ()
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderLines = __HeaderLines_JTextField.getText().trim();
 	String DateTimeColumns  = __DateTimeColumns_JTextField.getText().trim();
+	String DoubleColumns  = __DoubleColumns_JTextField.getText().trim();
+	String IntegerColumns  = __IntegerColumns_JTextField.getText().trim();
 	String TextColumns  = __TextColumns_JTextField.getText().trim();
 	String Top  = __Top_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
@@ -214,6 +226,8 @@ private void commitEdits ()
 	//__command.setCommandParameter ( "SkipColumns", SkipColumns );
 	__command.setCommandParameter ( "HeaderLines", HeaderLines );
 	__command.setCommandParameter ( "DateTimeColumns", DateTimeColumns );
+	__command.setCommandParameter ( "DoubleColumns", DoubleColumns );
+	__command.setCommandParameter ( "IntegerColumns", IntegerColumns );
 	__command.setCommandParameter ( "TextColumns", TextColumns );
 	__command.setCommandParameter ( "Top", Top );
 }
@@ -308,7 +322,8 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Delimiter_JTextField = new JTextField (5);
+    __Delimiter_JTextField = new JTextField (15);
+    __Delimiter_JTextField.setToolTipText("Specify the delimiter character between columns or use ${Property} notation");
     __Delimiter_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -352,6 +367,7 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time columns:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimeColumns_JTextField = new JTextField (20);
+    __DateTimeColumns_JTextField.setToolTipText("Specify column names containing date/time values, can use ${Property} notation");
     __DateTimeColumns_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __DateTimeColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -359,9 +375,32 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
         new JLabel ("Optional - columns that contain date/times, separated by commas."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Double precision (number) columns:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DoubleColumns_JTextField = new JTextField (20);
+    __DoubleColumns_JTextField.setToolTipText("Specify column names containing floating point (double precision) values, can use ${Property} notation");
+    __DoubleColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __DoubleColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ("Optional - columns that contain numbers, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Integer columns:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IntegerColumns_JTextField = new JTextField (20);
+    __IntegerColumns_JTextField.setToolTipText("Specify column names containing integer values, can use ${Property} notation");
+    __IntegerColumns_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __IntegerColumns_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ("Optional - columns that contain integers, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Text columns:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TextColumns_JTextField = new JTextField (20);
+    __TextColumns_JTextField.setToolTipText("Specify column names containing text values, can use ${Property} notation");
     __TextColumns_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TextColumns_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -369,7 +408,7 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
         new JLabel ("Optional - columns that contain text, separated by commas."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Top N columns:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Top N rows:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Top_JTextField = new JTextField (5);
     __Top_JTextField.addKeyListener (this);
@@ -465,6 +504,8 @@ private void refresh ()
 	//String SkipColumns = "";
 	String HeaderLines = "";
 	String DateTimeColumns = "";
+	String DoubleColumns = "";
+	String IntegerColumns = "";
 	String TextColumns = "";
 	String Top = "";
 	PropList props = __command.getCommandParameters();
@@ -477,6 +518,8 @@ private void refresh ()
 		//SkipColumns = props.getValue ( "SkipColumns" );
 		HeaderLines = props.getValue ( "HeaderLines" );
 		DateTimeColumns = props.getValue ( "DateTimeColumns" );
+		DoubleColumns = props.getValue ( "DoubleColumns" );
+		IntegerColumns = props.getValue ( "IntegerColumns" );
 		TextColumns = props.getValue ( "TextColumns" );
 		Top = props.getValue ( "Top" );
         if ( TableID != null ) {
@@ -500,6 +543,12 @@ private void refresh ()
         if ( DateTimeColumns != null ) {
             __DateTimeColumns_JTextField.setText ( DateTimeColumns );
         }
+        if ( DoubleColumns != null ) {
+            __DoubleColumns_JTextField.setText ( DoubleColumns );
+        }
+        if ( IntegerColumns != null ) {
+            __IntegerColumns_JTextField.setText ( IntegerColumns );
+        }
         if ( TextColumns != null ) {
             __TextColumns_JTextField.setText ( TextColumns );
         }
@@ -515,6 +564,8 @@ private void refresh ()
 	//SkipColumns = __SkipColumns_JTextField.getText().trim();
 	HeaderLines = __HeaderLines_JTextField.getText().trim();
 	DateTimeColumns = __DateTimeColumns_JTextField.getText().trim();
+	DoubleColumns = __DoubleColumns_JTextField.getText().trim();
+	IntegerColumns = __IntegerColumns_JTextField.getText().trim();
 	TextColumns = __TextColumns_JTextField.getText().trim();
 	Top = __Top_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
@@ -525,6 +576,8 @@ private void refresh ()
 	//props.add ( "SkipColumns=" + SkipColumns );
 	props.add ( "HeaderLines=" + HeaderLines );
 	props.add ( "DateTimeColumns=" + DateTimeColumns );
+	props.add ( "DoubleColumns=" + DoubleColumns );
+	props.add ( "IntegerColumns=" + IntegerColumns );
 	props.add ( "TextColumns=" + TextColumns );
 	props.add ( "Top=" + Top );
 	__command_JTextArea.setText( __command.toString ( props ) );

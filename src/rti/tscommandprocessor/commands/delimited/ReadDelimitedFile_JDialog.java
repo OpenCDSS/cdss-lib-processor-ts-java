@@ -683,7 +683,6 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener(this);
-    __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(data2_JPanel, __Alias_JTextField,
         1, yData2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data2_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),

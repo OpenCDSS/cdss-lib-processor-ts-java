@@ -236,15 +236,13 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3; // Level for non-user messages for log file.
 
-	// Make sure there are time series available to operate on...
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // default
@@ -271,7 +269,6 @@ CommandWarningException, CommandException
 	}
 	
 	try {
-
 	    Object Property_Object = null;
 	    if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
 	        Property_Object = Boolean.valueOf(PropertyValue);

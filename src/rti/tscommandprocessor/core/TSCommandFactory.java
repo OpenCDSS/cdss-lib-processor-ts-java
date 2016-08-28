@@ -297,6 +297,7 @@ import rti.tscommandprocessor.commands.util.RunCommands_Command;
 import rti.tscommandprocessor.commands.util.RunDSSUTL_Command;
 import rti.tscommandprocessor.commands.util.RunProgram_Command;
 import rti.tscommandprocessor.commands.util.RunPython_Command;
+import rti.tscommandprocessor.commands.util.SetPropertyFromTimeSeries_Command;
 import rti.tscommandprocessor.commands.util.SetProperty_Command;
 import rti.tscommandprocessor.commands.util.SetWorkingDir_Command;
 import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Command;
@@ -1007,6 +1008,9 @@ throws UnknownCommandException
     // Put this before the shorter SetProperty() to avoid ambiguity.
     else if ( commandName.equalsIgnoreCase("SetPropertyFromTable") ) {
         return new SetPropertyFromTable_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("SetPropertyFromTimeSeries") ) {
+        return new SetPropertyFromTimeSeries_Command ();
     }
     else if ( commandName.equalsIgnoreCase("SetProperty") ) {
         return new SetProperty_Command ();

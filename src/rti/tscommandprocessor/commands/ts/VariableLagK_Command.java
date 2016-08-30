@@ -1,10 +1,12 @@
 package rti.tscommandprocessor.commands.ts;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.swing.JFrame;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import riverside.ts.routing.lagk.LagKBuilder;
 import riverside.ts.util.Table;
@@ -45,6 +47,12 @@ This class initializes, edits, and runs the VariableLagK command.
 */
 public class VariableLagK_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
+
+/**
+Possible values for InitializeStatesFromTable parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
     
 /**
 Big flow value used to constrain lookups in the tables.
@@ -104,19 +112,19 @@ throws InvalidCommandParameterException
     String LagInterval = parameters.getValue( "LagInterval" );
     String Lag = parameters.getValue( "Lag" );
 	String K = parameters.getValue( "K" );
-    String AnalysisStart = parameters.getValue ( "AnalysisStart" );
-    String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
-	String InflowStateValueDefault = parameters.getValue( "InflowStateValueDefault" );
-	String OutflowStateValueDefault = parameters.getValue( "OutflowStateValueDefault" );
-	String InflowStateValues = parameters.getValue( "InflowStateValues" );
-	String OutflowStateValues = parameters.getValue( "OutflowStateValues" );
+    String OutputStart = parameters.getValue ( "OutputStart" );
+    String OutputEnd = parameters.getValue ( "OutputEnd" );
+    String InitializeStatesFromTable = parameters.getValue( "InitializeStatesFromTable" );
+	String InitialLaggedInflow = parameters.getValue( "InitialLaggedInflow" );
+	String InitialOutflow = parameters.getValue( "InitialOutflow" );
+	String InitialStorage = parameters.getValue( "InitialStorage" );
+	String InitialQTLag = parameters.getValue( "InitialQTLag" );
 	String StateTableID = parameters.getValue( "StateTableID" );
 	String StateTableObjectIDColumn = parameters.getValue( "StateTableObjectIDColumn" );
+	String StateTableObjectID = parameters.getValue( "StateTableObjectID" );
 	String StateTableDateTimeColumn = parameters.getValue( "StateTableDateTimeColumn" );
 	String StateTableNameColumn = parameters.getValue( "StateTableNameColumn" );
 	String StateTableValueColumn = parameters.getValue( "StateTableValueColumn" );
-	String StateTableInflowStateName = parameters.getValue( "StateTableInflowStateName" );
-	String StateTableOutflowStateName = parameters.getValue( "StateTableOutflowStateName" );
 	String StateSaveDateTime = parameters.getValue( "StateSaveDateTime" );
 	String StateSaveInterval = parameters.getValue( "StateSaveInterval" );
 	//String Alias = parameters.getValue( "Alias" );
@@ -224,46 +232,53 @@ throws InvalidCommandParameterException
     	warning = parseKParameter(K,warning,status);
     }
     
-    if ( (AnalysisStart != null) && !AnalysisStart.isEmpty() && !AnalysisStart.startsWith("${") ) {
+    if ( (OutputStart != null) && !OutputStart.isEmpty() && !OutputStart.startsWith("${") ) {
         try {
-            DateTime.parse(AnalysisStart);
+            DateTime.parse(OutputStart);
         }
         catch ( Exception e ) {
-            message = "The analysis start date/time \"" + AnalysisStart + "\" is not a valid date/time.";
+            message = "The analysis start date/time \"" + OutputStart + "\" is not a valid date/time.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a valid date/time or use ${Property}." ) );
         }
     }
-    if ( (AnalysisEnd != null) && !AnalysisEnd.isEmpty() && !AnalysisEnd.startsWith("${") ) {
+    if ( (OutputEnd != null) && !OutputEnd.isEmpty() && !OutputEnd.startsWith("${") ) {
         try {
-            DateTime.parse( AnalysisEnd );
+            DateTime.parse( OutputEnd );
         }
         catch ( Exception e ) {
-            message = "The analysis end date/time \"" + AnalysisEnd + "\" is not a valid date/time.";
+            message = "The analysis end date/time \"" + OutputEnd + "\" is not a valid date/time.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a valid date/time or use ${Property}." ) );
         }
     }
 
-	// TODO SAM 2008-10-06 Do more checks for the states in the 'runCommand' method. At this time, only
-	// the TS Aliases are known, and the data interval (needed to compute
-	// the number of required states) cannot be computed from an Alias.
-	
-    if ( (InflowStateValueDefault != null) && !InflowStateValueDefault.isEmpty() && (InflowStateValueDefault.indexOf("${") < 0) ) {
-    	if ( !StringUtil.isDouble(InflowStateValueDefault) ) {
-            message = "The value for InflowStateValueDefault (" + InflowStateValueDefault + ") is invalid.";
+    if ( (InitializeStatesFromTable != null) && !InitializeStatesFromTable.isEmpty() &&
+    	!InitializeStatesFromTable.equalsIgnoreCase(_False) && !InitializeStatesFromTable.equalsIgnoreCase(_True)) {
+    	if ( !StringUtil.isDouble(InitialLaggedInflow) ) {
+            message = "The value for InitializeStatesFromTable (" + InitializeStatesFromTable + ") is invalid.";
             warning +="\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the inflow state value default as a number." ) );
+                    message, "Specify as " + _False + " (default) or " + _True + "." ) );
+    	}
+    }
+	
+    if ( (InitialLaggedInflow != null) && !InitialLaggedInflow.isEmpty() && (InitialLaggedInflow.indexOf("${") < 0) ) {
+    	if ( !StringUtil.isDouble(InitialLaggedInflow) ) {
+            message = "The value for InitialLaggedInflow (" + InitialLaggedInflow + ") is invalid.";
+            warning +="\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the lagged inflow state value default as a number." ) );
     	}
     }
     
-    if ( (OutflowStateValueDefault != null) && !OutflowStateValueDefault.isEmpty() && (OutflowStateValueDefault.indexOf("${") < 0) ) {
-    	if ( !StringUtil.isDouble(OutflowStateValueDefault) ) {
-            message = "The value for OutflowStateValueDefault (" + OutflowStateValueDefault + ") is invalid.";
+    if ( (InitialOutflow != null) && !InitialOutflow.isEmpty() && (InitialOutflow.indexOf("${") < 0) ) {
+    	if ( !StringUtil.isDouble(InitialOutflow) ) {
+            message = "The value for InitialOutflow (" + InitialOutflow + ") is invalid.";
             warning +="\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -271,13 +286,23 @@ throws InvalidCommandParameterException
     	}
     }
     
-	if ( (InflowStateValues != null) && !InflowStateValues.equals("") && (OutflowStateValues.indexOf("${") < 0) ) {
-		List<String> v = StringUtil.breakStringList ( InflowStateValues, ",", 0 );
+    if ( (InitialStorage != null) && !InitialStorage.isEmpty() && (InitialStorage.indexOf("${") < 0) ) {
+    	if ( !StringUtil.isDouble(InitialOutflow) ) {
+            message = "The value for InitialStorage (" + InitialStorage + ") is invalid.";
+            warning +="\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the storage state value default as a number." ) );
+    	}
+    }
+    
+	if ( (InitialQTLag != null) && !InitialQTLag.equals("") && (InitialQTLag.indexOf("${") < 0) ) {
+		List<String> v = StringUtil.breakStringList ( InitialQTLag, ",", 0 );
 	    int size = v.size();
 	    for ( int i = 0; i < size; i++ ) {
 	        String state = v.get(i);
 	        if ( !StringUtil.isDouble(state) ) {
-	            message = "The value for InflowStateValues \"" + state + "\" is not a valid number.";
+	            message = "The value, position " + (i + 1) + " for InitialQTLag (" + state + ") is not a valid number.";
 	            warning +="\n" + message;
 	            status.addToLog ( CommandPhaseType.INITIALIZATION,
 	                    new CommandLogRecord(CommandStatusType.FAILURE,
@@ -286,37 +311,21 @@ throws InvalidCommandParameterException
 	    }
 	}
 	
-    if ( (OutflowStateValues != null) && !OutflowStateValues.equals("") && (OutflowStateValues.indexOf("${") < 0) ) {
-    	List<String> v = StringUtil.breakStringList ( OutflowStateValues, ",", 0 );
-        int size = v.size();
-        for ( int i = 0; i < size; i++ ) {
-            String state = v.get(i);
-            if ( !StringUtil.isDouble(state) ) {
-                message = "The value for OutflowStateValues \"" + state + "\" is not a valid number.";
-                warning +="\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify the outflow state value as a number." ) );
-            }
-        }
-    }
-    
     // If a state table is specified, make sure all the other necessary parameters are also specified
     
     if ( (StateTableID != null) && !StateTableID.isEmpty() ) {
-    	if ( (StateTableObjectIDColumn == null) || StateTableID.isEmpty() ) {
+    	if ( (StateTableObjectIDColumn == null) || StateTableObjectIDColumn.isEmpty() ) {
 	        message = "The StateTableObjectIDColumn must be specified.";
 	        warning +="\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableObjectIDColumn must be specified." ) );
     	}
-    	/*
-    	if ( (TableTSIDFormat == null) || TableTSIDFormat.isEmpty() ) {
-	        message = "The TableTSIDFormat must be specified.";
+    	if ( (StateTableObjectID == null) || StateTableObjectID.isEmpty() ) {
+	        message = "The StateTableObjectID must be specified.";
 	        warning +="\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
-	            new CommandLogRecord(CommandStatusType.FAILURE, message, "TableTSIDFormat must be specified." ) );
-    	}*/
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableObjectID must be specified." ) );
+    	}
     	if ( (StateTableDateTimeColumn == null) || StateTableDateTimeColumn.isEmpty() ) {
 	        message = "The StateTableDateTimeColumn must be specified.";
 	        warning +="\n" + message;
@@ -334,18 +343,6 @@ throws InvalidCommandParameterException
 	        warning +="\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableValueColumn must be specified." ) );
-    	}
-    	if ( (StateTableInflowStateName == null) || StateTableInflowStateName.isEmpty() ) {
-	        message = "The StateTableInflowStateName must be specified.";
-	        warning +="\n" + message;
-	        status.addToLog ( CommandPhaseType.INITIALIZATION,
-	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableInflowStateName must be specified." ) );
-    	}
-    	if ( (StateTableOutflowStateName == null) || StateTableOutflowStateName.isEmpty() ) {
-	        message = "The StateTableOutflowStateName must be specified.";
-	        warning +="\n" + message;
-	        status.addToLog ( CommandPhaseType.INITIALIZATION,
-	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableOutflowStateName must be specified." ) );
     	}
     }
 
@@ -376,26 +373,29 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List validList = new ArrayList<String>(20);
+    List validList = new ArrayList<String>(23);
     validList.add ( "TSID" );
-    validList.add ( "NewTSID" );
-    validList.add ( "Lag" );
-    validList.add ( "K" );
     validList.add ( "FlowUnits" );
     validList.add ( "LagInterval" );
-    validList.add ( "InflowStateValueDefault" );
-    validList.add ( "OutflowStateValueDefault" );
-    validList.add ( "InflowStateValues" );
+    validList.add ( "Lag" );
+    validList.add ( "K" );
+    validList.add ( "OutputStart" );
+    validList.add ( "OutputEnd" );
+    validList.add ( "InitialLaggedInflow" );
+    validList.add ( "InitialOutflow" );
+    validList.add ( "InitializeStatesFromTable" );
+    validList.add ( "InitialQTLag" );
     validList.add ( "OutflowStateValues" );
     validList.add ( "StateTableID" );
     validList.add ( "StateTableObjectIDColumn" );
+    validList.add ( "StateTableObjectID" );
     validList.add ( "StateTableDateTimeColumn" );
     validList.add ( "StateTableNameColumn" );
     validList.add ( "StateTableValueColumn" );
-    validList.add ( "StateTableInflowStateName" );
-    validList.add ( "StateTableOutflowStateName" );
+    validList.add ( "StateTableStateName" );
     validList.add ( "StateSaveDateTime" );
     validList.add ( "StateSaveInterval" );
+    validList.add ( "NewTSID" );
     validList.add ( "Alias" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -406,6 +406,15 @@ throws InvalidCommandParameterException
 	}
     
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+}
+
+/**
+ * Deserialize a states JSON string using Google GSON.
+ */
+private VariableLagK_States deserializeStatesJSON ( String statesJSON ) {
+	Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	VariableLagK_States states = gson.fromJson(statesJSON, VariableLagK_States.class);
+	return states;
 }
 
 /**
@@ -441,7 +450,7 @@ empty table (no Lag or no K).
 */
 private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, TimeInterval lagInterval, Table originalTable,
     int log_level, String command_tag, int warning_count, CommandStatus status )
-{   String routine = getClass().getName() + ".getNormalizedTable";
+{   String routine = getClass().getSimpleName() + ".getNormalizedTable";
     // If the original table is null, return an empty table.  For K, need to initialize so that
     // the storage value (K) is zero, with a large flow being used to allow the lookup.
     // This was implemented after SAM talked to Marc Baldo. 
@@ -580,65 +589,71 @@ public List getObjectList ( Class c )
     }
 }
 
-// TODO SAM 2016-07-31 This code code be moved to a more generic package and shared once vetted.
 /**
  * Get the states from the state table.
+ * @return the JSON states string.
  */
-private double [] getStatesFromTable(DataTable table,int StateTableObjectIDColumnNum,int StateTableDateTimeColumnNum,
-	int StateTableNameColumnNum, int StateTableValueColumnNum,
-	DateTime reqStateDate, String reqStateName ) {
-	double [] states = null;
-	// Loop through the states table and find matching criteria
-	TableRecord rec;
-	DateTime stateDate = null;
-	String stateName, stateValue;
-	Object o;
-	for ( int irec = 0; irec < table.getNumberOfRecords(); irec++ ) {
-		try {
-			rec = table.getRecord(irec);
-			// TODO SAM 2016-07-31 Need to check the TSID if that is what is used
-			stateName = rec.getFieldValueString(StateTableNameColumnNum);
-			if ( !stateName.equalsIgnoreCase(reqStateName) ) {
-				continue;
-			}
-			o = rec.getFieldValueString(StateTableDateTimeColumnNum);
-			if ( o instanceof DateTime ) {
-				stateDate = (DateTime)o;
-			}
-			else if ( o instanceof Date ) {
-				stateDate = new DateTime((Date)o);
-			}
-			else if ( o instanceof String ) {
-				stateDate = DateTime.parse((String)o);
-			}
-			else {
-				// TODO SAM 2016-07-31 need to handle other representations
-			}
-			if ( !reqStateDate.equals(stateDate) ) {
-				// Use precision of the requested state date/time since that should be correct
-				continue;
-			}
-			// If here the state identifier and date/time have matched so get the value
-			o = rec.getFieldValue(StateTableValueColumnNum);
-			if ( o instanceof String ) {
-				// Parse out the array
-				stateValue = (String)o;
-				stateValue = stateValue.replace("[","").trim();
-				stateValue = stateValue.replace("]","").trim();
-				String [] parts = stateValue.split(",");
-				states = new double[parts.length];
-				for ( int i = 0; i < parts.length; i++ ) {
-					states[i] = Double.parseDouble(parts[i]);
-					// TODO SAM 2016-07-31 need to add more error-handling
-				}
-			}
-		}
-		catch ( Exception e ) {
-			Message.printWarning(3,"",e);
-			continue;
+private VariableLagK_States getStatesFromTable(DataTable stateTable, int stateTableObjectIDColumnNum, int stateTableDateTimeColumnNum,
+	int stateTableNameColumnNum, int stateTableValueColumnNum,
+	String objectID, DateTime dt, String stateName )
+throws Exception {
+	String routine = getClass().getSimpleName() + ".getStatesFromTable";
+	// See if an existing table record exists
+	int [] columnNumbers = { stateTableObjectIDColumnNum, stateTableDateTimeColumnNum, stateTableNameColumnNum };
+	List<Object> columnValues = new ArrayList<Object>();
+	columnValues.add(objectID);
+	columnValues.add(dt);
+	columnValues.add(stateName);
+	List<TableRecord> records = stateTable.getRecords(columnNumbers, columnValues);
+	if ( records.size() != 1 ) {
+		// If more than one record it is a problem
+		throw new RuntimeException("State table contains " + records.size() + " records (1 expected) for ObjectID=\""
+			+ objectID + "\" date/time=\"" + dt + "\" state name=\"" + stateName + "\"");
+	}
+	TableRecord rec = records.get(0);
+	String statesJSON = rec.getFieldValueString(stateTableValueColumnNum);
+	Message.printStatus(2,routine,"Read states: " + statesJSON );
+	// Convert the states JSON string into in-memory objects that can be queried
+	return deserializeStatesJSON ( statesJSON );
+}
+
+/**
+Determine whether states should be saved by checking the current processing date/time against requested state save date/time.
+@param dt date/time to check, corresponding to processing iterator
+@param stateSaveDateTime a requested date/time to save the states, typically a single end of run date/time
+@param stateSaveInterval interval on which to save states, for example if Day, save at midnight each day
+@return true if the states need to be saved at the specified date/time, false if no need to save
+*/
+private boolean needToSaveStates(DateTime dt,DateTime stateSaveDateTime,TimeInterval stateSaveInterval,DateTime intervalDateTime) {
+	if ( stateSaveDateTime != null ) {
+		// Check whether the current date/time matches the requested save date/time
+		if ( dt.equals(stateSaveDateTime) ) {
+			return true;
 		}
 	}
-	return states;
+	if ( stateSaveInterval != null ) {
+		// Check whether the current date/time matches the requested save interval.
+		// For example if the requested save interval is Day then the full precision save date/time would be YYYY-MM-DD 00:00:00
+		// The intervalDateTime object is re-used by setting the start 
+		if ( (stateSaveInterval.getBase() == TimeInterval.DAY) && (stateSaveInterval.getMultiplier() == 1) ) {
+			if ( (dt.getHour() == intervalDateTime.getHour()) &&
+				(dt.getMinute() == intervalDateTime.getMinute()) &&
+				(dt.getSecond() == intervalDateTime.getSecond()) ) {
+				return true;
+			}
+		}
+		else if ( (stateSaveInterval.getBase() == TimeInterval.HOUR) && (stateSaveInterval.getMultiplier() == 1) ) {
+			if ( (dt.getMinute() == intervalDateTime.getMinute()) &&
+				(dt.getMinute() == intervalDateTime.getSecond()) ) {
+				return true;
+			}
+		}
+		else {
+			// Don't know how to handle.  Throw an exception
+			throw new RuntimeException ( "Don't know how to handle StateSaveInterval " + stateSaveInterval);
+		}
+	}
+	return false;
 }
 
 /**
@@ -876,37 +891,108 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	
 	String TSID = parameters.getValue( "TSID"  );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && !TSID.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
 	String NewTSID = parameters.getValue( "NewTSID"  );
-	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( (NewTSID != null) && (NewTSID.indexOf("${") >= 0) && !NewTSID.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
 		NewTSID = TSCommandProcessorUtil.expandParameterValue(processor, this, NewTSID);
 	}
+    String LagInterval = parameters.getValue( "LagInterval" );
+	if ( (LagInterval != null) && (LagInterval.indexOf("${") >= 0) && !LagInterval.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		LagInterval = TSCommandProcessorUtil.expandParameterValue(processor, this, LagInterval);
+	}
     String FlowUnits = parameters.getValue( "FlowUnits" );
-	if ( (FlowUnits != null) && (FlowUnits.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( (FlowUnits != null) && (FlowUnits.indexOf("${") >= 0) && !FlowUnits.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
 		FlowUnits = TSCommandProcessorUtil.expandParameterValue(processor, this, FlowUnits);
 	}
 	String Lag = parameters.getValue( "Lag" );
-	if ( (Lag != null) && (Lag.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( (Lag != null) && (Lag.indexOf("${") >= 0) && !Lag.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
 		Lag = TSCommandProcessorUtil.expandParameterValue(processor, this, Lag);
+	}
+	if ( (Lag != null) && !Lag.isEmpty() ) {
 		// Have to reparse the array at runtime
 		String warning = "";
 		parseLagParameter(Lag,warning,status);
 	}
     String K = parameters.getValue( "K" );
-	if ( (K != null) && (K.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+	if ( (K != null) && (K.indexOf("${") >= 0) && !K.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
 		K = TSCommandProcessorUtil.expandParameterValue(processor, this, K);
+	}
+	if ( (K != null) && !K.isEmpty() ) {
 		// Have to reparse the array at runtime
 		String warning = "";
 		parseKParameter(K,warning,status);
 	}
-    String AnalysisStart = parameters.getValue ( "AnalysisStart" );
-    String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+    String OutputStart = parameters.getValue ( "OutputStart" ); // Expand below
+    if ( (OutputStart == null) || OutputStart.isEmpty() ) {
+    	OutputStart = "${OutputStart}"; // Default global property
+    }
+    String OutputEnd = parameters.getValue ( "OutputEnd" ); // Expand below
+    if ( (OutputEnd == null) || OutputEnd.isEmpty() ) {
+    	OutputEnd = "${OutputEnd}"; // Default global property
+    }
+    String InitializeStatesFromTable = parameters.getValue ( "InitializeStatesFromTable" );
+    boolean initializeStatesFromTable = false;
+    if ( (InitializeStatesFromTable != null) && !InitializeStatesFromTable.isEmpty() ) {
+    	if ( InitializeStatesFromTable.equalsIgnoreCase(_True) ) {
+    		initializeStatesFromTable = true;
+    	}
+    }
+    String InitialLaggedInflow = parameters.getValue ( "InitialLaggedInflow" );
+    Double initialLaggedInflow = null;
+	if ( (InitialLaggedInflow != null) && (InitialLaggedInflow.indexOf("${") >= 0) && !InitialLaggedInflow.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		InitialLaggedInflow = TSCommandProcessorUtil.expandParameterValue(processor, this, InitialLaggedInflow);
+	}
+    if ( (InitialLaggedInflow != null) && !InitialLaggedInflow.isEmpty() ) {
+    	initialLaggedInflow = Double.valueOf(InitialLaggedInflow);
+    }
+    String InitialOutflow = parameters.getValue ( "InitialOutflow" );
+    Double initialOutflow = null;
+	if ( (InitialOutflow != null) && (InitialOutflow.indexOf("${") >= 0) && !InitialOutflow.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		InitialOutflow = TSCommandProcessorUtil.expandParameterValue(processor, this, InitialOutflow);
+	}
+    if ( (InitialOutflow != null) && !InitialOutflow.isEmpty() ) {
+    	initialOutflow = Double.valueOf(InitialOutflow);
+    }
+    String InitialStorage = parameters.getValue ( "InitialStorage" );
+	if ( (InitialStorage != null) && (InitialStorage.indexOf("${") >= 0) && !InitialStorage.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		InitialStorage = TSCommandProcessorUtil.expandParameterValue(processor, this, InitialStorage);
+	}
+    Double initialStorage = null;
+    if ( (InitialStorage != null) && !InitialOutflow.isEmpty() ) {
+    	initialStorage = Double.valueOf(InitialStorage);
+    }
+    String InitialQTLag = parameters.getValue ( "InitialQTLag" );
+    double [] initialQTLag = null;
+	if ( (InitialQTLag != null) && (InitialQTLag.indexOf("${") >= 0) && !InitialQTLag.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		InitialQTLag = TSCommandProcessorUtil.expandParameterValue(processor, this, InitialQTLag);
+	}
+    if ( (InitialQTLag != null) && !InitialQTLag.isEmpty() ) {
+    	String [] parts = InitialQTLag.split(",");
+    	initialQTLag = new double[parts.length];
+    	for ( int i = 0; i < parts.length; i++ ) {
+    		initialQTLag[i] = Double.valueOf(parts[i].trim());
+    	}
+    }
+    String StateSaveDateTime = parameters.getValue ( "StateSaveDateTime" );
+    DateTime stateSaveDateTime = null;
+	if ( (StateSaveDateTime != null) && (StateSaveDateTime.indexOf("${") >= 0) && !StateSaveDateTime.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		StateSaveDateTime = TSCommandProcessorUtil.expandParameterValue(processor, this, StateSaveDateTime);
+	}
+    if ( (StateSaveDateTime != null) && !StateSaveDateTime.isEmpty() ) {
+    	stateSaveDateTime = DateTime.parse(StateSaveDateTime);
+    }
+    String StateSaveInterval = parameters.getValue ( "StateSaveInterval" );
+    TimeInterval stateSaveInterval = null;
+    DateTime stateSaveIntervalDateTime = null;
+    if ( (StateSaveInterval != null) && !StateSaveInterval.isEmpty() ) {
+    	stateSaveInterval = TimeInterval.parseInterval(StateSaveInterval);
+    }
     String StateTableID = parameters.getValue ( "StateTableID" );
-    boolean doTable = false;
+    boolean haveStateTable = false; // Whether a state table is available
     if ( (StateTableID != null) && !StateTableID.isEmpty() ) {
-    	doTable = true;
+    	haveStateTable = true;
     	if ( (commandPhase == CommandPhaseType.RUN) && (StateTableID.indexOf("${") >= 0) ) {
     		// In discovery mode want lists of tables to include ${Property}
     		StateTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, StateTableID);
@@ -916,9 +1002,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (StateTableObjectIDColumn != null) && (StateTableObjectIDColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
     	StateTableObjectIDColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, StateTableObjectIDColumn);
 	}
-    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
-    	TableTSIDFormat = TSCommandProcessorUtil.expandParameterValue(processor, this, TableTSIDFormat);
+    String StateTableObjectID = parameters.getValue ( "StateTableObjectID" );
+    if ( (StateTableObjectID != null) && (StateTableObjectID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	StateTableObjectID = TSCommandProcessorUtil.expandParameterValue(processor, this, StateTableObjectID);
 	}
     String StateTableDateTimeColumn = parameters.getValue ( "StateTableDateTimeColumn" );
     if ( (StateTableDateTimeColumn != null) && (StateTableDateTimeColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
@@ -932,27 +1018,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (StateTableValueColumn != null) && (StateTableValueColumn.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
     	StateTableValueColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, StateTableValueColumn);
 	}
-    String StateTableInflowStateName = parameters.getValue ( "StateTableInflowStateName" );
-    if ( (StateTableInflowStateName != null) && (StateTableInflowStateName.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
-    	StateTableInflowStateName = TSCommandProcessorUtil.expandParameterValue(processor, this, StateTableInflowStateName);
+    String StateTableStateName = parameters.getValue ( "StateTableStateName" );
+    if ( (StateTableStateName != null) && (StateTableStateName.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	StateTableStateName = TSCommandProcessorUtil.expandParameterValue(processor, this, StateTableStateName);
 	}
-    String StateTableOutflowStateName = parameters.getValue ( "StateTableOutflowStateName" );
-    if ( (StateTableOutflowStateName != null) && (StateTableOutflowStateName.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
-    	StateTableOutflowStateName = TSCommandProcessorUtil.expandParameterValue(processor, this, StateTableOutflowStateName);
-	}
-	String Alias = parameters.getValue( "Alias" );
+    if ( (StateTableStateName == null) || StateTableStateName.isEmpty() ) {
+    	StateTableStateName = "VariableLagK";
+    }
+	String Alias = parameters.getValue( "Alias" ); // Expanded below
 	
 	TS original_ts = null; // Original time series
 	TS result_ts = null; // Result (lagged) time series
 	
     // Figure out the dates to use for the analysis.
     // Default of null means to analyze the full period.
-    DateTime AnalysisStart_DateTime = null;
-    DateTime AnalysisEnd_DateTime = null;
+    DateTime OutputStart_DateTime = null;
+    DateTime OutputEnd_DateTime = null;
     
     if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-			AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
+			OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
@@ -960,7 +1045,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			++warning_count;
 		}
 		try {
-			AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
+			OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
 				status, warning_level, command_tag );
 		}
 		catch ( InvalidCommandParameterException e ) {
@@ -969,23 +1054,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
     }
 	
-    // Get the table to process.
+    // Get the state table to process.
 
-    DataTable table = null;
-    if ( doTable ) {
+    DataTable stateTable = null;
+    if ( haveStateTable ) {
 	    PropList request_params = null;
 	    CommandProcessorRequestResultsBean bean = null;
 	    if ( (StateTableID != null) && !StateTableID.isEmpty() ) {
 	        // Get the table to be updated/created
 	        request_params = new PropList ( "" );
-	        request_params.set ( "StateTableID", StateTableID );
+	        request_params.set ( "TableID", StateTableID );
 	        try {
 	            bean = processor.processRequest( "GetTable", request_params);
 	            PropList bean_PropList = bean.getResultsPropList();
 	            Object o_Table = bean_PropList.getContents ( "Table" );
 	            if ( o_Table != null ) {
 	                // Found the table so no need to create it
-	                table = (DataTable)o_Table;
+	                stateTable = (DataTable)o_Table;
 	            }
 	        }
 	        catch ( Exception e ) {
@@ -1029,10 +1114,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	int StateTableDateTimeColumnNum = -1;
         	int StateTableNameColumnNum = -1;
         	int StateTableValueColumnNum = -1;
-	    	if ( doTable ) {
+	    	if ( haveStateTable ) {
 	    	    // Get the table columns and other needed data
                 try {
-                    StateTableObjectIDColumnNum = table.getFieldIndex(StateTableObjectIDColumn);
+                    StateTableObjectIDColumnNum = stateTable.getFieldIndex(StateTableObjectIDColumn);
                 }
                 catch ( Exception e2 ) {
                     Message.printStatus(2, routine, "Did not match StateTableObjectIDColumn \"" + StateTableObjectIDColumn +
@@ -1040,7 +1125,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     canRun = false;
                 }
                 try {
-                    StateTableDateTimeColumnNum = table.getFieldIndex(StateTableDateTimeColumn);
+                    StateTableDateTimeColumnNum = stateTable.getFieldIndex(StateTableDateTimeColumn);
                 }
                 catch ( Exception e2 ) {
                     Message.printStatus(2, routine, "Did not match StateTableDateTimeColumn \"" + StateTableDateTimeColumn +
@@ -1048,7 +1133,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     canRun = false;
                 }
                 try {
-                    StateTableNameColumnNum = table.getFieldIndex(StateTableNameColumn);
+                    StateTableNameColumnNum = stateTable.getFieldIndex(StateTableNameColumn);
                 }
                 catch ( Exception e2 ) {
                     Message.printStatus(2, routine, "Did not match StateTableNameColumn \"" + StateTableNameColumn +
@@ -1056,7 +1141,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     canRun = false;
                 }
                 try {
-                    StateTableValueColumnNum = table.getFieldIndex(StateTableValueColumn);
+                    StateTableValueColumnNum = stateTable.getFieldIndex(StateTableValueColumn);
                 }
                 catch ( Exception e2 ) {
                     Message.printStatus(2, routine, "Did not match StateTableValueColumn \"" + StateTableValueColumn +
@@ -1173,10 +1258,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 if ( original_ts != null ) {
                     result_ts.setDataUnits ( original_ts.getDataUnits() );
                     result_ts.setDataUnitsOriginal ( original_ts.getDataUnits() );
-                    result_ts.setDate1 ( original_ts.getDate1() );
-                    result_ts.setDate1Original ( original_ts.getDate1() );
-                    result_ts.setDate2 ( original_ts.getDate2() );
-                    result_ts.setDate2Original ( original_ts.getDate2() );
+                    if ( OutputStart_DateTime == null ) {
+                    	OutputStart_DateTime = new DateTime(original_ts.getDate1());
+                    }
+                    result_ts.setDate1 ( OutputStart_DateTime );
+                    result_ts.setDate1Original ( OutputStart_DateTime );
+                    if ( OutputEnd_DateTime == null ) {
+                    	OutputEnd_DateTime = new DateTime(original_ts.getDate2());
+                    }
+                    result_ts.setDate2 ( OutputEnd_DateTime );
+                    result_ts.setDate2Original ( OutputEnd_DateTime );
                     // Allocate memory
                     result_ts.allocateDataSpace();
                 }
@@ -1185,40 +1276,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Table Lag_Table = null;
                 try {
                     Lag_Table = getNormalizedTable ( "Lag", original_ts, FlowUnits, __LagInterval_TimeInterval, __Lag_Table,
-                    log_level, command_tag, warning_count, status );
+                    	log_level, command_tag, warning_count, status );
                 }
                 catch ( Exception e ) {
                     canRun = false;
-                }
-                if ( canRun && doTable ) {
-                	// Try to get the states from the table
-                	DateTime stateDate = new DateTime(DateTime.DATE_CURRENT);
-                	double [] InflowStateValues = getStatesFromTable(table,StateTableObjectIDColumnNum,StateTableDateTimeColumnNum,
-                		StateTableNameColumnNum,StateTableValueColumnNum,
-                		stateDate,StateTableInflowStateName);
-                	if ( InflowStateValues == null ) {
-                        message = "Inflow states were not found for " + StateTableInflowStateName + " date/time=" + stateDate;  
-                        Message.printWarning ( warning_level,
-                            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                        // This is just a warning
-                        status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Confirm that the state table \"" + StateTableID + "\" contains matching states." ) );
-                        canRun = false;
-                	}
-                	double [] OutflowStateValues = getStatesFromTable(table,StateTableObjectIDColumnNum,StateTableDateTimeColumnNum,
-                		StateTableNameColumnNum,StateTableValueColumnNum,
-                		stateDate,StateTableOutflowStateName);
-                	if ( OutflowStateValues == null ) {
-                        message = "Outflow states were not found for " + StateTableOutflowStateName + " date/time=" + stateDate;  
-                        Message.printWarning ( warning_level,
-                            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                        // This is just a warning
-                        status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Confirm that the state table \"" + StateTableID + "\" contains matching states." ) );
-                        canRun = false;
-                	}
                 }
                 // Make sure that the K table is in the same base interval as the time series being lagged
                 Table K_Table = null;
@@ -1245,8 +1306,69 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             		LagKBuilder lkb = new LagKBuilder(original_ts);
             		lkb.setLagIn ( Lag_Table );
             		lkb.setKOut ( K_Table );
-            		riverside.ts.routing.lagk.LagK lagK = lkb.create();
-            		
+            		double [] coInitial = null; // Will cause states to initialize to zero
+            		Double coLaggedInflow = null, coOutflow = null, coStorage = null;
+            	    boolean doInitialStates = true; // Whether the initial state parameters should be used (modified depending on state table)
+            		if ( haveStateTable && initializeStatesFromTable ) {
+                		doInitialStates = false; // Use what is in the table unless there is an issue below
+            			// New approach to getting states is to read from the state table
+                		// States are encoded string with JSON text, in particular the qt array:
+                		// { "currentLaggedInflow": 123.46,
+                		//   "currentOutflow": 123.45,
+                		//   "currentStorage": 123.45,
+                		//   "qt": [
+            			//      { "q": 123.45, "t": "0" },
+            			//      { "q": 123.45, "t": "1" },
+            			//      { ... }
+                		//   ]
+                		// }
+            			VariableLagK_States states = null;
+            			try {
+            				states = getStatesFromTable(stateTable, StateTableObjectIDColumnNum, StateTableDateTimeColumnNum,
+	        					StateTableNameColumnNum, StateTableValueColumnNum,
+	        					StateTableObjectID, OutputStart_DateTime, StateTableStateName );
+            				// The states will be null if not read from the JSON
+                			coLaggedInflow = states.getCurrentLaggedInflow();
+                			coOutflow = states.getCurrentOutflow();
+                			coStorage = states.getCurrentStorage();
+                			coInitial = states.getQtLag();
+                			// TODO SAM 2016-08-29 Check the states against the input time series to make sure they are compatible
+                			// Make sure that lag interval is the same as the input time series
+                			if ( (states.getLagInterval() != null) && !states.getLagInterval().isEmpty() ) {
+                				TimeInterval stateLagInterval = TimeInterval.parseInterval(states.getLagInterval());
+                				if ( (stateLagInterval.getBase() != original_ts.getDataIntervalBase()) ||
+                					(stateLagInterval.getMultiplier() != original_ts.getDataIntervalMult()) ) {
+                					// Major problem that indicates data management issue
+                                    message = "States retrieved from table have lag interval \"" + states.getLagInterval()
+                                    	+ "\" but input time series interval is \"" + original_ts.getIdentifier().getInterval() + "\" - ignoring.";  
+                                    Message.printWarning ( warning_level,
+                                        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                                    status.addToLog ( commandPhase,
+                                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                            message, "Verify that states were saved for inflow time series with proper interval." ) );
+                                    doInitialStates = true;
+                				}
+                			}
+            			}
+            			catch ( Exception e ) {
+                            message = "Unable to retrieve states at " + OutputStart_DateTime + ".  Will use initial states if provided.";  
+                            Message.printWarning ( warning_level,
+                                MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.WARNING,
+                                    message, "Verify that states were saved at " + OutputStart_DateTime ) );
+                            doInitialStates = true;
+            			}
+            		}
+            		if ( doInitialStates ) {
+            			// Try to use the initial states if they were provided (OK if values are null because handled in "create" method below)
+            			coLaggedInflow = initialLaggedInflow;
+            			coOutflow = initialOutflow;
+            			coStorage = initialStorage;
+            			coInitial = initialQTLag;
+            		}
+            		riverside.ts.routing.lagk.LagK lagK = lkb.create(coLaggedInflow,coOutflow,coStorage,coInitial);
+                    double previousOutflow = 0.0;
             		StringBuffer b = new StringBuffer();
                     double [] co0 = lagK.getCarryoverValues();
                     for ( int i = 0; i < co0.length; i++ ) {
@@ -1258,7 +1380,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             		
                     // TODO SAM 2009-03-24 evaluate input states - for now do not use and accept defaults (0)
                     //reinstate(lagK);
-                    double prev = 0;
+
                     //final boolean verbal = verbal();
                     // TODO SAM 2009-03-24 What does the following do?  Position the arrays?
                     /*
@@ -1276,11 +1398,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     // If there is no negative lag, it does not do anything to the Date/time
                     lagK.initializeCarryoverForNegativeLag (tsi);
                     TSIterator tso = original_ts.iterator(); // Same as tsi when positive lag, different when negative lag
+                    if ( stateSaveInterval != null ) {
+	                	// Create a DateTime instance that will be reused when checking
+	                	// processing DateTime for whether to save.
+	                	// Create to precision of the time series
+	                	stateSaveIntervalDateTime = new DateTime(original_ts.getDate1());
+	                	// Set the end of the date/time based on the save interval
+	                	// - currently can only save at midnight for Day and minute 0 for Hour interval
+	                	if ( stateSaveInterval.getBase() == TimeInterval.DAY ) {
+	                		// Will check that hour, minute, and second are 0 later so set here
+	                		stateSaveIntervalDateTime.setSecond(0);
+	                		stateSaveIntervalDateTime.setMinute(0);
+	                		stateSaveIntervalDateTime.setHour(0);
+	                	}
+	                	if ( stateSaveInterval.getBase() == TimeInterval.HOUR ) {
+	                		// Will check that minute, and second are 0 later so set here
+	                		stateSaveIntervalDateTime.setSecond(0);
+	                		stateSaveIntervalDateTime.setMinute(0);
+	                	}
+                    }
+                    // Process the input to create the routed time series
                     while ((tsd = tsi.next()) != null) {
                         tso.next();
                         dt = tsd.getDate();
                         double dataIn = tsd.getDataValue();
-                        double lagVal = lagK.solveMethod(tsd.getDate(), prev);
+                        double lagVal = lagK.solveMethod(tsd.getDate(), previousOutflow);
                         lagK.doCarryOver(tsd.getDate());
                         b.setLength(0);
                         // Only using for debugging...
@@ -1295,7 +1437,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         }
                         // TODO SAM 2009-03-29 Evaluate removing - we're trying to make it work
                         //prev = dataIn;
-                        prev = lagVal;
+                        previousOutflow = lagVal;
                         // TODO SAM 2009-03-29 Evaluate removing - lagged value from solveMethod() is for current time
                         //DateTime future = new DateTime(tsd.getDate());
                         //future.addInterval(original_ts.getDataIntervalBase(), original_ts.getDataIntervalMult());
@@ -1321,7 +1463,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                 message, "Adjust negative values before trying to route." ) );
                             break;
                         }
-                    }
+                        // If the date/time matches requested save date/time, write to the state table.
+                        // Make sure to overwrite if the record is matched
+                        if ( needToSaveStates(dt,stateSaveDateTime,stateSaveInterval,stateSaveIntervalDateTime) ) {
+                        	Message.printStatus(2,routine,"Saving states at " + dt );
+	                        try {
+	                        	saveStatesToTable(stateTable,StateTableObjectIDColumnNum,StateTableDateTimeColumnNum,
+	                        		StateTableNameColumnNum,StateTableValueColumnNum,
+	                        		StateTableObjectID,dt,
+	                        		StateTableStateName, FlowUnits, original_ts.getIdentifier().getInterval(),
+	                        		lagK.getLaggedInflow(), lagVal, lagK.getStorageCarryOver(), co );
+	                        }
+	                        catch ( Exception e ) {
+	                            message = "Unable to save states at " + dt + " (" + e + ") - will not be able to restart on date/time with states.";  
+                                Message.printWarning ( warning_level,
+                                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                                // This is just a warning
+                                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                                    message, "Contact software support to troubleshoot." ) );
+	                        }
+                        }
+                    } // End of time loop
             
             		// Update the newly created time series genesis.
             		result_ts.addToGenesis ( "Routed data from " + original_ts.getIdentifierString());
@@ -1329,7 +1491,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             
                     // Further process the time series...
                     // This makes sure the period is at least as long as the output period, and computes the historical averages.
-                    List tslist = new ArrayList<TS>();
+                    List<TS> tslist = new ArrayList<TS>();
                     tslist.add ( result_ts );
                     request_params = new PropList ( "" );
                     request_params.setUsingObject ( "TSList", tslist );
@@ -1396,6 +1558,56 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 }
 
 /**
+Save the states to the table, in JSON format.
+*/
+private void saveStatesToTable(DataTable stateTable, int stateTableObjectIDColumnNum, int stateTableDateTimeColumnNum,
+		int stateTableNameColumnNum, int stateTableValueColumnNum,
+		String stateTableObjectID, DateTime dt,
+		String stateName, String flowUnits, String lagInterval,
+		double currentLaggedInflow, double currentOutflow, double currentStorage, double [] co )
+throws Exception
+{
+	// Format the states as JSON
+	Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	VariableLagK_States states = new VariableLagK_States();
+	states.setLagInterval(lagInterval);
+	states.setUnits(flowUnits);
+	states.setCurrentLaggedInflow(currentLaggedInflow);
+	states.setCurrentOutflow(currentOutflow);
+	states.setCurrentStorage(currentStorage);
+	states.setQtLag(co);
+	// See if an existing table record exists
+	int [] columnNumbers = { stateTableObjectIDColumnNum, stateTableDateTimeColumnNum, stateTableNameColumnNum };
+	List<Object> columnValues = new ArrayList<Object>();
+	columnValues.add(stateTableObjectID);
+	columnValues.add(dt);
+	columnValues.add(stateName);
+	List<TableRecord> records = stateTable.getRecords(columnNumbers, columnValues);
+	if ( records.size() > 1 ) {
+		// If more than one record it is a problem
+		throw new RuntimeException("State table contains " + records.size() + " records (0 or 1 expected) for ObjectID=\""
+			+ stateTableObjectID + "\" date/time=\"" + dt + "\" state name=\"" + stateName + "\"");
+	}
+	else if ( records.size() == 1 ) {
+		// If an existing record, update
+		TableRecord record = records.get(0);
+		record.setFieldValue(stateTableObjectIDColumnNum, stateTableObjectID);
+		record.setFieldValue(stateTableDateTimeColumnNum, dt);
+		record.setFieldValue(stateTableNameColumnNum, stateName);
+		record.setFieldValue(stateTableValueColumnNum, gson.toJson(states));
+	}
+	else {
+		// Else, add a new record at the end
+		TableRecord newRecord = stateTable.emptyRecord();
+		newRecord.setFieldValue(stateTableObjectIDColumnNum, stateTableObjectID);
+		newRecord.setFieldValue(stateTableDateTimeColumnNum, dt);
+		newRecord.setFieldValue(stateTableNameColumnNum, stateName);
+		newRecord.setFieldValue(stateTableValueColumnNum, gson.toJson(states));
+		stateTable.addRecord(newRecord);
+	}
+}
+
+/**
 Set the list of time series read in discovery phase.
 */
 private void setDiscoveryTSList ( List discoveryTSList )
@@ -1419,20 +1631,22 @@ public String toString ( PropList props )
     String LagInterval = props.getValue("LagInterval");
 	String Lag = props.getValue("Lag");
 	String K = props.getValue("K");
-    String AnalysisStart = props.getValue( "AnalysisStart" );
-    String AnalysisEnd = props.getValue( "AnalysisEnd" );
-	String InflowStateValueDefault = props.getValue("InflowStateValueDefault");
-	String OutflowStateValueDefault = props.getValue("OutflowStateValueDefault");
-	String InflowStateValues = props.getValue("InflowStateValues");
+    String OutputStart = props.getValue( "OutputStart" );
+    String OutputEnd = props.getValue( "OutputEnd" );
+	String InitializeStatesFromTable = props.getValue("InitializeStatesFromTable");
+	String InitialLaggedInflow = props.getValue("InitialLaggedInflow");
+	String InitialOutflow = props.getValue("InitialOutflow");
+	String InitialStorage = props.getValue("InitialStorage");
+	String InitialQTLag = props.getValue("InitialQTLag");
 	String OutflowStateValues = props.getValue("OutflowStateValues");
 	String StateTableID = props.getValue ( "StateTableID" );
 	String StateTableObjectIDColumn = props.getValue ( "StateTableObjectIDColumn" );
+	String StateTableObjectID = props.getValue ( "StateTableObjectID" );
 	String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
 	String StateTableDateTimeColumn = props.getValue ( "StateTableDateTimeColumn" );
 	String StateTableNameColumn = props.getValue ( "StateTableNameColumn" );
 	String StateTableValueColumn = props.getValue ( "StateTableValueColumn" );
-	String StateTableInflowStateName = props.getValue ( "StateTableInflowStateName" );
-	String StateTableOutflowStateName = props.getValue ( "StateTableOutflowStateName" );
+	String StateTableStateName = props.getValue ( "StateTableStateName" );
 	String StateSaveDateTime = props.getValue ( "StateSaveDateTime" );
 	String StateSaveInterval = props.getValue ( "StateSaveInterval" );
 	String NewTSID = props.getValue("NewTSID");
@@ -1465,35 +1679,47 @@ public String toString ( PropList props )
 		}
 		b.append ( "K=\"" + K + "\"" );
 	}
-    if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
+    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
+        b.append ( "OutputStart=\"" + OutputStart + "\"" );
     }
-    if ( (AnalysisEnd != null) && (AnalysisEnd.length() > 0) ) {
+    if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
+        b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
     }
-	if ( (InflowStateValueDefault != null) && (InflowStateValueDefault.length() > 0) ) {
+	if ( (InitializeStatesFromTable != null) && (InitializeStatesFromTable.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "InflowStateValueDefault=" + InflowStateValueDefault );
+		b.append ( "InitializeStatesFromTable=" + InitializeStatesFromTable );
 	}
-	if ( (OutflowStateValueDefault != null) && (OutflowStateValueDefault.length() > 0) ) {
+	if ( (InitialLaggedInflow != null) && (InitialLaggedInflow.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "OutflowStateValueDefault=" + OutflowStateValueDefault );
+		b.append ( "InitialLaggedInflow=" + InitialLaggedInflow );
 	}
-	if ( (InflowStateValues != null) && (InflowStateValues.length() > 0) ) {
+	if ( (InitialOutflow != null) && (InitialOutflow.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "InflowStateValues=\"" + InflowStateValues + "\"" );
+		b.append ( "InitialOutflow=" + InitialOutflow );
+	}
+	if ( (InitialStorage != null) && (InitialStorage.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "InitialStorage=" + InitialStorage );
+	}
+	if ( (InitialQTLag != null) && (InitialQTLag.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "InitialQTLag=\"" + InitialQTLag + "\"" );
 	}
 	if ( (OutflowStateValues != null) && (OutflowStateValues.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -1512,6 +1738,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "StateTableObjectIDColumn=\"" + StateTableObjectIDColumn + "\"" );
+    }
+    if ( (StateTableObjectID != null) && (StateTableObjectID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "StateTableObjectID=\"" + StateTableObjectID + "\"" );
     }
     if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -1537,17 +1769,11 @@ public String toString ( PropList props )
         }
         b.append ( "StateTableValueColumn=\"" + StateTableValueColumn + "\"" );
     }
-    if ( (StateTableInflowStateName != null) && (StateTableInflowStateName.length() > 0) ) {
+    if ( (StateTableStateName != null) && (StateTableStateName.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "StateTableInflowStateName=\"" + StateTableInflowStateName + "\"" );
-    }
-    if ( (StateTableOutflowStateName != null) && (StateTableOutflowStateName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "StateTableOutflowStateName=\"" + StateTableOutflowStateName + "\"" );
+        b.append ( "StateTableStateName=\"" + StateTableStateName + "\"" );
     }
     if ( (StateSaveDateTime != null) && (StateSaveDateTime.length() > 0) ) {
         if ( b.length() > 0 ) {

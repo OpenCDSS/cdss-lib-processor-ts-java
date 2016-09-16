@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -74,6 +75,7 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeUtil;
 import RTi.Util.Time.YearType;
 import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
@@ -3547,7 +3549,7 @@ throws IOException, FileNotFoundException
         setCommandFileName ( path ); // This is used in headers, etc.
         // Read all the lines in the file
         String line;
-        List<String> commandStrings = new Vector<String>();
+        List<String> commandStrings = new ArrayList<String>();
         while ( true ) {
         	line = br.readLine();
         	if ( line == null ) {
@@ -3555,6 +3557,33 @@ throws IOException, FileNotFoundException
         	}
         	commandStrings.add ( line );
         } // Looping over commands in file
+        // Search for comment annotations in the file and set global settings
+        // Search for "@runDiscoveryOnLoad" at the start of the comment and if found change runDiscoveryOnLoad to false
+    	boolean inBlockComment = false;
+        for ( String commandString: commandStrings ) {
+        	commandString = commandString.trim();
+        	if ( commandString.startsWith("#") ) {
+        		continue;
+        	}
+        	// Put the following after the above because #/* comments out a block start
+        	else if ( commandString.startsWith("/*") ) {
+        		inBlockComment = true;
+        	}
+        	else if ( commandString.startsWith("*/") ) {
+        		inBlockComment = false;
+        	}
+        	if ( inBlockComment ) {
+        		continue;
+        	}
+        	commandString = commandString.toUpperCase();
+        	int pos = commandString.indexOf("@RUNDISCOVERYONLOAD");
+        	if ( pos > 0 ) {
+        		// Check to see if true or false after the annotation
+        		if ( commandString.indexOf("FALSE",(pos+19)) >= 0 ) {
+        			runDiscoveryOnLoad = false;
+        		}
+        	}
+        }
         // Now add the commands from the string list that was read
         File path_File = new File(path);
         String initialWorkingDir = path_File.getParent();
@@ -3773,12 +3802,17 @@ throws Exception
     // First clear user-defined properties.
     __property_Hashtable.clear();
     // Define some standard properties
+    __property_Hashtable.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages
+    __property_Hashtable.put ( "ComputerTimezone", TimeUtil.getLocalTimeZoneAbbr(TimeUtil.LOOKUP_TIME_ZONE_ALWAYS) ); // America/Denver, etc.
     __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
     __property_Hashtable.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
+    // Temporary directory useful in some cases
+    __property_Hashtable.put ( "TempDir", System.getProperty("java.io.tmpdir") );
     // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
     String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
     __property_Hashtable.put ( "UserHomeDir", homeDir );
     __property_Hashtable.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
+    __property_Hashtable.put ( "UserName", System.getProperty("user.name") );
     // Set the program version as a property, useful for version-dependent command logic
     // Assume the version is xxx.xxx.xxx beta (date), with at least one period
     // Save the program version as a string

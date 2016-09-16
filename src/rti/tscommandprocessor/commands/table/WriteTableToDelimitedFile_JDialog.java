@@ -234,6 +234,9 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
         "The delimiter is a comma, header comment lines start with #, " +
         "and column headings are the first non-comment line."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Double quote characters in data are replaced with \"\" (two double quotes).  Quotes inserted at start and end of line are single."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 if ( __working_dir != null ) {
      	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
@@ -394,7 +397,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + "_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + "_JDialog.refresh";
 	String OutputFile = "";
     String TableID = "";
     String WriteHeaderComments = "";

@@ -440,7 +440,7 @@ private int writeTable ( DataTable table, String OutputFile, boolean writeHeader
 	boolean alwaysQuoteStrings, String newlineReplacement, String NaNValue,
 	int warning_level, String command_tag, int warning_count )
 throws IOException
-{	String routine = getClass().getName() + ".writeTable";
+{	String routine = getClass().getSimpleName() + ".writeTable";
 	String message;
 
 	// Clear the output file

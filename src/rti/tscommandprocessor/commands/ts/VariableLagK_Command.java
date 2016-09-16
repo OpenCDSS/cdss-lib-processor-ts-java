@@ -120,10 +120,10 @@ throws InvalidCommandParameterException
 	String InitialStorage = parameters.getValue( "InitialStorage" );
 	String InitialQTLag = parameters.getValue( "InitialQTLag" );
 	String StateTableID = parameters.getValue( "StateTableID" );
-	String StateTableObjectIDColumn = parameters.getValue( "StateTableObjectIDColumn" );
-	String StateTableObjectID = parameters.getValue( "StateTableObjectID" );
+	//String StateTableObjectIDColumn = parameters.getValue( "StateTableObjectIDColumn" );
+	//String StateTableObjectID = parameters.getValue( "StateTableObjectID" );
 	String StateTableDateTimeColumn = parameters.getValue( "StateTableDateTimeColumn" );
-	String StateTableNameColumn = parameters.getValue( "StateTableNameColumn" );
+	//String StateTableNameColumn = parameters.getValue( "StateTableNameColumn" );
 	String StateTableValueColumn = parameters.getValue( "StateTableValueColumn" );
 	String StateSaveDateTime = parameters.getValue( "StateSaveDateTime" );
 	String StateSaveInterval = parameters.getValue( "StateSaveInterval" );
@@ -314,6 +314,7 @@ throws InvalidCommandParameterException
     // If a state table is specified, make sure all the other necessary parameters are also specified
     
     if ( (StateTableID != null) && !StateTableID.isEmpty() ) {
+    	/* Test not being required - in cases where the table only contains one object
     	if ( (StateTableObjectIDColumn == null) || StateTableObjectIDColumn.isEmpty() ) {
 	        message = "The StateTableObjectIDColumn must be specified.";
 	        warning +="\n" + message;
@@ -326,18 +327,21 @@ throws InvalidCommandParameterException
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableObjectID must be specified." ) );
     	}
+    	*/
     	if ( (StateTableDateTimeColumn == null) || StateTableDateTimeColumn.isEmpty() ) {
 	        message = "The StateTableDateTimeColumn must be specified.";
 	        warning +="\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableDateTimeColumn must be specified." ) );
     	}
+    	/*
     	if ( (StateTableNameColumn == null) || StateTableNameColumn.isEmpty() ) {
 	        message = "The StateTableNameColumn must be specified.";
 	        warning +="\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
 	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableNameColumn must be specified." ) );
     	}
+    	*/
     	if ( (StateTableValueColumn == null) || StateTableValueColumn.isEmpty() ) {
 	        message = "The StateTableValueColumn must be specified.";
 	        warning +="\n" + message;
@@ -381,11 +385,11 @@ throws InvalidCommandParameterException
     validList.add ( "K" );
     validList.add ( "OutputStart" );
     validList.add ( "OutputEnd" );
+    validList.add ( "InitializeStatesFromTable" );
     validList.add ( "InitialLaggedInflow" );
     validList.add ( "InitialOutflow" );
-    validList.add ( "InitializeStatesFromTable" );
+    validList.add ( "InitialStorage" );
     validList.add ( "InitialQTLag" );
-    validList.add ( "OutflowStateValues" );
     validList.add ( "StateTableID" );
     validList.add ( "StateTableObjectIDColumn" );
     validList.add ( "StateTableObjectID" );
@@ -412,7 +416,7 @@ throws InvalidCommandParameterException
  * Deserialize a states JSON string using Google GSON.
  */
 private VariableLagK_States deserializeStatesJSON ( String statesJSON ) {
-	Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	Gson gson = new GsonBuilder().create();
 	VariableLagK_States states = gson.fromJson(statesJSON, VariableLagK_States.class);
 	return states;
 }
@@ -591,6 +595,14 @@ public List getObjectList ( Class c )
 
 /**
  * Get the states from the state table.
+ * @param stateTable data table with states
+ * @param stateTableObjectIDColumnNum table column number (0+) with object ID - if < 0 don't used to lookup states
+ * @param stateTableDateTimeColumnNum table column number (0+) with date/time - required
+ * @param stateTableNameColumnNum table column number (0+) with state name - if < 0 don't use to lookup states
+ * @param stateTableValueColumnNum table column number (0+) with state value - required
+ * @param objectID object ID to match if using to look up states (not used if object ID column was not specified)
+ * @param dt date/time to look up state - required
+ * @param stateName name of state to look up (not used of state name column was not specified)
  * @return the JSON states string.
  */
 private VariableLagK_States getStatesFromTable(DataTable stateTable, int stateTableObjectIDColumnNum, int stateTableDateTimeColumnNum,
@@ -599,11 +611,28 @@ private VariableLagK_States getStatesFromTable(DataTable stateTable, int stateTa
 throws Exception {
 	String routine = getClass().getSimpleName() + ".getStatesFromTable";
 	// See if an existing table record exists
-	int [] columnNumbers = { stateTableObjectIDColumnNum, stateTableDateTimeColumnNum, stateTableNameColumnNum };
+	int [] columnNumbers = new int[3];
 	List<Object> columnValues = new ArrayList<Object>();
-	columnValues.add(objectID);
+	int columnCount = 0;
+	if ( stateTableObjectIDColumnNum >= 0 ) {
+		// Lookup using object ID if specified
+		columnNumbers[columnCount++] = stateTableObjectIDColumnNum;
+		columnValues.add(objectID);
+	}
+	// Date/time always used
+	columnNumbers[columnCount++] = stateTableDateTimeColumnNum;
 	columnValues.add(dt);
-	columnValues.add(stateName);
+	if ( stateTableNameColumnNum >= 0 ) {
+		// Lookup using state name if specified
+		columnNumbers[columnCount++] = stateTableNameColumnNum;
+		columnValues.add(stateName);
+	}
+	// Resize array if necessary because some columns may not have been used for lookup...
+	if ( columnCount != 3 ) {
+		int [] columnNumbers2 = new int[columnCount];
+		System.arraycopy(columnNumbers, 0, columnNumbers2, 0, columnCount);
+		columnNumbers = columnNumbers2;
+	}
 	List<TableRecord> records = stateTable.getRecords(columnNumbers, columnValues);
 	if ( records.size() != 1 ) {
 		// If more than one record it is a problem
@@ -612,7 +641,9 @@ throws Exception {
 	}
 	TableRecord rec = records.get(0);
 	String statesJSON = rec.getFieldValueString(stateTableValueColumnNum);
-	Message.printStatus(2,routine,"Read states: " + statesJSON );
+	if ( Message.isDebugOn ) {
+		Message.printStatus(2,routine,"Read states: " + statesJSON );
+	}
 	// Convert the states JSON string into in-memory objects that can be queried
 	return deserializeStatesJSON ( statesJSON );
 }
@@ -910,7 +941,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (Lag != null) && (Lag.indexOf("${") >= 0) && !Lag.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
 		Lag = TSCommandProcessorUtil.expandParameterValue(processor, this, Lag);
 	}
-	if ( (Lag != null) && !Lag.isEmpty() ) {
+	if ( (Lag != null) && !Lag.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
 		// Have to reparse the array at runtime
 		String warning = "";
 		parseLagParameter(Lag,warning,status);
@@ -919,7 +950,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (K != null) && (K.indexOf("${") >= 0) && !K.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
 		K = TSCommandProcessorUtil.expandParameterValue(processor, this, K);
 	}
-	if ( (K != null) && !K.isEmpty() ) {
+	if ( (K != null) && !K.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
 		// Have to reparse the array at runtime
 		String warning = "";
 		parseKParameter(K,warning,status);
@@ -1116,14 +1147,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	int StateTableValueColumnNum = -1;
 	    	if ( haveStateTable ) {
 	    	    // Get the table columns and other needed data
-                try {
-                    StateTableObjectIDColumnNum = stateTable.getFieldIndex(StateTableObjectIDColumn);
-                }
-                catch ( Exception e2 ) {
-                    Message.printStatus(2, routine, "Did not match StateTableObjectIDColumn \"" + StateTableObjectIDColumn +
-                        "\" as table column - cannot run." );
-                    canRun = false;
-                }
+	    		if ( (StateTableObjectIDColumn != null) && !StateTableObjectIDColumn.isEmpty() ) {
+	                try {
+	                    StateTableObjectIDColumnNum = stateTable.getFieldIndex(StateTableObjectIDColumn);
+	                }
+	                catch ( Exception e2 ) {
+	                    Message.printStatus(2, routine, "Did not match StateTableObjectIDColumn \"" + StateTableObjectIDColumn +
+	                        "\" as table column - cannot run." );
+	                    canRun = false;
+	                }
+	    		}
                 try {
                     StateTableDateTimeColumnNum = stateTable.getFieldIndex(StateTableDateTimeColumn);
                 }
@@ -1132,13 +1165,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         "\" as table column - cannot run." );
                     canRun = false;
                 }
-                try {
-                    StateTableNameColumnNum = stateTable.getFieldIndex(StateTableNameColumn);
-                }
-                catch ( Exception e2 ) {
-                    Message.printStatus(2, routine, "Did not match StateTableNameColumn \"" + StateTableNameColumn +
-                        "\" as table column - cannot run." );
-                    canRun = false;
+                if ( (StateTableNameColumn != null) && !StateTableNameColumn.isEmpty() ) {
+	                try {
+	                    StateTableNameColumnNum = stateTable.getFieldIndex(StateTableNameColumn);
+	                }
+	                catch ( Exception e2 ) {
+	                    Message.printStatus(2, routine, "Did not match StateTableNameColumn \"" + StateTableNameColumn +
+	                        "\" as table column - cannot run." );
+	                    canRun = false;
+	                }
                 }
                 try {
                     StateTableValueColumnNum = stateTable.getFieldIndex(StateTableValueColumn);
@@ -1568,7 +1603,14 @@ private void saveStatesToTable(DataTable stateTable, int stateTableObjectIDColum
 throws Exception
 {
 	// Format the states as JSON
-	Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	Gson gson = null;
+	boolean prettyJson = false; // Should only be used for debug because it introduces newlines
+	if ( prettyJson ) {
+		gson = new GsonBuilder().setPrettyPrinting().create();
+	}
+	else {
+		gson = new GsonBuilder().create();
+	}
 	VariableLagK_States states = new VariableLagK_States();
 	states.setLagInterval(lagInterval);
 	states.setUnits(flowUnits);
@@ -1577,11 +1619,28 @@ throws Exception
 	states.setCurrentStorage(currentStorage);
 	states.setQtLag(co);
 	// See if an existing table record exists
-	int [] columnNumbers = { stateTableObjectIDColumnNum, stateTableDateTimeColumnNum, stateTableNameColumnNum };
+	int [] columnNumbers = new int[3];
 	List<Object> columnValues = new ArrayList<Object>();
-	columnValues.add(stateTableObjectID);
+	int columnCount = 0;
+	if ( stateTableObjectIDColumnNum >= 0 ) {
+		// Lookup using object ID if specified
+		columnNumbers[columnCount++] = stateTableObjectIDColumnNum;
+		columnValues.add(stateTableObjectID);
+	}
+	// Date/time always used
+	columnNumbers[columnCount++] = stateTableDateTimeColumnNum;
 	columnValues.add(dt);
-	columnValues.add(stateName);
+	if ( stateTableNameColumnNum >= 0 ) {
+		// Lookup using state name if specified
+		columnNumbers[columnCount++] = stateTableNameColumnNum;
+		columnValues.add(stateName);
+	}
+	// Resize array if necessary because some columns may not have been used for lookup...
+	if ( columnCount != 3 ) {
+		int [] columnNumbers2 = new int[columnCount];
+		System.arraycopy(columnNumbers, 0, columnNumbers2, 0, columnCount);
+		columnNumbers = columnNumbers2;
+	}
 	List<TableRecord> records = stateTable.getRecords(columnNumbers, columnValues);
 	if ( records.size() > 1 ) {
 		// If more than one record it is a problem
@@ -1591,18 +1650,26 @@ throws Exception
 	else if ( records.size() == 1 ) {
 		// If an existing record, update
 		TableRecord record = records.get(0);
-		record.setFieldValue(stateTableObjectIDColumnNum, stateTableObjectID);
+		if ( stateTableObjectIDColumnNum >= 0 ) {
+			record.setFieldValue(stateTableObjectIDColumnNum, stateTableObjectID);
+		}
 		record.setFieldValue(stateTableDateTimeColumnNum, dt);
-		record.setFieldValue(stateTableNameColumnNum, stateName);
-		record.setFieldValue(stateTableValueColumnNum, gson.toJson(states));
+		if ( stateTableNameColumnNum >= 0 ) {
+			record.setFieldValue(stateTableNameColumnNum, stateName);
+		}
+		record.setFieldValue(stateTableValueColumnNum, gson.toJson(states).replace("\n"," "));
 	}
 	else {
 		// Else, add a new record at the end
 		TableRecord newRecord = stateTable.emptyRecord();
-		newRecord.setFieldValue(stateTableObjectIDColumnNum, stateTableObjectID);
+		if ( stateTableObjectIDColumnNum >= 0 ) {
+			newRecord.setFieldValue(stateTableObjectIDColumnNum, stateTableObjectID);
+		}
 		newRecord.setFieldValue(stateTableDateTimeColumnNum, dt);
-		newRecord.setFieldValue(stateTableNameColumnNum, stateName);
-		newRecord.setFieldValue(stateTableValueColumnNum, gson.toJson(states));
+		if ( stateTableNameColumnNum >= 0 ) {
+			newRecord.setFieldValue(stateTableNameColumnNum, stateName);
+		}
+		newRecord.setFieldValue(stateTableValueColumnNum, gson.toJson(states).replace("\n"," "));
 		stateTable.addRecord(newRecord);
 	}
 }
@@ -1638,11 +1705,9 @@ public String toString ( PropList props )
 	String InitialOutflow = props.getValue("InitialOutflow");
 	String InitialStorage = props.getValue("InitialStorage");
 	String InitialQTLag = props.getValue("InitialQTLag");
-	String OutflowStateValues = props.getValue("OutflowStateValues");
 	String StateTableID = props.getValue ( "StateTableID" );
 	String StateTableObjectIDColumn = props.getValue ( "StateTableObjectIDColumn" );
 	String StateTableObjectID = props.getValue ( "StateTableObjectID" );
-	String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
 	String StateTableDateTimeColumn = props.getValue ( "StateTableDateTimeColumn" );
 	String StateTableNameColumn = props.getValue ( "StateTableNameColumn" );
 	String StateTableValueColumn = props.getValue ( "StateTableValueColumn" );
@@ -1721,12 +1786,6 @@ public String toString ( PropList props )
 		}
 		b.append ( "InitialQTLag=\"" + InitialQTLag + "\"" );
 	}
-	if ( (OutflowStateValues != null) && (OutflowStateValues.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutflowStateValues=\"" + OutflowStateValues + "\"" );
-	}
     if ( (StateTableID != null) && (StateTableID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -1744,12 +1803,6 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "StateTableObjectID=\"" + StateTableObjectID + "\"" );
-    }
-    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
     }
     if ( (StateTableDateTimeColumn != null) && !StateTableDateTimeColumn.isEmpty() ) {
         if ( b.length() > 0 ) {

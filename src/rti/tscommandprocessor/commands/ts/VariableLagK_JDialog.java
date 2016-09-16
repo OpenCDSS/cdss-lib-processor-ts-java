@@ -635,7 +635,8 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
         "States can be initialized using a table, and the same table can be written to when saving states." ),
         0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(statesTable_JPanel, new JLabel (
-        "The state table should include columns for object ID, date/time, state name, and state value." ),
+        "The state table should generally include columns for object ID, date/time, state name, and state value,"
+        + " although the object ID and/or state name columns can be omitted if not needed for lookup." ),
         0, ++yStatesTable, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(statesTable_JPanel, new JLabel (
         "The object ID, date/time, and state name provide a unique key to look up the state values." ),
@@ -667,7 +668,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     __StateTableObjectIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableObjectIDColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Required if using table - column name for object ID."), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Optional - column name for object ID (default=match date/time,state name)."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State table object ID:" ), 
@@ -677,7 +678,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     __StateTableObjectID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableObjectID_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Required if using table - object ID for states."), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Optional - column name for object ID (default=match date/time,state name)."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Date/time column:" ),

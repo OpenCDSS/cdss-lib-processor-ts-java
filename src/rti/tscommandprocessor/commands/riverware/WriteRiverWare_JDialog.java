@@ -1,24 +1,3 @@
-// ----------------------------------------------------------------------------
-// writeRiverWare_JDialog - editor for writeRiverWare()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2002-06-04	Steven A. Malers, RTi	Initial version (copy and modify
-//					writeStateMod).
-// 2002-06-06	SAM, RTi		Add units, set_units, and set_scale to
-//					output.
-// 2003-12-07	SAM, RTi		Update to Swing.
-// 2004-02-17	SAM, RTi		Fix bug where directory from file
-//					selection was not getting set as the
-//					last dialog directory in JGUIUtil.
-// 2005-05-31	SAM, RTi		* Update to new command design.
-// 2005-06-01	SAM, RTi		* Add Precision parameter to control
-//					  output precision.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.riverware;
 
 import java.awt.FlowLayout;
@@ -27,6 +6,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -48,6 +29,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -56,56 +38,49 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+/**
+ * Editor for WriteRiverWare command.
+ * @author sam
+ *
+ */
 public class WriteRiverWare_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 	
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 	
-private SimpleJButton	__browse_JButton = null,// Button to browse for file
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and
-						// absolute paths
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
 private SimpleJComboBox	__TSList_JComboBox = null;
-						// Indicate how to get time
-						// series list.
-private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
-private JTextField	__OutputFile_JTextField = null;
-						// Field for time series
-						// identifier
-private JTextField	__Units_JTextField = null;// Units for output
-private JTextField	__Scale_JTextField = null;// Scale for output
-private JTextField	__SetUnits_JTextField = null;
-						// "set_units" for output
-private JTextField	__SetScale_JTextField = null;
-						// "set_scale" for output
-private JTextField	__Precision_JTextField = null;
-						// Precision for output values.
-private JTextArea	__command_JTextArea=null;// Command as JTextArea
-private String		__working_dir = null;	// Working directory.
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
-private WriteRiverWare_Command __command = null;// Command to edit
-private boolean		__ok = false;		// Indicates whether the user
-						// has pressed OK to close the
-						// dialog.
+private SimpleJComboBox	__TSID_JComboBox = null;
+private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
+private JTextField __Units_JTextField = null;
+private JTextField __Scale_JTextField = null;
+private JTextField __SetUnits_JTextField = null;
+private JTextField __SetScale_JTextField = null;
+private JTextField __Precision_JTextField = null;
+private JTextArea __command_JTextArea=null;
+private String __working_dir = null; // Working directory.
+private boolean __error_wait = false; // Is there an error that we are waiting to be cleared up or Cancel?
+private boolean __first_time = true;
+private WriteRiverWare_Command __command = null;
+private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public WriteRiverWare_JDialog (	JFrame parent, Command command )
+public WriteRiverWare_JDialog (	JFrame parent, WriteRiverWare_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -118,19 +93,15 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {	fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle("Select RiverWare Time Series File to Write");
-		SimpleFileFilter sff = new SimpleFileFilter("txt",
-			"RiverWare Time Series File");
+		SimpleFileFilter sff = new SimpleFileFilter("txt", "RiverWare Time Series File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -160,20 +131,15 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(__AddWorkingDirectory) ) {
-			__OutputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__OutputFile_JTextField.getText() ) );
+		if ( __path_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__OutputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir, __OutputFile_JTextField.getText() ) );
 		}
 		else if ( __path_JButton.getText().equals(__RemoveWorkingDirectory ) ) {
-			try {	__OutputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__OutputFile_JTextField.getText() ) );
+			try {
+				__OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,
-				"writeRiverWare_JDialog",
-				"Error converting file to relative path." );
+				Message.printWarning ( 1, "WriteRiverWare_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -212,6 +178,7 @@ private void checkInput ()
 	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+    String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
 	String Units = __Units_JTextField.getText().trim();
 	String Scale = __Scale_JTextField.getText().trim();
 	String SetUnits = __SetUnits_JTextField.getText().trim();
@@ -227,6 +194,9 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
 	}
+    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+    	props.set ( "WriteHeaderComments", WriteHeaderComments );
+    }
 	if ( Units.length() > 0 ) {
 		props.set ( "Units", Units );
 	}
@@ -259,6 +229,7 @@ private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
 	String Units = __Units_JTextField.getText().trim();
 	String Scale = __Scale_JTextField.getText().trim();
 	String SetUnits = __SetUnits_JTextField.getText().trim();
@@ -267,6 +238,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
 	__command.setCommandParameter ( "Units", Units );
 	__command.setCommandParameter ( "Scale", Scale );
 	__command.setCommandParameter ( "SetUnits", SetUnits );
@@ -275,35 +247,12 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__TSList_JComboBox = null;
-	__TSID_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	__Units_JTextField = null;
-	__Scale_JTextField = null;
-	__SetUnits_JTextField = null;
-	__SetScale_JTextField = null;
-	__Precision_JTextField = null;
-	__command = null;
-	__browse_JButton = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__working_dir = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (WriteRiverWare_Command)command;
+private void initialize ( JFrame parent, WriteRiverWare_Command command )
+{	__command = command;
     CommandProcessor processor = __command.getCommandProcessor();
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 	
@@ -328,14 +277,13 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"It is recommended that the file name follow the convention " +
-		"ObjectName.SlotName." ),
+		"It is recommended that the file name follow the convention ObjectName.SlotName." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time series to process are indicated using the TS list."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If TS list is \"" + __command._AllMatchingTSID + "\", "+
+		"If TS list is \"" + TSListType.ALL_MATCHING_TSID + "\", "+
 		"pick a single time series, or enter a wildcard time series identifier pattern."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -346,12 +294,12 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List tslist_Vector = new Vector();
-	tslist_Vector.add ( __command._AllMatchingTSID );
-	tslist_Vector.add ( __command._AllTS );
-	tslist_Vector.add ( __command._SelectedTS );
+    List tslistChoices = new ArrayList<String>(3);
+	tslistChoices.add ( "" + TSListType.ALL_MATCHING_TSID );
+	tslistChoices.add ( "" + TSListType.ALL_TS );
+	tslistChoices.add ( "" + TSListType.SELECTED_TS );
 	__TSList_JComboBox = new SimpleJComboBox(false);
-	__TSList_JComboBox.setData ( tslist_Vector );
+	__TSList_JComboBox.setData ( tslistChoices );
 	__TSList_JComboBox.select ( 0 );
 	__TSList_JComboBox.addActionListener (this);
 	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
@@ -401,47 +349,65 @@ private void initialize ( JFrame parent, Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Write header comments?:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
+    List<String> writeHeaderCommentsList = new Vector();
+    writeHeaderCommentsList.add("");
+    writeHeaderCommentsList.add(__command._False);
+    writeHeaderCommentsList.add(__command._True);
+    __WriteHeaderComments_JComboBox.setData ( writeHeaderCommentsList );
+    __WriteHeaderComments_JComboBox.select(0);
+    __WriteHeaderComments_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __WriteHeaderComments_JComboBox,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - should header comments be written? (default=" + __command._True + ")."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Units:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Units:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Units_JTextField = new JTextField ( "", 20 );
+	__Units_JTextField.setToolTipText("Specify the units or use ${Property} notation");
 	__Units_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Default is time series units. Data are not converted."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Scale:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Scale:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Scale_JTextField = new JTextField ( "", 20 );
 	__Scale_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Scale_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Scale_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel( "The default is 1."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - divide values by this to scale (default=1)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set_units:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set_units:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetUnits_JTextField = new JTextField ( "", 20 );
+	__SetUnits_JTextField.setToolTipText("Specify the set_units or use ${Property} notation.");
 	__SetUnits_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __SetUnits_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __SetUnits_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"The default is to not write."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - see RiverWare documentation (default=not output)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set_scale:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set_scale:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetScale_JTextField = new JTextField ( "", 20 );
 	__SetScale_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __SetScale_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __SetScale_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"The default is to not write."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - see RiverWare documentation (default=not output)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Precision_JTextField = new JTextField ( "", 20 );
 	__Precision_JTextField.addKeyListener ( this );
@@ -484,6 +450,15 @@ private void initialize ( JFrame parent, Command command )
 }
 
 /**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged (ItemEvent e)
+{
+    refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
@@ -521,10 +496,11 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "writeRiverWare_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String TSList = "";
 	String TSID = "";
 	String OutputFile = "";
+	String WriteHeaderComments = "";
 	String Units = "";
 	String Scale = "";
 	String SetUnits = "";
@@ -538,6 +514,7 @@ private void refresh ()
 		TSList = parameters.getValue ( "TSList" );
 		TSID = parameters.getValue ( "TSID" );
 		OutputFile = parameters.getValue("OutputFile");
+		WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 		Units = parameters.getValue("Units");
 		Scale = parameters.getValue("Scale");
 		SetUnits = parameters.getValue("SetUnits");
@@ -545,17 +522,15 @@ private void refresh ()
 		Precision = parameters.getValue("Precision");
 		if ( TSList == null ) {
 			// Select default...
-			__TSList_JComboBox.select ( __command._AllTS );
+			__TSList_JComboBox.select ( "" + TSListType.ALL_TS );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__TSList_JComboBox,
-				TSList, JGUIUtil.NONE, null, null ) ) {
+		else {
+			if ( JGUIUtil.isSimpleJComboBoxItem(__TSList_JComboBox, TSList, JGUIUtil.NONE, null, null ) ) {
 				__TSList_JComboBox.select ( TSList );
 			}
-			else {	Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\nTSList value \"" +
-				TSList +
+			else {
+				Message.printWarning ( 1, routine,
+				"Existing command references an invalid TSList value \"" + TSList +
 				"\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
@@ -586,6 +561,22 @@ private void refresh ()
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText( OutputFile );
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__WriteHeaderComments_JComboBox, WriteHeaderComments, JGUIUtil.NONE, null, null ) ) {
+            __WriteHeaderComments_JComboBox.select ( WriteHeaderComments );
+        }
+        else {
+            if ( (WriteHeaderComments == null) || WriteHeaderComments.equals("") ) {
+                // New command...select the default...
+                if ( __WriteHeaderComments_JComboBox.getItemCount() > 0 ) {
+                    __WriteHeaderComments_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                  "WriteHeaderComments parameter \"" + WriteHeaderComments + "\".  Select a different value or Cancel." );
+            }
+        }
 		if ( Units != null ) {
 			__Units_JTextField.setText ( Units );
 		}
@@ -606,6 +597,7 @@ private void refresh ()
 	TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	WriteHeaderComments = __WriteHeaderComments_JComboBox.getSelected();
 	Units = __Units_JTextField.getText().trim();
 	Scale = __Scale_JTextField.getText().trim();
 	SetUnits = __SetUnits_JTextField.getText().trim();
@@ -615,6 +607,7 @@ private void refresh ()
 	parameters.add ( "TSList=" + TSList );
 	parameters.add ( "TSID=" + TSID );
 	parameters.add ( "OutputFile=" + OutputFile );
+    parameters.add ( "WriteHeaderComments=" + WriteHeaderComments );
 	parameters.add ( "Units=" + Units );
 	parameters.add ( "Scale=" + Scale );
 	parameters.add ( "SetUnits=" + SetUnits );

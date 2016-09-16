@@ -21,13 +21,14 @@
 package rti.tscommandprocessor.commands.riverware;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
+import rti.tscommandprocessor.core.TSListType;
 // FIXME SAM 2007-08-30 Need to move RiverWare to its own DAO package
 import RTi.TS.RiverWareTS;
 import RTi.TS.TS;
@@ -58,13 +59,12 @@ This class initializes, checks, and runs the WriteRiverWare() command.
 public class WriteRiverWare_Command extends AbstractCommand implements Command, FileGenerator
 {
 
-/**
-Protected data members shared with the dialog and other related classes.
+/** 
+Values for use with WriteHeaderComments parameter.
 */
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
-
+protected final String _False = "False";
+protected final String _True = "True";
+	
 /**
 Output file that is created by this command.
 */
@@ -84,13 +84,12 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
+	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 	//String Units = parameters.getValue ( "Units" );
 	String Scale = parameters.getValue ( "Scale" );
 	//String SetUnits = parameters.getValue ( "SetUnits" );
@@ -111,7 +110,7 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an output file." ) );
 	}
-	else {
+	else if ( OutputFile.indexOf("${") < 0 ){
         String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
@@ -153,12 +152,23 @@ throws InvalidCommandParameterException
 		}
 	}
 
+	if ( (WriteHeaderComments != null) && !WriteHeaderComments.equals("") ) {
+        if ( !WriteHeaderComments.equalsIgnoreCase(_False) && !WriteHeaderComments.equalsIgnoreCase(_True) ) {
+            message = "The WriteHeaderComments parameter (" + WriteHeaderComments + ") must be " + _False +
+            " or " + _True + ".";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the parameter as " + _False + " or " + _True + "."));
+        }
+    }
+
 	/* TODO SAM 2005-05-31 Might need to check units against global
 	list - right now units are not universally choosable.
 	if ( (Units != null) && !Units.equals("") ) {
 	}
 	*/
-	if ( (Scale != null) && !Scale.equals("") ) {
+	if ( (Scale != null) && !Scale.isEmpty() && (Scale.indexOf("${") < 0) ) {
 		if ( !StringUtil.isDouble(Scale) ) {
 			message = "The scale: \"" + Scale + "\" is not a number.";
 			warning += "\n" + message;
@@ -181,7 +191,7 @@ throws InvalidCommandParameterException
 	if ( (SetUnits != null) && !SetUnits.equals("") ) {
 	}
 	*/
-	if ( (SetScale != null) && !SetScale.equals("") ) {
+	if ( (SetScale != null) && !SetScale.isEmpty() && (SetScale.indexOf("${") < 0) ) {
 		if ( !StringUtil.isDouble(SetScale) ) {
 			message = "The set_scale: \"" + SetScale + "\" is not a number.";
 			warning += "\n" + message;
@@ -214,35 +224,17 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-	valid_Vector.add ( "TSList" );
-	valid_Vector.add ( "TSID" );
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "Units" );
-	valid_Vector.add ( "Scale" );
-	valid_Vector.add ( "Set_scale" );
-	valid_Vector.add ( "Precision" );
-	valid_Vector.add ( "Set_units" );
-	List warning_Vector = null;
-	try {	warning_Vector = parameters.validatePropNames (
-			valid_Vector, null, null, "parameter" );
-	}
-	catch ( Exception e ) {
-		// Ignore.  Should not happen.
-		warning_Vector = null;
-	}
-	if ( warning_Vector != null ) {
-		int size = warning_Vector.size();
-		StringBuffer b = new StringBuffer();
-		for ( int i = 0; i < size; i++ ) {
-			warning += "\n" + (String)warning_Vector.get (i);
-			b.append ( (String)warning_Vector.get(i));
-		}
-		status.addToLog(CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.WARNING,
-					b.toString(),
-					"Specify only valid parameters - see documentation."));
-	}
+	List validList = new ArrayList<String>(9);
+	validList.add ( "TSList" );
+	validList.add ( "TSID" );
+	validList.add ( "OutputFile" );
+	validList.add ( "WriteHeaderComments" );
+	validList.add ( "Units" );
+	validList.add ( "Scale" );
+	validList.add ( "SetScale" );
+	validList.add ( "Precision" );
+	validList.add ( "SetUnits" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level), routine,
@@ -391,7 +383,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (TSID != null) && !TSID.isEmpty() && (TSID.indexOf("${") >= 0) ) {
     	TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
-	String OutputFile = parameters.getValue ( "OutputFile" );
+	String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
+    String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
+    boolean writeHeaderComments = true;
+    if ( (WriteHeaderComments != null) && WriteHeaderComments.equalsIgnoreCase(_False) ) {
+        writeHeaderComments = false;
+    }
+	String Units = parameters.getValue ( "Units" );
+    if ( (Units != null) && !Units.isEmpty() && (Units.indexOf("${") >= 0) ) {
+    	Units = TSCommandProcessorUtil.expandParameterValue(processor, this, Units);
+	}
+	String Scale = parameters.getValue ( "Scale" );
+    if ( (Scale != null) && !Scale.isEmpty() && (Scale.indexOf("${") >= 0) ) {
+    	Scale = TSCommandProcessorUtil.expandParameterValue(processor, this, Scale);
+	}
+	String SetUnits = parameters.getValue ( "SetUnits" );
+    if ( (SetUnits != null) && !SetUnits.isEmpty() && (SetUnits.indexOf("${") >= 0) ) {
+    	SetUnits = TSCommandProcessorUtil.expandParameterValue(processor, this, SetUnits);
+	}
+	String SetScale = parameters.getValue ( "SetScale" );
+    if ( (SetScale != null) && !SetScale.isEmpty() && (SetScale.indexOf("${") >= 0) ) {
+    	SetScale = TSCommandProcessorUtil.expandParameterValue(processor, this, SetScale);
+	}
+	String Precision = parameters.getValue ( "Precision" );
+    if ( (Precision != null) && !Precision.isEmpty() && (Precision.indexOf("${") >= 0) ) {
+    	Precision = TSCommandProcessorUtil.expandParameterValue(processor, this, Precision);
+	}
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	if ( (OutputStart == null) || OutputStart.isEmpty() ) {
 		OutputStart = "${OutputStart}"; // Default
@@ -405,7 +422,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	if ( TSList == null ) {
-		TSList = _AllTS;
+		TSList = "" + TSListType.ALL_TS;
 	}
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
@@ -477,19 +494,39 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
     // Get the comments to add to the top of the file.
 
-	List OutputComments_Vector = null;
-    try { Object o = processor.getPropContents ( "OutputComments" );
-        // Comments are available so use them...
-        if ( o != null ) {
-            OutputComments_Vector = (List)o;
-            parameters.setUsingObject("OutputComments",OutputComments_Vector);
-        }
-    }
-    catch ( Exception e ) {
-        // Not fatal, but of use to developers.
-        message = "Error requesting OutputComments from processor - not using.";
-        Message.printDebug(10, routine, message );
-    }
+	PropList outputProps = new PropList("");
+	List outputCommentsList = null;
+	if ( writeHeaderComments ) {
+	    try { Object o = processor.getPropContents ( "OutputComments" );
+	        // Comments are available so use them...
+	        if ( o != null ) {
+	            outputCommentsList = (List)o;
+	            outputProps.setUsingObject("OutputComments",outputCommentsList);
+	        }
+	    }
+	    catch ( Exception e ) {
+	        // Not fatal, but of use to developers.
+	        message = "Error requesting OutputComments from processor - not using.";
+	        Message.printDebug(10, routine, message );
+	    }
+	}
+	// Set output header parameters
+	if ( (Units != null) && !Units.isEmpty() ) {
+		outputProps.set("Units",Units);
+	}
+	if ( (Scale != null) && !Scale.isEmpty() ) {
+		outputProps.set("Scale",Scale);
+	}
+	// Set output header parameters
+	if ( (SetUnits != null) && !SetUnits.isEmpty() ) {
+		outputProps.set("SetUnits",SetUnits);
+	}
+	if ( (SetScale != null) && !SetScale.isEmpty() ) {
+		outputProps.set("SetScale",SetScale);
+	}
+	if ( (Precision != null) && !Precision.isEmpty() ) {
+		outputProps.set("Precision",Precision);
+	}
 
 	// Now try to write...
 
@@ -505,7 +542,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// Don't pass units to below...
 		RiverWareTS.writeTimeSeries ( tsout, OutputFile_full,
 			OutputStart_DateTime,
-			OutputEnd_DateTime, parameters, true );
+			OutputEnd_DateTime, outputProps, true );
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
 	}
@@ -541,6 +578,7 @@ public String toString ( PropList parameters )
 	String TSList = parameters.getValue("TSList");
 	String TSID = parameters.getValue("TSID");
 	String OutputFile = parameters.getValue("OutputFile");
+	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 	String Units = parameters.getValue("Units");
 	String Scale = parameters.getValue("Scale");
 	String SetUnits = parameters.getValue("SetUnits");
@@ -562,6 +600,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
+    if ( (WriteHeaderComments != null) && (WriteHeaderComments.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteHeaderComments=" + WriteHeaderComments );
+    }
 	if ( (Units != null) && (Units.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

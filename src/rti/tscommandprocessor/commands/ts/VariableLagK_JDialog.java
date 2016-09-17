@@ -516,13 +516,16 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel("Initialize states from table?: "),
         0, ++yStatesIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InitializeStatesFromTable_JComboBox = new SimpleJComboBox(false);
+    __InitializeStatesFromTable_JComboBox = new SimpleJComboBox(true); // Allow edit to use property
+    __InitializeStatesFromTable_JComboBox.setToolTipText("Indicate whether to initialize states from table, can use ${Property}");
     List<String> choiceList = new ArrayList<String>();
     choiceList.add ( "" );
     choiceList.add ( __command._False );
     choiceList.add ( __command._True );
     __InitializeStatesFromTable_JComboBox.setData ( choiceList );
     __InitializeStatesFromTable_JComboBox.addActionListener ( this );
+    //__InitializeStatesFromTable_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
+    __InitializeStatesFromTable_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(statesIn_JPanel, __InitializeStatesFromTable_JComboBox,
         1, yStatesIn, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesIn_JPanel, new JLabel("Optional - use if states available (default=" + __command._False + ")."),
@@ -607,7 +610,8 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
 
     JGUIUtil.addComponent(statesOut_JPanel, new JLabel ( "State save interval:" ), 
         0, ++yStatesOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __StateSaveInterval_JComboBox = new SimpleJComboBox ( false );
+    __StateSaveInterval_JComboBox = new SimpleJComboBox ( true ); // Allow editing to allow property to be specified
+    __StateSaveInterval_JComboBox.setToolTipText("Specify the interval to save states, can use ${Property}");
     // TODO SAM 2016-08-28 Evaluate whether to allow saving more frequently
     //boolean padZeroes = true;
     //boolean includeIrregular = false;
@@ -620,6 +624,8 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     stateSaveIntervalList.add(0,"");
     __StateSaveInterval_JComboBox.setData ( stateSaveIntervalList );
     __StateSaveInterval_JComboBox.addItemListener ( this );
+    //__StateSaveInterval_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
+    __StateSaveInterval_JComboBox.getJTextComponent().addKeyListener ( this );
         JGUIUtil.addComponent(statesOut_JPanel, __StateSaveInterval_JComboBox,
         1, yStatesOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesOut_JPanel, new JLabel("Optional (default=save only on StateSaveDateTime)."),
@@ -668,7 +674,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     __StateTableObjectIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableObjectIDColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Optional - column name for object ID (default=match date/time,state name)."), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Optional - column name for object ID (default=not used)."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State table object ID:" ), 
@@ -678,7 +684,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     __StateTableObjectID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableObjectID_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Optional - column name for object ID (default=match date/time,state name)."), 
+    JGUIUtil.addComponent(statesTable_JPanel, new JLabel( "Required - if object ID column is used."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "Date/time column:" ),
@@ -722,7 +728,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableStateName_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-        "Optional if using table - name of states as JSON (default=VariableLagK)."), 
+        "Optional if using table - name of states as JSON (default=state name column not used)."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for output time series
@@ -940,11 +946,16 @@ private void refresh ()
             if ( JGUIUtil.isSimpleJComboBoxItem( __InitializeStatesFromTable_JComboBox, InitializeStatesFromTable, JGUIUtil.NONE, null, null )) {
                 __InitializeStatesFromTable_JComboBox.select ( InitializeStatesFromTable );
             }
-            else {
+            else if ( InitializeStatesFromTable.indexOf("${") >= 0 ) {
+        		// OK to add as first position and select
+        		__InitializeStatesFromTable_JComboBox.insertItemAt(InitializeStatesFromTable, 1);
+        		__InitializeStatesFromTable_JComboBox.select(1);
+        	}
+        	else {
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n" +
                 "InitializeStatesFromTable value \"" + InitializeStatesFromTable + "\".  Select a different value or Cancel.");
                 __error_wait = true;
-            }
+        	}
         }
 		if ( Lag != null ) {
 			__Lag_JTextArea.setText( Lag );
@@ -1018,6 +1029,11 @@ private void refresh ()
             if ( JGUIUtil.isSimpleJComboBoxItem( __StateSaveInterval_JComboBox, StateSaveInterval, JGUIUtil.NONE, null, null )) {
                 __StateSaveInterval_JComboBox.select ( StateSaveInterval );
             }
+            else if ( StateSaveInterval.indexOf("${") >= 0 ) {
+        		// OK to add as first position and select
+        		__StateSaveInterval_JComboBox.insertItemAt(StateSaveInterval, 1);
+        		__StateSaveInterval_JComboBox.select(1);
+        	}
             else {
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n" +
                 "StateSaveInterval value \"" + StateSaveInterval + "\".  Select a different value or Cancel.");
@@ -1051,7 +1067,6 @@ private void refresh ()
     Alias = __Alias_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSID=" + TSID );
-    props.add ( "NewTSID=" + NewTSID );
     props.add ( "FlowUnits=" + FlowUnits );
     props.add ( "LagInterval=" + LagInterval );
 	props.add ( "Lag=" + Lag );
@@ -1063,6 +1078,8 @@ private void refresh ()
     props.add ( "InitialOutflow=" + InitialOutflow );
     props.add ( "InitialStorage=" + InitialStorage );
 	props.add ( "InitialQTLag=" + InitialQTLag );
+    props.add ( "StateSaveDateTime=" + StateSaveDateTime );
+    props.add ( "StateSaveInterval=" + StateSaveInterval );
     props.add ( "StateTableID=" + StateTableID );
     props.add ( "StateTableObjectIDColumn=" + StateTableObjectIDColumn );
     props.add ( "StateTableObjectID=" + StateTableObjectID );
@@ -1070,6 +1087,7 @@ private void refresh ()
     props.add ( "StateTableNameColumn=" + StateTableNameColumn );
     props.add ( "StateTableValueColumn=" + StateTableValueColumn );
     props.add ( "StateTableStateName=" + StateTableStateName );
+    props.add ( "NewTSID=" + NewTSID );
 	props.add ( "Alias=" + Alias );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }

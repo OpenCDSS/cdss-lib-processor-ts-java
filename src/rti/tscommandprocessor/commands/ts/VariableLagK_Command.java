@@ -38,6 +38,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableField;
 import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
@@ -120,8 +121,8 @@ throws InvalidCommandParameterException
 	String InitialStorage = parameters.getValue( "InitialStorage" );
 	String InitialQTLag = parameters.getValue( "InitialQTLag" );
 	String StateTableID = parameters.getValue( "StateTableID" );
-	//String StateTableObjectIDColumn = parameters.getValue( "StateTableObjectIDColumn" );
-	//String StateTableObjectID = parameters.getValue( "StateTableObjectID" );
+	String StateTableObjectIDColumn = parameters.getValue( "StateTableObjectIDColumn" );
+	String StateTableObjectID = parameters.getValue( "StateTableObjectID" );
 	String StateTableDateTimeColumn = parameters.getValue( "StateTableDateTimeColumn" );
 	//String StateTableNameColumn = parameters.getValue( "StateTableNameColumn" );
 	String StateTableValueColumn = parameters.getValue( "StateTableValueColumn" );
@@ -255,7 +256,7 @@ throws InvalidCommandParameterException
         }
     }
 
-    if ( (InitializeStatesFromTable != null) && !InitializeStatesFromTable.isEmpty() &&
+    if ( (InitializeStatesFromTable != null) && !InitializeStatesFromTable.isEmpty() && (InitializeStatesFromTable.indexOf("${")<0) &&
     	!InitializeStatesFromTable.equalsIgnoreCase(_False) && !InitializeStatesFromTable.equalsIgnoreCase(_True)) {
     	if ( !StringUtil.isDouble(InitialLaggedInflow) ) {
             message = "The value for InitializeStatesFromTable (" + InitializeStatesFromTable + ") is invalid.";
@@ -314,20 +315,20 @@ throws InvalidCommandParameterException
     // If a state table is specified, make sure all the other necessary parameters are also specified
     
     if ( (StateTableID != null) && !StateTableID.isEmpty() ) {
-    	/* Test not being required - in cases where the table only contains one object
-    	if ( (StateTableObjectIDColumn == null) || StateTableObjectIDColumn.isEmpty() ) {
-	        message = "The StateTableObjectIDColumn must be specified.";
+    	if ( ((StateTableObjectIDColumn != null) && !StateTableObjectIDColumn.isEmpty()) &&
+    		((StateTableObjectID == null) || StateTableObjectID.isEmpty()) ) {
+	        message = "The StateTableObjectIDColumn is specified but StateTableObjectID is not.";
 	        warning +="\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
-	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableObjectIDColumn must be specified." ) );
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify both StateTableObjectIDColumn and StateTableObjectID (or neither)." ) );
     	}
-    	if ( (StateTableObjectID == null) || StateTableObjectID.isEmpty() ) {
-	        message = "The StateTableObjectID must be specified.";
+    	if ( ((StateTableObjectIDColumn == null) || StateTableObjectIDColumn.isEmpty()) &&
+    		((StateTableObjectID != null) && !StateTableObjectID.isEmpty()) ) {
+	        message = "The StateTableObjectID is specified but StateTableObjectIDColumn is not.";
 	        warning +="\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
-	            new CommandLogRecord(CommandStatusType.FAILURE, message, "StateTableObjectID must be specified." ) );
+	            new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify both StateTableObjectIDColumn and StateTableObjectID (or neither)." ) );
     	}
-    	*/
     	if ( (StateTableDateTimeColumn == null) || StateTableDateTimeColumn.isEmpty() ) {
 	        message = "The StateTableDateTimeColumn must be specified.";
 	        warning +="\n" + message;
@@ -964,6 +965,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	OutputEnd = "${OutputEnd}"; // Default global property
     }
     String InitializeStatesFromTable = parameters.getValue ( "InitializeStatesFromTable" );
+	if ( (InitializeStatesFromTable != null) && (InitializeStatesFromTable.indexOf("${") >= 0) &&
+		!InitializeStatesFromTable.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		InitializeStatesFromTable = TSCommandProcessorUtil.expandParameterValue(processor, this, InitializeStatesFromTable);
+	}
     boolean initializeStatesFromTable = false;
     if ( (InitializeStatesFromTable != null) && !InitializeStatesFromTable.isEmpty() ) {
     	if ( InitializeStatesFromTable.equalsIgnoreCase(_True) ) {
@@ -1015,13 +1020,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	stateSaveDateTime = DateTime.parse(StateSaveDateTime);
     }
     String StateSaveInterval = parameters.getValue ( "StateSaveInterval" );
+	if ( (StateSaveInterval != null) && (StateSaveInterval.indexOf("${") >= 0) &&
+		!StateSaveInterval.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		StateSaveInterval = TSCommandProcessorUtil.expandParameterValue(processor, this, StateSaveInterval);
+	}
     TimeInterval stateSaveInterval = null;
     DateTime stateSaveIntervalDateTime = null;
-    if ( (StateSaveInterval != null) && !StateSaveInterval.isEmpty() ) {
+    if ( (StateSaveInterval != null) && !StateSaveInterval.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
     	stateSaveInterval = TimeInterval.parseInterval(StateSaveInterval);
     }
     String StateTableID = parameters.getValue ( "StateTableID" );
-    boolean haveStateTable = false; // Whether a state table is available
+    boolean haveStateTable = false; // Whether a state table is available, meaning the state table name was given and therefore should be used
     if ( (StateTableID != null) && !StateTableID.isEmpty() ) {
     	haveStateTable = true;
     	if ( (commandPhase == CommandPhaseType.RUN) && (StateTableID.indexOf("${") >= 0) ) {
@@ -1053,9 +1062,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (StateTableStateName != null) && (StateTableStateName.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
     	StateTableStateName = TSCommandProcessorUtil.expandParameterValue(processor, this, StateTableStateName);
 	}
-    if ( (StateTableStateName == null) || StateTableStateName.isEmpty() ) {
-    	StateTableStateName = "VariableLagK";
-    }
 	String Alias = parameters.getValue( "Alias" ); // Expanded below
 	
 	TS original_ts = null; // Original time series
@@ -1091,25 +1097,34 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( haveStateTable ) {
 	    PropList request_params = null;
 	    CommandProcessorRequestResultsBean bean = null;
-	    if ( (StateTableID != null) && !StateTableID.isEmpty() ) {
-	        // Get the table to be updated/created
-	        request_params = new PropList ( "" );
-	        request_params.set ( "TableID", StateTableID );
-	        try {
-	            bean = processor.processRequest( "GetTable", request_params);
-	            PropList bean_PropList = bean.getResultsPropList();
-	            Object o_Table = bean_PropList.getContents ( "Table" );
-	            if ( o_Table != null ) {
-	                // Found the table so no need to create it
-	                stateTable = (DataTable)o_Table;
-	            }
-	        }
-	        catch ( Exception e ) {
-	            message = "Error requesting GetTable(StateTableID=\"" + StateTableID + "\") from processor.";
+	    if ( commandPhase == CommandPhaseType.RUN ) {
+		    if ( (StateTableID != null) && !StateTableID.isEmpty() ) {
+		        // Get the table to be updated/created
+		        request_params = new PropList ( "" );
+		        request_params.set ( "TableID", StateTableID );
+		        try {
+		            bean = processor.processRequest( "GetTable", request_params);
+		            PropList bean_PropList = bean.getResultsPropList();
+		            Object o_Table = bean_PropList.getContents ( "Table" );
+		            if ( o_Table != null ) {
+		                // Found the table
+		                stateTable = (DataTable)o_Table;
+		            }
+		        }
+		        catch ( Exception e ) {
+		            message = "Error requesting GetTable(StateTableID=\"" + StateTableID + "\") from processor.";
+		            Message.printWarning(warning_level,
+		                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+		            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+		                message, "Report problem to software support." ) );
+		        }
+		    }
+	        if ( stateTable == null ) {
+	            message = "Specified state table \"" + StateTableID + "\" was not found.";
 	            Message.printWarning(warning_level,
 	                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
 	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Report problem to software support." ) );
+	                message, "Verify that the state table \"" + StateTableID + "\" is availbale." ) );
 	        }
 	    }
     }
@@ -1152,17 +1167,36 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                    StateTableObjectIDColumnNum = stateTable.getFieldIndex(StateTableObjectIDColumn);
 	                }
 	                catch ( Exception e2 ) {
-	                    Message.printStatus(2, routine, "Did not match StateTableObjectIDColumn \"" + StateTableObjectIDColumn +
-	                        "\" as table column - cannot run." );
+	                    message = "Did not match StateTableObjectIDColumn \"" + StateTableObjectIDColumn +
+	                        "\" as table column - cannot run."; 
+	                    Message.printWarning ( warning_level,
+		                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	                    status.addToLog ( commandPhase,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Correct command parameters/input." ) );
 	                    canRun = false;
 	                }
 	    		}
                 try {
                     StateTableDateTimeColumnNum = stateTable.getFieldIndex(StateTableDateTimeColumn);
+                    if ( stateTable.getFieldDataType(StateTableDateTimeColumnNum) != TableField.DATA_TYPE_DATETIME ) {
+                    	 message = "State table date/time column \"" + StateTableDateTimeColumn +
+                             "\" is not of type date/time and may not allow state lookups.";
+                         Message.printWarning ( warning_level,
+     	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                         status.addToLog ( commandPhase,
+                             new CommandLogRecord(CommandStatusType.WARNING,
+                                 message, "Verify that the column is read as a date/time." ) );
+                    }
                 }
                 catch ( Exception e2 ) {
-                    Message.printStatus(2, routine, "Did not match StateTableDateTimeColumn \"" + StateTableDateTimeColumn +
-                        "\" as table column - cannot run." );
+                    message = "Did not match StateTableDateTimeColumn \"" + StateTableDateTimeColumn +
+                        "\" as table column - cannot run.";
+                    Message.printWarning ( warning_level,
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Correct command parameters/input." ) );
                     canRun = false;
                 }
                 if ( (StateTableNameColumn != null) && !StateTableNameColumn.isEmpty() ) {
@@ -1170,8 +1204,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                    StateTableNameColumnNum = stateTable.getFieldIndex(StateTableNameColumn);
 	                }
 	                catch ( Exception e2 ) {
-	                    Message.printStatus(2, routine, "Did not match StateTableNameColumn \"" + StateTableNameColumn +
-	                        "\" as table column - cannot run." );
+	                    message = "Did not match StateTableNameColumn \"" + StateTableNameColumn +
+	                        "\" as table column - cannot run.";
+	                    Message.printWarning ( warning_level,
+    	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Correct command parameters/input." ) );
 	                    canRun = false;
 	                }
                 }
@@ -1179,8 +1218,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     StateTableValueColumnNum = stateTable.getFieldIndex(StateTableValueColumn);
                 }
                 catch ( Exception e2 ) {
-                    Message.printStatus(2, routine, "Did not match StateTableValueColumn \"" + StateTableValueColumn +
-                        "\" as table column - cannot run." );
+                    message = "Did not match StateTableValueColumn \"" + StateTableValueColumn +
+                        "\" as table column - cannot run.";
+                    Message.printWarning ( warning_level,
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Correct command parameters/input." ) );
                     canRun = false;
                 }
 	    	}
@@ -1389,6 +1433,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             message = "Unable to retrieve states at " + OutputStart_DateTime + ".  Will use initial states if provided.";  
                             Message.printWarning ( warning_level,
                                 MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                            Message.printWarning(3,routine,e);
                             status.addToLog ( commandPhase,
                                 new CommandLogRecord(CommandStatusType.WARNING,
                                     message, "Verify that states were saved at " + OutputStart_DateTime ) );
@@ -1760,7 +1805,7 @@ public String toString ( PropList props )
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "InitializeStatesFromTable=" + InitializeStatesFromTable );
+		b.append ( "InitializeStatesFromTable=\"" + InitializeStatesFromTable + "\"");
 	}
 	if ( (InitialLaggedInflow != null) && (InitialLaggedInflow.length() > 0) ) {
 		if ( b.length() > 0 ) {

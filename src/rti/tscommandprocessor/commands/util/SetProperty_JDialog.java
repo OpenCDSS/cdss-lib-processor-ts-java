@@ -19,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -34,11 +35,16 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null; // Cancel Button
 private SimpleJButton __ok_JButton = null; // Ok Button
+private JTabbedPane __main_JTabbedPane = null;
 private SetProperty_Command	__command = null; // Command to edit
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __PropertyType_JComboBox = null;
 private JTextField __PropertyValue_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
+private SimpleJComboBox	__SetNull_JComboBox = null;
+private SimpleJComboBox	__SetNaN_JComboBox = null;
+private SimpleJComboBox	__SetEmpty_JComboBox = null;
+private SimpleJComboBox	__RemoveProperty_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -90,6 +96,10 @@ private void checkInput ()
 	String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected();
 	String PropertyValue = __PropertyValue_JTextField.getText().trim();
+	String SetEmpty = __SetEmpty_JComboBox.getSelected();
+	String SetNaN = __SetNaN_JComboBox.getSelected();
+	String SetNull = __SetNull_JComboBox.getSelected();
+	String RemoveProperty = __RemoveProperty_JComboBox.getSelected();
 
 	__error_wait = false;
 
@@ -101,6 +111,18 @@ private void checkInput ()
     }
 	if ( PropertyValue.length() > 0 ) {
 		parameters.set ( "PropertyValue", PropertyValue );
+	}
+	if ( SetEmpty.length() > 0 ) {
+		parameters.set ( "SetEmpty", SetEmpty );
+	}
+	if ( SetNaN.length() > 0 ) {
+		parameters.set ( "SetNaN", SetNaN );
+	}
+	if ( SetNull.length() > 0 ) {
+		parameters.set ( "SetNull", SetNull );
+	}
+	if ( RemoveProperty.length() > 0 ) {
+		parameters.set ( "RemoveProperty", RemoveProperty );
 	}
 
 	try {
@@ -121,9 +143,17 @@ private void commitEdits ()
 {	String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyType = __PropertyType_JComboBox.getSelected(); 
 	String PropertyValue = __PropertyValue_JTextField.getText().trim();
+	String SetEmpty = __SetEmpty_JComboBox.getSelected();
+	String SetNaN = __SetNaN_JComboBox.getSelected();
+	String SetNull = __SetNull_JComboBox.getSelected();
+	String RemoveProperty = __RemoveProperty_JComboBox.getSelected();
     __command.setCommandParameter ( "PropertyType", PropertyType );
 	__command.setCommandParameter ( "PropertyValue", PropertyValue );
 	__command.setCommandParameter ( "PropertyName", PropertyName );
+	__command.setCommandParameter ( "SetEmpty", SetEmpty );
+	__command.setCommandParameter ( "SetNaN", SetNaN );
+	__command.setCommandParameter ( "SetNull", SetNull );
+	__command.setCommandParameter ( "RemoveProperty", RemoveProperty );
 }
 
 /**
@@ -145,46 +175,72 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Set a property for the processor." +
-		"  The property can be referenced in parameters of some commands using ${Property} notation." ), 
+		"Set (or unset) a property for the processor." +
+		"  The property can be referenced in parameters of other commands using ${Property} notation." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Specify date/times using standard notations to appropriate precision (e.g., YYYY-MM-DD hh:mm:ss)." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Refer to command documentation and command editors for information about support for ${Property} in command parameters." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Special values also are recognized for date/times (for all precisions)."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "See also the SetInputPeriod() command for examples of date/time modifiers, such as .Timezone(), which sets the time zone."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "    CurrentToYear = the current date to year precision"),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "    CurrentToMinute = the current date/time to minute precision"),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "    CurrentToMinute - 7Day = current date/time minus 7 days"),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "    CurrentToMinute + 7Day = current date/time plus 7 days"),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Properties can be set using the \"Set\" or \"Special Values\" tabs.  Properties can be removed (unset) using the \"Remove (unset)\" tab." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for setting
+    int ySet = -1;
+    JPanel set_JPanel = new JPanel();
+    set_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Set", set_JPanel );
+
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+		"The property value must be provided in a format that is appropriate for the type." ), 
+		0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+		"For example, a Boolean property can have a value true or false, and Integer can only contain numbers and the negative sign." ), 
+		0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+        "Specify date/times using standard notations to appropriate precision (e.g., YYYY-MM-DD hh:mm:ss)." ), 
+        0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+        "Special values also are recognized for date/times (for all precisions)."),
+        0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+        "    CurrentToYear = the current date to year precision"),
+        0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+        "    CurrentToMinute = the current date/time to minute precision"),
+        0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+        "    CurrentToMinute - 7Day = current date/time minus 7 days"),
+        0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+        "    CurrentToMinute + 7Day = current date/time plus 7 days"),
+        0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel (
+        "See also the SetInputPeriod() command for examples of date/time modifiers, such as .Timezone(), which sets the time zone."),
+        0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property name:" ), 
+        0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyName_JTextField = new JTextField ( 20 );
     __PropertyName_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(set_JPanel, __PropertyName_JTextField,
+        1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel(
         "Required - do not use spaces $, { or } in name."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property type:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property type:" ), 
+        0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
+    __PropertyType_JComboBox.addItem ( "" ); // Use when setting special values or removing
     __PropertyType_JComboBox.addItem ( __command._Boolean );
     __PropertyType_JComboBox.addItem ( __command._DateTime );
     __PropertyType_JComboBox.addItem ( __command._Double );
@@ -192,21 +248,115 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     __PropertyType_JComboBox.addItem ( __command._String );
     __PropertyType_JComboBox.select ( __command._String );
     __PropertyType_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(set_JPanel, __PropertyType_JComboBox,
+        1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel(
         "Required - to ensure proper initialization and checks."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property value:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property value:" ), 
+		0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__PropertyValue_JTextField = new JTextField ( 20 );
 	__PropertyValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - property value, can use ${Property}."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, __PropertyValue_JTextField,
+		1, ySet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(set_JPanel, new JLabel( "Required unless special value - property value, can use ${Property}."), 
+		3, ySet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    // Panel for special values
+    int ySpecial = -1;
+    JPanel special_JPanel = new JPanel();
+    special_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Special Values", special_JPanel );
+    
+    JGUIUtil.addComponent(special_JPanel, new JLabel (
+        "Use the following parameters to set properties to special values, depending on property type."),
+        0, ++ySpecial, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(special_JPanel, new JLabel (
+        "Using special values ensures that there is no confusion interpreting the property value."),
+        0, ++ySpecial, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(special_JPanel, new JLabel (
+        "The property name must be specified in the \"Set\" tab."),
+        0, ++ySpecial, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(special_JPanel, new JLabel (
+        "The property type must be specified as String in the \"Set\" tab if setting to an empty string."),
+        0, ++ySpecial, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(special_JPanel, new JLabel (
+        "The property type must be specified as Double in the \"Set\" tab if setting to NaN."),
+        0, ++ySpecial, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(special_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++ySpecial, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to empty string?"),
+		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__SetEmpty_JComboBox = new SimpleJComboBox ( false );
+	__SetEmpty_JComboBox.addItem ( "" );	// Default
+	__SetEmpty_JComboBox.addItem ( __command._True );
+	__SetEmpty_JComboBox.select ( 0 );
+	__SetEmpty_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(special_JPanel, __SetEmpty_JComboBox,
+		1, ySpecial, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(special_JPanel, new JLabel(
+		"Optional - set String property to empty string."), 
+		3, ySpecial, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to NaN?"),
+		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__SetNaN_JComboBox = new SimpleJComboBox ( false );
+	__SetNaN_JComboBox.addItem ( "" );	// Default
+	__SetNaN_JComboBox.addItem ( __command._True );
+	__SetNaN_JComboBox.select ( 0 );
+	__SetNaN_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(special_JPanel, __SetNaN_JComboBox,
+		1, ySpecial, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(special_JPanel, new JLabel(
+		"Optional - set Double property to \"not a number\" (NaN)."), 
+		3, ySpecial, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to null?"),
+		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__SetNull_JComboBox = new SimpleJComboBox ( false );
+	__SetNull_JComboBox.addItem ( "" );	// Default
+	__SetNull_JComboBox.addItem ( __command._True );
+	__SetNull_JComboBox.select ( 0 );
+	__SetNull_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(special_JPanel, __SetNull_JComboBox,
+		1, ySpecial, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(special_JPanel, new JLabel(
+		"Optional - set any property type to null."), 
+		3, ySpecial, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for unset/remove
+    int yUnset = -1;
+    JPanel unset_JPanel = new JPanel();
+    unset_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Remove (Unset)", unset_JPanel );
+    
+    JGUIUtil.addComponent(unset_JPanel, new JLabel (
+        "Use the following parameter to remove (unset) a property."),
+        0, ++yUnset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(unset_JPanel, new JLabel (
+        "The processor will not have access to the property after the command (requests will return null)."),
+        0, ++yUnset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(unset_JPanel, new JLabel (
+        "The property name must be specified in the \"Set\" tab."),
+        0, ++yUnset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(unset_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yUnset, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(unset_JPanel, new JLabel ( "Remove/unset property?"),
+		0, ++yUnset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__RemoveProperty_JComboBox = new SimpleJComboBox ( false );
+	__RemoveProperty_JComboBox.addItem ( "" );	// Default
+	__RemoveProperty_JComboBox.addItem ( __command._True );
+	__RemoveProperty_JComboBox.select ( 0 );
+	__RemoveProperty_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(unset_JPanel, __RemoveProperty_JComboBox,
+		1, yUnset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(unset_JPanel, new JLabel(
+		"Optional - remove/unset the property"), 
+		3, yUnset, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
@@ -282,10 +432,14 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "SetProperty_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String PropertyName = "";
     String PropertyType = "";
 	String PropertyValue = "";
+	String SetEmpty = "";
+	String SetNaN = "";
+	String SetNull = "";
+	String RemoveProperty = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -293,6 +447,10 @@ private void refresh ()
 		PropertyName = props.getValue ( "PropertyName" );
         PropertyType = props.getValue ( "PropertyType" );
 		PropertyValue = props.getValue ( "PropertyValue" );
+		SetEmpty = props.getValue ( "SetEmpty" );
+		SetNaN = props.getValue ( "SetNaN" );
+		SetNull = props.getValue ( "SetNull" );
+		RemoveProperty = props.getValue ( "RemoveProperty" );
 	    if ( PropertyName != null ) {
 	         __PropertyName_JTextField.setText ( PropertyName );
 	    }
@@ -314,15 +472,87 @@ private void refresh ()
 		if ( PropertyValue != null ) {
 		    __PropertyValue_JTextField.setText ( PropertyValue );
 		}
+        if ( (SetEmpty == null) || SetEmpty.isEmpty() ) {
+            // Select default...
+            __SetEmpty_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __SetEmpty_JComboBox,SetEmpty, JGUIUtil.NONE, null, null ) ) {
+                __SetEmpty_JComboBox.select ( SetEmpty );
+                __main_JTabbedPane.setSelectedIndex(1);
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nSetEmpty value \"" + SetEmpty +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( (SetNaN == null) || SetNaN.isEmpty() ) {
+            // Select default...
+            __SetNull_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __SetNaN_JComboBox,SetNaN, JGUIUtil.NONE, null, null ) ) {
+                __SetNaN_JComboBox.select ( SetNaN );
+                __main_JTabbedPane.setSelectedIndex(1);
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nSetNaN value \"" + SetNaN +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( (SetNull == null) || SetNull.isEmpty() ) {
+            // Select default...
+            __SetNull_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __SetNull_JComboBox,SetNull, JGUIUtil.NONE, null, null ) ) {
+                __SetNull_JComboBox.select ( SetNull );
+                __main_JTabbedPane.setSelectedIndex(1);
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nSetNull value \"" + SetNull +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( (RemoveProperty == null) || RemoveProperty.isEmpty() ) {
+            // Select default...
+            __RemoveProperty_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __RemoveProperty_JComboBox,RemoveProperty, JGUIUtil.NONE, null, null ) ) {
+                __RemoveProperty_JComboBox.select ( RemoveProperty );
+               	__main_JTabbedPane.setSelectedIndex(2);
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nRemoveProperty value \"" + RemoveProperty +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	PropertyName = __PropertyName_JTextField.getText().trim();
     PropertyType = __PropertyType_JComboBox.getSelected();
 	PropertyValue = __PropertyValue_JTextField.getText().trim();
+	SetEmpty = __SetEmpty_JComboBox.getSelected();
+	SetNaN = __SetNaN_JComboBox.getSelected();
+	SetNull = __SetNull_JComboBox.getSelected();
+	RemoveProperty = __RemoveProperty_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "PropertyType=" + PropertyType );
 	props.add ( "PropertyName=" + PropertyName );
 	props.add ( "PropertyValue=" + PropertyValue );
+	props.add ( "SetEmpty=" + SetEmpty );
+	props.add ( "SetNaN=" + SetNaN );
+	props.add ( "SetNull=" + SetNull );
+	props.add ( "RemoveProperty=" + RemoveProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

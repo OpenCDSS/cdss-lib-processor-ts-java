@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
@@ -185,7 +186,7 @@ The list of TSEnsemble managed by this command processor, guaranteed to be non-n
 private List<TSEnsemble> __TSEnsemble_Vector = new Vector<TSEnsemble>();
 
 /**
-The initial working directory for processing, typically the location of the commands
+The initial working directory for processing, typically the location of the command
 file from read/write.  This is used to adjust the working directory with
 SetWorkingDir() commands and is used as the starting location with RunCommands().
 */
@@ -197,11 +198,11 @@ InitialWorkingDir and modified by SetWorkingDir() commands.
 */
 private String __WorkingDir_String = null;
 
-// TODO SAM Need to evaluate whether a different object should be used to allow null values
 /**
-Hashtable of properties used by the processor.
+HashMap of properties used by the processor.
+HashMap allows null keys and values, although here keys should be non-null.
 */
-private Hashtable __property_Hashtable = new Hashtable();
+private HashMap<String,Object> __propertyHashmap = new HashMap<String,Object>();
 
 /**
 Indicates whether the processor is currently running (false if has not started
@@ -244,13 +245,13 @@ public TSCommandProcessor ()
     // Define some standard properties, even before the command processor has run
 	// TODO SAM 2010-05-26 Need to evaluate how to set important global properties up front but also
 	// dynamically in resetWorkflowProperties
-    __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
+    __propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
     // This is used to locate the HTML documentation for command editor dialogs, etc.
-    __property_Hashtable.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
+    __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
     String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
-    __property_Hashtable.put ( "UserHomeDir", homeDir );
-    __property_Hashtable.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
+    __propertyHashmap.put ( "UserHomeDir", homeDir );
+    __propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
 }
 
 /**
@@ -1214,12 +1215,15 @@ public Object getPropContents ( String propName ) throws Exception
 	else {
 	    // Property is not one of the individual objects that have been historically
 	    // maintained, but it may be a user-supplied property in the hashtable.
-	    Object o = __property_Hashtable.get ( propName );
+	    Object o = __propertyHashmap.get ( propName );
 	    if ( o == null ) {
-    	    String warning = "Unknown GetPropContents request \"" + propName + "\"";
+	    	// Changed on 2016-09-18 to allow null to be returned,
+	    	// generally indicating that user-supplied property is being processed
+    	    //String warning = "Unknown GetPropContents request \"" + propName + "\"";
     		// TODO SAM 2007-02-07 Need to figure out a way to indicate
     		// an error and pass back useful information.
-    		throw new UnrecognizedRequestException ( warning );
+    		//throw new UnrecognizedRequestException ( warning );
+	    	return null;
 	    }
 	    else {
 	        // Return the object from the hashtable
@@ -1514,22 +1518,28 @@ public Collection getPropertyNameList ( boolean includeBuiltInProperties, boolea
     // Create a set that includes the above.
     TreeSet set = new TreeSet();
 	// FIXME SAM 2008-02-15 Evaluate whether these should be in the
-	// property hashtable - should properties be available before ever
+	// property hashmap - should properties be available before ever
 	// being defined (in case they are used later) or should only defined
 	// properties be available (and rely on discovery to pass to other commands)?
-	// Add properties that are hard-coded.
+    // For now important properties are represented as data members in this class.
+    //
+	// Add properties that are accessible with getPropContents_XXXX methods.
 	if ( includeBuiltInProperties ) {
 	    List<String> v = new ArrayList<String>();
         v.add ( "AutoExtendPeriod" );
         v.add ( "AverageStart" );
         v.add ( "AverageEnd" );
+        v.add ( "CreateOutput" ); // Useful?
         v.add ( "DebugLevelLogFile" );
         v.add ( "DebugLevelScreen" );
+        v.add ( "HaveOutputPeriod" ); // Useful?
         v.add ( "HydroBaseDMIListSize" );
         v.add ( "IgnoreLEZero" );
         v.add ( "IncludeMissingTS" );
+        v.add ( "InitialWorkingDir" );
     	v.add ( "InputStart" );
     	v.add ( "InputEnd" );
+    	//v.add ( "OutputComments" ); // Not sure this needs to be visible
     	v.add ( "OutputStart" );
     	v.add ( "OutputEnd" );
         v.add ( "OutputYearType" );
@@ -1542,7 +1552,7 @@ public Collection getPropertyNameList ( boolean includeBuiltInProperties, boolea
 	}
     if ( includeDynamicProperties ) {
         // Add the hashtable keys and make a unique list
-        set.addAll ( __property_Hashtable.keySet() );
+        set.addAll ( __propertyHashmap.keySet() );
     }
 	return set;
 }
@@ -2066,6 +2076,19 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>RemoveProperty</b></td>
+<td>Remove (unset) a processor property.  Parameters to this request are:
+<ol>
+<li>    <b>PropertyName</b> The property name.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    None.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>RunCommands</b></td>
 <td>Run commands to create the results:
 <ol>
@@ -2116,6 +2139,7 @@ Returned values from this request are:
 <li>    <b>PropertyName</b> The property name.</li>
 <li>    <b>PropertyValue</b> The property value, as an object
         (e.g., DateTime, Double, Integer, or String.</li>
+<li>	<b>SetNull</b> If True, set the property value to null.</li>
 </ol>
 Returned values from this request are:
 <ol>
@@ -2241,6 +2265,9 @@ throws Exception
     }
     else if ( request.equalsIgnoreCase("RemoveAllFromTimeSeriesResultsList") ) {
         return processRequest_RemoveAllFromTimeSeriesResultsList ( request, request_params );
+    }
+    else if ( request.equalsIgnoreCase("RemoveProperty") ) {
+        return processRequest_RemoveProperty ( request, request_params );
     }
     else if ( request.equalsIgnoreCase("RemoveTableFromResultsList") ) {
         return processRequest_RemoveTableFromResultsList ( request, request_params );
@@ -2580,7 +2607,7 @@ throws Exception
         throw new RequestParameterNotFoundException ( warning );
     }
     String PropertyName = (String)o;
-    Object PropertyValue = __property_Hashtable.get ( PropertyName );
+    Object PropertyValue = __propertyHashmap.get ( PropertyName );
     if ( PropertyValue == null ) {
         // Try the built-in properties
         PropertyValue = getPropContents(PropertyName);
@@ -2608,9 +2635,9 @@ throws Exception
 		String propval = (String)o;
 		if ( (propval != null) && propval.equalsIgnoreCase("true") ) {
 			// Transfer the user-specified properties
-			Set<String> keys = __property_Hashtable.keySet();
+			Set<String> keys = __propertyHashmap.keySet();
 			for ( String key : keys ) {
-				o = __property_Hashtable.get ( key );
+				o = __propertyHashmap.get ( key );
 				ph.put(key,o);
 			}			
 		}
@@ -3177,6 +3204,33 @@ throws Exception
 }
 
 /**
+Process the SetProperty request.  Null property values are NOT allowed.
+*/
+private CommandProcessorRequestResultsBean processRequest_RemoveProperty (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "PropertyName" );
+    if ( o == null ) {
+            String warning = "Request SetProperty() does not provide a PropertyName parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String PropertyName = (String)o;
+    // Do not allow removing official property like InputStart as this would likely cause problems.
+    // First see if it is a known user-defined property
+    Object o2 = __propertyHashmap.get ( PropertyName );
+    if ( o2 != null ) {
+    	// Found it so remove (for some reason can't pass in o2 and have it work)
+    	__propertyHashmap.remove(PropertyName);
+    }
+    // No data are returned in the bean.
+    return bean;
+}
+
+/**
 Process the RemoveTableFromResultsList request.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveTableFromResultsList (
@@ -3391,7 +3445,9 @@ throws Exception
 }
 
 /**
-Process the SetProperty request.  Null property values are NOT allowed.
+Process the SetProperty request.
+Nulls are allowed, but typically only with a special request.
+Otherwise, it is difficult to check input for errors.
 */
 private CommandProcessorRequestResultsBean processRequest_SetProperty (
         String request, PropList request_params )
@@ -3407,23 +3463,31 @@ throws Exception
     }
     String PropertyName = (String)o;
     Object o2 = request_params.getContents ( "PropertyValue" );
-    // Nulls are not allowed because Hashtable does not allow.
     if ( o2 == null ) {
-        String warning = "Request SetProperty() does not provide a PropertyValue parameter.";
-        bean.setWarningText ( warning );
-        bean.setWarningRecommendationText ( "This is likely a software code error.");
-        throw new RequestParameterNotFoundException ( warning );
+    	Object o3 = request_params.getValue ( "SetNull" );
+    	if ( (o3 != null) && o3.toString().equalsIgnoreCase("true") ) { 
+	        String warning = "Request SetProperty() does not provide a PropertyValue parameter.";
+	        bean.setWarningText ( warning );
+	        bean.setWarningRecommendationText ( "This is likely a software code error.");
+	        throw new RequestParameterNotFoundException ( warning );
+    	}
+    	// Else OK to set a null property
     }
     // Try to set official property...
-    try {
-        setPropContents(PropertyName, o2);
+    Collection internalProperties = getPropertyNameList(true,false);
+    if ( internalProperties.contains(PropertyName) ) {
+	    try {
+	    	// Null is OK here for o2
+	        setPropContents(PropertyName, o2);
+	    }
+	    catch ( UnrecognizedRequestException e ) {
+	        // Not recognized as a core internal so will set below as a user property
+	    }
     }
-    catch ( UnrecognizedRequestException e ) {
-        // Not recognized as a core internal so will set below as a user property
+    else {
+	    // Otherwise it is a user-defined property...
+	    __propertyHashmap.put ( PropertyName, o2 );
     }
-    // TODO SAM 2015-05-05 Why is this not an "if" with official property?
-    // Otherwise it is a user-defined property...
-    __property_Hashtable.put ( PropertyName, o2 );
     // No data are returned in the bean.
     return bean;
 }
@@ -3800,19 +3864,19 @@ throws Exception
     Message.printStatus(2, routine, "Resetting workflow properties." );
     
     // First clear user-defined properties.
-    __property_Hashtable.clear();
+    __propertyHashmap.clear();
     // Define some standard properties
-    __property_Hashtable.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages
-    __property_Hashtable.put ( "ComputerTimezone", TimeUtil.getLocalTimeZoneAbbr(TimeUtil.LOOKUP_TIME_ZONE_ALWAYS) ); // America/Denver, etc.
-    __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
-    __property_Hashtable.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
+    __propertyHashmap.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages
+    __propertyHashmap.put ( "ComputerTimezone", TimeUtil.getLocalTimeZoneAbbr(TimeUtil.LOOKUP_TIME_ZONE_ALWAYS) ); // America/Denver, etc.
+    __propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
+    __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // Temporary directory useful in some cases
-    __property_Hashtable.put ( "TempDir", System.getProperty("java.io.tmpdir") );
+    __propertyHashmap.put ( "TempDir", System.getProperty("java.io.tmpdir") );
     // FIXME SAM 2016-04-03 This is hard-coded for TSTool - need to make more generic to work outside of TSTool?
     String homeDir = System.getProperty("user.home") + File.separator + ".tstool";
-    __property_Hashtable.put ( "UserHomeDir", homeDir );
-    __property_Hashtable.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
-    __property_Hashtable.put ( "UserName", System.getProperty("user.name") );
+    __propertyHashmap.put ( "UserHomeDir", homeDir );
+    __propertyHashmap.put ( "UserHomeDirURL", "file:///" + homeDir.replace("\\", "/") );
+    __propertyHashmap.put ( "UserName", System.getProperty("user.name") );
     // Set the program version as a property, useful for version-dependent command logic
     // Assume the version is xxx.xxx.xxx beta (date), with at least one period
     // Save the program version as a string
@@ -3821,7 +3885,7 @@ throws Exception
     if ( pos > 0 ) {
     	programVersion = programVersion.substring(0,pos);
     }
-    __property_Hashtable.put ( "ProgramVersionString", programVersion );
+    __propertyHashmap.put ( "ProgramVersionString", programVersion );
     // Also save the numerical version.
     double programVersionNumber = -1.0;
     pos = programVersion.indexOf(".");
@@ -3854,7 +3918,7 @@ throws Exception
     catch ( NumberFormatException e ) {
     	programVersionNumber = -1.0;
     }
-    __property_Hashtable.put ( "ProgramVersionNumber", new Double(programVersionNumber) );
+    __propertyHashmap.put ( "ProgramVersionNumber", new Double(programVersionNumber) );
     // Now make sure that specific controlling properties are cleared out.
     // FIXME SAM 2008-07-15 Move data members from TSEngine to this class
     __tsengine.setIgnoreLEZero ( false );

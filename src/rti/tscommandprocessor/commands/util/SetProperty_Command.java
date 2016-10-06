@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -31,6 +32,11 @@ This class initializes, checks, and runs the SetProperty() command.
 */
 public class SetProperty_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
+
+/**
+Possible value for several boolean parameters.
+*/
+protected final String _True = "True";
 
 /**
 Possible value for PropertyType.
@@ -65,7 +71,15 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String PropertyName = parameters.getValue ( "PropertyName" );
 	String PropertyType = parameters.getValue ( "PropertyType" );
+    if ( PropertyType == null ) {
+	    // Set to blank to be able to do checks below
+	    PropertyType = "";
+    }
 	String PropertyValue = parameters.getValue ( "PropertyValue" );
+	String SetEmpty = parameters.getValue ( "SetEmpty" );
+	String SetNaN = parameters.getValue ( "SetNaN" );
+	String SetNull = parameters.getValue ( "SetNull" );
+	String RemoveProperty = parameters.getValue ( "RemoveProperty" );
 	String warning = "";
     String message;
     
@@ -82,7 +96,7 @@ throws InvalidCommandParameterException
     else {
         // Check for allowed characters...
         if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
-            message = "The property name cannot contains invalid characters.";
+            message = "The property name contains invalid characters.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE, message,
@@ -90,20 +104,28 @@ throws InvalidCommandParameterException
         }
     }
     if ( (PropertyType == null) || PropertyType.equals("") ) {
-        message = "The property type must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
+		// The property type is not required for some special values that are independent of type
+		if ( ((SetNull == null) || SetNull.isEmpty()) &&
+			((RemoveProperty == null) || RemoveProperty.isEmpty()) ) {
+			message = "The property type must be specified unless setting to null or property is being removed.";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Provide a property type." ) );
-        // Set to blank to be able to do checks below
-        PropertyType = "";
+                    message, "Provide a property value, set to null special value, or indicate to remove." ) );
+		}
     }
 	if ( (PropertyValue == null) || PropertyValue.equals("") ) {
-        message = "The property value must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
+		// The property value is not required if a special value is used
+		if ( ((SetEmpty == null) || SetEmpty.isEmpty()) &&
+			((SetNaN == null) || SetNaN.isEmpty()) &&
+			((SetNull == null) || SetNull.isEmpty()) &&
+			((RemoveProperty == null) || RemoveProperty.isEmpty()) ) {
+			message = "The property value must be specified unless a special value is indicated or property is being removed.";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Provide a property value." ) );
+                    message, "Provide a property value, special value, or indicate to remove." ) );
+		}
 	}
 	else {
 	    // Check the value given the type.
@@ -144,13 +166,49 @@ throws InvalidCommandParameterException
                             message, "Specify the property value as an integer." ));
 		}
 	}
+	
+	if ( (SetEmpty != null) && !SetEmpty.isEmpty() && !SetEmpty.equalsIgnoreCase(_True)) {
+		message = "The SetEmpty parameter \"" + SetEmpty + "\" is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the parameter as " + _True + " or blank (default)."));
+	}
+	
+	if ( (SetNaN != null) && !SetNaN.isEmpty() && !SetNaN.equalsIgnoreCase(_True)) {
+		message = "The SetNaN parameter \"" + SetNaN + "\" is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the parameter as " + _True + " or blank (default)."));
+	}
+	
+	if ( (SetNull != null) && !SetNull.isEmpty() && !SetNull.equalsIgnoreCase(_True)) {
+		message = "The SetNull parameter \"" + SetNull + "\" is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the parameter as " + _True + " or blank (default)."));
+	}
+	
+	if ( (RemoveProperty != null) && !RemoveProperty.isEmpty() && !RemoveProperty.equalsIgnoreCase(_True)) {
+		message = "The RemoveProperty parameter \"" + RemoveProperty + "\" is invalid.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the parameter as " + _True + " or blank (default)."));
+	}
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "PropertyName" );
-    valid_Vector.add ( "PropertyType" );
-    valid_Vector.add ( "PropertyValue" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(7);
+    validList.add ( "PropertyName" );
+    validList.add ( "PropertyType" );
+    validList.add ( "PropertyValue" );
+    validList.add ( "SetEmpty" );
+    validList.add ( "SetNaN" );
+    validList.add ( "SetNull" );
+    validList.add ( "RemoveProperty" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -267,48 +325,115 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (PropertyValue != null) && (PropertyValue.indexOf("${") >= 0) ) {
 		PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
 	}
-	
+	String SetEmpty = parameters.getValue ( "SetEmpty" );
+	boolean setEmpty = false;
+	if ( (SetEmpty != null) && SetEmpty.equalsIgnoreCase(_True) ) {
+		setEmpty = true;
+	}
+	String SetNaN = parameters.getValue ( "SetNaN" );
+	boolean setNaN = false;
+	if ( (SetNaN != null) && SetNaN.equalsIgnoreCase(_True) ) {
+		setNaN = true;
+	}
+	String SetNull = parameters.getValue ( "SetNull" );
+	boolean setNull = false;
+	if ( (SetNull != null) && SetNull.equalsIgnoreCase(_True) ) {
+		setNull = true;
+	}
+	String RemoveProperty = parameters.getValue ( "RemoveProperty" );
+	boolean removeProperty = false;
+	if ( (RemoveProperty != null) && RemoveProperty.equalsIgnoreCase(_True) ) {
+		removeProperty = true;
+	}
+
 	try {
-	    Object Property_Object = null;
-	    if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
-	        Property_Object = Boolean.valueOf(PropertyValue);
+	    Object Property_Object = null; // Important to initialize to null because may be using setNull
+	    if ( removeProperty ) {
+	    	// Unset/remove property from the processor
+	    	// Only do in run mode for now because not sure of implications in discovery mode
+	    	// TODO SAM 2016-09-18 Evaluate whether a warning should be given if the property is not found
+		    if ( commandPhase == CommandPhaseType.RUN ) {
+		    	PropList request_params = new PropList ( "" );
+		    	request_params.setUsingObject ( "PropertyName", PropertyName );
+		    	try {
+		            processor.processRequest( "RemoveProperty", request_params);
+		    	}
+		    	catch ( Exception e ) {
+		    		message = "Error requesting RemoveProperty(Property=\"" + PropertyName + "\") from processor (" + e + ").";
+		    		Message.printWarning(log_level,
+		    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+		    				routine, message );
+		            Message.printWarning(log_level,routine,e);
+		            status.addToLog ( CommandPhaseType.RUN,
+		                    new CommandLogRecord(CommandStatusType.FAILURE,
+		                            message, "Report the problem to software support." ) );
+		    	}
+		    }
 	    }
-	    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
-	        // This handles special strings like CurrentToHour
-	        // Have to specify a PropList to ensure the special syntax is handled
-	        Property_Object = DateTime.parse(PropertyValue,(PropList)null);
-	    }
-	    else if ( PropertyType.equalsIgnoreCase(_Double) ) {
-	        Property_Object = Double.valueOf(PropertyValue);
-	    }
-	    else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
-	        Property_Object = Integer.valueOf(PropertyValue);
-	    }
-	    else if ( PropertyType.equalsIgnoreCase(_String) ) {
-	        Property_Object = PropertyValue;
-	    }
+	    else {
+	    	// Not setting to null so expect to have a property value or special value
+		    if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
+		    	if ( !setNull ) {
+		    		Property_Object = Boolean.valueOf(PropertyValue);
+		    	}
+		    }
+		    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
+		        // This handles special strings like CurrentToHour
+		        // Have to specify a PropList to ensure the special syntax is handled
+		    	// TODO SAM 2016-09-18 consider whether parsing should recognize in-memory DateTime properties
+		    	if ( !setNull ) {
+		    		Property_Object = DateTime.parse(PropertyValue,(PropList)null);
+		    	}
+		    }
+		    else if ( PropertyType.equalsIgnoreCase(_Double) ) {
+		    	if ( setNaN ) {
+		    		Property_Object = new Double(Double.NaN);
+		    	}
+		    	else if ( !setNull ) {
+		    		Property_Object = Double.valueOf(PropertyValue);
+		    	}
+		    }
+		    else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
+		    	if ( !setNull ) {
+		    		Property_Object = Integer.valueOf(PropertyValue);
+		    	}
+		    }
+		    else if ( PropertyType.equalsIgnoreCase(_String) ) {
+		    	if ( setEmpty ) {
+		    		Property_Object = "";
+		    	}
+		    	else if ( !setNull ) {
+		    		Property_Object = PropertyValue;
+		    	}
+		    	Message.printStatus(2,routine,"Setting string property to \"" + Property_Object + "\"");
+		    }
 	    
-    	// Set the property in the processor
-    
-    	PropList request_params = new PropList ( "" );
-    	request_params.setUsingObject ( "PropertyName", PropertyName );
-    	request_params.setUsingObject ( "PropertyValue", Property_Object );
-    	try {
-            processor.processRequest( "SetProperty", request_params);
-            // Set the 
-            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-                setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-            }
-    	}
-    	catch ( Exception e ) {
-    		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor.";
-    		Message.printWarning(log_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-    	}
+	    	// Set the property in the processor
+	    
+	    	PropList request_params = new PropList ( "" );
+	    	request_params.setUsingObject ( "PropertyName", PropertyName );
+	    	request_params.setUsingObject ( "PropertyValue", Property_Object );
+	    	if ( setNull ) {
+	    		request_params.setUsingObject ( "SetNull", Boolean.TRUE );
+	    	}
+	    	try {
+	            processor.processRequest( "SetProperty", request_params);
+	            // Set the 
+	            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	                setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+	            }
+	    	}
+	    	catch ( Exception e ) {
+	    		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor (" + e + ").";
+	    		Message.printWarning(log_level,
+	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	    				routine, message );
+	            Message.printWarning(log_level,routine,e);
+	            status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Report the problem to software support." ) );
+	    	}
+	    }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error setting property \""+ PropertyName + "\"=\"" + PropertyValue + "\" (" + e + ").";
@@ -351,6 +476,10 @@ public String toString ( PropList props )
     String PropertyName = props.getValue( "PropertyName" );
 	String PropertyType = props.getValue( "PropertyType" );
     String PropertyValue = props.getValue( "PropertyValue" );
+    String SetEmpty = props.getValue ( "SetEmpty" );
+    String SetNaN = props.getValue ( "SetNaN" );
+    String SetNull = props.getValue ( "SetNull" );
+    String RemoveProperty = props.getValue ( "RemoveProperty" );
 	StringBuffer b = new StringBuffer ();
     if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -369,6 +498,30 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
+	}
+	if ( (SetEmpty != null) && (SetEmpty.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "SetEmpty=" + SetEmpty );
+	}
+	if ( (SetNaN != null) && (SetNaN.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "SetNaN=" + SetNaN );
+	}
+	if ( (SetNull != null) && (SetNull.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "SetNull=" + SetNull );
+	}
+	if ( (RemoveProperty != null) && (RemoveProperty.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "RemoveProperty=" + RemoveProperty );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

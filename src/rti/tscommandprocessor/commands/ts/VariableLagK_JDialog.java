@@ -706,7 +706,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command, List<Stri
     JGUIUtil.addComponent(statesTable_JPanel, __StateTableNameColumn_JTextField,
         1, yStatesTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel(
-        "Required if using table - column name for state name."), 
+    	"Optional - column name for state name (default=not used)."), 
         3, yStatesTable, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(statesTable_JPanel, new JLabel ( "State value column:" ), 

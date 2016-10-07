@@ -1013,10 +1013,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String StateSaveDateTime = parameters.getValue ( "StateSaveDateTime" );
     DateTime stateSaveDateTime = null;
-	if ( (StateSaveDateTime != null) && (StateSaveDateTime.indexOf("${") >= 0) && !StateSaveDateTime.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+	if ( (StateSaveDateTime != null) && (StateSaveDateTime.indexOf("${") >= 0) &&
+		!StateSaveDateTime.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
 		StateSaveDateTime = TSCommandProcessorUtil.expandParameterValue(processor, this, StateSaveDateTime);
 	}
-    if ( (StateSaveDateTime != null) && !StateSaveDateTime.isEmpty() ) {
+    if ( (StateSaveDateTime != null) && !StateSaveDateTime.isEmpty() &&
+    	(StateSaveDateTime.indexOf("${") < 0) && (commandPhase == CommandPhaseType.RUN)) {
     	stateSaveDateTime = DateTime.parse(StateSaveDateTime);
     }
     String StateSaveInterval = parameters.getValue ( "StateSaveInterval" );
@@ -1026,7 +1028,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
     TimeInterval stateSaveInterval = null;
     DateTime stateSaveIntervalDateTime = null;
-    if ( (StateSaveInterval != null) && !StateSaveInterval.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
+    if ( (StateSaveInterval != null) && !StateSaveInterval.isEmpty() &&
+    	(StateSaveInterval.indexOf("${") < 0) && (commandPhase == CommandPhaseType.RUN) ) {
     	stateSaveInterval = TimeInterval.parseInterval(StateSaveInterval);
     }
     String StateTableID = parameters.getValue ( "StateTableID" );
@@ -1124,7 +1127,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            Message.printWarning(warning_level,
 	                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
 	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Verify that the state table \"" + StateTableID + "\" is availbale." ) );
+	                message, "Verify that the state table \"" + StateTableID + "\" is available." ) );
 	        }
 	    }
     }

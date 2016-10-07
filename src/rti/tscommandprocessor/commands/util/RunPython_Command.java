@@ -3,11 +3,11 @@ package rti.tscommandprocessor.commands.util;
 import java.io.File;
 import java.io.StringWriter;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -32,7 +32,6 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.ProcessManager;
 import RTi.Util.IO.PropList;
-
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 /**
@@ -100,7 +99,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify an input file." ) );
 	}
-	else {
+	else if ( InputFile.indexOf("${") < 0 ) {
 	    String working_dir = null;
 	
 		try {
@@ -160,13 +159,13 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Interpreter" );
-    valid_Vector.add ( "Program" );
-    valid_Vector.add ( "PythonPath" );
-	valid_Vector.add ( "Arguments" );
-	valid_Vector.add ( "InputFile" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(5);
+    validList.add ( "Interpreter" );
+    validList.add ( "Program" );
+    validList.add ( "PythonPath" );
+	validList.add ( "Arguments" );
+	validList.add ( "InputFile" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -221,33 +220,47 @@ private String getPythonProgram ( String interpreter )
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "RunPython_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	
 	CommandProcessor processor = getCommandProcessor();
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	PropList parameters = getCommandParameters();
 
-	String InputFile = parameters.getValue ( "InputFile" );
+	String InputFile = parameters.getValue ( "InputFile" ); // Expanded below
 	String Arguments = parameters.getValue ( "Arguments" );
-	if ( Arguments != null ) {
+	if ( (Arguments != null) && !Arguments.isEmpty() && (Arguments.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 	    Arguments = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, Arguments);
 	}
 	String Interpreter = parameters.getValue ( "Interpreter" );
-	if ( Interpreter != null ) {
+	if ( (Interpreter != null) && !Interpreter.isEmpty() && (Interpreter.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 	    Interpreter = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, Interpreter);
 	}
 	String PythonPath = parameters.getValue ( "PythonPath" );
+	if ( (PythonPath != null) && !PythonPath.isEmpty() && (PythonPath.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		PythonPath = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, PythonPath);
+	}
 	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -262,6 +275,8 @@ CommandWarningException, CommandException
 	String WorkingDir = TSCommandProcessorUtil.getWorkingDir(processor);
 	String InputFile_full = null;
 	try {
+		// TODO SAM 2016-09-18 Should this include the following like many other commands?
+		//IOUtil.toAbsolutePath(
         InputFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath ( WorkingDir,
             TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, InputFile)));
         if ( !IOUtil.fileExists(InputFile_full) ) {

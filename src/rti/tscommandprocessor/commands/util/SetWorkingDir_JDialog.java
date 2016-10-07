@@ -1,24 +1,3 @@
-// ----------------------------------------------------------------------------
-// setWorkingDir_JDialog - editor for setWorkingDir()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 28 Feb 2001	Steven A. Malers, RTi	Initial version (copy and modify
-//					runningAverage_Dialog).
-// 31 Aug 2001	SAM, RTi		Add comments at top and add Browse
-//					button.
-// 2002-03-29	SAM, RTi		Minor cleanup.
-// 2002-04-05	SAM, RTi		More minor cleanup to make the dialog
-//					look better.
-// 2003-11-06	SAM, RTi		* Update to Swing.
-//					* Pass in the current working directory
-//					  to allow phasing in of relative shifts
-//					  in the working directory.
-// 2007-02-26	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.util;
 
 import java.awt.event.ActionEvent;
@@ -40,16 +19,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -59,25 +38,25 @@ Editor for SetWorkingDir() command.
 public class SetWorkingDir_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__browse_JButton = null,// directory browse button
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;;
 private SetWorkingDir_Command __command = null;
-private String		__working_dir = null;	// Working directory.
-private JTextArea	__command_JTextArea = null;
-private SimpleJComboBox	__RunMode_JComboBox = null;// Field for GUI or GUI & batch
+private String __working_dir = null; // Working directory.
+private JTextArea __command_JTextArea = null;
+private SimpleJComboBox	__RunMode_JComboBox = null;
 private SimpleJComboBox __RunOnOS_JComboBox = null;
-private JTextField	__WorkingDir_JTextField = null;// Field for working directory
-private boolean		__error_wait = false;	// Is there an error waiting to be cleared up?
-private boolean		__first_time = true;
-private boolean     __ok = false; // Whether the user has pressed OK to close the dialog.
+private JTextField __WorkingDir_JTextField = null;
+private boolean __error_wait = false; // Is there an error waiting to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false; // Whether the user has pressed OK to close the dialog.
 
 /**
 Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetWorkingDir_JDialog (	JFrame parent, Command command )
+public SetWorkingDir_JDialog (	JFrame parent, SetWorkingDir_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -161,63 +140,50 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__browse_JButton = null;
-	__RunMode_JComboBox = null;
-	__WorkingDir_JTextField = null;
-	__browse_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	__working_dir = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (SetWorkingDir_Command)command;
+private void initialize ( JFrame parent, SetWorkingDir_Command command )
+{	__command = command;
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( __command.getCommandProcessor(), __command );
 
 	addWindowListener( this );
 
-   Insets insetsTLBR = new Insets(0,2,0,2);
+   Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>Use of this command is discouraged - commands may generate " +
         "warnings after editing, but will run correctly.</b></html>" ),
         0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Set the working directory, which will be prepended to relative paths in commands."),
+        "The working directory is automatically set to the location of the command file "
+        + "and generally all paths should be relative to the command file folder." ),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"This command (re)sets the working directory, which will be prepended to relative paths in commands."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If browsing for files while editing other commands, paths may need to be " +
 		"converted to be relative to the working directory." ),
-		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The command file folder is the initial working directory." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is currently: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Working directory:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WorkingDir_JTextField = new JTextField ( 55 );
+	__WorkingDir_JTextField.setToolTipText("Specify the absolute path to the working directory, can use ${Property}");
 	__WorkingDir_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __WorkingDir_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

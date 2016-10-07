@@ -1,13 +1,12 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -27,9 +26,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the SetWorkingDir() command.
-</p>
 */
 public class SetWorkingDir_Command extends AbstractCommand implements Command
 {
@@ -62,8 +59,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -85,44 +81,45 @@ throws InvalidCommandParameterException
                 message,
                 "Specify the working directory." ) );
     }
-    
-    String working_dir = null;
-    try { Object o = processor.getPropContents ( "WorkingDir" );
-        // Working directory is available so use it...
-        if ( o != null ) {
-            working_dir = (String)o;
-        }
-    }
-    catch ( Exception e ) {
-        // Not fatal, but of use to developers.
-        message = "Error requesting WorkingDir from processor.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Software error - report problem to support." ) );
-
-    }
-    try {
-        String adjusted_path = IOUtil.verifyPathForOS (
-            IOUtil.adjustPath ( working_dir, WorkingDir) );
-        File f = new File ( adjusted_path );
-        if ( !f.exists() ) {
-            message = "The working directory does not exist for: \"" + adjusted_path + "\".";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the directory exists." ) );
-        }
-        f = null;
-    }
-    catch ( Exception e ) {
-        message = "The working directory \"" + WorkingDir + "\" cannot be adjusted by the working directory \""
-        + working_dir + "\".";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message,
-                        "Verify that the path to the working directory and previous working directory are compatible." ) );
+    else if ( WorkingDir.indexOf("${") < 0 ) {
+	    String working_dir = null;
+	    try { Object o = processor.getPropContents ( "WorkingDir" );
+	        // Working directory is available so use it...
+	        if ( o != null ) {
+	            working_dir = (String)o;
+	        }
+	    }
+	    catch ( Exception e ) {
+	        // Not fatal, but of use to developers.
+	        message = "Error requesting WorkingDir from processor.";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Software error - report problem to support." ) );
+	
+	    }
+	    try {
+	        String adjusted_path = IOUtil.verifyPathForOS (
+	            IOUtil.adjustPath ( working_dir, WorkingDir) );
+	        File f = new File ( adjusted_path );
+	        if ( !f.exists() ) {
+	            message = "The working directory does not exist for: \"" + adjusted_path + "\".";
+	            warning += "\n" + message;
+	            status.addToLog ( CommandPhaseType.INITIALIZATION,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Verify that the directory exists." ) );
+	        }
+	        f = null;
+	    }
+	    catch ( Exception e ) {
+	        message = "The working directory \"" + WorkingDir + "\" cannot be adjusted by the working directory \""
+	        + working_dir + "\".";
+	        warning += "\n" + message;
+	        status.addToLog ( CommandPhaseType.INITIALIZATION,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message,
+	                        "Verify that the path to the working directory and previous working directory are compatible." ) );
+	    }
     }
 
 	if ( (RunMode != null) && !RunMode.equals("") &&
@@ -152,11 +149,11 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "WorkingDir" );
-    valid_Vector.add ( "RunMode" );
-    valid_Vector.add ( "RunOnOS" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List validList = new ArrayList<String>(3);
+    validList.add ( "WorkingDir" );
+    validList.add ( "RunMode" );
+    validList.add ( "RunOnOS" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -182,13 +179,12 @@ Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "SetWorkingDir_Command.parseCommand", message;
+{	String routine = getClass().getSimpleName() + ".parseCommand", message;
 	int warning_level = 2;
 	if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
 		// New syntax...
@@ -229,19 +225,30 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "SetWorkingDir_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
     
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
 	PropList parameters = getCommandParameters();
-	String WorkingDir = parameters.getValue ( "WorkingDir" );
+	String WorkingDir = parameters.getValue ( "WorkingDir" ); // Expanded below
 	String RunMode = parameters.getValue ( "RunMode" );
 	if ( (RunMode == null) || RunMode.equals("") ) {
 		RunMode = _GUIAndBatch;   // Default
@@ -275,7 +282,8 @@ CommandWarningException, CommandException
 	// for the processor.
 
     String WorkingDir_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),WorkingDir ) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor, this, WorkingDir)) );
 	try {
 	    if ( doRun ) {
 		    // Only run the command for the requested run mode...

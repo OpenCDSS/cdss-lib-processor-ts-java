@@ -80,7 +80,8 @@ throws InvalidCommandParameterException
 	//CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-	
+
+	CommandProcessor processor = getCommandProcessor();
 	if ( (OutputFile == null) || OutputFile.isEmpty() ) {
 		message = "The output file: \"" + OutputFile + "\" must be specified.";
 		warning += "\n" + message;
@@ -88,9 +89,7 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify an output file." ) );
 	}
-	/* Don't check because ${} properties may be used
-	 * TODO SAM 2008-07-31 Need to enable check in some form.
-	else {
+	else if ( OutputFile.indexOf("${") < 0 ) {
 	    String working_dir = null;
 		try {
 		    Object o = processor.getPropContents ( "WorkingDir" );
@@ -133,7 +132,6 @@ throws InvalidCommandParameterException
 						message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
-	*/
 
 	/* TODO Check to make sure properties are valid (but may be dynamic)
 	if ( (PropertyName == null) || (PropertyName.length() == 0) ) {
@@ -304,20 +302,35 @@ CommandWarningException, CommandException
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
+	CommandProcessor processor = getCommandProcessor();
+	CommandStatus status = getCommandStatus();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
+	
 	// Clear the output file
 	
 	setOutputFile ( null );
 	
 	// Check whether the processor wants output files to be created...
 
-	CommandProcessor processor = getCommandProcessor();
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
 		Message.printStatus ( 2, routine,
 		"Skipping \"" + toString() + "\" because output is not being created." );
 	}
 
 	PropList parameters = getCommandParameters();
-	String OutputFile = parameters.getValue ( "OutputFile" );
+	String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
 	String IncludeProperties = parameters.getValue ( "IncludeProperties" );
 	String [] includeProperties = new String[0];
 	if ( (IncludeProperties != null) && !IncludeProperties.equals("") ) {
@@ -355,9 +368,6 @@ CommandWarningException, CommandException
     		sortOrder = 1;
     	}
     }
-	
-	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
 
 	// Now try to write...
 
@@ -460,8 +470,10 @@ private void writeProperty ( PrintWriter fout, String propertyName, Object prope
         doDateTime = true;
     }
     if ( (propertyObject instanceof String) || doDateTime ) {
+    	// Quote the output
         quote = "\"";
     }
+    // TODO SAM 2016-09-19 Evaluate whether more complex objects should be quoted
     if ( formatType == PropertyFileFormatType.NAME_VALUE ) {
         fout.println ( propertyName + "=" + quote + propertyObject + quote );
     }

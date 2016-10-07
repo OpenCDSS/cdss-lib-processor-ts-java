@@ -9,7 +9,6 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -27,9 +26,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 
 /**
-<p>
 This class initializes, checks, and runs the WriteProperty() command.
-</p>
 */
 public class WriteProperty_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -81,9 +78,7 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an output file." ) );
 	}
-	/* Don't check because ${} properties may be used
-	 * TODO SAM 2008-07-31 Need to enable check in some form.
-	else {
+	else if ( OutputFile.indexOf("${") < 0 ) {
 	    String working_dir = null;
 		try {
 		    Object o = processor.getPropContents ( "WorkingDir" );
@@ -126,7 +121,6 @@ throws InvalidCommandParameterException
 						message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
-	*/
 		
 	if ( (PropertyName == null) || (PropertyName.length() == 0) ) {
 		message = "A property name must be specified.";
@@ -223,9 +217,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "WriteProperty_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -241,6 +234,21 @@ CommandWarningException, CommandException
 			Message.printStatus ( 2, routine,
 			"Skipping \"" + toString() + "\" because output is not being created." );
 	}
+	
+	CommandStatus status = getCommandStatus();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
 	PropList parameters = getCommandParameters();
 	String OutputFile = parameters.getValue ( "OutputFile" );
@@ -250,9 +258,15 @@ CommandWarningException, CommandException
     if ( (Append != null) && Append.equalsIgnoreCase(_False)) {
         Append_boolean = false;
     }
-	
-	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+    
+    // This command is deprecated so encourage moving to the new command
+    message = "The WriteProperty() command has been replaced by more flexible WritePropertiesToFile() command.";
+	Message.printWarning(warning_level,
+		MessageUtil.formatMessageTag( command_tag, ++warning_count),
+		routine, message );
+	status.addToLog ( CommandPhaseType.RUN,
+		new CommandLogRecord(CommandStatusType.WARNING,
+			message, "Migrate this command to the new command." ) );
 
 	// Get the property to output...
 	

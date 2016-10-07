@@ -193,7 +193,9 @@ private void checkInput ()
     if ( (DataStore != null) && DataStore.length() > 0 ) {
         props.set ( "DataStore", DataStore );
         __dataStore = getSelectedDataStore();
-        __dmi = ((DatabaseDataStore)__dataStore).getDMI();
+        if ( DataStore.indexOf("${") < 0 ) {
+        	__dmi = ((DatabaseDataStore)__dataStore).getDMI();
+        }
     }
     else {
         props.set ( "DataStore", "" );
@@ -369,7 +371,8 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Datastore:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataStore_JComboBox = new SimpleJComboBox ( false );
+    __DataStore_JComboBox = new SimpleJComboBox ( true ); // Editable to allow properties to be specified
+    __DataStore_JComboBox.setToolTipText("Select the datastore to use as input, can use ${Property}");
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
     for ( DataStore dataStore: dataStoreList ) {
@@ -381,6 +384,7 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     }
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
+    __DataStore_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - datastore of interest."), 
@@ -408,6 +412,7 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Reference tables:"), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ReferenceTables_JTextField = new JTextField (10);
+    __ReferenceTables_JTextField.setToolTipText("Specify the list of reference tables, separated by commas, can use ${Property}");
     __ReferenceTables_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(table_JPanel, __ReferenceTables_JTextField,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -417,6 +422,7 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     JGUIUtil.addComponent(table_JPanel, new JLabel ("Exclude tables:"), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExcludeTables_JTextField = new JTextField (20);
+    __ExcludeTables_JTextField.setToolTipText("Specify the list of tables to exclude, separated by commas, can use ${Property}");
     __ExcludeTables_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(table_JPanel, __ExcludeTables_JTextField,
         1, yTable, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -444,7 +450,7 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     JGUIUtil.addComponent(dict_JPanel, new JLabel ( "Output file:" ), 
         0, ++yDict, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputFile_JTextField = new JTextField ( 50 );
-    __OutputFile_JTextField.setToolTipText("Specify an output file for the data dictionary as *.hmtl");
+    __OutputFile_JTextField.setToolTipText("Specify an output file for the data dictionary as *.hmtl, can use ${Property}");
     __OutputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(dict_JPanel, __OutputFile_JTextField,
         1, yDict, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -498,20 +504,22 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     __main_JTabbedPane.addTab ( "Entity-Relationship Diagram", diag_JPanel );
 
     JGUIUtil.addComponent(diag_JPanel, new JLabel (
-        "<html><b>Features to create an Entity Relation Diagram are under development</b></html>."),
+        "<html><b>Features to create an Entity Relation Diagram are under development.</b></html>"),
         0, ++yDiag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(diag_JPanel, new JLabel (
-        "In the future this command will use an input table with diagram coordinates and create the diagram."),
+        "In the future this command will use an input table with table name and XY coordinates as input to create the diagram."),
         0, ++yDiag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(diag_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yDiag, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(diag_JPanel, new JLabel ( "Layout table ID:" ), 
         0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ERDiagramLayoutTableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __ERDiagramLayoutTableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit to specify property
+    __ERDiagramLayoutTableID_JComboBox.setToolTipText("Specify the table name containing table and XY coordinates for diagram, can use ${Property}");
     tableIDChoices.add(0,""); // Add blank to ignore table
     __ERDiagramLayoutTableID_JComboBox.setData ( tableIDChoices );
     __ERDiagramLayoutTableID_JComboBox.addItemListener ( this );
+    __ERDiagramLayoutTableID_JComboBox.getJTextComponent().addKeyListener ( this );
     //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(diag_JPanel, __ERDiagramLayoutTableID_JComboBox,
         1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -521,6 +529,7 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     JGUIUtil.addComponent(diag_JPanel, new JLabel ("Layout table name column:"), 
         0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ERDiagramLayoutTableNameColumn_JTextField = new JTextField (10);
+    __ERDiagramLayoutTableNameColumn_JTextField.setToolTipText("Specify the layout table column for table names, can use ${Property}");
     __ERDiagramLayoutTableNameColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(diag_JPanel, __ERDiagramLayoutTableNameColumn_JTextField,
         1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -529,25 +538,27 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     
     JGUIUtil.addComponent(diag_JPanel, new JLabel ("Layout table X column:"), 
         0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ERDiagramLayoutTableXColumn_JTextField = new JTextField (10);
+    __ERDiagramLayoutTableXColumn_JTextField = new JTextField (20);
+    __ERDiagramLayoutTableXColumn_JTextField.setToolTipText("Specify the layout table column containing X, can use ${Property}");
     __ERDiagramLayoutTableXColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(diag_JPanel, __ERDiagramLayoutTableXColumn_JTextField,
-        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(diag_JPanel, new JLabel ("Required - name of X-coordinate column."),
         3, yDiag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(diag_JPanel, new JLabel ("Layout table Y column:"), 
         0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ERDiagramLayoutTableYColumn_JTextField = new JTextField (10);
+    __ERDiagramLayoutTableYColumn_JTextField = new JTextField (20);
+    __ERDiagramLayoutTableYColumn_JTextField.setToolTipText("Specify the layout table column containing Y, can use ${Property}");
     __ERDiagramLayoutTableYColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(diag_JPanel, __ERDiagramLayoutTableYColumn_JTextField,
-        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yDiag, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(diag_JPanel, new JLabel ("Required - name of Y-coordinate column."),
         3, yDiag, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(diag_JPanel, new JLabel ( "Page size:"),
         0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ERDiagramPageSize_JComboBox = new SimpleJComboBox ( 30, false );
+    __ERDiagramPageSize_JComboBox = new SimpleJComboBox ( false );
     __ERDiagramPageSize_JComboBox.addItem ( "" ); // Default
     // TODO SAM 2015-05-11 Need to fill dynamically - can it be done independent of printer?
     __ERDiagramPageSize_JComboBox.addItem ( "A" );
@@ -732,6 +743,11 @@ try{
                 __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
                 __DataStore_JComboBox.select ( 0 );
             }
+            else if ( DataStore.indexOf("${") >= 0 ) {
+        		// OK to add as first position and select
+        		__DataStore_JComboBox.insertItemAt(DataStore, 1);
+        		__DataStore_JComboBox.select(1);
+        	}
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
@@ -954,8 +970,13 @@ private void viewDiagram ()
 	pageFormat.setOrientation(PageFormat.LANDSCAPE);
 	Paper paper = new Paper();
 	pageFormat.setPaper(paper);
-	new ERDiagram_JFrame ( getDMI(), tablesTableName, tableNameField,
-		erdXField, erdYField, pageFormat );
+	DMI dmi = getDMI();
+	if ( dmi == null ) {
+		Message.printWarning(1,"","Database connection is unavailable.  Can't display diagram.");
+	}
+	else {
+		new ERDiagram_JFrame ( getDMI(), tablesTableName, tableNameField, erdXField, erdYField, pageFormat );
+	}
 }
 
 /**

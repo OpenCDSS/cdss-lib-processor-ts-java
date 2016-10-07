@@ -89,11 +89,11 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
     if ( (DataStore == null) || (DataStore.length() == 0) ) {
-        message = "The data store must be specified.";
+        message = "The datastore must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data store." ) );
+                message, "Specify the datastore." ) );
     }
 
     if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
@@ -102,7 +102,7 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify an output file." ) );
     }
-    else {
+    else if ( OutputFile.indexOf("${") < 0 ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -281,17 +281,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     
-    CommandStatus status = getCommandStatus();
+	CommandProcessor processor = getCommandProcessor();
+	CommandStatus status = getCommandStatus();
     CommandPhaseType commandPhase = CommandPhaseType.RUN;
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(CommandPhaseType.RUN);
+	}
 
 	// Make sure there are time series available to operate on...
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
     String DataStore = parameters.getValue ( "DataStore" );
+	if ( (DataStore != null) && (DataStore.indexOf("${") >= 0) && !DataStore.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		DataStore = TSCommandProcessorUtil.expandParameterValue(processor, this, DataStore);
+	}
     String ReferenceTables = parameters.getValue ( "ReferenceTables" );
+	if ( (ReferenceTables != null) && (ReferenceTables.indexOf("${") >= 0) && !ReferenceTables.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		ReferenceTables = TSCommandProcessorUtil.expandParameterValue(processor, this, ReferenceTables);
+	}
     String [] referenceTables = null;
     List<String> referenceTablesList = new ArrayList<String>();
     if ( (ReferenceTables != null) && !ReferenceTables.isEmpty() ) {
@@ -301,6 +319,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String ExcludeTables = parameters.getValue ( "ExcludeTables" );
+	if ( (ExcludeTables != null) && (ExcludeTables.indexOf("${") >= 0) && !ExcludeTables.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		ExcludeTables = TSCommandProcessorUtil.expandParameterValue(processor, this, ExcludeTables);
+	}
     String [] excludeTables = null;
     List<String> excludeTablesList = new ArrayList<String>();
     if ( (ExcludeTables != null) && !ExcludeTables.isEmpty() ) {
@@ -309,7 +330,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         	excludeTablesList.add(excludeTables[i]);
         }
     }
-    String OutputFile = parameters.getValue("OutputFile");
+    String OutputFile = parameters.getValue("OutputFile"); // Expanded below
     String Newline = parameters.getValue("Newline");
     String SurroundWithPre = parameters.getValue("SurroundWithPre");
     boolean surroundWithPre = false;
@@ -322,9 +343,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	encodeHtmlChars = false;
     }
     String ERDiagramLayoutTableID = parameters.getValue("ERDiagramLayoutTableID");
+	if ( (ERDiagramLayoutTableID != null) && (ERDiagramLayoutTableID.indexOf("${") >= 0) && !ERDiagramLayoutTableID.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		ERDiagramLayoutTableID = TSCommandProcessorUtil.expandParameterValue(processor, this, ERDiagramLayoutTableID);
+	}
     String ERDiagramLayoutTableNameColumn = parameters.getValue("ERDiagramLayoutTableNameColumn");
+	if ( (ERDiagramLayoutTableNameColumn != null) && (ERDiagramLayoutTableNameColumn.indexOf("${") >= 0) && !ERDiagramLayoutTableNameColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		ERDiagramLayoutTableNameColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, ERDiagramLayoutTableNameColumn);
+	}
     String ERDiagramLayoutTableXColumn = parameters.getValue("ERDiagramLayoutTableXColumn");
+	if ( (ERDiagramLayoutTableXColumn != null) && (ERDiagramLayoutTableXColumn.indexOf("${") >= 0) && !ERDiagramLayoutTableXColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		ERDiagramLayoutTableXColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, ERDiagramLayoutTableXColumn);
+	}
     String ERDiagramLayoutTableYColumn = parameters.getValue("ERDiagramLayoutTableYColumn");
+	if ( (ERDiagramLayoutTableYColumn != null) && (ERDiagramLayoutTableYColumn.indexOf("${") >= 0) && !ERDiagramLayoutTableYColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		ERDiagramLayoutTableYColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, ERDiagramLayoutTableYColumn);
+	}
     String ERDiagramPageSize = parameters.getValue("ERDiagramPageSize");
     String ERDiagramOrientation = parameters.getValue("ERDiagramOrientation");
     String ViewERDiagram = parameters.getValue("ViewERDiagram");
@@ -333,11 +366,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	viewERDiagram = true;
     }
     
-    // Find the data store to use...
+    // Find the datastore to use...
     DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName ( DataStore, DatabaseDataStore.class );
     DMI dmi = null;
     if ( dataStore == null ) {
-        message = "Could not get data store for name \"" + DataStore + "\" to query data.";
+        message = "Could not get datastore for name \"" + DataStore + "\" to query data.";
         Message.printWarning ( 2, routine, message );
         status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
@@ -427,7 +460,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printWarning ( 2, routine, message );
         status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the database for data store \"" + DataStore +
+                message, "Verify that the database for datastore \"" + DataStore +
                 "\" has metadata defined and that database software supports Java metadata retrieval." ) );
         Message.printWarning ( 3, routine, e );
     }

@@ -106,6 +106,7 @@ import rti.tscommandprocessor.commands.riverware.WriteRiverWare_Command;
 
 // SHEF commands.
 import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
+//import rti.tscommandprocessor.commands.socrata.ReadSocrata_Command;
 import rti.tscommandprocessor.commands.spatial.WriteTableToGeoJSON_Command;
 // Spatial commands.
 import rti.tscommandprocessor.commands.spatial.WriteTableToKml_Command;
@@ -835,6 +836,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("ReadRiverWare") ) {
         return new ReadRiverWare_Command ();
     }
+    //else if ( commandName.equalsIgnoreCase("ReadSocrata") ) {
+    //    return new ReadSocrata_Command ();
+    //}
     // Put before shorter command name...
     else if ( commandName.equalsIgnoreCase("ReadStateCUB") ) {
         return new ReadStateCUB_Command ();

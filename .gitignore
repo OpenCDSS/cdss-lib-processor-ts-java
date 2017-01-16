@@ -2,6 +2,9 @@
 /bin
 /build
 
+# Ignore the javadoc folder - will need to package these files and archive somewhere
+/javadoc
+
 # Ignore the distribution folder created for local distribution and setup.exe files
 /dist
 

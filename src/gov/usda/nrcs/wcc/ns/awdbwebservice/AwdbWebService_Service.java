@@ -24,7 +24,9 @@ import RTi.Util.Message.Message;
  * Generated source version: 2.1
  * 
  */
-@WebServiceClient(name = "AwdbWebService", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", wsdlLocation = "http://www.wcc.nrcs.usda.gov/awdbWebService/services?WSDL")
+//@WebServiceClient(name = "AwdbWebService", targetNamespace = "https://wcc.sc.egov.usda.gov/awdbWebService", wsdlLocation = "https://wcc.sc.egov.usda.gov/awdbWebService/services?WSDL")
+//@WebServiceClient(name = "AwdbWebService", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", wsdlLocation = "https://www.wcc.nrcs.usda.gov/awdbWebService/services?WSDL")
+@WebServiceClient(name = "AwdbWebService", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService", wsdlLocation = "https://wcc.sc.egov.usda.gov/awdbWebService/services?WSDL")
 public class AwdbWebService_Service
     extends Service
 {
@@ -32,14 +34,16 @@ public class AwdbWebService_Service
     private final static URL AWDBWEBSERVICE_WSDL_LOCATION;
     private final static Logger logger = Logger.getLogger(gov.usda.nrcs.wcc.ns.awdbwebservice.AwdbWebService_Service.class.getName());
 
+    //static String wsdlURL = "https://www.wcc.nrcs.usda.gov/awdbWebService/services?WSDL";
+    static String wsdlURL = "https://wcc.sc.egov.usda.gov/awdbWebService/services?WSDL";
     static {
         URL url = null;
         try {
             URL baseUrl;
             baseUrl = gov.usda.nrcs.wcc.ns.awdbwebservice.AwdbWebService_Service.class.getResource(".");
-            url = new URL(baseUrl, "http://www.wcc.nrcs.usda.gov/awdbWebService/services?WSDL");
+            url = new URL(baseUrl, wsdlURL );
         } catch (MalformedURLException e) {
-            logger.warning("Failed to create URL for the wsdl Location: 'http://www.wcc.nrcs.usda.gov/awdbWebService/services?WSDL', retrying as a local file");
+            logger.warning("Failed to create URL for the wsdl Location: '" + wsdlURL + "', retrying as a local file");
             logger.warning(e.getMessage());
         }
         AWDBWEBSERVICE_WSDL_LOCATION = url;
@@ -57,6 +61,9 @@ public class AwdbWebService_Service
     throws MalformedURLException
     {
         super(new URL(wsdlLocation), new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebService"));
+    	//super(new URL(wsdlLocation), new QName("https://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebService"));
+        //super(new URL(wsdlLocation), new QName("https://wcc.sc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebService"));
+        //super(new URL(wsdlLocation), new QName("https://wcc.sc.egov.usda.gov/awdbWebService", "AwdbWebService"));
         String routine = "AdwdWebService_Service";
         // Set the timeout for web service requests for this web service instance - impacts all calls
         // First get the web service port
@@ -96,6 +103,8 @@ public class AwdbWebService_Service
 
     public AwdbWebService_Service() {
         super(AWDBWEBSERVICE_WSDL_LOCATION, new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebService"));
+        //super(AWDBWEBSERVICE_WSDL_LOCATION, new QName("https://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebService"));
+        //super(AWDBWEBSERVICE_WSDL_LOCATION, new QName("https://wcc.sc.egov.usda.gov/awdbWebService", "AwdbWebService"));
     }
 
     /**
@@ -106,6 +115,8 @@ public class AwdbWebService_Service
     @WebEndpoint(name = "AwdbWebServiceImplPort")
     public AwdbWebService getAwdbWebServiceImplPort() {
         return super.getPort(new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebServiceImplPort"), AwdbWebService.class);
+        //return super.getPort(new QName("https://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebServiceImplPort"), AwdbWebService.class);
+        //return super.getPort(new QName("https://wcc.sc.egov.usda.gov/awdbWebService", "AwdbWebServiceImplPort"), AwdbWebService.class);
     }
     
     /**
@@ -118,6 +129,8 @@ public class AwdbWebService_Service
     @WebEndpoint(name = "AwdbWebServiceImplPort")
     public AwdbWebService getAwdbWebServiceImplPort(WebServiceFeature... features) {
         return super.getPort(new QName("http://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebServiceImplPort"), AwdbWebService.class, features);
+        //return super.getPort(new QName("https://www.wcc.nrcs.usda.gov/ns/awdbWebService", "AwdbWebServiceImplPort"), AwdbWebService.class, features);
+        //return super.getPort(new QName("https://wcc.sc.egov.usda.gov/awdbWebService", "AwdbWebServiceImplPort"), AwdbWebService.class, features);
     }
 
 }

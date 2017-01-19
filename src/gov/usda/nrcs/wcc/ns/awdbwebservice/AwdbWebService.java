@@ -18,7 +18,8 @@ import javax.xml.ws.ResponseWrapper;
  * Generated source version: 2.1
  * 
  */
-@WebService(name = "AwdbWebService", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService")
+//@WebService(name = "AwdbWebService", targetNamespace = "http://www.wcc.nrcs.usda.gov/ns/awdbWebService")
+@WebService(name = "AwdbWebService", targetNamespace = "https://wcc.sc.egov.usda.gov/awdbWebService")
 @XmlSeeAlso({
     ObjectFactory.class
 })

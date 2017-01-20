@@ -1,10 +1,12 @@
 package rti.tscommandprocessor.commands.table;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -28,6 +30,8 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableField;
+import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the WriteTableToDelimitedFile() command.
@@ -42,6 +46,12 @@ protected final String _False = "False";
 protected final String _True = "True";
 
 /**
+ * Values for the OutputSchemaFormat parameter.
+ */
+protected final String _JSONTableSchema = "JSONTableSchema";
+protected final String _GoogleBigQuery = "GoogleBigQuery";
+
+/**
 Value to use for NaNValue.
 */
 protected final String _Blank = "Blank";
@@ -50,6 +60,11 @@ protected final String _Blank = "Blank";
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
+
+/**
+Output schema file that is created by this command.
+*/
+private File __OutputSchemaFile_File = null;
 
 /**
 Constructor.
@@ -72,6 +87,8 @@ throws InvalidCommandParameterException
 	String TableID = parameters.getValue ( "TableID" );
 	String WriteHeaderComments = parameters.getValue ( "WriteHeaderComments" );
 	String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
+	String OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
+	String OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -136,6 +153,31 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Verify that output file and working directory paths are compatible." ) );
 		}
+		// Also check schema file
+		if ( (OutputSchemaFile != null) && (OutputSchemaFile.indexOf("${") < 0) ) {
+			try {
+	            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputSchemaFile));
+				File f = new File ( adjusted_path );
+				File f2 = new File ( f.getParent() );
+				if ( !f2.exists() ) {
+					message = "The output schema file parent directory does not exist: \"" + adjusted_path + "\".";
+					warning += "\n" + message;
+					status.addToLog ( CommandPhaseType.INITIALIZATION,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								message, "Create the output directory." ) );
+				}
+			}
+			catch ( Exception e ) {
+				message = "The output schema file:\n" +
+				"    \"" + OutputSchemaFile +
+				"\"\ncannot be adjusted using the working directory:\n" +
+				"    \"" + working_dir + "\".";
+				warning += "\n" + message;
+				status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify that output file and working directory paths are compatible." ) );
+			}
+		}
 	}
 	
     if ( (WriteHeaderComments != null) && !WriteHeaderComments.equals("") ) {
@@ -159,15 +201,27 @@ throws InvalidCommandParameterException
                     message, "Specify the parameter as " + _False + " or " + _True + "."));
         }
     }
+    
+    if ( (OutputSchemaFormat != null) && !OutputSchemaFormat.equals("")
+    	&& !OutputSchemaFormat.equalsIgnoreCase(_JSONTableSchema) && !OutputSchemaFormat.equalsIgnoreCase(_GoogleBigQuery)) {
+        message = "The OutputSchemaFormat parameter (" + OutputSchemaFormat + ") must be " + _JSONTableSchema +
+        " (default if blank) or " + _GoogleBigQuery + ").";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + _False + " or " + _True + "."));
+    }
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(6);
+	List<String> validList = new ArrayList<String>(8);
 	validList.add ( "OutputFile" );
 	validList.add ( "TableID" );
 	validList.add ( "WriteHeaderComments" );
 	validList.add ( "AlwaysQuoteStrings" );
 	validList.add ( "NewlineReplacement" );
 	validList.add ( "NaNValue" );
+	validList.add ( "OutputSchemaFile" );
+	validList.add ( "OutputSchemaFormat" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -197,9 +251,12 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector();
+	List<File> list = new ArrayList<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
+	}
+	if ( getOutputSchemaFile() != null ) {
+		list.add ( getOutputSchemaFile() );
 	}
 	return list;
 }
@@ -210,6 +267,14 @@ Return the output file generated by this file.  This method is used internally.
 private File getOutputFile ()
 {
 	return __OutputFile_File;
+}
+
+/**
+Return the output schema file generated by this file.  This method is used internally.
+*/
+private File getOutputSchemaFile ()
+{
+	return __OutputSchemaFile_File;
 }
 
 /**
@@ -228,6 +293,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Clear the output file
 	
 	setOutputFile ( null );
+	setOutputSchemaFile ( null );
 	
 	// Check whether the processor wants output files to be created...
 
@@ -290,6 +356,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             NaNValue = "";
         }
     }
+    String OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
+    String OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
+    String outputSchemaFormat = OutputSchemaFormat;
+    if ( (outputSchemaFormat == null) || outputSchemaFormat.isEmpty() ) {
+    	outputSchemaFormat = _JSONTableSchema;
+    }
 
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
@@ -335,12 +407,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		OutputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             	TSCommandProcessorUtil.expandParameterValue(processor, this,OutputFile)) );
+		String outputSchemaFile = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            	TSCommandProcessorUtil.expandParameterValue(processor, this,OutputSchemaFile)) );
 		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
 		warning_count = writeTable ( table, OutputFile_full, WriteHeaderComments_boolean,
 		    AlwaysQuoteStrings_boolean, StringUtil.literalToInternal(newlineReplacement), NaNValue,
-		        warning_level, command_tag, warning_count );
+		    outputSchemaFile, outputSchemaFormat,
+		    warning_level, command_tag, warning_count );
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
+		if ( (outputSchemaFile != null) && !outputSchemaFile.isEmpty() ) {
+			setOutputSchemaFile ( new File(outputSchemaFile));
+		}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table to file \"" + OutputFile_full + "\" (" + e + ").";
@@ -371,6 +450,14 @@ private void setOutputFile ( File file )
 }
 
 /**
+Set the output schema file that is created by this command.  This is only used internally.
+*/
+private void setOutputSchemaFile ( File file )
+{
+	__OutputSchemaFile_File = file;
+}
+
+/**
 Return the string representation of the command.
 @param parameters Command parameters as strings.
 */
@@ -384,6 +471,8 @@ public String toString ( PropList parameters )
 	String AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
 	String NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
 	String NaNValue = parameters.getValue ( "NaNValue" );
+	String OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
+	String OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TableID != null) && (TableID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -421,7 +510,106 @@ public String toString ( PropList parameters )
         }
         b.append ( "NaNValue=\"" + NaNValue + "\"" );
     }
+	if ( (OutputSchemaFile != null) && (OutputSchemaFile.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "OutputSchemaFile=\"" + OutputSchemaFile + "\"" );
+	}
+	if ( (OutputSchemaFormat != null) && (OutputSchemaFormat.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "OutputSchemaFormat=\"" + OutputSchemaFormat + "\"" );
+	}
 	return getCommandName() + "(" + b.toString() + ")";
+}
+
+/**
+ * Write the table schema file using Google Big Query Schema.
+ * See:  https://cloud.google.com/bigquery/docs/reference/rest/v2/tables
+ * @table table to write
+ * @param outputSchemaFile path/name of schema file to write
+ */
+private void writeGoogleBigQueryTableSchema ( DataTable table, String outputSchemaFile ) throws IOException {
+	PrintWriter out = new PrintWriter( new BufferedWriter(new FileWriter(outputSchemaFile)));
+	// Brute force the output.
+	// TODO SAM 2017-01-18 move to a general class later
+	String nl = System.getProperty("line.separator");
+	String i1 = "  ", i2 = "    ", i3 = "      ", i4 = "        ";
+	out.print ( "{" + nl );
+	out.print ( i1 + "\"schema\": {" + nl );
+	out.print ( i2 + "\"fields\": [" + nl );
+	String colName, colDescription, dataTypeSchema;
+	int colType;
+	int irow;
+	TableField field;
+	for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
+		colName = table.getFieldName(icol);
+		// TODO sam 2017-01-18 need to enable
+		//colDescription = table.getFieldDescription(icol);
+		colType = table.getFieldDataType(icol);
+		dataTypeSchema = "STRING"; // default
+		if ( colType == TableField.DATA_TYPE_BOOLEAN ) {
+			dataTypeSchema = "BOOLEAN";
+		}
+		else if ( colType == TableField.DATA_TYPE_DATE ) {
+			dataTypeSchema = "DATETIME";
+		}
+		else if ( colType == TableField.DATA_TYPE_DATETIME ) {
+			// Figure out the most precise date/time
+			int precMin = DateTime.PRECISION_YEAR;
+			Object o;
+			DateTime dt;
+			for ( irow = 0; irow < table.getNumberOfRecords(); irow++ ) {
+				try {
+					o = table.getFieldValue(irow, icol);
+					if ( o != null ) {
+						dt = (DateTime)o;
+						if ( dt.getPrecision() < precMin ) {
+							precMin = dt.getPrecision();
+						}
+					}
+				}
+				catch ( Exception e ) {
+					// Ignore
+				}
+			}
+			if ( precMin >= DateTime.PRECISION_YEAR ) {
+				// Only date
+				dataTypeSchema = "DATE";
+			}
+			else {
+				// Date/time
+				dataTypeSchema = "DATETIME";
+			}
+		}
+		else if ( colType == TableField.DATA_TYPE_DOUBLE ) {
+			dataTypeSchema = "FLOAT";
+		}
+		else if ( colType == TableField.DATA_TYPE_FLOAT ) {
+			dataTypeSchema = "FLOAT";
+		}
+		else if ( colType == TableField.DATA_TYPE_INT ) {
+			dataTypeSchema = "INTEGER";
+		}
+		else if ( colType == TableField.DATA_TYPE_LONG ) {
+			dataTypeSchema = "INTEGER";
+		}
+		else if ( colType == TableField.DATA_TYPE_SHORT ) {
+			dataTypeSchema = "INTEGER";
+		}
+		if ( icol > 0 ) {
+			out.print("," + nl);
+		}
+		out.print(i3 + "{" + nl);
+		out.print(i4 + "\"name\": \"" + colName + "\"" );
+		//out.print(i4 + "\"description\": \"" + colDescription + "\"" );
+		out.print("," + nl + i4 + "\"type\": \"" + dataTypeSchema + "\"" );
+		out.print(nl + i3 + "}");
+	}
+	out.print ( nl + i2 + "]" + nl + i1 + "}" + nl + "}");
+	out.close();
 }
 
 /**
@@ -438,6 +626,7 @@ be quoted when they include the delimiter
 */
 private int writeTable ( DataTable table, String OutputFile, boolean writeHeaderComments,
 	boolean alwaysQuoteStrings, String newlineReplacement, String NaNValue,
+	String outputSchemaFile, String outputSchemaFormat,
 	int warning_level, String command_tag, int warning_count )
 throws IOException
 {	String routine = getClass().getSimpleName() + ".writeTable";
@@ -446,6 +635,7 @@ throws IOException
 	// Clear the output file
 
 	setOutputFile ( null );
+	setOutputSchemaFile ( null );
 
 	// Check whether the processor wants output files to be created...
 
@@ -454,7 +644,7 @@ throws IOException
 
     // Get the comments to add to the top of the file.
 
-    List<String> outputCommentsList = new Vector();
+    List<String> outputCommentsList = new ArrayList<String>();
     if ( writeHeaderComments ) {
         // Get the comments to be written at the top of the file
         // Put the standard header at the top of the file
@@ -480,16 +670,119 @@ throws IOException
 		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
 		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList, "#", alwaysQuoteStrings,
 		    newlineReplacement, NaNValue );
+		if ( (outputSchemaFile != null) && !outputSchemaFile.isEmpty() ) {
+			if ( outputSchemaFormat.equalsIgnoreCase(_GoogleBigQuery) ) {
+				writeGoogleBigQueryTableSchema ( table, outputSchemaFile );
+			}
+			else {
+				writeJSONTableSchema ( table, outputSchemaFile );
+			}
+		}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table to file \"" + OutputFile + "\" (" + e + ")";
 		Message.printWarning ( warning_level, 
 			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Software error - report problem to support." ) );
 	}
 	return warning_count;
+}
+
+/**
+ * Write the table schema file using JSON Table Schema.
+ * See:  http://specs.frictionlessdata.io/json-table-schema/
+ * @table table to write
+ * @param outputSchemaFile path/name of schema file to write
+ */
+private void writeJSONTableSchema ( DataTable table, String outputSchemaFile ) throws IOException {
+	PrintWriter out = new PrintWriter( new BufferedWriter(new FileWriter(outputSchemaFile)));
+	// Brute force the output.
+	// TODO SAM 2017-01-18 move to a general class later
+	String nl = System.getProperty("line.separator");
+	String i1 = "  ", i2 = "    ", i3 = "      ";
+	out.print ( "{" + nl );
+	out.print ( i1 + "\"fields\": [" + nl );
+	String colName, colDescription, dataTypeSchema;
+	int colType;
+	int irow;
+	TableField field;
+	for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
+		colName = table.getFieldName(icol);
+		// TODO sam 2017-01-18 need to enable
+		//colDescription = table.getFieldDescription(icol);
+		colType = table.getFieldDataType(icol);
+		dataTypeSchema = "string"; // default
+		if ( colType == TableField.DATA_TYPE_BOOLEAN ) {
+			dataTypeSchema = "boolean";
+		}
+		else if ( colType == TableField.DATA_TYPE_DATE ) {
+			dataTypeSchema = "datetime";
+		}
+		else if ( colType == TableField.DATA_TYPE_DATETIME ) {
+			// Figure out the most precise date/time
+			int precMin = DateTime.PRECISION_YEAR;
+			Object o;
+			DateTime dt;
+			for ( irow = 0; irow < table.getNumberOfRecords(); irow++ ) {
+				try {
+					o = table.getFieldValue(irow, icol);
+					if ( o != null ) {
+						dt = (DateTime)o;
+						if ( dt.getPrecision() < precMin ) {
+							precMin = dt.getPrecision();
+						}
+					}
+				}
+				catch ( Exception e ) {
+					// Ignore
+				}
+			}
+			if ( precMin == DateTime.PRECISION_YEAR ) {
+				// Only date
+				dataTypeSchema = "gyear";
+			}
+			else if ( precMin == DateTime.PRECISION_MONTH ) {
+				// Only date
+				dataTypeSchema = "gyearmonth";
+			}
+			else if ( precMin == DateTime.PRECISION_DAY ) {
+				// Only date
+				dataTypeSchema = "date";
+			}
+			else {
+				// Includes time
+				dataTypeSchema = "datetime";
+			}
+		}
+		else if ( colType == TableField.DATA_TYPE_DOUBLE ) {
+			dataTypeSchema = "number";
+		}
+		else if ( colType == TableField.DATA_TYPE_FLOAT ) {
+			dataTypeSchema = "number";
+		}
+		else if ( colType == TableField.DATA_TYPE_INT ) {
+			dataTypeSchema = "integer";
+		}
+		else if ( colType == TableField.DATA_TYPE_LONG ) {
+			dataTypeSchema = "integer";
+		}
+		else if ( colType == TableField.DATA_TYPE_SHORT ) {
+			dataTypeSchema = "integer";
+		}
+		if ( icol > 0 ) {
+			out.print("," + nl);
+		}
+		out.print(i2 + "{" + nl);
+		out.print(i3 + "\"name\": \"" + colName + "\"" );
+		//out.print(i3 + "\"description\": \"" + colDescription + "\"" );
+		out.print("," + nl + i3 + "\"type\": \"" + dataTypeSchema + "\"" );
+		out.print(nl + i2 + "}");
+	}
+	out.print ( nl + i1 + "]" + nl + "}");
+	out.close();
 }
 
 }

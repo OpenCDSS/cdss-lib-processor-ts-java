@@ -25,6 +25,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -45,11 +46,16 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
+
+private final String __AddWorkingDirectorySchema = "Add Working Directory (Schema)";
+private final String __RemoveWorkingDirectorySchema = "Remove Working Directory (Schema)";
 	
 private SimpleJButton __browse_JButton = null;
+private SimpleJButton __browse_schema_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SimpleJButton __path_JButton = null;
+private SimpleJButton __path_schema_JButton = null;
 private WriteTableToDelimitedFile_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
@@ -58,6 +64,8 @@ private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 private SimpleJComboBox __AlwaysQuoteStrings_JComboBox = null;
 private JTextField __NewlineReplacement_JTextField = null;
 private JTextField __NaNValue_JTextField = null;
+private JTextField __OutputSchemaFile_JTextField = null;
+private SimpleJComboBox __OutputSchemaFormat_JComboBox = null;
 private String __working_dir = null; // Working directory.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -114,6 +122,39 @@ public void actionPerformed( ActionEvent event )
 			}
 		}
 	}
+	else if ( o == __browse_schema_JButton ) {
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+		JFileChooser fc = null;
+		if ( last_directory_selected != null ) {
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+		}
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
+		}
+		fc.setDialogTitle("Select Schema File to Write");
+	    SimpleFileFilter sff_csv = new SimpleFileFilter("json", "Table Schema File (JSON)");
+	    fc.addChoosableFileFilter(sff_csv);
+		
+		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+			String directory = fc.getSelectedFile().getParent();
+			String filename = fc.getSelectedFile().getName(); 
+			String path = fc.getSelectedFile().getPath(); 
+	
+			if (filename == null || filename.equals("")) {
+				return;
+			}
+	
+			if (path != null) {
+				if ( fc.getFileFilter() == sff_csv ) {
+					// Enforce extension...
+					path = IOUtil.enforceFileExtension(path, "json");
+				}
+				__OutputSchemaFile_JTextField.setText(path );
+				JGUIUtil.setLastFileDialogDirectory( directory);
+				refresh();
+			}
+		}
+	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
@@ -141,6 +182,23 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+	else if ( o == __path_schema_JButton ) {
+		if ( __path_schema_JButton.getText().equals(__AddWorkingDirectorySchema) ) {
+			__OutputSchemaFile_JTextField.setText (
+			IOUtil.toAbsolutePath(__working_dir, __OutputSchemaFile_JTextField.getText() ) );
+		}
+		else if ( __path_schema_JButton.getText().equals(__RemoveWorkingDirectorySchema) ) {
+			try {
+				__OutputSchemaFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __OutputSchemaFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,
+				"WriteTableToDelimitedFile_JDialog", "Error converting schema file to relative path." );
+			}
+		}
+		refresh ();
+	}
 }
 
 /**
@@ -156,6 +214,8 @@ private void checkInput ()
     String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
     String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
     String NaNValue = __NaNValue_JTextField.getText().trim();
+    String OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
+    String OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -176,6 +236,12 @@ private void checkInput ()
     }
     if ( (NaNValue != null) && (NaNValue.length() > 0) ) {
         parameters.set ( "NaNValue", NaNValue );
+    }
+    if ( (OutputSchemaFile != null) && (OutputSchemaFile.length() > 0) ) {
+        parameters.set ( "OutputSchemaFile", OutputSchemaFile );
+    }
+    if ( (OutputSchemaFormat != null) && (OutputSchemaFormat.length() > 0) ) {
+        parameters.set ( "OutputSchemaFormat", OutputSchemaFormat );
     }
 	try {
 	    // This will warn the user...
@@ -199,12 +265,16 @@ private void commitEdits ()
 	String AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
 	String NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
 	String NaNValue = __NaNValue_JTextField.getText().trim();
+    String OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
+    String OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "WriteHeaderComments", WriteHeaderComments );
 	__command.setCommandParameter ( "AlwaysQuoteStrings", AlwaysQuoteStrings );
 	__command.setCommandParameter ( "NewlineReplacement", NewlineReplacement );
 	__command.setCommandParameter ( "NaNValue", NaNValue );
+	__command.setCommandParameter ( "OutputSchemaFile", OutputSchemaFile );
+	__command.setCommandParameter ( "OutputSchemaFormat", OutputSchemaFormat );
 }
 
 /**
@@ -236,6 +306,9 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Double quote characters in data are replaced with \"\" (two double quotes).  Quotes inserted at start and end of line are single."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "A schema file can also be written to provide metadata about the delimited file columns, which can be used by other software."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	 if ( __working_dir != null ) {
      	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -320,6 +393,33 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
          "Optional - value to use for NaN (use " + __command._Blank + " to write a blank)."),
          3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
      
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output schema file to write:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	 __OutputSchemaFile_JTextField = new JTextField ( 50 );
+	 __OutputSchemaFile_JTextField.setToolTipText("Specify the path to the output schema file or use ${Property} notation");
+	 __OutputSchemaFile_JTextField.addKeyListener ( this );
+     JGUIUtil.addComponent(main_JPanel, __OutputSchemaFile_JTextField,
+		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	 __browse_schema_JButton = new SimpleJButton ( "Browse", this );
+     JGUIUtil.addComponent(main_JPanel, __browse_schema_JButton,
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+     
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output schema format:"), 
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __OutputSchemaFormat_JComboBox = new SimpleJComboBox ( false );
+     List<String> schemaFormatChoices = new ArrayList<String>();
+     schemaFormatChoices.add("");
+     schemaFormatChoices.add(__command._GoogleBigQuery);
+     schemaFormatChoices.add(__command._JSONTableSchema);
+     __OutputSchemaFormat_JComboBox.setData ( schemaFormatChoices );
+     __OutputSchemaFormat_JComboBox.select(0);
+     __OutputSchemaFormat_JComboBox.addItemListener (this);
+     JGUIUtil.addComponent(main_JPanel, __OutputSchemaFormat_JComboBox,
+         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Optional - schema format (default=" + __command._JSONTableSchema + ")."),
+         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
@@ -336,9 +436,11 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
+		// Add the buttons to allow conversion to/from relative path...
 		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory, this);
 		button_JPanel.add ( __path_JButton );
+		__path_schema_JButton = new SimpleJButton(__RemoveWorkingDirectorySchema, this);
+		button_JPanel.add ( __path_schema_JButton );
 	}
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
@@ -404,6 +506,8 @@ private void refresh ()
     String AlwaysQuoteStrings = "";
     String NewlineReplacement = "";
     String NaNValue = "";
+    String OutputSchemaFile = "";
+    String OutputSchemaFormat = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -416,6 +520,8 @@ private void refresh ()
         AlwaysQuoteStrings = parameters.getValue ( "AlwaysQuoteStrings" );
         NewlineReplacement = parameters.getValue ( "NewlineReplacement" );
         NaNValue = parameters.getValue ( "NaNValue" );
+        OutputSchemaFile = parameters.getValue ( "OutputSchemaFile" );
+        OutputSchemaFormat = parameters.getValue ( "OutputSchemaFormat" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -474,6 +580,9 @@ private void refresh ()
         if (NaNValue != null) {
             __NaNValue_JTextField.setText(NaNValue);
         }
+		if ( OutputSchemaFile != null ) {
+			__OutputSchemaFile_JTextField.setText (OutputSchemaFile);
+		}
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -482,6 +591,8 @@ private void refresh ()
     AlwaysQuoteStrings = __AlwaysQuoteStrings_JComboBox.getSelected();
     NewlineReplacement = __NewlineReplacement_JTextField.getText().trim();
     NaNValue = __NaNValue_JTextField.getText().trim();
+    OutputSchemaFile = __OutputSchemaFile_JTextField.getText().trim();
+    OutputSchemaFormat = __OutputSchemaFormat_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
 	if ( TableID != null ) {
@@ -495,6 +606,10 @@ private void refresh ()
     }
     parameters.add("NewlineReplacement=" + NewlineReplacement );
     parameters.add("NaNValue=" + NaNValue );
+    parameters.add ( "OutputSchemaFile=" + OutputSchemaFile );
+    if ( OutputSchemaFormat != null ) {
+        parameters.add ( "OutputSchemaFormat=" + OutputSchemaFormat );
+    }
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {
@@ -509,6 +624,21 @@ private void refresh ()
 		}
 		else {
 		    __path_JButton.setText ( __AddWorkingDirectory );
+		}
+	}
+	if ( (OutputSchemaFile == null) || (OutputSchemaFile.length() == 0) ) {
+		if ( __path_schema_JButton != null ) {
+			__path_schema_JButton.setEnabled ( false );
+		}
+	}
+	if ( __path_schema_JButton != null ) {
+		__path_schema_JButton.setEnabled ( true );
+		File f = new File ( OutputSchemaFile );
+		if ( f.isAbsolute() ) {
+			__path_schema_JButton.setText ( __RemoveWorkingDirectorySchema );
+		}
+		else {
+			__path_schema_JButton.setText ( __AddWorkingDirectorySchema );
 		}
 	}
 }

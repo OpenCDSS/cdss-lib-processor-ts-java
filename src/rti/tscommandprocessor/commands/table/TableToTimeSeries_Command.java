@@ -413,8 +413,8 @@ throws InvalidCommandParameterException
         */
     }
     
-    List<String> valueColumns = new Vector<String>();
-    List<String> valueColumnsRuntime = new Vector();
+    List<String> valueColumns = new ArrayList<String>();
+    List<String> valueColumnsRuntime = new ArrayList<String>();
     setValueColumnsRuntime ( valueColumnsRuntime );
     if ( (ValueColumn == null) || (ValueColumn.length() == 0) ) {
         message = "The value column(s) must be specified.";

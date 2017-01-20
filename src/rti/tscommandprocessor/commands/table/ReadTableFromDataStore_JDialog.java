@@ -33,7 +33,6 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMIUtil;

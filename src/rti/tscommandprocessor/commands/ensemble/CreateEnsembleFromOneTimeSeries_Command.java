@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ensemble;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -8,11 +9,9 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
-
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSUtil_CreateTracesFromTimeSeries;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -109,9 +108,9 @@ throws InvalidCommandParameterException
                         message, "Specify a valid interval (e.g., 1Year)." ) );
     }
    
-    if (    (InputStart != null) && !InputStart.equals("") &&
+    if ( (InputStart != null) && !InputStart.equals("") &&
             !InputStart.equalsIgnoreCase("InputStart") &&
-            !InputStart.equalsIgnoreCase("InputEnd") ) {
+            !InputStart.equalsIgnoreCase("InputEnd") && (InputStart.indexOf("${") < 0) ) {
         try {   DateTime.parse(InputStart);
         }
         catch ( Exception e ) {
@@ -124,7 +123,7 @@ throws InvalidCommandParameterException
     }
     if (    (InputEnd != null) && !InputEnd.equals("") &&
         !InputEnd.equalsIgnoreCase("InputStart") &&
-        !InputEnd.equalsIgnoreCase("InputEnd") ) {
+        !InputEnd.equalsIgnoreCase("InputEnd") && (InputEnd.indexOf("${") < 0) ) {
         try {   DateTime.parse( InputEnd );
         }
         catch ( Exception e ) {
@@ -189,18 +188,18 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "EnsembleName" );
-    valid_Vector.add ( "Alias" );
-	valid_Vector.add ( "TraceLength" );
-	valid_Vector.add ( "ReferenceDate" );
-	valid_Vector.add ( "OutputYearType" );
-    valid_Vector.add ( "ShiftDataHow" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(10);
+    validList.add ( "TSID" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "EnsembleName" );
+    validList.add ( "Alias" );
+	validList.add ( "TraceLength" );
+	validList.add ( "ReferenceDate" );
+	validList.add ( "OutputYearType" );
+    validList.add ( "ShiftDataHow" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -315,15 +314,34 @@ CommandWarningException, CommandException
 
 	PropList parameters = getCommandParameters();
 	String TSID = parameters.getValue ( "TSID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String EnsembleName = parameters.getValue ( "EnsembleName" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (EnsembleName != null) && (EnsembleName.indexOf("${") >= 0) ) {
+		EnsembleName = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleName);
+	}
     if ( EnsembleName == null ) {
         EnsembleName = "";
     }
     String Alias = parameters.getValue ( "Alias" );
     if ( Alias == null ) {
-        Alias = "";
+        Alias = ""; // Alias expanded below
     }
+	String InputStart = parameters.getValue("InputStart");
+	if ( (InputStart == null) || InputStart.isEmpty() ) {
+		InputStart = "${InputStart}"; // Global default
+	}
+	DateTime InputStart_DateTime = null;
+	String InputEnd = parameters.getValue("InputEnd");
+	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
+		InputEnd = "${InputEnd}"; // Global default
+	}
+	DateTime InputEnd_DateTime = null;
     String TraceLength = parameters.getValue ( "TraceLength" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String OutputYearType = parameters.getValue( "OutputYearType" );
@@ -407,105 +425,26 @@ CommandWarningException, CommandException
         }
     }
     
-    String InputStart = parameters.getValue ( "InputStart" );
-    DateTime InputStart_DateTime = null;
-    if ( (InputStart != null) && (InputStart.length() > 0) ) {
-        request_params = new PropList ( "" );
-        request_params.set ( "DateTime", InputStart );
-        try {
-            bean = processor.processRequest( "DateTime", request_params);
-        }
-        catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputStart + ") from processor.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Report problem to software support." ) );
-        }
-        bean_PropList = bean.getResultsPropList();
-        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-        if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + InputStart + "\") returned from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Verify that a valid InputStart string has been specified." ) );
-        }
-        else {  InputStart_DateTime = (DateTime)prop_contents;
-        }
-    }
-    else {  // Get from the processor...
-        try {
-            Object o = processor.getPropContents ( "InputStart" );
-            if ( o != null ) {
-                InputStart_DateTime = (DateTime)o;
-            }
-        }
-        catch ( Exception e ) {
-            message = "Error requesting InputStart from processor.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report problem to software support." ) );
-        }
-    }
-    String InputEnd = parameters.getValue ( "InputEnd" );
-    DateTime InputEnd_DateTime = null;
-    if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-        request_params = new PropList ( "" );
-        request_params.set ( "DateTime", InputEnd );
-        try {
-            bean = processor.processRequest( "DateTime", request_params);
-        }
-        catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputEnd + ") from processor.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report problem to software support." ) );
-        }
-        bean_PropList = bean.getResultsPropList();
-        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-        if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + InputEnd + ") returned from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Verify that a valid InputEnd has been specified." ) );
-        }
-        else {  InputEnd_DateTime = (DateTime)prop_contents;
-        }
-    }
-    else {  // Get from the processor...
-        try { Object o = processor.getPropContents ( "InputEnd" );
-            if ( o != null ) {
-                InputEnd_DateTime = (DateTime)o;
-            }
-        }
-        catch ( Exception e ) {
-            // Not fatal, but of use to developers.
-            message = "Error requesting InputEnd from processor.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report problem to software support." ) );
-        }
-    }
+	// Input period...
+    
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+	}
 	
 	// Now try to process.
     

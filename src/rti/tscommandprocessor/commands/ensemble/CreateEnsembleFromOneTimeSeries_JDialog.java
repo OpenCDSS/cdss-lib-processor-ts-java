@@ -22,14 +22,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
@@ -244,14 +246,14 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create an ensemble of time series traces from a single time series, for example to split the " +
 		"time series into overlapping historical traces."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Each trace will start on the reference date and will be as long as specified (TraceLength)."),
+		"Each trace will start on the reference date within the year and will be as long as specified (TraceLength)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Each trace will have the properties of the original time series with sequence numbers set to the input year."),
@@ -268,6 +270,8 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "If NOT shifted, each trace will start on the reference date, but year will vary with the data."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,
 		new JLabel ( "Time series from which to create ensemble:"),
@@ -276,9 +280,12 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     if ( tsids == null ) {
         // User will not be able to select anything.
-        tsids = new Vector();
+        tsids = new ArrayList<String>();
+        // Add a blank
+        tsids.add("");
     }
-    __TSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     __TSID_JComboBox.setData ( tsids );
     __TSID_JComboBox.addKeyListener ( this );
     __TSID_JComboBox.addActionListener ( this );
@@ -288,6 +295,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -295,17 +303,19 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
-        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=full period)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __EnsembleID_JTextField = new JTextField ( "", 20 );
+    __EnsembleID_JTextField.setToolTipText("New ensemble ID, can specify with ${Property} notation");
     __EnsembleID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -315,6 +325,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __EnsembleName_JTextField = new JTextField ( "", 30 );
+    __EnsembleName_JTextField.setToolTipText("New ensemble name, can specify with ${Property} notation");
     __EnsembleName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -334,6 +345,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Trace length:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TraceLength_JTextField = new JTextField ( "1Year", 10 );
+	__TraceLength_JTextField.setToolTipText("Trace length using time series interval notation");
 	__TraceLength_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __TraceLength_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -343,6 +355,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Reference date:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ReferenceDate_JTextField = new JTextField ( 10 );
+	__ReferenceDate_JTextField.setToolTipText("Date at which to shift all ensemble traces to align start, YYYY-MM-DD for daily data");
 	__ReferenceDate_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __ReferenceDate_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -481,13 +494,20 @@ private void refresh ()
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
                 __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+        	// Automatically add to the list after the blank...
             if ( (TSID != null) && (TSID.length() > 0) ) {
-                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+            	if ( __TSID_JComboBox.getItemCount() <= 1 ) {
+            		__TSID_JComboBox.add(TSID);
+            	}
+            	else {
+            		__TSID_JComboBox.insertItemAt ( TSID, 1 );
+            	}
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
-            else {  // Do not select anything...
+            else {
+            	// Do not select anything...
             }
         }
         if ( InputStart != null ) {

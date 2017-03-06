@@ -410,7 +410,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeriesFromEnsemble_Comm
         0, ++yDist, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Distribution_JComboBox = new SimpleJComboBox(false);
     __Distribution_JComboBox.setToolTipText(
-        "Distribution is used with PlottingPosition*, *ExceedanceProbability statistics.  Default is " + DistributionType.SAMPLE_DATA + ".");
+        "Distribution is used with PlottingPosition*, *ExceedanceProbability statistics.  Default is " + DistributionType.SAMPLE + ".");
     List<String> distributions = tsu.getDistributionChoicesAsStrings();
     distributions.add(0,"");
     __Distribution_JComboBox.setData ( distributions );

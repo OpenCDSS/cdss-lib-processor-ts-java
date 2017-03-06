@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.shef;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
@@ -8,10 +9,8 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.ShefATS;
 import RTi.TS.TS;
-
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -32,9 +31,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the WriteSHEF() command.
-</p>
 */
 public class WriteSHEF_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -70,7 +67,7 @@ Check the command parameter for valid values, combination, etc.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag, int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	//String TSList = parameters.getValue ( "TSList" );
 	//String TSID = parameters.getValue ( "TSID" );
@@ -91,7 +88,7 @@ throws InvalidCommandParameterException
 	
 	// Parse and check the data type to PE lookup.  Save the results for use later.
 	__DataTypePELookup.clear();
-	if ( (DataTypePELookup != null) && !DataTypePELookup.equals("") ) {
+	if ( (DataTypePELookup != null) && !DataTypePELookup.equals("") && (DataTypePELookup.indexOf("${") < 0) ) {
 		List pairs = StringUtil.breakStringList(DataTypePELookup,";",0);
 	    int pairsSize = 0;
 	    if ( pairs != null ) {
@@ -127,7 +124,7 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an output file." ) );
 	}
-	else {
+	else if (OutputFile.indexOf("${") < 0) {
 	    String working_dir = null;		
 			try { Object o = processor.getPropContents ( "WorkingDir" );
 				// Working directory is available so use it...
@@ -180,7 +177,7 @@ throws InvalidCommandParameterException
 
 	if ( (OutputStart != null) && !OutputStart.equals("") &&
 		!OutputStart.equalsIgnoreCase("OutputStart") &&
-		!OutputStart.equalsIgnoreCase("OutputEnd") ) {
+		!OutputStart.equalsIgnoreCase("OutputEnd") && (OutputStart.indexOf("${") < 0) ) {
 		try {
 		    DateTime.parse(OutputStart);
 		}
@@ -194,7 +191,7 @@ throws InvalidCommandParameterException
 	}
 	if ( (OutputEnd != null) && !OutputEnd.equals("") &&
 		!OutputEnd.equalsIgnoreCase("OutputStart") &&
-		!OutputEnd.equalsIgnoreCase("OutputEnd") ) {
+		!OutputEnd.equalsIgnoreCase("OutputEnd") && (OutputEnd.indexOf("${") < 0)) {
 		try {
 		    DateTime.parse( OutputEnd );
 		}
@@ -218,20 +215,21 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-	valid_Vector.add ( "TSList" );
-	valid_Vector.add ( "TSID" );
-	valid_Vector.add ( "DataTypePELookup" );
-	valid_Vector.add ( "OutputFile" );
-    valid_Vector.add ( "Append" );
-	valid_Vector.add ( "OutputStart" );
-	valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "TimeZone" );
-    valid_Vector.add ( "ObservationTime" );
-    valid_Vector.add ( "CreationDate" );
-    valid_Vector.add ( "Duration" );
-	valid_Vector.add ( "Precision" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List validList = new ArrayList<String>(13);
+	validList.add ( "TSList" );
+	validList.add ( "TSID" );
+	validList.add ( "LocationID" );
+	validList.add ( "DataTypePELookup" );
+	validList.add ( "OutputFile" );
+	validList.add ( "Append" );
+	validList.add ( "OutputStart" );
+	validList.add ( "OutputEnd" );
+	validList.add ( "TimeZone" );
+	validList.add ( "ObservationTime" );
+	validList.add ( "CreationDate" );
+	validList.add ( "Duration" );
+	validList.add ( "Precision" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -307,11 +305,28 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "WriteSHEF_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int log_level = 3;	// Warning level for non-user log messages
+
+	CommandProcessor processor = getCommandProcessor();
+	CommandStatus status = getCommandStatus();
+	CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	// Clear the output file
 	
@@ -319,7 +334,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	// Check whether the processor wants output files to be created...
 
-	CommandProcessor processor = getCommandProcessor();
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
 			Message.printStatus ( 2, routine,
 			"Skipping \"" + toString() + "\" because output is not being created." );
@@ -328,7 +342,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
-	String OutputFile = parameters.getValue ( "OutputFile" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && !TSID.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
+	String LocationID = parameters.getValue ( "LocationID" );
+	if ( (LocationID != null) && (LocationID.indexOf("${") >= 0) && !LocationID.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		LocationID = TSCommandProcessorUtil.expandParameterValue(processor, this, LocationID);
+	}
+	String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
     String Append = parameters.getValue ( "Append" );
     if ( (Append == null) || Append.equals("") ) {
         Append = _False; // Default
@@ -337,20 +358,37 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( Append.equalsIgnoreCase(_True) ) {
         Append_boolean = true;
     }
+    String OutputStart = parameters.getValue ( "OutputStart" ); // Expand below
+    if ( (OutputStart == null) || OutputStart.isEmpty() ) {
+    	OutputStart = "${OutputStart}"; // Default global property
+    }
+    String OutputEnd = parameters.getValue ( "OutputEnd" ); // Expand below
+    if ( (OutputEnd == null) || OutputEnd.isEmpty() ) {
+    	OutputEnd = "${OutputEnd}"; // Default global property
+    }
     String TimeZone = parameters.getValue ( "TimeZone" );
+	if ( (TimeZone != null) && (TimeZone.indexOf("${") >= 0) && !TimeZone.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		TimeZone = TSCommandProcessorUtil.expandParameterValue(processor, this, TimeZone);
+	}
     String ObservationTime = parameters.getValue ( "ObservationTime" );
+	if ( (ObservationTime != null) && (ObservationTime.indexOf("${") >= 0) && !ObservationTime.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		ObservationTime = TSCommandProcessorUtil.expandParameterValue(processor, this, ObservationTime);
+	}
     String CreationDate = parameters.getValue ( "CreationDate" );
+	if ( (CreationDate != null) && (CreationDate.indexOf("${") >= 0) && !CreationDate.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		CreationDate = TSCommandProcessorUtil.expandParameterValue(processor, this, CreationDate);
+	}
     String Duration = parameters.getValue ( "Duration" );
+	if ( (Duration != null) && (Duration.indexOf("${") >= 0) && !Duration.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
+		Duration = TSCommandProcessorUtil.expandParameterValue(processor, this, Duration);
+	}
     String Precision = parameters.getValue ( "Precision" );
     int Precision_int = -1; // Default
     if ( StringUtil.isInteger(Precision) ) {
         Precision_int = Integer.parseInt(Precision);
     }
-	
-	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
-
-	// Get the time series to process...
+    
+    // Get the time series to process...
 	
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
@@ -369,7 +407,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
 		message = "Unable to find time series to write using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( log_level,
@@ -396,123 +434,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
 
-	String OutputStart = parameters.getValue ( "OutputStart" );
 	DateTime OutputStart_DateTime = null;
-	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	DateTime OutputEnd_DateTime = null;
-
-	if ( (OutputStart != null) && !OutputStart.equals("") ) {
-		try {
-    		request_params = new PropList ( "" );
-    		request_params.set ( "DateTime", OutputStart );
-    		bean = null;
-    		try {
-                bean = processor.processRequest( "DateTime", request_params);
-    		}
-    		catch ( Exception e ) {
-    			message = "Error requesting OutputStart DateTime(DateTime=" + OutputStart + ") from processor.";
-    			Message.printWarning(log_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
-    			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-    				message, "Report to software support." ) );
-    			throw new InvalidCommandParameterException ( message );
-    		}
-    
-    		bean_PropList = bean.getResultsPropList();
-    		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-    		if ( prop_contents == null ) {
-    			message = "Null value for OutputStart DateTime(DateTime=" +
-    			OutputStart + "\") returned from processor.";
-    			Message.printWarning(log_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
-    			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-    				message, "Report to software support." ) );
-    			throw new InvalidCommandParameterException ( message );
-    		}
-    		else {
-    		    OutputStart_DateTime = (DateTime)prop_contents;
-    		}
-    	}
-    	catch ( Exception e ) {
-    		message = "OutputStart \"" + OutputStart + "\" is invalid.";
-    		Message.printWarning(warning_level,
-    			MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
-    		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-    			message, "Specify a valid output start date/time." ) );
-    		throw new InvalidCommandParameterException ( message );
-    	}
+	
+	try {
+		OutputStart_DateTime = TSCommandProcessorUtil.getDateTime ( OutputStart, "OutputStart", processor,
+			status, warning_level, command_tag );
 	}
-	else {
-	    // Get from the processor...
-		try {
-		    Object o = processor.getPropContents ( "OutputStart" );
-			if ( o != null ) {
-				OutputStart_DateTime = (DateTime)o;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputStart from processor - not using.";
-			Message.printDebug(10, routine, message );
-		}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
 	}
-	if ( (OutputEnd != null) && !OutputEnd.equals("") ) {
-		try {
-			request_params = new PropList ( "" );
-			request_params.set ( "DateTime", OutputEnd );
-			bean = null;
-			try {
-			    bean = processor.processRequest( "DateTime", request_params);
-			}
-			catch ( Exception e ) {
-				message = "Error requesting OutputEnd DateTime(DateTime=" +	OutputEnd + ") from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
-				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "Report problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-
-			bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
-				message = "Null value for OutputEnd DateTime(DateTime=" + OutputEnd +") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
-				status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "Report problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {
-			    OutputEnd_DateTime = (DateTime)prop_contents;
-			}
-		}
-		catch ( Exception e ) {
-			message = "OutputEnd \"" + OutputEnd + "\" is invalid.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-				message, "Specify a valid output start date/time." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
+	try {
+		OutputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( OutputEnd, "OutputEnd", processor,
+			status, warning_level, command_tag );
 	}
-	else {
-	    // Get from the processor...
-		try {
-		    Object o = processor.getPropContents ( "OutputEnd" );
-			if ( o != null ) {
-				OutputEnd_DateTime = (DateTime)o;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting OutputEnd from processor - not using.";
-			Message.printDebug(10, routine, message );
-		}
+	catch ( InvalidCommandParameterException e ) {
+		// Warning will have been added above...
+		++warning_count;
 	}
-
-	//String Precision = parameters.getValue ( "Precision" );
-	//String MissingValue = parameters.getValue ( "MissingValue" );
 	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -526,7 +466,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String OutputFile_full = OutputFile;
 	try {
 		OutputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile));
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            	TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFile)));
 		Message.printStatus ( 2, routine,"Writing SHEF file \"" + OutputFile_full + "\"" );
 		
 		// Get the comments to add to the top of the file.
@@ -564,12 +505,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
             }
             List Duration_Vector = null;
-            List AltID_Vector = null;
+            List<String> AltIDList = new ArrayList<String>(tslist.size());
+            for ( TS ts : tslist ) {
+            	// Add identifier for output, same as time series location ID by default...
+            	String locationID = ts.getLocation();
+            	// If specified as a property, expand here
+            	if ( (LocationID != null) && !LocationID.isEmpty() ) { 
+            		locationID = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, LocationID, status, commandPhase);
+            	}
+            	AltIDList.add(locationID);
+            }
             // TODO SAM 2009-04-22 Why is this needed?
             int hourMax = 24;
             ShefATS.writeTimeSeriesList ( tslist,
                 OutputFile_full, Append_boolean, OutputStart_DateTime, OutputEnd_DateTime,
-                units_Vector, PE_Vector, Duration_Vector, AltID_Vector, TimeZone, ObservationTime,
+                units_Vector, PE_Vector, Duration_Vector, AltIDList, TimeZone, ObservationTime,
                 CreationDate, Duration, hourMax, Precision_int );
 			// Save the output file name...
 			setOutputFile ( new File(OutputFile_full));
@@ -614,6 +564,7 @@ public String toString ( PropList parameters )
 	}
 	String TSList = parameters.getValue("TSList");
 	String TSID = parameters.getValue("TSID");
+	String LocationID = parameters.getValue("LocationID");
 	String DataTypePELookup = parameters.getValue("DataTypePELookup");
 	String OutputFile = parameters.getValue("OutputFile");
 	String Append = parameters.getValue("Append");
@@ -633,6 +584,12 @@ public String toString ( PropList parameters )
 			b.append ( "," );
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
+	}
+	if ( (LocationID != null) && (LocationID.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "LocationID=\"" + LocationID + "\"" );
 	}
     if ( (DataTypePELookup != null) && (DataTypePELookup.length() > 0) ) {
         if ( b.length() > 0 ) {

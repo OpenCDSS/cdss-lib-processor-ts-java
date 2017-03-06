@@ -19,8 +19,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -47,30 +50,31 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 
-private SimpleJButton	__browse_JButton = null,// Button to browse for file
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and absolute paths
-private WriteSHEF_Command __command = null;	// Command to edit
-private SimpleJComboBox	__TSList_JComboBox = null; // Indicate how to get time series list.
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
+private WriteSHEF_Command __command = null;
+private JTabbedPane __main_JTabbedPane = null;
+private SimpleJComboBox	__TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
-private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
+private SimpleJComboBox	__TSID_JComboBox = null;
+private JTextField __LocationID_JTextField = null;
 private JTextArea __DataTypePELookup_JTextArea = null;
-private JTextField __OutputFile_JTextField = null;
-private SimpleJComboBox __Append_JComboBox = null;
-private JTextField __OutputStart_JTextField = null;
-private JTextField __OutputEnd_JTextField = null;
 private JTextField __TimeZone_JTextField = null;
 private JTextField __ObservationTime_JTextField = null;
 private JTextField __CreationDate_JTextField = null;
 private JTextField __Duration_JTextField = null;
 private JTextField __Precision_JTextField = null;
+private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __Append_JComboBox = null;
+private JTextField __OutputStart_JTextField = null;
+private JTextField __OutputEnd_JTextField = null;
 // TODO SAM 2007-12-10 Evaluate if other parameters are needed like the following
 //private JTextField __MissingValue_JTextField = null; // Missing value for output
-//private JTextField __Precision_JTextField = null; // Precision for output
-private JTextArea __command_JTextArea=null;// Command as JTextField
-private String __working_dir = null;	// Working directory.
-private boolean __error_wait = false;	// Is there an error that needs to be cleared up or Cancel?
+private JTextArea __command_JTextArea=null;
+private String __working_dir = null; // Working directory.
+private boolean __error_wait = false; // Is there an error that needs to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
@@ -183,6 +187,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
+	String LocationID = __LocationID_JTextField.getText().trim();
 	String DataTypePELookup = __DataTypePELookup_JTextArea.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
@@ -199,6 +204,9 @@ private void checkInput ()
 	}
 	if ( TSID.length() > 0 ) {
 		props.set ( "TSID", TSID );
+	}
+	if ( LocationID.length() > 0 ) {
+		props.set ( "LocationID", LocationID );
 	}
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
@@ -247,6 +255,7 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
+	String LocationID = __LocationID_JTextField.getText().trim();
 	String DataTypePELookup = __DataTypePELookup_JTextArea.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
@@ -259,6 +268,7 @@ private void commitEdits ()
     String Precision = __Precision_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
+	__command.setCommandParameter ( "LocationID", LocationID );
 	__command.setCommandParameter ( "DataTypePELookup", DataTypePELookup );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Append", Append );
@@ -269,23 +279,6 @@ private void commitEdits ()
     __command.setCommandParameter ( "CreationDate", CreationDate );
     __command.setCommandParameter ( "Duration", Duration );
 	__command.setCommandParameter ( "Precision", Precision );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
-	__Precision_JTextField = null;
-	__command = null;
-	__browse_JButton = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__working_dir = null;
-	super.finalize ();
 }
 
 /**
@@ -307,153 +300,214 @@ private void initialize ( JFrame parent, WriteSHEF_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write time series to a Standard Hydrologic Exchange Format (SHEF) file - " +
+		"Write time series to a Standard Hydrologic Exchange Format (SHEF) .A format file - " +
 		"refer to SHEF documentation for data format and nomenclature details."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"It is recommended that the file name be relative to the working directory."),
+		"A sample record is as follows:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    .A loc1 20071031 PS DH2400/DUE/QI 5.00"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+	    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     
+    // Panel for input time series
+    int yInputTS = -1;
+    JPanel inputTS_JPanel = new JPanel();
+    inputTS_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Input Time Series", inputTS_JPanel );
 
-   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(inputTS_JPanel, new JLabel (
 		"The time series to process are indicated using the TS list."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "The SHEF physical element (PE) code will normally be determined from the operational environment; " +
-    "however, specify the data type to PE lookup information if necessary."),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The observation time, if specified, will be used for all data - specify as an integer or " +
-        "include the character prefix (e.g., DH1200)."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The creation time, if specified, will be used for all data - specify as an integer or " +
-        "include the character prefix (e.g., CD20091231)."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The duration, if specified, will be used for all data - specify as an integer or " +
-        "include the character prefix (e.g., DVH06)."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yInputTS, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(inputTS_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yInputTS, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	
     __TSList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
+    yInputTS = CommandEditorUtil.addTSListToEditorDialogPanel ( this, inputTS_JPanel, __TSList_JComboBox, yInputTS );
     // Remove Ensemble because not supported
     __TSList_JComboBox.remove(TSListType.ENSEMBLE_ID.toString());
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+	__TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"SHEF file to write:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST );
-	__OutputFile_JTextField = new JTextField ( 50 );
-	__OutputFile_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
-		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-	__browse_JButton = new SimpleJButton ( "Browse", this );
-    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    yInputTS = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, inputTS_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yInputTS );
+   	
+    // Panel for SHEF data
+    int ySHEF = -1;
+    JPanel shef_JPanel = new JPanel();
+    shef_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "SHEF Data", shef_JPanel );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append to output?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+	    "The SHEF physical element (PE) code will normally be determined from the operational environment; " +
+	    "however, specify the data type to PE lookup information if necessary."),
+	    0, ++ySHEF, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+        "The observation time, if specified, will be used for all data - specify as an integer or " +
+        "include the character prefix (e.g., DH1200)."),
+        0, ++ySHEF, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+        "The creation time, if specified, will be used for all data - specify as an integer or " +
+        "include the character prefix (e.g., CD20091231)."),
+        0, ++ySHEF, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+        "The duration, if specified, will be used for all data - specify as an integer or " +
+        "include the character prefix (e.g., DVH06)."),
+        0, ++ySHEF, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(shef_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++ySHEF, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(shef_JPanel, new JLabel ( "DataType,PE;DataType,PE;...:"),
+        0, ++ySHEF, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataTypePELookup_JTextArea = new JTextArea ( 4, 55 );
+    __DataTypePELookup_JTextArea.setToolTipText("Specify time series data type and SHEF PE code as DataType,PE;DataType,PE, can use ${Property} notation");
+    __DataTypePELookup_JTextArea.setLineWrap ( true );
+    __DataTypePELookup_JTextArea.setWrapStyleWord ( true );
+    JGUIUtil.addComponent(shef_JPanel, new JScrollPane(__DataTypePELookup_JTextArea),
+        1, ySHEF, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(shef_JPanel, new JLabel ( "Location ID:" ),
+		0, ++ySHEF, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__LocationID_JTextField = new JTextField ( "", 20 );
+	__LocationID_JTextField.setToolTipText("Specify the location ID for output, can use ${Property} and ${ts:Property} notation");
+	__LocationID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(shef_JPanel, __LocationID_JTextField,
+		1, ySHEF, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+		"Optional - location ID for output (default=from time series)."),
+		3, ySHEF, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(shef_JPanel, new JLabel ( "Time zone:" ),
+		0, ++ySHEF, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__TimeZone_JTextField = new JTextField ( "", 20 );
+	__TimeZone_JTextField.setToolTipText("Specify the time zone string for output (no conversion occurs), can use ${Property} notation");
+	__TimeZone_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(shef_JPanel, __TimeZone_JTextField,
+		1, ySHEF, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+		"Optional - time zone for output (default=from time series or Z)."),
+		3, ySHEF, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(shef_JPanel, new JLabel ( "Observation time:" ),
+        0, ++ySHEF, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ObservationTime_JTextField = new JTextField ( "", 20 );
+    __ObservationTime_JTextField.setToolTipText("Specify the observation time, can use ${Property} notation");
+    __ObservationTime_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(shef_JPanel, __ObservationTime_JTextField,
+        1, ySHEF, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+        "Optional - observation time (default=from data)."),
+        3, ySHEF, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(shef_JPanel, new JLabel ( "Creation date:" ),
+        0, ++ySHEF, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CreationDate_JTextField = new JTextField ( "", 20 );
+    __CreationDate_JTextField.setToolTipText("Specify the creation date, can use ${Property} notation");
+    __CreationDate_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(shef_JPanel, __CreationDate_JTextField,
+        1, ySHEF, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+        "Optional - creation date (default=not used)."),
+        3, ySHEF, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(shef_JPanel, new JLabel ( "Duration:" ),
+        0, ++ySHEF, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Duration_JTextField = new JTextField ( "", 20 );
+    __Duration_JTextField.setToolTipText("Specify the duration, can use ${Property} notation");
+    __Duration_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(shef_JPanel, __Duration_JTextField,
+        1, ySHEF, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+        "Optional - duration (default=determined from time series if irregular)."),
+        3, ySHEF, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(shef_JPanel, new JLabel ("Output precision:" ),
+		0, ++ySHEF, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Precision_JTextField = new JTextField ( "", 20 );
+	__Precision_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(shef_JPanel, __Precision_JTextField,
+		1, ySHEF, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(shef_JPanel, new JLabel (
+		"Optional - digits after decimal (default=from units, or 2)."),
+		3, ySHEF, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for output
+    int yOut = -1;
+    JPanel out_JPanel = new JPanel();
+    out_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Output", out_JPanel );
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+	    "Specify the output file and period to write."),
+	    0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+		"It is recommended that the file name be relative to the working directory."),
+		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	if ( __working_dir != null ) {
+        JGUIUtil.addComponent(out_JPanel, new JLabel (
+		"The working directory is: " + __working_dir ), 
+		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	}
+	JGUIUtil.addComponent(out_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(out_JPanel, new JLabel (	"SHEF file to write:" ), 
+		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST );
+	__OutputFile_JTextField = new JTextField ( 50 );
+	__OutputFile_JTextField.setToolTipText("Specify the output file, can use ${Property} notation");
+	__OutputFile_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(out_JPanel, __OutputFile_JTextField,
+		1, yOut, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	__browse_JButton = new SimpleJButton ( "Browse", this );
+    JGUIUtil.addComponent(out_JPanel, __browse_JButton,
+		6, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Append to output?:"),
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Append_JComboBox = new SimpleJComboBox ( false );
     __Append_JComboBox.addItem ( "" );  // Default
     __Append_JComboBox.addItem ( __command._False );
     __Append_JComboBox.addItem ( __command._True );
     __Append_JComboBox.select ( 0 );
     __Append_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(out_JPanel, __Append_JComboBox,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
         "Optional - append to command file? (default=" + __command._False + ")."), 
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "DataType,PE;DataType,PE;...:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataTypePELookup_JTextArea = new JTextArea ( 4, 55 );
-    __DataTypePELookup_JTextArea.setLineWrap ( true );
-    __DataTypePELookup_JTextArea.setWrapStyleWord ( true );
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__DataTypePELookup_JTextArea),
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        3, yOut, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel ("Output start:"), 
+		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputStart_JTextField = new JTextField (20);
+    __OutputStart_JTextField.setToolTipText("Specify the output start using a date/time string or ${Property} notation");
 	__OutputStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
-		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(out_JPanel, __OutputStart_JTextField,
+		1, yOut, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
 		"Optional - default is all data or global output start."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		3, yOut, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Output end:"), 
+		0, ++yOut, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputEnd_JTextField = new JTextField (20);
+	__OutputEnd_JTextField.setToolTipText("Specify the output end using a date/time string or ${Property} notation");
 	__OutputEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(out_JPanel, __OutputEnd_JTextField,
+		1, yOut, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
 		"Optional - default is all data or global output end."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time zone:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TimeZone_JTextField = new JTextField ( "", 20 );
-	__TimeZone_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __TimeZone_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - time zone for output (default=from time series or Z)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Observation time:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ObservationTime_JTextField = new JTextField ( "", 20 );
-    __ObservationTime_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ObservationTime_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - observation time (default=from data)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Creation date:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __CreationDate_JTextField = new JTextField ( "", 20 );
-    __CreationDate_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __CreationDate_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - creation date (default=not used)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Duration:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Duration_JTextField = new JTextField ( "", 20 );
-    __Duration_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Duration_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - duration (default=determined from time series if irregular)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output precision:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Precision_JTextField = new JTextField ( "", 20 );
-	__Precision_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - digits after decimal (default=from units, or 2)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		3, yOut, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -533,9 +587,10 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WriteSHEF_JDialog.refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
 	String TSList = "";
 	String TSID = "";
+	String LocationID = "";
 	String DataTypePELookup = "";
 	String OutputFile = "";
 	String Append = "";
@@ -553,6 +608,7 @@ private void refresh ()
 		props = __command.getCommandParameters();
 		TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
+		LocationID = props.getValue ( "LocationID" );
 		DataTypePELookup = props.getValue ( "DataTypePELookup" );
 		OutputFile = props.getValue("OutputFile");
 		Append = props.getValue ( "Append" );
@@ -599,6 +655,9 @@ private void refresh ()
 			// the time series is being used...
 			TSID = null;
 		}
+        if ( LocationID != null ) {
+            __LocationID_JTextField.setText( LocationID );
+        }
         if ( DataTypePELookup != null ) {
             __DataTypePELookup_JTextArea.setText( DataTypePELookup );
         }
@@ -650,6 +709,7 @@ private void refresh ()
 	else {
 	    TSID = "";
 	}
+	LocationID = __LocationID_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Append = __Append_JComboBox.getSelected();
 	OutputStart = __OutputStart_JTextField.getText().trim();
@@ -662,6 +722,7 @@ private void refresh ()
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
+	props.add ( "LocationID=" + LocationID );
 	props.add ( "DataTypePELookup=" + DataTypePELookup );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "Append=" + Append );

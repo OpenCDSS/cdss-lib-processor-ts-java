@@ -407,9 +407,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		OutputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             	TSCommandProcessorUtil.expandParameterValue(processor, this,OutputFile)) );
-		String outputSchemaFile = IOUtil.verifyPathForOS(
+		String outputSchemaFile = null;
+		if ( (OutputSchemaFile != null) && !OutputSchemaFile.isEmpty() ) {
+			outputSchemaFile = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             	TSCommandProcessorUtil.expandParameterValue(processor, this,OutputSchemaFile)) );
+		}
 		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
 		warning_count = writeTable ( table, OutputFile_full, WriteHeaderComments_boolean,
 		    AlwaysQuoteStrings_boolean, StringUtil.literalToInternal(newlineReplacement), NaNValue,

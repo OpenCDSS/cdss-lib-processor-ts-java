@@ -295,7 +295,8 @@ public static void closeRegressionTestReportFile ()
         ", " + StringUtil.formatString(100.0*(double)getRegressionTestFailCount()/(double)totalRun,"%.3f")+ "%");
     __regression_test_fp.println ( "PASS count     = " + getRegressionTestPassCount() +
         ", " + StringUtil.formatString(100.0*(double)getRegressionTestPassCount()/(double)totalRun,"%.3f")+ "%");
-    __regression_test_fp.println ( "Disabled count = " + getRegressionTestDisabledCount() );
+    __regression_test_fp.println ( "Disabled count = " + getRegressionTestDisabledCount() +
+    	", " + StringUtil.formatString(100.0*(double)getRegressionTestDisabledCount()/(double)totalRun,"%.3f")+ "%");
     __regression_test_fp.println ( "#--------------------------------" );
     __regression_test_fp.println ( "Total          = " +
         (totalRun + getRegressionTestDisabledCount()) );

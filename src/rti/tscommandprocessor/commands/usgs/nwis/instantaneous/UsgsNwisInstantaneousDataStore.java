@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -14,7 +15,6 @@ import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisSiteStatusType;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisSiteTimeSeriesMetadata;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisSiteType;
 import rti.tscommandprocessor.commands.wateroneflow.waterml.WaterMLReader;
-
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
 import RTi.Util.GUI.InputFilter_JPanel;
@@ -224,6 +224,7 @@ throws MalformedURLException, IOException, Exception
     String outputFile = null;
     // Parse the TSID string and set in the query parameters
     TSIdent tsident = TSIdent.parseIdentifier(tsid);
+    TimeInterval watermlInterval = TimeInterval.parseInterval(tsident.getInterval());
     // Currently the interval must be 15Min
     if ( (tsident.getIntervalBase() != TimeInterval.MINUTE) && (tsident.getIntervalMult() != 15) ) {
         throw new RuntimeException ( "Only 15Min interval is supported for NWIS Instantaneous.  Can't read \"" + tsid + "\"");
@@ -231,9 +232,11 @@ throws MalformedURLException, IOException, Exception
     siteList.add ( tsident.getLocation() );
     parameterList.add ( new UsgsNwisParameterType(tsident.getMainType(), "", "", "", "", "") );
     // The following should return one and only one time series.
+    boolean waterRequireDataToMatchInterval = true; // Makes sure irregular data are properly handled
     List<TS> tsList = readTimeSeriesList ( siteList, stateList, hucList, boundingBox, countyList,
         parameterList, siteStatus, siteTypeList, agency,
-        format, outputFile, readStart, readEnd, readData );
+        format, outputFile, readStart, readEnd,
+        watermlInterval, waterRequireDataToMatchInterval, readData );
     if ( tsList.size() > 0 ) {
         return tsList.get(0);
     }
@@ -248,6 +251,9 @@ form the URL for the query.  The payload that is received is optionally saved as
 is then parsed into 1+ time series and returned.
 @param readStart the starting date/time to read, or null to read all data.
 @param readEnd the ending date/time to read, or null to read all data.
+@param watermlInterval a valid time interval to construct time series, needed because WaterML 1.1 does not specify explicitly
+@param waterRequireDataToMatchInterval if true, require all data to match the time series interval,
+used when the watermlInterval is not irregular
 @param readData if true, read the data; if false, construct the time series and populate properties but do
 not read the data
 @return the time series list read from the USGS NWIS instantaneous web services
@@ -257,17 +263,18 @@ public List<TS> readTimeSeriesList ( List<String> siteList, List<String> stateLi
     List<UsgsNwisParameterType> parameterList,
     UsgsNwisSiteStatusType siteStatus, List<UsgsNwisSiteType> siteTypeList, String agency,
     UsgsNwisFormatType format, String outputFile,
-    DateTime readStart, DateTime readEnd, boolean readData )
+    DateTime readStart, DateTime readEnd,
+    TimeInterval watermlInterval, boolean watermlRequireDataToMatchInterval, boolean readData )
 throws MalformedURLException, IOException, Exception
 {
-    String routine = getClass().getName() + ".readTimeSeriesList";
-    List<TS> tslist = new Vector<TS>();
+    String routine = getClass().getSimpleName() + ".readTimeSeriesList";
+    List<TS> tslist = new ArrayList<TS>();
 
     // Form the URL, starting with the root
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() );
     // Specify these in the order of the web service API documentation
     // Major filter - location, pick the first one specified
-    List<String> queryParameters = new Vector<String>(); // Correspond to each query argument - ? and & handled later
+    List<String> queryParameters = new ArrayList<String>(); // Correspond to each query argument - ? and & handled later
     // Site list
     if ( siteList.size() > 0 ) {
         StringBuffer b = new StringBuffer("sites=");
@@ -423,14 +430,10 @@ throws MalformedURLException, IOException, Exception
         if ( format == UsgsNwisFormatType.WATERML ) {
             // Create the time series from the WaterML...
             WaterMLReader watermlReader = new WaterMLReader ( resultString, urlString.toString(), null );
-            // This is necessary because WaterML (1.1 at least) does not appear to have a clear indicator of
-            // the time series data interval
-            TimeInterval interval = TimeInterval.parseInterval("15Min");
             // Pass the input period here because it is used for memory allocation and the time series
             // in the data my have gaps that cause the period to be different
-            boolean requireDataToMatchInterval = true; // For now only handle 15-minute data
-            tslist = watermlReader.readTimeSeriesList( interval, readStart, readEnd, readData,
-                    requireDataToMatchInterval );
+            tslist = watermlReader.readTimeSeriesList( watermlInterval, readStart, readEnd, readData,
+                    watermlRequireDataToMatchInterval );
         }
         else {
             Message.printWarning(3, routine, "USGS NWIS instantaneous format " + format +

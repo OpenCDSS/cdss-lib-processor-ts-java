@@ -16,8 +16,8 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
@@ -37,7 +37,6 @@ import rti.tscommandprocessor.commands.rccacis.FIPSCounty;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisFormatType;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.ChoiceFormatterJPanel;
 import RTi.Util.GUI.JFileChooserFactory;
@@ -51,7 +50,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Editor for he ReadUsgsNwisDaily() command.
+Editor for the ReadUsgsNwisDaily() command.
 */
 public class ReadUsgsNwisDaily_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
@@ -437,6 +436,18 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Refer to the USGS NWIS Daily Data Store documentation for more information." ), 
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __dataStoreDocumentation_JButton = new SimpleJButton ("USGS NWIS Documentation",this);
+    JGUIUtil.addComponent(main_JPanel, __dataStoreDocumentation_JButton, 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __dataStoreDocumentation_JButton.setEnabled(false);
+    __dataStoreDocumentation_JButton.setToolTipText("Show the USGS NWIS web service documentation in a browser - " +
+        "useful for explaining query parameters.");
+    __dataStoreOnline_JButton = new SimpleJButton ("USGS NWIS Online",this);
+    JGUIUtil.addComponent(main_JPanel, __dataStoreOnline_JButton, 
+        1, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __dataStoreOnline_JButton.setEnabled(false);
+    __dataStoreOnline_JButton.setToolTipText("Show the USGS NWIS web service web page in a browser - " +
+        "useful for testing queries.");
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"<html>Constrain the query by specifying time series metadata to match.  " +
     	"<b>A location constraint must be specified.</b></html>" ), 
@@ -453,18 +464,6 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
         "The working directory is: " + __working_dir ), 
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
-    __dataStoreDocumentation_JButton = new SimpleJButton ("USGS NWIS Documentation",this);
-    JGUIUtil.addComponent(main_JPanel, __dataStoreDocumentation_JButton, 
-        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    __dataStoreDocumentation_JButton.setEnabled(false);
-    __dataStoreDocumentation_JButton.setToolTipText("Show the USGS NWIS web service documentation in a browser - " +
-        "useful for explaining query parameters.");
-    __dataStoreOnline_JButton = new SimpleJButton ("USGS NWIS Online",this);
-    JGUIUtil.addComponent(main_JPanel, __dataStoreOnline_JButton, 
-        1, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    __dataStoreOnline_JButton.setEnabled(false);
-    __dataStoreOnline_JButton.setToolTipText("Show the USGS NWIS web service web page in a browser - " +
-        "useful for testing queries.");
     JGUIUtil.addComponent(main_JPanel, new JSeparator(), 
         0, ++yMain, 7, 1, 1, 1, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	
@@ -500,6 +499,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Site number(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Sites_JTextField = new JTextField (20);
+    __Sites_JTextField.setToolTipText("Specify comma-separated site identifiers, can use ${Property} notation");
     __Sites_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __Sites_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -509,6 +509,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("State(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __States_JTextField = new JTextField (20);
+    __States_JTextField.setToolTipText("Specify comma-separated state abbreviations, can use ${Property} notation");
     __States_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __States_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -518,6 +519,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("HUC(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HUCs_JTextField = new JTextField (20);
+    __HUCs_JTextField.setToolTipText("Specify comma-separated HUCs, can use ${Property} notation");
     __HUCs_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __HUCs_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -527,6 +529,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Bounding box:"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __BoundingBox_JTextField = new JTextField (20);
+    __BoundingBox_JTextField.setToolTipText("Specify comma-separated bounding box coordinates, can use ${Property} notation");
     __BoundingBox_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __BoundingBox_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -537,12 +540,13 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     // Get the global county FIPS data
     List<FIPSCounty> counties = FIPSCounty.getData();
-    List<String> countyList = new Vector();
+    List<String> countyList = new ArrayList<String>();
     for ( FIPSCounty fips : counties ) {
         countyList.add(fips.getCode() + " - " + fips.getName() + ", " + fips.getStateAbbreviation());
     }
     __Counties_JTextField = new ChoiceFormatterJPanel ( countyList, "-",
         "Select a FIPS county to insert in the text field at right.", "-- Select County --", ",",  20, true );
+    __Counties_JTextField.setToolTipText("Specify comma-separated FIPS counties, can use ${Property} notation");
     __Counties_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __Counties_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -555,6 +559,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Parameters_JTextField = new ChoiceFormatterJPanel ( getSelectedDataStore().getParameterStrings(true),
         "-", "Select a parameter to insert in the text field at right.", "-- Select Parameter --", ",",  20, true );
+    __Parameters_JTextField.setToolTipText("Specify comma-separated parameters, can use ${Property} notation");
     __Parameters_JTextField.addKeyListener (this);
     __Parameters_JTextField.addDocumentListener (this);
     JGUIUtil.addComponent(main_JPanel, __Parameters_JTextField,
@@ -595,6 +600,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Site types(s):"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SiteTypes_JTextField = new JTextField (20);
+    __SiteTypes_JTextField.setToolTipText("Specify comma-separated site types, can use ${Property} notation");
     __SiteTypes_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SiteTypes_JTextField,
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -606,6 +612,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Agency:"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Agency_JTextField = new JTextField (20);
+    __Agency_JTextField.setToolTipText("Specify agency code, can use ${Property} notation");
     __Agency_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Agency_JTextField,
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -615,6 +622,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.setToolTipText("Specify the input start using a date/time string or ${Property} notation");
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -624,6 +632,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.setToolTipText("Specify the input end using a date/time string or ${Property} notation");
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

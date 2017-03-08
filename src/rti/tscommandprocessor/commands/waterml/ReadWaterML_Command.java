@@ -322,7 +322,7 @@ Run the command.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "ReadWaterML_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInteral", message;
 	int warning_level = 2;
     int log_level = 3;
 	String command_tag = "" + command_number;

@@ -289,7 +289,7 @@ private void initialize(JFrame parent, ReadWaterML_Command command) {
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Read all the time series from a WaterML file, using " +
-        "information in the file to assign the time series identifier."),
+        "information in the file to assign the time series identifier.  WaterML 1.1 is currently supported."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to the working " +
@@ -309,6 +309,7 @@ private void initialize(JFrame parent, ReadWaterML_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"WaterML file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
+	__InputFile_JTextField.setToolTipText ("Specify path to input file, can use ${Property}");
 	__InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

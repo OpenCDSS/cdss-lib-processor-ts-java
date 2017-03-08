@@ -1,24 +1,21 @@
 package rti.tscommandprocessor.commands.usgs.nwis.daily;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-
 import RTi.TS.TS;
-
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -109,7 +106,7 @@ throws InvalidCommandParameterException
         ++locCount;
     }
     __boundingBox = null;
-    if ( (BoundingBox != null) && !BoundingBox.equals("") ) {
+    if ( (BoundingBox != null) && !BoundingBox.equals("") && (BoundingBox.indexOf("${") < 0) ) {
         // Make sure that 4 numbers are specified
         ++locCount;
         String [] parts = BoundingBox.split(",");
@@ -168,9 +165,7 @@ throws InvalidCommandParameterException
                 message, "Specify one location constraint." ) );
     }
 
-	// TODO SAM 2006-04-24 Need to check the WhereN parameters.
-
-	if ( (InputStart != null) && !InputStart.equals("") &&
+	if ( (InputStart != null) && !InputStart.equals("") && (InputStart.indexOf("${") < 0) &&
 		!InputStart.equalsIgnoreCase("InputStart") && !InputStart.equalsIgnoreCase("InputEnd") ) {
 		try {
 		    DateTime.parse(InputStart);
@@ -183,7 +178,7 @@ throws InvalidCommandParameterException
                             message, "Specify a date/time or InputStart." ) );
 		}
 	}
-	if ( (InputEnd != null) && !InputEnd.equals("") &&
+	if ( (InputEnd != null) && !InputEnd.equals("") && (InputEnd.indexOf("${") < 0) &&
 		!InputEnd.equalsIgnoreCase("InputStart") && !InputEnd.equalsIgnoreCase("InputEnd") ) {
 		try {
 		    DateTime.parse( InputEnd );
@@ -197,7 +192,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-    if ( (OutputFile != null) && (OutputFile.length() != 0) ) {
+    if ( (OutputFile != null) && (OutputFile.length() != 0) && (OutputFile.indexOf("${") < 0) ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -238,24 +233,24 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "Sites" );
-    valid_Vector.add ( "States" );
-    valid_Vector.add ( "HUCs" );
-    valid_Vector.add ( "BoundingBox" );
-    valid_Vector.add ( "Counties" );
-    valid_Vector.add ( "Parameters" );
-    valid_Vector.add ( "Statistics" );
-    valid_Vector.add ( "SiteStatus" );
-    valid_Vector.add ( "SiteTypes" );
-    valid_Vector.add ( "Agency" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "Format" );
-    valid_Vector.add ( "OutputFile" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(16);
+    validList.add ( "DataStore" );
+    validList.add ( "Sites" );
+    validList.add ( "States" );
+    validList.add ( "HUCs" );
+    validList.add ( "BoundingBox" );
+    validList.add ( "Counties" );
+    validList.add ( "Parameters" );
+    validList.add ( "Statistics" );
+    validList.add ( "SiteStatus" );
+    validList.add ( "SiteTypes" );
+    validList.add ( "Agency" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "Alias" );
+    validList.add ( "Format" );
+    validList.add ( "OutputFile" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -290,7 +285,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new Vector();
+    List<File> list = new ArrayList<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -359,9 +354,8 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "ReadUsgsNwisDaily_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -369,13 +363,26 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     
     // Clear the output file
     
     setOutputFile ( null );
     
     boolean readData = true;
+    boolean propertiesUsedInParameters = false; // Don't call the read method if any ${Property} are used because it will cause issues
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
         readData = false;
@@ -383,7 +390,15 @@ CommandWarningException, CommandException
     
     String dataStoreName = parameters.getValue("DataStore");
     String Sites = parameters.getValue("Sites");
-    List<String> siteList = new Vector();
+    if ( (Sites != null) && !Sites.isEmpty() && (Sites.indexOf("${") >= 0) ) {
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+    		Sites = TSCommandProcessorUtil.expandParameterValue(processor, this, Sites);
+    	}
+    	else {
+    		propertiesUsedInParameters = true;
+    	}
+	}
+    List<String> siteList = new ArrayList<String>();
     if ( (Sites != null) && !Sites.equals("") ) {
         if ( Sites.indexOf(",") < 0 ) {
             siteList.add(Sites.trim());
@@ -396,7 +411,15 @@ CommandWarningException, CommandException
         }
     }
     String States = parameters.getValue("States");
-    List<String> stateList = new Vector();
+    if ( (States != null) && !States.isEmpty() && (States.indexOf("${") >= 0) ) {
+    	if ( commandPhase == CommandPhaseType.RUN) {
+    		States = TSCommandProcessorUtil.expandParameterValue(processor, this, States);
+    	}
+    	else {
+    		propertiesUsedInParameters = true;
+    	}
+	}
+    List<String> stateList = new ArrayList<String>();
     if ( (States != null) && !States.equals("") ) {
         if ( States.indexOf(",") < 0 ) {
             stateList.add(States.trim());
@@ -409,7 +432,15 @@ CommandWarningException, CommandException
         }
     }
     String HUCs = parameters.getValue("HUCs");
-    List<String> hucList = new Vector();
+    if ( (HUCs != null) && !HUCs.isEmpty() && (HUCs.indexOf("${") >= 0) ) {
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+    		HUCs = TSCommandProcessorUtil.expandParameterValue(processor, this, HUCs);
+    	}
+    	else {
+    		propertiesUsedInParameters = true;
+    	}
+	}
+    List<String> hucList = new ArrayList<String>();
     if ( (HUCs != null) && !HUCs.equals("") ) {
         if ( HUCs.indexOf(",") < 0 ) {
             hucList.add(HUCs.trim());
@@ -422,7 +453,15 @@ CommandWarningException, CommandException
         }
     }
     String Counties = parameters.getValue("Counties");
-    List<String> countyList = new Vector();
+    if ( (Counties != null) && !Counties.isEmpty() && (Counties.indexOf("${") >= 0) ) {
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+    		Counties = TSCommandProcessorUtil.expandParameterValue(processor, this, Counties);
+    	}
+    	else {
+    		propertiesUsedInParameters = true;
+    	}
+	}
+    List<String> countyList = new ArrayList<String>();
     if ( (Counties != null) && !Counties.equals("") ) {
         if ( Counties.indexOf(",") < 0 ) {
             countyList.add(Counties.trim());
@@ -435,7 +474,15 @@ CommandWarningException, CommandException
         }
     }
     String Parameters = parameters.getValue("Parameters");
-    List<UsgsNwisParameterType> parameterList = new Vector();
+    if ( (Parameters != null) && !Parameters.isEmpty() && (Parameters.indexOf("${") >= 0) ) {
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+    		Parameters = TSCommandProcessorUtil.expandParameterValue(processor, this, Parameters);
+    	}
+    	else {
+    		propertiesUsedInParameters = true;
+    	}
+	}
+    List<UsgsNwisParameterType> parameterList = new ArrayList<UsgsNwisParameterType>();
     if ( (Parameters != null) && !Parameters.equals("") ) {
         if ( Parameters.indexOf(",") < 0 ) {
             parameterList.add(new UsgsNwisParameterType(Parameters.trim(), "", "", "", "", ""));
@@ -448,7 +495,15 @@ CommandWarningException, CommandException
         }
     }
     String Statistics = parameters.getValue("Statistics");
-    List<UsgsNwisStatisticType> statisticList = new Vector();
+    if ( (Statistics != null) && !Statistics.isEmpty() && (Statistics.indexOf("${") >= 0) ) {
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+    		Statistics = TSCommandProcessorUtil.expandParameterValue(processor, this, Statistics);
+    	}
+    	else {
+    		propertiesUsedInParameters = true;
+    	}
+	}
+    List<UsgsNwisStatisticType> statisticList = new ArrayList<UsgsNwisStatisticType>();
     if ( (Statistics != null) && !Statistics.equals("") ) {
         if ( Statistics.indexOf(",") < 0 ) {
             statisticList.add(new UsgsNwisStatisticType(Statistics.trim(), "", ""));
@@ -466,7 +521,15 @@ CommandWarningException, CommandException
         siteStatus = UsgsNwisSiteStatusType.ALL;
     }
     String SiteTypes = parameters.getValue("SiteTypes");
-    List<UsgsNwisSiteType> siteTypeList = new Vector();
+    if ( (SiteTypes != null) && !SiteTypes.isEmpty() && (SiteTypes.indexOf("${") >= 0) ) {
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+    		SiteTypes = TSCommandProcessorUtil.expandParameterValue(processor, this, SiteTypes);
+    	}
+    	else {
+    		propertiesUsedInParameters = true;
+    	}
+	}
+    List<UsgsNwisSiteType> siteTypeList = new ArrayList<UsgsNwisSiteType>();
     if ( (SiteTypes != null) && !SiteTypes.equals("") ) {
         if ( SiteTypes.indexOf(",") < 0 ) {
             siteTypeList.add(new UsgsNwisSiteType(SiteTypes.trim(), "", ""));
@@ -479,117 +542,58 @@ CommandWarningException, CommandException
         }
     }
     String Agency = parameters.getValue("Agency");
+    if ( (Agency != null) && !Agency.isEmpty() && (Agency.indexOf("${") >= 0) ) {
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+    		Agency = TSCommandProcessorUtil.expandParameterValue(processor, this, Agency);
+    	}
+    	else {
+    		propertiesUsedInParameters = true;
+    	}
+	}
     String Alias = parameters.getValue("Alias");
     String Format = parameters.getValue("Format");
     UsgsNwisFormatType format = UsgsNwisFormatType.valueOfIgnoreCase(Format);
     if ( format == null ) {
         format = UsgsNwisFormatType.WATERML;
     }
-    String OutputFile = parameters.getValue("OutputFile");
+    String OutputFile = parameters.getValue("OutputFile"); // Expanded below
+	String InputStart = parameters.getValue("InputStart");
+	if ( (InputStart == null) || InputStart.isEmpty() ) {
+		if ( commandPhase == CommandPhaseType.RUN ) {
+			InputStart = "${InputStart}"; // Global default
+		}
+		else {
+			propertiesUsedInParameters = true;
+		}
+	}
+	String InputEnd = parameters.getValue("InputEnd");
+	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
+		if ( commandPhase == CommandPhaseType.RUN ) {
+			InputEnd = "${InputEnd}"; // Global default
+		}
+		else {
+			propertiesUsedInParameters = true;
+		}
+	}
     
-	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
-	if ( (InputStart != null) && (InputStart.length() > 0) ) {
-		PropList request_params = new PropList ( "" );
-		request_params.set ( "DateTime", InputStart );
-		CommandProcessorRequestResultsBean bean = null;
-		try {
-            bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputStart + ") from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                   message, "Report problem to software support." ) );
-		}
-		PropList bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + InputStart + "\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a valid InputStart string has been specified." ) );
-		}
-		else {
-		    InputStart_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor...
-		try {
-            Object o = processor.getPropContents ( "InputStart" );
-			if ( o != null ) {
-				InputStart_DateTime = (DateTime)o;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting InputStart from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report problem to software support." ) );
-		}
-	}
-	String InputEnd = parameters.getValue ( "InputEnd" );
 	DateTime InputEnd_DateTime = null;
-	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-		PropList request_params = new PropList ( "" );
-		request_params.set ( "DateTime", InputEnd );
-		CommandProcessorRequestResultsBean bean = null;
+	if ( commandPhase == CommandPhaseType.RUN ) {
 		try {
-            bean = processor.processRequest( "DateTime", request_params);
+			InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
+				status, warning_level, command_tag );
 		}
-		catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report problem to software support." ) );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
-		PropList bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + InputEnd + ") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a valid InputEnd has been specified." ) );
+		try {
+			InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
+				status, warning_level, command_tag );
 		}
-		else {
-		    InputEnd_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor...
-		try { Object o = processor.getPropContents ( "InputEnd" );
-			if ( o != null ) {
-				InputEnd_DateTime = (DateTime)o;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting InputEnd from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report problem to software support." ) );
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
 		}
 	}
 
@@ -603,7 +607,7 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	List<TS> tslist = new Vector();	// List for time series results.
+	List<TS> tslist = new ArrayList<TS>();	// List for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -627,19 +631,22 @@ CommandWarningException, CommandException
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
 		}
-        tslist = usgsNwisDailyDataStore.readTimeSeriesList ( siteList, stateList,
-            hucList, __boundingBox, countyList,
-            parameterList, statisticList,
-            siteStatus, siteTypeList, Agency,
-            format, OutputFile_full,
-            InputStart_DateTime, InputEnd_DateTime, readData );
+		if ( !propertiesUsedInParameters ) {
+			// Only call the USGS web services if properties were not used
+	        tslist = usgsNwisDailyDataStore.readTimeSeriesList ( siteList, stateList,
+	            hucList, __boundingBox, countyList,
+	            parameterList, statisticList,
+	            siteStatus, siteTypeList, Agency,
+	            format, OutputFile_full,
+	            InputStart_DateTime, InputEnd_DateTime, readData );
+		}
 		// Make sure that size is set...
 		int size = 0;
 		if ( tslist != null ) {
 			size = tslist.size();
 		}
 	
-   		if ( (tslist == null) || (size == 0) ) {
+   		if ( ((tslist == null) || (size == 0)) && !propertiesUsedInParameters) {
 			Message.printStatus ( 2, routine,"No USGS NWIS daily time series were found." );
 	        // Warn if nothing was retrieved (can be overridden to ignore).
             message = "No time series were read from the USGS NWIS daily value web service.";
@@ -668,7 +675,7 @@ CommandWarningException, CommandException
         Message.printStatus ( 2, routine, "Read " + size + " USGS NWIS daily time series." );
 
         if ( commandPhase == CommandPhaseType.RUN ) {
-            if ( tslist != null ) {
+            if ( (tslist != null) && (tslist.size() > 0) ) {
                 // Further process the time series...
                 // This makes sure the period is at least as long as the output period...
 
@@ -700,7 +707,7 @@ CommandWarningException, CommandException
             setDiscoveryTSList ( tslist );
         }
         // Warn if nothing was retrieved (can be overridden to ignore).
-        if ( (tslist == null) || (size == 0) ) {
+        if ( ((tslist == null) || (size == 0)) && !propertiesUsedInParameters ) {
             message = "No time series were read from the USGS NWIS daily value web service.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );

@@ -11,8 +11,10 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
+import RTi.TS.IrregularTS;
 import RTi.TS.TS;
 import RTi.TS.TSData;
+import RTi.TS.TSIterator;
 import RTi.TS.TSLimits;
 import RTi.TS.TSUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -624,9 +626,20 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
                 outputEnd = limits.getDate2();
             }
         }
-        // TODO SAM 2013-10-22 For now do not support irregular data - when do have to use TSIterator
         if ( !TSUtil.areIntervalsSame(tslist) ) {
             throw new InvalidTimeIntervalException("Time series time intervals are not the same.  Cannot write file.");
+        }
+        boolean isRegular = true; // All time series are matching regular interval
+        // TODO SAM 2013-10-22 For now only support writing irregular data for a single time series
+        if ( !TimeInterval.isRegularInterval(tslist.get(0).getDataIntervalBase()) ) {
+        	// This will be the case if 1+ time series all have irregular interval
+        	if ( tslist.size() > 1 ) {
+        		throw new InvalidTimeIntervalException("Can only write a single irregular time series.  Cannot write file.");
+        	}
+        	else {
+        		// Have one time series so allow it to be written below as irregular
+        		isRegular = false;
+        	}
         }
         int intervalBase = -1;
         int intervalMult = -1;
@@ -692,30 +705,96 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
         // Loop through date/time corresponding to each row in the output file
         double value;
         String valueString, dateTimeString = "";
-        for ( DateTime date = new DateTime(outputStart); date.lessThanOrEqualTo(outputEnd); date.addInterval(intervalBase, intervalMult)) {
-            // Output the date/time as per the format
-            if ( dateTimeFormatterType == DateTimeFormatterType.C ) {
-                if ( dateTimeFormat == null ) {
-                    // Just use the default
-                    dateTimeString = date.toString();
-                }
-                else {
-                    // Format according to the requested
-                    dateTimeString = TimeUtil.formatDateTime(date, dateTimeFormat);
-                }
-                if ( delim.equals(" ") ) {
-                    // The dateTimeString might contain a space between date and time so replace
-                    dateTimeString.replace(" ","T");
-                }
-            }
-            fout.print(dateTimeString);
-            // Loop through the time series list and output each value
-            its = -1;
-            for ( TS ts : tslist ) {
-                // Iterate through data in the time series and output each value according to the format.
-                ++its;
-                TSData tsdata = new TSData();
-                tsdata = ts.getDataPoint(date, tsdata);
+        if ( isRegular ) {
+        	// Have regular interval data with matching intervals
+        	// Iterate using DateTime increment and the request data from time series
+	        for ( DateTime date = new DateTime(outputStart); date.lessThanOrEqualTo(outputEnd); date.addInterval(intervalBase, intervalMult)) {
+	            // Output the date/time as per the format
+	            if ( dateTimeFormatterType == DateTimeFormatterType.C ) {
+	                if ( dateTimeFormat == null ) {
+	                    // Just use the default
+	                    dateTimeString = date.toString();
+	                }
+	                else {
+	                    // Format according to the requested
+	                    dateTimeString = TimeUtil.formatDateTime(date, dateTimeFormat);
+	                }
+	                if ( delim.equals(" ") ) {
+	                    // The dateTimeString might contain a space between date and time so replace
+	                    dateTimeString.replace(" ","T");
+	                }
+	            }
+	            fout.print(dateTimeString);
+	            // Loop through the time series list and output each value
+	            its = -1;
+	            for ( TS ts : tslist ) {
+	                // Iterate through data in the time series and output each value according to the format.
+	                ++its;
+	                TSData tsdata = new TSData();
+	                tsdata = ts.getDataPoint(date, tsdata);
+	                // First expand the line to replace time series properties
+	                value = tsdata.getDataValue();
+	                if ( ts.isDataMissing(value) ) {
+	                    valueString = missingValueString;
+	                }
+	                else {
+	                    valueString = StringUtil.formatString(value, valueFormat);
+	                }
+	                fout.print(delim + valueString);
+	            }
+	            fout.println();
+	        }
+        }
+        else {
+        	// Single irregular interval time series
+        	IrregularTS ts = (IrregularTS)tslist.get(0);
+        	// Find the nearest date
+        	DateTime iteratorStart = null, iteratorEnd = null;
+        	if ( outputStart == null ) {
+        		iteratorStart = new DateTime(ts.getDate1());
+        	}
+        	else {
+            	TSData tsdata = ts.findNearestNext(outputStart, null, null, true);
+            	if ( tsdata == null ) {
+            		iteratorStart = new DateTime(ts.getDate1());
+            	}
+            	else {
+            		iteratorStart = new DateTime(tsdata.getDate());
+            	}
+        	}
+        	if ( outputEnd == null ) {
+        		iteratorEnd = new DateTime(ts.getDate2());
+        	}
+        	else {
+            	TSData tsdata = ts.findNearestNext(outputEnd, null, null, true);
+            	if ( tsdata == null ) {
+            		iteratorEnd = new DateTime(ts.getDate2());
+            	}
+            	else {
+            		iteratorEnd = new DateTime(tsdata.getDate());
+            	}
+        	}
+        	TSIterator tsi = ts.iterator(iteratorStart, iteratorEnd);
+        	TSData tsdata = null;
+        	DateTime date;
+	        while ( (tsdata = tsi.next()) != null ) {
+	            // Output the date/time as per the format
+	        	date = tsdata.getDate();
+	            if ( dateTimeFormatterType == DateTimeFormatterType.C ) {
+	                if ( dateTimeFormat == null ) {
+	                    // Just use the default
+	                    dateTimeString = date.toString();
+	                }
+	                else {
+	                    // Format according to the requested
+	                    dateTimeString = TimeUtil.formatDateTime(date, dateTimeFormat);
+	                }
+	                if ( delim.equals(" ") ) {
+	                    // The dateTimeString might contain a space between date and time so replace
+	                    dateTimeString.replace(" ","T");
+	                }
+	            }
+	            fout.print(dateTimeString);
                 // First expand the line to replace time series properties
                 value = tsdata.getDataValue();
                 if ( ts.isDataMissing(value) ) {
@@ -725,8 +804,8 @@ private void writeTimeSeries ( List<TS> tslist, String outputFile, String dateTi
                     valueString = StringUtil.formatString(value, valueFormat);
                 }
                 fout.print(delim + valueString);
-            }
-            fout.println();
+	            fout.println();
+	        }
         }
     }
     catch ( Exception e ) {

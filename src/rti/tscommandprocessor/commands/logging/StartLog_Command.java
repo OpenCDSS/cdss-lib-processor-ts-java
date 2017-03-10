@@ -245,9 +245,9 @@ throws CommandWarningException, CommandException
 					LogFile = LogFile.substring(0,LogFile.length()-ext.length()-1)+ Suffix + "." + ext;
 				}
 			}
-			LogFile_full = TSCommandProcessorUtil.expandParameterValue(processor,this,
-				IOUtil.verifyPathForOS(
-					IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LogFile)));
+			LogFile_full = IOUtil.verifyPathForOS(
+				IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+					TSCommandProcessorUtil.expandParameterValue(processor,this,LogFile)));
 			Message.printStatus(2, routine, "Logfile full path is \"" + LogFile_full + "\"");
 			// Close the old log file...
 			Message.closeLogFile();

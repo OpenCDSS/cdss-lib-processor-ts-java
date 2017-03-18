@@ -260,9 +260,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new Vector<DataTable>();
         v.add ( table );
     }
     return v;
@@ -412,7 +412,7 @@ CommandWarningException, CommandException
 	DataTable table = null;
 	try {
 	    if ( command_phase == CommandPhaseType.RUN ) {
-	    	List<String> problems = new ArrayList();
+	    	List<String> problems = new ArrayList<String>();
 	        table = readXmlTable ( InputFile_full, RowElement, top, problems );
 	        int errorMax = 50;
 	        int errorCount = 0;

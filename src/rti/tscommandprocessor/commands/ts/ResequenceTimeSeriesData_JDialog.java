@@ -42,6 +42,7 @@ import RTi.Util.Time.YearType;
 /**
 Command editor dialog for the ResequenceTimeSeriesData() command.
 */
+@SuppressWarnings("serial")
 public class ResequenceTimeSeriesData_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
@@ -263,9 +264,9 @@ throws Throwable
 /**
 Put together a list of row/column numbers (a list of numbers) for use in choices.
 */
-private List getRowNumberList ()
+private List<String> getRowNumberList ()
 {
-	List v = new Vector();
+	List<String> v = new Vector<String>();
     v.add( "");
     for ( int i = 1; i <= 200; i++ ) {
         v.add("" + i);
@@ -328,7 +329,7 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __TableID_JComboBox = new SimpleJComboBox ( true );
     if ( tableids == null ) {
-        tableids = new Vector ();
+        tableids = new Vector<String>();
     }
     // No blank (default) or wildcard is allowed.
     __TableID_JComboBox.setData ( tableids );
@@ -722,7 +723,7 @@ private void response ( boolean ok )
 Set the table column data based on the selected table.
 */
 private void setTableColumnData ( String selected_tableid )
-{   List column_names = TSCommandProcessorUtil.getTableColumnNamesFromCommandsBeforeCommand(
+{   List<String> column_names = TSCommandProcessorUtil.getTableColumnNamesFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command, __TableID_JComboBox.getSelected(), false );
     __TableColumn_JComboBox.setData ( column_names );
     if ( column_names.size() > 0 ) {

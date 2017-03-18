@@ -724,7 +724,7 @@ CommandWarningException, CommandException
     		// Update the data to the processor so that appropriate actions are taken...
     	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
     	        // Just want time series headers initialized
-    	        List<TS> discoveryTSList = new Vector();
+    	        List<TS> discoveryTSList = new Vector<TS>();
     	        discoveryTSList.add ( stats_ts );
     	        setDiscoveryTSList ( discoveryTSList );
     	    }

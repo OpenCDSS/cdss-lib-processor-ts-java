@@ -26,6 +26,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import rti.tscommandprocessor.core.EnsembleListType;
@@ -41,6 +42,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the SetEnsembleProperty() command.
 */
+@SuppressWarnings("serial")
 public class SetEnsembleProperty_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
@@ -294,11 +296,13 @@ private void initialize ( JFrame parent, SetEnsembleProperty_Command command )
     JGUIUtil.addComponent(user_JPanel, new JLabel ( "Property type:" ), 
         0, ++yUser, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
-    __PropertyType_JComboBox.addItem ( "" );
-    __PropertyType_JComboBox.addItem ( __command._DateTime );
-    __PropertyType_JComboBox.addItem ( __command._Double );
-    __PropertyType_JComboBox.addItem ( __command._Integer );
-    __PropertyType_JComboBox.addItem ( __command._String );
+    List<String> typeChoices = new ArrayList<String>();
+    typeChoices.add ( "" );
+    typeChoices.add ( __command._DateTime );
+    typeChoices.add ( __command._Double );
+    typeChoices.add ( __command._Integer );
+    typeChoices.add ( __command._String );
+    __PropertyType_JComboBox.setData(typeChoices);
     __PropertyType_JComboBox.select ( __command._String );
     __PropertyType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(user_JPanel, __PropertyType_JComboBox,

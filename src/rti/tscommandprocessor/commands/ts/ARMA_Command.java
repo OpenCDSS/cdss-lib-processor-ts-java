@@ -121,7 +121,7 @@ throws InvalidCommandParameterException
     // a is optional
     if ( (a != null) && !a.isEmpty() && (a.indexOf("${") < 0) ) {
         // Make sure coefficients are doubles...
-    	List aVector = StringUtil.breakStringList ( a, ", ", StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> aVector = StringUtil.breakStringList ( a, ", ", StringUtil.DELIM_SKIP_BLANKS );
         int aSize = 0;
         if ( aVector != null ) {
             aSize = aVector.size();
@@ -154,7 +154,7 @@ throws InvalidCommandParameterException
     }
     else if ( b.indexOf("${") < 0 ) {
         // Make sure coefficients are doubles...
-    	List bVector = StringUtil.breakStringList ( b, ", ", StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> bVector = StringUtil.breakStringList ( b, ", ", StringUtil.DELIM_SKIP_BLANKS );
         int bSize = 0;
         if ( bVector != null ) {
             bSize = bVector.size();
@@ -427,7 +427,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     else {
 		// TODO SAM 2009-09-15 This whole block of code needs to be
 		// removed as soon as commands have been migrated to the new syntax.
-    	List v = StringUtil.breakStringList(command_string,
+    	List<String> v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
@@ -818,7 +818,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	                "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 		}
 		else {
-	        tslist = (List)o_TSList;
+	        tslist = (List<TS>)o_TSList;
 			if ( tslist.size() == 0 ) {
 	            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 	            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

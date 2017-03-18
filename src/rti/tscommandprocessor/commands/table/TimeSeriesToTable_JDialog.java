@@ -33,6 +33,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
@@ -50,6 +51,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 Editor for TimeSeriesToTable command.
 */
+@SuppressWarnings("serial")
 public class TimeSeriesToTable_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -464,9 +466,11 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(singleColumn_JPanel, new JLabel ( "Include missing values?:"), 
         0, ++ySingleColumn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IncludeMissingValues_JComboBox = new SimpleJComboBox ( false );
-    __IncludeMissingValues_JComboBox.addItem ( "" );
-    __IncludeMissingValues_JComboBox.addItem ( __command._False );
-    __IncludeMissingValues_JComboBox.addItem ( __command._True );
+    List<String> missingChoices = new ArrayList<String>();
+    missingChoices.add ( "" );
+    missingChoices.add ( __command._False );
+    missingChoices.add ( __command._True );
+    __IncludeMissingValues_JComboBox.setData(missingChoices);
     __IncludeMissingValues_JComboBox.select(0);
     __IncludeMissingValues_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(singleColumn_JPanel, __IncludeMissingValues_JComboBox,
@@ -573,9 +577,11 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if table not found:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfTableNotFound_JComboBox = new SimpleJComboBox ( false );
-	__IfTableNotFound_JComboBox.addItem ( "" );
-	__IfTableNotFound_JComboBox.addItem ( __command._Create );
-	__IfTableNotFound_JComboBox.addItem ( __command._Warn );
+	List<String> notFoundChoices = new ArrayList<String>();
+	notFoundChoices.add ( "" );
+	notFoundChoices.add ( __command._Create );
+	notFoundChoices.add ( __command._Warn );
+	__IfTableNotFound_JComboBox.setData(notFoundChoices);
 	__IfTableNotFound_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __IfTableNotFound_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

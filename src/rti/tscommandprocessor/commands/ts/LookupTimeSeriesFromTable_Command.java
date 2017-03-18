@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -29,9 +30,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.WarningCount;
 import RTi.Util.String.StringUtil;
@@ -84,7 +83,7 @@ throws InvalidCommandParameterException
     String NewTSID = parameters.getValue ( "NewTSID" );
 	String TSID = parameters.getValue ( "TSID" );
     String TableID = parameters.getValue ( "TableID" );
-    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    //String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableValue1Column = parameters.getValue ( "TableValue1Column" );
     String TableValue2Column = parameters.getValue ( "TableValue2Column" );
     String LookupMethod = parameters.getValue ( "LookupMethod" );
@@ -268,25 +267,25 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "NewTSID" );
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "TableTSIDColumn" );
-    valid_Vector.add ( "TableTSIDFormat" );
-    valid_Vector.add ( "TableValue1Column" );
-    valid_Vector.add ( "TableValue2Column" );
-    valid_Vector.add ( "Units" );
-    valid_Vector.add ( "EffectiveDateColumn" );
-    valid_Vector.add ( "LookupMethod" );
-    valid_Vector.add ( "OutOfRangeLookupMethod" );
-    valid_Vector.add ( "OutOfRangeNotification" );
-    valid_Vector.add ( "Transformation" );
-    valid_Vector.add ( "LEZeroLogValue" );
-    valid_Vector.add ( "AnalysisStart" );
-    valid_Vector.add ( "AnalysisEnd" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "Alias" );
+    validList.add ( "TSID" );
+    validList.add ( "NewTSID" );
+    validList.add ( "TableID" );
+    validList.add ( "TableTSIDColumn" );
+    validList.add ( "TableTSIDFormat" );
+    validList.add ( "TableValue1Column" );
+    validList.add ( "TableValue2Column" );
+    validList.add ( "Units" );
+    validList.add ( "EffectiveDateColumn" );
+    validList.add ( "LookupMethod" );
+    validList.add ( "OutOfRangeLookupMethod" );
+    validList.add ( "OutOfRangeNotification" );
+    validList.add ( "Transformation" );
+    validList.add ( "LEZeroLogValue" );
+    validList.add ( "AnalysisStart" );
+    validList.add ( "AnalysisEnd" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -417,8 +416,8 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
     String TableID = parameters.getValue ( "TableID" );
-    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
-    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    //String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    //String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TableValue1Column = parameters.getValue ( "TableValue1Column" );
     String TableValue2Column = parameters.getValue ( "TableValue2Column" );
     String Units = parameters.getValue ( "Units" );
@@ -694,7 +693,7 @@ CommandWarningException, CommandException
 
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Just want time series headers initialized
-        List<TS> discoveryTSList = new Vector();
+        List<TS> discoveryTSList = new Vector<TS>();
         discoveryTSList.add ( tsnew );
         setDiscoveryTSList ( discoveryTSList );
     }

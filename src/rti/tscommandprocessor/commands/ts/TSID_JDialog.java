@@ -38,6 +38,7 @@ import RTi.Util.Message.Message;
 Editor dialog for time series identifiers.  Currently a simple text field is provided
 but in the future separate fields may be used for TSID parts.
 */
+@SuppressWarnings("serial")
 public class TSID_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {

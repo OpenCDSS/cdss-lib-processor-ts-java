@@ -11,6 +11,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -34,6 +36,7 @@ import RTi.Util.Message.Message;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+@SuppressWarnings("serial")
 public class FTPGet_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
@@ -319,9 +322,11 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transfer mode:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TransferMode_JComboBox = new SimpleJComboBox ( false );
-    __TransferMode_JComboBox.addItem ( "" );   // Default
-    __TransferMode_JComboBox.addItem ( __command._ASCII );
-    __TransferMode_JComboBox.addItem ( __command._Binary );
+    List<String> modeChoices = new ArrayList<String>();
+    modeChoices.add ( "" );   // Default
+    modeChoices.add ( __command._ASCII );
+    modeChoices.add ( __command._Binary );
+    __TransferMode_JComboBox.setData(modeChoices);
     __TransferMode_JComboBox.select ( 0 );
     __TransferMode_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TransferMode_JComboBox,

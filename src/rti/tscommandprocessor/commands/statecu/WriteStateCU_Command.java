@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.statecu;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -11,6 +12,7 @@ import rti.tscommandprocessor.core.TSListType;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -194,15 +196,15 @@ throws InvalidCommandParameterException
 	*/
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> validList = new ArrayList<String>();
 	//valid_Vector.add ( "TSList" );
 	//valid_Vector.add ( "TSID" );
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "OutputStart" );
-	valid_Vector.add ( "OutputEnd" );
+	validList.add ( "OutputFile" );
+	validList.add ( "OutputStart" );
+	validList.add ( "OutputEnd" );
 	//valid_Vector.add ( "MissingValue" );
 	//valid_Vector.add ( "Precision" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -216,9 +218,9 @@ throws InvalidCommandParameterException
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -263,7 +265,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	else {
 	    // Parse the old command...
-		List tokens = StringUtil.breakStringList ( command_string,
+		List<String> tokens = StringUtil.breakStringList ( command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 2 ) {
 			message =
@@ -351,7 +353,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
 		message = "Unable to find time series to write using TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\".";
@@ -362,7 +364,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report to software support." ) );
 	}
-	else {	tslist = (List)o_TSList;
+	else {
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+		tslist = tslist0;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to write using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
@@ -529,11 +534,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 		// Get the comments to add to the top of the file.
 
-		List OutputComments_Vector = null;
+		List<String> OutputComments_Vector = null;
 		try { Object o = processor.getPropContents ( "OutputComments" );
 			// Comments are available so use them...
 			if ( o != null ) {
-				OutputComments_Vector = (List)o;
+				@SuppressWarnings("unchecked")
+				List<String> OutputComments_Vector0 = (List<String>)o;
+				OutputComments_Vector = OutputComments_Vector0;
 			}
 		}
 		catch ( Exception e ) {

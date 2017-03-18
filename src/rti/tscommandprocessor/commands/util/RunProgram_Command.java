@@ -107,7 +107,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List validList = new ArrayList<String>(10+_ProgramArg_SIZE);
+    List<String> validList = new ArrayList<String>(10+_ProgramArg_SIZE);
 	validList.add ( "CommandLine" );
 	validList.add ( "Program" );
 	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
@@ -164,7 +164,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     }
     else {
         // Old syntax...
-    	List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
+    	List<String> tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
         CommandStatus status = getCommandStatus();
         if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
             message = "Invalid syntax for \"" + command_string + "\".  Expecting RunProgram(...).";
@@ -349,7 +349,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( (Program != null) && !Program.isEmpty() ) {
             // Specify the program to run using individual strings - this takes precedence over the full
             // command line.
-            List programAndArgsList = new ArrayList<String>();
+            List<String> programAndArgsList = new ArrayList<String>();
             programAndArgsList.add ( Program );
             for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
                 if ( (ProgramArg[i] != null) && !ProgramArg[i].isEmpty() ) {

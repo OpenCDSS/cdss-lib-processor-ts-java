@@ -374,9 +374,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (Properties != null) && (Properties.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
     	Properties = TSCommandProcessorUtil.expandParameterValue(processor, this, Properties);
 	}
-    Hashtable properties = null;
+    Hashtable<String,String> properties = null;
     if ( (Properties != null) && (Properties.length() > 0) && (Properties.indexOf(":") > 0) ) {
-        properties = new Hashtable();
+        properties = new Hashtable<String,String>();
         // First break map pairs by comma
         List<String> pairs = new ArrayList<String>();
         if ( Properties.indexOf(",") > 0 ) {
@@ -772,10 +772,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
                 if ( properties != null ) {
                     // Assign properties
-                    Enumeration keys = properties.keys();
+                    Enumeration<String> keys = properties.keys();
                     String key = null;
                     while ( keys.hasMoreElements() ) {
-                        key = (String)keys.nextElement();
+                        key = keys.nextElement();
                         ts.setProperty( key, TSCommandProcessorUtil.expandTimeSeriesMetadataString (
                             processor, ts, (String)properties.get(key), status, commandPhase) );
                     }

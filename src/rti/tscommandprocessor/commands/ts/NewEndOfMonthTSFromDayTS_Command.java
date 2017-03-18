@@ -204,7 +204,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     		Message.printWarning ( warning_level, routine, message);
     		throw new InvalidCommandSyntaxException ( message );
     	}
-    	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
         if ( v == null ) {
             message = "Syntax error in \"" + command +
             "\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(DayTSID,Bracket)";

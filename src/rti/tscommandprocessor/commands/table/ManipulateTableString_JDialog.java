@@ -34,6 +34,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Table.DataTableStringManipulator;
 import RTi.Util.Table.DataTableStringOperatorType;
 
+@SuppressWarnings("serial")
 public class ManipulateTableString_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -333,7 +334,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputColumn1_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
     __InputColumn1_JComboBox.setToolTipText("Specify the first input column name (if appropriate) or use ${Property} notation");
-    Vector input1Choices = new Vector();
+    List<String> input1Choices = new Vector<String>();
     input1Choices.add("");
     __InputColumn1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __InputColumn1_JComboBox.addItemListener ( this );
@@ -360,7 +361,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputColumn2_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
     __InputColumn2_JComboBox.setToolTipText("Specify the second input column name (if appropriate) or use ${Property} notation");
-    Vector input2Choices = new Vector();
+    List<String> input2Choices = new Vector<String>();
     input2Choices.add("");
     __InputColumn2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __InputColumn2_JComboBox.addItemListener ( this );
@@ -395,7 +396,7 @@ private void initialize ( JFrame parent, ManipulateTableString_Command command, 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputColumn_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
     __OutputColumn_JComboBox.setToolTipText("Specify the output column name or use ${Property} notation");
-    Vector outputChoices = new Vector();
+    List<String> outputChoices = new Vector<String>();
     outputChoices.add("");
     __OutputColumn_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __OutputColumn_JComboBox.addItemListener ( this );

@@ -44,6 +44,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 Editor dialog for the ReadUsgsNwis() command.
 */
+@SuppressWarnings("serial")
 public class ReadUsgsNwisRdb_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

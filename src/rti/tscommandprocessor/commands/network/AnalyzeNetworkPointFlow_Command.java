@@ -761,7 +761,7 @@ same as the returned list
 @param problems a list of problem strings, to be treated as warnings in calling code
 @return the list of nodes including and upstream of "node", but not including upstream known point flow nodes.
 */
-public List<HydrologyNode> analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss(List upstreamGainLossNodes,
+public List<HydrologyNode> analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss(List<HydrologyNode> upstreamGainLossNodes,
     HydrologyNode node, DataTable table, int nodeIdColumnNum, int nodeTypeColumnNum, String [] nodeOutflowTypes,
     List<String> problems)
 {
@@ -770,7 +770,7 @@ public List<HydrologyNode> analyzeNetworkPointFlow_GetUpstreamNodesForGainLoss(L
 
     if (upstreamGainLossNodes == null) {
         // Create the list
-        upstreamGainLossNodes = new Vector<HydrologyNode>();
+        upstreamGainLossNodes = new ArrayList<HydrologyNode>();
     }
     
     /*
@@ -1128,7 +1128,7 @@ public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
     if ( (table != null) && (c == table.getClass()) ) {
         // Table request
-        List v = new Vector();
+        List<DataTable> v = new Vector<DataTable>();
         v.add ( table );
         return v;
     }
@@ -1354,7 +1354,9 @@ private List<TS> lookupAnalysisInputTimeSeries ( String nodeID, String [] tsData
                 "\" TSID=\"" + tsid + "\") - did not find requested TSID.");
             }
             else {
-                tslist = (List)o_TSList;
+            	@SuppressWarnings("unchecked")
+				List<TS> tslist0 = (List<TS>)o_TSList;
+                tslist = tslist0;
             }
         }
         if ( tslist.size() == 0 ) {
@@ -1393,7 +1395,9 @@ private List<TS> lookupAnalysisInputTimeSeries ( String nodeID, String [] tsData
                 "\" TSID=\"" + tsid + "\").");
             }
             else {
-                tslist = (List)o_TSList;
+            	@SuppressWarnings("unchecked")
+				List<TS> tslist0 = (List<TS>)o_TSList;
+                tslist = tslist0;
                 if ( tslist.size() == 0 ) {
                     problems2.add("No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
                     "\" TSID=\"" + tsid + "\").");

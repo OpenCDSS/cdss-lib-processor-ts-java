@@ -44,6 +44,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WritePropertiesToFile() command.
 */
+@SuppressWarnings("serial")
 public class WritePropertiesToFile_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
@@ -261,7 +262,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write mode:"),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     List<FileWriteModeType> writeModeChoices = __command.getWriteModeChoices();
-    List<String> writeModeChoicesS = new Vector();
+    List<String> writeModeChoicesS = new Vector<String>();
     writeModeChoicesS.add ( "" );
     for ( FileWriteModeType c : writeModeChoices ) {
         writeModeChoicesS.add ( "" + c );
@@ -279,7 +280,7 @@ private void initialize ( JFrame parent, WritePropertiesToFile_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FileFormat_JComboBox = new SimpleJComboBox(false);
     List<PropertyFileFormatType> fileFormatChoices = __command.getFileFormatChoices();
-    List<String> fileFormatChoicesS = new Vector();
+    List<String> fileFormatChoicesS = new Vector<String>();
     fileFormatChoicesS.add ( "" );
     for ( PropertyFileFormatType c : fileFormatChoices ) {
         fileFormatChoicesS.add ( "" + c );

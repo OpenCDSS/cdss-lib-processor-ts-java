@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -38,6 +39,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class Delta_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -289,7 +291,7 @@ private void initialize ( JFrame parent, Delta_Command command )
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -297,10 +299,12 @@ private void initialize ( JFrame parent, Delta_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expected trend:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExpectedTrend_JComboBox = new SimpleJComboBox ();
-    __ExpectedTrend_JComboBox.addItem ( "" );
-    __ExpectedTrend_JComboBox.addItem ( "" + TrendType.DECREASING );
-    __ExpectedTrend_JComboBox.addItem ( "" + TrendType.INCREASING );
-    __ExpectedTrend_JComboBox.addItem ( "" + TrendType.VARIABLE );
+    List<String> expectedChoices = new ArrayList<String>();
+    expectedChoices.add ( "" );
+    expectedChoices.add ( "" + TrendType.DECREASING );
+    expectedChoices.add ( "" + TrendType.INCREASING );
+    expectedChoices.add ( "" + TrendType.VARIABLE );
+    __ExpectedTrend_JComboBox.setData(expectedChoices);
     __ExpectedTrend_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ExpectedTrend_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

@@ -34,6 +34,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
@@ -52,6 +53,7 @@ import RTi.Util.Time.DateTimeFormatterType;
 /**
 Editor for the WriteTimeSeriesToExcel command.
 */
+@SuppressWarnings("serial")
 public class WriteTimeSeriesToExcel_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -664,9 +666,11 @@ private void initialize ( JFrame parent, WriteTimeSeriesToExcel_Command command,
     JGUIUtil.addComponent(excelOutput_JPanel, new JLabel ( "Append?:"),
 		0, ++yExcelOutput, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Append_JComboBox = new SimpleJComboBox ( false );
-	__Append_JComboBox.addItem ( "" );	// Default
-	__Append_JComboBox.addItem ( __command._False );
-	__Append_JComboBox.addItem ( __command._True );
+	List<String> appendChoices = new ArrayList<String>();
+	appendChoices.add ( "" );	// Default
+	appendChoices.add ( __command._False );
+	appendChoices.add ( __command._True );
+	__Append_JComboBox.setData(appendChoices);
 	__Append_JComboBox.select ( 0 );
 	__Append_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(excelOutput_JPanel, __Append_JComboBox,

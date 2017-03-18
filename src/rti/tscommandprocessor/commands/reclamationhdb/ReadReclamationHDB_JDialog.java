@@ -769,12 +769,14 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     // Get all datastores for ReclamationHDB, even if not open (DMI open will be checked when selected).
     List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
         ReclamationHDBDataStore.class, false );
+    List<String> datastoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
     if ( __DataStore_JComboBox.getItemCount() > 0 ) {
         __DataStore_JComboBox.select ( 0 );
     }
+    __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -1546,7 +1548,7 @@ private void populateEnsembleNameChoices ( ReclamationHDB_DMI rdmi )
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB ensemble list (" + e + ")." );
-        ensembleNameStrings = new Vector();
+        ensembleNameStrings = new Vector<String>();
     }
     __EnsembleName_JComboBox.removeAll ();
     __EnsembleName_JComboBox.setData(ensembleNameStrings);
@@ -1570,7 +1572,7 @@ private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
         // Initialization
         return;
     }
-    List<String> hydrologicIndicatorStrings = new ArrayList();
+    List<String> hydrologicIndicatorStrings = new ArrayList<String>();
     hydrologicIndicatorStrings.add ( "" ); // Always add blank because user may not want model time series
     try {
         //readModelList(rdmi);
@@ -1685,7 +1687,7 @@ private void populateModelNameChoices ( ReclamationHDB_DMI rdmi )
 Populate the model run date list based on the selected datastore.
 */
 private void populateModelRunDateChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateModelRunDateChoices";
+{   //String routine = getClass().getName() + ".populateModelRunDateChoices";
     if ( (rdmi == null) || (__ModelRunDate_JComboBox == null) ) {
         // Initialization
         return;

@@ -30,7 +30,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -49,6 +49,7 @@ import RTi.Util.Message.Message;
 /**
 Command parameter editor.
 */
+@SuppressWarnings("serial")
 public class RunSql_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -302,13 +303,15 @@ private void initialize ( JFrame parent, RunSql_Command command )
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
+    List<String>dataStoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	dataStoreChoices.add ( dataStore.getName() );
     }
     if ( dataStoreList.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
-        __DataStore_JComboBox.addItem ( "" );
+    	dataStoreChoices.add ( "" );
     }
+    __DataStore_JComboBox.setData(dataStoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
@@ -486,7 +489,7 @@ private void populateDataStoreProcedureChoices ( DMI dmi )
     List<String> procList = null;
     List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system procedures
     if ( dmi == null ) {
-        procList = new Vector();
+        procList = new Vector<String>();
     }
     else {
         try {

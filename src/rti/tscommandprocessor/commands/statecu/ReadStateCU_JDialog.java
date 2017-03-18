@@ -46,6 +46,8 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -57,6 +59,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class ReadStateCU_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -419,10 +422,12 @@ private void initialize ( JFrame parent, ReadStateCU_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Automatically adjust?:" ), 
    		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
    	__AutoAdjust_JComboBox = new SimpleJComboBox ( false );
-   	__AutoAdjust_JComboBox.addItem ( "" );
-   	__AutoAdjust_JComboBox.addItem ( __command._False );
-   	__AutoAdjust_JComboBox.addItem ( __command._True );
+   	List<String> adjustChoices = new ArrayList<String>();
+   	adjustChoices.add ( "" );
+   	adjustChoices.add ( __command._False );
+   	adjustChoices.add ( __command._True );
    	__AutoAdjust_JComboBox.addItemListener ( this );
+   	__AutoAdjust_JComboBox.setData(adjustChoices);
     JGUIUtil.addComponent(main_JPanel, __AutoAdjust_JComboBox,
    		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -432,9 +437,11 @@ private void initialize ( JFrame parent, ReadStateCU_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Check data after read?:" ), 
        		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CheckData_JComboBox = new SimpleJComboBox ( false );
-    __CheckData_JComboBox.addItem ( "" );
-    __CheckData_JComboBox.addItem ( __command._False );
-    __CheckData_JComboBox.addItem ( __command._True );
+    List<String> checkChoices = new ArrayList<String>();
+    checkChoices.add ( "" );
+    checkChoices.add ( __command._False );
+    checkChoices.add ( __command._True );
+    __CheckData_JComboBox.setData(checkChoices);
     __CheckData_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __CheckData_JComboBox,
        		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

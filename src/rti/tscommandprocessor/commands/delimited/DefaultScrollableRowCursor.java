@@ -20,17 +20,17 @@ import java.util.List;
  */
 public class DefaultScrollableRowCursor implements ScrollableRowCursor, RowCursor.Mutable {
 
-    private final List/*<List<Object>>*/ data;
+    private final List<Object> data;
 
     private final int columns;
 
-    private List/*<Object>*/ row;
+    private List<Object> row;
 
     private int rowIdx;
 
     public DefaultScrollableRowCursor(int columns) {
         //data = new ArrayList<List<Object>>();
-        data = new ArrayList();
+        data = new ArrayList<Object>();
         this.columns = columns;
     }
 
@@ -40,20 +40,25 @@ public class DefaultScrollableRowCursor implements ScrollableRowCursor, RowCurso
 
     public void moveTo(int row) {
         this.rowIdx = row;
-        this.row = (List) data.get(row);
+        @SuppressWarnings("unchecked")
+		List<Object> arow = (List<Object>) data.get(row);
+        this.row = arow;
+        
     }
 
     public boolean next() throws IOException {
         if (rowIdx + 1 >= data.size()) {
             //row = new ArrayList<Object>(columns);
-            row = new ArrayList(columns);
+            row = new ArrayList<Object>(columns);
             for (int i = 0; i < columns; i++) {
                 row.add(null);
             }
             data.add(row);
             rowIdx++;
         } else {
-            row = (List) data.get(rowIdx++);
+        	@SuppressWarnings("unchecked")
+			List<Object> arow = (List<Object>) data.get(rowIdx++);
+            row = arow;
         }
         return true;
     }

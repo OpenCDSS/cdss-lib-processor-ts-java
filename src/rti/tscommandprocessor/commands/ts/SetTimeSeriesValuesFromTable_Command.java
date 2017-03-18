@@ -180,7 +180,7 @@ throws InvalidCommandParameterException
     }*/
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList(15);
+    List<String> validList = new ArrayList<String>(15);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -326,6 +326,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
 	}
+	@SuppressWarnings("unchecked")
 	List<TS> tslist = (List<TS>)o_TSList;
 	if ( tslist.size() == 0 ) {
         message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +

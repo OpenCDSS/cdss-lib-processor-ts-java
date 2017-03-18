@@ -39,12 +39,12 @@ public class UsgsNwisDailyDataStore extends AbstractWebServiceDataStore
 /**
 The records of valid parameters, listed here:  http://help.waterdata.usgs.gov/codes-and-parameters/parameters
 */
-private List<UsgsNwisParameterType> __parameterTypeList = new Vector();
+private List<UsgsNwisParameterType> __parameterTypeList = new Vector<UsgsNwisParameterType>();
     
 /**
 The records of valid statistics, listed here:  http://waterservices.usgs.gov/rest/USGS-DV-Service.html
 */
-private List<UsgsNwisStatisticType> __statisticTypeList = new Vector();
+private List<UsgsNwisStatisticType> __statisticTypeList = new Vector<UsgsNwisStatisticType>();
     
 /**
 Constructor for web service.
@@ -121,7 +121,7 @@ Return the list of agencies that are available.  Currently this returns an empty
 @param includeName whether to include the name.
 */
 public List<String> getAgencyStrings ( boolean includeName )
-{   List<String> agencyList = new Vector();
+{   List<String> agencyList = new Vector<String>();
     /*
     for ( UsgsNwisAgencyType agency: __agencyTypeList ) {
         if ( includeName ) {
@@ -141,7 +141,7 @@ are consistent with TSTool ("Day", rather than "daily").  There is only one choi
 value web service.
 */
 public List<String> getDataIntervalStringsForDataType ( String dataType )
-{   List<String> dataIntervalStrings = new Vector();
+{   List<String> dataIntervalStrings = new Vector<String>();
     dataIntervalStrings.add("Day");
     return dataIntervalStrings;
 }
@@ -154,7 +154,7 @@ numeric codes, but this may not be an option.
 @param includeName whether to include the name.
 */
 public List<String> getParameterStrings ( boolean includeName )
-{   List<String> dataTypeList = new Vector();
+{   List<String> dataTypeList = new Vector<String>();
     for ( UsgsNwisParameterType param: __parameterTypeList ) {
         if ( includeName ) {
             dataTypeList.add( "" + param.getCode() + " - " + param.getName() );
@@ -172,7 +172,7 @@ the name.
 @param includeName whether to include the name.
 */
 public List<String> getStatisticStrings ( boolean includeName )
-{   List<String> statisticList = new Vector();
+{   List<String> statisticList = new Vector<String>();
     for ( UsgsNwisStatisticType statistic: __statisticTypeList ) {
         if ( includeName ) {
             statisticList.add( "" + statistic.getCode() + " - " + statistic.getName() );
@@ -235,7 +235,7 @@ public List<UsgsNwisSiteTimeSeriesMetadata> readSiteTimeSeriesMetadataList(
     String dataType, String timeStep, InputFilter_JPanel ifp )
 throws IOException, MalformedURLException
 {   //String routine = getClass().getName() + ".readSiteTimeSeriesMetadataList";
-    List<UsgsNwisSiteTimeSeriesMetadata> metadataList = new Vector();
+    List<UsgsNwisSiteTimeSeriesMetadata> metadataList = new Vector<UsgsNwisSiteTimeSeriesMetadata>();
     UsgsNwisSiteTimeSeriesMetadata metadata = new UsgsNwisSiteTimeSeriesMetadata();
     metadata.setDataStore(this);
     metadata.setInterval("1Day");
@@ -284,11 +284,11 @@ not read the data
 public TS readTimeSeries ( String tsid, DateTime readStart, DateTime readEnd, boolean readData )
 throws MalformedURLException, IOException, Exception
 {   // Initialize empty query parameters.
-    List<String> siteList = new Vector();
-    List<String> stateList = new Vector();
-    List<String> hucList = new Vector();
+    List<String> siteList = new Vector<String>();
+    List<String> stateList = new Vector<String>();
+    List<String> hucList = new Vector<String>();
     double [] boundingBox = null;
-    List<String> countyList = new Vector();
+    List<String> countyList = new Vector<String>();
     List<UsgsNwisParameterType> parameterList = new Vector<UsgsNwisParameterType>();
     List<UsgsNwisStatisticType> statisticTypeList = new Vector<UsgsNwisStatisticType>();
     UsgsNwisSiteStatusType siteStatus = UsgsNwisSiteStatusType.ALL;
@@ -332,13 +332,13 @@ public List<TS> readTimeSeriesList ( List<String> siteList, List<String> stateLi
 throws MalformedURLException, IOException, Exception
 {
     String routine = getClass().getName() + ".readTimeSeriesList";
-    List<TS> tslist = new Vector();
+    List<TS> tslist = new Vector<TS>();
 
     // Form the URL, starting with the root
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() );
     // Specify these in the order of the web service API documentation
     // Major filter - location, pick the first one specified
-    List<String> queryParameters = new Vector(); // Correspond to each query argument - ? and & handled later
+    List<String> queryParameters = new Vector<String>(); // Correspond to each query argument - ? and & handled later
     // Site list
     if ( siteList.size() > 0 ) {
         StringBuffer b = new StringBuffer("sites=");

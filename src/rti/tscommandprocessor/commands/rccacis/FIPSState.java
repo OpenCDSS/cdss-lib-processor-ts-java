@@ -20,7 +20,7 @@ public class FIPSState {
 /**
 Static singleton list of state FIPS data, read on first access.
 */
-private static List<FIPSState> __dataList = new Vector();
+private static List<FIPSState> __dataList = new Vector<FIPSState>();
 
 /**
 The FIPS state code as a two-digit zero-padded string.

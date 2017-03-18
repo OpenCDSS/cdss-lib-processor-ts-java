@@ -26,6 +26,7 @@ import RTi.Util.Message.Message;
 JTree to use in the TimeSeriesTreeView.  This primarily uses SimpleJTree functionality, with some
 overrides for popup menus.
 */
+@SuppressWarnings("serial")
 public class TimeSeriesTreeView_JTree extends SimpleJTree implements ActionListener, MouseListener
 {
     
@@ -80,7 +81,7 @@ public void actionPerformed(ActionEvent event)
     List selectedNodes = getSelectedNodes();
     
     if ( action.equals(__MENU_Graph_Line)) {
-        List<TS> tslist = new Vector();
+        List<TS> tslist = new Vector<TS>();
         for ( Object o : selectedNodes ) {
             // TODO SAM Don't like all the casting but the low-level code deals with generic objects
             if ( o instanceof SimpleJTree_Node ) {
@@ -113,7 +114,6 @@ public void actionPerformed(ActionEvent event)
         }
     }
     else if ( action.equals(__MENU_Graph_Product) ) {
-    	List<TS> tslist = new Vector();
         for ( Object o : selectedNodes ) {
             // TODO SAM Don't like all the casting but the low-level code deals with generic objects
             if ( o instanceof SimpleJTree_Node ) {

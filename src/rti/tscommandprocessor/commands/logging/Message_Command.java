@@ -70,7 +70,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List validList = new ArrayList<String>(2);
+    List<String> validList = new ArrayList<String>(2);
 	validList.add ( "Message" );
 	validList.add ( "CommandStatus" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );

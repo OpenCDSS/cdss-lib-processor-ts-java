@@ -35,6 +35,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the For() command.
 */
+@SuppressWarnings("serial")
 public class For_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

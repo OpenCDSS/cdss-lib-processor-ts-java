@@ -40,6 +40,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog.
 */
+@SuppressWarnings("serial")
 public class ProcessRasterGraph_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

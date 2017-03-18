@@ -463,7 +463,7 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    List<TS> matchingDiscoveryTS = new Vector();
+    List<TS> matchingDiscoveryTS = new Vector<TS>();
     List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return matchingDiscoveryTS;
@@ -564,9 +564,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     DistributionType distributionType = DistributionType.valueOfIgnoreCase(Distribution);
     String DistributionParameters = parameters.getValue ( "DistributionParameters" );
-    Hashtable distParams = null;
+    Hashtable<String,String> distParams = null;
     if ( (DistributionParameters != null) && (DistributionParameters.length() > 0) && (DistributionParameters.indexOf(":") > 0) ) {
-        distParams = new Hashtable();
+        distParams = new Hashtable<String,String>();
         // First break map pairs by comma
         List<String> pairs = new ArrayList<String>();
         if ( DistributionParameters.indexOf(",") > 0 ) {
@@ -660,9 +660,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String OutputStart = parameters.getValue ( "OutputStart" );
     String OutputEnd = parameters.getValue ( "OutputEnd" );
     String Properties = parameters.getValue ( "Properties" );
-    Hashtable properties = null;
+    Hashtable<String,String> properties = null;
     if ( (Properties != null) && (Properties.length() > 0) && (Properties.indexOf(":") > 0) ) {
-        properties = new Hashtable();
+        properties = new Hashtable<String,String>();
         // First break map pairs by comma
         List<String> pairs = new ArrayList<String>();
         if ( Properties.indexOf(",") > 0 ) {
@@ -799,7 +799,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
         }
         else {
-            tslist = (List)o_TSList;
+        	@SuppressWarnings("unchecked")
+			List<TS> tslist0 = (List<TS>)o_TSList;
+            tslist = tslist0;
             if ( tslist.size() == 0 ) {
                 message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
                 "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -877,10 +879,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             else if ( commandPhase == CommandPhaseType.RUN ) {
                 if ( properties != null ) {
                     // Assign properties
-                    Enumeration keys = properties.keys();
+                    Enumeration<String> keys = properties.keys();
                     String key = null;
                     while ( keys.hasMoreElements() ) {
-                        key = (String)keys.nextElement();
+                        key = keys.nextElement();
                         newts.setProperty( key, TSCommandProcessorUtil.expandTimeSeriesMetadataString (
                             processor, ts, (String)properties.get(key), status, CommandPhaseType.RUN) );
                     }

@@ -55,7 +55,6 @@ import RTi.Util.String.StringDictionary;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
-import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -259,7 +258,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new Vector();
+    List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -506,7 +505,7 @@ throws InvalidCommandParameterException, CommandWarningException
         }
     }
     String ColumnNamedRanges = parameters.getValue ( "ColumnNamedRanges" );
-    Hashtable columnNamedRanges = new Hashtable();
+    Hashtable<String,String> columnNamedRanges = new Hashtable<String,String>();
     if ( (ColumnNamedRanges != null) && (ColumnNamedRanges.length() > 0) && (ColumnNamedRanges.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(ColumnNamedRanges, ",", 0 );
@@ -657,10 +656,10 @@ throws InvalidCommandParameterException, CommandWarningException
 	try {
         // Check that named ranges match columns
 	    if ( columnNamedRanges != null ) {
-    	    Enumeration keys = columnNamedRanges.keys();
+    	    Enumeration<String> keys = columnNamedRanges.keys();
             String key = null;
             while ( keys.hasMoreElements() ) {
-                key = (String)keys.nextElement(); // Column name
+                key = keys.nextElement(); // Column name
                 // Find the table column
                 if ( table.getFieldIndex(key) < 0 ) {
                     message += "\nThe column \"" + key + "\" for a named range does not exist in the table.";
@@ -976,13 +975,11 @@ private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TableCo
     cell = tk.setCellValue(sheet,rowOut,colOut,"Color Legend");
 	// Loop through the conditions
 	DataTable ct = styleManager.getConditionTable();
-	TableRecord rec = null;
 	for ( int i = 0; i < ct.getNumberOfRecords(); i++ ) {
 		++rowOut;
 		try {
 			// Write the condition string
 			// TODO SAM 2015-07-11 evaluate how to make presentation-friendly
-			rec = ct.getRecord(i);
 			String legendString = styleManager.getDisplayString(i);
 			if ( legendString.isEmpty() ) {
 				legendString = styleManager.getConditionString(i);
@@ -1307,12 +1304,12 @@ throws FileNotFoundException, IOException
             // If named ranges are to be written, match the table columns and do it
             if ( columnNamedRanges != null ) {
                 // Iterate through hashtable
-                Enumeration keys = columnNamedRanges.keys();
+                Enumeration<String> keys = columnNamedRanges.keys();
                 String key = null;
                 boolean found = false;
                 String namedRange = null;
                 while ( keys.hasMoreElements() ) {
-                    key = (String)keys.nextElement(); // Column name
+                    key = keys.nextElement(); // Column name
                     // Find the table column
                     int namedRangeCol = table.getFieldIndex(key);
                     namedRange = columnNamedRanges.get(key); // Named range

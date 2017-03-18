@@ -42,6 +42,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the ReadReclamationPisces() command.
 */
+@SuppressWarnings("serial")
 public class ReadReclamationPisces_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -421,10 +422,12 @@ private void initialize ( JFrame parent, ReadReclamationPisces_Command command )
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( ReclamationPiscesDataStore.class );
     // Add a blank because the datastore needs to be selected to trigger other events
-    __DataStore_JComboBox.addItem ( "" );
+    List<String> dataStoreChoices = new ArrayList<String>();
+    dataStoreChoices.add ( "" );
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	dataStoreChoices.add ( dataStore.getName() );
     }
+    __DataStore_JComboBox.setData(dataStoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
@@ -493,12 +496,12 @@ private void initialize ( JFrame parent, ReadReclamationPisces_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If missing:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> IfMissing_Vector = new Vector ( 3 );
-    IfMissing_Vector.add ( "" );
-    IfMissing_Vector.add ( __command._Ignore );
-    IfMissing_Vector.add ( __command._Warn );
+    List<String> IfMissing_List = new ArrayList<String> ( 3 );
+    IfMissing_List.add ( "" );
+    IfMissing_List.add ( __command._Ignore );
+    IfMissing_List.add ( __command._Warn );
     __IfMissing_JComboBox = new SimpleJComboBox ( false );
-    __IfMissing_JComboBox.setData ( IfMissing_Vector);
+    __IfMissing_JComboBox.setData ( IfMissing_List);
     __IfMissing_JComboBox.select ( 0 );
     __IfMissing_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IfMissing_JComboBox,

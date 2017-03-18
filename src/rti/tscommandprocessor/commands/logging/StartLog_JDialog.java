@@ -11,6 +11,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -34,6 +36,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class StartLog_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
@@ -274,9 +277,11 @@ private void initialize ( JFrame parent, StartLog_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Suffix:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Suffix_JComboBox = new SimpleJComboBox ( false );
-	__Suffix_JComboBox.addItem ( "" );	// Default
-	__Suffix_JComboBox.addItem ( __command._Date );
-	__Suffix_JComboBox.addItem ( __command._DateTime );
+	List<String> suffixChoices = new ArrayList<String>();
+	suffixChoices.add ( "" );	// Default
+	suffixChoices.add ( __command._Date );
+	suffixChoices.add ( __command._DateTime );
+	__Suffix_JComboBox.setData(suffixChoices);
 	__Suffix_JComboBox.select ( 0 );
 	__Suffix_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Suffix_JComboBox,

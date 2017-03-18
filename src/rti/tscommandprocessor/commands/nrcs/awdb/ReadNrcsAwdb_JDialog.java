@@ -47,6 +47,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for he ReadNrcsAwdb() command.
 */
+@SuppressWarnings("serial")
 public class ReadNrcsAwdb_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -444,10 +445,12 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( NrcsAwdbDataStore.class );
+    List<String> datastoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
     if ( dataStoreList.size() > 0 ) {
+    	__DataStore_JComboBox.setData(datastoreChoices);
         __DataStore_JComboBox.select ( 0 );
     }
     __DataStore_JComboBox.addItemListener ( this );
@@ -546,7 +549,7 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     // Get the global county FIPS data
     List<FIPSCounty> counties = FIPSCounty.getData();
-    List<String> countyList = new Vector();
+    List<String> countyList = new Vector<String>();
     for ( FIPSCounty fips : counties ) {
         countyList.add(fips.getName() + ", " + fips.getStateAbbreviation() + " (" + fips.getCode() + ")" );
     }

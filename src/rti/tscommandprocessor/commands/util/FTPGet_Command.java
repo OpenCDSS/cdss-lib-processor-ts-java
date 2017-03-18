@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.regex.Pattern;
 import javax.swing.JFrame;
 
@@ -168,17 +167,17 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-	valid_Vector.add ( "RemoteSite" );
-	valid_Vector.add ( "Login" );
-	valid_Vector.add ( "Password" );
-	valid_Vector.add ( "RemoteFolder" );
-	valid_Vector.add ( "FilePattern" );
-	valid_Vector.add ( "DestinationFolder" );
-	valid_Vector.add ( "TransferMode" );
-	valid_Vector.add ( "RetryCount" );
-	valid_Vector.add ( "RetryWait" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(9);
+	validList.add ( "RemoteSite" );
+	validList.add ( "Login" );
+	validList.add ( "Password" );
+	validList.add ( "RemoteFolder" );
+	validList.add ( "FilePattern" );
+	validList.add ( "DestinationFolder" );
+	validList.add ( "TransferMode" );
+	validList.add ( "RetryCount" );
+	validList.add ( "RetryWait" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -557,7 +556,7 @@ private void downloadFiles(FTPClient ftp, String remoteFolder, String FilePatter
     } catch (IOException ex) {
         throw new RuntimeException("Error listing remote directory", ex);
     }
-    ArrayList matched = new ArrayList();
+    ArrayList<String> matched = new ArrayList<String>();
     Glob filePattern = new Glob ( "*", false );
     if ( (FilePattern != null) && !FilePattern.equals("") ) {
         filePattern = new Glob(FilePattern,false);

@@ -43,6 +43,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
+import RTi.TS.TS;
 
 /**
 <p>
@@ -180,18 +181,18 @@ throws InvalidCommandParameterException
                 message, "Specify the output file name similar to: SEGID.TSID.TSTYPE.06.CS" ) );
     }
     
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "OutputFile" );
-    valid_Vector.add ( "CarryoverGroup" );
-    valid_Vector.add ( "ForecastGroup" );
-    valid_Vector.add ( "Segment" );
-    valid_Vector.add ( "SegmentDescription" );
-    valid_Vector.add ( "Latitude" );
-    valid_Vector.add ( "Longitude" );
-    valid_Vector.add ( "RFC" );
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "EnsembleID" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new Vector<String>();
+    validList.add ( "OutputFile" );
+    validList.add ( "CarryoverGroup" );
+    validList.add ( "ForecastGroup" );
+    validList.add ( "Segment" );
+    validList.add ( "SegmentDescription" );
+    validList.add ( "Latitude" );
+    validList.add ( "Longitude" );
+    validList.add ( "RFC" );
+    validList.add ( "TSList" );
+    validList.add ( "EnsembleID" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -226,9 +227,9 @@ throws Throwable {
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -261,7 +262,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	int warning_level = 2;
 	int warning_count = 0;
 
-	List tokens = StringUtil.breakStringList(command, "()", 0);
+	List<String> tokens = StringUtil.breakStringList(command, "()", 0);
 	if ((tokens == null) || tokens.size() < 2) {
 		// Must have at least the command name and the InputFile
 		message = "Syntax error in \"" + command + "\".  Expecting " + getCommandName() + "().";
@@ -332,7 +333,7 @@ throws InvalidCommandParameterException,
         }
 	}
 		
-	List tslist = null;
+	List<TS> tslist = null;
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	//request_params.set ( "TSID", TSID );
@@ -366,7 +367,10 @@ throws InvalidCommandParameterException,
                 CommandStatusType.FAILURE, message,
                 "Report the problem to software support."));
 	}
-	else {	tslist = (List)o_TSList;
+	else {
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+		tslist = tslist0;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to write using TSList=\"" + TSList + "\", EnsembleID=\"" +
 			EnsembleID + "\"";

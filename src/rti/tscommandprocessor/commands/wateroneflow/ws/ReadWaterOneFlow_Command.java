@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.wateroneflow.ws;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -205,22 +206,22 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "NetworkName" );
-    valid_Vector.add ( "SiteID" );
-    valid_Vector.add ( "Variable" );
-    valid_Vector.add ( "Interval" );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "DataStore" );
+    validList.add ( "NetworkName" );
+    validList.add ( "SiteID" );
+    validList.add ( "Variable" );
+    validList.add ( "Interval" );
     /*
     for ( int i = 1; i <= __numFilterGroups; i++ ) { 
         valid_Vector.add ( "Where" + i );
     }
     */
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "OutputFile" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "Alias" );
+    validList.add ( "OutputFile" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -324,10 +325,10 @@ CommandWarningException, CommandException
     CommandStatus status = getCommandStatus();
     status.clearLog(commandPhase);
     
-    boolean readData = true;
+    //boolean readData = true;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
-        readData = false;
+        //readData = false;
     }
     
     String DataStore = parameters.getValue("DataStore");
@@ -341,8 +342,8 @@ CommandWarningException, CommandException
         Variable = Variable.substring(0,pos);
     }
     */
-    String Interval = parameters.getValue("Interval");
-    String Alias = parameters.getValue("Alias");
+    //String Interval = parameters.getValue("Interval");
+    //String Alias = parameters.getValue("Alias");
     String OutputFile = parameters.getValue("OutputFile");
     
 	String InputStart = parameters.getValue ( "InputStart" );
@@ -461,7 +462,7 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	List<TS> tslist = new Vector();	// List for time series results.
+	List<TS> tslist = new Vector<TS>();	// List for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -671,7 +672,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

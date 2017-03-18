@@ -26,6 +26,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -35,6 +36,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class Free_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -244,13 +246,13 @@ private void initialize ( JFrame parent, Command command )
 
      __TSID_JLabel = new JLabel ("TSID (for TSList=matching TSID):");
      __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
          (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
      
      __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
      __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-     List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
              (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
              this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -268,9 +270,11 @@ private void initialize ( JFrame parent, Command command )
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Free ensemble if empty?" ), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __FreeEnsembleIfEmpty_JComboBox = new SimpleJComboBox ( false );
-     __FreeEnsembleIfEmpty_JComboBox.addItem ( "" );
-     __FreeEnsembleIfEmpty_JComboBox.addItem ( __command._False );
-     __FreeEnsembleIfEmpty_JComboBox.addItem ( __command._True );
+     List<String> emptyChoices = new ArrayList<String>();
+     emptyChoices.add ( "" );
+     emptyChoices.add ( __command._False );
+     emptyChoices.add ( __command._True );
+     __FreeEnsembleIfEmpty_JComboBox.setData(emptyChoices);
      __FreeEnsembleIfEmpty_JComboBox.select ( __command._True );
      __FreeEnsembleIfEmpty_JComboBox.addItemListener ( this );
      JGUIUtil.addComponent(main_JPanel, __FreeEnsembleIfEmpty_JComboBox,

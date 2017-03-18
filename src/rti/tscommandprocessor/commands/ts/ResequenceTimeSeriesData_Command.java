@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -191,20 +192,20 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-	valid_Vector.add ( "TSID" );
-	valid_Vector.add ( "EnsembleID" );
-	valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "TableColumn" );
-    valid_Vector.add ( "TableRowStart" );
-    valid_Vector.add ( "TableRowEnd" );
-    valid_Vector.add ( "OutputYearType" );
-    valid_Vector.add ( "OutputStart" );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "TSList" );
+	validList.add ( "TSID" );
+	validList.add ( "EnsembleID" );
+	validList.add ( "TableID" );
+    validList.add ( "TableColumn" );
+    validList.add ( "TableRowStart" );
+    validList.add ( "TableRowEnd" );
+    validList.add ( "OutputYearType" );
+    validList.add ( "OutputStart" );
     //valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "NewScenario" );
-    valid_Vector.add ( "Alias" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	validList.add ( "NewScenario" );
+    validList.add ( "Alias" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -521,7 +522,9 @@ CommandWarningException, CommandException
     				new CommandLogRecord(CommandStatusType.FAILURE,
     						message, "Report problem to software support." ) );
     	}
-    	tslist = (List)o_TSList;
+    	@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+    	tslist = tslist0;
     }
 	if ( (tslist == null) || (tslist.size() == 0) ) {
 		message = "No time series in list to process using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
@@ -755,7 +758,7 @@ CommandWarningException, CommandException
     }
     TS ts = null;
     TS newts = null;
-    List<TS> discoveryTSList = new Vector();
+    List<TS> discoveryTSList = new Vector<TS>();
     for ( int i = 0; i < size; i++ ) {
         // Create a copy of the original, but with the new scenario.
         ts = (TS)tslist.get(i);

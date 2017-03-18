@@ -24,7 +24,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.GUI.JFileChooserFactory;
@@ -40,6 +40,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the CompareTables() command.
 */
+@SuppressWarnings("serial")
 public class CompareTables_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -370,9 +371,11 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match columns how:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MatchColumnsHow_JComboBox = new SimpleJComboBox ( false );
-    __MatchColumnsHow_JComboBox.addItem ( "" ); // Default
-    __MatchColumnsHow_JComboBox.addItem ( __command._Name );
-    __MatchColumnsHow_JComboBox.addItem ( __command._Order );
+    List<String> matchChoices = new ArrayList<String>();
+    matchChoices.add ( "" ); // Default
+    matchChoices.add ( __command._Name );
+    matchChoices.add ( __command._Order );
+    __MatchColumnsHow_JComboBox.setData(matchChoices);
     __MatchColumnsHow_JComboBox.select ( 0 );
     __MatchColumnsHow_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __MatchColumnsHow_JComboBox,
@@ -433,10 +436,12 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if different:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __IfDifferent_JComboBox = new SimpleJComboBox ( false );
-     __IfDifferent_JComboBox.addItem ( "" ); // Default
-     __IfDifferent_JComboBox.addItem ( __command._Ignore );
-     __IfDifferent_JComboBox.addItem ( __command._Warn );
-     __IfDifferent_JComboBox.addItem ( __command._Fail );
+     List<String> diffChoices = new ArrayList<String>();
+     diffChoices.add ( "" ); // Default
+     diffChoices.add ( __command._Ignore );
+     diffChoices.add ( __command._Warn );
+     diffChoices.add ( __command._Fail );
+     __IfDifferent_JComboBox.setData(diffChoices);
      __IfDifferent_JComboBox.select ( 0 );
      __IfDifferent_JComboBox.addActionListener ( this );
      JGUIUtil.addComponent(main_JPanel, __IfDifferent_JComboBox,
@@ -448,10 +453,12 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if same:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __IfSame_JComboBox = new SimpleJComboBox ( false );
-     __IfSame_JComboBox.addItem ( "" );  // Default
-     __IfSame_JComboBox.addItem ( __command._Ignore );
-     __IfSame_JComboBox.addItem ( __command._Warn );
-     __IfSame_JComboBox.addItem ( __command._Fail );
+     List<String> sameChoices = new ArrayList<String>();
+     sameChoices.add ( "" );  // Default
+     sameChoices.add ( __command._Ignore );
+     sameChoices.add ( __command._Warn );
+     sameChoices.add ( __command._Fail );
+     __IfSame_JComboBox.setData(sameChoices);
      __IfSame_JComboBox.select ( 0 );
      __IfSame_JComboBox.addActionListener ( this );
      JGUIUtil.addComponent(main_JPanel, __IfSame_JComboBox,

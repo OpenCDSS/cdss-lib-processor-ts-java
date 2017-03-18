@@ -30,6 +30,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -41,6 +42,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the FillFromTS() command.
 */
+@SuppressWarnings("serial")
 public class FillFromTS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
@@ -364,9 +366,11 @@ private void initialize ( JFrame parent, FillFromTS_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RecalcLimits_JComboBox = new SimpleJComboBox ( false );
-    __RecalcLimits_JComboBox.addItem ( "" );
-    __RecalcLimits_JComboBox.addItem ( __command._False );
-    __RecalcLimits_JComboBox.addItem ( __command._True );
+    List<String> recalcChoices = new ArrayList<String>();
+    recalcChoices.add ( "" );
+    recalcChoices.add ( __command._False );
+    recalcChoices.add ( __command._True );
+    __RecalcLimits_JComboBox.setData(recalcChoices);
     __RecalcLimits_JComboBox.select ( 0 );
     __RecalcLimits_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,

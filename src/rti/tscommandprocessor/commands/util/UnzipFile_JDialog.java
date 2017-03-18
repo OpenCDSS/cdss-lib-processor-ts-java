@@ -13,6 +13,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -35,6 +37,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+@SuppressWarnings("serial")
 public class UnzipFile_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -355,10 +358,12 @@ private void initialize ( JFrame parent, UnzipFile_Command command )
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If input not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfInputNotFound_JComboBox = new SimpleJComboBox ( false );
-	__IfInputNotFound_JComboBox.addItem ( "" );	// Default
-	__IfInputNotFound_JComboBox.addItem ( __command._Ignore );
-	__IfInputNotFound_JComboBox.addItem ( __command._Warn );
-	__IfInputNotFound_JComboBox.addItem ( __command._Fail );
+	List<String> notFoundChoices = new ArrayList<String>();
+	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( __command._Ignore );
+	notFoundChoices.add ( __command._Warn );
+	notFoundChoices.add ( __command._Fail );
+	__IfInputNotFound_JComboBox.setData(notFoundChoices);
 	__IfInputNotFound_JComboBox.select ( 0 );
 	__IfInputNotFound_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __IfInputNotFound_JComboBox,

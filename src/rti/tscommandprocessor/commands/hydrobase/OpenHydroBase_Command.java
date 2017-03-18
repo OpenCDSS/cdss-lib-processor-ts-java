@@ -20,6 +20,7 @@
 
 package rti.tscommandprocessor.commands.hydrobase;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
@@ -126,14 +127,14 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "OdbcDsn" );
-    valid_Vector.add ( "DatabaseServer" );
-    valid_Vector.add ( "DatabaseName" );
-    valid_Vector.add ( "RunMode" );
-    valid_Vector.add ( "UseStoredProcedures" );
-    valid_Vector.add ( "InputName" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(6);
+    validList.add ( "OdbcDsn" );
+    validList.add ( "DatabaseServer" );
+    validList.add ( "DatabaseName" );
+    validList.add ( "RunMode" );
+    validList.add ( "UseStoredProcedures" );
+    validList.add ( "InputName" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -171,7 +172,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     
     CommandStatus status = getCommandStatus();
 	
-    List tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
+    List<String> tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
 	if ( (tokens == null) ) {
 		message = "Invalid syntax for \"" + command + "\".  Expecting OpenHydroBase(...).";
@@ -357,10 +358,12 @@ throws CommandException
 	// Get the DMI instances from the processor...
 
 	CommandProcessor processor = getCommandProcessor();
-	List dmilist = null;
+	List<HydroBaseDMI> dmilist = null;
 	try { Object o = processor.getPropContents ( "HydroBaseDMIList" );
 			if ( o != null ) {
-				dmilist = (List)o;
+				@SuppressWarnings("unchecked")
+				List<HydroBaseDMI> dmilist0 = (List<HydroBaseDMI>)o;
+				dmilist = dmilist0;
 			}
 	}
 	catch ( Exception e ) {
@@ -375,13 +378,13 @@ throws CommandException
 	
 	int size = 0;
 	if ( dmilist == null ) {
-		dmilist = new Vector();
+		dmilist = new Vector<HydroBaseDMI>();
 	}
 	size = dmilist.size();
 	HydroBaseDMI hbdmi2 = null;
 	String input_name = hbdmi.getInputName();
 	for ( int i = 0; i < size; i++ ) {
-		hbdmi2 = (HydroBaseDMI)dmilist.get(i);
+		hbdmi2 = dmilist.get(i);
 		if ( hbdmi2.getInputName().equalsIgnoreCase(input_name)){
 			// The input name of the current instance matches that of the instance in the Vector.
 			// Replace the instance in the Vector by the new instance...

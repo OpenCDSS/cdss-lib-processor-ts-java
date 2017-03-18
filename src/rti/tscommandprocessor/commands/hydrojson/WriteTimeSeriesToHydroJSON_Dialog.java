@@ -26,6 +26,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -45,6 +46,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTimeSeriesToHydroJSON() command.
 */
+@SuppressWarnings("serial")
 public class WriteTimeSeriesToHydroJSON_Dialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
@@ -807,9 +809,11 @@ private void initialize ( JFrame parent, WriteTimeSeriesToHydroJSON_Command comm
     JGUIUtil.addComponent(file_JPanel, new JLabel ( "Print nice?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__PrintNice_JComboBox = new SimpleJComboBox ( false );
-	__PrintNice_JComboBox.addItem ( "" ); // Default
-	__PrintNice_JComboBox.addItem ( __command._False );
-	__PrintNice_JComboBox.addItem ( __command._True );
+	List<String> niceChoices = new ArrayList<String>();
+	niceChoices.add ( "" ); // Default
+	niceChoices.add ( __command._False );
+	niceChoices.add ( __command._True );
+	__PrintNice_JComboBox.setData(niceChoices);
 	__PrintNice_JComboBox.addItemListener(this);
    JGUIUtil.addComponent(file_JPanel, __PrintNice_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

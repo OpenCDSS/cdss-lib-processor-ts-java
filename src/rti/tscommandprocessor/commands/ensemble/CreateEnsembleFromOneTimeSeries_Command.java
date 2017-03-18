@@ -244,7 +244,7 @@ public List getObjectList ( Class c )
     List<TS> discoveryTSList = getDiscoveryTSList ();
 	List v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        v = new Vector();
+        v = new Vector<TSEnsemble>();
         v.add ( tsensemble );
     }
     else if ( (discoveryTSList != null) && (discoveryTSList.size() != 0) ) {

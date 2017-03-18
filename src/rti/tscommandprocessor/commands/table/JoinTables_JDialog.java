@@ -35,6 +35,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Table.DataTableJoinMethodType;
 import RTi.Util.Table.HandleMultipleJoinMatchesHowType;
 
+@SuppressWarnings("serial")
 public class JoinTables_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

@@ -2,20 +2,10 @@ package rti.tscommandprocessor.commands.spreadsheet;
 
 import javax.swing.JFrame;
 
-import org.apache.poi.hssf.util.CellRangeAddress;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.Cell;
-//import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CellValue;
-import org.apache.poi.ss.usermodel.DataFormat;
-import org.apache.poi.ss.usermodel.DateUtil;
-import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.AreaReference;
 import org.apache.poi.ss.util.CellReference;
 
@@ -23,13 +13,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
@@ -48,17 +32,12 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
-import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 //import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
-import RTi.Util.Table.TableColumnType;
-import RTi.Util.Table.TableField;
-import RTi.Util.Table.TableRecord;
-import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the WriteTableCellsToExcel() command, using Apache POI.
@@ -113,7 +92,7 @@ private boolean cellMatchesFilter ( String columnName, String cellValue, Hashtab
     if ( filtersMap == null ) {
         return false;
     }
-    Enumeration keys = filtersMap.keys();
+    Enumeration<String> keys = filtersMap.keys();
     String key = null;
     // Compare as upper case to treat as case insensitive
     String cellValueUpper = null;
@@ -123,7 +102,7 @@ private boolean cellMatchesFilter ( String columnName, String cellValue, Hashtab
     String columnNameUpper = columnName.toUpperCase();
     String pattern;
     while ( keys.hasMoreElements() ) {
-        key = (String)keys.nextElement();
+        key = keys.nextElement();
         pattern = filtersMap.get(key);
         //Message.printStatus(2,"","Checking column \"" + columnNameUpper + "\" against key \"" + key +
         //    "\" for cell value \"" + cellValueUpper + "\" and pattern \"" + pattern + "\"" );
@@ -165,8 +144,6 @@ throws InvalidCommandParameterException
 
 	// If the input file does not exist, warn the user...
 
-	String working_dir = null;
-	
 	CommandProcessor processor = getCommandProcessor();
 	
     if ( (TableID == null) || (TableID.length() == 0) ) {
@@ -180,7 +157,7 @@ throws InvalidCommandParameterException
 	    Object o = processor.getPropContents ( "WorkingDir" );
 		// Working directory is available so use it...
 		if ( o != null ) {
-			working_dir = (String)o;
+			//working_dir = (String)o;
 		}
 	}
 	catch ( Exception e ) {
@@ -444,7 +421,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new Vector();
+    List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -539,7 +516,7 @@ throws InvalidCommandParameterException, CommandWarningException
 	}
 	*/
     String ColumnCellMap = parameters.getValue ( "ColumnCellMap" );
-    Hashtable columnCellMap = new Hashtable();
+    Hashtable<String,String> columnCellMap = new Hashtable<String,String>();
     if ( (ColumnCellMap != null) && (ColumnCellMap.length() > 0) && (ColumnCellMap.indexOf(":") > 0) ) {
         // First break map pairs by comma
         String [] pairs = ColumnCellMap.split(",");
@@ -627,10 +604,10 @@ throws InvalidCommandParameterException, CommandWarningException
 	try {
         // Check that named ranges match columns
 	    if ( ColumnCellMap != null ) {
-    	    Enumeration keys = columnCellMap.keys();
+    	    Enumeration<String> keys = columnCellMap.keys();
             String key = null;
             while ( keys.hasMoreElements() ) {
-                key = (String)keys.nextElement(); // Column name
+                key = keys.nextElement(); // Column name
                 // Find the table column
                 if ( table.getFieldIndex(key) < 0 ) {
                     message += "\nThe column \"" + key + "\" to map to a cell address does not exist in the table.";

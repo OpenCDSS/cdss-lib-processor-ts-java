@@ -47,6 +47,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for WriteNwsrfsEspTraceEnsemble() command.
 */
+@SuppressWarnings("serial")
 public class WriteNWSRFSESPTraceEnsemble_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -402,7 +403,7 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> tslist_Vector = new Vector();
+    List<String> tslist_Vector = new Vector<String>();
 	tslist_Vector.add ( "" );
 	tslist_Vector.add ( TSListType.ALL_TS.toString() );
     tslist_Vector.add ( TSListType.ENSEMBLE_ID.toString() );
@@ -418,7 +419,7 @@ private void initialize ( JFrame parent, Command command )
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );

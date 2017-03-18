@@ -30,6 +30,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the SetIncludeMissingTS() command.
 */
+@SuppressWarnings("serial")
 public class SetIncludeMissingTS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

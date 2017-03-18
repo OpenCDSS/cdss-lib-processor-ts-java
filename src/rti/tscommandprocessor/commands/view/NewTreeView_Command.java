@@ -164,9 +164,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   TimeSeriesView view = getDiscoveryView();
-    List v = null;
+    List<TimeSeriesView> v = null;
     if ( (view != null) && (c == view.getClass()) ) {
-        v = new Vector();
+        v = new Vector<TimeSeriesView>();
         v.add ( view );
     }
     return v;
@@ -267,7 +267,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( commandPhase == CommandPhaseType.RUN ) {
             // Create the view based on the input file
             view = new TimeSeriesTreeView( ViewID );
-            List<String> problems = new Vector();
+            List<String> problems = new Vector<String>();
             view.createViewFromFile ( (TSCommandProcessor)processor, new File(InputFile_full), problems );
             
             // Set the table in the processor...

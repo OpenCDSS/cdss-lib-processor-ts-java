@@ -35,6 +35,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Table.TableColumnType;
 
+@SuppressWarnings("serial")
 public class InsertTableColumn_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

@@ -662,7 +662,7 @@ CommandWarningException, CommandException
         if ( commandPhase == CommandPhaseType.RUN ) {
     		// Further process the time series...
             // This makes sure the period is at least as long as the output period, and computes the historical averages.
-            List tslist = new Vector();
+            List<TS> tslist = new Vector<TS>();
             tslist.add ( ts );
             PropList request_params = new PropList ( "" );
             request_params.setUsingObject ( "TSList", tslist );

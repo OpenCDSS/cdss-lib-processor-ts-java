@@ -518,9 +518,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList(Class c) {
 	DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new Vector<DataTable>();
         v.add ( table );
     }
     return v;
@@ -560,7 +560,9 @@ private List<Object> getTimeSeriesToProcess ( CommandProcessor processor, String
 		Message.printWarning ( log_level, routine, message );
 	}
 	else {
-	    tslist = (List)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+	    tslist = tslist0;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find " + label + " time series to process using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
@@ -583,7 +585,7 @@ private List<Object> getTimeSeriesToProcess ( CommandProcessor processor, String
 		}
 	}
 	// In any case, return the data needed by the calling code and let it further handle errors...
-	List data = new Vector(2);
+	List<Object> data = new Vector<Object>(2);
 	data.add ( tslist );
 	data.add ( indices );
 	return data;
@@ -781,11 +783,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	// Get the list of dependent time series to process...
 	List<Object> tsdata = getTimeSeriesToProcess( processor, "dependent", DependentTSList, DependentTSID );
-	List<TS> dependentTSList = (List)tsdata.get(0);
+	@SuppressWarnings("unchecked")
+	List<TS> dependentTSList = (List<TS>)tsdata.get(0);
 
 	// Get the list of independent time series to process...
 	List<Object> tsdata2 = getTimeSeriesToProcess( processor, "independent", IndependentTSList, IndependentTSID );
-	List<TS> independentTSList = (List)tsdata2.get(0);
+	@SuppressWarnings("unchecked")
+	List<TS> independentTSList = (List<TS>)tsdata2.get(0);
 	
 	// Only allow one FillMixedStation command in a command file.  Otherwise it is difficult to
 	// track when filled data are used to compute relationships later in the data flow
@@ -911,7 +915,7 @@ public String toString ( PropList props )
 	String AnalysisMonth = props.getValue ( "AnalysisMonth" );
 	String Transformation = props.getValue ( "Transformation" );
 	String LEZeroLogValue = props.getValue ( "LEZeroLogValue" );
-	String IgnoreIndependentZeroes = props.getValue( "IgnoreIndependentZeroes" );
+	//String IgnoreIndependentZeroes = props.getValue( "IgnoreIndependentZeroes" );
 	String AnalysisStart = props.getValue ( "AnalysisStart" );
 	String AnalysisEnd = props.getValue ( "AnalysisEnd" );
 	String MinimumDataCount = props.getValue ( "MinimumDataCount" );

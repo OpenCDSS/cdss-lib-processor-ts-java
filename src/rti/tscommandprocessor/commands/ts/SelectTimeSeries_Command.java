@@ -86,7 +86,7 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	if ( (TSPosition != null) && !TSPosition.equals("") ) {
-		List tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
+		List<String> tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
         int npos = 0;
         if ( tokens != null ) {
             npos = tokens.size();
@@ -361,11 +361,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	
 	// If necessary, get the list of all time series...
-	List<TS> tslistAll = new Vector();
+	List<TS> tslistAll = new Vector<TS>();
 	if ( DeselectAllFirst_boolean ) {
 	    // Deselect all first
 	    try {
-	        tslistAll = (List)processor.getPropContents("TSResultsList");
+	    	@SuppressWarnings("unchecked")
+			List<TS> tslistAll0 = (List<TS>)processor.getPropContents("TSResultsList");
+	        tslistAll= tslistAll0;
             Message.printStatus ( 2, routine, "Deselecting all time series first." );
             int ntsAll = 0;
             if ( tslistAll != null ) {
@@ -426,7 +428,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
 		if ( tslist.size() == 0 ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -555,7 +559,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Report the problem to software support." ) );
         }
         if ( o != null ) {
-            List<TS> allTS = (List<TS>)o;
+            @SuppressWarnings("unchecked")
+			List<TS> allTS = (List<TS>)o;
             for ( TS ats: allTS ) {
                 if ( (ats != null) && ats.isSelected() ) {
                     ++selectCount;

@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -110,13 +111,13 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "NewEnsembleID" );
-    valid_Vector.add ( "NewEnsembleName" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "NewAlias" );
-    valid_Vector.add ( "NewTSID" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(5);
+    validList.add ( "NewEnsembleID" );
+    validList.add ( "NewEnsembleName" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "NewAlias" );
+    validList.add ( "NewTSID" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -152,9 +153,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
-	List v = null;
+	List<TSEnsemble> v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        v = new Vector();
+        v = new Vector<TSEnsemble>();
         v.add ( tsensemble );
         Message.printStatus ( 2, "", "Added ensemble to object list: " + tsensemble.getEnsembleID());
     }

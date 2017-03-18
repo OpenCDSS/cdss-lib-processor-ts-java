@@ -577,7 +577,7 @@ public List getObjectList ( Class c )
         }
     }
     else if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        List<TSEnsemble> v = new Vector();
+        List<TSEnsemble> v = new Vector<TSEnsemble>();
         v.add ( tsensemble );
         return v;
     }
@@ -919,7 +919,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
         }
         else {
-            tslist = (List)o_TSList;
+        	List<TS> tslist0 = (List<TS>)o_TSList;
+            tslist = tslist0;
             if ( tslist.size() == 0 ) {
                 message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
                 "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -960,7 +961,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// If here, have enough input to attempt the changing the interval
     TS original_ts = null; // Original (input) time series
 	TS result_ts = null; // Result time series
-	List<TS> resultList = new Vector();
+	List<TS> resultList = new Vector<TS>();
     for ( int its = 0; its < nts; its++ ) {
         original_ts = tslist.get(its);
         notifyCommandProgressListeners ( its, nts, (float)-1.0, "Changing interval for " +

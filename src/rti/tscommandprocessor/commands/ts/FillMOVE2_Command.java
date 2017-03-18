@@ -26,7 +26,6 @@ import java.util.Vector;
 import RTi.TS.TS;
 import RTi.TS.TSRegression;
 import RTi.TS.TSUtil;
-import RTi.TS.TSUtil_FillRegression;
 
 import RTi.Util.Math.DataTransformationType;
 import RTi.Util.Math.NumberOfEquationsType;
@@ -51,6 +50,7 @@ import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeUtil;
 
@@ -340,7 +340,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "IndependentTSID" );
     valid_Vector.add ( "NumberOfEquations" );
@@ -400,9 +400,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new Vector<DataTable>();
         v.add ( table );
     }
     return v;
@@ -806,8 +806,8 @@ CommandWarningException, CommandException
     }
     
     String TableID = parameters.getValue ( "TableID" );
-    String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
-    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    //String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    //String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     
     DataTable table = null;
     boolean newTable = false; // true if a new table had to be created
@@ -832,7 +832,7 @@ CommandWarningException, CommandException
             Message.printStatus ( 2, routine, "Unable to find table to process using TableID=\"" + TableID +
                 "\" - creating empty table." );
             // Create an empty table matching the identifier
-            table = new DataTable( new Vector() );
+            table = new DataTable( new Vector<TableField>() );
             table.setTableID ( TableID );
 
         }

@@ -31,6 +31,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Table.DataTableMath;
 
+@SuppressWarnings("serial")
 public class TableMath_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -215,7 +216,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input 1:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Input1_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    Vector input1Choices = new Vector();
+    List<String> input1Choices = new Vector<String>();
     input1Choices.add("");
     __Input1_JComboBox.setData ( input1Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __Input1_JComboBox.addItemListener ( this );
@@ -240,7 +241,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input 2:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Input2_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    Vector input2Choices = new Vector();
+    Vector<String> input2Choices = new Vector<String>();
     input2Choices.add("");
     __Input2_JComboBox.setData ( input2Choices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __Input2_JComboBox.addItemListener ( this );
@@ -253,7 +254,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output column:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Output_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    Vector outputChoices = new Vector();
+    Vector<String> outputChoices = new Vector<String>();
     outputChoices.add("");
     __Output_JComboBox.setData ( outputChoices ); // TODO SAM 2010-09-13 Need to populate via discovery
     __Output_JComboBox.addItemListener ( this );
@@ -266,7 +267,7 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Non-value:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NonValue_JComboBox = new SimpleJComboBox ( 12, false );    // Allow edit
-    Vector nonValueChoices = new Vector();
+    Vector<String> nonValueChoices = new Vector<String>();
     nonValueChoices.add("");
     nonValueChoices.add(__command._NaN );
     nonValueChoices.add(__command._Null );

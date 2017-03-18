@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -270,28 +271,28 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "Statistic" );
-    valid_Vector.add ( "StatisticValue1" );
-    valid_Vector.add ( "StatisticValue2" );
-    valid_Vector.add ( "StatisticValue3" );
-    valid_Vector.add ( "AnalysisStart" );
-    valid_Vector.add ( "AnalysisEnd" );
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "TableTSIDColumn" );
-    valid_Vector.add ( "TableTSIDFormat" );
-    valid_Vector.add ( "TableStatisticColumn" );
-    valid_Vector.add ( "CheckCriteria" );
-    valid_Vector.add ( "CheckValue1" );
-    valid_Vector.add ( "CheckValue2" );
-    valid_Vector.add ( "IfCriteriaMet" );
-    valid_Vector.add ( "ProblemType" );
-    valid_Vector.add ( "PropertyName" );
-    valid_Vector.add ( "PropertyValue" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(20);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "Statistic" );
+    validList.add ( "StatisticValue1" );
+    validList.add ( "StatisticValue2" );
+    validList.add ( "StatisticValue3" );
+    validList.add ( "AnalysisStart" );
+    validList.add ( "AnalysisEnd" );
+    validList.add ( "TableID" );
+    validList.add ( "TableTSIDColumn" );
+    validList.add ( "TableTSIDFormat" );
+    validList.add ( "TableStatisticColumn" );
+    validList.add ( "CheckCriteria" );
+    validList.add ( "CheckValue1" );
+    validList.add ( "CheckValue2" );
+    validList.add ( "IfCriteriaMet" );
+    validList.add ( "ProblemType" );
+    validList.add ( "PropertyName" );
+    validList.add ( "PropertyValue" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
         Message.printWarning ( warning_level,
@@ -446,7 +447,7 @@ Get the list of check types that can be performed.
 */
 public List<CheckType> getCheckCriteriaChoices()
 {
-    List<CheckType> choices = new Vector();
+    List<CheckType> choices = new Vector<CheckType>();
     choices.add ( CheckType.IN_RANGE );
     choices.add ( CheckType.OUT_OF_RANGE );
     //choices.add ( CheckType.MISSING );
@@ -465,7 +466,7 @@ Get the list of statistics that can be performed.
 public List<String> getCheckCriteriaChoicesAsStrings()
 {
     List<CheckType> choices = getCheckCriteriaChoices();
-    List<String> stringChoices = new Vector();
+    List<String> stringChoices = new Vector<String>();
     for ( int i = 0; i < choices.size(); i++ ) {
         stringChoices.add ( "" + choices.get(i) );
     }
@@ -581,7 +582,7 @@ CommandWarningException, CommandException
     }
     PropList bean_PropList = bean.getResultsPropList();
     Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-    List tslist = null;
+    List<TS> tslist = null;
     if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -590,7 +591,7 @@ CommandWarningException, CommandException
             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        tslist = (List)o_TSList;
+        tslist = (List<TS>)o_TSList;
         if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -723,7 +724,7 @@ CommandWarningException, CommandException
                 }
                 
                 // Do the check by comparing to the statistic...
-                List<String> problems = new Vector();
+                List<String> problems = new Vector<String>();
                 // This is similar to TSUtil_CheckTimeSeries but it only needs to check the one statistic
                 // value and therefore is much simpler... so include the code in this class for now
                 boolean ifCriteriaMet = checkTimeSeriesStatistic ( ts, tsStatistic, checkCriteria,

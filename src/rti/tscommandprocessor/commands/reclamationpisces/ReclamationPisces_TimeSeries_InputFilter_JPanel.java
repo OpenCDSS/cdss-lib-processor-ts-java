@@ -2,7 +2,6 @@ package rti.tscommandprocessor.commands.reclamationpisces;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.GUI.InputFilter;
 import RTi.Util.GUI.InputFilter_JPanel;
@@ -11,6 +10,7 @@ import RTi.Util.String.StringUtil;
 /**
 This class is an input filter for querying ReclamationPisces.
 */
+@SuppressWarnings("serial")
 public class ReclamationPisces_TimeSeries_InputFilter_JPanel extends InputFilter_JPanel //implements ItemListener, KeyListener
 {
 
@@ -41,7 +41,7 @@ public void setFilters ( ReclamationPiscesDMI dmi, int numFilterGroups )
     //String rd = dmi.getRightIdDelim();
     //String ld = dmi.getLeftIdDelim();
 
-    List<InputFilter> filters = new Vector();//new ArrayList<InputFilter>(); // TODO SAM 2015-08-20 Why is Vector required?
+    List<InputFilter> filters = new ArrayList<InputFilter>();//new ArrayList<InputFilter>(); // TODO SAM 2015-08-20 Why is Vector required?
 
     // The database may have timed out so check here
     this.datastore.checkDatabaseConnection();

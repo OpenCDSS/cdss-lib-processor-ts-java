@@ -195,7 +195,7 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
     CommandProcessor processor = getCommandProcessor();
     String message;
     CommandStatus status = getCommandStatus();
-    int warning_level = 2;
+    //int warning_level = 2;
     int log_level = 3;
     try {
         bean = processor.processRequest( "GetTimeSeries", request_params);
@@ -224,17 +224,6 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
     }
     else {
         ts = (TS)prop_contents;
-    }
-    
-    if ( ts == null ) {
-        // Skip time series.
-        message = "Unable to set time series at position " + tspos[its] + " - null time series.";
-        Message.printWarning(warning_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
     }
     return ts;
 }
@@ -298,7 +287,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         // removed as soon as commands have been migrated to the new syntax.
         //
         // Old syntax without named parameters.
-    	List v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List<String> v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_ALLOW_STRINGS );
         if ( (v == null) || (v.size() < 4) ) {
             message = "Syntax error in legacy command \"" + command_string +
                 "Expecting Subract(TSID,HandleMissingHow,SubtractTSID,...";
@@ -434,7 +423,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -447,7 +436,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -551,7 +542,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     bean_PropList = bean.getResultsPropList();
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
-    List subtract_tslist = null;
+    List<TS> subtract_tslist = null;
     if ( o_TSList2 == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + SubtractTSList +
         "\" TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\".";
@@ -564,7 +555,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 "Verify that the SubtractTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        subtract_tslist = (List)o_TSList2;
+    	@SuppressWarnings("unchecked")
+		List<TS> subtract_tslist0 = (List<TS>)o_TSList2;
+        subtract_tslist = subtract_tslist0;
         if ( subtract_tslist.size() == 0 ) {
             message = "No time series to subtract are available from processor GetTimeSeriesToProcess (TSList=\"" + SubtractTSList +
             "\" TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\".";

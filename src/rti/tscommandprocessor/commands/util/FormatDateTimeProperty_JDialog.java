@@ -37,6 +37,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
 import RTi.Util.Time.DateTimeFormatterType;
 
+@SuppressWarnings("serial")
 public class FormatDateTimeProperty_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -234,7 +235,7 @@ private void initialize ( JFrame parent, FormatDateTimeProperty_Command command 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time property name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimePropertyName_JComboBox = new SimpleJComboBox(false);
-    List<String> propertyList = new Vector(TSCommandProcessorUtil.getPropertyNameList(processor));
+    List<String> propertyList = new Vector<String>(TSCommandProcessorUtil.getPropertyNameList(processor));
     // Remove all but DateTime instances
     Object property;
     for ( int i = 0; i < propertyList.size(); i++ ) {

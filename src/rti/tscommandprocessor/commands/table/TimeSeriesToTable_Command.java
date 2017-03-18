@@ -383,9 +383,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new Vector<DataTable>();
         v.add ( table );
     }
     return v;
@@ -445,7 +445,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messages
+	//int log_level = 3;	// Warning message level for non-user messages
 
 	// Make sure there are time series available to operate on...
 	
@@ -595,7 +595,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
     	}
     	else {
-            tslist = (List)o_TSList;
+    		@SuppressWarnings("unchecked")
+			List<TS> tslist0 = (List<TS>)o_TSList;
+            tslist = tslist0;
     		if ( tslist.size() == 0 ) {
     			message = "Unable to find time series to process using TSList=\"" + TSList +
     			"\" TSID=\"" + TSID + "\".";

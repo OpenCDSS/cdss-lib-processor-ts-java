@@ -51,6 +51,7 @@ import RTi.Util.Message.Message;
 /**
 Command parameter editor.
 */
+@SuppressWarnings("serial")
 public class CreateDataStoreDataDictionary_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -375,13 +376,15 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     __DataStore_JComboBox.setToolTipText("Select the datastore to use as input, can use ${Property}");
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
+    List<String> datastoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
     if ( dataStoreList.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
-        __DataStore_JComboBox.addItem ( "" );
+    	datastoreChoices.add ( "" );
     }
+    __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     __DataStore_JComboBox.getJTextComponent().addKeyListener ( this );
@@ -559,13 +562,15 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     JGUIUtil.addComponent(diag_JPanel, new JLabel ( "Page size:"),
         0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ERDiagramPageSize_JComboBox = new SimpleJComboBox ( false );
-    __ERDiagramPageSize_JComboBox.addItem ( "" ); // Default
+    List<String> pageSizeChoices = new ArrayList<String>();
+    pageSizeChoices.add ( "" ); // Default
     // TODO SAM 2015-05-11 Need to fill dynamically - can it be done independent of printer?
-    __ERDiagramPageSize_JComboBox.addItem ( "A" );
-    __ERDiagramPageSize_JComboBox.addItem ( "B" );
-    __ERDiagramPageSize_JComboBox.addItem ( "C" );
-    __ERDiagramPageSize_JComboBox.addItem ( "D" );
-    __ERDiagramPageSize_JComboBox.addItem ( "E" );
+    pageSizeChoices.add ( "A" );
+    pageSizeChoices.add ( "B" );
+    pageSizeChoices.add ( "C" );
+    pageSizeChoices.add ( "D" );
+    pageSizeChoices.add ( "E" );
+    __ERDiagramPageSize_JComboBox.setData(pageSizeChoices);
     // TODO SAM 2011-06-24 Get from a PrinterJob
     __ERDiagramPageSize_JComboBox.select ( 0 );
     __ERDiagramPageSize_JComboBox.addActionListener ( this );
@@ -578,9 +583,11 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     JGUIUtil.addComponent(diag_JPanel, new JLabel ( "Orientation:"),
         0, ++yDiag, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ERDiagramOrientation_JComboBox = new SimpleJComboBox ( false );
-    __ERDiagramOrientation_JComboBox.addItem ( "" ); // Default
-    __ERDiagramOrientation_JComboBox.addItem ( PrintUtil.getOrientationAsString(PageFormat.LANDSCAPE) );
-    __ERDiagramOrientation_JComboBox.addItem ( PrintUtil.getOrientationAsString(PageFormat.PORTRAIT) );
+    List<String> orientChoices = new ArrayList<String>();
+    orientChoices.add ( "" ); // Default
+    orientChoices.add ( PrintUtil.getOrientationAsString(PageFormat.LANDSCAPE) );
+    orientChoices.add ( PrintUtil.getOrientationAsString(PageFormat.PORTRAIT) );
+    __ERDiagramOrientation_JComboBox.setData(orientChoices);
     __ERDiagramOrientation_JComboBox.select ( 0 );
     __ERDiagramOrientation_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(diag_JPanel, __ERDiagramOrientation_JComboBox,

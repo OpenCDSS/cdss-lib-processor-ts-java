@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -13,6 +14,7 @@ This class is an input filter for querying ReclamationHDB.
 Checks for nulls are done in many places because developing with HDB can be difficult due to limited VPN access, etc.
 Consequently, sometimes it is necessary to develop off-line.
 */
+@SuppressWarnings("serial")
 public class ReclamationHDB_TimeSeries_InputFilter_JPanel extends InputFilter_JPanel //implements ItemListener, KeyListener
 {
     
@@ -43,7 +45,7 @@ public void setFilters ( ReclamationHDB_DMI dmi, int numFilterGroups )
     //String rd = dmi.getRightIdDelim();
     //String ld = dmi.getLeftIdDelim();
 
-    List<InputFilter> filters = new Vector();
+    List<InputFilter> filters = new ArrayList<InputFilter>();
 
     // The database may have timed out so check here
     __dataStore.checkDatabaseConnection();

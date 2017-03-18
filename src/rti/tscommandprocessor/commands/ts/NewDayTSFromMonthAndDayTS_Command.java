@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -142,12 +143,12 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "NewTSID" );
-    valid_Vector.add ( "MonthTSID" );
-    valid_Vector.add ( "DayTSID" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(4);
+    validList.add ( "Alias" );
+    validList.add ( "NewTSID" );
+    validList.add ( "MonthTSID" );
+    validList.add ( "DayTSID" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -535,7 +536,7 @@ CommandWarningException, CommandException
     // Update the data to the processor so that appropriate actions are taken...
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Just want time series headers initialized
-        List<TS> discoveryTSList = new Vector();
+        List<TS> discoveryTSList = new Vector<TS>();
         discoveryTSList.add ( ts );
         setDiscoveryTSList ( discoveryTSList );
     }

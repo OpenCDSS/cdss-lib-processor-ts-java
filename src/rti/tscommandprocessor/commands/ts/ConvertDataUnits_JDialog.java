@@ -43,6 +43,7 @@ import RTi.Util.String.StringUtil;
 /**
 Editor for ConvertDataUnits() command.
 */
+@SuppressWarnings("serial")
 public class ConvertDataUnits_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -218,14 +219,14 @@ private void initialize ( JFrame parent, ConvertDataUnits_Command command )
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select a time series ensemble ID from the list or specify with ${Property} notation");
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -233,13 +234,13 @@ private void initialize ( JFrame parent, ConvertDataUnits_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Dimension:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Dimension_JComboBox = new SimpleJComboBox ( false );
-	List dimension_data_Vector0 = DataDimension.getDimensionData();
-	List dimension_data_Vector = null;
+	List<DataDimension> dimension_data_Vector0 = DataDimension.getDimensionData();
+	List<String> dimension_data_Vector = null;
 	int size = 0;
 	if ( dimension_data_Vector0 != null ) {
 		size = dimension_data_Vector0.size();
 		Message.printStatus ( 2, "", "Number of dimension: " + size );
-		dimension_data_Vector = new Vector(size);
+		dimension_data_Vector = new Vector<String>(size);
 		DataDimension dim;
 		for ( int i = 0; i < size; i++ ) {
 			dim =(DataDimension)dimension_data_Vector0.get(i);
@@ -489,16 +490,16 @@ Refresh the data units based on the dimension.
 */
 private void refreshUnits ()
 {	String dimension = __Dimension_JComboBox.getSelected();
-	List units_Vector = DataUnits.lookupUnitsForDimension ( null, StringUtil.getToken(dimension," ",0,0) );
+	List<DataUnits> units_Vector = DataUnits.lookupUnitsForDimension ( null, StringUtil.getToken(dimension," ",0,0) );
 	int size = 0;
 	if ( units_Vector != null ) {
 		size = units_Vector.size();
 	}
 	__NewUnits_JComboBox.removeAll ();
 	DataUnits units = null;
-	List units_sorted_Vector = new Vector();
+	List<String> units_sorted_Vector = new Vector<String>();
 	for ( int i = 0; i < size; i++ ) {
-		units = (DataUnits)units_Vector.get(i);
+		units = units_Vector.get(i);
 		units_sorted_Vector.add ( units.getAbbreviation() + " - " + units.getLongName() );
 	}
 	units_sorted_Vector = StringUtil.sortStringList ( units_sorted_Vector );

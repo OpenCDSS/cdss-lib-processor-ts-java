@@ -29,6 +29,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class SplitTableColumn_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -255,7 +256,7 @@ private void initialize ( JFrame parent, SplitTableColumn_Command command, List<
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delete original column:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DeleteOriginalColumn_JComboBox = new SimpleJComboBox ( 12, false );
-    List choices = new ArrayList<String>();
+    List<String> choices = new ArrayList<String>();
     choices.add("");
     choices.add("" + __command._False);
     choices.add("" + __command._True);

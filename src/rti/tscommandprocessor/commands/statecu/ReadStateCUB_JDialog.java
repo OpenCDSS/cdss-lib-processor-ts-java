@@ -37,6 +37,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class ReadStateCUB_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {

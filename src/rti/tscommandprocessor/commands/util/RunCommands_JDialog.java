@@ -26,6 +26,8 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -37,6 +39,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class RunCommands_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
@@ -237,11 +240,13 @@ private void initialize ( JFrame parent, RunCommands_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expected status:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ExpectedStatus_JComboBox = new SimpleJComboBox ( false );
-    __ExpectedStatus_JComboBox.addItem ( "" );   // Default
-    __ExpectedStatus_JComboBox.addItem ( __command._Unknown );
-    __ExpectedStatus_JComboBox.addItem ( __command._Success );
-    __ExpectedStatus_JComboBox.addItem ( __command._Warning );
-    __ExpectedStatus_JComboBox.addItem ( __command._Failure );
+    List<String> statusChoices = new ArrayList<String>();
+    statusChoices.add ( "" );   // Default
+    statusChoices.add ( __command._Unknown );
+    statusChoices.add ( __command._Success );
+    statusChoices.add ( __command._Warning );
+    statusChoices.add ( __command._Failure );
+    __ExpectedStatus_JComboBox.setData(statusChoices);
     __ExpectedStatus_JComboBox.select ( 0 );
     __ExpectedStatus_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ExpectedStatus_JComboBox,
@@ -270,10 +275,12 @@ private void initialize ( JFrame parent, RunCommands_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Share parent data stores?:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ShareDataStores_JComboBox = new SimpleJComboBox ( false );
-    __ShareDataStores_JComboBox.addItem ( "" );   // Default
-    //__ShareDataStores_JComboBox.addItem ( __command._Copy ); // Too difficult?
-    __ShareDataStores_JComboBox.addItem ( __command._DoNotShare );
-    __ShareDataStores_JComboBox.addItem ( __command._Share );
+    List<String> shareChoices = new ArrayList<String>();
+    shareChoices.add ( "" );   // Default
+    //shareChoices.add ( __command._Copy ); // Too difficult?
+    shareChoices.add ( __command._DoNotShare );
+    shareChoices.add ( __command._Share );
+    __ShareDataStores_JComboBox.setData(shareChoices);
     __ShareDataStores_JComboBox.select ( 0 );
     __ShareDataStores_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ShareDataStores_JComboBox,

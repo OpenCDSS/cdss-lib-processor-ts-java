@@ -40,6 +40,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for SetPropertyFromTimeSeries() command.
 */
+@SuppressWarnings("serial")
 public class SetPropertyFromTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

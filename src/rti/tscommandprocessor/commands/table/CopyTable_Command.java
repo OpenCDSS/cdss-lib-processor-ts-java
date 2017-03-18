@@ -240,7 +240,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String ColumnMap = parameters.getValue ( "ColumnMap" );
-    Hashtable columnMap = new Hashtable();
+    Hashtable<String,String> columnMap = new Hashtable<String,String>();
     if ( (ColumnMap != null) && (ColumnMap.length() > 0) && (ColumnMap.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(ColumnMap, ",", 0 );
@@ -254,7 +254,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (ColumnFilters != null) && !ColumnFilters.isEmpty() && (commandPhase == CommandPhaseType.RUN) && ColumnFilters.indexOf("${") >= 0 ) {
     	ColumnFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnFilters);
     }
-    Hashtable columnFilters = new Hashtable();
+    Hashtable<String,String> columnFilters = new Hashtable<String,String>();
     if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );

@@ -138,14 +138,14 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "Method" );
-    valid_Vector.add ( "NewInterval" );
-    valid_Vector.add ( "NewDataType" );
-    valid_Vector.add ( "NewUnits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new Vector<String>(6);
+    validList.add ( "Alias" );
+    validList.add ( "TSID" );
+    validList.add ( "Method" );
+    validList.add ( "NewInterval" );
+    validList.add ( "NewDataType" );
+    validList.add ( "NewUnits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -459,7 +459,7 @@ CommandWarningException, CommandException
 
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Just want time series headers initialized
-        List<TS> discoveryTSList = new Vector();
+        List<TS> discoveryTSList = new Vector<TS>();
         discoveryTSList.add ( tsnew );
         setDiscoveryTSList ( discoveryTSList );
     }

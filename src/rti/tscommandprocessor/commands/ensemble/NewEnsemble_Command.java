@@ -226,9 +226,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
-    List v = null;
+    List<TSEnsemble> v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        v = new Vector();
+        v = new Vector<TSEnsemble>();
         v.add ( tsensemble );
         Message.printStatus ( 2, "", "Added ensemble to object list: " + tsensemble.getEnsembleID());
     }
@@ -389,7 +389,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
         	}
         	else {
-                tslist = (List)o_TSList;
+        		@SuppressWarnings("unchecked")
+				List<TS> tslist0 = (List<TS>)o_TSList;
+                tslist = tslist0;
         		if ( tslist.size() == 0 ) {
         			message = "Unable to find time series to process using TSList=\"" + TSList +
         			"\" TSID=\"" + TSID + "\".";

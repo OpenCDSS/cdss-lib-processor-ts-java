@@ -15,6 +15,7 @@ import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
 Input filter panel for HEC-DSS time series files.  The filter contents are refreshed interactively based on
 user selections.
 */
+@SuppressWarnings("serial")
 public class HecDssTSInputFilter_JPanel extends InputFilter_JPanel
 {
     
@@ -57,7 +58,7 @@ Choices are available for the A, B, C, E, and F parts of the time series.
 */
 public HecDssTSInputFilter_JPanel ( int numFilterGroups )
 throws Exception
-{	List inputFilters = new Vector(6);
+{	List<InputFilter> inputFilters = new Vector<InputFilter>(6);
     inputFilters.add ( new InputFilter (
         "", "",
         StringUtil.TYPE_STRING,
@@ -68,23 +69,23 @@ throws Exception
     inputFilters.add ( __aPartInputFilter = new InputFilter (
         "A part", "A part",
         StringUtil.TYPE_STRING,
-        new Vector(), null, true ) );
+        new Vector<String>(), null, true ) );
     inputFilters.add ( __bPartInputFilter = new InputFilter (
         "B part", "B part",
         StringUtil.TYPE_STRING,
-        new Vector(), null, true ) );
+        new Vector<String>(), null, true ) );
     inputFilters.add ( __cPartInputFilter = new InputFilter (
         "C part", "C part",
         StringUtil.TYPE_STRING,
-        new Vector(), null, true ) );
+        new Vector<String>(), null, true ) );
     inputFilters.add ( __ePartInputFilter = new InputFilter (
         "E part", "E part",
         StringUtil.TYPE_STRING,
-        new Vector(), null, true ) );
+        new Vector<String>(), null, true ) );
     inputFilters.add ( __fPartInputFilter = new InputFilter (
         "F part", "F part",
         StringUtil.TYPE_STRING,
-        new Vector(), null, true ) );
+        new Vector<String>(), null, true ) );
 	setToolTipText ( "<html>HEC-DSS queries can be filtered <br>based on time series metadata.</html>" );
 	setInputFilters ( inputFilters, numFilterGroups, -1 );
 }
@@ -103,13 +104,13 @@ public void refreshChoices ( boolean clearFirst )
     }
     if ( clearFirst ) {
         // Clear all the choices
-        __aPartInputFilter.setChoices( new Vector(), null, true);
-        __bPartInputFilter.setChoices( new Vector(), null, true);
-        __cPartInputFilter.setChoices( new Vector(), null, true);
-        __ePartInputFilter.setChoices( new Vector(), null, true);
-        __fPartInputFilter.setChoices( new Vector(), null, true);
+        __aPartInputFilter.setChoices( new Vector<String>(), null, true);
+        __bPartInputFilter.setChoices( new Vector<String>(), null, true);
+        __cPartInputFilter.setChoices( new Vector<String>(), null, true);
+        __ePartInputFilter.setChoices( new Vector<String>(), null, true);
+        __fPartInputFilter.setChoices( new Vector<String>(), null, true);
         // Since the A part is the first in the path, it is the most generic
-        List aPartList = HecDssAPI.getUniqueAPartList(__hecDssFile,null,null,null,null);
+        List<String> aPartList = HecDssAPI.getUniqueAPartList(__hecDssFile,null,null,null,null);
         // Now set it in the choices
         __aPartInputFilter.setChoices ( aPartList, null, true ); // No internal list of choices, list is editable
         // redraw

@@ -152,7 +152,9 @@ throws CommandWarningException, CommandException
 	
 	try {
 	    Object o = processor.getPropContents ( "TSResultsList" );
-		tslist = (List)o;
+	    @SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o;
+		tslist = tslist0;
 	}
 	catch ( Exception e ) {
 		// Not fatal, but of use to developers.

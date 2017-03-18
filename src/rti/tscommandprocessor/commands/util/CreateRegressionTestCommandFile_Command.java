@@ -16,7 +16,6 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -36,7 +35,7 @@ import RTi.Util.String.StringUtil;
 This class initializes, checks, and runs the CreateRegressionTestCommandFile() command.
 */
 public class CreateRegressionTestCommandFile_Command extends AbstractCommand
-implements Command, FileGenerator
+implements FileGenerator
 {
 
 /**
@@ -245,7 +244,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List validList = new ArrayList<String>(9);
+	List<String> validList = new ArrayList<String>(9);
 	validList.add ( "SearchFolder" );
 	validList.add ( "OutputFile" );
     validList.add ( "SetupCommandFile" );
@@ -330,9 +329,9 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -440,7 +439,7 @@ throws IOException
         	}
         	else {
         	    // Check to see if the test suites in the test match the requested test suites
-        	    List tagValues2 = TSCommandProcessorUtil.getTagValues ( path.toString(), "testSuite" );
+        	    List<Object> tagValues2 = TSCommandProcessorUtil.getTagValues ( path.toString(), "testSuite" );
         	    if ( tagValues2.size() == 0 ) {
         	        // Test case is not specified to belong to a specific suite so it is always included
         	        doAddForTestSuite = true;
@@ -624,7 +623,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	try {
 	    // Get the list of files to run as test cases...
-		List<String> files = new Vector();
+		List<String> files = new Vector<String>();
         String [] includedTestSuitePatterns = new String[0];
         includedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeTestSuitePattern,",",0));
         String [] includedOSPatterns = new String[0];

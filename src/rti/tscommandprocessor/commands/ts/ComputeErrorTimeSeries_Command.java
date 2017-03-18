@@ -5,8 +5,8 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil_ComputeErrorTimeSeries;
@@ -144,18 +144,18 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "ObservedTSList" );
-    valid_Vector.add ( "ObservedTSID" );
-    valid_Vector.add ( "ObservedEnsembleID" );
-    valid_Vector.add ( "SimulatedTSList" );
-    valid_Vector.add ( "SimulatedTSID" );
-    valid_Vector.add ( "SimulatedEnsembleID" );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "ObservedTSList" );
+    validList.add ( "ObservedTSID" );
+    validList.add ( "ObservedEnsembleID" );
+    validList.add ( "SimulatedTSList" );
+    validList.add ( "SimulatedTSID" );
+    validList.add ( "SimulatedEnsembleID" );
     //valid_Vector.add ( "SetStart" );
     //valid_Vector.add ( "SetEnd" );
-    valid_Vector.add ( "ErrorMeasure" );
-    valid_Vector.add ( "Alias" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    validList.add ( "ErrorMeasure" );
+    validList.add ( "Alias" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -248,17 +248,6 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
     else {
         ts = (TS)prop_contents;
     }
-    
-    if ( ts == null ) {
-        // Skip time series.
-        message = "Unable to set time series at position " + tspos[its] + " - null time series.";
-        Message.printWarning(warning_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
-    }
     return ts;
 }
 
@@ -348,7 +337,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + ObservedTSList +
         "\" TSID=\"" + ObservedTSID + "\", EnsembleID=\"" + ObservedEnsembleID + "\").";
@@ -361,7 +350,9 @@ CommandWarningException, CommandException
                 "Verify that the ObservedTSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+        @SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + ObservedTSList +
             "\" TSID=\"" + ObservedTSID + "\", EnsembleID=\"" + ObservedEnsembleID + "\").";
@@ -456,7 +447,7 @@ CommandWarningException, CommandException
     }
     bean_PropList = bean.getResultsPropList();
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
-    List independent_tslist = null;
+    List<TS> independent_tslist = null;
     if ( o_TSList2 == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + SimulatedTSList +
         "\" TSID=\"" + SimulatedTSID + "\", EnsembleID=\"" + SimulatedEnsembleID + "\").";
@@ -469,7 +460,9 @@ CommandWarningException, CommandException
                 "Verify that the SimulatedTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        independent_tslist = (List)o_TSList2;
+    	@SuppressWarnings("unchecked")
+		List<TS> independent_tslist0 = (List<TS>)o_TSList2;
+        independent_tslist = independent_tslist0;
         if ( independent_tslist.size() == 0 ) {
             message = "No simulated time series are available from processor GetTimeSeriesToProcess (TSList=\"" + SimulatedTSList +
             "\" TSID=\"" + SimulatedTSID + "\", EnsembleID=\"" + SimulatedEnsembleID + "\").";
@@ -775,7 +768,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_List )
+private void setDiscoveryTSList ( List<TS> discovery_TS_List )
 {
     __discovery_TS_List = discovery_TS_List;
 }

@@ -23,7 +23,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -37,6 +37,7 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class DeleteDataStoreTableRows_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -241,13 +242,15 @@ private void initialize ( JFrame parent, DeleteDataStoreTableRows_Command comman
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
+    List<String> datastoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
     if ( dataStoreList.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
-        __DataStore_JComboBox.addItem ( "" );
+    	datastoreChoices.add ( "" );
     }
+    __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
@@ -389,9 +392,9 @@ private void populateDataStoreTableChoices ( DMI dmi )
 {   String routine = getClass().getName() + "populateDataStoreTableChoices";
     //__TableID_JTextField.removeAll ();
     List<String> tableList = null;
-    List<String> notIncluded = new Vector(); // TODO SAM 2012-01-31 need to omit system tables
+    List<String> notIncluded = new Vector<String>(); // TODO SAM 2012-01-31 need to omit system tables
     if ( dmi == null ) {
-        tableList = new Vector();
+        tableList = new Vector<String>();
     }
     else {
         try {
@@ -404,7 +407,7 @@ private void populateDataStoreTableChoices ( DMI dmi )
         }
     }
     if ( tableList == null ) {
-        tableList = new Vector();
+        tableList = new Vector<String>();
     }
     // Always add a blank option at the start to help with initialization
     tableList.add ( 0, "" );

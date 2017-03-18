@@ -28,6 +28,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringFormatterSpecifiersJPanel;
 
+@SuppressWarnings("serial")
 public class FormatStringProperty_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

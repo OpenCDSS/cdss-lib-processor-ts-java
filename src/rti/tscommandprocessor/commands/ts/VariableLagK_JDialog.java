@@ -44,6 +44,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 Editor for the VariableLagK command.
 */
+@SuppressWarnings("serial")
 public class VariableLagK_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

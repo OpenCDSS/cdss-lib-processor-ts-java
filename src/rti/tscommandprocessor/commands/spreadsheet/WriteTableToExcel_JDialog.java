@@ -46,6 +46,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the WriteTableToExcel command.
 */
+@SuppressWarnings("serial")
 public class WriteTableToExcel_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

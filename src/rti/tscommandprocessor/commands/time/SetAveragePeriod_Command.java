@@ -1,7 +1,7 @@
 package rti.tscommandprocessor.commands.time;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -113,10 +113,10 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-	valid_Vector.add ( "AverageStart" );
-	valid_Vector.add ( "AverageEnd" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>();
+	validList.add ( "AverageStart" );
+	validList.add ( "AverageEnd" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -158,7 +158,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	else {
 		// TODO SAM 2005-04-29 This whole block of code needs to be
 		// removed as soon as commands have been migrated to the new syntax.
-		List tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
+		List<String> tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() != 3) ) {
 			throw new InvalidCommandSyntaxException ("Bad command \"" + command + "\"" );
 		}

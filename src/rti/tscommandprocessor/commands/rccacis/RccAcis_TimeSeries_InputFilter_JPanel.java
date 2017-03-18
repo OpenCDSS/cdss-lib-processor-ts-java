@@ -12,6 +12,7 @@ import RTi.Util.String.StringUtil;
 /**
 This class is an input filter for querying RCC ACIS web services.
 */
+@SuppressWarnings("serial")
 public class RccAcis_TimeSeries_InputFilter_JPanel extends InputFilter_JPanel //implements ItemListener, KeyListener
 {
     
@@ -38,7 +39,7 @@ Always use the most current parameter name from the API (translate when filter i
 */
 public void setFilters ( int numFilterGroups )
 {   //String routine = getClass().getName() + ".setFilters";
-    List<InputFilter> filters = new Vector();
+    List<InputFilter> filters = new Vector<InputFilter>();
 
     filters.add(new InputFilter("", "", StringUtil.TYPE_STRING, null, null, false)); // Blank
 

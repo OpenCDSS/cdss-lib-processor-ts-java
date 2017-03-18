@@ -7,7 +7,6 @@ import rti.tscommandprocessor.core.TSListType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
@@ -240,7 +239,7 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
     CommandProcessor processor = getCommandProcessor();
     String message;
     CommandStatus status = getCommandStatus();
-    int warning_level = 2;
+    //int warning_level = 2;
     int log_level = 3;
     try {
         bean = processor.processRequest( "GetTimeSeries", request_params);
@@ -269,17 +268,6 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
     }
     else {
         ts = (TS)prop_contents;
-    }
-    
-    if ( ts == null ) {
-        // Skip time series.
-        message = "Unable to set time series at position " + tspos[its] + " - null time series.";
-        Message.printWarning(warning_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
     }
     return ts;
 }
@@ -347,7 +335,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         // removed as soon as commands have been migrated to the new syntax.
         //
         // Old syntax without named parameters.
-    	List v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List<String> v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_ALLOW_STRINGS );
         if ( (v == null) || (v.size() < 4) ) {
             message = "Syntax error in legacy command \"" + command_string +
                 "Expecting Add(TSID,HandleMissingHow,AddTSID,...";
@@ -771,7 +759,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// Get the specific time series to add depending on the input parameters...
         
         TS tstoadd = null;  // Single time series to add
-        List<TS> tstoadd_list = new Vector(); // List of time series to add
+        List<TS> tstoadd_list = new ArrayList<TS>(); // List of time series to add
         if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
             // Processing a single time series.  Add all the time series to it
             // Reuse the same independent time series for all transfers...

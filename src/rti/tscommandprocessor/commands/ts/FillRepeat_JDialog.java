@@ -28,6 +28,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -36,6 +37,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class FillRepeat_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -264,8 +266,10 @@ private void initialize ( JFrame parent, FillRepeat_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Fill direction:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillDirection_JComboBox = new SimpleJComboBox ( false );
-	__FillDirection_JComboBox.addItem ( __command._Backward );
-	__FillDirection_JComboBox.addItem ( __command._Forward );
+	List<String> dirChoices = new ArrayList<String>();
+	dirChoices.add ( __command._Backward );
+	dirChoices.add ( __command._Forward );
+	__FillDirection_JComboBox.setData(dirChoices);
 	__FillDirection_JComboBox.select ( __command._Forward );
 	__FillDirection_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillDirection_JComboBox,

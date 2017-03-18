@@ -28,6 +28,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -39,6 +40,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
+@SuppressWarnings("serial")
 public class FillProrate_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
@@ -304,13 +306,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -350,9 +352,11 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill direction:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillDirection_JComboBox = new SimpleJComboBox ( false );
-	__FillDirection_JComboBox.addItem ( "" );
-	__FillDirection_JComboBox.addItem ( __command._Backward );
-	__FillDirection_JComboBox.addItem ( __command._Forward );
+	List<String> fillChoices = new ArrayList<String>();
+	fillChoices.add ( "" );
+	fillChoices.add ( __command._Backward );
+	fillChoices.add ( __command._Forward );
+	__FillDirection_JComboBox.setData(fillChoices);
 	__FillDirection_JComboBox.select ( 0 );
 	__FillDirection_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillDirection_JComboBox,
@@ -364,9 +368,11 @@ private void initialize ( JFrame parent, Command command )
    JGUIUtil.addComponent(main_JPanel, new JLabel("Calculate factor how?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FactorMethod_JComboBox = new SimpleJComboBox ( false );
-	__FactorMethod_JComboBox.addItem ( "" );
-	__FactorMethod_JComboBox.addItem ( __command._AnalyzeAverage );
-	__FactorMethod_JComboBox.addItem ( __command._NearestPoint );
+	List<String> factorChoices = new ArrayList<String>();
+	factorChoices.add ( "" );
+	factorChoices.add ( __command._AnalyzeAverage );
+	factorChoices.add ( __command._NearestPoint );
+	__FactorMethod_JComboBox.setData(factorChoices);
 	__FactorMethod_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FactorMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -397,7 +403,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Initial value:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InitialValue_JComboBox = new SimpleJComboBox ( true );
-	List InitialValue_Vector = new Vector  ( 3 );
+	List<String> InitialValue_Vector = new Vector<String>( 3 );
 	InitialValue_Vector.add ( "" );
 	InitialValue_Vector.add ( __command._NearestBackward );
 	InitialValue_Vector.add ( __command._NearestForward );

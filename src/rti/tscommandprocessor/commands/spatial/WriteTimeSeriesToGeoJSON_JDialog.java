@@ -48,6 +48,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTimeSeriesToGeoJSON() command.
 */
+@SuppressWarnings("serial")
 public class WriteTimeSeriesToGeoJSON_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {

@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.statecu;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -10,6 +11,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -140,12 +142,12 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(4);
+    validList.add ( "InputFile" );
+    validList.add ( "TSID" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -370,16 +372,18 @@ CommandWarningException, CommandException
 
 		StateCU_BTS bts = null;
 		bts = new StateCU_BTS ( InputFile_full );
-		List tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, true );
+		List<TS> tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, true );
 		bts.close();
 		bts = null;
 
 		// Now add the time series to the end of the normal list...
 
 		if ( tslist != null ) {
-			List TSResultsList_Vector = null;
+			List<TS> TSResultsList_Vector = null;
 			try { Object o = processor.getPropContents( "TSResultsList" );
-					TSResultsList_Vector = (List)o;
+				@SuppressWarnings("unchecked")
+				List<TS> TSResultsList_Vector0 = (List<TS>)o;
+					TSResultsList_Vector = TSResultsList_Vector0;
 			}
 			catch ( Exception e ){
 				message = "Cannot get time series list to add read time series.  Starting new list.";
@@ -390,7 +394,7 @@ CommandWarningException, CommandException
                 status.addToLog ( CommandPhaseType.RUN,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
-				TSResultsList_Vector = new Vector();
+				TSResultsList_Vector = new Vector<TS>();
 			}
 
 			// Further process the time series...

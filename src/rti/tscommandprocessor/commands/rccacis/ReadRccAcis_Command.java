@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.rccacis;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -145,18 +146,18 @@ throws InvalidCommandParameterException
 	}
 
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "DataType" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "SiteID" );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "DataStore" );
+    validList.add ( "DataType" );
+    validList.add ( "Interval" );
+    validList.add ( "SiteID" );
     for ( int i = 1; i <= __numFilterGroups; i++ ) { 
-        valid_Vector.add ( "Where" + i );
+        validList.add ( "Where" + i );
     }
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "Alias" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "Alias" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -425,7 +426,7 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	List<TS> tslist = new Vector();	// List for time series results.
+	List<TS> tslist = new Vector<TS>();	// List for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -446,7 +447,7 @@ CommandWarningException, CommandException
 	    if ( !SiteID.equals("") ) {
 	        // If the SiteID is specified so read one time series.  Do this by initializing a metadata object
 	        // as if it were returned from the multi-station web service call
-	        tsMetadataList = new Vector();
+	        tsMetadataList = new Vector<RccAcisStationTimeSeriesMetadata>();
 	        RccAcisStationTimeSeriesMetadata tsMetadata = new RccAcisStationTimeSeriesMetadata();
 	        // Split the SiteID into parts if a station type is specified
 	        String stationType = null;
@@ -487,7 +488,7 @@ CommandWarningException, CommandException
 	    }
 	    else {
             // Read 1+ time series...
-    		List<String> WhereN_Vector = new Vector ( 6 );
+    		List<String> WhereN_Vector = new Vector<String> ( 6 );
     		String WhereN;
     		int nfg = 0; // Used below.
     		for ( nfg = 0; nfg < 100; nfg++ ) {
@@ -663,7 +664,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

@@ -40,6 +40,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class WriteTableToDelimitedFile_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -343,7 +344,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Write header comments?:"), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
-     List<String> writeHeaderCommentsList = new Vector();
+     List<String> writeHeaderCommentsList = new Vector<String>();
      writeHeaderCommentsList.add("");
      writeHeaderCommentsList.add(__command._False);
      writeHeaderCommentsList.add(__command._True);
@@ -359,7 +360,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Always quote strings?:"), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __AlwaysQuoteStrings_JComboBox = new SimpleJComboBox ( false );
-     List<String> alwaysQuoteStringsList = new Vector();
+     List<String> alwaysQuoteStringsList = new Vector<String>();
      alwaysQuoteStringsList.add("");
      alwaysQuoteStringsList.add(__command._False);
      alwaysQuoteStringsList.add(__command._True);

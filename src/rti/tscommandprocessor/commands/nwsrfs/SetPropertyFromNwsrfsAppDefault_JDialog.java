@@ -8,6 +8,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -31,6 +33,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the SetPropertyFromNwsrfsAppDefault command.
 */
+@SuppressWarnings("serial")
 public class SetPropertyFromNwsrfsAppDefault_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -183,10 +186,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property type:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
-    __PropertyType_JComboBox.addItem ( __command._DateTime );
-    __PropertyType_JComboBox.addItem ( __command._Double );
-    __PropertyType_JComboBox.addItem ( __command._Integer );
-    __PropertyType_JComboBox.addItem ( __command._String );
+    List<String> typeChoices = new ArrayList<String>();
+    typeChoices.add ( __command._DateTime );
+    typeChoices.add ( __command._Double );
+    typeChoices.add ( __command._Integer );
+    typeChoices.add ( __command._String );
+    __PropertyType_JComboBox.setData(typeChoices);
     __PropertyType_JComboBox.select ( __command._String );
     __PropertyType_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,

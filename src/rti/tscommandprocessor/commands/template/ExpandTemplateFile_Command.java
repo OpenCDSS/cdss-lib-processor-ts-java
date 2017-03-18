@@ -398,7 +398,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (StringProperties != null) && !StringProperties.isEmpty() && (commandPhase == CommandPhaseType.RUN) && StringProperties.indexOf("${") >= 0 ) {
     	StringProperties = TSCommandProcessorUtil.expandParameterValue(processor, this, StringProperties);
     }
-    Hashtable stringProperties = new Hashtable();
+    Hashtable<String,String> stringProperties = new Hashtable<String,String>();
     if ( (StringProperties != null) && (StringProperties.length() > 0) && (StringProperties.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(StringProperties, ",", 0 );
@@ -553,7 +553,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             if ( !error ) {
                 // Create a model
-                Map model = new HashMap();
+                Map<String,Object> model = new HashMap<String,Object>();
                 TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
                 if ( processor instanceof TSCommandProcessor ) {
                     // Add properties from the processor
@@ -563,7 +563,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     }
                     // Add single column tables from the processor, using the table ID as the object key
                     if ( UseTables_boolean ) {
-                        List<DataTable> tables = (List<DataTable>)tsprocessor.getPropContents ( "TableResultsList" );
+                        @SuppressWarnings("unchecked")
+						List<DataTable> tables = (List<DataTable>)tsprocessor.getPropContents ( "TableResultsList" );
                         Object tableVal;
                         for ( DataTable table: tables ) {
                             if ( table.getNumberOfFields() == 1 ) {

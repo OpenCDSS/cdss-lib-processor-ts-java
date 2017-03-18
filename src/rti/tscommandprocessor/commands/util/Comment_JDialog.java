@@ -29,6 +29,7 @@ import RTi.Util.String.StringUtil;
 /**
 Editor for # comments.
 */
+@SuppressWarnings("serial")
 public class Comment_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
@@ -101,14 +102,14 @@ private void checkComments ()
 Return the text for the command.
 @return the text for the command or null if there is a problem with the command.
 */
-public List getText ()
+public List<String> getText ()
 {	if ( __commandList == null ) {
 		// Indicates a cancel...
 		return null;
 	}
 	// Else, OK to process the comments...
 	checkComments ();
-	if ( (__commandList == null) || (__commandList.size() == 0) || ((String)__commandList.get(0)).equals("") ) {
+	if ( (__commandList == null) || (__commandList.size() == 0) || __commandList.get(0).equals("") ) {
 		__commandList = null;
 	}
 	return __commandList;
@@ -241,11 +242,11 @@ private void refresh ()
 }
 
 /**
-Return the time series command as a Vector of String.
+Return the time series command as a list of String.
 @param status 0 to cancel, 1 is OK.
 @return returns the command text or null if no command.
 */
-public List response ( int status )
+public List<String> response ( int status )
 {	setVisible( false );
 	dispose();
 	if ( status == 0 ) {

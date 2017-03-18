@@ -2,7 +2,6 @@ package rti.tscommandprocessor.commands.reclamationpisces;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -170,15 +169,15 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
-    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+	List<TS> discovery_TS_List = getDiscoveryTSList ();
+    if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
         return null;
     }
     // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
-    TS datats = discovery_TS_Vector.get(0);
+    TS datats = discovery_TS_List.get(0);
     // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return discovery_TS_List;
     }
     else {
         return null;
@@ -310,7 +309,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		// Get the input needed to process the file...
 		String DataType = parameters.getValue ( "DataType" );
 		String Interval = parameters.getValue ( "Interval" );
-		List<String> whereNList = new Vector ( 6 );
+		List<String> whereNList = new ArrayList<String> ( 6 );
 		String WhereN;
 		int nfg = 0;	// Used below.
 		for ( nfg = 0; nfg < 1000; nfg++ ) {
@@ -535,7 +534,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discoveryTSList )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
     __discoveryTSList = discoveryTSList;
 }

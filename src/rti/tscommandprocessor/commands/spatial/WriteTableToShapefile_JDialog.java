@@ -42,6 +42,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTableToShapefile() command.
 */
+@SuppressWarnings("serial")
 public class WriteTableToShapefile_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {

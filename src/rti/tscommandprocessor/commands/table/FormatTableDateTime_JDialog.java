@@ -38,6 +38,7 @@ import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.YearType;
 
+@SuppressWarnings("serial")
 public class FormatTableDateTime_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -430,11 +431,13 @@ private void initialize ( JFrame parent, FormatTableDateTime_Command command, Li
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Output type:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputType_JComboBox = new SimpleJComboBox ( false );
-    __OutputType_JComboBox.addItem ( "" );
-    __OutputType_JComboBox.addItem ( __command._DateTime );
-    __OutputType_JComboBox.addItem ( __command._Double );
-    __OutputType_JComboBox.addItem ( __command._Integer );
-    __OutputType_JComboBox.addItem ( __command._String );
+    List<String> typeChoices = new ArrayList<String>();
+    typeChoices.add ( "" );
+    typeChoices.add ( __command._DateTime );
+    typeChoices.add ( __command._Double );
+    typeChoices.add ( __command._Integer );
+    typeChoices.add ( __command._String );
+    __OutputType_JComboBox.setData(typeChoices);
     __OutputType_JComboBox.select ( __command._String );
     __OutputType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(out_JPanel, __OutputType_JComboBox,

@@ -1343,7 +1343,7 @@ throws FileNotFoundException, IOException
             }
         }
         // First get the table column numbers for columns mentioned in the filter
-        Enumeration keys = null;
+        Enumeration<String> keys = null;
         int [] columnNumbersToFilter = null;
         String [] columnFilterGlobs = null;
         int ikey = -1;
@@ -1358,7 +1358,7 @@ throws FileNotFoundException, IOException
                 ++ikey;
                 columnNumbersToFilter[ikey] = -1;
                 try {
-                    key = (String)keys.nextElement();
+                    key = keys.nextElement();
                     columnNumbersToFilter[ikey] = table.getFieldIndex(key);
                     if ( columnNumbersToFilter[ikey] < 0 ) {
                         problems.add ( "Filter column \"" + key + "\" not found in table.");
@@ -2258,8 +2258,8 @@ Write a list of values to table cells in an Excel worksheet.
 @param problems list of problems encountered during read, for formatted logging in calling code
 */
 public void writeTableCells ( DataTable table, String workbookFile, String sheetName,
-    Hashtable columnIncludeFiltersMap,
-    Hashtable columnCellMap, boolean cellFormatExcel, boolean keepOpen, List<String> problems )
+    Hashtable<String,String> columnIncludeFiltersMap,
+    Hashtable<String,String> columnCellMap, boolean cellFormatExcel, boolean keepOpen, List<String> problems )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getSimpleName() + ".writeTableCells", message;
     
@@ -2314,7 +2314,7 @@ throws FileNotFoundException, IOException
             }
         }
         // First get the table column numbers for columns mentioned in the filter
-        Enumeration keys = columnIncludeFiltersMap.keys();
+        Enumeration<String> keys = columnIncludeFiltersMap.keys();
         int [] columnNumbersToFilter = new int[columnIncludeFiltersMap.size()];
         String [] columnFilterGlobs = new String[columnIncludeFiltersMap.size()];
         int ikey = -1;
@@ -2323,7 +2323,7 @@ throws FileNotFoundException, IOException
             ++ikey;
             columnNumbersToFilter[ikey] = -1;
             try {
-                key = (String)keys.nextElement();
+                key = keys.nextElement();
                 columnNumbersToFilter[ikey] = table.getFieldIndex(key);
                 if ( columnNumbersToFilter[ikey] < 0 ) {
                     problems.add ( "Filter column \"" + key + "\" not found in table.");

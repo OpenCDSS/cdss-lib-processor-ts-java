@@ -30,6 +30,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the SetIgnoreLEZero() command.
 */
+@SuppressWarnings("serial")
 public class SetIgnoreLEZero_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

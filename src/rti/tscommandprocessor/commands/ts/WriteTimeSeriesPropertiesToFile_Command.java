@@ -179,7 +179,7 @@ throws InvalidCommandParameterException
     }
 	
 	// Check for invalid parameters...
-	List validList = new ArrayList<String>(8);
+	List<String> validList = new ArrayList<String>(8);
 	validList.add ( "TSList" );
 	validList.add ( "TSID" );
 	validList.add ( "EnsembleID" );
@@ -225,9 +225,9 @@ protected List<PropertyFileFormatType> getFileFormatChoices ()
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -359,7 +359,7 @@ CommandWarningException, CommandException
     }
     PropList bean_PropList = bean.getResultsPropList();
     Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-    List tslist = null;
+    List<TS> tslist = null;
     if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -372,7 +372,9 @@ CommandWarningException, CommandException
                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        tslist = (List)o_TSList;
+    	@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
         if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -595,8 +597,8 @@ private List<String> writePropertyFile ( CommandProcessor processor, List<TS> ts
     	  ts = tslist.get(its);
 	      // Get the list of all time series properties
     	  HashMap<String,Object> propMap =  ts.getProperties();
-    	  Set keys = propMap.keySet();
-	      List<String> propNameList = new ArrayList(keys);
+    	  Set<String> keys = propMap.keySet();
+	      List<String> propNameList = new ArrayList<String>(keys);
 	      if ( sortOrder == 0 ) {
 	      	  // Want to output in the order of the properties that were requested, not the order from the processor
 	      	  // Rearrange the full list to make sure the requested properties are at the front

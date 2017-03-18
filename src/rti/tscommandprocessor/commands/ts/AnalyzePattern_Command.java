@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.ts;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -144,7 +145,7 @@ throws InvalidCommandParameterException
 	// Make sure one or more time series are selected when AllMatchingTSID is selected.
 	if ( TSList.equalsIgnoreCase ( TSListType.ALL_MATCHING_TSID.toString() ) ) {
 		if ( TSID != null ) {
-			List selectedV = StringUtil.breakStringList (TSID, ",",StringUtil.DELIM_SKIP_BLANKS );
+			List<String> selectedV = StringUtil.breakStringList (TSID, ",",StringUtil.DELIM_SKIP_BLANKS );
 			if ( (selectedV == null) || (selectedV.size() == 0) ) {
                 message = "TSID should should not be empty when TSList=" + TSListType.ALL_MATCHING_TSID + " is specified.";
 				warning += "\n" + message;
@@ -181,7 +182,7 @@ throws InvalidCommandParameterException
         
 	}
     else {
-    	List percentileV = StringUtil.breakStringList ( Percentile, ",",StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> percentileV = StringUtil.breakStringList ( Percentile, ",",StringUtil.DELIM_SKIP_BLANKS );
 		if ( percentileV == null || percentileV.size()<= 0 ) {
             message = "Error parsing Percentile list \"" + Percentile + "\".";
 			warning += "\n" + message;
@@ -240,7 +241,7 @@ throws InvalidCommandParameterException
                         message, "Specify a list of pattern values." ) );
 	}
     else {
-    	List patternV = StringUtil.breakStringList ( PatternID, ",",StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> patternV = StringUtil.breakStringList ( PatternID, ",",StringUtil.DELIM_SKIP_BLANKS );
 		if ( patternV == null || patternV.size() <= 0 ) {
             message = "Error parsing PatternID list \"" + PatternID + "\".";
 			warning += "\n" + message;
@@ -313,18 +314,18 @@ throws InvalidCommandParameterException
     }
 	
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "Method" );
-    valid_Vector.add ( "Percentile" );
-    valid_Vector.add ( "PatternID" );
-    valid_Vector.add ( "OutputFile" );
-    valid_Vector.add ( "TableID" );
-    valid_Vector.add ( "DataRow" );
-    valid_Vector.add ( "Legacy" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(10);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "Method" );
+    validList.add ( "Percentile" );
+    validList.add ( "PatternID" );
+    validList.add ( "OutputFile" );
+    validList.add ( "TableID" );
+    validList.add ( "DataRow" );
+    validList.add ( "Legacy" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -348,7 +349,7 @@ private DataTable createStatisticsTable ( String TableID, double [] percentileAr
     String tsLabelFormatReq, double [][][] tsPercentiles )
 throws Exception
 {
-    List<TableField> columnList = new Vector();
+    List<TableField> columnList = new ArrayList<TableField>();
     DataTable table = null;
     StringBuffer tsLabelFormat = new StringBuffer();
     
@@ -442,9 +443,9 @@ private DataTable getDiscoveryTable()
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -458,7 +459,7 @@ public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
     List v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new Vector<DataTable>();
         v.add ( table );
     }
     return v;
@@ -601,7 +602,9 @@ throws CommandWarningException, CommandException
                                 message, "Report the problem to software support." ) );
             }
             else {
-                tslist = (List<TS>)o_TSList;
+            	@SuppressWarnings("unchecked")
+				List<TS> tslist0 = (List<TS>)o_TSList;
+                tslist = tslist0;
                 if ( tslist.size() == 0 ) {
                     message = "Unable to find time series to process using TSList=\"" + TSList +
                     "\" TSID=\"" + TSID + "\".";
@@ -669,7 +672,7 @@ throws CommandWarningException, CommandException
             String OutputFile_full = OutputFile;
     		// Looping through each time series creating a new StringMonthTS
     		// And keep the StringMonthTS in a vector of time series
-    		List StringMonthTS_List = new Vector(tsCount);
+    		List<StringMonthTS> StringMonthTS_List = new ArrayList<StringMonthTS>(tsCount);
     		StringMonthTS stringMonthTS = null;
     		// Array to hold cutoff values for each bin, for outputting statistics to the table
     		// Each time series has monthly values.  The values are the last values put into a bin,
@@ -733,13 +736,6 @@ throws CommandWarningException, CommandException
     
     			// Create the new time series using the new identifier.
     			stringMonthTS = new StringMonthTS(smIdent.getIdentifier(), startDate, endDate );
-    			if ( stringMonthTS == null ) {
-    				message = "Could not create the StringMonth time series.";
-                    status.addToLog ( CommandPhaseType.RUN,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Report the problem to software support." ) );
-    				throw new CommandWarningException ( message );
-    			}
     			// Update the stringMonth time series properties with
     			// information from the input analysis time series.
     			// Notice: CopyHeader() overwrites, among several other
@@ -956,7 +952,9 @@ throws CommandWarningException, CommandException
                 Object o = processor.getPropContents ( "OutputComments" );
                 // Comments are available so use them...
                 if ( o != null ) {
-                    outputCommentsList = (List<String>)o;
+                	@SuppressWarnings("unchecked")
+					List<String> outputCommentsList0 = (List<String>)o;
+                    outputCommentsList = outputCommentsList0;
                 }
             }
             catch ( Exception e ) {

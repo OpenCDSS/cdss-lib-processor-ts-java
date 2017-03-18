@@ -250,7 +250,7 @@ public List getObjectList ( Class c )
     Prop prop = new Prop();
     // Check for TS request or class that matches the data...
     if ( c == prop.getClass() ) {
-        List v = new Vector (1);
+        List<Prop> v = new Vector<Prop>(1);
         v.add ( discovery_Prop );
         return v;
     }

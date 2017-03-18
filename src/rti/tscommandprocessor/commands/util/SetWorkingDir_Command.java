@@ -149,7 +149,7 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    List validList = new ArrayList<String>(3);
+    List<String> validList = new ArrayList<String>(3);
     validList.add ( "WorkingDir" );
     validList.add ( "RunMode" );
     validList.add ( "RunOnOS" );
@@ -192,7 +192,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	else {
 	    // Parse the old command...
-		List tokens = StringUtil.breakStringList ( command_string,
+		List<String> tokens = StringUtil.breakStringList ( command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 3 ) {
 			message =

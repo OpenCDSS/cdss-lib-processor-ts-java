@@ -6,6 +6,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -29,6 +31,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the testCommand() command.
 */
+@SuppressWarnings("serial")
 public class TestCommand_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
@@ -169,10 +172,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Initialization status:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InitializeStatus_JComboBox = new SimpleJComboBox ( false );
-	__InitializeStatus_JComboBox.addItem ( CommandStatusType.UNKNOWN.toString() );
-	__InitializeStatus_JComboBox.addItem ( CommandStatusType.SUCCESS.toString() );
-	__InitializeStatus_JComboBox.addItem ( CommandStatusType.WARNING.toString() );
-	__InitializeStatus_JComboBox.addItem ( CommandStatusType.FAILURE.toString() );
+	List<String> statusChoices = new ArrayList<String>();
+	statusChoices.add ( CommandStatusType.UNKNOWN.toString() );
+	statusChoices.add ( CommandStatusType.SUCCESS.toString() );
+	statusChoices.add ( CommandStatusType.WARNING.toString() );
+	statusChoices.add ( CommandStatusType.FAILURE.toString() );
+	__InitializeStatus_JComboBox.setData(statusChoices);
 	__InitializeStatus_JComboBox.select ( 0 );
 	__InitializeStatus_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InitializeStatus_JComboBox,
@@ -184,10 +189,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Discovery status:"),
         		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DiscoveryStatus_JComboBox = new SimpleJComboBox ( false );
-	__DiscoveryStatus_JComboBox.addItem ( CommandStatusType.UNKNOWN.toString() );
-	__DiscoveryStatus_JComboBox.addItem ( CommandStatusType.SUCCESS.toString() );
-	__DiscoveryStatus_JComboBox.addItem ( CommandStatusType.WARNING.toString() );
-	__DiscoveryStatus_JComboBox.addItem ( CommandStatusType.FAILURE.toString() );
+	List<String> discoveryChoices = new ArrayList<String>();
+	discoveryChoices.add ( CommandStatusType.UNKNOWN.toString() );
+	discoveryChoices.add ( CommandStatusType.SUCCESS.toString() );
+	discoveryChoices.add ( CommandStatusType.WARNING.toString() );
+	discoveryChoices.add ( CommandStatusType.FAILURE.toString() );
+	__DiscoveryStatus_JComboBox.setData(discoveryChoices);
 	__DiscoveryStatus_JComboBox.select ( 0 );
 	__DiscoveryStatus_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(main_JPanel, __DiscoveryStatus_JComboBox,
@@ -199,10 +206,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run status:"),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RunStatus_JComboBox = new SimpleJComboBox ( false );
-	__RunStatus_JComboBox.addItem ( CommandStatusType.UNKNOWN.toString() );
-	__RunStatus_JComboBox.addItem ( CommandStatusType.SUCCESS.toString() );
-	__RunStatus_JComboBox.addItem ( CommandStatusType.WARNING.toString() );
-	__RunStatus_JComboBox.addItem ( CommandStatusType.FAILURE.toString() );
+	List<String> runChoices = new ArrayList<String>();
+	runChoices.add ( CommandStatusType.UNKNOWN.toString() );
+	runChoices.add ( CommandStatusType.SUCCESS.toString() );
+	runChoices.add ( CommandStatusType.WARNING.toString() );
+	runChoices.add ( CommandStatusType.FAILURE.toString() );
+	__RunStatus_JComboBox.setData(runChoices);
 	__RunStatus_JComboBox.select ( 0 );
 	__RunStatus_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(main_JPanel, __RunStatus_JComboBox,

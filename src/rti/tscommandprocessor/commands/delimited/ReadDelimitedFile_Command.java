@@ -2052,7 +2052,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_List )
+private void setDiscoveryTSList ( List<TS> discovery_TS_List )
 {
     __discovery_TS_List = discovery_TS_List;
 }

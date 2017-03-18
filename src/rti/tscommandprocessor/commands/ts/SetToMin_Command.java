@@ -5,11 +5,10 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
-//import RTi.TS.TSLimits;
 import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
@@ -101,15 +100,15 @@ throws InvalidCommandParameterException
 	*/
     
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "TSID" );
+    List<String> validList = new ArrayList<String>(4);
+    validList.add ( "TSID" );
     //valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "IndependentTSList" );
-    valid_Vector.add ( "IndependentTSID" );
-    valid_Vector.add ( "IndependentEnsembleID" );
+    validList.add ( "IndependentTSList" );
+    validList.add ( "IndependentTSID" );
+    validList.add ( "IndependentEnsembleID" );
     //valid_Vector.add ( "SetStart" );
     //valid_Vector.add ( "SetEnd" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -146,7 +145,7 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
     CommandProcessor processor = getCommandProcessor();
     String message;
     CommandStatus status = getCommandStatus();
-    int warning_level = 2;
+    //int warning_level = 2;
     int log_level = 3;
     try {
         bean = processor.processRequest( "GetTimeSeries", request_params);
@@ -176,17 +175,6 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
     else {
         ts = (TS)prop_contents;
     }
-    
-    if ( ts == null ) {
-        // Skip time series.
-        message = "Unable to set time series at position " + tspos[its] + " - null time series.";
-        Message.printWarning(warning_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
-    }
     return ts;
 }
 
@@ -214,7 +202,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax
-    	List v = StringUtil.breakStringList(command_string,
+    	List<String> v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
@@ -386,7 +374,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -399,7 +387,9 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -478,7 +468,7 @@ CommandWarningException, CommandException
     }
     bean_PropList = bean.getResultsPropList();
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
-    List independent_tslist = null;
+    List<TS> independent_tslist = null;
     if ( o_TSList2 == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + IndependentTSList +
         "\" TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\").";
@@ -491,7 +481,9 @@ CommandWarningException, CommandException
                 "Verify that the IndependentTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        independent_tslist = (List)o_TSList2;
+    	@SuppressWarnings("unchecked")
+		List<TS> independent_tslist0 = (List<TS>)o_TSList2;
+        independent_tslist = independent_tslist0;
         if ( independent_tslist.size() == 0 ) {
             message = "No independent time series are available from processor GetTimeSeriesToProcess (TSList=\"" + IndependentTSList +
             "\" TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\").";

@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.commands.reclamationhdb.java_lib.dmiLib.ModelDateTime;
@@ -422,7 +423,7 @@ public class RdbTimeValues
 	public static boolean readRdbData(Connection ourConn, String dbType, String tableName,
 		ModelDateTime startDate, ModelDateTime endDate, String timeStep,
 		int site_datatype_id, String sdtidField, String dateField, String valueField,
-		Vector tvVec) throws Exception
+		List<TimeValue> tvVec) throws Exception
 	{
 		ResultSet rs = null;
 		Statement stmt = null;
@@ -465,10 +466,9 @@ public class RdbTimeValues
 				if(dateString==null) break;
 				theDate = new ModelDateTime(dateString);
 				doubleValue = new Double(rs.getDouble(2));
-				if(doubleValue==null) break;
 //				System.out.println("Adding " + theDate.getSQLDateTime() + " - " + doubleValue + " to vector.");
 				thisData = new TimeValue(theDate, doubleValue);
-				tvVec.addElement(thisData);
+				tvVec.add(thisData);
 			}
 			ranOk = true;
 		}
@@ -519,7 +519,7 @@ public class RdbTimeValues
 	public static boolean writeRdbData(PrintWriter logBuffer, Connection ourConn, String dbType,
 		ModelDateTime startDate, ModelDateTime endDate, String tableName, String timeStep,
 		int site_datatype_id, String sdtidField, String dateField, String valueField,
-		Vector tvVec) throws Exception
+		List<TimeValue> tvVec) throws Exception
 	{
 		int i;
 		int thePoint = 0;
@@ -574,7 +574,7 @@ public class RdbTimeValues
 
 		for (i = 0; i < tvVec.size(); i++)
 		{
-			thisData = (TimeValue) tvVec.elementAt(i);
+			thisData = tvVec.get(i);
 			action = false;
 			if (thisData.value.doubleValue() != -9999.0)
 			{

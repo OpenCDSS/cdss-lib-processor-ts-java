@@ -15,6 +15,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
@@ -46,6 +47,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 /**
 Editor for PrintTextFile command.
 */
+@SuppressWarnings("serial")
 public class PrintTextFile_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -445,7 +447,7 @@ private void initialize ( JFrame parent, Command command )
     //this.__printerJob = PrinterJob.getPrinterJob();
     this.__printServiceArray = PrinterJob.lookupPrintServices();
     this.__defaultPrintService = PrintServiceLookup.lookupDefaultPrintService();
-    List<String> printerNames = new Vector();
+    List<String> printerNames = new Vector<String>();
     printerNames.add ( "" ); // Corresponds to default printer
     for ( int i = 0; i < this.__printServiceArray.length; i++ ) {
         printerNames.add (this.__printServiceArray[i].getName());
@@ -464,8 +466,10 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Paper size:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PaperSize_JComboBox = new SimpleJComboBox ( 30, false );
-    __PaperSize_JComboBox.addItem ( "" );  // Default
+    List<String> paperSizeChoices = new ArrayList<String>();
+    paperSizeChoices.add ( "" );  // Default
     // TODO SAM 2011-06-24 Get from a PrinterJob
+    __PaperSize_JComboBox.setData(paperSizeChoices);
     __PaperSize_JComboBox.select ( 0 );
     __PaperSize_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __PaperSize_JComboBox,
@@ -478,8 +482,10 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PaperSource_JComboBox = new SimpleJComboBox ( false );
     __PaperSource_JComboBox.setEnabled(false); // TODO SAM 2011-06-24 For now disable
-    __PaperSource_JComboBox.addItem ( "" );  // Default
+    List<String> sourceChoices = new ArrayList<String>();
+    sourceChoices.add ( "" );  // Default
     // TODO SAM 2011-06-24 Get from a PrinterJob
+    __PaperSource_JComboBox.setData(sourceChoices);
     __PaperSource_JComboBox.select ( 0 );
     __PaperSource_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __PaperSource_JComboBox,
@@ -491,11 +497,13 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Orientation:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Orientation_JComboBox = new SimpleJComboBox ( false );
-    __Orientation_JComboBox.addItem ( "" ); // Default
+    List<String> orientChoices = new ArrayList<String>();
+    orientChoices.add ( "" ); // Default
     // TODO SAM 2011-06-25 Figure out the reverse orientations
-    __Orientation_JComboBox.addItem ( PrintUtil.getOrientationAsString(PageFormat.LANDSCAPE) );
-    __Orientation_JComboBox.addItem ( PrintUtil.getOrientationAsString(PageFormat.PORTRAIT) );
+    orientChoices.add ( PrintUtil.getOrientationAsString(PageFormat.LANDSCAPE) );
+    orientChoices.add ( PrintUtil.getOrientationAsString(PageFormat.PORTRAIT) );
     // TODO SAM 2011-06-24 Get from a PrinterJob
+    __Orientation_JComboBox.setData(orientChoices);
     __Orientation_JComboBox.select ( 0 );
     __Orientation_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __Orientation_JComboBox,
@@ -577,9 +585,11 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Show line count:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ShowLineCount_JComboBox = new SimpleJComboBox ( false );
-    __ShowLineCount_JComboBox.addItem ( "" );  // Default
-    __ShowLineCount_JComboBox.addItem ( __command._False );
-    __ShowLineCount_JComboBox.addItem ( __command._True );
+    List<String> countChoices = new ArrayList<String>();
+    countChoices.add ( "" );  // Default
+    countChoices.add ( __command._False );
+    countChoices.add ( __command._True );
+    __ShowLineCount_JComboBox.setData(countChoices);
     __ShowLineCount_JComboBox.select ( 0 );
     __ShowLineCount_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __ShowLineCount_JComboBox,
@@ -591,9 +601,11 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Show page count:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ShowPageCount_JComboBox = new SimpleJComboBox ( false );
-    __ShowPageCount_JComboBox.addItem ( "" );  // Default
-    __ShowPageCount_JComboBox.addItem ( __command._False );
-    __ShowPageCount_JComboBox.addItem ( __command._True );
+    List<String> pageCountChoices = new ArrayList<String>();
+    pageCountChoices.add ( "" );  // Default
+    pageCountChoices.add ( __command._False );
+    pageCountChoices.add ( __command._True );
+    __ShowPageCount_JComboBox.setData(pageCountChoices);
     __ShowPageCount_JComboBox.select ( 0 );
     __ShowPageCount_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __ShowPageCount_JComboBox,
@@ -616,9 +628,11 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DoubleSided_JComboBox = new SimpleJComboBox ( false );
     __DoubleSided_JComboBox.setEnabled ( false ); // TODO SAM 2011-06-24 Enable later (Sides attribute)
-    __DoubleSided_JComboBox.addItem ( "" );  // Default
-    __DoubleSided_JComboBox.addItem ( __command._False );
-    __DoubleSided_JComboBox.addItem ( __command._True );
+    List<String> doubleChoices = new ArrayList<String>();
+    doubleChoices.add ( "" );  // Default
+    doubleChoices.add ( __command._False );
+    doubleChoices.add ( __command._True );
+    __DoubleSided_JComboBox.setData(doubleChoices);
     __DoubleSided_JComboBox.select ( 0 );
     __DoubleSided_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __DoubleSided_JComboBox,
@@ -643,9 +657,11 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Show dialog?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ShowDialog_JComboBox = new SimpleJComboBox ( false );
-    __ShowDialog_JComboBox.addItem ( "" );  // Default
-    __ShowDialog_JComboBox.addItem ( __command._False );
-    __ShowDialog_JComboBox.addItem ( __command._True );
+    List<String> dialogChoices = new ArrayList<String>();
+    dialogChoices.add ( "" );  // Default
+    dialogChoices.add ( __command._False );
+    dialogChoices.add ( __command._True );
+    __ShowDialog_JComboBox.setData(dialogChoices);
     __ShowDialog_JComboBox.select ( 0 );
     __ShowDialog_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __ShowDialog_JComboBox,
@@ -657,10 +673,12 @@ private void initialize ( JFrame parent, Command command )
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
-	__IfNotFound_JComboBox.addItem ( "" );	// Default
-	__IfNotFound_JComboBox.addItem ( __command._Ignore );
-	__IfNotFound_JComboBox.addItem ( __command._Warn );
-	__IfNotFound_JComboBox.addItem ( __command._Fail );
+	List<String> notFoundChoices = new ArrayList<String>();
+	notFoundChoices.add ( "" );	// Default
+	notFoundChoices.add ( __command._Ignore );
+	notFoundChoices.add ( __command._Warn );
+	notFoundChoices.add ( __command._Fail );
+	__IfNotFound_JComboBox.setData(notFoundChoices);
 	__IfNotFound_JComboBox.select ( 0 );
 	__IfNotFound_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,

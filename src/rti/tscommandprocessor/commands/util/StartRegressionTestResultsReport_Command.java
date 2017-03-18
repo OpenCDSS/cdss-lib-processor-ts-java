@@ -123,7 +123,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List validList = new ArrayList<String>();
+	List<String> validList = new ArrayList<String>();
 	validList.add ( "Outputfile" );
 	validList.add ( "TestResultsTableID" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -160,9 +160,9 @@ private DataTable getDiscoveryTable()
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -174,9 +174,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new Vector<DataTable>();
         v.add ( table );
     }
     return v;
@@ -276,7 +276,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        		TableField.DATA_TYPE_STRING,
 	        		TableField.DATA_TYPE_STRING
 	        	};
-	        	List columnList = new ArrayList<TableField>();
+	        	List<TableField> columnList = new ArrayList<TableField>();
                 for ( int i = 0; i < columnNames.length; i++ ) {
                     // No precision is necessary and specify the field width as -1 meaning it can grow
                     columnList.add ( new TableField(columnTypes[i], columnNames[i], -1) );

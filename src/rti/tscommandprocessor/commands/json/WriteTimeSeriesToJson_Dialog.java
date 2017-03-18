@@ -43,6 +43,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTimeSeriesToJson() command.
 */
+@SuppressWarnings("serial")
 public class WriteTimeSeriesToJson_Dialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {

@@ -13,6 +13,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -40,6 +41,7 @@ import RTi.Util.String.StringUtil;
 /**
 Editor for the Cumulate command.
 */
+@SuppressWarnings("serial")
 public class Cumulate_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -268,9 +270,11 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingHow_JComboBox = new SimpleJComboBox ();
-	__HandleMissingHow_JComboBox.addItem ( "" );
-	__HandleMissingHow_JComboBox.addItem ( __command._CarryForwardIfMissing );
-	__HandleMissingHow_JComboBox.addItem ( __command._SetMissingIfMissing );
+	List<String> missingChoices = new ArrayList<String>();
+	missingChoices.add ( "" );
+	missingChoices.add ( __command._CarryForwardIfMissing );
+	missingChoices.add ( __command._SetMissingIfMissing );
+	__HandleMissingHow_JComboBox.setData(missingChoices);
 	__HandleMissingHow_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -289,21 +293,23 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     JGUIUtil.addComponent(reset_JPanel, new JLabel ( "Reset date/time:" ), 
 		0, ++yReset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Reset_JComboBox = new SimpleJComboBox (true); // Editable
-	__Reset_JComboBox.addItem ( "" );  // No reset
+	List<String> resetChoices = new ArrayList<String>();
+	resetChoices.add ( "" );  // No reset
     /*
     for ( int i = 1; i <= 12; i++ ) {
-        __Reset_JComboBox.addItem ( "Date " + i + "-1 (reset matching MM-DD for day interval)" );
+        resetChoices.add ( "Date " + i + "-1 (reset matching MM-DD for day interval)" );
     }
     for ( int i = 1; i <= 12; i++ ) {
-        __Reset_JComboBox.addItem ( "Date " + i + "-1 (reset matching MM-DD for month interval)" );
+        resetChoices.add ( "Date " + i + "-1 (reset matching MM-DD for month interval)" );
     }
 	for ( int i = 1; i <= 31; i++ ) {
-		__Reset_JComboBox.addItem ( "Day " + i + " (reset every specified day for day interval)" );
+		resetChoices.add ( "Day " + i + " (reset every specified day for day interval)" );
 	}
 	for ( int i = 1; i <= 12; i++ ) {
-		__Reset_JComboBox.addItem ( "Month " + i + " (reset every specified month for month interval)" );
+		resetChoices.add ( "Month " + i + " (reset every specified month for month interval)" );
 	}
     */
+	__Reset_JComboBox.setData(resetChoices);
 	__Reset_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(reset_JPanel, __Reset_JComboBox,
 		1, yReset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -314,10 +320,12 @@ private void initialize ( JFrame parent, Cumulate_Command command )
     JGUIUtil.addComponent(reset_JPanel, new JLabel ( "Reset value:" ), 
         0, ++yReset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ResetValue_JComboBox = new SimpleJComboBox (true); // Allow edit
-    __ResetValue_JComboBox.addItem ( "" );
-    __ResetValue_JComboBox.addItem ( __command._DataValue );
-    __ResetValue_JComboBox.addItem ( __command._Zero );
+    List<String> resetValueChoices = new ArrayList<String>();
+    resetValueChoices.add ( "" );
+    resetValueChoices.add ( __command._DataValue );
+    resetValueChoices.add ( __command._Zero );
     __ResetValue_JComboBox.addItemListener ( this );
+    __ResetValue_JComboBox.setData(resetValueChoices);
     JGUIUtil.addComponent(reset_JPanel, __ResetValue_JComboBox,
         1, yReset, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(reset_JPanel, new JLabel(

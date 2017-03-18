@@ -9,6 +9,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
+import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -206,7 +207,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-	List validList = new ArrayList<String>(15);
+	List<String> validList = new ArrayList<String>(15);
 	validList.add ( "OutputFile" );
 	validList.add ( "OutputStart" );
 	validList.add ( "OutputEnd" );
@@ -246,9 +247,9 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -366,7 +367,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
 			message, "Report problem to software support." ) );
 	}
-	List tslist = (List)o_TSList;
+	@SuppressWarnings("unchecked")
+	List<TS> tslist = (List<TS>)o_TSList;
 	if ( tslist.size() == 0 ) {
         message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -454,11 +456,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     // Get the comments to add to the top of the file.
 
-    List OutputComments_Vector = null;
+    List<String> OutputComments_Vector = null;
     try { Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
         if ( o != null ) {
-            OutputComments_Vector = (List)o;
+        	@SuppressWarnings("unchecked")
+			List<String> OutputComments_Vector0 = (List<String>)o;
+            OutputComments_Vector = OutputComments_Vector0;
             props.setUsingObject("OutputComments",OutputComments_Vector);
         }
     }

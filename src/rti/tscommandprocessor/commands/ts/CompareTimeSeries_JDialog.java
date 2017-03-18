@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -26,7 +27,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.Document;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -39,6 +39,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for CompareTimeSeries() command.
 */
+@SuppressWarnings("serial")
 public class CompareTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -370,9 +371,11 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Match location:"),
 		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchLocation_JComboBox = new SimpleJComboBox ( false );
-	__MatchLocation_JComboBox.addItem ( "" );	// Default
-	__MatchLocation_JComboBox.addItem ( __command._False );
-	__MatchLocation_JComboBox.addItem ( __command._True );
+	List<String> matchChoices = new ArrayList<String>();
+	matchChoices.add ( "" );	// Default
+	matchChoices.add ( __command._False );
+	matchChoices.add ( __command._True );
+	__MatchLocation_JComboBox.setData(matchChoices);
 	__MatchLocation_JComboBox.select ( 0 );
 	__MatchLocation_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(ts_JPanel, __MatchLocation_JComboBox,
@@ -384,9 +387,11 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     JGUIUtil.addComponent(ts_JPanel, new JLabel ( "Match data type:"),
 		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchDataType_JComboBox = new SimpleJComboBox ( false );
-	__MatchDataType_JComboBox.addItem ( "" );	// Default
-	__MatchDataType_JComboBox.addItem ( __command._False );
-	__MatchDataType_JComboBox.addItem ( __command._True );
+	List<String> matchDataTypeChoices = new ArrayList<String>();
+	matchDataTypeChoices.add ( "" );	// Default
+	matchDataTypeChoices.add ( __command._False );
+	matchDataTypeChoices.add ( __command._True );
+	__MatchDataType_JComboBox.setData(matchDataTypeChoices);
 	__MatchDataType_JComboBox.select ( 0 );
 	__MatchDataType_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(ts_JPanel, __MatchDataType_JComboBox,
@@ -462,9 +467,11 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Warn if different?:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfDifferent_JComboBox = new SimpleJComboBox ( false );
-	__WarnIfDifferent_JComboBox.addItem ( "" );	// Default
-	__WarnIfDifferent_JComboBox.addItem ( __command._False );
-	__WarnIfDifferent_JComboBox.addItem ( __command._True );
+	List<String> diffChoices = new ArrayList<String>();
+	diffChoices.add ( "" );	// Default
+	diffChoices.add ( __command._False );
+	diffChoices.add ( __command._True );
+	__WarnIfDifferent_JComboBox.setData(diffChoices);
 	__WarnIfDifferent_JComboBox.select ( 0 );
 	__WarnIfDifferent_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(analysis_JPanel, __WarnIfDifferent_JComboBox,
@@ -476,9 +483,11 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     JGUIUtil.addComponent(analysis_JPanel, new JLabel ( "Warn if same?:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfSame_JComboBox = new SimpleJComboBox ( false );
-	__WarnIfSame_JComboBox.addItem ( "" );	// Default
-	__WarnIfSame_JComboBox.addItem ( __command._False );
-	__WarnIfSame_JComboBox.addItem ( __command._True );
+	List<String> sameChoices = new ArrayList<String>();
+	sameChoices.add ( "" );	// Default
+	sameChoices.add ( __command._False );
+	sameChoices.add ( __command._True );
+	__WarnIfSame_JComboBox.setData(sameChoices);
 	__WarnIfSame_JComboBox.select ( 0 );
 	__WarnIfSame_JComboBox.addActionListener ( this );
 	    JGUIUtil.addComponent(analysis_JPanel, __WarnIfSame_JComboBox,
@@ -502,9 +511,11 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Create difference time series?:"),
 		0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
   	__CreateDiffTS_JComboBox = new SimpleJComboBox ( false );
-  	__CreateDiffTS_JComboBox.addItem ( "" );	// Default
-   	__CreateDiffTS_JComboBox.addItem ( __command._False );
-   	__CreateDiffTS_JComboBox.addItem ( __command._True );
+  	List<String> createChoices = new ArrayList<String>();
+  	createChoices.add ( "" );	// Default
+  	createChoices.add ( __command._False );
+  	createChoices.add ( __command._True );
+  	__CreateDiffTS_JComboBox.setData(createChoices);
    	__CreateDiffTS_JComboBox.select ( 0 );
    	__CreateDiffTS_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(out_JPanel, __CreateDiffTS_JComboBox,

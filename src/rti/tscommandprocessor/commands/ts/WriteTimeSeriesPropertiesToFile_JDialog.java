@@ -45,6 +45,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTimeSeriesPropertiesToFile() command.
 */
+@SuppressWarnings("serial")
 public class WriteTimeSeriesPropertiesToFile_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
@@ -284,13 +285,13 @@ private void initialize ( JFrame parent, WriteTimeSeriesPropertiesToFile_Command
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -318,7 +319,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesPropertiesToFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write mode:"),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     List<FileWriteModeType> writeModeChoices = __command.getWriteModeChoices();
-    List<String> writeModeChoicesS = new Vector();
+    List<String> writeModeChoicesS = new Vector<String>();
     writeModeChoicesS.add ( "" );
     for ( FileWriteModeType c : writeModeChoices ) {
         writeModeChoicesS.add ( "" + c );
@@ -336,7 +337,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesPropertiesToFile_Command
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FileFormat_JComboBox = new SimpleJComboBox(false);
     List<PropertyFileFormatType> fileFormatChoices = __command.getFileFormatChoices();
-    List<String> fileFormatChoicesS = new Vector();
+    List<String> fileFormatChoicesS = new Vector<String>();
     fileFormatChoicesS.add ( "" );
     for ( PropertyFileFormatType c : fileFormatChoices ) {
         fileFormatChoicesS.add ( "" + c );

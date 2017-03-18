@@ -13,6 +13,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -39,6 +40,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class CheckTimeSeriesStatistic_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -535,11 +537,13 @@ private void initialize ( JFrame parent, CheckTimeSeriesStatistic_Command comman
     JGUIUtil.addComponent(check_JPanel,new JLabel("If criteria met?:"),
         0, ++yCheck, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IfCriteriaMet_JComboBox = new SimpleJComboBox ( false );
-    __IfCriteriaMet_JComboBox.addItem ( "" );
-    __IfCriteriaMet_JComboBox.addItem ( __command._Ignore );
-    __IfCriteriaMet_JComboBox.addItem ( __command._Warn );
-    __IfCriteriaMet_JComboBox.addItem ( __command._Fail );
-    __IfCriteriaMet_JComboBox.select ( "" );
+    List<String> criteriaChoices = new ArrayList<String>();
+    criteriaChoices.add ( "" );
+    criteriaChoices.add ( __command._Ignore );
+    criteriaChoices.add ( __command._Warn );
+    criteriaChoices.add ( __command._Fail );
+    __IfCriteriaMet_JComboBox.setData(criteriaChoices);
+    __IfCriteriaMet_JComboBox.select ( 0 );
     __IfCriteriaMet_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(check_JPanel, __IfCriteriaMet_JComboBox,
         1, yCheck, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

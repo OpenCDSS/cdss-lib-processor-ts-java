@@ -47,6 +47,7 @@ import RTi.Util.Time.DateTime_JPanel;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.YearType;
 
+@SuppressWarnings("serial")
 public class NewStatisticYearTS_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

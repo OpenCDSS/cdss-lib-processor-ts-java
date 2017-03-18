@@ -34,6 +34,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.TimeInterval;
 
+@SuppressWarnings("serial")
 public class AnalyzeNetworkPointFlow_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

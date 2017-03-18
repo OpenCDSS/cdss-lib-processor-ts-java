@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.List;
 
 import RTi.Util.IO.Command;
-import RTi.Util.Message.Message;
 
 /**
 This class allows a commands file to be be run.  For example, it can be

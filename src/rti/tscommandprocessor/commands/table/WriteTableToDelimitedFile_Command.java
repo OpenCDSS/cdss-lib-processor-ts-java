@@ -546,7 +546,6 @@ private void writeGoogleBigQueryTableSchema ( DataTable table, String outputSche
 	String colName, colDescription, dataTypeSchema;
 	int colType;
 	int irow;
-	TableField field;
 	for ( int icol = 0; icol < table.getNumberOfFields(); icol++ ) {
 		colName = table.getFieldName(icol);
 		// TODO sam 2017-01-18 need to enable
@@ -657,7 +656,9 @@ throws IOException
             Object o = processor.getPropContents ( "OutputComments" );
             // Comments are available so use them...
             if ( o != null ) {
-                outputCommentsList.addAll((List<String>)o);
+            	@SuppressWarnings("unchecked")
+				List<String> o2 = (List<String>)o;
+            	outputCommentsList.addAll(o2);
             }
             // Also add internal comments specific to the table.
             outputCommentsList.addAll ( table.getComments() );

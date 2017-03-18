@@ -39,6 +39,7 @@
 
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -270,7 +271,7 @@ throws InvalidCommandParameterException
 	// the number of required states) cannot be computed from an Alias.
 	
 	if ( (InflowStates != null) && !InflowStates.equals("") ) {
-		List v = StringUtil.breakStringList ( InflowStates, ",", 0 );
+		List<String> v = StringUtil.breakStringList ( InflowStates, ",", 0 );
 	    int size = v.size();
 	    for ( int i = 0; i < size; i++ ) {
 	        String state = (String)v.get(i);
@@ -285,7 +286,7 @@ throws InvalidCommandParameterException
 	}
 	
     if ( (OutflowStates != null) && !OutflowStates.equals("") ) {
-    	List v = StringUtil.breakStringList ( OutflowStates, ",", 0 );
+    	List<String> v = StringUtil.breakStringList ( OutflowStates, ",", 0 );
         int size = v.size();
         for ( int i = 0; i < size; i++ ) {
             String state = (String)v.get(i);
@@ -302,18 +303,18 @@ throws InvalidCommandParameterException
 	// Throw an InvalidCommandParameterException in case of errors.
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "ObsTSID" );
-    valid_Vector.add ( "FillNearest" );
-    valid_Vector.add ( "DefaultFlow" );
-    valid_Vector.add ( "Lag" );
-    valid_Vector.add ( "K" );
-    valid_Vector.add ( "InflowStates" );
-    valid_Vector.add ( "OutflowStates" );
+    List<String> validList = new ArrayList<String>(9);
+    validList.add ( "Alias" );
+    validList.add ( "TSID" );
+    validList.add ( "ObsTSID" );
+    validList.add ( "FillNearest" );
+    validList.add ( "DefaultFlow" );
+    validList.add ( "Lag" );
+    validList.add ( "K" );
+    validList.add ( "InflowStates" );
+    validList.add ( "OutflowStates" );
     //valid_Vector.add ( "SearchStart" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {		
 		Message.printWarning ( warning_level,
@@ -995,7 +996,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         		result_ts.addToGenesis ( "Lag: " + __param_lag + " K: "  + __param_k );
         
         		// Add the newly created time series to the software memory.
-        		List TSResultsList = (List) processor.getPropContents ( "TSResultsList" );
+        		@SuppressWarnings("unchecked")
+				List<TS> TSResultsList = (List<TS>) processor.getPropContents ( "TSResultsList" );
         		TSResultsList.add( result_ts );
         		processor.setPropContents ( "TSResultsList", TSResultsList );
             }
@@ -1007,7 +1009,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		                    processor, result_ts, Alias, status, commandPhase);
 		                result_ts.setAlias ( alias );
 		            }
-		            List<TS> tslist = new Vector();
+		            List<TS> tslist = new Vector<TS>();
 		            tslist.add(result_ts);
 		            setDiscoveryTSList(tslist);
 		        }
@@ -1302,7 +1304,7 @@ throws CommandWarningException
 	__param_InflowStates = new double[ __param_numStates ];	
 	//Check DefaultinflowStatesStr 
 	if (	(InflowStates != null) && InflowStates.length() != 0 ) {
-		List v1 = StringUtil.breakStringList (
+		List<String> v1 = StringUtil.breakStringList (
 				InflowStates, ",",
 				StringUtil.DELIM_SKIP_BLANKS ); 
 		int num_co_supplied1 = v1.size();
@@ -1358,7 +1360,7 @@ throws CommandWarningException
 	//Check DefaultoutflowStatesStr 
 	__param_OutflowStates = new double[ __param_numStates ];
 	if( OutflowStates != null && OutflowStates.length() != 0 ) {
-		List v2 = StringUtil.breakStringList (
+		List<String> v2 = StringUtil.breakStringList (
 				OutflowStates, ",",
 				StringUtil.DELIM_SKIP_BLANKS ); 
 		int num_co_supplied2 = v2.size();

@@ -52,7 +52,7 @@ private JavaConnections __hdbConnection = null;
 /**
 Database parameters from REF_DB_PARAMETER.
 */
-private Hashtable<String, String> __databaseParameterList = new Hashtable();
+private Hashtable<String, String> __databaseParameterList = new Hashtable<String, String>();
 
 /**
 Agencies from HDB_AGEN.
@@ -261,6 +261,7 @@ private String convertInternalDateTimeToHDBStartString ( DateTime dateTime, int 
     }
 }
 
+// TODO sam 2017-03-13 figure out if this is needed or can be deleted.
 /**
 Convert a TimeInterval interval to a ReclamationHDB interval for use with read code.
 */
@@ -503,9 +504,6 @@ throws SQLException
         // Set the fetch size to a relatively big number to try to improve performance.
         // Hopefully this improves performance over VPN and using remote databases
         rs.setFetchSize(__resultSetFetchSize);
-        if ( rs == null ) {
-            Message.printWarning(3, routine, "Resultset is null.");
-        }
         String objectType = null, dataType = null;
         while (rs.next()) {
             objectType = rs.getString(1);
@@ -928,7 +926,6 @@ throws Exception
     int modelIDSave = -1;
     Date runDateSave = null;
     List<ReclamationHDB_EnsembleTrace> missingTraceList = new ArrayList<ReclamationHDB_EnsembleTrace>();
-    String hydrologicIndicator = null;
     for ( ReclamationHDB_EnsembleTrace trace: ensembleTraceList ) {
         // Read the model run for the trace and confirm that the model run and run_date are the same for all traces
         ++itrace;
@@ -1149,11 +1146,9 @@ throws SQLException
         rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_Agency data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_Agency();
             col = 1;
             i = rs.getInt(col++);
@@ -1214,11 +1209,9 @@ throws SQLException
         rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_DataType data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_DataType();
             col = 1;
             i = rs.getInt(col++);
@@ -1295,11 +1288,9 @@ throws SQLException
         rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_LoadingApplication data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_LoadingApplication();
             col = 1;
             i = rs.getInt(col++);
@@ -1364,11 +1355,9 @@ throws SQLException
         rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_Model data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_Model();
             col = 1;
             i = rs.getInt(col++);
@@ -1484,11 +1473,9 @@ throws SQLException
         String s;
         Date date;
         DateTime dt;
-        int record = 0;
         int col;
         ReclamationHDB_ModelRun data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_ModelRun();
             col = 1;
             i = rs.getInt(col++);
@@ -1605,11 +1592,9 @@ throws SQLException
         rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_ObjectType data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_ObjectType();
             col = 1;
             i = rs.getInt(col++);
@@ -1668,11 +1653,9 @@ throws SQLException
         // Hopefully this improves performance over VPN and using remote databases
         rs.setFetchSize(__resultSetFetchSize);
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_OverwriteFlag data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_OverwriteFlag();
             col = 1;
             s = rs.getString(col++);
@@ -1731,11 +1714,9 @@ throws SQLException
         rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_SiteDataType data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_SiteDataType();
             col = 1;
             i = rs.getInt(col++);
@@ -1822,11 +1803,9 @@ throws SQLException
         int i;
         String s;
         float f;
-        int record = 0;
         int col;
         ReclamationHDB_Site data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_Site();
             col = 1;
             i = rs.getInt(col++);
@@ -1940,11 +1919,9 @@ throws SQLException
         // Hopefully this improves performance over VPN and using remote databases
         rs.setFetchSize(__resultSetFetchSize);
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_Validation data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_Validation();
             col = 1;
             s = rs.getString(col++);
@@ -2072,7 +2049,7 @@ private Hashtable<String,String> readRefDbParameterList ( )
 throws SQLException
 {   String routine = getClass().getName() + ".readRefDbParameter";
 
-    Hashtable<String,String> results = new Hashtable();
+    Hashtable<String,String> results = new Hashtable<String,String>();
     /* TODO SAM 2010-12-08 This is a real dog - 
     try {
         if ( !DMIUtil.databaseHasTable(this, "REF_DB_PARAMETER") ) {
@@ -2194,11 +2171,9 @@ throws SQLException
         rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_EnsembleKeyVal data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_EnsembleKeyVal();
             col = 1;
             i = rs.getInt(col++);
@@ -2285,11 +2260,9 @@ throws SQLException
         rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_Ensemble data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_Ensemble();
             col = 1;
             i = rs.getInt(col++);
@@ -2351,9 +2324,7 @@ throws SQLException
         // Hopefully this improves performance over VPN and using remote databases
         rs.setFetchSize(__resultSetFetchSize);
         String s;
-        int record = 0;
         while (rs.next()) {
-            ++record;
             s = rs.getString(1);
             if ( !rs.wasNull() ) {
                 results.add(s);
@@ -2439,11 +2410,9 @@ throws SQLException
         rs.setFetchSize(__resultSetFetchSize);
         int i;
         String s;
-        int record = 0;
         int col;
         ReclamationHDB_EnsembleTrace data;
         while (rs.next()) {
-            ++record;
             data = new ReclamationHDB_EnsembleTrace();
             col = 1;
             i = rs.getInt(col++);
@@ -2931,6 +2900,7 @@ throws Exception
         tsType = "Model";
         if ( readingEnsemble ) {
             // Read the trace information for the MRI in order to get the trace identifier
+        	// TODO SAM 2017-03-13 is the above comment relevant?  "traceList" is not used below?
             List<ReclamationHDB_EnsembleTrace> traceList = readRefEnsembleTraceList(-1, -1, modelRunID, null);
         }
     }
@@ -3042,7 +3012,7 @@ data to be loaded at more hours than appropriate)
 */
 public TS readTimeSeries ( String tsidentString, DateTime readStart, DateTime readEnd, int nHourIntervalOffset, boolean readData )
 throws Exception
-{   String routine = getClass().getSimpleName() + ".readTimeSeries";
+{   //String routine = getClass().getSimpleName() + ".readTimeSeries";
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString );
 
     if ( (tsident.getIntervalBase() != TimeInterval.HOUR) && (tsident.getIntervalBase() != TimeInterval.IRREGULAR) &&
@@ -3307,6 +3277,7 @@ throws Exception
             sw.clearAndStart();
             Date hdbSampleStart = null, hdbSampleEnd = null;
             double value = 0.0;
+            // TODO sam 2017-03-13 evaluate whether these should be used - currently disabled via a boolean
             String validation;
             String overwriteFlag;
             String derivationFlags;
@@ -3318,7 +3289,7 @@ throws Exception
             startDateTime.setTimeZone(hdbTimeZone); // Set here because HDB timestamp does not include time zone
             DateTime endDateTime = new DateTime(ts.getDate1()); // Reused end for each record
             endDateTime.setTimeZone(hdbTimeZone); // Set here because HDB timestamp does not include time zone
-            int hour1 = ts.getDate1().getHour();
+            //int hour1 = ts.getDate1().getHour();
             // Array to count how many NHour observations fall in a certain hour to allow integrity check
             int [] countHourForNHour = new int[24];
             for ( int i = 0; i < countHourForNHour.length; i++ ) {
@@ -4234,7 +4205,8 @@ throws SQLException
         modelRunID = new Long(0);
     }
     Timestamp startTimeStamp, endTimeStamp; // Timestamps for SQL inserts, using timeZone data
-    long startTimeStampMsDelta = 0, startTimeStampMsPrev = 0;
+    //long startTimeStampMsDelta = 0;
+    long startTimeStampMsPrev = 0;
     long startTimeStampBeforeShiftMs;
     long startTimeStampMs;
     int batchCount = 0;
@@ -4292,7 +4264,7 @@ throws SQLException
                     // In other words, MST time zone will shift times by 7 hours to GMT
                     startTimeStampBeforeShiftMs = dateTime.getDate(timeZone).getTime(); // UNIX GMT time reflecting that date/time is in the specified time zone such as MST
                     startTimeStampMs = startTimeStampBeforeShiftMs + timeOffsetTsToHdbStart; // UNIX GMT, will be non-zero only for hourly data
-                    startTimeStampMsDelta = startTimeStampMs - startTimeStampMsPrev; // Delta to see if incrementing evenly over daylight savings
+                    //startTimeStampMsDelta = startTimeStampMs - startTimeStampMsPrev; // Delta to see if incrementing evenly over daylight savings
                     startTimeStampMsPrev = startTimeStampMs; // Reset previous value, for log messages
                     // Version to create Timestamp from date/time parts is deprecated so use millisecond version
                     startTimeStamp = new Timestamp(startTimeStampMs);

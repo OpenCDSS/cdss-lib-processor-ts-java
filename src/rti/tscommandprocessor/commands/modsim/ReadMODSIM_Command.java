@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -242,15 +243,15 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
+	List<String> validList = new ArrayList<String>(5);
+    validList.add ( "Alias" );
+    validList.add ( "TSID" );
+    validList.add ( "InputFile" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
     // TODO SAM 2008-09-09 Enable in version 8 MODSIM files?
     //valid_Vector.add ( "NewUnits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -364,7 +365,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         else {
             // TODO SAM 2008-09-09 This whole block of code needs to be
             // removed as soon as commands have been migrated to the new syntax.
-        	List v = StringUtil.breakStringList(commandString, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+        	List<String> v = StringUtil.breakStringList(commandString, "(),", StringUtil.DELIM_ALLOW_STRINGS );
             int ntokens = 0;
             if ( v != null ) {
                 ntokens = v.size();
@@ -650,7 +651,7 @@ throws InvalidCommandParameterException,
                 ts = ModsimTS.readTimeSeries ( TSID, InputFile_full, InputStart_DateTime, InputEnd_DateTime,
                         NewUnits, read_data );
                 if ( ts != null ) {
-                    tslist = new Vector ( 1 );
+                    tslist = new Vector<TS>( 1 );
                     tslist.add ( ts );
                 }
             }
@@ -745,7 +746,7 @@ throws InvalidCommandParameterException,
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

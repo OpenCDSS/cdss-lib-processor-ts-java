@@ -20,7 +20,7 @@ public class FIPSCounty {
 /**
 Static singleton list of state FIPS data, read on first access.
 */
-private static List<FIPSCounty> __dataList = new Vector();
+private static List<FIPSCounty> __dataList = new Vector<FIPSCounty>();
 
 /**
 The FIPS county code as a five-digit zero-padded string.

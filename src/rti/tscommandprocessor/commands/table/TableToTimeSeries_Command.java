@@ -2989,7 +2989,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         
         // Read everything in the file (one time series or traces).
-        List<String> errorMessages = new Vector();
+        List<String> errorMessages = new Vector<String>();
         // Read the time series
         // If the location column has been specified then the table is single-column data
         boolean singleColumn = false;
@@ -3180,7 +3180,7 @@ private void setDateTimeColumnRuntime ( String dateTimeColumnRuntime )
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_List )
+private void setDiscoveryTSList ( List<TS> discovery_TS_List )
 {
     __discovery_TS_List = discovery_TS_List;
 }

@@ -43,6 +43,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.TimeInterval;
 
+@SuppressWarnings("serial")
 public class NewStatisticEnsemble_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -390,7 +391,7 @@ private void initialize ( JFrame parent, NewStatisticEnsemble_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias for new time series:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> choiceList = new Vector();
+    List<String> choiceList = new Vector<String>();
     choiceList.add("${c:Statistic}");
     choiceList.add("${c:TestValue}");
     __Alias_JTextField = new CommandPropertyFormatterJPanel(15,choiceList);

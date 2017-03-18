@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -231,7 +232,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	else {
-		List v = StringUtil.breakStringList (	SimpleMergeFormat, ",", 0 );
+		List<String> v = StringUtil.breakStringList (	SimpleMergeFormat, ",", 0 );
 		int size = v.size();
 		if ( size != __Columns_intArray.length ) {
 			message = "The number of specifiers in the merge format (" + SimpleMergeFormat +
@@ -265,13 +266,13 @@ throws InvalidCommandParameterException
 	}
     
 	//  Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "ListFile" );
-    valid_Vector.add ( "OutputFile" );
-    valid_Vector.add ( "Columns" );
-    valid_Vector.add ( "NewColumnName" );
-    valid_Vector.add ( "SimpleMergeFormat" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
+	List<String> validList = new ArrayList<String>(5);
+    validList.add ( "ListFile" );
+    validList.add ( "OutputFile" );
+    validList.add ( "Columns" );
+    validList.add ( "NewColumnName" );
+    validList.add ( "SimpleMergeFormat" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -313,9 +314,9 @@ public boolean editRunnableCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -435,7 +436,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int size = table.getNumberOfRecords();
 	String merged;	// Merged column string
 	int mergedcol = table.getNumberOfFields() - 1;	// New at end
-	List v = new Vector ( __Columns_intArray.length );
+	List<Object> v = new Vector<Object> ( __Columns_intArray.length );
 	TableRecord rec = null;
 	String s;
 	int j;

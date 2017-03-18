@@ -44,6 +44,7 @@ The class edits the TS Alias = ReadNwsrfsEspTraceEnsemble() and non-TS Alias
 ReadNwsrfsEspTraceEnsemble() commands.  Currently only the latter is implemented,
 although the Alias parameter is used for both versions.
 */
+@SuppressWarnings("serial")
 public class ReadNwsrfsEspTraceEnsemble_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {

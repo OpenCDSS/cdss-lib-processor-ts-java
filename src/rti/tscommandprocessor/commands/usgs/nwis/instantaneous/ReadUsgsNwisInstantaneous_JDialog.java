@@ -56,6 +56,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 Editor for he ReadUsgsNwisInstantaneous() command.
 */
+@SuppressWarnings("serial")
 public class ReadUsgsNwisInstantaneous_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -482,10 +483,12 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( UsgsNwisInstantaneousDataStore.class );
+    List<String> datastoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
     if ( dataStoreList.size() > 0 ) {
+    	__DataStore_JComboBox.setData(datastoreChoices);
         __DataStore_JComboBox.select ( 0 );
     }
     __DataStore_JComboBox.addItemListener ( this );

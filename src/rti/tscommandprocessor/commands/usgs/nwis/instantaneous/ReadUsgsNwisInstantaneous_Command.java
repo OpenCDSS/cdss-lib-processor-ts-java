@@ -281,7 +281,7 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    List<String> validList = new ArrayList(17);
+    List<String> validList = new ArrayList<String>(17);
     validList.add ( "DataStore" );
     validList.add ( "Sites" );
     validList.add ( "States" );
@@ -789,7 +789,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

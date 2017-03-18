@@ -29,6 +29,8 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
@@ -42,6 +44,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the ReadRiverWare() command.
 */
+@SuppressWarnings("serial")
 public class ReadRiverWare_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
@@ -335,9 +338,11 @@ private void initialize ( JFrame parent, ReadRiverWare_Command command )
     JGUIUtil.addComponent(rdfJPanel, new JLabel ( "Output"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Output_JComboBox = new SimpleJComboBox ( false );
-    __Output_JComboBox.addItem ( "" );
-    __Output_JComboBox.addItem ( __command._TimeSeries );
-    __Output_JComboBox.addItem ( __command._TimeSeriesAndEnsembles );
+    List<String> outputChoices = new ArrayList<String>();
+    outputChoices.add ( "" );
+    outputChoices.add ( __command._TimeSeries );
+    outputChoices.add ( __command._TimeSeriesAndEnsembles );
+    __Output_JComboBox.setData(outputChoices);
     __Output_JComboBox.select ( 0 );
     __Output_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(rdfJPanel, __Output_JComboBox,

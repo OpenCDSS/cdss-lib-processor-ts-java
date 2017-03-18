@@ -29,7 +29,6 @@ import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -46,8 +45,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
@@ -59,6 +56,7 @@ Very important - this dialog uses HDB data to populate lists and requires that t
 metadata are already defined.  Consequently, list choices cascade to valid options rather than
 letting the user define new combinations.
 */
+@SuppressWarnings("serial")
 public class WriteReclamationHDB_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
@@ -704,6 +702,7 @@ private String getSelectedEnsembleName()
    	return EnsembleName;
 }
 
+// TODO SAM 2017-03-13 Determine why the following is not called
 /**
 Return the selected model ID corresponding to the selected model name by querying the database.
 @return the selected model ID or -1 if the model ID cannot be determined.
@@ -837,9 +836,11 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType( ReclamationHDBDataStore.class );
+    List<String> dataStoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	dataStoreChoices.add ( dataStore.getName() );
     }
+    __DataStore_JComboBox.setData(dataStoreChoices);
     if ( __DataStore_JComboBox.getItemCount() > 0 ) {
         __DataStore_JComboBox.select ( 0 );
     }
@@ -1485,7 +1486,7 @@ private void populateAgencyChoices ( ReclamationHDB_DMI rdmi )
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB agency list (" + e + ")." );
-        agencyStrings = new Vector();
+        agencyStrings = new ArrayList<String>();
     }
     __Agency_JComboBox.removeAll ();
     __Agency_JComboBox.setData(agencyStrings);
@@ -1501,7 +1502,7 @@ private void populateAgencyChoices ( ReclamationHDB_DMI rdmi )
 Populate the data type choice list based on the selected site common name.
 */
 private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getSimpleName() + ".populateDataTypeCommonNameChoices";
+{   //String routine = getClass().getSimpleName() + ".populateDataTypeCommonNameChoices";
     if ( (rdmi == null) || (__DataTypeCommonName_JComboBox == null) ) {
         // Initialization
         return;
@@ -1551,7 +1552,7 @@ private void populateEnsembleModelNameChoices ( ReclamationHDB_DMI rdmi )
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB model list (" + e + ")." );
-        modelNameStrings = new Vector();
+        modelNameStrings = new ArrayList<String>();
     }
     __EnsembleModelName_JComboBox.removeAll ();
     __EnsembleModelName_JComboBox.setData(modelNameStrings);
@@ -1671,7 +1672,7 @@ private void populateHydrologicIndicatorChoices ( ReclamationHDB_DMI rdmi )
         return;
     }
 	Message.printStatus(2,routine,"Start populating hydrologic indicator choices at " + new DateTime(DateTime.DATE_CURRENT));
-    List<String> hydrologicIndicatorStrings = new ArrayList();
+    List<String> hydrologicIndicatorStrings = new ArrayList<String>();
     hydrologicIndicatorStrings.add ( "" ); // Always add blank because user may not want model time series
     try {
         //readModelList(rdmi);
@@ -2026,7 +2027,7 @@ private void populateOverwriteFlagChoices ( ReclamationHDB_DMI rdmi )
         return;
     }
     //Message.printStatus(2,routine,"Start populating overwrite flag choices at " + new DateTime(DateTime.DATE_CURRENT));
-    List<String> overwriteFlagStrings = new Vector();
+    List<String> overwriteFlagStrings = new ArrayList<String>();
     try {
         List<ReclamationHDB_OverwriteFlag> overwriteFlagList = rdmi.getOverwriteFlagList();
         overwriteFlagStrings.add(""); // No flag specified by parameter
@@ -2038,7 +2039,7 @@ private void populateOverwriteFlagChoices ( ReclamationHDB_DMI rdmi )
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB overwrite flag list (" + e + ")." );
-        overwriteFlagStrings = new Vector();
+        overwriteFlagStrings = new ArrayList<String>();
     }
     __OverwriteFlag_JComboBox.removeAll ();
     __OverwriteFlag_JComboBox.setData(overwriteFlagStrings);
@@ -2073,7 +2074,7 @@ private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB site data type list (" + e + ")." );
-        siteCommonNameStrings = new Vector();
+        siteCommonNameStrings = new ArrayList<String>();
     }
     __SiteCommonName_JComboBox.removeAll ();
     __SiteCommonName_JComboBox.setData(siteCommonNameStrings);
@@ -2164,7 +2165,7 @@ private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
 Populate the time zone choices based on the selected datastore.
 */
 private void populateTimeZoneChoices ( ReclamationHDB_DMI rdmi )
-{	String routine = getClass().getSimpleName() + ".populteTimeZoneChoices";
+{	//String routine = getClass().getSimpleName() + ".populteTimeZoneChoices";
 	//Message.printStatus(2,routine,"Start populating time zone choices at " + new DateTime(DateTime.DATE_CURRENT));
     __TimeZone_JComboBox.removeAll ();
     List<String> timeZoneChoices = rdmi.getTimeZoneList();
@@ -2223,7 +2224,7 @@ private void populateValidationFlagChoices ( ReclamationHDB_DMI rdmi )
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB validation flag list (" + e + ")." );
-        validationFlagStrings = new Vector();
+        validationFlagStrings = new ArrayList<String>();
     }
     __ValidationFlag_JComboBox.removeAll ();
     __ValidationFlag_JComboBox.setData(validationFlagStrings);
@@ -2274,7 +2275,7 @@ private void readModelRunListForSelectedModel ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getSimpleName() + ".readModelRunList";
     String selectedModelName = __ModelName_JComboBox.getSelected();
     List<ReclamationHDB_Model> modelList = rdmi.findModel(__modelList, selectedModelName);
-    List<String> modelRunNameStrings = new Vector();
+    List<String> modelRunNameStrings = new ArrayList<String>();
     modelRunNameStrings.add ( "" ); // Always add blank because user may not want model time series
     if ( modelList.size() == 1 ) {
         ReclamationHDB_Model model = modelList.get(0);

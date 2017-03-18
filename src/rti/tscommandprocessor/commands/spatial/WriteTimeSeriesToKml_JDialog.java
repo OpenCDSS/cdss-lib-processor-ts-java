@@ -48,6 +48,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTimeSeriesToKml() command.
 */
+@SuppressWarnings("serial")
 public class WriteTimeSeriesToKml_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {

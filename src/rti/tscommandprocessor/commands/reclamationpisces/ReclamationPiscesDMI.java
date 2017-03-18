@@ -6,7 +6,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMIUtil;
@@ -196,12 +195,12 @@ private List<String> getWhereClausesFromInputFilter ( DMI dmi, InputFilter_JPane
     // Loop through each filter group.  There will be one where clause per filter group.
 
     if (panel == null) {
-        return new Vector();
+        return new ArrayList<String>();
     }
 
     int nfg = panel.getNumFilterGroups ();
     InputFilter filter;
-    List<String> where_clauses = new Vector();
+    List<String> where_clauses = new ArrayList<String>();
     String where_clause=""; // A where clause that is being formed.
     for ( int ifg = 0; ifg < nfg; ifg++ ) {
         filter = panel.getInputFilter ( ifg );  

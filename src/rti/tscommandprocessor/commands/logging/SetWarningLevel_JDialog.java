@@ -41,6 +41,7 @@ import RTi.Util.IO.PropList;
 /**
 Editor dialog for the SetWarningLevel() command.
 */
+@SuppressWarnings("serial")
 public class SetWarningLevel_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {

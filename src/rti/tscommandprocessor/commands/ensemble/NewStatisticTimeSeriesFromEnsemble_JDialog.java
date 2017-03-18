@@ -44,6 +44,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Math.DistributionType;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class NewStatisticTimeSeriesFromEnsemble_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -439,7 +440,7 @@ private void initialize ( JFrame parent, NewStatisticTimeSeriesFromEnsemble_Comm
     JGUIUtil.addComponent(dist_JPanel, new JLabel ("Probability units:"),
         0, ++yDist, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ProbabilityUnits_JComboBox = new SimpleJComboBox(false);
-    List<String> probabilityUnits = new Vector();
+    List<String> probabilityUnits = new Vector<String>();
     probabilityUnits.add ( "" );
     probabilityUnits.add ( "Fraction" );
     probabilityUnits.add ( "Percent" );

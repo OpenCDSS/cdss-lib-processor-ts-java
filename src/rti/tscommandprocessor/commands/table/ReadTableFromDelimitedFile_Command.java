@@ -169,7 +169,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List validList = new ArrayList<String>(11);
+	List<String> validList = new ArrayList<String>(11);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
     validList.add ( "Delimiter" );
@@ -216,9 +216,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new Vector<DataTable>();
         v.add ( table );
     }
     return v;

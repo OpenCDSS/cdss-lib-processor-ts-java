@@ -45,6 +45,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteDelftFewsPiXml() command.
 */
+@SuppressWarnings("serial")
 public class WriteDelftFewsPiXml_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
@@ -386,7 +387,7 @@ private void initialize ( JFrame parent, WriteDelftFewsPiXml_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
-    List<String> intervalChoices = new Vector();
+    List<String> intervalChoices = new Vector<String>();
     intervalChoices.add("");
     intervalChoices.add("Minute");
     intervalChoices.add("Hour");

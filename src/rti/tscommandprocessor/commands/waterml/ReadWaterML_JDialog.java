@@ -45,6 +45,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 Editor for the ReadWaterML() command.
 */
+@SuppressWarnings("serial")
 public class ReadWaterML_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

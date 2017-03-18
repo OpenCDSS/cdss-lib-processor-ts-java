@@ -39,6 +39,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class WriteTableToHTML_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

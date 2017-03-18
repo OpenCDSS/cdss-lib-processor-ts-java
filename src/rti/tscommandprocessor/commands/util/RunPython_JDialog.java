@@ -28,6 +28,8 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -43,6 +45,7 @@ import RTi.Util.Message.Message;
 /**
 Class to edit the RunPython() command.
 */
+@SuppressWarnings("serial")
 public class RunPython_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -269,10 +272,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interpreter:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interpreter_JComboBox = new SimpleJComboBox ( false );
-    __Interpreter_JComboBox.addItem ( __command._IronPython );
-    __Interpreter_JComboBox.addItem ( __command._Jython );
-    __Interpreter_JComboBox.addItem ( __command._JythonEmbedded );
-    __Interpreter_JComboBox.addItem ( __command._Python );
+    List<String> interpreterChoices = new ArrayList<String>();
+    interpreterChoices.add ( __command._IronPython );
+    interpreterChoices.add ( __command._Jython );
+    interpreterChoices.add ( __command._JythonEmbedded );
+    interpreterChoices.add ( __command._Python );
+    __Interpreter_JComboBox.setData(interpreterChoices);
     __Interpreter_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Interpreter_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

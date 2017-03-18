@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -138,11 +139,11 @@ throws InvalidCommandParameterException
 	*/
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "PropertyName" );
-    valid_Vector.add ( "PropertyType" );
-    valid_Vector.add ( "PropertyValue" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(3);
+    validList.add ( "PropertyName" );
+    validList.add ( "PropertyType" );
+    validList.add ( "PropertyValue" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -185,7 +186,7 @@ public List getObjectList ( Class c )
     Prop prop = new Prop();
     // Check for TS request or class that matches the data...
     if ( c == prop.getClass() ) {
-    	List v = new Vector (1);
+    	List<Prop> v = new Vector<Prop> (1);
         v.add ( discovery_Prop );
         return v;
     }

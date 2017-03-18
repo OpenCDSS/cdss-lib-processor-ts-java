@@ -1,7 +1,7 @@
 package rti.tscommandprocessor.commands.logging;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -76,10 +76,10 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
-	valid_Vector.add ( "ScreenLevel" );
-	valid_Vector.add ( "LogFileLevel" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(2);
+	validList.add ( "ScreenLevel" );
+	validList.add ( "LogFileLevel" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -122,7 +122,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     else {
         // TODO SAM 2008-06-23 This whole block of code needs to be
         // removed as soon as commands have been migrated to the new syntax.
-    	List v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List<String> v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
         int ntokens = 0;
         if ( v != null ) {
             ntokens = v.size();

@@ -418,7 +418,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (OutputEnsembleID == null) || OutputEnsembleID.isEmpty() ) {
     	OutputEnsembleID = EnsembleName; // default
     }
-    String EnsembleModelName = parameters.getValue("EnsembleModelName");
+    // TODO sam 2017-03-13 Why is the following not used?
+    //String EnsembleModelName = parameters.getValue("EnsembleModelName");
     String EnsembleModelRunID = parameters.getValue("EnsembleModelRunID");
     int ensembleModelRunID = -1;
     if ( (EnsembleModelRunID != null) && !EnsembleModelRunID.equals("") ) {
@@ -426,9 +427,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String Alias = parameters.getValue("Alias");
     String Properties = parameters.getValue ( "Properties" );
-    Hashtable properties = null;
+    Hashtable<String,String> properties = null;
     if ( (Properties != null) && (Properties.length() > 0) && (Properties.indexOf(":") > 0) ) {
-        properties = new Hashtable();
+        properties = new Hashtable<String,String>();
         // First break map pairs by comma
         List<String> pairs = new ArrayList<String>();
         if ( Properties.indexOf(",") > 0 ) {
@@ -899,12 +900,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 for ( TS ts: tslist ) {
                     if ( properties != null ) {
                         // Assign properties
-                        Enumeration keys = properties.keys();
+                        Enumeration<String> keys = properties.keys();
                         String key = null;
                         while ( keys.hasMoreElements() ) {
-                            key = (String)keys.nextElement();
+                            key = keys.nextElement();
                             ts.setProperty( key, TSCommandProcessorUtil.expandTimeSeriesMetadataString (
-                                processor, ts, (String)properties.get(key), status, CommandPhaseType.RUN) );
+                                processor, ts, properties.get(key), status, CommandPhaseType.RUN) );
                         }
                     }
                 }
@@ -987,9 +988,9 @@ private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_List )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discovery_TS_Vector = discovery_TS_List;
 }
 
 /**

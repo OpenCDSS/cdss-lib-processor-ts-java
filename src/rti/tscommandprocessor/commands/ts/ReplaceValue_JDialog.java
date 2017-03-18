@@ -39,6 +39,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTime_JPanel;
 import RTi.Util.Time.TimeInterval;
 
+@SuppressWarnings("serial")
 public class ReplaceValue_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -344,7 +345,7 @@ private void initialize ( JFrame parent, ReplaceValue_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Action_JComboBox = new SimpleJComboBox ( 12, false ); // Do not allow edit
-    List<String> actionChoices = new Vector();
+    List<String> actionChoices = new Vector<String>();
     actionChoices.add("");
     actionChoices.add(__command._Remove);
     actionChoices.add(__command._SetMissing);

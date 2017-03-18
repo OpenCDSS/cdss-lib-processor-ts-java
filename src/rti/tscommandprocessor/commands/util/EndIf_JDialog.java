@@ -28,6 +28,7 @@ import RTi.Util.IO.PropList;
 /**
 Editor dialog for the EndIf() command.
 */
+@SuppressWarnings("serial")
 public class EndIf_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {

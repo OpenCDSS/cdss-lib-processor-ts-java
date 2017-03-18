@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -40,6 +41,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the SelectTimeSeries() command.
 */
+@SuppressWarnings("serial")
 public class SelectTimeSeries_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -352,11 +354,13 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Property criterion:" ), 
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyCriterion_JComboBox = new SimpleJComboBox ( false );
-    __PropertyCriterion_JComboBox.addItem ( "" );
-    __PropertyCriterion_JComboBox.addItem ( "" + InputFilterStringCriterionType.CONTAINS );
-    __PropertyCriterion_JComboBox.addItem ( "" + InputFilterStringCriterionType.ENDS_WITH );
-    __PropertyCriterion_JComboBox.addItem ( "" + InputFilterStringCriterionType.MATCHES );
-    __PropertyCriterion_JComboBox.addItem ( "" + InputFilterStringCriterionType.STARTS_WITH );
+    List<String> critChoices = new ArrayList<String>();
+    critChoices.add ( "" );
+    critChoices.add ( "" + InputFilterStringCriterionType.CONTAINS );
+    critChoices.add ( "" + InputFilterStringCriterionType.ENDS_WITH );
+    critChoices.add ( "" + InputFilterStringCriterionType.MATCHES );
+    critChoices.add ( "" + InputFilterStringCriterionType.STARTS_WITH );
+    __PropertyCriterion_JComboBox.setData(critChoices);
     __PropertyCriterion_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __PropertyCriterion_JComboBox,
         1, yProp, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -391,7 +395,7 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     
     // Remaining general parameters
 
-    List<String> select_all_first = new Vector ( 3 );
+    List<String> select_all_first = new Vector<String> ( 3 );
 	select_all_first.add ( "" );
 	select_all_first.add ( __command._False );
 	select_all_first.add ( __command._True );
@@ -409,10 +413,12 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IfNotFound_JComboBox = new SimpleJComboBox ( false );
-    __IfNotFound_JComboBox.addItem ( "" );
-    __IfNotFound_JComboBox.addItem ( __command._Ignore );
-    __IfNotFound_JComboBox.addItem ( __command._Warn );
-    __IfNotFound_JComboBox.addItem ( __command._Fail );
+    List<String> notFoundChoices = new ArrayList<String>();
+    notFoundChoices.add ( "" );
+    notFoundChoices.add ( __command._Ignore );
+    notFoundChoices.add ( __command._Warn );
+    notFoundChoices.add ( __command._Fail );
+    __IfNotFound_JComboBox.setData(notFoundChoices);
     __IfNotFound_JComboBox.select ( 0 );
     __IfNotFound_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,

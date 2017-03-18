@@ -34,6 +34,7 @@ import RTi.Util.Message.Message;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+@SuppressWarnings("serial")
 public class WebGet_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {

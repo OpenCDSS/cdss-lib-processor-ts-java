@@ -37,6 +37,7 @@ import RTi.Util.Message.Message;
 /**
 This class provides an editor dialog for the WriteStateCU() command.
 */
+@SuppressWarnings("serial")
 public class WriteStateCU_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {

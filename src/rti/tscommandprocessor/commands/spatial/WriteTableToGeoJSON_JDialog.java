@@ -42,6 +42,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTableToGeoJSON() command.
 */
+@SuppressWarnings("serial")
 public class WriteTableToGeoJSON_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {

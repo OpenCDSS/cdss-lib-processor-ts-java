@@ -40,6 +40,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for NewEnsemble command.
 */
+@SuppressWarnings("serial")
 public class NewEnsemble_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -317,7 +318,7 @@ private void initialize ( JFrame parent, NewEnsemble_Command command )
     JGUIUtil.addComponent(main_JPanel, CopyTimeSeries_JLabel, 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CopyTimeSeries_JComboBox = new SimpleJComboBox ( 10, false ); // Don't allow edits
-    List<String> CopyTimeSeriesChoices = new Vector();
+    List<String> CopyTimeSeriesChoices = new Vector<String>();
     CopyTimeSeriesChoices.add ( "" );
     CopyTimeSeriesChoices.add ( __command._False );
     CopyTimeSeriesChoices.add ( __command._True );

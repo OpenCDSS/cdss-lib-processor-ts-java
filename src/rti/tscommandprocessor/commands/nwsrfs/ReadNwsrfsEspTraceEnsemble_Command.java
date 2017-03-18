@@ -472,7 +472,7 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-        	List<TSEnsemble> v = new Vector();
+        	List<TSEnsemble> v = new Vector<TSEnsemble>();
             v.add ( ensemble );
             return v;
         }
@@ -745,7 +745,7 @@ private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

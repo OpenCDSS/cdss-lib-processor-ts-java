@@ -38,6 +38,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class TableTimeSeriesMath_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -283,7 +284,7 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify using ${Property} notation");
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -348,7 +349,7 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If table input is blank:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> ifTableInputIsBlankChoices = new Vector();
+    List<String> ifTableInputIsBlankChoices = new Vector<String>();
     ifTableInputIsBlankChoices.add ( "" );
     ifTableInputIsBlankChoices.add ( __command._Warn );
     ifTableInputIsBlankChoices.add ( __command._Ignore );
@@ -365,7 +366,7 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If time series list is empty:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> ifTSListIsEmptyChoices = new Vector();
+    List<String> ifTSListIsEmptyChoices = new Vector<String>();
     ifTSListIsEmptyChoices.add ( "" );
     ifTSListIsEmptyChoices.add ( __command._Warn );
     ifTSListIsEmptyChoices.add ( __command._Ignore );

@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -311,11 +312,11 @@ private File getOutputFile ()
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
-public List getObjectList ( Class c )
+public List<Object> getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<Object> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new ArrayList<Object>();
         v.add ( table );
     }
     return v;

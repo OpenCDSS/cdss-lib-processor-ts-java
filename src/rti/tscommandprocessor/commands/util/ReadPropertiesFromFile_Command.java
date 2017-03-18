@@ -42,7 +42,7 @@ public class ReadPropertiesFromFile_Command extends AbstractCommand implements C
 /**
 List of properties in discovery mode.
 */
-List<Prop> __discoveryProps = new Vector();
+List<Prop> __discoveryProps = new Vector<Prop>();
 	
 /**
 Constructor.
@@ -141,7 +141,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
 	valid_Vector.add ( "InputFile" );
 	valid_Vector.add ( "FileFormat" );
 	valid_Vector.add ( "IncludeProperty" );
@@ -180,7 +180,7 @@ Return the list of supported FileFormat parameter choices.
 */
 protected List<PropertyFileFormatType> getFileFormatChoices ()
 {
-    List<PropertyFileFormatType> fileFormatChoices = new Vector();
+    List<PropertyFileFormatType> fileFormatChoices = new Vector<PropertyFileFormatType>();
     fileFormatChoices.add ( PropertyFileFormatType.NAME_TYPE_VALUE );
     fileFormatChoices.add ( PropertyFileFormatType.NAME_TYPE_VALUE_PYTHON );
     fileFormatChoices.add ( PropertyFileFormatType.NAME_VALUE );
@@ -223,7 +223,7 @@ private List<String> readPropertyFileNameValue ( CommandProcessor processor, Com
 throws IOException
 {
     BufferedReader in = null;
-    List<String> problems = new Vector();
+    List<String> problems = new Vector<String>();
     try {
         // Open the file...
         in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
@@ -467,7 +467,7 @@ CommandWarningException, CommandException
 		InputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor, this, InputFile) ) );
-		List<String> problems = new Vector();
+		List<String> problems = new Vector<String>();
 		// Call the parsing method based on the file format
 		if ( fileFormat == PropertyFileFormatType.NAME_VALUE ) {
 		    problems = readPropertyFileNameValue ( processor, commandPhase, InputFile_full, includeProperty );

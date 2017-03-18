@@ -142,7 +142,7 @@ throws InvalidCommandParameterException
 	else {
 		//Vector valid_properties = new Vector(
 		        //TSCommandProcessorUtil.getPropertyNameList(processor));
-		List valid_properties = new Vector(1);
+		List<String> valid_properties = new Vector<String>(1);
 	    // FIXME SAM 2008-08-18 Need to not hard-code property names.
 	    valid_properties.add( "DataLimitsOriginal" );
 		int size = 0;
@@ -175,11 +175,11 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "PropertyName" );
-	valid_Vector.add ( "Append" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new Vector<String>();
+	validList.add ( "OutputFile" );
+	validList.add ( "PropertyName" );
+	validList.add ( "Append" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -203,9 +203,9 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -290,7 +290,7 @@ CommandWarningException, CommandException
     }
     PropList bean_PropList = bean.getResultsPropList();
     Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-    List tslist = null;
+    List<TS> tslist = null;
     if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -303,7 +303,9 @@ CommandWarningException, CommandException
                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        tslist = (List)o_TSList;
+    	@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
         if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

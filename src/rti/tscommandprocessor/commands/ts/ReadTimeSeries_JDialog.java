@@ -8,6 +8,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -32,6 +34,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class ReadTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -220,9 +223,11 @@ private void initialize ( JFrame parent, ReadTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IfNotFound_JComboBox = new SimpleJComboBox ( false );
-    __IfNotFound_JComboBox.addItem ( __command._Default );
-    __IfNotFound_JComboBox.addItem ( __command._Ignore );
-    __IfNotFound_JComboBox.addItem ( __command._Warn );
+    List<String> notFoundChoices = new ArrayList<String>();
+    notFoundChoices.add ( __command._Default );
+    notFoundChoices.add ( __command._Ignore );
+    notFoundChoices.add ( __command._Warn );
+    __IfNotFound_JComboBox.setData(notFoundChoices);
     __IfNotFound_JComboBox.select ( __command._Warn );
     __IfNotFound_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,

@@ -41,6 +41,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the CloseExcelWorkbook command.
 */
+@SuppressWarnings("serial")
 public class CloseExcelWorkbook_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

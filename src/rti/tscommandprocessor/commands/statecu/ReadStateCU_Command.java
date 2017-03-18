@@ -15,8 +15,8 @@ package rti.tscommandprocessor.commands.statecu;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -217,15 +217,15 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "AutoAdjust" );
-    valid_Vector.add ( "NewScenario" );
-    valid_Vector.add ( "CheckData" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(7);
+    validList.add ( "InputFile" );
+    validList.add ( "TSID" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "AutoAdjust" );
+    validList.add ( "NewScenario" );
+    validList.add ( "CheckData" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -244,7 +244,7 @@ be used by StateDMI commands that read or write the file.
 @param tslist List of StateCU_IrrigationPracticeTS to check.
 @param status CommandStatus to append check warnings.
 */
-private void checkIrrigationPracticeTS ( List tslist, CommandStatus status )
+private void checkIrrigationPracticeTS ( List<StateCU_IrrigationPracticeTS> tslist, CommandStatus status )
 {	
 	int size = 0;
 	if ( tslist != null ) {
@@ -269,7 +269,7 @@ private void checkIrrigationPracticeTS ( List tslist, CommandStatus status )
 	String id;
 	double calculated_total;	// Calculated total of parts.
 	for ( int i = 0; i < size; i++ ) {
-		ipy_ts = (StateCU_IrrigationPracticeTS)tslist.get(i);
+		ipy_ts = tslist.get(i);
 		id = ipy_ts.getID();
 		AcresSWFlood_yts = ipy_ts.getAcswflTS();
 		AcresSWSprinkler_yts = ipy_ts.getAcswsprTS();
@@ -591,7 +591,7 @@ CommandWarningException, CommandException
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
         Message.printStatus ( 2, routine, "Reading StateCU file \"" + InputFile_full + "\"" );
-		List tslist = null;
+		List<TS> tslist = null;
 		String file_type = "unknown file type";
 		if ( StateCU_CropPatternTS.isCropPatternTSFile ( InputFile_full ) ) {
 			file_type = "crop pattern";
@@ -614,7 +614,7 @@ CommandWarningException, CommandException
 			// Clear the status...
 			status.clearLog(command_phase);
 			try {
-				List ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
+				List<StateCU_IrrigationPracticeTS> ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
 					InputFile_full, InputStart_DateTime, InputEnd_DateTime );
 					// Get the individual time series for use by TSTool.
 					tslist = StateCU_IrrigationPracticeTS.toTSList(
@@ -741,7 +741,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

@@ -48,12 +48,12 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class MergeTableColumns_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

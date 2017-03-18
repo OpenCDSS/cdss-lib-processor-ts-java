@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -296,16 +297,16 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "EnsembleName" );
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "NewUnits" );
-    valid_Vector.add ( "Read24HourAsDay" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(8);
+    validList.add ( "Alias" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "EnsembleName" );
+    validList.add ( "InputFile" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "NewUnits" );
+    validList.add ( "Read24HourAsDay" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -378,7 +379,7 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-        	List<TSEnsemble> v = new Vector();
+        	List<TSEnsemble> v = new Vector<TSEnsemble>();
             v.add ( ensemble );
             return v;
         }
@@ -778,7 +779,7 @@ private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

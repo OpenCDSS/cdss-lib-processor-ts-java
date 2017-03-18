@@ -250,7 +250,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new Vector();
+    List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }

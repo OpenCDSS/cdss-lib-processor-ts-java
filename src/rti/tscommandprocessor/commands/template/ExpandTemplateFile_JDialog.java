@@ -37,6 +37,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+@SuppressWarnings("serial")
 public class ExpandTemplateFile_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

@@ -55,12 +55,12 @@ private int __apiVersion = 2; // Default
 /**
 The records of table variables, for version 1 read from:  http://data.rcc-acis.org/doc/VariableTable.html
 */
-private List<RccAcisVariableTableRecord> __variableTableRecordList = new Vector();
+private List<RccAcisVariableTableRecord> __variableTableRecordList = new Vector<RccAcisVariableTableRecord>();
 
 /**
 The station codes for provider agency station identifiers.
 */
-private List<RccAcisStationType> __stationTypeList = new Vector();
+private List<RccAcisStationType> __stationTypeList = new Vector<RccAcisStationType>();
 
 /**
 Indicates whether global data store properties have been initialized, set by initialize().
@@ -152,7 +152,7 @@ are consistent with TSTool ("Day", rather than "daily").
 @param dataType data type string of form "N" or "N - name" or "name", where N is the major number.
 */
 public List<String> getDataIntervalStringsForDataType ( String dataType )
-{   List<String> dataIntervalStrings = new Vector();
+{   List<String> dataIntervalStrings = new Vector<String>();
     // For now a data type should only have one interval because of the uniqueness of the data type.
     RccAcisVariableTableRecord variable = lookupVariable(dataType);
     String interval = translateAcisIntervalToInternal(variable.getReportInterval());
@@ -178,7 +178,7 @@ public List<String> getDataTypeStrings ( boolean includeName, boolean includeInt
         ; // Ignore.
     }
     int version = getAPIVersion();
-    List<String> typeList = new Vector();
+    List<String> typeList = new Vector<String>();
     RccAcisVariableTableRecord recPrev = null;
     String nameString = "";
     String intervalString = "";
@@ -487,7 +487,7 @@ throws IOException, MalformedURLException, URISyntaxException
         }
         else {
             // Return an empty list
-            List<RccAcisStationTimeSeriesMetadata> data = new Vector();
+            List<RccAcisStationTimeSeriesMetadata> data = new Vector<RccAcisStationTimeSeriesMetadata>();
             return data;
         }
     }
@@ -611,7 +611,7 @@ throws IOException, MalformedURLException
         }
         else {
             // Return an empty list
-            List<RccAcisStationTimeSeriesMetadata> data = new Vector();
+            List<RccAcisStationTimeSeriesMetadata> data = new Vector<RccAcisStationTimeSeriesMetadata>();
             return data;
         }
     }
@@ -635,7 +635,6 @@ throws MalformedURLException, Exception
     TS ts = null;
     String routine = getClass().getName() + ".readTimeSeries";
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString);
-    int intervalBase = tsident.getIntervalBase();
     // Look up the metadata for the data name
     RccAcisVariableTableRecord variable = lookupVariable ( tsident.getType() );
     if ( variable == null ) {

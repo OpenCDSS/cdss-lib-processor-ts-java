@@ -11,6 +11,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -34,6 +36,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+@SuppressWarnings("serial")
 public class CompareFiles_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
@@ -353,9 +356,11 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match case:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MatchCase_JComboBox = new SimpleJComboBox ( false );
-    __MatchCase_JComboBox.addItem ( "" );
-    __MatchCase_JComboBox.addItem ( __command._False );
-    __MatchCase_JComboBox.addItem ( __command._True );
+    List<String> matchChoices = new ArrayList<String>();
+    matchChoices.add ( "" );
+    matchChoices.add ( __command._False );
+    matchChoices.add ( __command._True );
+    __MatchCase_JComboBox.setData(matchChoices);
     __MatchCase_JComboBox.select ( 0 );
     __MatchCase_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __MatchCase_JComboBox,
@@ -367,9 +372,11 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ignore whitespace:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IgnoreWhitespace_JComboBox = new SimpleJComboBox ( false );
-	__IgnoreWhitespace_JComboBox.addItem ( "" );	// Default
-	__IgnoreWhitespace_JComboBox.addItem ( __command._False );
-	__IgnoreWhitespace_JComboBox.addItem ( __command._True );
+	List<String> ignoreChoices = new ArrayList<String>();
+	ignoreChoices.add ( "" );	// Default
+	ignoreChoices.add ( __command._False );
+	ignoreChoices.add ( __command._True );
+	__IgnoreWhitespace_JComboBox.setData(ignoreChoices);
 	__IgnoreWhitespace_JComboBox.select ( 0 );
 	__IgnoreWhitespace_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IgnoreWhitespace_JComboBox,
@@ -390,10 +397,12 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if different:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfDifferent_JComboBox = new SimpleJComboBox ( false );
-	__IfDifferent_JComboBox.addItem ( "" );	// Default
-	__IfDifferent_JComboBox.addItem ( __command._Ignore );
-	__IfDifferent_JComboBox.addItem ( __command._Warn );
-	__IfDifferent_JComboBox.addItem ( __command._Fail );
+	List<String> diffChoices = new ArrayList<String>();
+	diffChoices.add ( "" );	// Default
+	diffChoices.add ( __command._Ignore );
+	diffChoices.add ( __command._Warn );
+	diffChoices.add ( __command._Fail );
+	__IfDifferent_JComboBox.setData(diffChoices);
 	__IfDifferent_JComboBox.select ( 0 );
 	__IfDifferent_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IfDifferent_JComboBox,
@@ -405,10 +414,12 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if same:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfSame_JComboBox = new SimpleJComboBox ( false );
-	__IfSame_JComboBox.addItem ( "" );	// Default
-	__IfSame_JComboBox.addItem ( __command._Ignore );
-	__IfSame_JComboBox.addItem ( __command._Warn );
-	__IfSame_JComboBox.addItem ( __command._Fail );
+	List<String> sameChoices = new ArrayList<String>();
+	sameChoices.add ( "" );	// Default
+	sameChoices.add ( __command._Ignore );
+	sameChoices.add ( __command._Warn );
+	sameChoices.add ( __command._Fail );
+	__IfSame_JComboBox.setData(sameChoices);
 	__IfSame_JComboBox.select ( 0 );
 	__IfSame_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IfSame_JComboBox,

@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -118,7 +119,7 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message,
                 "Provide an identifier for the ensemble to copy."));
 	}
-	List Weights_Vector = StringUtil.breakStringList ( Weights, ", ", StringUtil.DELIM_SKIP_BLANKS );
+	List<String> Weights_Vector = StringUtil.breakStringList ( Weights, ", ", StringUtil.DELIM_SKIP_BLANKS );
     int Weights_size = 0;
     if ( Weights_Vector != null ) {
         Weights_size = Weights_Vector.size();
@@ -197,13 +198,13 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "SpecifyWeightsHow" );
-    valid_Vector.add ( "Weights" );
-    valid_Vector.add ( "NewTSID" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(5);
+    validList.add ( "Alias" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "SpecifyWeightsHow" );
+    validList.add ( "Weights" );
+    validList.add ( "NewTSID" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -485,7 +486,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Add the time series to the new time series.  This will add to the description for each
             // added/scaled value.
             if ( commandPhase == CommandPhaseType.RUN ) {
-                List v = new Vector();
+                List<TS> v = new Vector<TS>();
                 v.add ( ts );
                 double [] factor = new double[1];
                 factor[0] = __Weight_double[iyear];
@@ -497,7 +498,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Update the data to the processor so that appropriate actions are taken...
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Just want time series headers initialized
-            List<TS> discoveryTSList = new Vector();
+            List<TS> discoveryTSList = new Vector<TS>();
             discoveryTSList.add ( newts );
             setDiscoveryTSList ( discoveryTSList );
         }
@@ -541,7 +542,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discoveryTSList = discovery_TS_Vector;
 }

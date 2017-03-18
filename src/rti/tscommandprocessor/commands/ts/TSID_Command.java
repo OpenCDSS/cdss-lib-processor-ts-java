@@ -83,7 +83,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector<String>();
     valid_Vector.add ( "TSID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -356,7 +356,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Check the log file - report the problem to software support." ) );
 	}
 	
-	List<TS> tslist = new Vector(1);
+	List<TS> tslist = new Vector<TS>(1);
     if ( ts != null ) {
         tslist.add ( ts );
     }

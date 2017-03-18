@@ -183,7 +183,9 @@ throws IOException
                     "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\")." );
                 }
                 else {
-                    tslist = (List<TS>)o_TSList;
+                	@SuppressWarnings("unchecked")
+					List<TS> tslist0 = (List<TS>)o_TSList;
+                    tslist = tslist0;
                     if ( tslist.size() == 0 ) {
                         problems.add ( "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
                         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\")." );

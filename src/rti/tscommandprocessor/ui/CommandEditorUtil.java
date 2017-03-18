@@ -34,14 +34,14 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addEnsembleIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
-    JPanel panel, JLabel label, SimpleJComboBox choices, List EnsembleIDs, int y )
+    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> EnsembleIDs, int y )
 {
     Insets insetsTLBR = new Insets(2,2,2,2);
     JGUIUtil.addComponent(panel, label,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     int size = 0;
     if ( EnsembleIDs == null ) {
-        EnsembleIDs = new Vector ();
+        EnsembleIDs = new Vector<String> ();
     }
     size = EnsembleIDs.size();
     // Blank for default (not used)
@@ -128,7 +128,7 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
-    JPanel panel, JLabel label, SimpleJComboBox choices, List tsids, int y )
+    JPanel panel, JLabel label, SimpleJComboBox choices, List<String> tsids, int y )
 {
     return addTSIDToEditorDialogPanel ( itemlistener, keylistener, panel, label, choices, tsids, y, true );
 }
@@ -153,7 +153,7 @@ public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyLis
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     int size = 0;
     if ( tsids == null ) {
-        tsids = new Vector ();
+        tsids = new Vector<String> ();
     }
     size = tsids.size();
     // Blank for default
@@ -284,7 +284,7 @@ public static int addTSListToEditorDialogPanel (
         label = new JLabel ("TS list:");
     }
     JGUIUtil.addComponent(panel, label, 0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> TSList_Vector = new Vector();
+    List<String> TSList_Vector = new Vector<String>();
     TSList_Vector.add ( "" );
     TSList_Vector.add ( TSListType.ALL_MATCHING_TSID.toString() );
     TSList_Vector.add ( TSListType.ALL_TS.toString() );

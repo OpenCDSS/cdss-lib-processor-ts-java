@@ -50,7 +50,7 @@ private File __OutputFile_File = null;
 /**
 The lookup information for data types.
 */
-Hashtable __DataTypePELookup = new Hashtable();
+Hashtable<String,String> __DataTypePELookup = new Hashtable<String,String>();
 
 /**
 Constructor.
@@ -89,15 +89,15 @@ throws InvalidCommandParameterException
 	// Parse and check the data type to PE lookup.  Save the results for use later.
 	__DataTypePELookup.clear();
 	if ( (DataTypePELookup != null) && !DataTypePELookup.equals("") && (DataTypePELookup.indexOf("${") < 0) ) {
-		List pairs = StringUtil.breakStringList(DataTypePELookup,";",0);
+		List<String> pairs = StringUtil.breakStringList(DataTypePELookup,";",0);
 	    int pairsSize = 0;
 	    if ( pairs != null ) {
 	        pairsSize = pairs.size();
 	    }
 	    for ( int i = 0; i < pairsSize; i++ ) {
 	        // Further break the pairs..
-	        String onePair = ((String)pairs.get(i)).trim();
-	        List pairParts = StringUtil.breakStringList(onePair,",",StringUtil.DELIM_SKIP_BLANKS);
+	        String onePair = pairs.get(i).trim();
+	        List<String> pairParts = StringUtil.breakStringList(onePair,",",StringUtil.DELIM_SKIP_BLANKS);
 	        int pairPartsSize = 0;
 	        if ( pairParts != null ) {
 	            pairPartsSize = pairParts.size();
@@ -110,8 +110,8 @@ throws InvalidCommandParameterException
 	                            message, "Specify data type/PE lookup pairs as DataType,PE." ) );
 	        }
 	        else {
-	            String dataType = ((String)pairParts.get(0)).trim();
-	            String pe = ((String)pairParts.get(1)).trim();
+	            String dataType = pairParts.get(0).trim();
+	            String pe = pairParts.get(1).trim();
 	            __DataTypePELookup.put(dataType, pe);
 	        }
 	    } 
@@ -215,7 +215,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List validList = new ArrayList<String>(13);
+	List<String> validList = new ArrayList<String>(13);
 	validList.add ( "TSList" );
 	validList.add ( "TSID" );
 	validList.add ( "LocationID" );
@@ -243,9 +243,9 @@ throws InvalidCommandParameterException
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -267,15 +267,15 @@ the contents as is otherwise.
 @param tslist List of time series, from which to extract data types.
 @param peList list of PE values (strings) corresponding to the time series data types.
  */
-private void getPEForTimeSeries ( List tslist, List peList )
+private void getPEForTimeSeries ( List<TS> tslist, List<String> peList )
 {   String routine = "WriteSHEF_Command.getPEForTimeSeries";
     int size = 0;
     if ( tslist != null ) {
         size = tslist.size();
     }
     for ( int i = 0; i < size; i++ ) {
-        TS ts = (TS)tslist.get(i);
-        Object pe = __DataTypePELookup.get( ts.getDataType() );
+        TS ts = tslist.get(i);
+        String pe = __DataTypePELookup.get( ts.getDataType() );
         if ( pe != null ) {
             Message.printStatus(2, routine, "Using user-specified PE code \"" + pe +
                 "\" for data type \"" + ts.getDataType() + "\"" );
@@ -417,7 +417,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			message, "Report to software support." ) );
 	}
 	else {
-	    tslist = (List)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+	    tslist = tslist0;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to write using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 			Message.printWarning ( log_level, MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
@@ -488,9 +490,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         */
 
 		try {	
-			List units_Vector = null;
+			List<String> units_Vector = null;
             // Get PE code from global information...
-			List PE_Vector = ShefATS.getPEForTimeSeries ( tslist );
+			List<String> PE_Vector = ShefATS.getPEForTimeSeries ( tslist );
             // Get PE code from parameter
             getPEForTimeSeries ( tslist, PE_Vector );
             for ( int i = 0; i < tslist.size(); i++ ) {
@@ -504,7 +506,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Check log file for details." ) );
                 }
             }
-            List Duration_Vector = null;
+            List<String> Duration_Vector = null;
             List<String> AltIDList = new ArrayList<String>(tslist.size());
             for ( TS ts : tslist ) {
             	// Add identifier for output, same as time series location ID by default...

@@ -178,7 +178,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-	List validList = new ArrayList(7);
+	List<String> validList = new ArrayList<String>(7);
     validList.add ( "TableID" );
     validList.add ( "InputFile" );
     validList.add ( "DataFormat" );
@@ -221,9 +221,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new Vector<DataTable>();
         v.add ( table );
     }
     return v;
@@ -284,8 +284,8 @@ CommandWarningException, CommandException
     String TableID = parameters.getValue ( "TableID" );
 	String InputFile = parameters.getValue ( "InputFile" );
 	//String SkipColumns = parameters.getValue ( "SkipColumns" );
-	String SkipLines = parameters.getValue ( "SkipLines" );
-	String HeaderLines = parameters.getValue ( "HeaderLines" );
+//	String SkipLines = parameters.getValue ( "SkipLines" );
+//	String HeaderLines = parameters.getValue ( "HeaderLines" );
 	String DataFormat = parameters.getValue ( "DataFormat" );
 	String ColumnNames = parameters.getValue ( "ColumnNames" );
 	String [] columnNames = null;

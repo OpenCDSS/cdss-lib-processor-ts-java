@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TimeSeriesNotFoundException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -17,7 +18,6 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
@@ -35,7 +35,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 This class initializes, checks, and runs the CreateFromList() command.
 */
-public class CreateFromList_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class CreateFromList_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
 
 protected final String _Default = "Default";
@@ -176,20 +176,20 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "ListFile" );
-    valid_Vector.add ( "IDCol" );
-    valid_Vector.add ( "Delim" );
-    valid_Vector.add ( "ID" );
-    valid_Vector.add ( "DataSource" );
-    valid_Vector.add ( "DataType" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "Scenario" );
-    valid_Vector.add ( "InputType" );
-    valid_Vector.add ( "InputName" );
-    valid_Vector.add ( "IfNotFound" );
-    valid_Vector.add ( "DefaultUnits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(12);
+    validList.add ( "ListFile" );
+    validList.add ( "IDCol" );
+    validList.add ( "Delim" );
+    validList.add ( "ID" );
+    validList.add ( "DataSource" );
+    validList.add ( "DataType" );
+    validList.add ( "Interval" );
+    validList.add ( "Scenario" );
+    validList.add ( "InputType" );
+    validList.add ( "InputName" );
+    validList.add ( "IfNotFound" );
+    validList.add ( "DefaultUnits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -382,7 +382,7 @@ throws InvalidCommandParameterException,
     String DefaultUnits = parameters.getValue("DefaultUnits");
     
 	// Read the file.
-    List<TS> tslist = new Vector();   // Keep the list of time series
+    List<TS> tslist = new Vector<TS>();   // Keep the list of time series
     String ListFile_full = ListFile;
 	try {
         boolean read_data = true;

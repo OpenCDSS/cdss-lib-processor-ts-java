@@ -224,7 +224,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	List validList = new ArrayList<String>(9);
+	List<String> validList = new ArrayList<String>(9);
 	validList.add ( "TSList" );
 	validList.add ( "TSID" );
 	validList.add ( "OutputFile" );
@@ -258,9 +258,9 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -293,7 +293,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		super.parseCommand ( command_string );
 	}
 	else {	// Parse the old command...
-		List tokens = StringUtil.breakStringList ( command_string,
+		List<String> tokens = StringUtil.breakStringList ( command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 6 ) {
 			message =
@@ -451,7 +451,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
 	}
-	List tslist = (List)o_TSList;
+	@SuppressWarnings("unchecked")
+	List<TS> tslist = (List<TS>)o_TSList;
 	if ( tslist.size() == 0 ) {
 		message = "Unable to find time series to write using TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\".";
@@ -495,12 +496,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     // Get the comments to add to the top of the file.
 
 	PropList outputProps = new PropList("");
-	List outputCommentsList = null;
+	List<String> outputCommentsList = null;
 	if ( writeHeaderComments ) {
 	    try { Object o = processor.getPropContents ( "OutputComments" );
 	        // Comments are available so use them...
 	        if ( o != null ) {
-	            outputCommentsList = (List)o;
+	        	@SuppressWarnings("unchecked")
+				List<String> outputCommentsList0 = (List<String>)o;
+	            outputCommentsList = outputCommentsList0;
 	            outputProps.setUsingObject("OutputComments",outputCommentsList);
 	        }
 	    }

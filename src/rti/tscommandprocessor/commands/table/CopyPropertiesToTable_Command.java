@@ -158,9 +158,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new ArrayList();
+        v = new ArrayList<DataTable>();
         v.add ( table );
     }
     return v;
@@ -204,7 +204,7 @@ CommandWarningException, CommandException
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
-    int log_level = 3;
+    //int log_level = 3;
     //int log_level = 3;  // Level for non-use messages for log file.
     
     CommandProcessor processor = getCommandProcessor();

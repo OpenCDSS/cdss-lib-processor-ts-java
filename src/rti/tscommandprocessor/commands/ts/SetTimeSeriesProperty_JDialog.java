@@ -28,6 +28,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -44,6 +45,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the SetTimeSeriesProperty() command.
 */
+@SuppressWarnings("serial")
 public class SetTimeSeriesProperty_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
@@ -384,11 +386,13 @@ private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
     JGUIUtil.addComponent(user_JPanel, new JLabel ( "Property type:" ), 
         0, ++yUser, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
-    __PropertyType_JComboBox.addItem ( "" );
-    __PropertyType_JComboBox.addItem ( __command._DateTime );
-    __PropertyType_JComboBox.addItem ( __command._Double );
-    __PropertyType_JComboBox.addItem ( __command._Integer );
-    __PropertyType_JComboBox.addItem ( __command._String );
+    List<String> propType = new ArrayList<String>();
+    propType.add ( "" );
+    propType.add( __command._DateTime );
+    propType.add ( __command._Double );
+    propType.add ( __command._Integer );
+    propType.add ( __command._String );
+    __PropertyType_JComboBox.setData(propType);
     __PropertyType_JComboBox.select ( __command._String );
     __PropertyType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(user_JPanel, __PropertyType_JComboBox,

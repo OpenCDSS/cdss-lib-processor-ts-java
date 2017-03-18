@@ -1,8 +1,8 @@
 package rti.tscommandprocessor.commands.statemod;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -168,10 +168,10 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "InputFile1" );
-    valid_Vector.add ( "InputFile2" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>(2);
+    validList.add ( "InputFile1" );
+    validList.add ( "InputFile2" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -240,7 +240,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	else {
 	    // Parse the old command...
-		List tokens = StringUtil.breakStringList (command_string,
+		List<String> tokens = StringUtil.breakStringList (command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 3 ) {
 			message = "Invalid syntax for command.  Expecting StateModMax(InputFile1,InputFile2).";
@@ -321,7 +321,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     DateTime InputEnd_DateTime = null;
     Object o = null;
     try {
-        processor.getPropContents( "InputStart" );
+        o = processor.getPropContents( "InputStart" );
         if ( o != null ) {
             InputStart_DateTime = (DateTime)o;
         }
@@ -351,8 +351,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     String InputFile1_full = InputFile1;
     String InputFile2_full = InputFile2;
-    List tslist1 = null;  // First file and results
-    List tslist2 = null;  // Second file
+    List<TS> tslist1 = null;  // First file and results
+    List<TS> tslist2 = null;  // Second file
     try {
         boolean readData = true;
         if ( command_phase == CommandPhaseType.DISCOVERY ){
@@ -538,7 +538,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

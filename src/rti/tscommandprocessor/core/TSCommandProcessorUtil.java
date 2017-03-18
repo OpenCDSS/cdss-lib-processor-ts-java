@@ -44,7 +44,7 @@ import RTi.Util.Time.DateTimeRange;
 
 /**
 This class contains static utility methods to support TSCommandProcessor.  These methods
-are here to prevent the processor from getting to large and in some cases because code is being migrated.
+are here to prevent the processor from getting too large and in some cases because code is being migrated.
 */
 public abstract class TSCommandProcessorUtil
 {
@@ -54,15 +54,15 @@ PrintWriter for regression test results report.
 */
 private static PrintWriter __regression_test_fp = null;
 /**
-Count of regression tests that fail.
+Count of regression tests that fail (does not include disabled tests).
 */
 private static int __regressionTestFailCount = 0;
 /**
-Count of regression tests that pass.
+Count of regression tests that pass (does not include disabled tests).
 */
 private static int __regressionTestPassCount = 0;
 /**
-Count of regression tests that are disabled.
+Count of regression tests that are disabled (not included in pass/fail tests).
 */
 private static int __regressionTestDisabledCount = 0;
 /**
@@ -112,6 +112,7 @@ public static int appendEnsembleToResultsEnsembleList ( CommandProcessor process
 Count of output lines in regression output report body (basically a count of the tests).
 */
 private static int __regressionTestLineCount = 0;
+
 /**
 Add a record to the regression test results report and optionally results table.
 The report is a simple text file that indicates whether a test passed.
@@ -132,21 +133,23 @@ public static void appendToRegressionTestReport(CommandProcessor processor, bool
 {
     ++__regressionTestLineCount;
     String indicator = " ";
-    if ( testPassFail.toUpperCase().indexOf("FAIL") >= 0 ) {
-        indicator = "*";
-        ++__regressionTestFailCount;
+    String enabled = "TRUE   ";
+    if ( isEnabled ) {
+	    if ( testPassFail.toUpperCase().indexOf("FAIL") >= 0 ) {
+	        indicator = "*";
+	        ++__regressionTestFailCount;
+	    }
+	    else {
+	        ++__regressionTestPassCount;
+	    }
     }
     else {
-        ++__regressionTestPassCount;
-    }
-    String lineCount = StringUtil.formatString(__regressionTestLineCount,"%5d");
-    String enabled = "TRUE   ";
-    //String runTime = "        ";
-    if ( !isEnabled ) {
         ++__regressionTestDisabledCount;
         enabled = "FALSE  ";
         testPassFail = "    ";
     }
+    String lineCount = StringUtil.formatString(__regressionTestLineCount,"%5d");
+    //String runTime = "        ";
     //runTime = StringUtil.formatString(runTimeMs,"%7d");
     String delim = "|";
     if ( __regression_test_fp != null ) {
@@ -166,57 +169,22 @@ public static void appendToRegressionTestReport(CommandProcessor processor, bool
     	try {
     		col = __regressionTestTable.getFieldIndex("Num");
     		rec.setFieldValue(col, new Integer(__regressionTestLineCount));
-    	}
-    	catch ( Exception e ) {
-    		// Just ignore setting
-    	}
-    	try {
     		col = __regressionTestTable.getFieldIndex("Enabled");
     		rec.setFieldValue(col, enabled.trim());
-    	}
-    	catch ( Exception e ) {
-    		// Just ignore setting
-    	}
-    	try {
     		col = __regressionTestTable.getFieldIndex("Run Time (ms)");
     		rec.setFieldValue(col, runTimeMs);
-    	}
-    	catch ( Exception e ) {
-    		// Just ignore setting
-    	}
-    	try {
     		col = __regressionTestTable.getFieldIndex("Test Pass/Fail");
     		rec.setFieldValue(col, testPassFail.trim());
-    	}
-    	catch ( Exception e ) {
-    		// Just ignore setting
-    	}
-    	try {
     		col = __regressionTestTable.getFieldIndex("Commands Expected Status");
     		rec.setFieldValue(col, expectedStatus.trim());
-    	}
-    	catch ( Exception e ) {
-    		// Just ignore setting
-    	}
-    	try {
     		col = __regressionTestTable.getFieldIndex("Commands Actual Status");
     		rec.setFieldValue(col, ""+maxSeverity);
-    	}
-    	catch ( Exception e ) {
-    		// Just ignore setting
-    	}
-    	try {
     		col = __regressionTestTable.getFieldIndex("Command File");
     		rec.setFieldValue(col, testCommandFile);
-    	}
-    	catch ( Exception e ) {
-    		// Just ignore setting
-    	}
-    	try {
     		__regressionTestTable.addRecord(rec);
     	}
     	catch ( Exception e ) {
-    		// Just ignore adding
+    		// Just ignore adding the test record to the table
     	}
     }
 }
@@ -290,19 +258,17 @@ public static void closeRegressionTestReportFile ()
     }
     __regression_test_fp.println ( "#----+-------+-------+------+----------+-----------+------------------" +
     "---------------------------------------------------------------------------" );
-    int totalRun = getRegressionTestFailCount() + getRegressionTestPassCount();
+    int totalCount = getRegressionTestFailCount() + getRegressionTestPassCount() + getRegressionTestDisabledCount();
     __regression_test_fp.println ( "FAIL count     = " + getRegressionTestFailCount() +
-        ", " + StringUtil.formatString(100.0*(double)getRegressionTestFailCount()/(double)totalRun,"%.3f")+ "%");
+        ", " + StringUtil.formatString(100.0*(double)getRegressionTestFailCount()/(double)totalCount,"%.3f")+ "%");
     __regression_test_fp.println ( "PASS count     = " + getRegressionTestPassCount() +
-        ", " + StringUtil.formatString(100.0*(double)getRegressionTestPassCount()/(double)totalRun,"%.3f")+ "%");
+        ", " + StringUtil.formatString(100.0*(double)getRegressionTestPassCount()/(double)totalCount,"%.3f")+ "%");
     __regression_test_fp.println ( "Disabled count = " + getRegressionTestDisabledCount() +
-    	", " + StringUtil.formatString(100.0*(double)getRegressionTestDisabledCount()/(double)totalRun,"%.3f")+ "%");
+    	", " + StringUtil.formatString(100.0*(double)getRegressionTestDisabledCount()/(double)totalCount,"%.3f")+ "%");
     __regression_test_fp.println ( "#--------------------------------" );
-    __regression_test_fp.println ( "Total          = " +
-        (totalRun + getRegressionTestDisabledCount()) );
+    __regression_test_fp.println ( "Total          = " + totalCount );
     
     __regression_test_fp.close();
-    __regression_test_fp = null;
 }
 
 /**
@@ -795,7 +761,7 @@ public static List<Command> getCommandsBeforeIndex ( int index, TSCommandProcess
 		size = neededCommandsList.size();
 	}
 	String needed_command_string;
-	List<Command> found_commands = new Vector();
+	List<Command> found_commands = new ArrayList<Command>();
 	// Get the commands from the processor
 	List<Command> commands = processor.getCommands();
 	Command command;
@@ -820,7 +786,7 @@ public static List<Command> getCommandsBeforeIndex ( int index, TSCommandProcess
 	if ( size <= 1 ) {
 		return found_commands;
 	}
-	List<Command> found_commands_sorted = new Vector(size);
+	List<Command> found_commands_sorted = new ArrayList<Command>(size);
 	for ( int i = size - 1; i >= 0; i-- ) {
 		found_commands_sorted.add ( found_commands.get(i));
 	}
@@ -834,7 +800,7 @@ Get the commands above an index position.
 position is NOT included in the search.
 */
 private static List<Command> getCommandsBeforeIndex ( TSCommandProcessor processor, int pos )
-{	List<Command> commands = new Vector();
+{	List<Command> commands = new ArrayList<Command>();
 	int size = processor.size();
 	if ( pos > size ) {
 		pos = size;
@@ -987,15 +953,17 @@ getObjectList(TS) method called and the returned time series are added to the li
 */
 protected static List<TSEnsemble> getDiscoveryEnsembleFromCommands ( List<Command> commands, boolean sort )
 {   if ( commands == null ) {
-        return new Vector();
+        return new ArrayList<TSEnsemble>();
     }
-    List<TSEnsemble> tsEnsembleList = new Vector ();
+    List<TSEnsemble> tsEnsembleList = new ArrayList<TSEnsemble>();
     for ( Command command: commands ) {
         if ( (command != null) && (command instanceof ObjectListProvider) ) {
         	Object o = ((ObjectListProvider)command).getObjectList ( TSEnsemble.class );
         	List<TSEnsemble> list = null;
         	if ( o != null ) {
-        		list = (List<TSEnsemble>)o;
+        		@SuppressWarnings("unchecked")
+				List<TSEnsemble> list0 = (List<TSEnsemble>)o;
+        		list = list0;
         	}
             if ( list != null ) {
                 for ( TSEnsemble tsEnsemble : list ) {
@@ -1031,7 +999,7 @@ public static List<TSEnsemble> getDiscoveryEnsembleFromCommandsBeforeCommand(
     }
     if ( pos < 0 ) {
         // Just return a blank list...
-        return new Vector();
+        return new Vector<TSEnsemble>();
     }
     // Find the commands above the position...
     List<Command> commands = getCommandsBeforeIndex ( processor, pos );
@@ -1050,16 +1018,30 @@ called and the returned time series are added to the list.
 */
 protected static List<TS> getDiscoveryTSFromCommands ( List<Command> commands, boolean sort )
 {   if ( commands == null ) {
-        return new Vector();
+        return new ArrayList<TS>();
     }
-    List<TS> tslist = new Vector ();
+    List<TS> tslist = new ArrayList<TS>();
     for ( Command command: commands ) {
         if ( (command != null) && (command instanceof ObjectListProvider) ) {
-        	Object o = ((ObjectListProvider)command).getObjectList ( TS.class );
+        	//TODO sam 2017-03-17 figure out how to do generics but for now the old way works
+			ObjectListProvider objectListProvider = (ObjectListProvider)command;
+        	Object o = objectListProvider.getObjectList ( TS.class );
             List<TS> list = null;
             if ( o != null ) {
-            	list = (List<TS>)o;
+            	@SuppressWarnings("unchecked")
+				List<TS> list0 = (List<TS>)o;
+            	list = list0;
             }
+        	// Following is attempt at generics
+        	//@SuppressWarnings("unchecked")
+			//ObjectListProvider<TS> objectListProvider = (ObjectListProvider<TS>)command;
+        	//List<TS> list = objectListProvider.getObjectList ( TS.class );
+            //List<TS> list = null;
+            //if ( o != null ) {
+            //	@SuppressWarnings("unchecked")
+			//	List<TS> list0 = (List<TS>)o;
+            //	list = list0;
+            //}
             if ( list != null ) {
                 int tssize = list.size();
                 TS ts;
@@ -1079,7 +1061,7 @@ protected static List<TS> getDiscoveryTSFromCommands ( List<Command> commands, b
             // First get the matching time series for the Free() command parameters
             PropList parameters = command.getCommandParameters();
             // TODO SAM 2011-04-04 Need to get ensembles above command
-            List<TSEnsemble> ensemblesFromCommands = new Vector();
+            List<TSEnsemble> ensemblesFromCommands = new ArrayList<TSEnsemble>();
             TimeSeriesToProcess tsToProcess = getTSMatchingTSListParameters(tslist, ensemblesFromCommands,
                 parameters.getValue("TSList"), parameters.getValue("TSID"),
                 parameters.getValue("TSPosition"), parameters.getValue("EnsembleID") );
@@ -1123,7 +1105,7 @@ public static List<TS> getDiscoveryTSFromCommandsBeforeCommand( TSCommandProcess
     }
     if ( pos < 0 ) {
         // Just return a blank list...
-        return new Vector();
+        return new Vector<TS>();
     }
     // Find the commands above the position...
     List<Command> commands = getCommandsBeforeIndex ( processor, pos );
@@ -1145,7 +1127,7 @@ fully loaded method.  The output list is not sorted..
 @param commands Commands to search.
 @return list of table identifiers or an empty non-null list if nothing found.
 */
-private static List<String> getEnsembleIdentifiersFromCommands ( List commands )
+private static List<String> getEnsembleIdentifiersFromCommands ( List<Command> commands )
 {   // Default behavior...
     return getEnsembleIdentifiersFromCommands ( commands, false );
 }
@@ -1161,9 +1143,9 @@ The getEnsembleID() method on the TSEnsemble is then returned.
 */
 protected static List<String> getEnsembleIdentifiersFromCommands ( List<Command> commands, boolean sort )
 {   if ( commands == null ) {
-        return new Vector();
+        return new ArrayList<String>();
     }
-    List<String> v = new Vector ( 10, 10 );
+    List<String> v = new ArrayList<String>(10);
     int size = commands.size();
     boolean in_comment = false;
     Command command = null;
@@ -1185,8 +1167,10 @@ protected static List<String> getEnsembleIdentifiersFromCommands ( List<Command>
         if ( command instanceof ObjectListProvider ) {
         	Object o = ((ObjectListProvider)command).getObjectList ( new TSEnsemble().getClass() );
             List<TSEnsemble> list = null;
-            if ( o != null ) { 
-            	list = (List<TSEnsemble>)o;
+            if ( o != null ) {
+            	@SuppressWarnings("unchecked")
+				List<TSEnsemble> list0 = (List<TSEnsemble>)o;
+            	list = list0;
             }
             String id;
             if ( list != null ) {
@@ -1221,7 +1205,7 @@ public static List<String> getEnsembleIdentifiersFromCommandsBeforeCommand( TSCo
     }
     if ( pos < 0 ) {
         // Just return a blank list...
-        return new Vector();
+        return new ArrayList<String>();
     }
     // Find the commands above the position...
     List<Command> commands = getCommandsBeforeIndex ( processor, pos );
@@ -1420,17 +1404,17 @@ time identifiers to editor dialogs, using information determined during discover
 @param command the command above which time series are needed.
 @return a List of pattern time series.
 */
-public static List getPatternTSListFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
+public static List<TS> getPatternTSListFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
 {   //String routine = "TSCommandProcessorUtil.getPatternTSFromCommandsBeforeCommand";
     // Get the position of the command in the list...
     int pos = processor.indexOf(command);
     //Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
     if ( pos < 0 ) {
         // Just return a blank list...
-        return new Vector();
+        return new Vector<TS>();
     }
     // Find the commands above the position...
-    List commands = getCommandsBeforeIndex ( processor, pos );
+    List<Command> commands = getCommandsBeforeIndex ( processor, pos );
     // Get the time series identifiers from the commands...
     return getPatternTSListFromCommands ( commands );
 }
@@ -1448,11 +1432,11 @@ Time series are determined as follows:
 @param commands Commands to search.
 @param List of pattern time series provided by commands.
 */
-protected static List<TS> getPatternTSListFromCommands ( List commands )
+protected static List<TS> getPatternTSListFromCommands ( List<Command> commands )
 {   if ( commands == null ) {
-        return new Vector();
+        return new ArrayList<TS>();
     }
-    List<TS> v = new Vector ( 10, 10 );
+    List<TS> v = new ArrayList<TS>(10);
     int size = commands.size();
     Object command_o = null;    // Command as object
     for ( int i = 0; i < size; i++ ) {
@@ -1463,7 +1447,9 @@ protected static List<TS> getPatternTSListFromCommands ( List commands )
         	Object o = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
             List<TS> list = null;
             if ( o != null ) {
-            	list = (List<TS>)o;
+            	@SuppressWarnings("unchecked")
+				List<TS> list0 = (List<TS>)o;
+            	list = list0;
             }
             if ( list != null ) {
                 int tssize = list.size();
@@ -1527,7 +1513,7 @@ Return the list of property names available from the processor.
 These properties can be requested using getPropContents().
 @return the list of property names available from the processor.
 */
-public static Collection getPropertyNameList( CommandProcessor processor )
+public static Collection<String> getPropertyNameList( CommandProcessor processor )
 {
 	// This could use reflection.
 	if ( processor instanceof TSCommandProcessor ) {
@@ -1602,13 +1588,15 @@ public static List<String> getTableColumnNamesFromCommandsBeforeCommand(
     // the table as close previous to the command in question.
     DataTable table;
     for ( int i = (pos - 1); i >= 0; i-- ) {
-        command = (Command)processor.get(i);
+        command = processor.get(i);
         if ( command instanceof ObjectListProvider ) {
             // Request table objects
         	Object o = ((ObjectListProvider)command).getObjectList(DataTable.class);
         	List<DataTable> tables = null;
         	if ( o != null ) {
-        		tables = (List<DataTable>)o;
+            	@SuppressWarnings("unchecked")
+				List<DataTable> tables0 = (List<DataTable>)o;
+            	tables = tables0;
         	}
             int ntables = 0;
             if ( tables != null ) {
@@ -1621,16 +1609,16 @@ public static List<String> getTableColumnNamesFromCommandsBeforeCommand(
                 }
                 // Found the table.  Get its column names.
                 String [] field_names = table.getFieldNames();
-                List<String> field_names_Vector = new Vector();
+                List<String> fieldNamesList = new Vector<String>();
                 for ( int in = 0; in < field_names.length; in++ ) {
-                    field_names_Vector.add ( field_names[in] );
+                    fieldNamesList.add ( field_names[in] );
                 }
-                return field_names_Vector;
+                return fieldNamesList;
             }
         }
     }
     // Nothing found...
-    return new Vector();
+    return new Vector<String>();
 }
 
 /**
@@ -1682,7 +1670,9 @@ protected static List<String> getTableIdentifiersFromCommands ( List<Command> co
         	Object o = ((ObjectListProvider)command).getObjectList ( new DataTable().getClass() );
             List<DataTable> list = null;
             if ( o != null ) {
-            	list = (List<DataTable>)o;
+            	@SuppressWarnings("unchecked")
+				List<DataTable> list0 = (List<DataTable>)o;
+            	list = list0;
             }
             String id;
             if ( list != null ) {
@@ -1763,7 +1753,7 @@ no value.  Return an empty list if the tag was not found.
 */
 public static List<Object> getTagValues ( CommandProcessor processor, String tag )
 {
-    List<Object> tagValues = new Vector();
+    List<Object> tagValues = new ArrayList<Object>();
     // Loop through the commands and check comments for the special string
     List<Command> commandList = ((TSCommandProcessor)processor).getCommands();
     int size = commandList.size();
@@ -1876,6 +1866,8 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
 			command = (Command)command_o;
 			commandName = command.getCommandName();
 		}
+		// TODO SAM 2017-03-17 seems like the following can be removed because
+		// code update to generics does not indicate any use of string version
 		else if ( command_o instanceof String ) {
 			commandString = ((String)command_o).trim();
 		}
@@ -1900,7 +1892,9 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
         	Object o = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
             List<TS> list = null;
             if ( o != null ) {
-            	list = (List<TS>)o;
+            	@SuppressWarnings("unchecked")
+				List<TS> list0 = (List<TS>)o;
+            	list = list0;
             }
             if ( list != null ) {
                 int tssize = list.size();
@@ -1991,7 +1985,7 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
 		    Command commandInst = (Command)command_o;
 		    PropList parameters = commandInst.getCommandParameters();
 		    // TODO SAM 2011-04-04 Need to get ensembles above command
-		    List<TSEnsemble> ensemblesFromCommands = new Vector();
+		    List<TSEnsemble> ensemblesFromCommands = new ArrayList<TSEnsemble>();
 		    TimeSeriesToProcess tsToProcess = getTSMatchingTSListParameters(tsFromCommands, ensemblesFromCommands,
 	            parameters.getValue("TSList"), parameters.getValue("TSID"),
 	            parameters.getValue("TSPosition"), parameters.getValue("EnsembleID") );
@@ -2026,7 +2020,7 @@ public static List<String> getTSIdentifiersNoInputFromCommandsBeforeCommand( TSC
 	}
 	if ( pos < 0 ) {
 		// Just return a blank list...
-		return new Vector();
+		return new ArrayList<String>();
 	}
     // Find the commands above the position...
 	List<Command> commands = getCommandsBeforeIndex ( processor, pos );
@@ -2052,8 +2046,8 @@ public static TimeSeriesToProcess getTSMatchingTSListParameters ( List<TS> tsCan
         // Default is to match all
         TSList = "" + TSListType.ALL_TS;
     }
-    List<TS> tslist = new Vector(); // List of time series to process
-    List<String> errorList = new Vector(); // List of error messages finding time series
+    List<TS> tslist = new ArrayList<TS>(); // List of time series to process
+    List<String> errorList = new ArrayList<String>(); // List of error messages finding time series
     if ( (tsCandidateList == null) || (tsCandidateList.size() == 0) ) {
         // Return an empty list
         return new TimeSeriesToProcess(tslist, new int[0], errorList);
@@ -2273,14 +2267,14 @@ public static TimeSeriesToProcess getTSMatchingTSListParameters ( List<TS> tsCan
     }
     else if ( TSList.equalsIgnoreCase(TSListType.TSPOSITION.toString()) ) {
         // Process the position string
-        List tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
+        List<String> tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
         int npos = 0;
         if ( tokens != null ) {
             npos = tokens.size();
         }
         int tsposStart, tsposEnd;
         for ( int i = 0; i < npos; i++ ) {
-            String token = (String)tokens.get(i);
+            String token = tokens.get(i);
             if ( token.indexOf("-") >= 0 ) {
                 // Range...
                 String posString = StringUtil.getToken(token, "-",0,0).trim();
@@ -2541,7 +2535,7 @@ Command status messages will be added if problems arise but exceptions are not t
 */
 public static int processTimeSeriesAfterRead( CommandProcessor processor, Command command, TS ts )
 {
-    List<TS> tslist = new Vector();
+    List<TS> tslist = new ArrayList<TS>();
     tslist.add ( ts );
     return processTimeSeriesListAfterRead ( processor, command, tslist );
 }

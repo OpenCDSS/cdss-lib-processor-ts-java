@@ -29,6 +29,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.TS.ModsimTS;
@@ -48,6 +49,7 @@ import RTi.Util.String.StringUtil;
 /**
 Command editor dialog for the ReadMODSIM().
 */
+@SuppressWarnings("serial")
 public class ReadMODSIM_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -341,7 +343,9 @@ private void initialize ( JFrame parent, ReadMODSIM_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Data type to read:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
         __DataType_JComboBox = new SimpleJComboBox ( false );
-        __DataType_JComboBox.addItem ( "Unavailable" );
+        List<String> typeChoices = new ArrayList<String>();
+        typeChoices.add ( "Unavailable" );
+        __DataType_JComboBox.setData(typeChoices);
         __DataType_JComboBox.addItemListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

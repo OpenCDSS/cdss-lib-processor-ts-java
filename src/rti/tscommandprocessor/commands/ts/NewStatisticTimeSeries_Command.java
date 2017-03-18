@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -251,19 +252,19 @@ throws InvalidCommandParameterException
    }
 	
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "Alias" );
-	valid_Vector.add ( "TSID" );
-	valid_Vector.add ( "NewTSID" );
-	valid_Vector.add ( "Statistic" );
+	List<String> validList = new ArrayList<String>();
+	validList.add ( "Alias" );
+	validList.add ( "TSID" );
+	validList.add ( "NewTSID" );
+	validList.add ( "Statistic" );
 	//valid_Vector.add ( "TestValue" );
-	valid_Vector.add ( "AllowMissingCount" );
-	valid_Vector.add ( "MinimumSampleSize" );
-	valid_Vector.add ( "AnalysisStart" );
-	valid_Vector.add ( "AnalysisEnd" );
-    valid_Vector.add ( "OutputStart" );
-    valid_Vector.add ( "OutputEnd" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	validList.add ( "AllowMissingCount" );
+	validList.add ( "MinimumSampleSize" );
+	validList.add ( "AnalysisStart" );
+	validList.add ( "AnalysisEnd" );
+    validList.add ( "OutputStart" );
+    validList.add ( "OutputEnd" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -752,7 +753,7 @@ CommandWarningException, CommandException
     if ( stats_ts != null ) {
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Just want time series headers initialized
-            List<TS> discoveryTSList = new Vector();
+            List<TS> discoveryTSList = new Vector<TS>();
             discoveryTSList.add ( stats_ts );
             setDiscoveryTSList ( discoveryTSList );
         }

@@ -39,6 +39,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 Editor for the NewPatternTimeSeries() command.
 */
+@SuppressWarnings("serial")
 public class NewPatternTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -319,11 +320,11 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
     __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
     boolean padZeroes = true;
     boolean includeIrregular = false;
-    List interval_Vector = TimeInterval.getTimeIntervalChoices(
+    List<String> intervalChoices = TimeInterval.getTimeIntervalChoices(
         TimeInterval.MINUTE, TimeInterval.YEAR, padZeroes, 1, includeIrregular);
     // Add a blank
-    interval_Vector.add(0,"");
-    __IrregularInterval_JComboBox.setData ( interval_Vector );
+    intervalChoices.add(0,"");
+    __IrregularInterval_JComboBox.setData ( intervalChoices );
     __IrregularInterval_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __IrregularInterval_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

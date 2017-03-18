@@ -1,7 +1,7 @@
 package rti.tscommandprocessor.commands.time;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -81,9 +81,9 @@ throws InvalidCommandParameterException
         }
 	}
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-	valid_Vector.add ( "OutputYearType" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>();
+	validList.add ( "OutputYearType" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,

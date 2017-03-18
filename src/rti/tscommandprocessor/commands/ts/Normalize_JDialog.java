@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -34,6 +35,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;   
 
+@SuppressWarnings("serial")
 public class Normalize_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -231,8 +233,10 @@ private void initialize ( JFrame parent, Normalize_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Minimum data value to process:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __MinValueMethod_JComboBox = new SimpleJComboBox ( false );
-    __MinValueMethod_JComboBox.addItem ( __command._MinFromTS );
-    __MinValueMethod_JComboBox.addItem ( __command._MinZero );
+    List<String> minChoices = new ArrayList<String>();
+    minChoices.add ( __command._MinFromTS );
+    minChoices.add ( __command._MinZero );
+    __MinValueMethod_JComboBox.setData(minChoices);
     __MinValueMethod_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __MinValueMethod_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

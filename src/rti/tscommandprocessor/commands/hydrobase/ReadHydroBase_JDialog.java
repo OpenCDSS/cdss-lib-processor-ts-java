@@ -1,7 +1,6 @@
 package rti.tscommandprocessor.commands.hydrobase;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -14,6 +13,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -57,6 +57,7 @@ import DWR.DMI.HydroBaseDMI.HydroBase_Util;
 /**
 Editor for the ReadHydroBase() command.
 */
+@SuppressWarnings("serial")
 public class ReadHydroBase_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -521,7 +522,8 @@ private HydroBaseDataStore getSelectedDataStoreFromInputName ()
         Object o = __command.getCommandProcessor().getPropContents("HydroBaseDMIList");
         if ( o != null ) {
             // Loop through and match the input name
-            List<HydroBaseDMI> dmiList = (List<HydroBaseDMI>)o;
+            @SuppressWarnings("unchecked")
+			List<HydroBaseDMI> dmiList = (List<HydroBaseDMI>)o;
             String inputName2;
             for ( HydroBaseDMI dmi2 : dmiList ) {
                 inputName2 = dmi2.getInputName();
@@ -635,7 +637,9 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
         if ( o != null ) {
             // Use the first HydroBaseDMI instance, since input filter
             // information should be relatively consistent...
-            legacyDmiList = (List<HydroBaseDMI>)o;
+        	@SuppressWarnings("unchecked")
+			List<HydroBaseDMI> legacyDmiList0 = (List<HydroBaseDMI>)o;
+            legacyDmiList = legacyDmiList0;
         }
     }
     catch ( Exception e ){
@@ -650,14 +654,16 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
         0, ++ydb, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputName_JComboBox = new SimpleJComboBox ( false );
     // Add a blank because the input type/name is not required
-    __InputName_JComboBox.addItem ( "" );
+    List<String> nameChoices = new ArrayList<String>();
+    nameChoices.add ( "" );
     for ( HydroBaseDMI hbdmi: legacyDmiList ) {
         String inputName = hbdmi.getInputName();
         if ( (inputName == null) || inputName.equals("") ) {
             inputName = "HydroBase"; // Default
         }
-        __InputName_JComboBox.addItem ( inputName );
+        nameChoices.add ( inputName );
     }
+    __InputName_JComboBox.setData(nameChoices);
     __InputName_JComboBox.select ( 0 );
     __InputName_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(dbJPanel, __InputName_JComboBox,
@@ -672,10 +678,12 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( HydroBaseDataStore.class );
     // Add a blank because the data store is not required
-    __DataStore_JComboBox.addItem ( "" );
+    List<String> datastoreChoices = new ArrayList<String>();
+    datastoreChoices.add ( "" );
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
+    __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(dbJPanel, __DataStore_JComboBox,
@@ -826,7 +834,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     
     JGUIUtil.addComponent(divJPanel, new JLabel ( "Fill using diversion comments:"),
 		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> FillUsingDivComments_Vector = new Vector ( 3 );
+    List<String> FillUsingDivComments_Vector = new Vector<String>( 3 );
 	FillUsingDivComments_Vector.add ( "" );
 	FillUsingDivComments_Vector.add ( __command._False );
 	FillUsingDivComments_Vector.add ( __command._True );
@@ -853,7 +861,7 @@ private void initialize ( JFrame parent, ReadHydroBase_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If missing:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> IfMissing_Vector = new Vector ( 3 );
+    List<String> IfMissing_Vector = new Vector<String>( 3 );
     IfMissing_Vector.add ( "" );
     IfMissing_Vector.add ( __command._Ignore );
     IfMissing_Vector.add ( __command._Warn );

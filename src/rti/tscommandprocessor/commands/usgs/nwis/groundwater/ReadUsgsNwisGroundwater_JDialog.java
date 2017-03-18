@@ -16,6 +16,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -54,6 +55,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for he ReadUsgsNwisGroundwater() command.
 */
+@SuppressWarnings("serial")
 public class ReadUsgsNwisGroundwater_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -479,10 +481,12 @@ private void initialize ( JFrame parent, ReadUsgsNwisGroundwater_Command command
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( UsgsNwisGroundwaterDataStore.class );
+    List<String> datastoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
     if ( dataStoreList.size() > 0 ) {
+    	__DataStore_JComboBox.setData(datastoreChoices);
         __DataStore_JComboBox.select ( 0 );
     }
     __DataStore_JComboBox.addItemListener ( this );
@@ -541,7 +545,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisGroundwater_Command command
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     // Get the global county FIPS data
     List<FIPSCounty> counties = FIPSCounty.getData();
-    List<String> countyList = new Vector();
+    List<String> countyList = new Vector<String>();
     for ( FIPSCounty fips : counties ) {
         countyList.add(fips.getCode() + " - " + fips.getName() + ", " + fips.getStateAbbreviation());
     }

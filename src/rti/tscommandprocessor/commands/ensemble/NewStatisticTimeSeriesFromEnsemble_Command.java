@@ -683,7 +683,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             // Set in the discovery list
             if ( stats_ts != null ) {
-                List<TS> tslist = new Vector();
+                List<TS> tslist = new Vector<TS>();
                 tslist.add(stats_ts);
                 setDiscoveryTSList(tslist);
             }

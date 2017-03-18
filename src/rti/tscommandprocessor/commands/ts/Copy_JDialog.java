@@ -37,6 +37,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class Copy_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -280,7 +281,7 @@ private void initialize ( JFrame parent, Copy_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Copy data flags?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CopyDataFlags_JComboBox = new SimpleJComboBox ( false );
-    List<String> choices = new Vector();
+    List<String> choices = new Vector<String>();
     choices.add ("");
     choices.add ( __command._False );
     choices.add ( __command._True );

@@ -39,6 +39,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the ReadHecDss() command.
 */
+@SuppressWarnings("serial")
 public class ReadHecDss_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {

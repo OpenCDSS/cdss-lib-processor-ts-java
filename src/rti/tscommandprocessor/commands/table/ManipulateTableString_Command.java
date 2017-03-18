@@ -398,7 +398,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     // Now process...
 
-    List<String> problems = new ArrayList();
+    List<String> problems = new ArrayList<String>();
     try {
         DataTableStringManipulator dtm = new DataTableStringManipulator ( table, columnIncludeFilters, columnExcludeFilters );
         dtm.manipulate ( InputColumn1, operator, InputColumn2, InputValue2, InputValue3, OutputColumn, problems );

@@ -48,6 +48,7 @@ import RTi.Util.Message.Message;
  * @author sam
  *
  */
+@SuppressWarnings("serial")
 public class WriteRiverWare_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -294,7 +295,7 @@ private void initialize ( JFrame parent, WriteRiverWare_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List tslistChoices = new ArrayList<String>(3);
+    List<String> tslistChoices = new ArrayList<String>(3);
 	tslistChoices.add ( "" + TSListType.ALL_MATCHING_TSID );
 	tslistChoices.add ( "" + TSListType.ALL_TS );
 	tslistChoices.add ( "" + TSListType.SELECTED_TS );
@@ -314,14 +315,14 @@ private void initialize ( JFrame parent, WriteRiverWare_Command command )
 
 	// Allow edits...
         
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
     			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 
 	__TSID_JComboBox = new SimpleJComboBox ( true );
 	__TSID_JComboBox.setToolTipText("Specify the time series identifier pattern to match or use ${Property} notation");
 	int size = 0;
 	if ( tsids == null ) {
-		tsids = new Vector ();
+		tsids = new Vector<String> ();
 	}
 	size = tsids.size();
 	// Blank for default
@@ -353,7 +354,7 @@ private void initialize ( JFrame parent, WriteRiverWare_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write header comments?:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __WriteHeaderComments_JComboBox = new SimpleJComboBox ( false );
-    List<String> writeHeaderCommentsList = new Vector();
+    List<String> writeHeaderCommentsList = new Vector<String>();
     writeHeaderCommentsList.add("");
     writeHeaderCommentsList.add(__command._False);
     writeHeaderCommentsList.add(__command._True);

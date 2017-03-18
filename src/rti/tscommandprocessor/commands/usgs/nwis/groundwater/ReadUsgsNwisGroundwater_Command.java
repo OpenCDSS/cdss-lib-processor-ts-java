@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.usgs.nwis.groundwater;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -265,24 +266,24 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "Sites" );
-    valid_Vector.add ( "States" );
-    valid_Vector.add ( "HUCs" );
-    valid_Vector.add ( "BoundingBox" );
-    valid_Vector.add ( "Counties" );
-    valid_Vector.add ( "Parameters" );
-    valid_Vector.add ( "SiteStatus" );
-    valid_Vector.add ( "SiteTypes" );
-    valid_Vector.add ( "Agency" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "Format" );
-    valid_Vector.add ( "OutputFile" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "DataStore" );
+    validList.add ( "Sites" );
+    validList.add ( "States" );
+    validList.add ( "HUCs" );
+    validList.add ( "BoundingBox" );
+    validList.add ( "Counties" );
+    validList.add ( "Parameters" );
+    validList.add ( "SiteStatus" );
+    validList.add ( "SiteTypes" );
+    validList.add ( "Agency" );
+    validList.add ( "Interval" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "Alias" );
+    validList.add ( "Format" );
+    validList.add ( "OutputFile" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -317,7 +318,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-    List<File> list = new Vector();
+    List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -410,7 +411,7 @@ CommandWarningException, CommandException
     
     String dataStoreName = parameters.getValue("DataStore");
     String Sites = parameters.getValue("Sites");
-    List<String> siteList = new Vector();
+    List<String> siteList = new Vector<String>();
     if ( (Sites != null) && !Sites.equals("") ) {
         if ( Sites.indexOf(",") < 0 ) {
             siteList.add(Sites.trim());
@@ -423,7 +424,7 @@ CommandWarningException, CommandException
         }
     }
     String States = parameters.getValue("States");
-    List<String> stateList = new Vector();
+    List<String> stateList = new Vector<String>();
     if ( (States != null) && !States.equals("") ) {
         if ( States.indexOf(",") < 0 ) {
             stateList.add(States.trim());
@@ -436,7 +437,7 @@ CommandWarningException, CommandException
         }
     }
     String HUCs = parameters.getValue("HUCs");
-    List<String> hucList = new Vector();
+    List<String> hucList = new Vector<String>();
     if ( (HUCs != null) && !HUCs.equals("") ) {
         if ( HUCs.indexOf(",") < 0 ) {
             hucList.add(HUCs.trim());
@@ -449,7 +450,7 @@ CommandWarningException, CommandException
         }
     }
     String Counties = parameters.getValue("Counties");
-    List<String> countyList = new Vector();
+    List<String> countyList = new Vector<String>();
     if ( (Counties != null) && !Counties.equals("") ) {
         if ( Counties.indexOf(",") < 0 ) {
             countyList.add(Counties.trim());
@@ -462,7 +463,7 @@ CommandWarningException, CommandException
         }
     }
     String Parameters = parameters.getValue("Parameters");
-    List<UsgsNwisParameterType> parameterList = new Vector();
+    List<UsgsNwisParameterType> parameterList = new Vector<UsgsNwisParameterType>();
     if ( (Parameters != null) && !Parameters.equals("") ) {
         if ( Parameters.indexOf(",") < 0 ) {
             parameterList.add(new UsgsNwisParameterType(Parameters.trim(), "", "", "", "", ""));
@@ -480,7 +481,7 @@ CommandWarningException, CommandException
         siteStatus = UsgsNwisSiteStatusType.ALL;
     }
     String SiteTypes = parameters.getValue("SiteTypes");
-    List<UsgsNwisSiteType> siteTypeList = new Vector();
+    List<UsgsNwisSiteType> siteTypeList = new Vector<UsgsNwisSiteType>();
     if ( (SiteTypes != null) && !SiteTypes.equals("") ) {
         if ( SiteTypes.indexOf(",") < 0 ) {
             siteTypeList.add(new UsgsNwisSiteType(SiteTypes.trim(), "", ""));
@@ -627,7 +628,7 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	List<TS> tslist = new Vector();	// List for time series results.
+	List<TS> tslist = new Vector<TS>();	// List for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -761,7 +762,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

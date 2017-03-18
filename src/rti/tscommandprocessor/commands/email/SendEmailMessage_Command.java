@@ -1,10 +1,6 @@
 package rti.tscommandprocessor.commands.email;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -66,8 +62,8 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String To = parameters.getValue ( "To" );
 	String Subject = parameters.getValue ( "Subject" );
-	String Message0 = parameters.getValue ( "Message" );
-	String MessageFile = parameters.getValue ( "MessageFile" );   
+	//String Message0 = parameters.getValue ( "Message" );
+	//String MessageFile = parameters.getValue ( "MessageFile" );   
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	String warning = "";
 	String message;
@@ -172,16 +168,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String BCC = parameters.getValue ( "BCC" );
     String Subject = parameters.getValue ( "Subject" );
     String Message0 = parameters.getValue ( "Message" );
-    String MessageFile = parameters.getValue ( "MessageFile" );
+    //String MessageFile = parameters.getValue ( "MessageFile" );
     String AttachmentFiles = parameters.getValue ( "AttachmentFiles" );
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
 	    IfNotFound = _Warn; // Default
 	}
 
-	String MessageFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-        	TSCommandProcessorUtil.expandParameterValue(processor,this,MessageFile) ) );
+	//String MessageFile_full = IOUtil.verifyPathForOS(
+    //   IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+    //    	TSCommandProcessorUtil.expandParameterValue(processor,this,MessageFile) ) );
 	String AttachmentFiles_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
         	TSCommandProcessorUtil.expandParameterValue(processor,this,AttachmentFiles) ) );

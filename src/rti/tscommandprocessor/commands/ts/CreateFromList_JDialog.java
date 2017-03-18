@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -40,6 +41,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the CreateFromList() command.
 */
+@SuppressWarnings("serial")
 public class CreateFromList_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -327,7 +329,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "ID column:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IDCol_JComboBox = new SimpleJComboBox ( false );
-	List IDCol_Vector = new Vector ( 100 );
+	List<String> IDCol_Vector = new Vector<String> ( 100 );
 	for ( int i = 1; i < 101; i++ ) {
 		IDCol_Vector.add ( "" + i );
 	}
@@ -418,10 +420,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
-	__IfNotFound_JComboBox.addItem ( __command._Default );
-	__IfNotFound_JComboBox.addItem ( __command._Ignore );
-	__IfNotFound_JComboBox.addItem ( __command._Warn );
+	List<String> notFoundChoices = new ArrayList<String>();
+	notFoundChoices.add ( __command._Default );
+	notFoundChoices.add ( __command._Ignore );
+	notFoundChoices.add ( __command._Warn );
 	__IfNotFound_JComboBox.select ( __command._Warn );
+	__IfNotFound_JComboBox.setData(notFoundChoices);
 	__IfNotFound_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

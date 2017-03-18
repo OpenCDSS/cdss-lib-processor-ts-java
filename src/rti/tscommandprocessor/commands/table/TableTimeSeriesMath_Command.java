@@ -202,7 +202,7 @@ Get the list of operators that can be used.
 */
 public List<DataTableMathOperatorType> getOperatorChoices()
 {
-    List<DataTableMathOperatorType> choices = new Vector();
+    List<DataTableMathOperatorType> choices = new Vector<DataTableMathOperatorType>();
     choices.add ( DataTableMathOperatorType.ASSIGN );
     choices.add ( DataTableMathOperatorType.ADD );
     choices.add ( DataTableMathOperatorType.SUBTRACT );
@@ -218,7 +218,7 @@ Get the list of operators that can be performed.
 public List<String> getOperatorChoicesAsStrings()
 {
     List<DataTableMathOperatorType> choices = getOperatorChoices();
-    List<String> stringChoices = new Vector();
+    List<String> stringChoices = new Vector<String>();
     for ( int i = 0; i < choices.size(); i++ ) {
         stringChoices.add ( "" + choices.get(i) );
     }
@@ -379,7 +379,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        tslist = (List<TS>)o_TSList;
+    	@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
         nts = tslist.size();
     }
     

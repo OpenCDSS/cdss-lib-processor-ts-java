@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -37,6 +38,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the AdjustExtremes() command.
 */
+@SuppressWarnings("serial")
 public class AdjustExtremes_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -262,14 +264,14 @@ private void initialize ( JFrame parent, AdjustExtremes_Command command )
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -277,8 +279,10 @@ private void initialize ( JFrame parent, AdjustExtremes_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Adjust method:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AdjustMethod_JComboBox = new SimpleJComboBox ( false );
-	__AdjustMethod_JComboBox.addItem ( __command._Average );
+	List<String> adjustChoices = new ArrayList<String>();
+	adjustChoices.add ( __command._Average );
 	//__method_JComboBox.addItem ( "WeightedAverage" );
+	__AdjustMethod_JComboBox.setData(adjustChoices);
 	__AdjustMethod_JComboBox.select ( __command._Average );
         JGUIUtil.addComponent(main_JPanel, __AdjustMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -288,8 +292,10 @@ private void initialize ( JFrame parent, AdjustExtremes_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Extreme to adjust:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ExtremeToAdjust_JComboBox = new SimpleJComboBox ( false );
-	__ExtremeToAdjust_JComboBox.addItem ( __command._AdjustMinimum );
-	__ExtremeToAdjust_JComboBox.addItem ( __command._AdjustMaximum );
+	List<String> extremeChoices = new ArrayList<String>();
+	extremeChoices.add ( __command._AdjustMinimum );
+	extremeChoices.add ( __command._AdjustMaximum );
+	__ExtremeToAdjust_JComboBox.setData(adjustChoices);
 	__ExtremeToAdjust_JComboBox.select ( __command._AdjustMinimum );
         JGUIUtil.addComponent(main_JPanel, __ExtremeToAdjust_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

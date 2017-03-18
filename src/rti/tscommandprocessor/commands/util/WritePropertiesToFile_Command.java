@@ -242,7 +242,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new ArrayList();
+	List<File> list = new ArrayList<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -535,7 +535,7 @@ private List<String> writePropertyFile ( CommandProcessor processor, String outp
         // Get the list of all processor properties
         TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
         Collection<String> list = tsprocessor.getPropertyNameList(true, true);
-        List<String> propNameList = new ArrayList(list);
+        List<String> propNameList = new ArrayList<String>(list);
         if ( sortOrder == 0 ) {
         	// Want to output in the order of the properties that were requested, not the order from the processor
         	// Rearrange the full list to make sure the requested properties are at the front

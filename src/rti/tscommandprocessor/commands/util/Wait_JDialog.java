@@ -28,6 +28,7 @@ import RTi.Util.IO.PropList;
 /**
 Editor dialog for the Wait() command.
 */
+@SuppressWarnings("serial")
 public class Wait_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {

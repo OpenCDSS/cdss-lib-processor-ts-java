@@ -213,7 +213,7 @@ public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommandInternal",message = "";
 	int warning_level = 2;
-	int log_level = 3; // Level for non-user messages for log file.
+	//int log_level = 3; // Level for non-user messages for log file.
 	String command_tag = "" + command_number;	
 	int warning_count = 0;
     

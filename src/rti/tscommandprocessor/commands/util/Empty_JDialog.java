@@ -26,6 +26,7 @@ import RTi.Util.IO.PropList;
 /**
 Editor for Empty command - used for blank lines in the command file.
 */
+@SuppressWarnings("serial")
 public class Empty_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {

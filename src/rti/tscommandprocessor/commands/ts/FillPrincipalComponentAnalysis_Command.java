@@ -101,8 +101,8 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	// Get the properties from the propList parameters.
-	String DependentTSList  = parameters.getValue ( "DependentTSList"  );
-	String DependentTSID    = parameters.getValue ( "DependentTSID"    );
+	//String DependentTSList  = parameters.getValue ( "DependentTSList"  );
+	//String DependentTSID    = parameters.getValue ( "DependentTSID"    );
 	String IndependentTSList= parameters.getValue ( "IndependentTSList");
 	String IndependentTSID  = parameters.getValue ( "IndependentTSID"  );
 	String AnalysisStart	= parameters.getValue ( "AnalysisStart"    );
@@ -139,7 +139,7 @@ throws InvalidCommandParameterException
          IndependentTSList.equalsIgnoreCase(TSListType.SPECIFIED_TSID.toString())
             ) {
 		if ( IndependentTSID != null ) {
-			List selectedV = StringUtil.breakStringList (
+			List<String> selectedV = StringUtil.breakStringList (
 				IndependentTSID, ",",
 				StringUtil.DELIM_SKIP_BLANKS );
 			if ( (selectedV == null) || (selectedV.size() == 0) ) {
@@ -229,16 +229,6 @@ throws InvalidCommandParameterException
     if ( __commandMode ) {
         // Make sure FillStart, if given, is a valid date
         DateTime FillStartDate = null;
-        if ( FillStartDate != null && !FillStart.equals("") ) {
-            try {
-                FillStartDate = DateTime.parse( FillStart );
-            } catch ( Exception e ) {
-                warning += "\n Fill Start \""
-                    + FillStart
-                    + "\" is not a valid date.";
-            }
-        }
-
         // Make sure FillEnd, if given, is a valid date
         DateTime FillEndDate = null;
         if ( FillEnd != null && !FillEnd.equals("") ) {
@@ -328,7 +318,7 @@ throws InvalidCommandParameterException
  * Create the commands needed to fill the dependent time series applying the
  * selected regression equation to the independent time series.
 */
-protected List createFillCommands ()
+protected List<String> createFillCommands ()
 {
     List<String> commandList = new ArrayList<String>();
     String command = "FillPrincipalComponentAnalysis";
@@ -572,7 +562,7 @@ protected void fillDependents() throws InvalidCommandParameterException
     }
 
     try {
-        List tslist = new ArrayList();
+        List<TS> tslist = new ArrayList<TS>();
         tslist.add(__filledTS);
         TSUtil.formatOutput(FilledTSOutputFile, tslist, null);
     } catch (TSException ex) {
@@ -599,7 +589,7 @@ Get the time series to process.
 @param TSList TSList command parameter.
 @param TSID TSID command parameter.
 */
-private List getTimeSeriesToProcess ( CommandProcessor processor,
+private List<Object> getTimeSeriesToProcess ( CommandProcessor processor,
 		String TSList, String TSID )
 {	String routine = getCommandName() + ".getTimeSeriesToProcess", message;
 	int log_level = 3;
@@ -617,13 +607,13 @@ private List getTimeSeriesToProcess ( CommandProcessor processor,
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
 		message = "Unable to find time series to process using TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( log_level, routine, message );
 	}
-	else {	tslist = (List)o_TSList;
+	else {	tslist = (List<TS>)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to process using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
@@ -646,7 +636,7 @@ private List getTimeSeriesToProcess ( CommandProcessor processor,
 	}
 	// In any case, return the data needed by the calling code and let
 	// it further handle errors...
-	List data = new Vector(2);
+	List<Object> data = new Vector<Object>(2);
 	data.add ( tslist );
 	data.add ( indices );
 	return data;
@@ -679,7 +669,7 @@ throws 	InvalidCommandSyntaxException,
 {	String rtn = "fillMixedStation_Command.parseCommand", mssg;
 	int warning_level = 2;
 
-	List tokens = StringUtil.breakStringList ( command,
+	List<String> tokens = StringUtil.breakStringList ( command,
 		"()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name and the InputFile
@@ -730,7 +720,7 @@ throws InvalidCommandParameterException,
     String AnalysisMonths = parameters.getValue("AnalysisMonths");
     DateTime AnalysisStartDateTime = null, AnalysisEndDateTime = null;
 
-	List v;
+	List<Object> v;
 	int [] tspos;
 	int tsCount;
 	
@@ -754,14 +744,14 @@ throws InvalidCommandParameterException,
 	// Get the list of DEPENDENT time series to process...
     //
     TS dependentTS = null;
-	List dependentTSList = null; 
+	List<TS> dependentTSList = null; 
 		
     // Get the time series from the command list.
     // The getTimeSeriesToProcess method will properly return the
     // time series according to the settings of DependentTSList.
     // It's like Highlander:  "There can be only 1" ... dependent time series.
     v = getTimeSeriesToProcess( processor, DependentTSList, DependentTSID );
-    List tslist = (List)v.get(0);
+    List<TS> tslist = (List<TS>)v.get(0);
     tspos = (int [])v.get(1);
     tsCount = tslist.size();
     if ( tsCount == 0 ) {
@@ -771,7 +761,7 @@ throws InvalidCommandParameterException,
             MessageUtil.formatMessageTag(
                 command_tag, ++warning_count), rtn, mssg );
     }
-    dependentTSList = new Vector( tsCount );
+    dependentTSList = new Vector<TS>( tsCount );
     for ( int nTS = 0; nTS < tsCount; nTS++ ) {
         // Get the time series object.
         try {
@@ -809,13 +799,13 @@ throws InvalidCommandParameterException,
     //
 	// Get the list of INDEPENDENT time series to process...
     //
-	List independentTSList = null;
+	List<TS> independentTSList = null;
 		
     // Get the time series from the command list.
     // The getTimeSeriesToProcess method will properly return the
     // time series according to the settings of IndependentTSList.
     v = getTimeSeriesToProcess( processor, IndependentTSList, IndependentTSID);
-    tslist = (List)v.get(0);
+    tslist = (List<TS>)v.get(0);
     tspos = (int [])v.get(1);
     tsCount = tslist.size();
     if ( tsCount == 0 ) {
@@ -825,7 +815,7 @@ throws InvalidCommandParameterException,
             MessageUtil.formatMessageTag(
                 command_tag, ++warning_count), rtn, mssg );
     }
-    independentTSList = new Vector( tsCount );
+    independentTSList = new Vector<TS>( tsCount );
     TS independentTS = null;
     for ( int nTS = 0; nTS < tsCount; nTS++ ) {
         // Get the time series object.
@@ -954,8 +944,7 @@ public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{	String rtn = "fillMixedStation_Command.runCommand", mssg = "";
-	String command_tag = "" + command_number;
+{	String command_tag = "" + command_number;
 
     // first run PCA analysis...
     runAnalysis ( command_tag );

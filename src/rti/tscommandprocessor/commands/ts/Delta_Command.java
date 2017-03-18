@@ -211,7 +211,7 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    List<TS> matchingDiscoveryTS = new Vector();
+    List<TS> matchingDiscoveryTS = new Vector<TS>();
     List<TS> discoveryTSList = getDiscoveryTSList ();
     if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return matchingDiscoveryTS;
@@ -393,7 +393,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     	}
     	else {
-            tslist = (List)o_TSList;
+    		@SuppressWarnings("unchecked")
+			List<TS> tslist0 = (List<TS>)o_TSList;
+            tslist = tslist0;
     		if ( tslist.size() == 0 ) {
     			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
     			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -445,7 +447,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	TS ts = null;
 	Object o_ts = null;
-	List<TS> discoverTSList = new Vector();
+	List<TS> discoverTSList = new Vector<TS>();
     boolean createData = true; // Run full command
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Just want time series headers initialized, but not actually do the processing

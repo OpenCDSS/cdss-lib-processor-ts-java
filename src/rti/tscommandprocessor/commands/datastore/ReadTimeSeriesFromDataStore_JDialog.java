@@ -46,6 +46,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the ReadTimeSeriesFromDataStore() command.
 */
+@SuppressWarnings("serial")
 public class ReadTimeSeriesFromDataStore_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

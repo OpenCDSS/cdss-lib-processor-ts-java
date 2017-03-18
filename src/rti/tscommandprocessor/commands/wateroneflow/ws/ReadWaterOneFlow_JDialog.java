@@ -13,6 +13,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -27,14 +28,11 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import org.cuahsi.waterml._1.VariableInfoType;
-
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
-import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -44,11 +42,11 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 /**
 Editor for the ReadWaterOneFlow() command.
 */
+@SuppressWarnings("serial")
 public class ReadWaterOneFlow_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -72,7 +70,6 @@ private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
 			
 private JTextArea __command_JTextArea = null; // Command as JTextArea
-private InputFilter_JPanel __inputFilter_JPanel =null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
@@ -348,7 +345,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, ReadWaterOneFlow_Command command )
-{	String routine = getClass().getName() + ".initialize";
+{	//String routine = getClass().getName() + ".initialize";
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -386,10 +383,12 @@ private void initialize ( JFrame parent, ReadWaterOneFlow_Command command )
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( WaterOneFlowDataStore.class );
+    List<String> datastoreList = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreList.add ( dataStore.getName() );
     }
-    if ( dataStoreList.size() > 0 ) {   
+    if ( dataStoreList.size() > 0 ) {
+    	__DataStore_JComboBox.setData(datastoreList);
         __DataStore_JComboBox.select ( 0 );
     }
     __DataStore_JComboBox.addItemListener ( this );
@@ -589,7 +588,7 @@ Populate the data type choices in response to a new data store being selected.
 private void populateVariableChoices ()
 {   String routine = getClass().getName() + ".populateVariableChoices";
     WaterOneFlowDataStore ds = getSelectedDataStore();
-    List<String> variables = new Vector();
+    List<String> variables = new Vector<String>();
     variables.add("");
     try {
         List<String> variableList = ds.getVariableList ( true, 30 );

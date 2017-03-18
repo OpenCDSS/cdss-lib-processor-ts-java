@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -33,6 +34,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class RelativeDiff_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -228,8 +230,10 @@ private void initialize ( JFrame parent, RelativeDiff_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Divisor:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Divisor_JComboBox = new SimpleJComboBox ( false );
-	__Divisor_JComboBox.addItem ( __command._DivideByTS1 );
-	__Divisor_JComboBox.addItem ( __command._DivideByTS2 );
+	List<String> divChoices = new ArrayList<String>();
+	divChoices.add ( __command._DivideByTS1 );
+	divChoices.add ( __command._DivideByTS2 );
+	__Divisor_JComboBox.setData(divChoices);
 	__Divisor_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Divisor_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

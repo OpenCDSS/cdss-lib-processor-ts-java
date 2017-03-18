@@ -18,6 +18,7 @@
 package rti.tscommandprocessor.commands.statemod;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -192,14 +193,14 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "Version" );
-    valid_Vector.add ( "Alias" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(6);
+    validList.add ( "InputFile" );
+    validList.add ( "TSID" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "Version" );
+    validList.add ( "Alias" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -486,11 +487,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		else {
 		    bts = new StateMod_BTS ( InputFile_full );
 		}
-		List tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, readData );
+		List<TS> tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, readData );
 		bts.close();
 		bts = null;
 
-        List<String> aliasList = new Vector();
+        List<String> aliasList = new Vector<String>();
         if ( tslist != null ) {
             int tscount = tslist.size();
             message = "Read " + tscount + " time series from \"" + InputFile_full + "\"";

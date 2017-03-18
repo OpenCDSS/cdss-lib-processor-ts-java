@@ -7,7 +7,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;

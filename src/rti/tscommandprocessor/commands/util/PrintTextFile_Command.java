@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.util;
 
 import java.awt.print.PageFormat;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
@@ -219,27 +220,27 @@ throws InvalidCommandParameterException
         }
     }
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-	valid_Vector.add ( "InputFile" );
-	valid_Vector.add ( "PrinterName" );
-	valid_Vector.add ( "PaperSize" );
-	valid_Vector.add ( "PaperSource" );
-	valid_Vector.add ( "Orientation" );
-	valid_Vector.add ( "MarginLeft" );
-	valid_Vector.add ( "MarginRight" );
-	valid_Vector.add ( "MarginTop" );
-	valid_Vector.add ( "MarginBottom" );
-	valid_Vector.add ( "LinesPerPage" );
-	valid_Vector.add ( "Header" );
-	valid_Vector.add ( "Footer" );
-	valid_Vector.add ( "ShowLineCount" );
-	valid_Vector.add ( "ShowPageCount" );
-	valid_Vector.add ( "Pages" );
-	valid_Vector.add ( "DoubleSided" );
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "ShowDialog" );
-	valid_Vector.add ( "IfNotFound" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>();
+	validList.add ( "InputFile" );
+	validList.add ( "PrinterName" );
+	validList.add ( "PaperSize" );
+	validList.add ( "PaperSource" );
+	validList.add ( "Orientation" );
+	validList.add ( "MarginLeft" );
+	validList.add ( "MarginRight" );
+	validList.add ( "MarginTop" );
+	validList.add ( "MarginBottom" );
+	validList.add ( "LinesPerPage" );
+	validList.add ( "Header" );
+	validList.add ( "Footer" );
+	validList.add ( "ShowLineCount" );
+	validList.add ( "ShowPageCount" );
+	validList.add ( "Pages" );
+	validList.add ( "DoubleSided" );
+	validList.add ( "OutputFile" );
+	validList.add ( "ShowDialog" );
+	validList.add ( "IfNotFound" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -263,9 +264,9 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-    List list = new Vector();
+    List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }

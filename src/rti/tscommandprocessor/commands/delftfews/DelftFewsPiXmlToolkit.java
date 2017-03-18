@@ -1,6 +1,5 @@
 package rti.tscommandprocessor.commands.delftfews;
 
-import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
 
 /**

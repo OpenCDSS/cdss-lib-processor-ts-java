@@ -14,6 +14,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.border.LineBorder;
@@ -52,6 +53,7 @@ import RTi.Util.Math.NumberOfEquationsType;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
+@SuppressWarnings("serial")
 public class FillMixedStation_JDialog extends JDialog
 implements ActionListener,
 ItemListener,
@@ -855,10 +857,12 @@ Instantiates the GUI components.
 			0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__AnalysisMonth_JComboBox = new SimpleJComboBox ( false );
 	__AnalysisMonth_JComboBox.setMaximumRowCount ( 13 );
-	__AnalysisMonth_JComboBox.addItem ( "" );
+	List<String> monthChoices = new ArrayList<String>();
+	monthChoices.add ( "" );
 	for ( int i = 1; i <= 12; i++ ) {
-		__AnalysisMonth_JComboBox.addItem ( "" + i );
+		monthChoices.add ( "" + i );
 	}
+	__AnalysisMonth_JComboBox.setData(monthChoices);
 	__AnalysisMonth_JComboBox.select ( 0 );
 	__AnalysisMonth_JComboBox.addActionListener ( this );
 	JGUIUtil.addComponent(mainAnalysis_JPanel, __AnalysisMonth_JComboBox,
@@ -941,10 +945,12 @@ Instantiates the GUI components.
 	JGUIUtil.addComponent(mainRelate_JPanel, new JLabel ( "Best Fit:" ),
 			0, ++yRelate, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 	__BestFitIndicator_JComboBox = new SimpleJComboBox ( false );
-	__BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.R );
-	__BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.SEP );
+	List<String> fitChoices = new ArrayList<String>();
+	fitChoices.add ( "" + BestFitIndicatorType.R );
+	fitChoices.add ( "" + BestFitIndicatorType.SEP );
 	// FIXME SAM 2010-06-10 Does not seem to get computed for monthly and just confusing
-	//__BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.SEP_TOTAL );
+	//fitChoices.add ( "" + BestFitIndicatorType.SEP_TOTAL );
+	__BestFitIndicator_JComboBox.setData(fitChoices);
 	__BestFitIndicator_JComboBox.select ( "" + BestFitIndicatorType.SEP );
 	__BestFitIndicator_JComboBox.addItemListener ( this );
 	JGUIUtil.addComponent(mainRelate_JPanel, __BestFitIndicator_JComboBox,
@@ -1003,9 +1009,11 @@ Instantiates the GUI components.
 		JGUIUtil.addComponent(mainFill_JPanel, new JLabel ("Fill:"),
 				0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_END);
 		__Fill_JComboBox = new SimpleJComboBox ( false );
-		__Fill_JComboBox.addItem( "" );
-		__Fill_JComboBox.addItem( "" + __command._False );
-		__Fill_JComboBox.addItem( "" + __command._True );
+		List<String> fill2Choices = new ArrayList<String>();
+		fill2Choices.add( "" );
+		fill2Choices.add( "" + __command._False );
+		fill2Choices.add( "" + __command._True );
+		__Fill_JComboBox.setData(fill2Choices);
 		__Fill_JComboBox.select ( 0 );
 		__Fill_JComboBox.setToolTipText("Use False to calculate statistics but do not fill.");
 		__Fill_JComboBox.addActionListener( this );

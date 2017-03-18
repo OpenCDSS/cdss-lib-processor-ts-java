@@ -30,6 +30,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Table.TableField;
 
+@SuppressWarnings("serial")
 public class NewTable_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

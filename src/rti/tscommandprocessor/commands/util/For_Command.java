@@ -40,7 +40,7 @@ private Object iteratorObject = null;
 /**
 Hashmap for column to property map.
 */
-private Hashtable tablePropertyMap = null;
+private Hashtable<String,String> tablePropertyMap = null;
 
 /**
 Indicate that the iterator is using a list.
@@ -552,7 +552,7 @@ This is necessary because the next() method is called before runCommand().
 */
 private void parseTablePropertyMap ( String TablePropertyMap ) {
 	//if ( TablePropertyMap != null) && (TablePropertyMap)
-    this.tablePropertyMap = new Hashtable();
+    this.tablePropertyMap = new Hashtable<String,String>();
     if ( (TablePropertyMap != null) && (TablePropertyMap.length() > 0) && (TablePropertyMap.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(TablePropertyMap, ",", 0 );

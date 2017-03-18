@@ -55,7 +55,6 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
-import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.InvalidTimeIntervalException;
@@ -581,7 +580,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
 	}
-	List tslist = (List)o_TSList;
+	@SuppressWarnings("unchecked")
+	List<TS> tslist = (List<TS>)o_TSList;
 	if ( tslist.size() == 0 ) {
         message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -1127,13 +1127,11 @@ private void writeLegend ( ExcelToolkit tk, Workbook wb, Sheet reqSheet, TimeSer
     cell = tk.setCellValue(sheet,rowOut,colOut,"Color Legend");
 	// Loop through the conditions
 	DataTable ct = styleManager.getConditionTable();
-	TableRecord rec = null;
 	for ( int i = 0; i < ct.getNumberOfRecords(); i++ ) {
 		++rowOut;
 		try {
 			// Write the condition string
 			// TODO SAM 2015-07-11 evaluate how to make presentation-friendly
-			rec = ct.getRecord(i);
 			cell = tk.setCellValue(sheet,rowOut,colOut,styleManager.getConditionString(i));
 			// Write a cell with the format - blank string to force column size
 			cell = tk.setCellValue(sheet,rowOut,(colOut + 1),"     ");
@@ -1350,7 +1348,6 @@ throws FileNotFoundException, IOException
             	}
             }
         }
-        String missingValueString = "";
         // Create a DateTimeFormatter to format the data values
         if ( dateTimeFormatterType == null ) {
             dateTimeFormatterType = DateTimeFormatterType.C;

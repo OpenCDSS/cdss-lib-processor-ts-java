@@ -49,6 +49,7 @@ import RTi.Util.Time.DateTimeFormatterType;
 /**
 Command editor for the WriteDelimitedFile() command.
 */
+@SuppressWarnings("serial")
 public class WriteDelimitedFile_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {

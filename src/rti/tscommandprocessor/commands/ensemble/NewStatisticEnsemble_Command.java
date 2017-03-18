@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -250,21 +251,21 @@ throws InvalidCommandParameterException
     }
    
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "NewEnsembleID" );
-    valid_Vector.add ( "NewEnsembleName" );
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "NewTSID" );
-    valid_Vector.add ( "Statistic" );
-    valid_Vector.add ( "TestValue" );
-    valid_Vector.add ( "AllowMissingCount" );
-    valid_Vector.add ( "MinimumSampleSize" );
-    valid_Vector.add ( "AnalysisStart" );
-    valid_Vector.add ( "AnalysisEnd" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>();
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "NewEnsembleID" );
+    validList.add ( "NewEnsembleName" );
+    validList.add ( "Alias" );
+    validList.add ( "NewTSID" );
+    validList.add ( "Statistic" );
+    validList.add ( "TestValue" );
+    validList.add ( "AllowMissingCount" );
+    validList.add ( "MinimumSampleSize" );
+    validList.add ( "AnalysisStart" );
+    validList.add ( "AnalysisEnd" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -417,9 +418,8 @@ Return a list of objects of the requested type.
 public List getObjectList ( Class c )
 {   TSEnsemble tsensemble = getDiscoveryTSEnsemble();
     List<TS> discoveryTSList = getDiscoveryTSList ();
-    List v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        v = new Vector();
+    	List<TSEnsemble> v = new Vector<TSEnsemble>();
         v.add ( tsensemble );
     }
     else if ( (discoveryTSList != null) && (discoveryTSList.size() != 0) ) {
@@ -429,7 +429,7 @@ public List getObjectList ( Class c )
             return discoveryTSList;
         }
     }
-    return v;
+    return null;
 }
 
 /**
@@ -558,7 +558,9 @@ CommandWarningException, CommandException
                         message, "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
             }
             else {
-                tslist = (List)o_TSList;
+            	@SuppressWarnings("unchecked")
+				List<TS> tslist0 = (List<TS>)o_TSList;
+                tslist = tslist0;
                 if ( tslist.size() == 0 ) {
                     message = "Unable to find time series to process using TSList=\"" + TSList +
                     "\" TSID=\"" + TSID + "\".";

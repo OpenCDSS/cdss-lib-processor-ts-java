@@ -13,8 +13,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
@@ -44,6 +44,7 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeScaleType;
 import RTi.Util.Time.YearType;
 
+@SuppressWarnings("serial")
 public class ChangeIntervalRegularToIrregular_JDialog extends JDialog
 	implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -710,7 +711,7 @@ private void initialize ( JFrame parent, ChangeIntervalRegularToIrregular_Comman
     JGUIUtil.addComponent(main_JPanel, __HandleEndpointsHow_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleEndpointsHow_JComboBox = new SimpleJComboBox ( false );
-	List endpoints_Vector = new Vector(4);
+	List<String> endpoints_Vector = new ArrayList<String>(4);
 	endpoints_Vector.add ( "" );	// Blank is default
 	endpoints_Vector.add ( __command._AverageEndpoints );
 	endpoints_Vector.add ( __command._IncludeFirstOnly );
@@ -767,7 +768,7 @@ private void initialize ( JFrame parent, ChangeIntervalRegularToIrregular_Comman
     JGUIUtil.addComponent(main_JPanel, __OutputFillMethod_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFillMethod_JComboBox = new SimpleJComboBox ( false );
-	List fill_Vector = new Vector(3);
+	List<String> fill_Vector = new ArrayList<String>(3);
 	fill_Vector.add ( "" );	// Blank is default
 	fill_Vector.add ( __command._Interpolate );
 	fill_Vector.add ( __command._Repeat );
@@ -785,7 +786,7 @@ private void initialize ( JFrame parent, ChangeIntervalRegularToIrregular_Comman
     JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingInputHow_JComboBox = new SimpleJComboBox ( false );
-	List missing_Vector = new Vector(4);
+	List<String> missing_Vector = new ArrayList<String>(4);
 	missing_Vector.add ( "" );	// Blank is default
 	missing_Vector.add ( __command._KeepMissing );
 	missing_Vector.add ( __command._Repeat );
@@ -802,9 +803,11 @@ private void initialize ( JFrame parent, ChangeIntervalRegularToIrregular_Comman
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RecalcLimits_JComboBox = new SimpleJComboBox ( false );
-    __RecalcLimits_JComboBox.addItem ( "" );
-    __RecalcLimits_JComboBox.addItem ( __command._False );
-    __RecalcLimits_JComboBox.addItem ( __command._True );
+    List<String> recalcChoices = new ArrayList<String>();
+    recalcChoices.add ( "" );
+    recalcChoices.add ( __command._False );
+    recalcChoices.add ( __command._True );
+    __RecalcLimits_JComboBox.setData(recalcChoices);
     __RecalcLimits_JComboBox.select ( 0 );
     __RecalcLimits_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,

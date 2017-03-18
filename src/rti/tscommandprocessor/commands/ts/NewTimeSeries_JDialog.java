@@ -35,6 +35,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class NewTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {

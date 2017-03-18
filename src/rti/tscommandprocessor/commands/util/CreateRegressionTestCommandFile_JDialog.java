@@ -11,6 +11,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -38,6 +40,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 /**
 Editor for CreateRegressionTestCommandFile command.
 */
+@SuppressWarnings("serial")
 public class CreateRegressionTestCommandFile_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
@@ -483,9 +486,11 @@ private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append to output?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Append_JComboBox = new SimpleJComboBox ( false );
-	__Append_JComboBox.addItem ( "" );	// Default
-	__Append_JComboBox.addItem ( __command._False );
-	__Append_JComboBox.addItem ( __command._True );
+	List<String> appendChoices = new ArrayList<String>();
+	appendChoices.add ( "" );	// Default
+	appendChoices.add ( __command._False );
+	appendChoices.add ( __command._True );
+	__Append_JComboBox.setData(appendChoices);
 	__Append_JComboBox.select ( 0 );
 	__Append_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,

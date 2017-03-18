@@ -37,6 +37,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for Scale() command.
 */
+@SuppressWarnings("serial")
 public class Scale_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

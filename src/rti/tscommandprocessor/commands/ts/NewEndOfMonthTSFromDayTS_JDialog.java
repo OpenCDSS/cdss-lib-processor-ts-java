@@ -34,6 +34,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 
+@SuppressWarnings("serial")
 public class NewEndOfMonthTSFromDayTS_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -189,7 +190,7 @@ private void initialize ( JFrame parent, NewEndOfMonthTSFromDayTS_Command comman
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DayTSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit, for example to add ${Property}
     __DayTSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list and or specify with ${Property} notation");
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __DayTSID_JComboBox.setData ( tsids );
     __DayTSID_JComboBox.addItemListener ( this );

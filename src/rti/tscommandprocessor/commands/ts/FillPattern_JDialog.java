@@ -35,6 +35,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class FillPattern_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -187,7 +188,7 @@ private void initialize ( JFrame parent, FillPattern_Command command )
     String routine = getClass().getSimpleName() + ".initialize";
 	
     // Get the patterns
-    List patternTS_List = null;
+    List<TS> patternTS_List = null;
     try {
         patternTS_List = TSCommandProcessorUtil.getPatternTSListFromCommandsBeforeCommand(
                 (TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -200,10 +201,10 @@ private void initialize ( JFrame parent, FillPattern_Command command )
             "inserting a FillPattern() command." );
             response ( false );
     }
-    List PatternID_List = new Vector();
+    List<String> PatternID_List = new Vector<String>();
     if ( patternTS_List != null ) {
         for ( int i = 0; i < patternTS_List.size(); i++ ) {
-            TS ts = (TS)patternTS_List.get(i);
+            TS ts = patternTS_List.get(i);
             PatternID_List.add ( ts.getLocation() );
         }
     }
@@ -234,14 +235,14 @@ private void initialize ( JFrame parent, FillPattern_Command command )
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );

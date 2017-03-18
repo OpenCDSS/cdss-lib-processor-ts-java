@@ -39,6 +39,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the ReadDateValue() commands.
 */
+@SuppressWarnings("serial")
 public class ReadDateValue_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {

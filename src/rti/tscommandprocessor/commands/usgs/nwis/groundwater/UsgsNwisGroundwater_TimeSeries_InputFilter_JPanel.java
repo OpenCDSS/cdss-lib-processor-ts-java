@@ -11,6 +11,7 @@ import RTi.Util.String.StringUtil;
 /**
 This class is an input filter for querying USGS NWIS groundwater web services.
 */
+@SuppressWarnings("serial")
 public class UsgsNwisGroundwater_TimeSeries_InputFilter_JPanel extends InputFilter_JPanel //implements ItemListener, KeyListener
 {
     
@@ -37,7 +38,7 @@ Set the filter data.  This method is called at setup.
 public void setFilters ( int numFilterGroups )
 {   //String routine = getClass().getName() + ".setFilters";
 
-    List<InputFilter> filters = new Vector();
+    List<InputFilter> filters = new Vector<InputFilter>();
     //List<String> parameterChoices = new Vector();
     List<String> agencyChoices = __dataStore.getAgencyStrings(true);
     agencyChoices.add("");

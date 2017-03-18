@@ -5,8 +5,8 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
@@ -176,15 +176,15 @@ throws InvalidCommandParameterException
     */
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "EnsembleID2" );
+	List<String> validList = new ArrayList<String>(4);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "EnsembleID2" );
     //valid_Vector.add ( "InputStart" );
     //valid_Vector.add ( "InputEnd" );
     //valid_Vector.add ( "CopyTimeSeries" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -276,7 +276,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message, "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to process using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";

@@ -55,14 +55,14 @@ throws InvalidCommandParameterException
     String DataStore = parameters.getValue ( "DataStore" );
     String IntervalHint = parameters.getValue ( "IntervalHint" );
     String SiteCommonName = parameters.getValue ( "SiteCommonName" );
-    String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
+    //String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
     String SiteDataTypeID = parameters.getValue ( "SiteDataTypeID" );
-    String ModelName = parameters.getValue ( "ModelName" );
-    String ModelRunName = parameters.getValue ( "ModelRunName" );
-    String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
+    //String ModelName = parameters.getValue ( "ModelName" );
+    //String ModelRunName = parameters.getValue ( "ModelRunName" );
+    //String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
     String ModelRunDate = parameters.getValue ( "ModelRunDate" );
     String NewModelRunDate = parameters.getValue ( "NewModelRunDate" );
-    String ModelRunID = parameters.getValue ( "ModelRunID" );
+    //String ModelRunID = parameters.getValue ( "ModelRunID" );
     String EnsembleName = parameters.getValue ( "EnsembleName" );
     String NewEnsembleName = parameters.getValue ( "NewEnsembleName" );
     String EnsembleModelName = parameters.getValue ( "EnsembleModelName" );
@@ -506,7 +506,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             ModelRunDate = ModelRunDate.substring(0,pos);
         }
     }
-    String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
+    // TODO SAM 2017-03-17 why is HydrologicIndictor not used?
+    //String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
     String ModelRunID = parameters.getValue ( "ModelRunID" );
     Long modelRunID = null;
     if ( (ModelRunID != null) && !ModelRunID.equals("") ) {
@@ -593,6 +594,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
 	}
+	@SuppressWarnings("unchecked")
 	List<TS> tslist = (List <TS>)o_TSList;
 	if ( tslist.size() == 0 ) {
         message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +

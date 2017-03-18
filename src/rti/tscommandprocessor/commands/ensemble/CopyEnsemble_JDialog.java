@@ -39,6 +39,7 @@ import RTi.Util.Message.Message;
 /**
 Dialog to edit CopyEnsemble() command.
  */
+@SuppressWarnings("serial")
 public class CopyEnsemble_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -250,7 +251,7 @@ private void initialize ( JFrame parent, Command command )
     
     JLabel EnsembleID_JLabel = new JLabel ("Ensemble to copy:");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );

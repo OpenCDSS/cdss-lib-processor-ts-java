@@ -44,6 +44,7 @@ import RTi.Util.Message.Message;
 /**
 The ReadNwsCard_JDialog edits the ReadNWSCard() commands.
 */
+@SuppressWarnings("serial")
 public class ReadNwsCard_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
@@ -390,7 +391,7 @@ private void initialize(JFrame parent, ReadNwsCard_Command command) {
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel("Read 24 hour as day:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	List<String> v = new Vector();
+	List<String> v = new Vector<String>();
 	v.add("");
 	v.add(ReadNwsCard_Command._TRUE);
 	v.add(ReadNwsCard_Command._FALSE);

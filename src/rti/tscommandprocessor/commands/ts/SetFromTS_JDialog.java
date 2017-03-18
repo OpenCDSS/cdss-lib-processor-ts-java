@@ -32,6 +32,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -48,6 +49,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 Editor dialog for the SetFromTS() command.
 */
+@SuppressWarnings("serial")
 public class SetFromTS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
@@ -520,8 +522,10 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
 	JGUIUtil.addComponent(set_JPanel, new JLabel ( "Transfer data how:" ), 
 		0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TransferHow_JComboBox = new SimpleJComboBox ( false );
-	__TransferHow_JComboBox.addItem ( TSUtil.TRANSFER_BYDATETIME );
-	__TransferHow_JComboBox.addItem ( TSUtil.TRANSFER_SEQUENTIALLY );
+	List<String> transferChoices = new ArrayList<String>();
+	transferChoices.add ( TSUtil.TRANSFER_BYDATETIME );
+	transferChoices.add ( TSUtil.TRANSFER_SEQUENTIALLY );
+	__TransferHow_JComboBox.setData(transferChoices);
 	__TransferHow_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(set_JPanel, __TransferHow_JComboBox,
 		1, ySet, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -532,10 +536,12 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     JGUIUtil.addComponent(set_JPanel, new JLabel ( "Handle missing data how?:" ), 
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __HandleMissingHow_JComboBox = new SimpleJComboBox ( false );
-    __HandleMissingHow_JComboBox.addItem ( "" );
-    __HandleMissingHow_JComboBox.addItem ( __command._IgnoreMissing );
-    __HandleMissingHow_JComboBox.addItem ( __command._SetMissing );
-    __HandleMissingHow_JComboBox.addItem ( __command._SetOnlyMissingValues );
+	List<String> missingChoices = new ArrayList<String>();
+	missingChoices.add ( "" );
+	missingChoices.add ( __command._IgnoreMissing );
+	missingChoices.add ( __command._SetMissing );
+	missingChoices.add ( __command._SetOnlyMissingValues );
+	__HandleMissingHow_JComboBox.setData(missingChoices);
     __HandleMissingHow_JComboBox.select ( 0 );
     __HandleMissingHow_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(set_JPanel, __HandleMissingHow_JComboBox,
@@ -547,7 +553,7 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     JGUIUtil.addComponent(set_JPanel, new JLabel("Set data flags?:"),
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SetDataFlags_JComboBox = new SimpleJComboBox ( false );
-    List<String> choices = new Vector();
+    List<String> choices = new Vector<String>();
     choices.add ("");
     choices.add ( __command._False );
     choices.add ( __command._True );
@@ -581,9 +587,11 @@ private void initialize ( JFrame parent, SetFromTS_Command command )
     JGUIUtil.addComponent(set_JPanel, new JLabel ( "Recalculate limits:"), 
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RecalcLimits_JComboBox = new SimpleJComboBox ( false );
-    __RecalcLimits_JComboBox.addItem ( "" );
-    __RecalcLimits_JComboBox.addItem ( __command._False );
-    __RecalcLimits_JComboBox.addItem ( __command._True );
+    List<String>recalcChoices = new ArrayList<String>();
+    recalcChoices.add ( "" );
+    recalcChoices.add ( __command._False );
+    recalcChoices.add ( __command._True );
+    __RecalcLimits_JComboBox.setData(recalcChoices);
     __RecalcLimits_JComboBox.select ( 0 );
     __RecalcLimits_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(set_JPanel, __RecalcLimits_JComboBox,

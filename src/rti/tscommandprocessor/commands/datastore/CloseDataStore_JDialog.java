@@ -24,7 +24,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.DMI.DMI;
@@ -36,6 +36,7 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class CloseDataStore_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -209,13 +210,15 @@ private void initialize ( JFrame parent, CloseDataStore_Command command )
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class, false );
+    List<String> dataStoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	dataStoreChoices.add ( dataStore.getName() );
     }
     if ( dataStoreList.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
-        __DataStore_JComboBox.addItem ( "" );
+    	dataStoreChoices.add ( "" );
     }
+    __DataStore_JComboBox.setData(dataStoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,

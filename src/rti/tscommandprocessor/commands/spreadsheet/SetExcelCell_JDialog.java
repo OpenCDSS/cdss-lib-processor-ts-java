@@ -44,6 +44,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the SetExcelCell command.
 */
+@SuppressWarnings("serial")
 public class SetExcelCell_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

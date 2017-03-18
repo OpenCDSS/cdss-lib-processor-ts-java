@@ -160,9 +160,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataStore ds = getDiscoveryDataStore();
-    List v = null;
+    List<DataStore> v = null;
     if ( (ds != null) && (c == ds.getClass()) ) {
-        v = new ArrayList();
+        v = new ArrayList<DataStore>();
         v.add ( ds );
     }
     return v;

@@ -464,7 +464,7 @@ throws PyException
             // Put the delimiter in front because parts will be appended to the existing path
             path.append ( System.getProperty("path.separator") + pathParts[i] );
         }
-        HashMap envMap = new HashMap();
+        HashMap<String,String> envMap = new HashMap<String,String>();
         envMap.put ( "PYTHONPATH", "+" + path );
         pm.setEnvironment ( envMap );
     }

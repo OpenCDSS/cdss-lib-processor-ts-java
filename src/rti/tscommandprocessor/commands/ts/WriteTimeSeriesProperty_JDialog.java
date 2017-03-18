@@ -45,6 +45,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTimeSeriesProperty() command.
 */
+@SuppressWarnings("serial")
 public class WriteTimeSeriesProperty_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
@@ -291,13 +292,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -315,7 +316,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Property to write:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__PropertyName_JComboBox = new SimpleJComboBox(false);
-	List PropertyName_Vector = new Vector(1);
+	List<String> PropertyName_Vector = new Vector<String>(1);
 	// FIXME SAM 2008-08-18 Need to not hard-code property names.
 	PropertyName_Vector.add( "DataLimitsOriginal" );
 	__PropertyName_JComboBox.setData ( PropertyName_Vector );
@@ -329,7 +330,7 @@ private void initialize ( JFrame parent, Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Append to file?:"),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List Append_Vector = new Vector();
+    List<String> Append_Vector = new Vector<String>();
     Append_Vector.add ( "" );
     Append_Vector.add ( __command._False );
     Append_Vector.add ( __command._True );

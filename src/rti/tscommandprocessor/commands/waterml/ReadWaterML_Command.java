@@ -8,8 +8,8 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
@@ -214,15 +214,15 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "Interval" );
-    valid_Vector.add ( "RequireDataToMatchInterval" );
+	List<String> validList = new ArrayList<String>(6);
+    validList.add ( "Alias" );
+    validList.add ( "InputFile" );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "Interval" );
+    validList.add ( "RequireDataToMatchInterval" );
     //valid_Vector.add ( "NewUnits" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -620,7 +620,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

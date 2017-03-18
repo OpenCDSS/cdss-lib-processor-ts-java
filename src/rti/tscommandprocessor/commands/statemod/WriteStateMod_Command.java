@@ -18,6 +18,7 @@
 package rti.tscommandprocessor.commands.statemod;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -204,15 +205,15 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-	valid_Vector.add ( "TSList" );
-	valid_Vector.add ( "TSID" );
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "OutputStart" );
-	valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "MissingValue" );
-	valid_Vector.add ( "Precision" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(7);
+	validList.add ( "TSList" );
+	validList.add ( "TSID" );
+	validList.add ( "OutputFile" );
+	validList.add ( "OutputStart" );
+	validList.add ( "OutputEnd" );
+	validList.add ( "MissingValue" );
+	validList.add ( "Precision" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -228,7 +229,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -371,7 +372,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						message, "Report to software support." ) );
 	}
 	else {
-	    tslist = (List<TS>)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+	    tslist = tslist0;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to write using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
@@ -571,7 +574,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		try { Object o = processor.getPropContents ( "OutputComments" );
 			// Comments are available so use them...
 			if ( o != null ) {
-				OutputComments_Vector = (List<String>)o;
+				@SuppressWarnings("unchecked")
+				List<String> OutputComments_Vector0 = (List<String>)o;
+				OutputComments_Vector = OutputComments_Vector0;
 			}
 		}
 		catch ( Exception e ) {

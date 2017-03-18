@@ -102,7 +102,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList(6);
+	List<String> validList = new ArrayList<String>(6);
 	validList.add ( "InputFile" );
 	validList.add ( "OutputFile" );
 	validList.add ( "IncludeText" );

@@ -50,6 +50,7 @@ import RTi.Util.Time.DateTimeFormatterType;
 /**
 Command editor dialog for the WriteTimeSeriesToDataStream() command.
 */
+@SuppressWarnings("serial")
 public class WriteTimeSeriesToDataStream_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {

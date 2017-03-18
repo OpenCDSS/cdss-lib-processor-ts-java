@@ -4,8 +4,8 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
@@ -100,11 +100,11 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "IndependentTSID" );
-    valid_Vector.add ( "BlendMethod" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(3);
+    validList.add ( "TSID" );
+    validList.add ( "IndependentTSID" );
+    validList.add ( "BlendMethod" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -152,7 +152,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax.
-    	List v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List<String> v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
 			ntokens = v.size();

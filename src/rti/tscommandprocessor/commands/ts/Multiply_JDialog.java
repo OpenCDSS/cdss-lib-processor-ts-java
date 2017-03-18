@@ -39,6 +39,7 @@ import RTi.Util.IO.PropList;
 /**
 Editor for the Multiple() command.
 */
+@SuppressWarnings("serial")
 public class Multiply_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
@@ -158,7 +159,7 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit
     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __TSID_JComboBox.setData ( tsids );
     __TSID_JComboBox.addItemListener ( this );

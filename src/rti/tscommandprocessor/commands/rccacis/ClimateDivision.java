@@ -20,7 +20,7 @@ public class ClimateDivision {
 /**
 Static singleton list of climate division data, read on first access.
 */
-private static List<ClimateDivision> __dataList = new Vector();
+private static List<ClimateDivision> __dataList = new Vector<ClimateDivision>();
 
 /**
 The climate division code is a sequential number within a state.

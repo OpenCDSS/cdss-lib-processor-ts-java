@@ -31,6 +31,7 @@ import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.GUI.JFileChooserFactory;
@@ -43,6 +44,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class WriteSHEF_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -339,7 +341,7 @@ private void initialize ( JFrame parent, WriteSHEF_Command command )
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
 	__TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     yInputTS = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, inputTS_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yInputTS );
    	
@@ -476,9 +478,10 @@ private void initialize ( JFrame parent, WriteSHEF_Command command )
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Append to output?:"),
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Append_JComboBox = new SimpleJComboBox ( false );
-    __Append_JComboBox.addItem ( "" );  // Default
-    __Append_JComboBox.addItem ( __command._False );
-    __Append_JComboBox.addItem ( __command._True );
+    List<String> appendChoices = new ArrayList<String>();
+    appendChoices.add ( "" );  // Default
+    appendChoices.add ( __command._False );
+    appendChoices.add ( __command._True );
     __Append_JComboBox.select ( 0 );
     __Append_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(out_JPanel, __Append_JComboBox,

@@ -35,6 +35,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for FillDayTSFrom2MonthTSAnd1DayTS() command.
 */
+@SuppressWarnings("serial")
 public class FillDayTSFrom2MonthTSAnd1DayTS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -197,7 +198,7 @@ private void initialize ( JFrame parent, Command command )
         "monthly until the command is run.</B></HTML>" ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Daily time series to fill (D1):" ), 

@@ -8,6 +8,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -33,6 +35,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the If() command.
 */
+@SuppressWarnings("serial")
 public class If_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -207,9 +210,11 @@ private void initialize ( JFrame parent, If_Command command )
     JGUIUtil.addComponent(cond_JPanel, new JLabel ( "Compare as strings?:" ), 
         0, ++yCond, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CompareAsStrings_JComboBox = new SimpleJComboBox ( false );
-    __CompareAsStrings_JComboBox.addItem ( "" );
-    __CompareAsStrings_JComboBox.addItem ( __command._False );
-    __CompareAsStrings_JComboBox.addItem ( __command._True );
+    List<String> compareChoices = new ArrayList<String>();
+    compareChoices.add ( "" );
+    compareChoices.add ( __command._False );
+    compareChoices.add ( __command._True );
+    __CompareAsStrings_JComboBox.setData(compareChoices);
     __CompareAsStrings_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(cond_JPanel, __CompareAsStrings_JComboBox,
         1, yCond, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -44,6 +45,7 @@ import RTi.Util.Table.OutOfRangeLookupMethodType;
 /**
 Editor for the LookupTimeSeriesFromTable command.
 */
+@SuppressWarnings("serial")
 public class LookupTimeSeriesFromTable_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -446,10 +448,12 @@ private void initialize ( JFrame parent, LookupTimeSeriesFromTable_Command comma
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Lookup method:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __LookupMethod_JComboBox = new SimpleJComboBox ( false );
-    __LookupMethod_JComboBox.addItem ( "" );
-    __LookupMethod_JComboBox.addItem ( "" + LookupMethodType.INTERPOLATE );
-    __LookupMethod_JComboBox.addItem ( "" + LookupMethodType.PREVIOUS_VALUE );
-    __LookupMethod_JComboBox.addItem ( "" + LookupMethodType.NEXT_VALUE );
+    List<String> methodChoices = new ArrayList<String>();
+    methodChoices.add ( "" );
+    methodChoices.add ( "" + LookupMethodType.INTERPOLATE );
+    methodChoices.add ( "" + LookupMethodType.PREVIOUS_VALUE );
+    methodChoices.add ( "" + LookupMethodType.NEXT_VALUE );
+    __LookupMethod_JComboBox.setData(methodChoices);
     __LookupMethod_JComboBox.select ( 0 );
     __LookupMethod_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __LookupMethod_JComboBox,
@@ -461,10 +465,12 @@ private void initialize ( JFrame parent, LookupTimeSeriesFromTable_Command comma
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Out of range lookup method:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutOfRangeLookupMethod_JComboBox = new SimpleJComboBox ( false );
-    __OutOfRangeLookupMethod_JComboBox.addItem ( "" );
-    __OutOfRangeLookupMethod_JComboBox.addItem ( "" + OutOfRangeLookupMethodType.EXTRAPOLATE );
-    __OutOfRangeLookupMethod_JComboBox.addItem ( "" + OutOfRangeLookupMethodType.SET_MISSING );
-    __OutOfRangeLookupMethod_JComboBox.addItem ( "" + OutOfRangeLookupMethodType.USE_END_VALUE );
+    List<String> rangeChoices = new ArrayList<String>();
+    rangeChoices.add ( "" );
+    rangeChoices.add ( "" + OutOfRangeLookupMethodType.EXTRAPOLATE );
+    rangeChoices.add ( "" + OutOfRangeLookupMethodType.SET_MISSING );
+    rangeChoices.add ( "" + OutOfRangeLookupMethodType.USE_END_VALUE );
+    __OutOfRangeLookupMethod_JComboBox.setData(rangeChoices);
     __OutOfRangeLookupMethod_JComboBox.select ( 0 );
     __OutOfRangeLookupMethod_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutOfRangeLookupMethod_JComboBox,
@@ -476,10 +482,12 @@ private void initialize ( JFrame parent, LookupTimeSeriesFromTable_Command comma
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Out of range notification:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutOfRangeNotification_JComboBox = new SimpleJComboBox ( false );
-    __OutOfRangeNotification_JComboBox.addItem ( "" );
-    __OutOfRangeNotification_JComboBox.addItem ( "" + __command._Ignore );
-    __OutOfRangeNotification_JComboBox.addItem ( "" + __command._Warn );
-    __OutOfRangeNotification_JComboBox.addItem ( "" + __command._Fail );
+    List<String> notifyChoices = new ArrayList<String>();
+    notifyChoices.add ( "" );
+    notifyChoices.add ( "" + __command._Ignore );
+    notifyChoices.add ( "" + __command._Warn );
+    notifyChoices.add ( "" + __command._Fail );
+    __OutOfRangeNotification_JComboBox.setData(notifyChoices);
     __OutOfRangeNotification_JComboBox.select ( 0 );
     __OutOfRangeNotification_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutOfRangeNotification_JComboBox,
@@ -491,9 +499,11 @@ private void initialize ( JFrame parent, LookupTimeSeriesFromTable_Command comma
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Transformation_JComboBox = new SimpleJComboBox ( false );
-    __Transformation_JComboBox.addItem ( "" );
-    __Transformation_JComboBox.addItem ( "" + DataTransformationType.NONE );
-    __Transformation_JComboBox.addItem ( "" + DataTransformationType.LOG );
+    List<String> transChoices = new ArrayList<String>();
+    transChoices.add ( "" );
+    transChoices.add ( "" + DataTransformationType.NONE );
+    transChoices.add ( "" + DataTransformationType.LOG );
+    __Transformation_JComboBox.setData(transChoices);
     __Transformation_JComboBox.select ( 0 );
     __Transformation_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Transformation_JComboBox,

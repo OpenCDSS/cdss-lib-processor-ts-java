@@ -5,6 +5,7 @@ An exception to be used when a time series is not found, for example
 when it is not in a database.  This can be used when code cannot simply
 return a null time series to indicate a time series not found.
 */
+@SuppressWarnings("serial")
 public class TimeSeriesNotFoundException extends Exception
 {
 	/**

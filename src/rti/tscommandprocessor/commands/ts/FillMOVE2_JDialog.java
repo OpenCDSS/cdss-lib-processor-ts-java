@@ -53,6 +53,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
@@ -65,6 +66,7 @@ import RTi.Util.Math.DataTransformationType;
 import RTi.Util.Math.NumberOfEquationsType;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class FillMOVE2_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, ListSelectionListener, WindowListener
 {
@@ -403,9 +405,11 @@ private void initialize ( JFrame parent, FillMOVE2_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Number of equations:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NumberOfEquations_JComboBox = new SimpleJComboBox ( false );
-	__NumberOfEquations_JComboBox.addItem ( "" );	// Default
-	__NumberOfEquations_JComboBox.addItem ( ""+NumberOfEquationsType.ONE_EQUATION );
-	__NumberOfEquations_JComboBox.addItem ( ""+NumberOfEquationsType.MONTHLY_EQUATIONS );
+	List<String> numeqChoices = new ArrayList<String>();
+	numeqChoices.add ( "" );	// Default
+	numeqChoices.add ( ""+NumberOfEquationsType.ONE_EQUATION );
+	numeqChoices.add ( ""+NumberOfEquationsType.MONTHLY_EQUATIONS );
+	__NumberOfEquations_JComboBox.setData(numeqChoices);
 	__NumberOfEquations_JComboBox.select ( 0 );
 	__NumberOfEquations_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NumberOfEquations_JComboBox,
@@ -435,9 +439,11 @@ private void initialize ( JFrame parent, FillMOVE2_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Transformation_JComboBox = new SimpleJComboBox ( false );
-	__Transformation_JComboBox.addItem ( "" );
-	__Transformation_JComboBox.addItem ( "" + DataTransformationType.NONE );
-	__Transformation_JComboBox.addItem ( "" + DataTransformationType.LOG );
+	List<String> transChoices = new ArrayList<String>();
+	transChoices.add ( "" );
+	transChoices.add ( "" + DataTransformationType.NONE );
+	transChoices.add ( "" + DataTransformationType.LOG );
+	__Transformation_JComboBox.setData(transChoices);
 	__Transformation_JComboBox.select ( 0 );
 	__Transformation_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Transformation_JComboBox,
@@ -617,9 +623,11 @@ private void initialize ( JFrame parent, FillMOVE2_Command command, List<String>
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Fill_JComboBox = new SimpleJComboBox ( false );
-    __Fill_JComboBox.addItem ( "" );
-    __Fill_JComboBox.addItem ( "" + __command._False );
-    __Fill_JComboBox.addItem ( "" + __command._True );
+    List<String> fillChoices = new ArrayList<String>();
+    fillChoices.add ( "" );
+    fillChoices.add ( "" + __command._False );
+    fillChoices.add ( "" + __command._True );
+    __Fill_JComboBox.setData(fillChoices);
     __Fill_JComboBox.select ( 0 );
     __Fill_JComboBox.setToolTipText ( "Use False to calculate statistics but do not fill." );
     __Fill_JComboBox.addActionListener ( this );

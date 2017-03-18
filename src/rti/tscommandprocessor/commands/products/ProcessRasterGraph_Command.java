@@ -259,9 +259,9 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new ArrayList();
+	List<File> list = new ArrayList<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -408,11 +408,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TSProductFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),TSProductFile);
 			TSProduct tsp = new TSProduct ( TSProductFile_full, overrideProps );
 			// Specify annotation providers if available...
-			List ap_Vector = null;			
+			List<TSProductAnnotationProvider> ap_Vector = null;			
 			try {
                 Object o = processor.getPropContents ("TSProductAnnotationProviderList" );
 					if ( o != null ) {
-							ap_Vector = (List)o;
+						@SuppressWarnings("unchecked")
+						List<TSProductAnnotationProvider> ap_Vector0 = (List<TSProductAnnotationProvider>)o;
+						ap_Vector = ap_Vector0;
 					}
 			}
 			catch ( Exception e ) {

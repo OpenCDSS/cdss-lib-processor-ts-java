@@ -42,6 +42,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
+@SuppressWarnings("serial")
 public class SetToMax_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
@@ -268,7 +269,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to receive results:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __TSID_JComboBox.setData ( tsids );
     __TSID_JComboBox.addItemListener ( this );
@@ -286,7 +287,7 @@ private void initialize ( JFrame parent, Command command )
     __IndependentTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __IndependentTSID_JLabel, __IndependentTSID_JComboBox, tsids, y );
     
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __IndependentEnsembleID_JLabel = new JLabel (
             "Independent EnsembleID (for Independent TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
@@ -300,11 +301,11 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IndependentSpecifiedTSID_JListModel = new DefaultListModel();
     // Get the list again because above list will have "*" which we don't want
-    List tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     int size = tsids2.size();
     for ( int i = 0; i < size; i++ ) {
-        __IndependentSpecifiedTSID_JListModel.addElement( (String)tsids2.get(i));
+        __IndependentSpecifiedTSID_JListModel.addElement( tsids2.get(i));
     }
     __IndependentSpecifiedTSID_JList = new JList ( __IndependentSpecifiedTSID_JListModel );
     __IndependentSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
@@ -551,10 +552,10 @@ private void setupIndependentSpecifiedTSID ( String IndependentTSList, String In
     if ( (IndependentTSList != null) &&
             TSListType.SPECIFIED_TSID.equals(IndependentTSList) && (IndependentSpecifiedTSID != null) ) {
         // Break list by commas since identifiers may have spaces and other "special" characters (but no commas)
-    	List v = StringUtil.breakStringList ( IndependentSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> v = StringUtil.breakStringList ( IndependentSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
         int size = v.size();
         int pos = 0;
-        List selected = new Vector();
+        List<String> selected = new Vector<String>();
         String independent = "";
         for ( int i = 0; i < size; i++ ) {
             independent = (String)v.get(i);

@@ -11,6 +11,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -43,6 +44,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the ReadDelftFewsPiXml() command.
 */
+@SuppressWarnings("serial")
 public class ReadDelftFewsPiXml_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
@@ -357,9 +359,11 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Output_JComboBox = new SimpleJComboBox ( false );
-    __Output_JComboBox.addItem ( "" );
-    __Output_JComboBox.addItem ( __command._TimeSeries );
-    __Output_JComboBox.addItem ( __command._TimeSeriesAndEnsembles );
+    List<String> outputChoices = new ArrayList<String>();
+    outputChoices.add ( "" );
+    outputChoices.add ( __command._TimeSeries );
+    outputChoices.add ( __command._TimeSeriesAndEnsembles );
+    __Output_JComboBox.setData(outputChoices);
     __Output_JComboBox.select ( 0 );
     __Output_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Output_JComboBox,
@@ -467,7 +471,7 @@ private void initialize(JFrame parent, ReadDelftFewsPiXml_Command command) {
     
 	JGUIUtil.addComponent(ts_JPanel, new JLabel("Read 24 hour as day:"),
 		0, ++yts, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	List<String> v = new Vector();
+	List<String> v = new Vector<String>();
 	v.add("");
 	v.add(__command._False);
 	v.add(__command._True);

@@ -308,23 +308,23 @@ throws InvalidCommandParameterException
         }
     
     // Check for invalid parameters...
-    List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "InputName" );
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "Alias" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "DataType" );
-    valid_Vector.add ( "Interval" );
+    List<String> validList = new ArrayList<String>();
+    validList.add ( "InputName" );
+    validList.add ( "DataStore" );
+    validList.add ( "Alias" );
+    validList.add ( "TSID" );
+    validList.add ( "DataType" );
+    validList.add ( "Interval" );
     int numFilters = HydroBaseDMI.getSPFlexMaxParameters() - 2; // Maximum minus data type and interval
     for ( int i = 1; i <= numFilters; i++ ) { 
-        valid_Vector.add ( "Where" + i );
+        validList.add ( "Where" + i );
     }
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "FillUsingDivComments" );
-    valid_Vector.add ( "FillUsingDivCommentsFlag" );
-    valid_Vector.add ( "IfMissing" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    validList.add ( "InputStart" );
+    validList.add ( "InputEnd" );
+    validList.add ( "FillUsingDivComments" );
+    validList.add ( "FillUsingDivCommentsFlag" );
+    validList.add ( "IfMissing" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -389,7 +389,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	int warning_level = 2;
 	int warning_count = 0;
 
-   if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
+    if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
         // New style syntax using simple parameter=value notation
         super.parseCommand(commandString);
     }
@@ -674,7 +674,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 	// Now try to read...
 
-	List<TS> tslist = new Vector();	// List for time series results.
+	List<TS> tslist = new Vector<TS>();	// List for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -717,7 +717,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             message, "Verify that a HydroBase database connection has been opened." ) );
     				throw new RuntimeException ( message );
     			}
-    			List<HydroBaseDMI> hbdmiList = (List<HydroBaseDMI>)o;
+    			@SuppressWarnings("unchecked")
+				List<HydroBaseDMI> hbdmiList = (List<HydroBaseDMI>)o;
     			hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmiList, tsident.getInputName() );
     			if ( hbdmi == null ) {
     				message = "Could not find HydroBase connection with input name \"" +
@@ -812,7 +813,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				throw new Exception ( message );
     			}
     			//Message.printStatus(2,routine,"Using HydroBase input type.");
-    			List<HydroBaseDMI> hbdmi_Vector = (List<HydroBaseDMI>)o;
+    			@SuppressWarnings("unchecked")
+				List<HydroBaseDMI> hbdmi_Vector = (List<HydroBaseDMI>)o;
     			hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, InputName );
     			// Create a temporary data store to pass to following code
     			hbDataStore = new HydroBaseDataStore ( InputName, "State of Colorado HydroBase", hbdmi );
@@ -1227,7 +1229,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

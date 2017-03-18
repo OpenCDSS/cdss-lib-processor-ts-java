@@ -252,7 +252,7 @@ Return the list of supported functions for the InitialFunction parameter.
 */
 protected List<TSFunctionType> getFunctionChoices()
 {
-    List<TSFunctionType> functionTypes = new Vector();
+    List<TSFunctionType> functionTypes = new Vector<TSFunctionType>();
     functionTypes.add ( TSFunctionType.DATE_YYYY );
     functionTypes.add ( TSFunctionType.DATE_YYYYMM );
     functionTypes.add ( TSFunctionType.DATE_YYYYMMDD );

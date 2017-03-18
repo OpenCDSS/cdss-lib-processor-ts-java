@@ -23,18 +23,19 @@ import javax.swing.JTextArea;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
 Editor dialog for the Blend() command.
 */
+@SuppressWarnings("serial")
 public class Blend_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -199,8 +200,10 @@ private void initialize ( JFrame parent, Blend_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Blend method:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__BlendMethod_JComboBox = new SimpleJComboBox ( false );
-	__BlendMethod_JComboBox.addItem ( __command._BlendAtEnd );
+	List<String> methodChoices = new ArrayList<String>();
+	methodChoices.add ( __command._BlendAtEnd );
 	__BlendMethod_JComboBox.addItemListener ( this );
+	__BlendMethod_JComboBox.setData(methodChoices);
     JGUIUtil.addComponent(main_JPanel, __BlendMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 

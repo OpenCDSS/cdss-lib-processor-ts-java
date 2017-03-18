@@ -43,6 +43,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTime_JPanel;
 import RTi.Util.Time.TimeInterval;
 
+@SuppressWarnings("serial")
 public class NewStatisticMonthTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -327,7 +328,7 @@ private void initialize ( JFrame parent, NewStatisticMonthTimeSeries_Command com
 	
 	if ( tsids == null ) {
 		// User will not be able to select anything.
-		tsids = new Vector();
+		tsids = new Vector<String>();
 	}
 	
 	__TSID_JComboBox.setData ( tsids );

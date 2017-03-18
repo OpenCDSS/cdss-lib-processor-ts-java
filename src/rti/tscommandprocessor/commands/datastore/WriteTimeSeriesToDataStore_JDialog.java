@@ -25,6 +25,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -46,6 +47,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTimeSeriesToDataStore() command.
 */
+@SuppressWarnings("serial")
 public class WriteTimeSeriesToDataStore_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
@@ -415,13 +417,15 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStore_Command comm
     JGUIUtil.addComponent(ds_JPanel, new JLabel ( "Datastore:"),
         0, ++yDS, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
+    List<String> datastoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
     if ( dataStoreList.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
-        __DataStore_JComboBox.addItem ( "" );
+    	datastoreChoices.add ( "" );
     }
+    __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(ds_JPanel, __DataStore_JComboBox,

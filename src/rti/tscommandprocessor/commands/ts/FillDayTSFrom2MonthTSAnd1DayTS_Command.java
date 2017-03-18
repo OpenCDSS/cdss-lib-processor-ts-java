@@ -4,8 +4,8 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.DayTS;
 import RTi.TS.MonthTS;
@@ -123,14 +123,14 @@ throws InvalidCommandParameterException
 	}
    
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-    valid_Vector.add ( "TSID_D1" );
-    valid_Vector.add ( "TSID_M1" );
-    valid_Vector.add ( "TSID_M2" );
-    valid_Vector.add ( "TSID_D2" );
-    valid_Vector.add ( "FillStart" );
-    valid_Vector.add ( "FillEnd" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(6);
+    validList.add ( "TSID_D1" );
+    validList.add ( "TSID_M1" );
+    validList.add ( "TSID_M2" );
+    validList.add ( "TSID_D2" );
+    validList.add ( "FillStart" );
+    validList.add ( "FillEnd" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -222,7 +222,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax
-    	List v = StringUtil.breakStringList(command_string,
+    	List<String> v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {

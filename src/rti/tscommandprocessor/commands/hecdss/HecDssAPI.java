@@ -73,7 +73,7 @@ static
 
     if ( !IOUtil.isUNIXMachine() ) {
         // The DLLS won't load properly on UNIX/Linux
-        boolean loadUsingJavaLibraryPath = true; // Don't use full paths to libraries - rely on runtime load path
+        //boolean loadUsingJavaLibraryPath = true; // Don't use full paths to libraries - rely on runtime load path
         String dll = "";
         boolean loadRmaUtil = true; // Quick way to turn on/off rmaUtil.dll load, for testing dependencies
         // TODO SAM 2009-04-15 This may not be needed - load problems were probably due to changing the "start in" folder
@@ -289,6 +289,7 @@ private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean 
 /**
 Run Bill Charley's example write code.  Keep this around for awhile for a reference.
 */
+/*
 private static void billsWriteCode ()
 {
     HecTimeSeries.setMessageLevel(9);
@@ -334,6 +335,7 @@ HecTimeSeries.getEPartFromInterval(tsc.interval);
     HecTimeSeries.closeAllFiles();
     System.out.println("done!");
 }
+*/
 
 /**
 Close the data files that may be open.
@@ -356,7 +358,7 @@ Condensing works for time series records and paired data pass through.
 @param pathnameList A list of pathnames (as String).  This will be modified and returned.
 @return a condensed pathname list, as a new list.
 */
-private static List createCondensedCatalog ( List pathnameList )
+private static List<String> createCondensedCatalog ( List<String> pathnameList )
 {   String routine = "HecDssAPI.createCondensedCatalog";
     // Sort the pathnames to make sure that duplicates are grouped - seems like this is not needed
     // because the catalog is always sorted.  For now don't sort to increase performance
@@ -365,7 +367,7 @@ private static List createCondensedCatalog ( List pathnameList )
     // except for the D part, remove the item and change the D part to be inclusive
     
     int size = pathnameList.size();
-    List condensedPathnameList = new Vector();
+    List<String> condensedPathnameList = new Vector<String>();
     String aPart, aPart2 = null; // Basin
     String bPart, bPart2 = null; // Location
     String cPart, cPart2 = null; // Data type
@@ -379,7 +381,7 @@ private static List createCondensedCatalog ( List pathnameList )
     int numAdditionalRecords = 0; // Number of records to merge with the first
     int numAdditionalRecordsTotal = 0; // Number of total addtional/merged records
     for ( int i = 0; i < size; i++ ) {
-        pathname = (String)pathnameList.get(i);
+        pathname = pathnameList.get(i);
         dssPathName = new DSSPathname ( pathname );
         aPart = dssPathName.getAPart();
         bPart = dssPathName.getBPart();
@@ -390,7 +392,7 @@ private static List createCondensedCatalog ( List pathnameList )
         // will be zero and the current record will be added below.
         numAdditionalRecords = 0;
         for ( int j = (i + 1); j < size; j++ ) {
-            pathname2 = (String)pathnameList.get(j);
+            pathname2 = pathnameList.get(j);
             dssPathName2 = new DSSPathname ( pathname2 );
             aPart2 = dssPathName2.getAPart();
             bPart2 = dssPathName2.getBPart();
@@ -569,11 +571,11 @@ public static DSSPathname getPathnamePartsFromDefaultTSIdent( TS ts )
 Get the list of A parts that are available in the file.
 @return the list of unique A parts from the file, using a condensed catalog.
 */
-public static List getUniqueAPartList ( File hecDssFile, String bPartReq, String cPartReq, String ePartReq, String fPartReq )
+public static List<String> getUniqueAPartList ( File hecDssFile, String bPartReq, String cPartReq, String ePartReq, String fPartReq )
 {
     // Internally use the time series code because it handles all of the wildcarding
-    List tsList = null;
-    List aPartList = new Vector();
+    List<TS> tsList = null;
+    List<String> aPartList = new Vector<String>();
     String bPart = "*";
     String cPart = "*";
     String ePart = "*";
@@ -600,7 +602,7 @@ public static List getUniqueAPartList ( File hecDssFile, String bPartReq, String
         boolean found = false;
         for ( int i = 0; i < tsListSize; i++ ) {
             // Search the list to see if the A part is already in the list.  If not, add it.
-            ts = (TS)tsList.get(i);
+            ts = tsList.get(i);
             aPart = ts.getIdentifier().getMainLocation();
             aPartListSize = aPartList.size();
             found = false;
@@ -628,9 +630,9 @@ TODO SAM 2008-01-08 Need to enable this capability to support GUI filters.
 Read the available data types from the DSS file.  Unless there is an easy way to do this, will probably implement
 by calling readTimeSeriesList(readData=false) and find unique data types from the pathnames.
 */
-public static List getDataTypes ( String filename )
+public static List<String> getDataTypes ( String filename )
 {   // For now return a blank list since the GUI functionality is not enabled.
-	List dataTypes = new Vector();
+	List<String> dataTypes = new Vector<String>();
     return dataTypes;
 }
 
@@ -704,7 +706,7 @@ throws Exception
 {
     // Expecting that a single time series will be matched because the time series identifier should not
     // contain wildcards.
-	List tslist = readTimeSeriesList ( file, tsident, readStartReq, readEndReq, unitsReq, readData );
+	List<TS> tslist = readTimeSeriesList ( file, tsident, readStartReq, readEndReq, unitsReq, readData );
     if ( (tslist == null) || (tslist.size() == 0) ) {
         throw new RuntimeException ( "No time series were found matching \"" + tsident + "\"" );
     }
@@ -752,7 +754,7 @@ If null, read all available data.
 @return a list of time series that were read.
 @throws Exception if there is an error reading the time series
 */
-public static List readTimeSeriesList ( File file, String tsidentPattern,
+public static List<TS> readTimeSeriesList ( File file, String tsidentPattern,
         DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
 throws Exception
 {   String routine = "HecDssAPI.readTimeSeriesList";
@@ -842,7 +844,7 @@ If null, read all available data.
 @return a list of time series that were read.
 @throws Exception if there is an error reading the time series
 */
-public static List readTimeSeriesListUsingPathname ( File file, String pathname,
+public static List<TS> readTimeSeriesListUsingPathname ( File file, String pathname,
         DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
 throws Exception
 {   String routine = "HecDssAPI.readTimeSeriesListUsingPathname";
@@ -852,7 +854,7 @@ throws Exception
     // Do this similar to other binary file databases like StateMod and StateCU
     int stat = dssFile.open();
     Message.printStatus ( 2, routine, "Status from opening DSS file \"" + dssFilename + "\" is " + stat );
-    Vector pathnameList = new Vector();
+    Vector<String> pathnameList = new Vector<String>();
     pathnameList.add ( pathname );
     return readTimeSeriesListUsingPathnameList ( dssFilename, pathnameList, readStartReq, readEndReq, unitsReq, readData );
 }
@@ -860,11 +862,11 @@ throws Exception
 /**
 Internal method to help with reading time series, called from multiple methods.
 */
-private static List readTimeSeriesListUsingPathnameList ( String dssFilename, List condensedPathnameList,
+private static List<TS> readTimeSeriesListUsingPathnameList ( String dssFilename, List condensedPathnameList,
     DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
 throws Exception
 {   String routine = "HecDSSAPI.readTimeSeriesListUsingPathnameList";
-    List tslist = new Vector();
+    List<TS> tslist = new Vector<TS>();
     DateTime date1FromDPart = null;
     DateTime date2FromDPart = null;
     // Create a file manager so that the utility code for sure knows the filename
@@ -1576,7 +1578,7 @@ will ensure that the process does not lock the file for removal, etc.
 @exception IOException if the HEC-DSS file cannot be written.
 @exception Exception if other errors occur.
 */
-public static void writeTimeSeriesList ( File outputFile, List tslist, DateTime writeStartReq, DateTime writeEndReq,
+public static void writeTimeSeriesList ( File outputFile, List<TS> tslist, DateTime writeStartReq, DateTime writeEndReq,
         String unitsReq, int precisionReq, String hecType, String A, String B, String C, String E, String F,
         boolean replaceTimeSeries, boolean closeFileAfterWrite )
 throws IOException, Exception
@@ -1595,13 +1597,13 @@ throws IOException, Exception
 
     // Loop through the time series and write each to the file
     int tslistSize = tslist.size();
-    List<String> pathsNotWritten80List = new Vector(); // HEC-DSS time series that could not be written (path > 80 char)
-    List<String> pathsNotWrittenBadIntervalList = new Vector(); // HEC-DSS time series that could not be written (interval not supported)
-    List<String> errorDuplicatePathsList = new Vector(); // Writing multiple time series with the same path
-    List<String> pathsWrittenNoDPartList = new Vector(); // Unique list of paths (no D parts) that are written (duplicates removed) - for error check
+    List<String> pathsNotWritten80List = new Vector<String>(); // HEC-DSS time series that could not be written (path > 80 char)
+    List<String> pathsNotWrittenBadIntervalList = new Vector<String>(); // HEC-DSS time series that could not be written (interval not supported)
+    List<String> errorDuplicatePathsList = new Vector<String>(); // Writing multiple time series with the same path
+    List<String> pathsWrittenNoDPartList = new Vector<String>(); // Unique list of paths (no D parts) that are written (duplicates removed) - for error check
     HecTimeSeries hts = null; // Put here because handle on time series is used to close HEC-DSS files after loop
     for ( int i = 0; i < tslistSize; i++ ) {
-        TS ts = (TS)tslist.get(i);
+        TS ts = tslist.get(i);
         // Get the date/times for output, either the entire period or the requested date/times
         DateTime writeStart = ts.getDate1();
         DateTime writeEnd = ts.getDate2();

@@ -3,8 +3,6 @@ package rti.tscommandprocessor.commands.hydrojson;
 import java.util.ArrayList;
 import java.util.List;
 
-import RTi.Util.Time.DateTime;
-
 /**
 Time series definition for HydroJSON format.
 */

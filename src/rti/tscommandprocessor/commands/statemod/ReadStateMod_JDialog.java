@@ -52,6 +52,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 Editor for ReadStateMod() command.
 */
+@SuppressWarnings("serial")
 public class ReadStateMod_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
@@ -460,7 +461,7 @@ private void initialize ( JFrame parent, ReadStateMod_Command command )
     __SpatialAggregation_JLabel = new JLabel ("Spatial aggregation:");
     JGUIUtil.addComponent(right_JPanel, __SpatialAggregation_JLabel,
        0, ++yRight, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List SpatialAggregation_Vector = new Vector();
+    List<String> SpatialAggregation_Vector = new Vector<String>();
    	SpatialAggregation_Vector.add ( "" );
    	SpatialAggregation_Vector.add ( __command._Location );
    	SpatialAggregation_Vector.add ( __command._Parcel );

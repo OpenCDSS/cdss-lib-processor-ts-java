@@ -5,8 +5,8 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.TS.TS;
 
@@ -141,14 +141,14 @@ throws InvalidCommandParameterException
     */
     
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "TSList" );
-    valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "SetDateTime" );
-    valid_Vector.add ( "NewValue" );
+	List<String> validList = new ArrayList<String>(5);
+    validList.add ( "TSList" );
+    validList.add ( "TSID" );
+    validList.add ( "EnsembleID" );
+    validList.add ( "SetDateTime" );
+    validList.add ( "NewValue" );
     //valid_Vector.add ( "FillFlag" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -195,7 +195,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the only parameter is a single TSID or * to fill all.
-    	List v = StringUtil.breakStringList(command_string,
+    	List<String> v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS | StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
@@ -295,7 +295,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -308,7 +308,9 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

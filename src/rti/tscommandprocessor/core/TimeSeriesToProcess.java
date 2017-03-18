@@ -14,7 +14,7 @@ public class TimeSeriesToProcess
 /**
 List of time series to be processed.
 */
-List<TS> __tsList = new Vector();
+List<TS> __tsList = new Vector<TS>();
 
 /**
 Array of time series positions (in the full time series list)
@@ -25,7 +25,7 @@ int [] __tsPos = new int[0];
 List of error strings generated when determining the time series list (e.g., 5 time series expected
 but only 4 matched.
 */
-List<String>__errorList = new Vector();
+List<String>__errorList = new Vector<String>();
 
 /**
 Constructor.

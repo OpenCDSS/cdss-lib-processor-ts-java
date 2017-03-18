@@ -42,6 +42,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTime_JPanel;
 import RTi.Util.Time.TimeInterval;
 
+@SuppressWarnings("serial")
 public class CalculateTimeSeriesStatistic_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

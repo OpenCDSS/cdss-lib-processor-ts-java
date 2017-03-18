@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -48,6 +49,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the RunningStatisticTimeSeries() command.
 */
+@SuppressWarnings("serial")
 public class RunningStatisticTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -600,7 +602,7 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(dist_JPanel, new JLabel ("Probability units:"),
         0, ++yDist, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ProbabilityUnits_JComboBox = new SimpleJComboBox(false);
-    List<String> probabilityUnits = new Vector();
+    List<String> probabilityUnits = new Vector<String>();
     probabilityUnits.add ( "" );
     probabilityUnits.add ( "Fraction" );
     probabilityUnits.add ( "Percent" );
@@ -667,9 +669,11 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(sample_JPanel, new JLabel ( "Sample method:" ), 
 		0, ++ySample, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SampleMethod_JComboBox = new SimpleJComboBox ( false );
+	List<String> typeChoices = new ArrayList<String>();
 	for ( RunningAverageType type : TSUtil_RunningStatistic.getRunningAverageTypeChoices() ) {
-	    __SampleMethod_JComboBox.addItem ( "" + type );
+		typeChoices.add ( "" + type );
 	}
+	__SampleMethod_JComboBox.setData(typeChoices);
 	__SampleMethod_JComboBox.setMaximumRowCount(__SampleMethod_JComboBox.getItemCount());
 	__SampleMethod_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(sample_JPanel, __SampleMethod_JComboBox,

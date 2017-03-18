@@ -40,6 +40,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the ReadExcelWorkbook command.
 */
+@SuppressWarnings("serial")
 public class ReadExcelWorkbook_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

@@ -28,6 +28,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -42,6 +44,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the SetExcelWorksheetViewProperties command.
 */
+@SuppressWarnings("serial")
 public class SetExcelWorksheetViewProperties_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -268,9 +271,11 @@ private void initialize ( JFrame parent, SetExcelWorksheetViewProperties_Command
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __KeepOpen_JComboBox = new SimpleJComboBox ( false );
     __KeepOpen_JComboBox.setPrototypeDisplayValue(__command._False + "MMMM"); // to fix some issues with layout of dynamic components
-    __KeepOpen_JComboBox.add("");
-    __KeepOpen_JComboBox.add(__command._False);
-    __KeepOpen_JComboBox.add(__command._True);
+    List<String> keepChoices = new ArrayList<String>();
+    keepChoices.add("");
+    keepChoices.add(__command._False);
+    keepChoices.add(__command._True);
+    __KeepOpen_JComboBox.setData(keepChoices);
     __KeepOpen_JComboBox.select ( 0 );
     __KeepOpen_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __KeepOpen_JComboBox,

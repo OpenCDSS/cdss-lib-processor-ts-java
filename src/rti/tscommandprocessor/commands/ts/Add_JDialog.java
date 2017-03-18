@@ -34,8 +34,8 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -48,6 +48,7 @@ import RTi.Util.String.StringUtil;
 /**
 Editor dialog for the Add() command.
 */
+@SuppressWarnings("serial")
 public class Add_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
@@ -64,8 +65,8 @@ private SimpleJComboBox __AddTSID_JComboBox = null;
 private JLabel __AddEnsembleID_JLabel = null;
 private SimpleJComboBox __AddEnsembleID_JComboBox = null;
 private JLabel __AddSpecifiedTSID_JLabel = null;
-private DefaultListModel __AddSpecifiedTSID_JListModel = null;
-private JList __AddSpecifiedTSID_JList= null;
+private DefaultListModel<String> __AddSpecifiedTSID_JListModel = null;
+private JList<String> __AddSpecifiedTSID_JList= null;
 private SimpleJComboBox	__HandleMissingHow_JComboBox = null; // How to handle missing data in time series.
 private SimpleJComboBox __IfTSListToAddIsEmpty_JComboBox = null;
 private JTextField __AnalysisStart_JTextField = null;
@@ -326,7 +327,7 @@ private void initialize ( JFrame parent, Command command )
         new JLabel ("Add specified TSID (for AddTSList=" + TSListType.SPECIFIED_TSID.toString() + "):");
     JGUIUtil.addComponent(main_JPanel, __AddSpecifiedTSID_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__AddSpecifiedTSID_JListModel = new DefaultListModel();
+	__AddSpecifiedTSID_JListModel = new DefaultListModel<String>();
     // Get the list again because above list will have "*" which we don't want
 	List<String> tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -334,7 +335,7 @@ private void initialize ( JFrame parent, Command command )
 	for ( int i = 0; i < size; i++ ) {
 		__AddSpecifiedTSID_JListModel.addElement( (String)tsids2.get(i));
 	}
-	__AddSpecifiedTSID_JList = new JList ( __AddSpecifiedTSID_JListModel );
+	__AddSpecifiedTSID_JList = new JList<String> ( __AddSpecifiedTSID_JListModel );
     __AddSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
 	__AddSpecifiedTSID_JList.addListSelectionListener ( this );
 	__AddSpecifiedTSID_JList.addKeyListener ( this );
@@ -348,9 +349,11 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingHow_JComboBox = new SimpleJComboBox ( false );
-	__HandleMissingHow_JComboBox.addItem ( __command._IgnoreMissing );
-	__HandleMissingHow_JComboBox.addItem ( __command._SetMissingIfOtherMissing );
-	__HandleMissingHow_JComboBox.addItem ( __command._SetMissingIfAnyMissing );
+	List<String> missingChoices = new ArrayList<String>();
+	missingChoices.add(__command._IgnoreMissing);
+	missingChoices.add(__command._SetMissingIfOtherMissing);
+	missingChoices.add(__command._SetMissingIfAnyMissing);
+	__HandleMissingHow_JComboBox.setData(missingChoices);
 	__HandleMissingHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -360,7 +363,7 @@ private void initialize ( JFrame parent, Command command )
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If time series list to add is empty?:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> IfTSListToAddIsEmptyChoices = new Vector();
+    List<String> IfTSListToAddIsEmptyChoices = new ArrayList<String>();
     IfTSListToAddIsEmptyChoices.add ( "" );
     IfTSListToAddIsEmptyChoices.add ( __command._Warn );
     IfTSListToAddIsEmptyChoices.add ( __command._Ignore );
@@ -675,13 +678,13 @@ private void setupAddSpecifiedTSID ( String AddTSList, String AddSpecifiedTSID )
     // Check all the items in the list and highlight the ones that match the command being edited...
     if ( (AddTSList != null) && TSListType.SPECIFIED_TSID.equals(AddTSList) && (AddSpecifiedTSID != null) ) {
         // Break list by commas since identifiers may have spaces and other "special" characters (but no commas)
-    	List v = StringUtil.breakStringList ( AddSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> v = StringUtil.breakStringList ( AddSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
         int size = v.size();
         int pos = 0;
-        List selected = new Vector();
+        List<String> selected = new ArrayList<String>();
         String independent = "";
         for ( int i = 0; i < size; i++ ) {
-            independent = (String)v.get(i);
+            independent = v.get(i);
             if ( (pos = JGUIUtil.indexOf( __AddSpecifiedTSID_JList, independent, false, true))>= 0 ) {
                 // Select it because it is in the command and the list...
                 selected.add ( "" + pos );
@@ -697,7 +700,7 @@ private void setupAddSpecifiedTSID ( String AddTSList, String AddSpecifiedTSID )
         if ( selected.size() > 0  ) {
             int [] iselected = new int[selected.size()];
             for ( int is = 0; is < iselected.length; is++ ){
-                iselected[is] = StringUtil.atoi ( (String)selected.get(is));
+                iselected[is] = StringUtil.atoi ( selected.get(is));
             }
             __AddSpecifiedTSID_JList.setSelectedIndices( iselected );
         }

@@ -29,6 +29,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
@@ -41,6 +42,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the ComputeErrorTimeSeries() command.
 */
+@SuppressWarnings("serial")
 public class ComputeErrorTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
@@ -373,7 +375,9 @@ private void initialize ( JFrame parent, ComputeErrorTimeSeries_Command command 
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Error measure:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ErrorMeasure_JComboBox = new SimpleJComboBox ( false );
-	__ErrorMeasure_JComboBox.addItem ( __command._PercentError );
+	List<String> choices = new ArrayList<String>();
+	choices.add ( __command._PercentError );
+	__ErrorMeasure_JComboBox.setData(choices);
 	__ErrorMeasure_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ErrorMeasure_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

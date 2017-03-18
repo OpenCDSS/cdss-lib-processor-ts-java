@@ -28,6 +28,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class ProfileCommands_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

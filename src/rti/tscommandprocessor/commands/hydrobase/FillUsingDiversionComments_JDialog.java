@@ -27,6 +27,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -38,6 +39,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for FillUsingDiversionComments command.
 */
+@SuppressWarnings("serial")
 public class FillUsingDiversionComments_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -329,8 +331,10 @@ private void initialize ( JFrame parent, FillUsingDiversionComments_Command comm
     JGUIUtil.addComponent(comment_JPanel, new JLabel (	"Recalculate limits:"), 
     	0, ++yComment, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RecalcLimits_JComboBox = new SimpleJComboBox ( false );
-	__RecalcLimits_JComboBox.addItem ( __command._True );
-	__RecalcLimits_JComboBox.addItem ( __command._False );
+	List<String> recalcChoices = new ArrayList<String>();
+	recalcChoices.add ( __command._True );
+	recalcChoices.add ( __command._False );
+	__RecalcLimits_JComboBox.setData(recalcChoices);
 	__RecalcLimits_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(comment_JPanel, __RecalcLimits_JComboBox,
     	1, yComment, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -352,8 +356,10 @@ private void initialize ( JFrame parent, FillUsingDiversionComments_Command comm
     JGUIUtil.addComponent(ciu_JPanel, new JLabel ("Fill using CIU:"), 
     	0, ++yCiu, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillUsingCIU_JComboBox = new SimpleJComboBox ( false );
-	__FillUsingCIU_JComboBox.addItem ( __command._True );
-	__FillUsingCIU_JComboBox.addItem ( __command._False );
+	List<String> fillChoices = new ArrayList<String>();
+	fillChoices.add ( __command._True );
+	fillChoices.add ( __command._False );
+	__FillUsingCIU_JComboBox.setData(fillChoices);
 	__FillUsingCIU_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(ciu_JPanel, __FillUsingCIU_JComboBox,
     	1, yCiu, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

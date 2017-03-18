@@ -34,6 +34,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringFormatterSpecifiersJPanel;
 
+@SuppressWarnings("serial")
 public class FormatTableString_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

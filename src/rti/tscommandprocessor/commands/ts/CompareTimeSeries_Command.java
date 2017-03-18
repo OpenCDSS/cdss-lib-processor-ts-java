@@ -1121,7 +1121,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		if ( doCreateDiffTS ) {
 			try {
 			    Object o = processor.getPropContents ( "TSResultsList" );
-				tslist = (List)o;
+				tslist = (List<TS>)o;
 			}
 			catch ( Exception e ) {
 				// Not fatal, but of use to developers.

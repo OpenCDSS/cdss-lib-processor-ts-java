@@ -52,6 +52,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class FillHistYearAverage_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -231,7 +232,7 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> tslist_Vector = new Vector();
+    List<String> tslist_Vector = new Vector<String>();
 	tslist_Vector.add ( __command._AllTS );
 	tslist_Vector.add ( __command._AllMatchingTSID );
 	tslist_Vector.add ( __command._SelectedTS );
@@ -256,7 +257,7 @@ private void initialize ( JFrame parent, Command command )
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	
 	if ( tsids == null ) {
-		tsids = new Vector ();
+		tsids = new Vector<String> ();
 	}
 	int size = tsids.size();
 	// Blank for default

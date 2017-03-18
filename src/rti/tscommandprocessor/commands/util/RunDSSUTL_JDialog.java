@@ -40,6 +40,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the RunDSSUTL() command.
 */
+@SuppressWarnings("serial")
 public class RunDSSUTL_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

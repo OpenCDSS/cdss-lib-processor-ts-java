@@ -1,7 +1,6 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
 import RTi.DMI.DMIDataObject;
-import RTi.DMI.DMIUtil;
 
 /**
 Hold data from the Reclamation HDB database HDB_VALIDATION table, used to provide a list of flags

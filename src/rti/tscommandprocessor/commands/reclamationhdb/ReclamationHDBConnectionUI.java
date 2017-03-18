@@ -33,6 +33,7 @@ import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBConnectionUI
 User interface for the ReclamationHDB connection dialog.
 @author sam
 */
+@SuppressWarnings("serial")
 public class ReclamationHDBConnectionUI extends JDialog implements ActionListener, ItemListener, KeyListener
 {
 	

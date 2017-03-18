@@ -328,7 +328,7 @@ public List getObjectList ( Class c )
     DataTable table = getDiscoveryTable();
     if ( (table != null) && (c == table.getClass()) ) {
         // Asking for tables
-        List list = null;
+        List<DataTable> list = null;
         if ( table != null ) {
             list = new ArrayList<DataTable>();
             list.add ( table );
@@ -415,7 +415,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     String dataStoreName = parameters.getValue("DataStore");
     String Stations = parameters.getValue("Stations");
-    List<String> stationList = new ArrayList();
+    List<String> stationList = new ArrayList<String>();
     if ( (Stations != null) && !Stations.equals("") ) {
         // Station list is allowed to use a processor property
         Stations = TSCommandProcessorUtil.expandParameterValue(processor,this,Stations);
@@ -430,7 +430,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String States = parameters.getValue("States");
-    List<String> stateList = new ArrayList();
+    List<String> stateList = new ArrayList<String>();
     if ( (States != null) && !States.equals("") ) {
         // State list is allowed to use a processor property
         States = TSCommandProcessorUtil.expandParameterValue(processor,this,States);
@@ -445,7 +445,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String Networks = parameters.getValue("Networks");
-    List<NrcsAwdbNetworkCode> networkList = new ArrayList();
+    List<NrcsAwdbNetworkCode> networkList = new ArrayList<NrcsAwdbNetworkCode>();
     if ( (Networks != null) && !Networks.equals("") ) {
         // Network list is allowed to use a processor property
         Networks = TSCommandProcessorUtil.expandParameterValue(processor,this,Networks);
@@ -564,7 +564,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		InputEnd = "${InputEnd}"; // Global default
 	}
     String TimeZoneMap = parameters.getValue ( "TimeZoneMap" );
-    Hashtable timeZoneMap = new Hashtable();
+    Hashtable<String,String> timeZoneMap = new Hashtable<String,String>();
     if ( (TimeZoneMap != null) && (TimeZoneMap.length() > 0) && (TimeZoneMap.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(TimeZoneMap, ",", 0 );

@@ -373,7 +373,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     			Object o_tslist = processor2.getPropContents("TSResultsList");
     			PropList request_params = new PropList ( "" );
     			if ( o_tslist != null ) {
-    				List tslist = (List)o_tslist;
+    				@SuppressWarnings("unchecked")
+					List<TS> tslist = (List<TS>)o_tslist;
     				int size = tslist.size();
     				TS ts;
     				for ( int i = 0; i < size; i++ ) {

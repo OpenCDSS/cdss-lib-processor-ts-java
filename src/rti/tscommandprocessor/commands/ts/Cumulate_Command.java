@@ -14,7 +14,6 @@ import RTi.TS.TSUtil_CumulateTimeSeries;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -33,7 +32,7 @@ import RTi.Util.Time.DateTime;
 /**
 This class initializes, checks, and runs the Cumulate() command.
 */
-public class Cumulate_Command extends AbstractCommand implements Command
+public class Cumulate_Command extends AbstractCommand
 {
 
 /**
@@ -245,7 +244,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
-    	List v = StringUtil.breakStringList ( command_string,"(),",StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> v = StringUtil.breakStringList ( command_string,"(),",StringUtil.DELIM_SKIP_BLANKS );
 		String TSID = "";
 		String HandleMissingHow = "";
 		if ( (v != null) && (v.size() == 3) ) {
@@ -373,7 +372,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -385,7 +384,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message,
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
-	else {	tslist = (List)o_TSList;
+	else {
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+		tslist = tslist0;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

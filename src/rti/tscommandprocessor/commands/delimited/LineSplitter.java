@@ -7,7 +7,6 @@
 
 package rti.tscommandprocessor.commands.delimited;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -25,5 +24,5 @@ public interface LineSplitter {
      * if list, if any
      * @throws NullPointerException if the line is null
      */
-    List split(String line,List list);
+    List<String> split(String line,List<String> list);
 }

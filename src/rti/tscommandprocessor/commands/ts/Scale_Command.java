@@ -400,7 +400,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
 		message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -413,7 +413,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+        tslist = tslist0;
 		if ( tslist.size() == 0 ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

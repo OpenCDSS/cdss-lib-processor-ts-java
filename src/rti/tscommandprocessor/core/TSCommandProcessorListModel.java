@@ -10,6 +10,7 @@ This class provides a way for the Swing JList and other components to
 display time series commands that are managed in a TSCommandProcessor.  It allows the TSCommandProcessor
 to be the data model for the UI components.  Therefore, there is a single data model for UI and processing.
 */
+@SuppressWarnings("serial")
 public class TSCommandProcessorListModel extends AbstractListModel
 implements CommandListListener
 {

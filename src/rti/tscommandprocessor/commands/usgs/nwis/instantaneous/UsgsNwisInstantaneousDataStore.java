@@ -38,7 +38,7 @@ public class UsgsNwisInstantaneousDataStore extends AbstractWebServiceDataStore
 /**
 The records of valid parameters, listed here:  http://help.waterdata.usgs.gov/codes-and-parameters/parameters
 */
-private List<UsgsNwisParameterType> __parameterTypeList = new Vector();
+private List<UsgsNwisParameterType> __parameterTypeList = new Vector<UsgsNwisParameterType>();
     
 /**
 Constructor for web service.
@@ -96,7 +96,7 @@ Return the list of agencies that are available.  Currently this returns an empty
 @param includeName whether to include the name.
 */
 public List<String> getAgencyStrings ( boolean includeName )
-{   List<String> agencyList = new Vector();
+{   List<String> agencyList = new Vector<String>();
     /*
     for ( UsgsNwisAgencyType agency: __agencyTypeList ) {
         if ( includeName ) {
@@ -116,7 +116,7 @@ are consistent with TSTool ("15Min", rather than "instantaneous").  There is onl
 instantaneous value web service.
 */
 public List<String> getDataIntervalStringsForDataType ( String dataType )
-{   List<String> dataIntervalStrings = new Vector();
+{   List<String> dataIntervalStrings = new Vector<String>();
     dataIntervalStrings.add("15Min");
     return dataIntervalStrings;
 }
@@ -129,7 +129,7 @@ numeric codes, but this may not be an option.
 @param includeName whether to include the name.
 */
 public List<String> getParameterStrings ( boolean includeName )
-{   List<String> dataTypeList = new Vector();
+{   List<String> dataTypeList = new Vector<String>();
     for ( UsgsNwisParameterType param: __parameterTypeList ) {
         if ( includeName ) {
             dataTypeList.add( "" + param.getCode() + " - " + param.getName() );
@@ -171,7 +171,7 @@ public List<UsgsNwisSiteTimeSeriesMetadata> readSiteTimeSeriesMetadataList(
     String dataType, String timeStep, InputFilter_JPanel ifp )
 throws IOException, MalformedURLException
 {   //String routine = getClass().getName() + ".readSiteTimeSeriesMetadataList";
-    List<UsgsNwisSiteTimeSeriesMetadata> metadataList = new Vector();
+    List<UsgsNwisSiteTimeSeriesMetadata> metadataList = new Vector<UsgsNwisSiteTimeSeriesMetadata>();
     UsgsNwisSiteTimeSeriesMetadata metadata = new UsgsNwisSiteTimeSeriesMetadata();
     metadata.setDataStore(this);
     metadata.setInterval("1Day");

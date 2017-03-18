@@ -13,6 +13,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -48,6 +49,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 Editor for the ReadDelimitedFile() command.
 */
+@SuppressWarnings("serial")
 public class ReadDelimitedFile_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -463,9 +465,11 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(data_JPanel, new JLabel ( "Treat consecutive delimiters as one?:" ), 
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TreatConsecutiveDelimitersAsOne_JComboBox = new SimpleJComboBox ( false );
-    __TreatConsecutiveDelimitersAsOne_JComboBox.addItem ( "" );
-    __TreatConsecutiveDelimitersAsOne_JComboBox.addItem ( __command._False );
-    __TreatConsecutiveDelimitersAsOne_JComboBox.addItem ( __command._True );
+    List<String> delimChoices = new ArrayList<String>();
+    delimChoices.add ( "" );
+    delimChoices.add ( __command._False );
+    delimChoices.add ( __command._True );
+    __TreatConsecutiveDelimitersAsOne_JComboBox.setData(delimChoices);
     __TreatConsecutiveDelimitersAsOne_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(data_JPanel, __TreatConsecutiveDelimitersAsOne_JComboBox,
         1, yData, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

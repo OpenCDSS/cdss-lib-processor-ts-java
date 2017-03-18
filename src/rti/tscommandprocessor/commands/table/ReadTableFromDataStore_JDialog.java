@@ -46,6 +46,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class ReadTableFromDataStore_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -402,13 +403,15 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( DatabaseDataStore.class );
+    List<String> datastoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
     if ( dataStoreList.size() == 0 ) {
         // Add an empty item so users can at least bring up the editor
-        __DataStore_JComboBox.addItem ( "" );
+    	datastoreChoices.add ( "" );
     }
+    __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
@@ -708,7 +711,7 @@ private void populateDataStoreCatalogChoices ( DMI dmi )
         }
     }
     if ( catalogList == null ) {
-        catalogList = new ArrayList();
+        catalogList = new ArrayList<String>();
     }
     // Always add a blank option at the start to help with initialization
     catalogList.add ( 0, "" );
@@ -818,7 +821,7 @@ Populate the table list based on the selected database.
 private void populateDataStoreTableChoices ( DMI dmi )
 {   String routine = getClass().getName() + "populateDataStoreTableChoices";
     List<String> tableList = null;
-    List<String> notIncluded = new ArrayList(); // TODO SAM 2012-01-31 need to omit system tables
+    List<String> notIncluded = new ArrayList<String>(); // TODO SAM 2012-01-31 need to omit system tables
     if ( dmi == null ) {
         tableList = new ArrayList<String>();
     }

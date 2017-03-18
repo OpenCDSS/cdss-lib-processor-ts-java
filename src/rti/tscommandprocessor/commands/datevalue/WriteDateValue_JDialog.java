@@ -45,6 +45,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteDateValue() command.
 */
+@SuppressWarnings("serial")
 public class WriteDateValue_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
@@ -395,7 +396,7 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Write data flag descriptions?:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __WriteDataFlagDescriptions_JComboBox = new SimpleJComboBox ( false );
-    List<String> flagChoices = new Vector();
+    List<String> flagChoices = new Vector<String>();
     flagChoices.add("");
     flagChoices.add(__command._False);
     flagChoices.add(__command._True);
@@ -433,7 +434,7 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
-    List<String> intervalChoices = new Vector();
+    List<String> intervalChoices = new Vector<String>();
     intervalChoices.add("");
     intervalChoices.add("Minute");
     intervalChoices.add("Hour");
@@ -452,7 +453,7 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "DateValue format version:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Version_JComboBox = new SimpleJComboBox ( false );
-    List<String> versionChoices = new Vector();
+    List<String> versionChoices = new Vector<String>();
     versionChoices.add("");
     versionChoices.add("1.4");
     versionChoices.add("1.5");

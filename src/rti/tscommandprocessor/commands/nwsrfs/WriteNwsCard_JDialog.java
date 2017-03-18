@@ -42,6 +42,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteNwsCard() command.
 */
+@SuppressWarnings("serial")
 public class WriteNwsCard_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
@@ -285,12 +286,12 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List tslist_Vector = new Vector();
-	tslist_Vector.add ( "" );
-	tslist_Vector.add ( __command._SelectedTS );
-	tslist_Vector.add ( __command._AllTS );
+    List<String> tslistChoices = new Vector<String>();
+	tslistChoices.add ( "" );
+	tslistChoices.add ( __command._SelectedTS );
+	tslistChoices.add ( __command._AllTS );
 	__TSList_JComboBox = new SimpleJComboBox(false);
-	__TSList_JComboBox.setData ( tslist_Vector );
+	__TSList_JComboBox.setData ( tslistChoices );
 	__TSList_JComboBox.addItemListener (this);
 	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

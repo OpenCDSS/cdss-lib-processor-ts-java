@@ -164,9 +164,9 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new ArrayList();
+        v = new ArrayList<DataTable>();
         v.add ( table );
     }
     return v;
@@ -354,7 +354,9 @@ CommandWarningException, CommandException
                 "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
         }
         else {
-            tslist = (List<TS>)o_TSList;
+        	@SuppressWarnings("unchecked")
+			List<TS> tslist0 = (List<TS>)o_TSList;
+            tslist = tslist0;
             if ( tslist.size() == 0 ) {
                 message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
                 "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

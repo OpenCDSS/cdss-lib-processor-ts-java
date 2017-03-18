@@ -44,6 +44,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the ReadPropertiesFromExcel command.
 */
+@SuppressWarnings("serial")
 public class ReadPropertiesFromExcel_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {

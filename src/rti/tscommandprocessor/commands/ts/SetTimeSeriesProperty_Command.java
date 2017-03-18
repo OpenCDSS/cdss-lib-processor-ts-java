@@ -272,7 +272,8 @@ CommandWarningException, CommandException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
-	List<TS> tslist = (List)o_TSList;
+	@SuppressWarnings("unchecked")
+	List<TS> tslist = (List<TS>)o_TSList;
 	if ( tslist.size() == 0 ) {
 		message = "Zero time series in list to process using TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";

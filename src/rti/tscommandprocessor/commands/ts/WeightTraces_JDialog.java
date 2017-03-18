@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -40,6 +41,7 @@ import RTi.Util.String.StringUtil;
 /**
 Editor for WeightTraces command.
 */
+@SuppressWarnings("serial")
 public class WeightTraces_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -231,12 +233,12 @@ Get the weights string from the GUI components.  The returned string has the for
 private String getWeights()
 {
     StringBuffer weights = new StringBuffer();
-    List Year_Vector = StringUtil.breakStringList ( __Year_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
+    List<String> Year_Vector = StringUtil.breakStringList ( __Year_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
     int Year_size = 0;
     if ( Year_Vector != null ) {
         Year_size = Year_Vector.size();
     }
-    List Weight_Vector = StringUtil.breakStringList ( __Weight_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
+    List<String> Weight_Vector = StringUtil.breakStringList ( __Weight_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
     int Weight_size = 0;
     if ( Weight_Vector != null ) {
         Weight_size = Weight_Vector.size();
@@ -331,8 +333,10 @@ private void initialize ( JFrame parent, WeightTraces_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Specify weights how?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SpecifyWeightsHow_JComboBox = new SimpleJComboBox ( false );
-	__SpecifyWeightsHow_JComboBox.addItem ( __command._AbsoluteWeights );
-	//__weight_JComboBox.addItem ( __NORMALIZED_WEIGHTS );
+	List<String> howChoices = new ArrayList<String>();
+	howChoices.add ( __command._AbsoluteWeights );
+	//__weight_JComboBox.add ( __NORMALIZED_WEIGHTS );
+	__SpecifyWeightsHow_JComboBox.setData(howChoices);
 	__SpecifyWeightsHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __SpecifyWeightsHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -463,7 +467,7 @@ private void refresh ()
     				SpecifyWeightsHow + "\".\nSelect a different type or Cancel." );
     		}
         }
-        List v = StringUtil.breakStringList ( Weights, ",", StringUtil.DELIM_SKIP_BLANKS );
+        List<String> v = StringUtil.breakStringList ( Weights, ",", StringUtil.DELIM_SKIP_BLANKS );
         int size = 0;
         if ( v != null ) {
             size = v.size();

@@ -378,7 +378,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List validList = new ArrayList<String>(23);
+    List<String> validList = new ArrayList<String>(23);
     validList.add ( "TSID" );
     validList.add ( "FlowUnits" );
     validList.add ( "LagInterval" );
@@ -1612,7 +1612,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
         }
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            List tslist = new ArrayList<TS>();
+            List<TS> tslist = new ArrayList<TS>();
             tslist.add ( result_ts );
             setDiscoveryTSList ( tslist );
         }
@@ -1725,7 +1725,7 @@ throws Exception
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discoveryTSList )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
     __discoveryTSList = discoveryTSList;
 }

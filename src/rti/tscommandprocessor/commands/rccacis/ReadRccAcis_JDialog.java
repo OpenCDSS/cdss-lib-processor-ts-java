@@ -13,6 +13,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -44,6 +45,7 @@ import RTi.Util.String.StringUtil;
 /**
 Editor for he ReadRccAcis() command.
 */
+@SuppressWarnings("serial")
 public class ReadRccAcis_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -303,9 +305,11 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( RccAcisDataStore.class );
+    List<String> datastoreChoices = new ArrayList<String>();
     for ( DataStore dataStore: dataStoreList ) {
-        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    	datastoreChoices.add ( dataStore.getName() );
     }
+    __DataStore_JComboBox.setData(datastoreChoices);
     __DataStore_JComboBox.select ( 0 );
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
@@ -669,7 +673,7 @@ Set the data type choices in response to a new data store being selected.
 private void setDataTypeChoices ()
 {   String routine = getClass().getName() + ".setDataTypeChoices";
     RccAcisDataStore ds = getSelectedDataStore();
-    List<String> dataTypes = new Vector();
+    List<String> dataTypes = new Vector<String>();
     try {
         dataTypes = ds.getDataTypeStrings ( true, true );
     }

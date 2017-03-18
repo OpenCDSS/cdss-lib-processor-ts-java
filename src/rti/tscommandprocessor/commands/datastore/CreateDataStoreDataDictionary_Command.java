@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import RTi.DMI.DMI;
-import RTi.DMI.DMIUtil;
 import RTi.DMI.DataDictionary;
 import RTi.DMI.DatabaseDataStore;
 import RTi.DMI.ERDiagram_JFrame;
@@ -358,7 +357,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (ERDiagramLayoutTableYColumn != null) && (ERDiagramLayoutTableYColumn.indexOf("${") >= 0) && !ERDiagramLayoutTableYColumn.isEmpty() && (commandPhase == CommandPhaseType.RUN)) {
 		ERDiagramLayoutTableYColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, ERDiagramLayoutTableYColumn);
 	}
-    String ERDiagramPageSize = parameters.getValue("ERDiagramPageSize");
+    //String ERDiagramPageSize = parameters.getValue("ERDiagramPageSize");
     String ERDiagramOrientation = parameters.getValue("ERDiagramOrientation");
     String ViewERDiagram = parameters.getValue("ViewERDiagram");
     boolean viewERDiagram = false;

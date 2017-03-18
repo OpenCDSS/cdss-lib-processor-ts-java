@@ -32,6 +32,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class SplitTableRow_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -55,7 +56,6 @@ private JTextField __MinimumEndSegmentLength_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private SplitTableRow_Command __command = null;
-private JFrame __parent = null;
 private boolean __ok = false;
 
 /**
@@ -195,7 +195,6 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, SplitTableRow_Command command, List<String> tableIDChoices )
 {	__command = command;
-    __parent = parent;
 
 	addWindowListener(this);
 

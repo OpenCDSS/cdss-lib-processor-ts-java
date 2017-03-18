@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
@@ -202,12 +203,12 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
-	valid_Vector.add ( "DssFile" );
-	valid_Vector.add ( "InputFile" );
-	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "DssutlProgram" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    List<String> validList = new ArrayList<String>();
+	validList.add ( "DssFile" );
+	validList.add ( "InputFile" );
+	validList.add ( "OutputFile" );
+	validList.add ( "DssutlProgram" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -255,9 +256,9 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-    List list = new Vector();
+    List<File> list = new Vector<File>();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -285,7 +286,7 @@ Get the list of processes managed by this class.
 */
 public List<Process> getProcessList()
 {
-    List processList = new Vector(1);
+    List<Process> processList = new Vector<Process>(1);
     Process process = getProcess();
     if ( process != null ) {
         processList.add ( process );
@@ -457,7 +458,7 @@ CommandWarningException, CommandException
                     message, "Verify running the program on the command line before running in TSTool."));
         }
         // Echo the output to the log file.
-        List output = pm.getOutputList();
+        List<String> output = pm.getOutputList();
         int size = 0;
         if ( output != null ) {
             size = output.size();

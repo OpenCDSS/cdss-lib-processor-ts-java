@@ -10,6 +10,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import RTi.TS.DateValueTS;
+import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -258,7 +259,7 @@ Return the list of files that were created by this command.
 */
 public List<File> getGeneratedFileList ()
 {
-	List<File> list = new Vector();
+	List<File> list = new Vector<File>();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -290,7 +291,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		super.parseCommand ( command_string );
 	}
 	else {	// Parse the old command...
-		List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
+		List<String> tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 2 ) {
 			message =
 			"Invalid syntax for command.  Expecting WriteDateValue(OutputFile).";
@@ -407,7 +408,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
 	}
-	List tslist = (List)o_TSList;
+	@SuppressWarnings("unchecked")
+	List<TS> tslist = (List<TS>)o_TSList;
 	if ( tslist.size() == 0 ) {
         message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -493,7 +495,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
         if ( o != null ) {
-            OutputComments_Vector = (List)o;
+        	@SuppressWarnings("unchecked")
+			List<String> OutputComments_Vector0 = (List<String>)o;
+            OutputComments_Vector = OutputComments_Vector0;
             props.setUsingObject("OutputComments",OutputComments_Vector);
         }
     }

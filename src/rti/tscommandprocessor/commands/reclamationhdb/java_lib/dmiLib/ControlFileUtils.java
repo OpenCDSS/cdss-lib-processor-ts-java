@@ -6,7 +6,7 @@ import java.util.StringTokenizer;
 
 //package java_lib.dmiLib;
 
-// control file parsing utililities
+// control file parsing utilities
 
 public class ControlFileUtils
 {
@@ -53,8 +53,8 @@ public class ControlFileUtils
 		}
 		finally
 		{
-			return units;
 		}
+		return units;
 
 	}	// end method
 
@@ -98,8 +98,9 @@ public class ControlFileUtils
 		}
 		finally
 		{
-			return fileName;
+
 		}
+		return fileName;
 
 	}	// end method
 
@@ -143,8 +144,9 @@ public class ControlFileUtils
 		}
 		finally
 		{
-			return objType;
+
 		}
+		return objType;
 
 	}	// end method
 
@@ -188,8 +190,9 @@ public class ControlFileUtils
 		}
 		finally
 		{
-			return account;
+
 		}
+		return account;
 
 	}	// end method
 
@@ -471,8 +474,9 @@ public class ControlFileUtils
 		finally
 		{
 //			System.out.println("Station is " + stationName);
-			return stationName;
+
 		}
+		return stationName;
 
 	}	// end method
 
@@ -606,8 +610,9 @@ public class ControlFileUtils
 		finally
 		{
 //			System.out.println("Parameter is " + parameter);
-			return parameter;
+
 		}
+		return parameter;
 
 	}	// end method
 
@@ -683,8 +688,9 @@ public class ControlFileUtils
 		finally
 		{
 //			System.out.println("Part A is " + Apart);
-			return Apart;
+
 		}
+		return Apart;
 
 	}	// end method
 
@@ -760,8 +766,9 @@ public class ControlFileUtils
 		finally
 		{
 //			System.out.println("Part F is " + Fpart);
-			return Fpart;
+
 		}
+		return Fpart;
 
 	}	// end method
 
@@ -792,8 +799,9 @@ public class ControlFileUtils
 		}
 		finally
 		{
-			return method_id;
+
 		}
+		return method_id;
 	}	// end method
 
 	/*
@@ -823,8 +831,9 @@ public class ControlFileUtils
 		}
 		finally
 		{
-			return valueToPost;
+
 		}
+		return valueToPost;
 	}	// end method
 
 	/*

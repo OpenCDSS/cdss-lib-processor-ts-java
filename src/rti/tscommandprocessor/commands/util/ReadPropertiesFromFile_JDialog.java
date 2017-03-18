@@ -42,6 +42,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the ReadPropertiesFromFile() command.
 */
+@SuppressWarnings("serial")
 public class ReadPropertiesFromFile_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
@@ -249,7 +250,7 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FileFormat_JComboBox = new SimpleJComboBox(false);
     List<PropertyFileFormatType> fileFormatChoices = __command.getFileFormatChoices();
-    List<String> fileFormatChoicesS = new Vector();
+    List<String> fileFormatChoicesS = new Vector<String>();
     fileFormatChoicesS.add ( "" );
     for ( PropertyFileFormatType c : fileFormatChoices ) {
         fileFormatChoicesS.add ( "" + c );

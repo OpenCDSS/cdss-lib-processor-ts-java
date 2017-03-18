@@ -746,7 +746,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
         }
         else {
-            tsList = (List)o_TSList;
+        	@SuppressWarnings("unchecked")
+			List<TS> tsList0 = (List<TS>)o_TSList;
+            tsList = tsList0;
             if ( tsList.size() == 0 ) {
                 message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
                 "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

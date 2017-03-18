@@ -66,6 +66,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class WriteStateMod_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
@@ -324,7 +325,7 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> tslist_Vector = new Vector();
+    List<String> tslist_Vector = new Vector<String>();
 	tslist_Vector.add ( "" + TSListType.ALL_MATCHING_TSID );
 	tslist_Vector.add ( "" + TSListType.ALL_TS );
 	tslist_Vector.add ( "" + TSListType.SELECTED_TS );
@@ -340,12 +341,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Identifier (TSID) to match:" ), 
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	
 	int size = 0;
 	if ( tsids == null ) {
-		tsids = new Vector ();
+		tsids = new Vector<String> ();
 	}
 	size = tsids.size();
 	// Blank for default

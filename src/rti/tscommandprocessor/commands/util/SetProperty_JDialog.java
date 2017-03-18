@@ -8,6 +8,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -30,6 +32,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class SetProperty_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -240,12 +243,14 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(set_JPanel, new JLabel ( "Property type:" ), 
         0, ++ySet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __PropertyType_JComboBox = new SimpleJComboBox ( false );
-    __PropertyType_JComboBox.addItem ( "" ); // Use when setting special values or removing
-    __PropertyType_JComboBox.addItem ( __command._Boolean );
-    __PropertyType_JComboBox.addItem ( __command._DateTime );
-    __PropertyType_JComboBox.addItem ( __command._Double );
-    __PropertyType_JComboBox.addItem ( __command._Integer );
-    __PropertyType_JComboBox.addItem ( __command._String );
+    List<String> typeChoices = new ArrayList<String>();
+    typeChoices.add ( "" ); // Use when setting special values or removing
+    typeChoices.add ( __command._Boolean );
+    typeChoices.add ( __command._DateTime );
+    typeChoices.add ( __command._Double );
+    typeChoices.add ( __command._Integer );
+    typeChoices.add ( __command._String );
+    __PropertyType_JComboBox.setData(typeChoices);
     __PropertyType_JComboBox.select ( __command._String );
     __PropertyType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(set_JPanel, __PropertyType_JComboBox,
@@ -290,8 +295,10 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to empty string?"),
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetEmpty_JComboBox = new SimpleJComboBox ( false );
-	__SetEmpty_JComboBox.addItem ( "" );	// Default
-	__SetEmpty_JComboBox.addItem ( __command._True );
+	List<String> emptyChoices = new ArrayList<String>();
+	emptyChoices.add ( "" );	// Default
+	emptyChoices.add ( __command._True );
+	__SetEmpty_JComboBox.setData(emptyChoices);
 	__SetEmpty_JComboBox.select ( 0 );
 	__SetEmpty_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(special_JPanel, __SetEmpty_JComboBox,
@@ -303,8 +310,10 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to NaN?"),
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetNaN_JComboBox = new SimpleJComboBox ( false );
-	__SetNaN_JComboBox.addItem ( "" );	// Default
-	__SetNaN_JComboBox.addItem ( __command._True );
+	List<String> nanChoices = new ArrayList<String>();
+	nanChoices.add ( "" );	// Default
+	nanChoices.add ( __command._True );
+	__SetNaN_JComboBox.setData(nanChoices);
 	__SetNaN_JComboBox.select ( 0 );
 	__SetNaN_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(special_JPanel, __SetNaN_JComboBox,
@@ -316,8 +325,10 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(special_JPanel, new JLabel ( "Set to null?"),
 		0, ++ySpecial, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetNull_JComboBox = new SimpleJComboBox ( false );
-	__SetNull_JComboBox.addItem ( "" );	// Default
-	__SetNull_JComboBox.addItem ( __command._True );
+	List<String> nullChoices = new ArrayList<String>();
+	nullChoices.add ( "" );	// Default
+	nullChoices.add ( __command._True );
+	__SetNull_JComboBox.setData(nullChoices);
 	__SetNull_JComboBox.select ( 0 );
 	__SetNull_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(special_JPanel, __SetNull_JComboBox,
@@ -347,8 +358,10 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(unset_JPanel, new JLabel ( "Remove/unset property?"),
 		0, ++yUnset, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RemoveProperty_JComboBox = new SimpleJComboBox ( false );
-	__RemoveProperty_JComboBox.addItem ( "" );	// Default
-	__RemoveProperty_JComboBox.addItem ( __command._True );
+	List<String> removeChoices = new ArrayList<String>();
+	removeChoices.add ( "" );	// Default
+	removeChoices.add ( __command._True );
+	__RemoveProperty_JComboBox.setData(removeChoices);
 	__RemoveProperty_JComboBox.select ( 0 );
 	__RemoveProperty_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(unset_JPanel, __RemoveProperty_JComboBox,

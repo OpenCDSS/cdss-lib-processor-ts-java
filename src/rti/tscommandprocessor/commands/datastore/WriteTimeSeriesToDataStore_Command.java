@@ -429,7 +429,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						message, "Report problem to software support." ) );
 	}
 	else {
-    	tslist = (List<TS>)o_TSList;
+		@SuppressWarnings("unchecked")
+		List<TS> tslist0 = (List<TS>)o_TSList;
+    	tslist = tslist0;
     	if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

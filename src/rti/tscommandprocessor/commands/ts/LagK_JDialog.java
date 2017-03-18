@@ -35,6 +35,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class LagK_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -264,7 +265,7 @@ private void initialize ( JFrame parent, LagK_Command command )
 		(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	if ( tsids == null ) {
 		// User will not be able to select anything.
-		tsids = new Vector();
+		tsids = new Vector<String>();
 	}
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
@@ -279,7 +280,7 @@ private void initialize ( JFrame parent, LagK_Command command )
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     if ( tsids2 == null ) {
         // User will not be able to select anything.
-        tsids2 = new Vector();
+        tsids2 = new Vector<String>();
     }
     if ( tsids.size() == 0 ) {
         tsids2.add("");

@@ -41,6 +41,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the WriteTableToKml() command.
 */
+@SuppressWarnings("serial")
 public class WriteTableToKml_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {

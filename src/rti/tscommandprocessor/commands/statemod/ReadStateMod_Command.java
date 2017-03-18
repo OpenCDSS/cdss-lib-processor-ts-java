@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -227,7 +226,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List validList = new ArrayList<String>();
+	List<String> validList = new ArrayList<String>();
     validList.add ( "InputFile" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
@@ -315,7 +314,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			super.parseCommand ( command_string );
 		}
 		else {	// Parse the old command...
-			List tokens = StringUtil.breakStringList (command_string,
+			List<String> tokens = StringUtil.breakStringList (command_string,
 				"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 			if ( tokens.size() != 2 ) {
 				message = "Invalid syntax for command.  Expecting 1 parameter.";
@@ -612,7 +611,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
             // Read the reservoir rights file and convert to time series
             // (default is to sum time series at a location).
-            List rer_Vector = StateMod_ReservoirRight.readStateModFile ( InputFile_full );
+            List<StateMod_ReservoirRight> rer_Vector = StateMod_ReservoirRight.readStateModFile ( InputFile_full );
             // Convert the rights to time series (one per location)...
             tslist = StateMod_Util.createWaterRightTimeSeriesList (
                     rer_Vector, // raw water rights
@@ -771,7 +770,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

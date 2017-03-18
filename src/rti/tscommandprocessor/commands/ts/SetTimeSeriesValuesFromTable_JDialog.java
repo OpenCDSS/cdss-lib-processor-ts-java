@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -41,6 +42,7 @@ import RTi.Util.Message.Message;
 /**
 Editor for the SetTimeSeriesValuesFromTable command.
 */
+@SuppressWarnings("serial")
 public class SetTimeSeriesValuesFromTable_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
@@ -514,10 +516,12 @@ private void initialize ( JFrame parent, SetTimeSeriesValuesFromTable_Command co
     JGUIUtil.addComponent(table_JPanel, new JLabel ( "Sort order for date/time:" ), 
         0, ++yTable, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SortOrder_JComboBox = new SimpleJComboBox ( false );
-    __SortOrder_JComboBox.addItem ( "" );
-    //__SortOrder_JComboBox.addItem ( __command._Ascending );
-    //__SortOrder_JComboBox.addItem ( __command._Descending );
-    __SortOrder_JComboBox.addItem ( __command._None );
+    List<String> sortChoices = new ArrayList<String>();
+    sortChoices.add ( "" );
+    //sortChoices.add ( __command._Ascending );
+    //sortChoices.add ( __command._Descending );
+    sortChoices.add ( __command._None );
+    __SortOrder_JComboBox.setData(sortChoices);
     __SortOrder_JComboBox.select ( 0 );
     __SortOrder_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(table_JPanel, __SortOrder_JComboBox,

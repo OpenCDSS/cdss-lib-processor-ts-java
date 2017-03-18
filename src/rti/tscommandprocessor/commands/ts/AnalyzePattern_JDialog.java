@@ -14,8 +14,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
@@ -45,6 +45,7 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class AnalyzePattern_JDialog extends JDialog
 	implements ActionListener,
 	 	   ItemListener,
@@ -354,13 +355,13 @@ private void initialize ( JFrame parent, AnalyzePattern_Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -368,7 +369,7 @@ private void initialize ( JFrame parent, AnalyzePattern_Command command )
 	// Method
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Method:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	List av = new Vector();
+	List<String> av = new ArrayList<String>();
 	av.add( __command._ANALYSIS_PERCENTILE  );
 	__Method_SimpleJList = new SimpleJList (av);
 	av = null;
@@ -444,7 +445,7 @@ private void initialize ( JFrame parent, AnalyzePattern_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Legacy behavior:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Legacy_JComboBox = new SimpleJComboBox ( 10, false );
-    List<String> legacyChoices = new Vector();
+    List<String> legacyChoices = new ArrayList<String>(3);
     legacyChoices.add ( "" );
     legacyChoices.add ( __command._False );
     legacyChoices.add ( __command._True );

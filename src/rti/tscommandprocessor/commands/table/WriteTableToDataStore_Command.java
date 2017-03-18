@@ -197,7 +197,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         DataStoreTable = null; // Simplifies logic below
     }
     String ColumnMap = parameters.getValue ( "ColumnMap" );
-    Hashtable columnMap = new Hashtable();
+    Hashtable<String,String> columnMap = new Hashtable<String,String>();
     if ( (ColumnMap != null) && (ColumnMap.length() > 0) && (ColumnMap.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(ColumnMap, ",", 0 );
@@ -218,7 +218,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     String DataStoreRelatedColumnsMap = parameters.getValue ( "DataStoreRelatedColumnsMap" );
-    Hashtable dataStoreRelatedColumnsMap = new Hashtable();
+    Hashtable<String,String> dataStoreRelatedColumnsMap = new Hashtable<String,String>();
     if ( (DataStoreRelatedColumnsMap != null) && (DataStoreRelatedColumnsMap.length() > 0) &&
         (DataStoreRelatedColumnsMap.indexOf(":") > 0) ) {
         // First break map pairs by comma

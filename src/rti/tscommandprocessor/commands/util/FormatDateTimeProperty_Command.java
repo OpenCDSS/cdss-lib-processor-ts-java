@@ -159,7 +159,7 @@ public List getObjectList ( Class c )
     Prop prop = new Prop();
     // Check for TS request or class that matches the data...
     if ( c == prop.getClass() ) {
-        List v = new Vector (1);
+        List<Prop> v = new Vector<Prop> (1);
         v.add ( discovery_Prop );
         return v;
     }
@@ -232,11 +232,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		setDiscoveryProp(null);
 	}
     
+	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	PropList parameters = getCommandParameters();
-	CommandProcessor processor = getCommandProcessor();
 
 	String PropertyName = parameters.getValue ( "PropertyName" );
 	String DateTimePropertyName = parameters.getValue ( "DateTimePropertyName" );

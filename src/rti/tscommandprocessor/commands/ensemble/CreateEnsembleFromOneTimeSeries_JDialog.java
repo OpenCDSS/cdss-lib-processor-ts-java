@@ -44,6 +44,7 @@ import RTi.Util.Time.YearType;
 /**
 Command editor dialog for the CreateEnsembleFromOneTimeSeries() command.
 */
+@SuppressWarnings("serial")
 public class CreateEnsembleFromOneTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
@@ -354,8 +355,8 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Reference date:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__ReferenceDate_JTextField = new JTextField ( 10 );
-	__ReferenceDate_JTextField.setToolTipText("Date at which to shift all ensemble traces to align start, YYYY-MM-DD for daily data");
+	__ReferenceDate_JTextField = new JTextField ( 20 );
+	__ReferenceDate_JTextField.setToolTipText("Date at which to shift all ensemble traces to align start, YYYY-MM-DD for daily data, can use ${Property}");
 	__ReferenceDate_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __ReferenceDate_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -369,6 +370,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
     __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
     __OutputYearType_JComboBox.add ( "" + YearType.WATER );
+    __OutputYearType_JComboBox.select(0);
     __OutputYearType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -379,8 +381,11 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Shift data how?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ShiftDataHow_JComboBox = new SimpleJComboBox ( false );
-	__ShiftDataHow_JComboBox.addItem ( __command._NoShift );
-	__ShiftDataHow_JComboBox.addItem ( __command._ShiftToReference );
+	List<String> shiftChoices = new ArrayList<String>();
+	shiftChoices.add ( __command._NoShift );
+	shiftChoices.add ( __command._ShiftToReference );
+	__ShiftDataHow_JComboBox.setData(shiftChoices);
+	__ShiftDataHow_JComboBox.select(0);
 	__ShiftDataHow_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ShiftDataHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

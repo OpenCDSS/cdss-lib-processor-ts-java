@@ -2734,26 +2734,27 @@ throws Exception
     // Loop through the commands and reset any For() commands to make sure they don't think they are complete.
     // Nexted for loops will be handled when processed by resetting when a for loop is totally complete.
     For_Command forCommand = null;
-    CommandStatusProvider statusProvider = null;
+    CommandStatusProvider commandStatusProvider = null;
     for ( i = 0; i < size; i++ ) {
     	//Message.printStatus(2, routine, "Processing: " + command);
         command = commandList.get(i);
         if ( command == null ) {
             continue;
         }
-        statusProvider = null;
+        commandStatusProvider = null;
         if ( command instanceof CommandStatusProvider ) {
-        	statusProvider = (CommandStatusProvider)command;
+        	// The command status provider is used below as needed and does not need to be recast
+        	commandStatusProvider = (CommandStatusProvider)command;
         }
         if ( command instanceof For_Command ) {
             forCommand = (For_Command)command;
             forCommand.resetCommand();
         }
-        if ( statusProvider != null ) {
+        if ( commandStatusProvider != null ) {
 	        // Clear the log on all the commands
 	        // TODO SAM 2015-06-06 This is needed because it is difficult with For() commands to know when to clear vs. accumulate
         	// TODO SAM 2015-06-06 Do the other run modes need to be cleared out?
-	        statusProvider.getCommandStatus().clearLog(CommandPhaseType.RUN);
+	        commandStatusProvider.getCommandStatus().clearLog(CommandPhaseType.RUN);
         }
     }
     // Indicate that commands should not clear their logs when running - allows For() loop logging to accumulate
@@ -2764,7 +2765,7 @@ throws Exception
     boolean commandsShouldClearRunStatus = getCommandsShouldClearRunStatus(); // For use below - constant for all processing
     // Run using the command list index because the index is modified below by For() commands
 	for ( i = 0; i < size; i++ ) {
-		// 1-offset comand count for messages
+		// 1-offset command count for messages
 		i_for_message = i + 1;
 		command_tag = "" + i_for_message;	// Command number as integer 1+, for message/log handler.
 		// Reset each command
@@ -2814,15 +2815,16 @@ throws Exception
     		}
     		commandString = commandString.trim();
     		// All commands will implement CommandStatusProvider so get it...
-    		commandStatus = ((CommandStatusProvider)command).getCommandStatus();
+    		commandStatus = commandStatusProvider.getCommandStatus();
     		// Clear the run status (internally will set to UNKNOWN).
     		if ( commandsShouldClearRunStatus ) {
     			commandStatus.clearLog(CommandPhaseType.RUN);
     		}
     		commandProfile = command.getCommandProfile(CommandPhaseType.RUN);
     		// Don't use routine in messages... keep log messages shorter
-    		Message.printStatus ( 2, "", "--->>>>");
-    		Message.printStatus ( 2, "", "Start processing command " + (i + 1) + " of " + size + ": \"" + commandString + "\" " );
+    		if ( !inComment && ifStackOkToRun ) {
+    			Message.printStatus ( 2, "", "-> Start processing command " + (i + 1) + " of " + size + ": \"" + commandString + "\" " );
+    		}
             stopWatch.clear();
             stopWatch.start();
             commandProfile.setStartTime(System.currentTimeMillis());
@@ -2885,7 +2887,7 @@ throws Exception
     		// Check for obsolete commands (do this last to minimize the amount of processing through this code)...
     		// Do this at the end because this logic may seldom be hit if valid commands are processed above.  
     		
-    		else if ( processCommands_CheckForObsoleteCommands(commandString, (CommandStatusProvider)command, message_tag, i_for_message) ) {
+    		else if ( processCommands_CheckForObsoleteCommands(commandString, commandStatusProvider, message_tag, i_for_message) ) {
     			// Had a match so increment the counters.
     			++update_count;
     			++error_count;
@@ -2902,11 +2904,9 @@ throws Exception
     				if ( Message.isDebugOn ) {
     					Message.printDebug ( 1, routine, "Initializing the Command for \"" + commandString + "\"" );
     				}
-    				if ( command instanceof CommandStatusProvider ) {
-    					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.INITIALIZATION);
-    				}
-    				if ( command instanceof CommandStatusProvider ) {
-    					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.DISCOVERY);
+    				if ( commandStatusProvider != null ) {
+    					commandStatusProvider.getCommandStatus().clearLog(CommandPhaseType.INITIALIZATION);
+    					commandStatusProvider.getCommandStatus().clearLog(CommandPhaseType.DISCOVERY);
     				}
     				// TODO SAM 2014-06-29 Need to determine how this will impact For()
     				command.initializeCommand ( commandString, __ts_processor, true );
@@ -2918,8 +2918,8 @@ throws Exception
     				command.checkCommandParameters ( command.getCommandParameters(), command_tag, 2 );
     				// TODO SAM 2015-06-06 Seems to be multiple places where status is cleared
     				// Clear the run status for the command...
-    				if ( (command instanceof CommandStatusProvider) && commandsShouldClearRunStatus ) {
-    					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.RUN);
+    				if ( (commandStatusProvider != null) && commandsShouldClearRunStatus ) {
+    					commandStatusProvider.getCommandStatus().clearLog(CommandPhaseType.RUN);
     				}
     				// Check to see whether in one or more If() commands and if so evaluate their values to determine
     				// whether to run
@@ -3043,7 +3043,7 @@ throws Exception
     	                // Add to the if command stack
     	                If_Command ifCommand = (If_Command)command;
     	                ifCommandStack.add(ifCommand);
-    	                // Re-evalute if stack
+    	                // Re-evaluate if stack
     	                ifStackOkToRun = evaluateIfStack(ifCommandStack);
     	            }
     	            else if ( command instanceof EndIf_Command ) {
@@ -3080,19 +3080,14 @@ throws Exception
     			}
     			catch ( InvalidCommandSyntaxException e ) {
     				message = "Unable to process command - invalid syntax (" + e + ").";
-    				if ( command instanceof CommandStatusProvider ) {
-    				       if (	CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+    				if ( commandStatusProvider != null ) {
+    				       if (	CommandStatusUtil.getHighestSeverity(commandStatusProvider).
                                    greaterThan(CommandStatusType.UNKNOWN) ) {
     				           // No need to print a message to the screen because a visual marker will be shown, but log...
     				           Message.printWarning ( 2,
     				                   MessageUtil.formatMessageTag(command_tag,
     				                           ++error_count), routine, message );
                            }
-    				}
-    				else {
-    				    // Command has not been updated to set warning/failure in status so show here
-    					Message.printWarning ( popup_warning_level,
-    					    MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
     				}
     				// Log the exception.
     				if (Message.isDebugOn) {
@@ -3107,8 +3102,8 @@ throws Exception
     			}
     			catch ( InvalidCommandParameterException e ) {
     				message = "Unable to process command - invalid parameter (" + e + ").";
-    				if ( command instanceof CommandStatusProvider ) {
-    				    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+    				if ( commandStatusProvider != null ) {
+    				    if ( CommandStatusUtil.getHighestSeverity(commandStatusProvider).
                                 greaterThan(CommandStatusType.UNKNOWN) ) {
     				        // No need to print a message to the screen because a visual marker will be shown, but log...
     				        Message.printWarning ( 2,
@@ -3133,8 +3128,8 @@ throws Exception
     			}
     			catch ( CommandWarningException e ) {
     				message = "Warnings were generated processing command - output may be incomplete (" + e + ").";
-    				if ( command instanceof CommandStatusProvider ) {
-    				    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+    				if ( commandStatusProvider != null ) {
+    				    if ( CommandStatusUtil.getHighestSeverity(commandStatusProvider).
                                 greaterThan(CommandStatusType.UNKNOWN) ) {
     				        // No need to print a message to the screen because a visual marker will be shown, but log...
     				        Message.printWarning ( 2,
@@ -3158,8 +3153,8 @@ throws Exception
     			}
     			catch ( CommandException e ) {
     				message = "Error processing command - unable to complete command (" + e + ").";
-    				if ( command instanceof CommandStatusProvider ) {
-    				    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+    				if ( commandStatusProvider != null ) {
+    				    if ( CommandStatusUtil.getHighestSeverity(commandStatusProvider).
                                 greaterThan(CommandStatusType.UNKNOWN) ) {
     				        // No need to print a message to the screen because a visual marker will be shown, but log...
     				        Message.printWarning ( 2,
@@ -3192,7 +3187,7 @@ throws Exception
     				}
     				else {
 	    				message = "Unexpected error processing command - unable to complete command (" + e + ").";
-	    				if ( command instanceof CommandStatusProvider ) {
+	    				if ( commandStatusProvider != null ) {
 	    					// Add to the log as a failure...
 	    					Message.printWarning ( 2,
 	    						MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
@@ -3229,7 +3224,7 @@ throws Exception
 			++error_count), routine, "There was an error processing command: \"" + commandString +
 			"\".  Cannot continue processing." );
 			Message.printWarning ( 3, routine, e );
-			if ( command instanceof CommandStatusProvider ) {
+			if ( commandStatusProvider != null ) {
 				// Add to the command log as a failure...
 				commandStatus.addToLog(CommandPhaseType.RUN,
 						new CommandLogRecord(CommandStatusType.FAILURE,
@@ -3241,7 +3236,7 @@ throws Exception
 			Message.printWarning ( popup_warning_level,
 			MessageUtil.formatMessageTag(command_tag,
 			++error_count), routine, message );
-			if ( command instanceof CommandStatusProvider ) {
+			if ( commandStatusProvider != null ) {
 				// Add to the command log as a failure...
 				commandStatus.addToLog(CommandPhaseType.RUN,
 					new CommandLogRecord(CommandStatusType.FAILURE, message,
@@ -3258,12 +3253,12 @@ throws Exception
 		// Notify any listeners that the command is done running...
 		prev_command_complete_notified = true;
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
-		Message.printStatus ( 1, routine,
-            "Done processing command \"" + commandString + "\" (" +  (i + 1) + " of " + size + " commands, " +
-            StringUtil.formatString(commandProfile.getRunTime(),"%d") + " ms runtime)" );
+		if ( !inComment && ifStackOkToRun ) {
+			Message.printStatus ( 2, "",
+	            "<- Done processing command \"" + commandString + "\" (" +  (i + 1) + " of " + size + " commands, " +
+	            StringUtil.formatString(commandProfile.getRunTime(),"%d") + " ms runtime)" );
+		}
 		runtimeTotal += commandProfile.getRunTime();
-		// Don't use routine... keep message smaller
-        Message.printStatus ( 2, "", "----<<<<" );
 	}
 	// If necessary, do a final notify for the last command...
 	if ( !prev_command_complete_notified ) {

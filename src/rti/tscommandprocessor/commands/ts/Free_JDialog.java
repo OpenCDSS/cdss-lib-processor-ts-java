@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -32,7 +34,6 @@ import java.util.List;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -40,28 +41,29 @@ import RTi.Util.Message.Message;
 public class Free_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton   __cancel_JButton = null,// Cancel Button
-            __ok_JButton = null;    // Ok Button
-private Free_Command      __command = null;
-private JTextArea  __command_JTextArea=null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private Free_Command __command = null;
+private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
+private SimpleJComboBox	__IfNotFound_JComboBox = null;
 private SimpleJComboBox __FreeEnsembleIfEmpty_JComboBox = null;
 private JLabel __TSPosition_JLabel = null;
-private JTextField  __TSPosition_JTextField=null;       // Field for TS positions
-private boolean     __first_time = true;
-private boolean     __error_wait = false;
-private boolean     __ok = false; // Indicates whether user pressed OK to close the dialog.
+private JTextField __TSPosition_JTextField = null;
+private boolean __first_time = true;
+private boolean __error_wait = false;
+private boolean __ok = false; // Indicates whether user pressed OK to close the dialog.
 
 /**
 Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public Free_JDialog ( JFrame parent, Command command )
+public Free_JDialog ( JFrame parent, Free_Command command )
 {   super(parent, true);
     initialize ( parent, command );
 }
@@ -129,8 +131,9 @@ private void checkInput()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
-    String FreeEnsembleIfEmpty = __FreeEnsembleIfEmpty_JComboBox.getSelected();
     String TSPosition = __TSPosition_JTextField.getText().trim();
+    String IfNotFound = __IfNotFound_JComboBox.getSelected();
+    String FreeEnsembleIfEmpty = __FreeEnsembleIfEmpty_JComboBox.getSelected();
 
     __error_wait = false;
     
@@ -143,11 +146,14 @@ private void checkInput()
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
-    if ( FreeEnsembleIfEmpty.length() > 0 ) {
-        parameters.set ( "FreeEnsembleIfEmpty", FreeEnsembleIfEmpty );
-    }
     if ( TSPosition.length() > 0 ) {
         parameters.set ( "TSPosition", TSPosition );
+    }
+    if ( IfNotFound.length() > 0 ) {
+        parameters.set ( "IfNotFound", IfNotFound );
+    }
+    if ( FreeEnsembleIfEmpty.length() > 0 ) {
+        parameters.set ( "FreeEnsembleIfEmpty", FreeEnsembleIfEmpty );
     }
     try {
         // This will warn the user...
@@ -168,26 +174,15 @@ private void commitEdits ()
 {   String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String FreeEnsembleIfEmpty = __FreeEnsembleIfEmpty_JComboBox.getSelected();
     String TSPosition = __TSPosition_JTextField.getText().trim();
+    String IfNotFound = __IfNotFound_JComboBox.getSelected();
+    String FreeEnsembleIfEmpty = __FreeEnsembleIfEmpty_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-    __command.setCommandParameter ( "FreeEnsembleIfEmpty", FreeEnsembleIfEmpty );
     __command.setCommandParameter ( "TSPosition", TSPosition );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{   __TSID_JComboBox = null;
-    __cancel_JButton = null;
-    __command_JTextArea = null;
-    __command = null;
-    __ok_JButton = null;
-    super.finalize ();
+    __command.setCommandParameter ( "IfNotFound", IfNotFound );
+    __command.setCommandParameter ( "FreeEnsembleIfEmpty", FreeEnsembleIfEmpty );
 }
 
 /**
@@ -195,8 +190,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{   __command = (Free_Command)command;
+private void initialize ( JFrame parent, Free_Command command )
+{   __command = command;
 
     addWindowListener( this );
 
@@ -205,11 +200,11 @@ private void initialize ( JFrame parent, Command command )
     JPanel main_JPanel = new JPanel();
     main_JPanel.setLayout( new GridBagLayout() );
     getContentPane().add ( "North", main_JPanel );
-    int y = 0;
+    int y = -1;
 
      JGUIUtil.addComponent(main_JPanel, new JLabel (
         "This command frees (removes) time series, which is useful to remove unneeded or temporary time series."),
-        0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The list of time series to be removed can be indicated in several ways."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -236,28 +231,32 @@ private void initialize ( JFrame parent, Command command )
          " with caution because positions may change when commands are changed.</b></html>"),
          0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
-         "Time series that are in an ensemble will be removed from the ensemble."),
+         "Time series that are in an ensemble will be removed from the ensemble and the ensemble can optionally be removed."),
          0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
      __TSList_JComboBox = new SimpleJComboBox(false);
      y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
      // Add the non-standard choice
-     __TSList_JComboBox.add( TSListType.TSPOSITION.toString());
+     __TSList_JComboBox.add( "" + TSListType.TSPOSITION);
 
      __TSID_JLabel = new JLabel ("TSID (for TSList=matching TSID):");
      __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+     __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
      List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
          (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
      
-     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID + "):");
      __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
      List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
              (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
              this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
      
-      __TSPosition_JLabel = new JLabel ("Time series position(s) (for TSList=" + TSListType.TSPOSITION.toString() + "):");
+      __TSPosition_JLabel = new JLabel ("Time series position(s) (for TSList=" + TSListType.TSPOSITION + "):");
      JGUIUtil.addComponent(main_JPanel, __TSPosition_JLabel,
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __TSPosition_JTextField = new JTextField ( "", 8 );
@@ -266,6 +265,23 @@ private void initialize ( JFrame parent, Command command )
          1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
          JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - use with TSList=TSPosition (e.g., 1,2,7-8)." ),
          2, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+         
+     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
+			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		__IfNotFound_JComboBox = new SimpleJComboBox ( false );
+		List<String> notFoundChoices = new ArrayList<String>();
+		notFoundChoices.add ( "" );
+		notFoundChoices.add ( __command._Ignore );
+		notFoundChoices.add ( __command._Warn );
+		notFoundChoices.add ( __command._Fail );
+		__IfNotFound_JComboBox.setData(notFoundChoices);
+		__IfNotFound_JComboBox.select ( 0 );
+		__IfNotFound_JComboBox.addItemListener ( this );
+	    JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
+			1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	    JGUIUtil.addComponent(main_JPanel, new JLabel (
+			"Optional - how to handle time series that are not found (default=" + __command._Warn + ")."),
+			3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
          
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Free ensemble if empty?" ), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -361,12 +377,13 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String routine = "Free_JDialog.refresh";
+{   String routine = getClass().getSimpleName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
-    String FreeEnsembleIfEmpty = "";
     String TSPosition = "";
+    String IfNotFound = "";
+    String FreeEnsembleIfEmpty = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -374,8 +391,9 @@ private void refresh ()
         TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
-        FreeEnsembleIfEmpty = props.getValue ( "FreeEnsembleIfEmpty" );
         TSPosition = props.getValue ( "TSPosition" );
+        IfNotFound = props.getValue ( "IfNotFound" );
+        FreeEnsembleIfEmpty = props.getValue ( "FreeEnsembleIfEmpty" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -420,6 +438,26 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( TSPosition != null ) {
+            __TSPosition_JTextField.setText ( TSPosition );
+        }
+        if ( __IfNotFound_JComboBox != null ) {
+            if ( IfNotFound == null ) {
+                // Select default...
+                __IfNotFound_JComboBox.select ( 0 );
+            }
+            else {
+            	if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox,
+                    IfNotFound, JGUIUtil.NONE, null, null ) ) {
+                    __IfNotFound_JComboBox.select ( IfNotFound );
+                }
+                else {
+                	Message.printWarning ( 1, routine,
+                    "Existing command references an invalid\n"+
+                    "IfNotFound \"" + IfNotFound + "\".  Select a\ndifferent value or Cancel." );
+                }
+            }
+        }
         if ( FreeEnsembleIfEmpty == null ) {
             // Select default...
             __FreeEnsembleIfEmpty_JComboBox.select ( 0 );
@@ -435,22 +473,21 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( TSPosition != null ) {
-            __TSPosition_JTextField.setText ( TSPosition );
-        }
     }
     // Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected().trim();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-    FreeEnsembleIfEmpty = __FreeEnsembleIfEmpty_JComboBox.getSelected();
     TSPosition = __TSPosition_JTextField.getText().trim();
+    IfNotFound = __IfNotFound_JComboBox.getSelected();
+    FreeEnsembleIfEmpty = __FreeEnsembleIfEmpty_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
-    props.add ( "FreeEnsembleIfEmpty=" + FreeEnsembleIfEmpty );
     props.add ( "TSPosition=" + TSPosition );
+    props.add ( "IfNotFound=" + IfNotFound );
+    props.add ( "FreeEnsembleIfEmpty=" + FreeEnsembleIfEmpty );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

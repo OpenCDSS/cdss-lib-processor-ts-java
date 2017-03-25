@@ -13,7 +13,6 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -30,7 +29,7 @@ import RTi.Util.IO.PropList;
 /**
 This class initializes, checks, and runs the Free() command.
 */
-public class Free_Command extends AbstractCommand implements Command
+public class Free_Command extends AbstractCommand
 {
     
 /**
@@ -38,6 +37,13 @@ public class Free_Command extends AbstractCommand implements Command
  */
 protected final String _False = "False";
 protected final String _True = "True";
+
+/**
+ * Values for IfNotFound.
+ */
+protected final String _Fail = "Fail";
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
 
 /**
 TSPosition data, zero offset indices
@@ -64,6 +70,7 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TSPosition = parameters.getValue ( "TSPosition" );
+	String IfNotFound = parameters.getValue("IfNotFound");
     String FreeEnsembleIfEmpty = parameters.getValue ( "FreeEnsembleIfEmpty" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
@@ -124,6 +131,19 @@ throws InvalidCommandParameterException
         }
     }
     
+	if ( (IfNotFound != null) && !IfNotFound.equals("") &&
+        !IfNotFound.equalsIgnoreCase(_Ignore) &&
+        !IfNotFound.equalsIgnoreCase(_Fail) &&
+        !IfNotFound.equalsIgnoreCase(_Warn) ) {
+        message = "Invalid IfNotFound flag \"" + IfNotFound + "\".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the IfNotFound as " + _Ignore + ", " +
+                _Warn + ", (default), or " + _Fail + "." ) );
+                            
+	}
+    
     if ( (FreeEnsembleIfEmpty != null) && !FreeEnsembleIfEmpty.equals("") ) {
         if ( !FreeEnsembleIfEmpty.equals(_False) && !FreeEnsembleIfEmpty.equals(_True) ) {
             message = "The FreeEnsembleIfEmpty parameter \"" + FreeEnsembleIfEmpty + "\" must be " +
@@ -140,6 +160,7 @@ throws InvalidCommandParameterException
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
     validList.add ( "TSPosition" );
+    validList.add ( "IfNotFound" );
     validList.add ( "FreeEnsembleIfEmpty" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -298,13 +319,29 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "Free_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int log_level = 3;  // Level for non-use messages for log file.
+
+    CommandProcessor processor = getCommandProcessor();
+	CommandStatus status = getCommandStatus();
+    Boolean clearStatus = new Boolean(true); // default
+    CommandPhaseType commandPhase = CommandPhaseType.RUN;
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	PropList parameters = getCommandParameters();
     String TSList = parameters.getValue ( "TSList" );
@@ -312,17 +349,23 @@ CommandWarningException, CommandException
         TSList = "" + TSListType.ALL_TS;
     }
     String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
+	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
     String TSPosition = parameters.getValue ( "TSPosition" );
+    String IfNotFound = parameters.getValue("IfNotFound");
+    if ( (IfNotFound == null) || IfNotFound.equals("")) {
+        IfNotFound = _Warn; // default
+    }
     String FreeEnsembleIfEmpty = parameters.getValue ( "FreeEnsembleIfEmpty" );
     if ( (FreeEnsembleIfEmpty == null) || FreeEnsembleIfEmpty.equals("")) {
         FreeEnsembleIfEmpty = _True;    // Default
     }
 	
-    CommandProcessor processor = getCommandProcessor();
-	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
-
     int countRemoved = 0;  // Number of time series removed.
     // Get the original count of time series...
     Object o = null;
@@ -344,7 +387,16 @@ CommandWarningException, CommandException
             message, "Report problem to software support." ) );
     }
     
-    // Get the time series to process.  Allow TSID to be a pattern or specific time series...
+    // Get the time series to process.
+    // - Allow TSID to be a pattern or specific time series
+    // - If time series are not found, handle using the IfNotFound preference
+    CommandStatusType notFoundStatus = CommandStatusType.FAILURE;
+    if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+    	notFoundStatus = CommandStatusType.WARNING;
+    }
+    else if ( IfNotFound.equalsIgnoreCase(_Ignore) ) {
+    	notFoundStatus = null;
+    }
 
     PropList request_params = new PropList ( "" );
     request_params.set ( "TSList", TSList );
@@ -356,13 +408,13 @@ CommandWarningException, CommandException
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
     }
     catch ( Exception e ) {
-        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
-        Message.printWarning(log_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-        Message.printWarning(log_level, routine, e );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Report the problem to software support." ) );
+	        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+	        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+	        Message.printWarning(log_level,
+	            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+	        Message.printWarning(log_level, routine, e );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	            message, "Report the problem to software support." ) );
     }
 
     PropList bean_PropList = bean.getResultsPropList();
@@ -370,24 +422,28 @@ CommandWarningException, CommandException
     List<TS> tslist = null;
     int [] tsposArray = null;
     if ( o_TSList == null ) {
-        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
-        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\").";
-        Message.printWarning ( log_level,
-            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+    	if ( notFoundStatus != null ) {
+	        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+	        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\").";
+	        Message.printWarning ( log_level,
+	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(notFoundStatus, message,
+	            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+    	}
     }
     else {
     	@SuppressWarnings("unchecked")
 		List<TS> tslist0 = (List<TS>)o_TSList;
         tslist = tslist0;
         if ( tslist.size() == 0 ) {
-            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
-            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\").";
-            Message.printWarning ( log_level,
-                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        	if ( notFoundStatus != null ) {
+	            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+	            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\").";
+	            Message.printWarning ( log_level,
+	                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(notFoundStatus, message,
+	                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        	}
         }
         // Also get the array positions...
         tsposArray = (int [])bean_PropList.getContents ( "Indices" );
@@ -395,12 +451,14 @@ CommandWarningException, CommandException
     
     int nts = tslist.size();
     if ( nts == 0 ) {
-        message = "Unable to find time series to free using TSList=\"" + TSList + "\" TSID=\"" + TSID +
-            "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\".";
-        Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+    	if ( notFoundStatus != null ) {
+	        message = "Unable to find time series to free using TSList=\"" + TSList + "\" TSID=\"" + TSID +
+	            "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\".";
+	        Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(notFoundStatus, message,
+	            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+    	}
     }
 
     if ( warning_count > 0 ) {
@@ -458,7 +516,7 @@ CommandWarningException, CommandException
                     message, "See the log file for details - report the problem to software support." ) );
         }
     }
-    if ( countRemoved == 0 ) {
+    if ( (nts > 0) && (countRemoved == 0) ) {
         // Maybe an error but could be OK for a partial run.
         message = "No time series were matched for \"" + this + "\"";
         Message.printWarning ( 2, routine, message );
@@ -485,6 +543,7 @@ public String toString ( PropList parameters )
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
     String TSPosition = parameters.getValue("TSPosition");
+    String IfNotFound = parameters.getValue ( "IfNotFound" );
     String FreeEnsembleIfEmpty = parameters.getValue("FreeEnsembleIfEmpty");
     StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
@@ -510,6 +569,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TSPosition=\"" + TSPosition + "\"" );
+    }
+    if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("IfNotFound=" + IfNotFound );
     }
     if ( (FreeEnsembleIfEmpty != null) && (FreeEnsembleIfEmpty.length() > 0) ) {
         if ( b.length() > 0 ) {

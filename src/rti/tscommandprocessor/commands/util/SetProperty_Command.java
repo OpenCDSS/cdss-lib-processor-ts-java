@@ -26,6 +26,7 @@ import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the SetProperty() command.
@@ -80,6 +81,10 @@ throws InvalidCommandParameterException
 	String SetNaN = parameters.getValue ( "SetNaN" );
 	String SetNull = parameters.getValue ( "SetNull" );
 	String RemoveProperty = parameters.getValue ( "RemoveProperty" );
+	String Add = parameters.getValue ( "Add" );
+	String Subtract = parameters.getValue ( "Subtract" );
+	String Multiply = parameters.getValue ( "Multiply" );
+	String Divide = parameters.getValue ( "Divide" );
 	String warning = "";
     String message;
     
@@ -127,7 +132,7 @@ throws InvalidCommandParameterException
                     message, "Provide a property value, special value, or indicate to remove." ) );
 		}
 	}
-	else {
+	else if ( PropertyValue.indexOf("${") < 0 ){
 	    // Check the value given the type.
 	    PropertyValue = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, PropertyValue);
 	    if ( PropertyType.equalsIgnoreCase(_Boolean) && !PropertyValue.equalsIgnoreCase("true") && !PropertyValue.equalsIgnoreCase("false") ) {
@@ -198,9 +203,77 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify the parameter as " + _True + " or blank (default)."));
 	}
+	
+	if ( (Add != null) && !Add.isEmpty() ) {
+		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Add) ) {
+			message = "The Add parameter \"" + Add + "\" is invalid for " + _Double + " property type.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as a number."));
+		}
+		if ( PropertyType.equalsIgnoreCase(_Integer) && !StringUtil.isDouble(Add) ) {
+			message = "The Add parameter \"" + Add + "\" is invalid for " + _Integer + " property type.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as an integer."));
+		}
+	}
+	
+	if ( (Subtract != null) && !Subtract.isEmpty() ) {
+		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Subtract) ) {
+			message = "The Subtract parameter \"" + Subtract + "\" is invalid for " + _Double + " property type.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as a number."));
+		}
+		if ( PropertyType.equalsIgnoreCase(_Integer) && !StringUtil.isDouble(Subtract) ) {
+			message = "The Subtract parameter \"" + Subtract + "\" is invalid for " + _Integer + " property type.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as an integer."));
+		}
+	}
+	
+	if ( (Multiply != null) && !Multiply.isEmpty() ) {
+		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Multiply) ) {
+			message = "The Subtract parameter \"" + Subtract + "\" is invalid for " + _Double + " property type.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as a number."));
+		}
+		if ( PropertyType.equalsIgnoreCase(_Integer) && !StringUtil.isDouble(Multiply) ) {
+			message = "The Multiply parameter \"" + Subtract + "\" is invalid for " + _Integer + " property type.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as an integer."));
+		}
+	}
+	
+	if ( (Divide != null) && !Divide.isEmpty() ) {
+		if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(Divide) ) {
+			message = "The Divide parameter \"" + Divide + "\" is invalid for " + _Double + " property type.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as a number."));
+		}
+		if ( PropertyType.equalsIgnoreCase(_Integer) && !StringUtil.isDouble(Divide) ) {
+			message = "The Divide parameter \"" + Divide + "\" is invalid for " + _Integer + " property type.";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as an integer."));
+		}
+	}
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(7);
+	List<String> validList = new ArrayList<String>(11);
     validList.add ( "PropertyName" );
     validList.add ( "PropertyType" );
     validList.add ( "PropertyValue" );
@@ -208,6 +281,10 @@ throws InvalidCommandParameterException
     validList.add ( "SetNaN" );
     validList.add ( "SetNull" );
     validList.add ( "RemoveProperty" );
+    validList.add ( "Add" );
+    validList.add ( "Subtract" );
+    validList.add ( "Multiply" );
+    validList.add ( "Divide" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -345,6 +422,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (RemoveProperty != null) && RemoveProperty.equalsIgnoreCase(_True) ) {
 		removeProperty = true;
 	}
+	// Treat as strings until the math operation is executed and type is handled
+	String Add = parameters.getValue ( "Add" );
+	String Subtract = parameters.getValue ( "Subtract" );
+	String Multiply = parameters.getValue ( "Multiply" );
+	String Divide = parameters.getValue ( "Divide" );
 
 	try {
 	    Object Property_Object = null; // Important to initialize to null because may be using setNull
@@ -372,66 +454,151 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    }
 	    else {
 	    	// Not setting to null so expect to have a property value or special value
-		    if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
-		    	if ( !setNull ) {
-		    		Property_Object = Boolean.valueOf(PropertyValue);
+	    	if ( commandPhase == CommandPhaseType.RUN ) {
+			    if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
+			    	if ( !setNull ) {
+			    		Property_Object = Boolean.valueOf(PropertyValue);
+			    	}
+			    }
+			    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
+			        // This handles special strings like CurrentToHour
+			        // Have to specify a PropList to ensure the special syntax is handled
+			    	// TODO SAM 2016-09-18 consider whether parsing should recognize in-memory DateTime properties
+			    	if ( !setNull ) {
+			    		Property_Object = DateTime.parse(PropertyValue,(PropList)null);
+			    		if ( (Add != null) && !Add.isEmpty() ) {
+			    			DateTime dt = (DateTime)Property_Object;
+			    			TimeInterval interval = TimeInterval.parseInterval(Add);
+			    			dt.addInterval(interval.getBase(), interval.getMultiplier());
+			    		}
+			    		else if ( (Subtract != null) && !Subtract.isEmpty() ) {
+			    			DateTime dt = (DateTime)Property_Object;
+			    			TimeInterval interval = TimeInterval.parseInterval(Subtract);
+			    			dt.addInterval(interval.getBase(), -interval.getMultiplier());
+			    		}
+			    	}
+			    }
+			    else if ( PropertyType.equalsIgnoreCase(_Double) ) {
+			    	if ( setNaN ) {
+			    		Property_Object = new Double(Double.NaN);
+			    	}
+			    	else if ( !setNull ) {
+			    		// Set a number value
+			    		Property_Object = Double.valueOf(PropertyValue);
+			    		// Do math operations if specified
+			    		if ( (Add != null) && !Add.isEmpty() ) {
+			    			Double d = (Double)Property_Object;
+			    			Property_Object = new Double(d.doubleValue() + Double.parseDouble(Add));
+			    		}
+			    		else if ( (Subtract != null) && !Subtract.isEmpty() ) {
+			    			Double d = (Double)Property_Object;
+			    			Property_Object = new Double(d.doubleValue() - Double.parseDouble(Subtract));
+			    		}
+			    		else if ( (Multiply != null) && !Multiply.isEmpty() ) {
+			    			Double d = (Double)Property_Object;
+			    			Property_Object = new Double(d.doubleValue()*Double.parseDouble(Multiply));
+			    		}
+			    		else if ( (Divide != null) && !Divide.isEmpty() ) {
+			    			Double d = (Double)Property_Object;
+			    			if ( d == 0.0 ) {
+			    				Property_Object = Double.NaN;
+			    				// TODO sam 2017-03-25 should this throw an exception?
+			    			}
+			    			else {
+			    				Property_Object = new Double(d.doubleValue()/Double.parseDouble(Divide));
+			    			}
+			    		}
+			    	}
+			    }
+			    else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
+			    	if ( !setNull ) {
+			    		Property_Object = Integer.valueOf(PropertyValue);
+			    		// Do math operations if specified
+			    		if ( (Add != null) && !Add.isEmpty() ) {
+			    			Integer i = (Integer)Property_Object;
+			    			Property_Object = new Integer(i.intValue() + Integer.parseInt(Add));
+			    		}
+			    		else if ( (Subtract != null) && !Subtract.isEmpty() ) {
+			    			Integer i = (Integer)Property_Object;
+			    			Property_Object = new Integer(i.intValue() - Integer.parseInt(Subtract));
+			    		}
+			    		else if ( (Multiply != null) && !Multiply.isEmpty() ) {
+			    			Integer i = (Integer)Property_Object;
+			    			Property_Object = new Integer(i.intValue()*Integer.parseInt(Multiply));
+			    		}
+			    		else if ( (Divide != null) && !Divide.isEmpty() ) {
+			    			Integer i = (Integer)Property_Object;
+			    			if ( i == 0 ) {
+			    				Property_Object = null;
+			    				// TODO sam 2017-03-25 evaluate whether to throw an exception
+			    			}
+			    			else {
+			    				Property_Object = new Integer(i.intValue()/Integer.parseInt(Divide));
+			    			}
+			    		}
+			    	}
+			    }
+			    else if ( PropertyType.equalsIgnoreCase(_String) ) {
+			    	if ( setEmpty ) {
+			    		Property_Object = "";
+			    	}
+			    	else if ( !setNull ) {
+			    		Property_Object = PropertyValue;
+			    		// Do math operations if specified
+			    		if ( (Add != null) && !Add.isEmpty() ) {
+			    			// Concatenate
+			    			String s = (String)Property_Object;
+			    			Property_Object = s + Add;
+			    		}
+			    		else if ( (Multiply != null) && !Multiply.isEmpty() ) {
+			    			// Repeat the original string.
+			    			String s = (String)Property_Object;
+			    			StringBuilder b = new StringBuilder();
+			    			Double count = Double.parseDouble(Multiply);
+			    			for ( int i = 0; i < count; i++ ) {
+			    				b.append(s);
+			    			}
+			    			Property_Object = b.toString();
+			    		}
+			    		else if ( (Subtract != null) && !Subtract.isEmpty() ) {
+			    			// Remove the string.
+			    			String s = (String)Property_Object;
+			    			Property_Object = s.replace(Subtract,"");
+			    		}
+			    	}
+			    	Message.printStatus(2,routine,"Setting string property to \"" + Property_Object + "\"");
+			    }
+		    
+		    	// Set the property in the processor
+		    
+		    	PropList request_params = new PropList ( "" );
+		    	request_params.setUsingObject ( "PropertyName", PropertyName );
+		    	request_params.setUsingObject ( "PropertyValue", Property_Object );
+		    	if ( setNull ) {
+		    		request_params.setUsingObject ( "SetNull", Boolean.TRUE );
 		    	}
-		    }
-		    else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
-		        // This handles special strings like CurrentToHour
-		        // Have to specify a PropList to ensure the special syntax is handled
-		    	// TODO SAM 2016-09-18 consider whether parsing should recognize in-memory DateTime properties
-		    	if ( !setNull ) {
-		    		Property_Object = DateTime.parse(PropertyValue,(PropList)null);
+		    	try {
+		            processor.processRequest( "SetProperty", request_params);
 		    	}
-		    }
-		    else if ( PropertyType.equalsIgnoreCase(_Double) ) {
-		    	if ( setNaN ) {
-		    		Property_Object = new Double(Double.NaN);
+		    	catch ( Exception e ) {
+		    		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor (" + e + ").";
+		    		Message.printWarning(log_level,
+		    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+		    				routine, message );
+		            Message.printWarning(log_level,routine,e);
+		            status.addToLog ( CommandPhaseType.RUN,
+		                    new CommandLogRecord(CommandStatusType.FAILURE,
+		                            message, "Report the problem to software support." ) );
 		    	}
-		    	else if ( !setNull ) {
-		    		Property_Object = Double.valueOf(PropertyValue);
-		    	}
-		    }
-		    else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
-		    	if ( !setNull ) {
-		    		Property_Object = Integer.valueOf(PropertyValue);
-		    	}
-		    }
-		    else if ( PropertyType.equalsIgnoreCase(_String) ) {
-		    	if ( setEmpty ) {
-		    		Property_Object = "";
-		    	}
-		    	else if ( !setNull ) {
-		    		Property_Object = PropertyValue;
-		    	}
-		    	Message.printStatus(2,routine,"Setting string property to \"" + Property_Object + "\"");
-		    }
-	    
-	    	// Set the property in the processor
-	    
-	    	PropList request_params = new PropList ( "" );
-	    	request_params.setUsingObject ( "PropertyName", PropertyName );
-	    	request_params.setUsingObject ( "PropertyValue", Property_Object );
-	    	if ( setNull ) {
-	    		request_params.setUsingObject ( "SetNull", Boolean.TRUE );
 	    	}
-	    	try {
-	            processor.processRequest( "SetProperty", request_params);
-	            // Set the 
-	            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	                setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-	            }
-	    	}
-	    	catch ( Exception e ) {
-	    		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor (" + e + ").";
-	    		Message.printWarning(log_level,
-	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	    				routine, message );
-	            Message.printWarning(log_level,routine,e);
-	            status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Report the problem to software support." ) );
+	    	else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	    		// TODO sam 2017-03-18 evaluate whether this is appropriate for discovery mode
+	    		// -the problem is is ${Property} notation breaks conversions above
+	    		//setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+	    		// For now just set the value string
+	    		Prop prop = new Prop(PropertyName,PropertyValue);
+	            prop.setHowSet(Prop.SET_UNKNOWN);
+	    		setDiscoveryProp ( prop );
 	    	}
 	    }
 	}
@@ -480,6 +647,10 @@ public String toString ( PropList props )
     String SetNaN = props.getValue ( "SetNaN" );
     String SetNull = props.getValue ( "SetNull" );
     String RemoveProperty = props.getValue ( "RemoveProperty" );
+    String Add = props.getValue ( "Add" );
+    String Subtract = props.getValue ( "Subtract" );
+    String Multiply = props.getValue ( "Multiply" );
+    String Divide = props.getValue ( "Divide" );
 	StringBuffer b = new StringBuffer ();
     if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -522,6 +693,30 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "RemoveProperty=" + RemoveProperty );
+	}
+	if ( (Add != null) && (Add.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "Add=" + Add );
+	}
+	if ( (Subtract != null) && (Subtract.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "Subtract=" + Subtract );
+	}
+	if ( (Multiply != null) && (Multiply.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "Multiply=" + Multiply );
+	}
+	if ( (Divide != null) && (Divide.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "Divide=" + Divide );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

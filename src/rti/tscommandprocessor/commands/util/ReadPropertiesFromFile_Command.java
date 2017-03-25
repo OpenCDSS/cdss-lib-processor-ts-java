@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 
@@ -17,7 +17,6 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeUtil;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -36,13 +35,13 @@ import RTi.Util.IO.PropertyFileFormatType;
 /**
 This class initializes, checks, and runs the ReadPropertiesFromFile() command.
 */
-public class ReadPropertiesFromFile_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadPropertiesFromFile_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
 
 /**
 List of properties in discovery mode.
 */
-List<Prop> __discoveryProps = new Vector<Prop>();
+List<Prop> __discoveryProps = new ArrayList<Prop>();
 	
 /**
 Constructor.
@@ -80,9 +79,8 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify an input file." ) );
 	}
-	/* Don't check because ${} properties may be used
-	 * TODO SAM 2008-07-31 Need to enable check in some form.
-	else {
+	/* TODO SAM 2017-03-19 need to enable in some form
+	else if ( InputFile.indexOf("${") < 0 ) {
 	    String working_dir = null;
 		try {
 		    Object o = processor.getPropContents ( "WorkingDir" );
@@ -141,11 +139,11 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-	valid_Vector.add ( "InputFile" );
-	valid_Vector.add ( "FileFormat" );
-	valid_Vector.add ( "IncludeProperty" );
-	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(3);
+	validList.add ( "InputFile" );
+	validList.add ( "FileFormat" );
+	validList.add ( "IncludeProperty" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -180,7 +178,7 @@ Return the list of supported FileFormat parameter choices.
 */
 protected List<PropertyFileFormatType> getFileFormatChoices ()
 {
-    List<PropertyFileFormatType> fileFormatChoices = new Vector<PropertyFileFormatType>();
+    List<PropertyFileFormatType> fileFormatChoices = new ArrayList<PropertyFileFormatType>();
     fileFormatChoices.add ( PropertyFileFormatType.NAME_TYPE_VALUE );
     fileFormatChoices.add ( PropertyFileFormatType.NAME_TYPE_VALUE_PYTHON );
     fileFormatChoices.add ( PropertyFileFormatType.NAME_VALUE );
@@ -214,16 +212,15 @@ Read the property file for PropertyFileFormatType.NAME_VALUE format.
 @param processor the command processor
 @param commandPhase the command phase
 @param inputFileFull full path to the property file being read
-@param fileFormat format of file being read (currently not used much but may be used more as more complex
-Pythonic and nested notation is used for properties)
 @param includeProperty the list of properties to read, or if empty read all
+@return the list of problems, guaranteed to be non-null
 */
 private List<String> readPropertyFileNameValue ( CommandProcessor processor, CommandPhaseType commandPhase,
     String inputFileFull, String [] includeProperty )
 throws IOException
-{
+{	String routine = getClass().getSimpleName() + ".readPropertyFileNameValue";
     BufferedReader in = null;
-    List<String> problems = new Vector<String>();
+    List<String> problems = new ArrayList<String>();
     try {
         // Open the file...
         in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
@@ -319,7 +316,7 @@ throws IOException
             else if ( TimeUtil.isDateTime(propValue) ) {
                 objectValue = DateTime.parse(propValue);
             }
-            // The order of the following is important
+            // The order of the following is important because an integer also passes test for double
             else if ( StringUtil.isInteger(propValue) ) {
                 objectValue = new Integer(propValue);
             }
@@ -336,6 +333,7 @@ throws IOException
                     requestParams.setUsingObject ( "PropertyName", propName );
                     requestParams.setUsingObject ( "PropertyValue", objectValue );
                     processor.processRequest( "SetProperty", requestParams);
+                    Message.printStatus(2,routine,"Setting property " + propName + "=" + objectValue );
                 }
             }
             catch ( Exception e ) {
@@ -360,9 +358,8 @@ Read the property file for PropertyFileFormatType.NAME_TYPE_VALUE format.
 @param processor the command processor
 @param commandPhase the command phase
 @param inputFileFull full path to the property file being read
-@param fileFormat format of file being read (currently not used much but may be used more as more complex
-Pythonic and nested notation is used for properties)
 @param includeProperty the list of properties to read, or if empty read all
+@return the list of problems, guaranteed to be non-null
 */
 private List<String> readPropertyFileNameTypeValue ( CommandProcessor processor, CommandPhaseType commandPhase,
     String inputFileFull, String [] includeProperty )
@@ -377,9 +374,8 @@ Read the property file for PropertyFileFormatType.NAME_TYPE_VALUE_PYTHON format.
 @param processor the command processor
 @param commandPhase the command phase
 @param inputFileFull full path to the property file being read
-@param fileFormat format of file being read (currently not used much but may be used more as more complex
-Pythonic and nested notation is used for properties)
 @param includeProperty the list of properties to read, or if empty read all
+@return the list of problems, guaranteed to be non-null
 */
 private List<String> readPropertyFileNameTypeValuePython ( CommandProcessor processor, CommandPhaseType commandPhase,
     String inputFileFull, String [] includeProperty )
@@ -428,16 +424,31 @@ parameter values are invalid.
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = getClass().getName() + ".runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
+
+	CommandProcessor processor = getCommandProcessor();
+	CommandStatus status = getCommandStatus();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 	
 	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 	    getDiscoveryProps().clear();
 	}
 	
-	CommandProcessor processor = getCommandProcessor();
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue ( "InputFile" );
     String FileFormat = parameters.getValue ( "FileFormat" );
@@ -446,6 +457,9 @@ CommandWarningException, CommandException
         fileFormat = PropertyFileFormatType.NAME_TYPE_VALUE; // Default
     }
 	String IncludeProperty = parameters.getValue ( "IncludeProperty" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (IncludeProperty != null) && (IncludeProperty.indexOf("${") >= 0) ) {
+		IncludeProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, IncludeProperty);
+	}
 	String [] includeProperty = new String[0];
 	if ( (IncludeProperty != null) && !IncludeProperty.equals("") ) {
 	    if ( IncludeProperty.indexOf(",") > 0 ) {
@@ -456,33 +470,33 @@ CommandWarningException, CommandException
 	        includeProperty[0] = IncludeProperty.trim();
 	    }
 	}
-	CommandStatus status = getCommandStatus();
-	status.clearLog(commandPhase);
 
 	// Now try to read...
 
 	String InputFile_full = InputFile;
 	try {
-		// Convert to an absolute path...
-		InputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                TSCommandProcessorUtil.expandParameterValue(processor, this, InputFile) ) );
-		List<String> problems = new Vector<String>();
-		// Call the parsing method based on the file format
-		if ( fileFormat == PropertyFileFormatType.NAME_VALUE ) {
-		    problems = readPropertyFileNameValue ( processor, commandPhase, InputFile_full, includeProperty );
-		}
-		else if ( fileFormat == PropertyFileFormatType.NAME_TYPE_VALUE ) {
-            problems = readPropertyFileNameTypeValue ( processor, commandPhase, InputFile_full, includeProperty );
-        }
-		else if ( fileFormat == PropertyFileFormatType.NAME_TYPE_VALUE_PYTHON ) {
-            problems = readPropertyFileNameTypeValuePython ( processor, commandPhase, InputFile_full, includeProperty );
-        }
-		for ( String problem : problems ) {
-		    Message.printWarning ( warning_level, 
-	            MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, problem );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE, problem, "" ) );
+		if ( commandPhase == CommandPhaseType.RUN ) {
+			// Convert to an absolute path...
+			InputFile_full = IOUtil.verifyPathForOS(
+	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+	                TSCommandProcessorUtil.expandParameterValue(processor, this, InputFile) ) );
+			List<String> problems = new ArrayList<String>();
+			// Call the parsing method based on the file format
+			if ( fileFormat == PropertyFileFormatType.NAME_VALUE ) {
+			    problems = readPropertyFileNameValue ( processor, commandPhase, InputFile_full, includeProperty );
+			}
+			else if ( fileFormat == PropertyFileFormatType.NAME_TYPE_VALUE ) {
+	            problems = readPropertyFileNameTypeValue ( processor, commandPhase, InputFile_full, includeProperty );
+	        }
+			else if ( fileFormat == PropertyFileFormatType.NAME_TYPE_VALUE_PYTHON ) {
+	            problems = readPropertyFileNameTypeValuePython ( processor, commandPhase, InputFile_full, includeProperty );
+	        }
+			for ( String problem : problems ) {
+			    Message.printWarning ( warning_level, 
+		            MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, problem );
+	            status.addToLog ( commandPhase,
+	                new CommandLogRecord(CommandStatusType.FAILURE, problem, "" ) );
+			}
 		}
 	}
 	catch ( Exception e ) {
@@ -509,7 +523,7 @@ public String toString ( PropList parameters )
 	String InputFile = parameters.getValue ( "InputFile" );
 	String FileFormat = parameters.getValue ( "FileFormat" );
 	String IncludeProperty = parameters.getValue ( "IncludeProperty" );
-	StringBuffer b = new StringBuffer ();
+	StringBuilder b = new StringBuilder ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

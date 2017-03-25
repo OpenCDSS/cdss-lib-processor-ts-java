@@ -298,6 +298,7 @@ import rti.tscommandprocessor.commands.util.RunCommands_Command;
 import rti.tscommandprocessor.commands.util.RunDSSUTL_Command;
 import rti.tscommandprocessor.commands.util.RunProgram_Command;
 import rti.tscommandprocessor.commands.util.RunPython_Command;
+import rti.tscommandprocessor.commands.util.SetPropertyFromEnsemble_Command;
 import rti.tscommandprocessor.commands.util.SetPropertyFromTimeSeries_Command;
 import rti.tscommandprocessor.commands.util.SetProperty_Command;
 import rti.tscommandprocessor.commands.util.SetWorkingDir_Command;
@@ -1006,6 +1007,9 @@ throws UnknownCommandException
         return new ReadPatternFile_Command ();
     }
     // Put this before the shorter SetProperty() to avoid ambiguity.
+    else if ( commandName.equalsIgnoreCase("SetPropertyFromEnsemble") ) {
+        return new SetPropertyFromEnsemble_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("SetPropertyFromNwsrfsAppDefault") ) {
         return new SetPropertyFromNwsrfsAppDefault_Command ();
     }

@@ -20,7 +20,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JSeparator;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -188,7 +190,7 @@ private void initUI()
 
 	int y = -1;	// Vertical position of components in grid bag layout
 	if ( this.editingSingle ) {
-	    JGUIUtil.addComponent(northJPanel, new JLabel("This dialog is being shown because the datastore configuration file is requesting a prompt for login."), 
+	    JGUIUtil.addComponent(northJPanel, new JLabel("This dialog is shown because the datastore configuration file is requesting a prompt for login."), 
 			0, ++y, 7, 1, 0, 0, LTB_insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	else {
@@ -197,6 +199,8 @@ private void initUI()
 	}
     JGUIUtil.addComponent(northJPanel, new JLabel("Only the login and password can be specified - change other information in the datastore configuration file."), 
 		0, ++y, 7, 1, 0, 0, LTB_insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(northJPanel, new JSeparator(SwingConstants.HORIZONTAL), 
+		0, ++y, 7, 1, 0, 0, LTB_insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     // Datastore name - put in a combo box but if constructor used a PropList make it view-only
 	JGUIUtil.addComponent(northJPanel, new JLabel("Datastore:"), 
@@ -219,12 +223,12 @@ private void initUI()
     }
     this.nameJComboBox.addItemListener(this);
     JGUIUtil.addComponent(northJPanel, this.nameJComboBox, 
-		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
 	// Description
     JGUIUtil.addComponent(northJPanel, new JLabel("Description:"), 
 		0, ++y, 1, 1, 0, 0, LTB_insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    this.descriptionJTextField = new JTextField(20);
+    this.descriptionJTextField = new JTextField(40);
     this.descriptionJTextField.setEnabled(false);
     setDescription();
     JGUIUtil.addComponent(northJPanel, this.descriptionJTextField, 
@@ -238,7 +242,7 @@ private void initUI()
     setServer();
 	//this.loginJTextField.addKeyListener(this);
     JGUIUtil.addComponent(northJPanel, this.serverJTextField, 
-		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
 	// Database
     JGUIUtil.addComponent(northJPanel, new JLabel("Database:"), 
@@ -248,7 +252,7 @@ private void initUI()
 	//this.loginJTextField.addKeyListener(this);
     setDatabase();
     JGUIUtil.addComponent(northJPanel, this.databaseJTextField, 
-		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
 	// Login
     JGUIUtil.addComponent(northJPanel, new JLabel("Login:"), 
@@ -257,18 +261,18 @@ private void initUI()
 	//this.loginJTextField.addKeyListener(this);
 	setLogin();
     JGUIUtil.addComponent(northJPanel, this.loginJTextField, 
-		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Password
     JGUIUtil.addComponent(northJPanel, new JLabel("Password:"), 
 		0, ++y, 1, 1, 0, 0, LTB_insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	this.passwordJPasswordField = new JPasswordField(25);
+	this.passwordJPasswordField = new JPasswordField(20);
 	this.passwordJPasswordField.addKeyListener(this);
 	this.passwordJPasswordField.setEchoChar('*');
 	setPassword();
 	//passwordJPasswordField.addKeyListener(this);
 	JGUIUtil.addComponent(northJPanel, this.passwordJPasswordField, 
-		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 1, 1, 0, 0, RTB_insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// South JPanel
 	JPanel southJPanel = new JPanel();

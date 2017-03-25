@@ -28,9 +28,7 @@ import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -38,23 +36,20 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Editor for SetPropertyFromTimeSeries() command.
+Editor for SetPropertyFromEnsemble() command.
 */
 @SuppressWarnings("serial")
-public class SetPropertyFromTimeSeries_JDialog extends JDialog
+public class SetPropertyFromEnsemble_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
-private SetPropertyFromTimeSeries_Command __command = null;
+private SetPropertyFromEnsemble_Command __command = null;
 private JTextArea __command_JTextArea=null;
-private SimpleJComboBox __TSList_JComboBox = null;
-private JLabel __TSID_JLabel = null;
-private SimpleJComboBox	__TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __PropertyName_JTextField = null;
-private TSFormatSpecifiersJPanel __PropertyValue_JTextField = null;
+private JTextField __PropertyValue_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -64,7 +59,7 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetPropertyFromTimeSeries_JDialog ( JFrame parent, SetPropertyFromTimeSeries_Command command )
+public SetPropertyFromEnsemble_JDialog ( JFrame parent, SetPropertyFromEnsemble_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -96,7 +91,7 @@ Handle DocumentEvent events.
 */
 public void changedUpdate ( DocumentEvent e )
 {   checkGUIState();
- refresh();
+    refresh();
 }
 
 /**
@@ -105,7 +100,7 @@ Handle DocumentEvent events.
 */
 public void insertUpdate ( DocumentEvent e )
 {   checkGUIState();
- refresh();
+    refresh();
 }
 
 /**
@@ -114,7 +109,7 @@ Handle DocumentEvent events.
 */
 public void removeUpdate ( DocumentEvent e )
 {   checkGUIState();
- refresh();
+    refresh();
 }
 
 //...End event handlers for DocumentListener
@@ -124,25 +119,9 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 */
 private void checkGUIState ()
 {
-    String TSList = __TSList_JComboBox.getSelected();
-    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
-            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
-            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
-        __TSID_JComboBox.setEnabled(true);
-        __TSID_JLabel.setEnabled ( true );
-    }
-    else {
-        __TSID_JComboBox.setEnabled(false);
-        __TSID_JLabel.setEnabled ( false );
-    }
-    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
-        __EnsembleID_JComboBox.setEnabled(true);
-        __EnsembleID_JLabel.setEnabled ( true );
-    }
-    else {
-        __EnsembleID_JComboBox.setEnabled(false);
-        __EnsembleID_JLabel.setEnabled ( false );
-    }
+    __EnsembleID_JComboBox.setEnabled(true);
+    __EnsembleID_JLabel.setEnabled ( true );
+
 }
 
 /**
@@ -152,19 +131,11 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
-    String TSList = __TSList_JComboBox.getSelected();
-	String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyValue = __PropertyValue_JTextField.getText().trim();
 	__error_wait = false;
 
-    if ( TSList.length() > 0 ) {
-        parameters.set ( "TSList", TSList );
-    }
-	if ( TSID.length() > 0 ) {
-		parameters.set ( "TSID", TSID );
-	}
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
@@ -189,13 +160,9 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
-    String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();   
+{	String EnsembleID = __EnsembleID_JComboBox.getSelected();   
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyValue = __PropertyValue_JTextField.getText().trim();
-    __command.setCommandParameter ( "TSList", TSList );
-	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "PropertyValue", PropertyValue );
@@ -207,7 +174,7 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command The command to edit.
 */
-private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command command )
+private void initialize ( JFrame parent, SetPropertyFromEnsemble_Command command )
 {	__command = command;
 
 	addWindowListener( this );
@@ -220,10 +187,10 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Set a processor property from time series properties." ), 
+		"Set a processor property from time series ensemble." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"One processor property can be set for each time series that is processed (but currently the property name is constant)."),
+		"One processor property can be set for each ensemble that is processed (but currently the property name is constant)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command is useful when setting a processor property in a For() loop."),
@@ -231,17 +198,7 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    __TSList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
-
-    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    __TSID_JComboBox.setToolTipText("Select a time series TSID/alias from the list or specify with ${Property} notation");
-    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
-    
-    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID + "):");
+    __EnsembleID_JLabel = new JLabel ("EnsembleID:");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
@@ -261,13 +218,13 @@ private void initialize ( JFrame parent, SetPropertyFromTimeSeries_Command comma
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Property value:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __PropertyValue_JTextField = new TSFormatSpecifiersJPanel(10);
-    __PropertyValue_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval, ${ts:Property}, ${Property}.");
+    __PropertyValue_JTextField = new JTextField ( 20 );
+    __PropertyValue_JTextField.setToolTipText("Use ${tsensemble:Property}, ${Property}.");
     __PropertyValue_JTextField.addKeyListener ( this );
     __PropertyValue_JTextField.getDocument().addDocumentListener(this);
     JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use ${tsensemble:Property}."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -346,8 +303,6 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = getClass().getSimpleName() + ".refresh";
-    String TSList = "";
-    String TSID = "";
     String EnsembleID = "";
     String PropertyName = "";
     String PropertyValue = "";
@@ -355,41 +310,9 @@ private void refresh ()
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command...
-        TSList = props.getValue ( "TSList" );
-		TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
         PropertyName = props.getValue ( "PropertyName" );
         PropertyValue = props.getValue ( "PropertyValue" );
-        if ( TSList == null ) {
-            // Select default...
-            __TSList_JComboBox.select ( 0 );
-        }
-        else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __TSList_JComboBox,TSList, JGUIUtil.NONE, null, null ) ) {
-                __TSList_JComboBox.select ( TSList );
-            }
-            else {
-                Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nTSList value \"" + TSList +
-                "\".  Select a different value or Cancel.");
-                __error_wait = true;
-            }
-        }
-		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
-			__TSID_JComboBox.select ( TSID );
-		}
-		else {
-		    // Automatically add to the list after the blank...
-			if ( (TSID != null) && (TSID.length() > 0) ) {
-				__TSID_JComboBox.insertItemAt ( TSID, 1 );
-				// Select...
-				__TSID_JComboBox.select ( TSID );
-			}
-			else {
-			    // Select the blank...
-				__TSID_JComboBox.select ( 0 );
-			}
-		}
         if ( EnsembleID == null ) {
             // Select default...
             __EnsembleID_JComboBox.select ( 0 );
@@ -413,14 +336,10 @@ private void refresh ()
 	    }
 	}
 	// Regardless, reset the command from the fields...
-    TSList = __TSList_JComboBox.getSelected();
-	TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     PropertyName = __PropertyName_JTextField.getText().trim();
     PropertyValue = __PropertyValue_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
-    props.add ( "TSList=" + TSList );
-	props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "PropertyName=" + PropertyName );
 	props.add ( "PropertyValue=" + PropertyValue );

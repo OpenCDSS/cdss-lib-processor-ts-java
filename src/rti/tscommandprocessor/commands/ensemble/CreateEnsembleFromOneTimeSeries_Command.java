@@ -18,7 +18,6 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.YearType;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -35,7 +34,7 @@ import RTi.Util.IO.PropList;
 /**
 This class initializes, checks, and runs the CreateEnsembleFromOneTimeSeries() command.
 */
-public class CreateEnsembleFromOneTimeSeries_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class CreateEnsembleFromOneTimeSeries_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -142,7 +141,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an ensemble identifier." ) );
     }
-    if ( (ReferenceDate != null) && !ReferenceDate.equals("") ) {
+    if ( (ReferenceDate != null) && !ReferenceDate.equals("") && (ReferenceDate.indexOf("${") < 0) ) {
         try {
             DateTime.parse ( ReferenceDate, null );
         }
@@ -242,10 +241,10 @@ Return a list of objects of the requested type.
 public List getObjectList ( Class c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
     List<TS> discoveryTSList = getDiscoveryTSList ();
-	List v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
-        v = new Vector<TSEnsemble>();
+    	List<TSEnsemble> v = new Vector<TSEnsemble>();
         v.add ( tsensemble );
+        return v;
     }
     else if ( (discoveryTSList != null) && (discoveryTSList.size() != 0) ) {
         // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
@@ -254,7 +253,7 @@ public List getObjectList ( Class c )
             return discoveryTSList;
         }
     }
-    return v;
+    return null;
 }
 
 // Use base class parseCommand()
@@ -295,9 +294,8 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
-{	String routine = "CreateEnsembleFromOneTimeSeries_Command.runCommandInternal", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
     int log_level = 3;  // Non-user warning level
 	String command_tag = "" + command_number;
@@ -305,7 +303,19 @@ CommandWarningException, CommandException
 
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(commandPhase);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryEnsemble ( null );
@@ -344,6 +354,9 @@ CommandWarningException, CommandException
 	DateTime InputEnd_DateTime = null;
     String TraceLength = parameters.getValue ( "TraceLength" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
+	if ( (commandPhase == CommandPhaseType.RUN) && (ReferenceDate != null) && (ReferenceDate.indexOf("${") >= 0) ) {
+		ReferenceDate = TSCommandProcessorUtil.expandParameterValue(processor, this, ReferenceDate);
+	}
     String OutputYearType = parameters.getValue( "OutputYearType" );
     YearType outputYearType = YearType.CALENDAR;
     if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
@@ -398,32 +411,36 @@ CommandWarningException, CommandException
     }
      
     if ( ts == null ) {
-        message = "Unable to find time series to analyze using TSID \"" + TSID + "\".";
-        Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( commandPhase,
-        new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-        throw new CommandWarningException ( message );
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+	        message = "Unable to find time series to analyze using TSID \"" + TSID + "\".";
+	        Message.printWarning ( warning_level,
+	        MessageUtil.formatMessageTag(
+	        command_tag,++warning_count), routine, message );
+	        status.addToLog ( commandPhase,
+	        new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+	        throw new CommandWarningException ( message );
+    	}
     }
     
     DateTime ReferenceDate_DateTime = null;
-    if ( (ReferenceDate != null) && !ReferenceDate.equals("") ) {
-        try {
-            // The following call will recognize special values like CurrentToDay
-            ReferenceDate_DateTime = DateTime.parse(ReferenceDate,null);
-        }
-        catch ( Exception e ) {
-            message="Reference date \"" + ReferenceDate + "\" is invalid.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the reference date is valid." ) );
-        }
-    }
+	if ( commandPhase == CommandPhaseType.RUN ) {
+	    if ( (ReferenceDate != null) && !ReferenceDate.equals("") ) {
+	        try {
+	            // The following call will recognize special values like CurrentToDay
+	            ReferenceDate_DateTime = DateTime.parse(ReferenceDate,null);
+	        }
+	        catch ( Exception e ) {
+	            message="Reference date \"" + ReferenceDate + "\" is invalid.";
+	            Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	            status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Verify that the reference date is valid." ) );
+	        }
+	    }
+	}
     
 	// Input period...
     
@@ -457,6 +474,14 @@ CommandWarningException, CommandException
         TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
         tslist = util.getTracesFromTS ( ts, TraceLength, ReferenceDate_DateTime,
             outputYearType, ShiftDataHow, InputStart_DateTime, InputEnd_DateTime, Alias, createData );
+        // The above code does not recognize ${Properties} from the processor so reset the alias if necessary
+        if ( (Alias != null) && Alias.indexOf("${") >= 0 ) {
+        	for ( TS ts2 : tslist ) {
+        		String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                    processor, ts2, Alias, status, commandPhase);
+                ts2.setAlias ( alias );
+        	}
+        }
     }
     catch ( Exception e ) {
         message = "Unexpected error creating traces from time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -473,11 +498,13 @@ CommandWarningException, CommandException
     if ( tslist != null ) {
         size = tslist.size();
     }
-    Message.printStatus ( 2, routine, "Created " + size + " traces from time series \"" + ts.getIdentifier() + "\"" );
     
     // Update the data to the processor so that appropriate actions are taken...
 
     if ( tslist != null ) {
+        if ( ts != null ) {
+        	Message.printStatus ( 2, routine, "Created " + size + " traces from time series \"" + ts.getIdentifier() + "\"" );
+        }
         if ( commandPhase == CommandPhaseType.RUN ) {
             TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
             TSCommandProcessorUtil.appendTimeSeriesListToResultsList(processor, this, tslist);
@@ -487,12 +514,13 @@ CommandWarningException, CommandException
             TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
             TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
         }
-        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create an ensemble and add the discovery time series...
-            TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
-            setDiscoveryTSList(tslist);
-            setDiscoveryEnsemble ( ensemble );
-        }
+    }
+    // Always set the data in discovery mode
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Create an ensemble and add the discovery time series...
+        TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
+        setDiscoveryTSList(tslist);
+        setDiscoveryEnsemble ( ensemble );
     }
 
     if ( warning_count > 0 ) {

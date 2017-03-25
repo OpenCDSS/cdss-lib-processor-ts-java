@@ -4,37 +4,34 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
+import RTi.TS.TSEnsemble;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
-import RTi.Util.Time.DateTimeFormatterType;
-import RTi.Util.Time.TimeUtil;
 
 /**
-This class initializes, checks, and runs the FormatDateTimeProperty() command.
+This class initializes, checks, and runs the SetPropertyFromEnsemble() command.
 */
-public class FormatDateTimeProperty_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class SetPropertyFromEnsemble_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
-
+	
 /**
 Property set during discovery.
 */
@@ -43,25 +40,22 @@ private Prop __discovery_Prop = null;
 /**
 Constructor.
 */
-public FormatDateTimeProperty_Command ()
+public SetPropertyFromEnsemble_Command ()
 {	super();
-	setCommandName ( "FormatDateTimeProperty" );
+	setCommandName ( "SetPropertyFromEnsemble" );
 }
 
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String PropertyName = parameters.getValue ( "PropertyName" );
-    String DateTimePropertyName = parameters.getValue ( "DateTimePropertyName" );
-	String FormatterType = parameters.getValue ( "FormatterType" );
-	String Format = parameters.getValue ( "Format" );
+	String PropertyValue = parameters.getValue ( "PropertyValue" );
 	String warning = "";
     String message;
     
@@ -85,43 +79,24 @@ throws InvalidCommandParameterException
                     "Specify a property name that does not include the characters $(){}, space, or tab." ) );
         }
     }
-	if ( (DateTimePropertyName == null) || DateTimePropertyName.equals("") ) {
-        message = "The date/time property name must be specified.";
+    
+    if ( (PropertyValue == null) || PropertyValue.equals("") ) {
+        message = "The property value must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Provide a date/time property name." ) );
-	}
-	if ( (FormatterType != null) && !FormatterType.equals("") ) {
-	    // Check the value given the type - only support types that are enabled in this command.
-	    if ( !FormatterType.equalsIgnoreCase(""+DateTimeFormatterType.C) ) {
-	        message = "The date/time formatter \"" + FormatterType + "\" is not recognized.";
-	        warning += "\n" + message;
-	        status.addToLog ( CommandPhaseType.INITIALIZATION,
-	            new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Specify the date/time formatter type as " + DateTimeFormatterType.C ));
-	    }
-	}
-    if ( (Format == null) || Format.equals("") ) {
-        message = "The format must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Provide a format." ) );
+                message, "Provide a property value." ) );
     }
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "PropertyName" );
-    valid_Vector.add ( "DateTimePropertyName" );
-    valid_Vector.add ( "FormatterType" );
-    valid_Vector.add ( "Format" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(5);
+    validList.add ( "EnsembleID" );
+    validList.add ( "PropertyName" );
+    validList.add ( "PropertyValue" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		Message.printWarning ( warning_level, MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -131,12 +106,11 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new FormatDateTimeProperty_JDialog ( parent, this )).ok();
+	return (new SetPropertyFromEnsemble_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -159,7 +133,7 @@ public List getObjectList ( Class c )
     Prop prop = new Prop();
     // Check for TS request or class that matches the data...
     if ( c == prop.getClass() ) {
-        List<Prop> v = new Vector<Prop> (1);
+        List<Prop> v = new ArrayList<Prop>(1);
         v.add ( discovery_Prop );
         return v;
     }
@@ -169,28 +143,9 @@ public List getObjectList ( Class c )
 }
 
 /**
-Parse the command string into a PropList of parameters.  A check for a legacy definition is needed to
-transition to new conventions.
-@param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
-*/
-public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{   super.parseCommand( command_string);
-    // Changed STRFTIME to C because using more terse abbreviations like "ISO" and "MS"
-    PropList parameters = getCommandParameters();
-    String propVal = parameters.getValue("FormatterType");
-    if ( (propVal != null) && propVal.equalsIgnoreCase("Strftime") ) {
-        parameters.set("FormatterType", "C");
-    }
-}
-
-/**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -202,8 +157,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
@@ -222,16 +176,14 @@ Run the command.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "FormatDateTimeProperty_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int log_level = 3;  // Level for non-use messages for log file.
 
-	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-		setDiscoveryProp(null);
-	}
-    
+	// Make sure there are time series available to operate on...
+
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // default
@@ -250,67 +202,106 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	PropList parameters = getCommandParameters();
 
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
+	}
 	String PropertyName = parameters.getValue ( "PropertyName" );
-	String DateTimePropertyName = parameters.getValue ( "DateTimePropertyName" );
-    String FormatterType = parameters.getValue ( "FormatterType" );
-    if ( (FormatterType == null) || FormatterType.equals("") ) {
-        FormatterType = "" + DateTimeFormatterType.C;
-    }
-    DateTimeFormatterType formatterType = DateTimeFormatterType.valueOfIgnoreCase(FormatterType);
-	String Format = parameters.getValue ( "Format" );
-	
+	String PropertyValue = parameters.getValue ( "PropertyValue" ); // Expanded below in run mode
+
+	if ( warning_count > 0 ) {
+		// Input error (e.g., missing time series)...
+		message = "Command parameter data has errors.  Unable to run command.";
+		Message.printWarning ( warning_level,
+		MessageUtil.formatMessageTag(
+		command_tag,++warning_count), routine, message );
+		throw new CommandException ( message );
+	}
+
+	// Now process the ensembles...
+
+	TSEnsemble ensemble = null;
 	try {
 		if ( commandPhase == CommandPhaseType.RUN ) {
-		    // Get the original property...
-		    Object dateTimeProperty = processor.getPropContents(DateTimePropertyName);
-		    // Format the new property...
-		    Object Property_Object = null;
-		    if ( dateTimeProperty != null ) {
-		        DateTime dt = (DateTime)dateTimeProperty;
-		        if ( formatterType == DateTimeFormatterType.C ) {
-		            Property_Object = TimeUtil.formatDateTime(dt, Format);
-		        }
-		    }
-		    
-	    	// Set the new property in the processor
-	    
-	    	PropList request_params = new PropList ( "" );
-	    	request_params.setUsingObject ( "PropertyName", PropertyName );
-	    	request_params.setUsingObject ( "PropertyValue", Property_Object );
-	    	try {
-	            processor.processRequest( "SetProperty", request_params);
-	            // Set the 
-	            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	                setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-	            }
-	    	}
-	    	catch ( Exception e ) {
-	    		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor.";
-	    		Message.printWarning(log_level,
-	    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	    				routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Report the problem to software support." ) );
-	    	}
-		}
-		else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-			// Set a property that will be listed for choices
-            Prop prop = new Prop();
-            prop.setKey ( PropertyName );
-            prop.setHowSet(Prop.SET_UNKNOWN);
-            setDiscoveryProp ( prop );
+			// Get the ensemble to process...
+			PropList request_params = new PropList ( "" );
+			String EnsembleList = "AllMatchingEnsembleID";
+			request_params.set ( "EnsembleList", null ); // Will be ignored for now
+		    request_params.set ( "EnsembleID", EnsembleID );
+			CommandProcessorRequestResultsBean bean = null;
+			try {
+		        bean = processor.processRequest( "GetEnsemble", request_params);
+			}
+			catch ( Exception e ) {
+				message = "Error requesting GetEnsemble(EnsembleList=\"" + EnsembleList +
+				"\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+				Message.printWarning(warning_level,
+						MessageUtil.formatMessageTag( command_tag, ++warning_count),
+						routine, message );
+				status.addToLog ( CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								message, "Report problem to software support." ) );
+			}
+			PropList bean_PropList = bean.getResultsPropList();
+			Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble" );
+			if ( o_TSEnsemble == null ) {
+				message = "Unable to find time series ensemble to process using EnsembleList=\"" + EnsembleList + "\" EnsembleID=\"" +
+		        EnsembleID + "\".";
+				Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag(
+				command_tag,++warning_count), routine, message );
+				status.addToLog ( CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								message, "Confirm that time series ensemble is available (may be OK for partial run)." ) );
+			}
+			List<TSEnsemble> ensembleList = new ArrayList<TSEnsemble>(1);
+			if ( o_TSEnsemble != null ) {
+				ensembleList.add((TSEnsemble)o_TSEnsemble);
+			}
+			int size = 0;
+			if ( ensembleList != null ) {
+				size = ensembleList.size();
+			}
+		    for ( int i = 0; i < size; i++ ) {
+		        ensemble = ensembleList.get(i);
+	
+		    	// Set the property in the processor
+				Object Property_Object = null;
+				if ( commandPhase == CommandPhaseType.RUN ) {
+					Property_Object = TSCommandProcessorUtil.expandTimeSeriesEnsembleMetadataString (
+		                    processor, ensemble, PropertyValue, status, CommandPhaseType.RUN);
+				}
+		    	request_params = new PropList ( "" );
+		    	request_params.setUsingObject ( "PropertyName", PropertyName );
+		    	request_params.setUsingObject ( "PropertyValue", Property_Object );
+		    	try {
+		            processor.processRequest( "SetProperty", request_params);
+		            // Set the property value in discovery mode
+		            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+		                setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+		            }
+		    	}
+		    	catch ( Exception e ) {
+		    		message = "Error requesting SetProperty(Property=\"" + PropertyName + "\") from processor.";
+		    		Message.printWarning(log_level,
+		    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+		    				routine, message );
+		            status.addToLog ( CommandPhaseType.RUN,
+		                    new CommandLogRecord(CommandStatusType.FAILURE,
+		                            message, "Report the problem to software support." ) );
+		    	}
+			}
 		}
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error setting property \""+ PropertyName + "\"=\"" + Format + "\" (" + e + ").";
+		message = "Unexpected error setting property from ensemble \""+ ensemble.getEnsembleID() + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
         status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "See the log file for details - report the problem to software support." ) );
+                message, "See the log file for details." ) );
 	}
 
 	if ( warning_count > 0 ) {
@@ -340,35 +331,28 @@ public String toString ( PropList props )
 {	if ( props == null ) {
 		return getCommandName() + "()";
 	}
+    String EnsembleID = props.getValue( "EnsembleID" );
     String PropertyName = props.getValue( "PropertyName" );
-    String DateTimePropertyName = props.getValue( "DateTimePropertyName" );
-	String FormatterType = props.getValue( "FormatterType" );
-    String Format = props.getValue( "Format" );
+    String PropertyValue = props.getValue( "PropertyValue" );
 	StringBuffer b = new StringBuffer ();
+	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+	}
     if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "PropertyName=\"" + PropertyName + "\"" );
+        b.append ( "PropertyName=\"" + PropertyName + "\"");
     }
-    if ( (DateTimePropertyName != null) && (DateTimePropertyName.length() > 0) ) {
+    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DateTimePropertyName=\"" + DateTimePropertyName + "\"" );
+        b.append ( "PropertyValue=\"" + PropertyValue + "\"");
     }
-    if ( (FormatterType != null) && (FormatterType.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "FormatterType=" + FormatterType );
-    }
-	if ( (Format != null) && (Format.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Format=\"" + Format + "\"" );
-	}
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

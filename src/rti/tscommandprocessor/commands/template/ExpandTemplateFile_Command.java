@@ -448,31 +448,33 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	*/
 
 	String InputFile_full = null;
-	if ( (InputFile != null) && !InputFile.equals("") ) {
-	    InputFile_full = IOUtil.verifyPathForOS(
-	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-	        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
-        File file = new File ( InputFile_full );
-    	if ( !file.exists() ) {
-            message = "Template command file \"" + InputFile_full + "\" does not exist.";
-            /*
-            if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
-                Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the file exists at the time the command is run."));
-            }
-            else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {*/
-                Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-                    message, "Verify that the file exists at the time the command is run."));
-                /*
-            }
-            else {
-                Message.printStatus( 2, routine, message + "  Ignoring.");
-            }*/
-    	}
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		if ( (InputFile != null) && !InputFile.equals("") ) {
+		    InputFile_full = IOUtil.verifyPathForOS(
+		        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+		        	TSCommandProcessorUtil.expandParameterValue(processor, this,InputFile)) );
+	        File file = new File ( InputFile_full );
+	    	if ( !file.exists() ) {
+	            message = "Template command file \"" + InputFile_full + "\" does not exist.";
+	            /*
+	            if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+	                Message.printWarning ( warning_level,
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Verify that the file exists at the time the command is run."));
+	            }
+	            else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {*/
+	                Message.printWarning ( warning_level,
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	                status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+	                    message, "Verify that the file exists at the time the command is run."));
+	                /*
+	            }
+	            else {
+	                Message.printStatus( 2, routine, message + "  Ignoring.");
+	            }*/
+	    	}
+		}
 	}
     String OutputFile_full = null;
     if ( (OutputFile != null) && !OutputFile.equals("") ) {

@@ -267,7 +267,6 @@ public class JavaConnections extends Object
 						}
 						else
 						{
-							theConn.close();
 							return null;
 						}
 					}

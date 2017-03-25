@@ -48,6 +48,10 @@ private SimpleJComboBox	__SetNull_JComboBox = null;
 private SimpleJComboBox	__SetNaN_JComboBox = null;
 private SimpleJComboBox	__SetEmpty_JComboBox = null;
 private SimpleJComboBox	__RemoveProperty_JComboBox = null;
+private JTextField __Add_JTextField = null;
+private JTextField __Subtract_JTextField = null;
+private JTextField __Multiply_JTextField = null;
+private JTextField __Divide_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -103,6 +107,10 @@ private void checkInput ()
 	String SetNaN = __SetNaN_JComboBox.getSelected();
 	String SetNull = __SetNull_JComboBox.getSelected();
 	String RemoveProperty = __RemoveProperty_JComboBox.getSelected();
+	String Add = __Add_JTextField.getText().trim();
+	String Subtract = __Subtract_JTextField.getText().trim();
+	String Multiply = __Multiply_JTextField.getText().trim();
+	String Divide = __Divide_JTextField.getText().trim();
 
 	__error_wait = false;
 
@@ -127,6 +135,18 @@ private void checkInput ()
 	if ( RemoveProperty.length() > 0 ) {
 		parameters.set ( "RemoveProperty", RemoveProperty );
 	}
+	if ( Add.length() > 0 ) {
+		parameters.set ( "Add", Add );
+	}
+	if ( Subtract.length() > 0 ) {
+		parameters.set ( "Subtract", Subtract );
+	}
+	if ( Multiply.length() > 0 ) {
+		parameters.set ( "Multiply", Multiply );
+	}
+	if ( Divide.length() > 0 ) {
+		parameters.set ( "Divide", Divide );
+	}
 
 	try {
 	    // This will warn the user...
@@ -150,6 +170,10 @@ private void commitEdits ()
 	String SetNaN = __SetNaN_JComboBox.getSelected();
 	String SetNull = __SetNull_JComboBox.getSelected();
 	String RemoveProperty = __RemoveProperty_JComboBox.getSelected();
+	String Add = __Add_JTextField.getText().trim();
+	String Subtract = __Subtract_JTextField.getText().trim();
+	String Multiply = __Multiply_JTextField.getText().trim();
+	String Divide = __Divide_JTextField.getText().trim();
     __command.setCommandParameter ( "PropertyType", PropertyType );
 	__command.setCommandParameter ( "PropertyValue", PropertyValue );
 	__command.setCommandParameter ( "PropertyName", PropertyName );
@@ -157,6 +181,10 @@ private void commitEdits ()
 	__command.setCommandParameter ( "SetNaN", SetNaN );
 	__command.setCommandParameter ( "SetNull", SetNull );
 	__command.setCommandParameter ( "RemoveProperty", RemoveProperty );
+	__command.setCommandParameter ( "Add", Add );
+	__command.setCommandParameter ( "Subtract", Subtract );
+	__command.setCommandParameter ( "Multiply", Multiply );
+	__command.setCommandParameter ( "Divide", Divide );
 }
 
 /**
@@ -187,6 +215,12 @@ private void initialize ( JFrame parent, SetProperty_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Properties can be set using the \"Set\" or \"Special Values\" tabs.  Properties can be removed (unset) using the \"Remove (unset)\" tab." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Properties can be removed (unset) using the \"Remove (unset)\" tab." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Existing properties can be modified using basic math using the \"Math\" tab." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
@@ -210,7 +244,7 @@ private void initialize ( JFrame parent, SetProperty_Command command )
         "Specify date/times using standard notations to appropriate precision (e.g., YYYY-MM-DD hh:mm:ss)." ), 
         0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JLabel (
-        "Special values also are recognized for date/times (for all precisions)."),
+        "DateTime values also recognize the following syntax (use as appropriate for date/time precision):"),
         0, ++ySet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(set_JPanel, new JLabel (
         "    CurrentToYear = the current date to year precision"),
@@ -370,6 +404,69 @@ private void initialize ( JFrame parent, SetProperty_Command command )
 		"Optional - remove/unset the property"), 
 		3, yUnset, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    // Panel for math
+    int yMath = -1;
+    JPanel math_JPanel = new JPanel();
+    math_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Math", math_JPanel );
+
+    JGUIUtil.addComponent(math_JPanel, new JLabel (
+		"Use the following parameters to perform basic math operations on the property." ),
+		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel (
+		"The value must be consistent with the property type and math operation, as follows:" ), 
+		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel (
+		"  DateTime - can add or subtract an interval such as 1Day, 15Minute" ),
+		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel (
+		"  Double - can add, subtract, multiply, or divide by a number" ),
+		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel (
+		"  Integer - can add, subtract, multiply, or divide by an integer" ),
+		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel (
+		"  String - can concatenate (add), remove (subtract), or replicate (append multiple times)" ), 
+		0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yMath, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Add:" ), 
+		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Add_JTextField = new JTextField ( 20 );
+	__Add_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(math_JPanel, __Add_JTextField,
+		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to add."), 
+		3, yMath, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Subtract:" ), 
+		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Subtract_JTextField = new JTextField ( 20 );
+	__Subtract_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(math_JPanel, __Subtract_JTextField,
+		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to subtract."), 
+		3, yMath, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Multiply:" ), 
+		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Multiply_JTextField = new JTextField ( 20 );
+	__Multiply_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(math_JPanel, __Multiply_JTextField,
+		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to multiply."), 
+		3, yMath, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(math_JPanel, new JLabel ( "Divide:" ), 
+		0, ++yMath, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Divide_JTextField = new JTextField ( 20 );
+	__Divide_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(math_JPanel, __Divide_JTextField,
+		1, yMath, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(math_JPanel, new JLabel( "Optional - value to divide."), 
+		3, yMath, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
@@ -453,6 +550,10 @@ private void refresh ()
 	String SetNaN = "";
 	String SetNull = "";
 	String RemoveProperty = "";
+	String Add = "";
+	String Subtract = "";
+	String Multiply = "";
+	String Divide = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -464,6 +565,10 @@ private void refresh ()
 		SetNaN = props.getValue ( "SetNaN" );
 		SetNull = props.getValue ( "SetNull" );
 		RemoveProperty = props.getValue ( "RemoveProperty" );
+		Add = props.getValue ( "Add" );
+		Subtract = props.getValue ( "Subtract" );
+		Multiply = props.getValue ( "Multiply" );
+		Divide = props.getValue ( "Divide" );
 	    if ( PropertyName != null ) {
 	         __PropertyName_JTextField.setText ( PropertyName );
 	    }
@@ -549,6 +654,18 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+		if ( Add != null ) {
+		    __Add_JTextField.setText ( Add );
+		}
+		if ( Subtract != null ) {
+		    __Subtract_JTextField.setText ( Subtract );
+		}
+		if ( Multiply != null ) {
+		    __Multiply_JTextField.setText ( Multiply );
+		}
+		if ( Divide != null ) {
+		    __Divide_JTextField.setText ( Divide );
+		}
 	}
 	// Regardless, reset the command from the fields...
 	PropertyName = __PropertyName_JTextField.getText().trim();
@@ -558,6 +675,10 @@ private void refresh ()
 	SetNaN = __SetNaN_JComboBox.getSelected();
 	SetNull = __SetNull_JComboBox.getSelected();
 	RemoveProperty = __RemoveProperty_JComboBox.getSelected();
+	Add = __Add_JTextField.getText().trim();
+	Subtract = __Subtract_JTextField.getText().trim();
+	Multiply = __Multiply_JTextField.getText().trim();
+	Divide = __Divide_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "PropertyType=" + PropertyType );
 	props.add ( "PropertyName=" + PropertyName );
@@ -566,6 +687,10 @@ private void refresh ()
 	props.add ( "SetNaN=" + SetNaN );
 	props.add ( "SetNull=" + SetNull );
 	props.add ( "RemoveProperty=" + RemoveProperty );
+	props.add ( "Add=" + Add );
+	props.add ( "Subtract=" + Subtract );
+	props.add ( "Multiply=" + Multiply );
+	props.add ( "Divide=" + Divide );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

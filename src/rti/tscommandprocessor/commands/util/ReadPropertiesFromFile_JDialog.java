@@ -19,12 +19,14 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -84,21 +86,19 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+			fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle("Select Property File to Read");
 		SimpleFileFilter sff = new SimpleFileFilter("txt", "Property File");
 		fc.addChoosableFileFilter(sff);
 		
-		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+		if (fc.showDialog(this,"Select") == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
 			String filename = fc.getSelectedFile().getName(); 
 			String path = fc.getSelectedFile().getPath(); 
@@ -190,22 +190,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__InputFile_JTextField = null;
-	__command = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__browse_JButton = null;
-	__working_dir = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
@@ -222,23 +206,26 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Read one or more properties from a file.  The properties will apply globally to subsequent commands." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"It is recommended that the input file be relative to the current working directory." ), 
+		"It is recommended that the input file location is relative to the current working directory." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
+	__InputFile_JTextField.setToolTipText("Property file name, can use ${Property} notation.");
 	__InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -249,13 +236,14 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("File format:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FileFormat_JComboBox = new SimpleJComboBox(false);
-    List<PropertyFileFormatType> fileFormatChoices = __command.getFileFormatChoices();
-    List<String> fileFormatChoicesS = new Vector<String>();
-    fileFormatChoicesS.add ( "" );
-    for ( PropertyFileFormatType c : fileFormatChoices ) {
-        fileFormatChoicesS.add ( "" + c );
+    List<PropertyFileFormatType> fileFormatTypes = __command.getFileFormatChoices();
+    List<String> fileFormatChoices = new ArrayList<String>();
+    fileFormatChoices.add ( "" );
+    for ( PropertyFileFormatType c : fileFormatTypes ) {
+        fileFormatChoices.add ( "" + c );
     }
-    __FileFormat_JComboBox.setData (fileFormatChoicesS);
+    __FileFormat_JComboBox.setData (fileFormatChoices);
+    __FileFormat_JComboBox.select(0);
     __FileFormat_JComboBox.addItemListener (this);
     JGUIUtil.addComponent(main_JPanel, __FileFormat_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -266,6 +254,7 @@ private void initialize ( JFrame parent, ReadPropertiesFromFile_Command command 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Property to read:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IncludeProperty_JTextField = new JTextField(20);
+	__IncludeProperty_JTextField.setToolTipText("List of properties to read separated by commas, can use ${Property} notation.");
 	__IncludeProperty_JTextField.addKeyListener (this);
 	JGUIUtil.addComponent(main_JPanel, __IncludeProperty_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -336,7 +325,7 @@ public void keyReleased ( KeyEvent event )
 }
 
 public void keyTyped ( KeyEvent event )
-{
+{	// Covered by the other events
 }
 
 /**
@@ -351,7 +340,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String InputFile = "";
 	String IncludeProperty = "";
 	String FileFormat = "";
@@ -389,9 +378,10 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
+	FileFormat = __FileFormat_JComboBox.getSelected();
 	IncludeProperty = __IncludeProperty_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
-	parameters.add ( "InputFileFile=" + InputFile );
+	parameters.add ( "InputFile=" + InputFile );
 	parameters.add ( "FileFormat=" + FileFormat );
 	parameters.add ( "IncludeProperty=" + IncludeProperty );
 	__command_JTextArea.setText( __command.toString ( parameters ) );

@@ -98,7 +98,7 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify an existing input file." ) );
     }
-    else {
+    else if ( InputFile.indexOf("${") < 0 ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );
@@ -137,7 +137,7 @@ throws InvalidCommandParameterException
 
 	// InputStart
 	DateTime inputStart = null, inputEnd = null;
-	if ((InputStart != null) && !InputStart.isEmpty() && !InputStart.startsWith("${")) {
+	if ((InputStart != null) && !InputStart.isEmpty() && (InputStart.indexOf("${") < 0)) {
 		try {
 			inputStart = DateTime.parse(InputStart);
 		} 
@@ -151,7 +151,7 @@ throws InvalidCommandParameterException
 	}
 
 	// InputEnd
-	if ((InputEnd != null) && !InputEnd.isEmpty() && !InputEnd.startsWith("${")) {
+	if ((InputEnd != null) && !InputEnd.isEmpty() && (InputEnd.indexOf("${") < 0)) {
 		try {
 			inputEnd = DateTime.parse(InputEnd);
 		} 
@@ -371,7 +371,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     int log_level = 3;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	    
+
     // Get and clear the status and clear the run log...
     
     CommandStatus status = getCommandStatus();

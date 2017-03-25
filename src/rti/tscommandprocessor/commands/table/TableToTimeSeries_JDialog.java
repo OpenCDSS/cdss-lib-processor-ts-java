@@ -44,6 +44,7 @@ import RTi.Util.Time.YearType;
 /**
 Editor for the TableToTimeSeries() command.
 */
+@SuppressWarnings("serial")
 public class TableToTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {

@@ -440,10 +440,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     	catch ( Exception e ) {
     		Message.printWarning ( 3, routine, e );
-    		message = "Unexpected error read table from delimited file \"" + InputFile_full + "\" (" + e + ").";
+    		message = "Unexpected error reading table from delimited file \"" + InputFile_full + "\" (" + e + ").";
     		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
             status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the file exists and is readable." ) );
+                message, "Verify that the file exists and is properly formatted - see the log file." ) );
     		throw new CommandWarningException ( message );
     	}
     	

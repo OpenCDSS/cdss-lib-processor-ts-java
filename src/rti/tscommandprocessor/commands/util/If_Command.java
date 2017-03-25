@@ -8,7 +8,6 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -26,7 +25,7 @@ import RTi.Util.String.StringUtil;
 /**
 This class initializes, checks, and runs the If() command.
 */
-public class If_Command extends AbstractCommand implements Command
+public class If_Command extends AbstractCommand
 {
 
 /**
@@ -62,21 +61,36 @@ throws InvalidCommandParameterException
 	String Name = parameters.getValue ( "Name" );
 	String Condition = parameters.getValue ( "Condition" );
 	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
+	String PropertyIsNotDefinedOrIsEmpty = parameters.getValue ( "PropertyIsNotDefinedOrIsEmpty" );
 	String TSExists = parameters.getValue ( "TSExists" );
 	String warning = "";
 	String message;
 	
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
+	
+	boolean conditionProvided = false;
+	boolean tsexistsProvided = false;
+	boolean propertyDefinedProvided = false;
+	
+	if ( (Condition != null) && !Condition.isEmpty() ) {
+		conditionProvided = true;
+	}
+	if ( (TSExists != null) && !TSExists.isEmpty() ) {
+		tsexistsProvided = true;
+	}
+	if ( (PropertyIsNotDefinedOrIsEmpty != null) && !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
+		propertyDefinedProvided = true;
+	}
 
     if ( (Name == null) || Name.equals("") ) {
-        message = "A name for the if block must be specified";
+        message = "A name for the If() block must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
-    if ( ((Condition == null) || Condition.equals("")) && ((TSExists == null) || TSExists.equals("")) ) {
-        message = "A condition or TSExists must be specified";
+    if ( !conditionProvided && !tsexistsProvided && !propertyDefinedProvided ) {
+        message = "A condition, PropertyIsNotDefinedOrIsEmpty, or TSExists must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the condition." ) );
@@ -91,10 +105,11 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(3);
+    List<String> validList = new ArrayList<String>(5);
 	validList.add ( "Name" );
 	validList.add ( "Condition" );
 	validList.add ( "CompareAsStrings" );
+	validList.add ( "PropertyIsNotDefinedOrIsEmpty" );
 	validList.add ( "TSExists" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
@@ -174,6 +189,10 @@ throws CommandWarningException, CommandException
 	if ( (CompareAsStrings != null) && CompareAsStrings.equalsIgnoreCase(_True) ) {
 		compareAsStrings = true;
 	}
+	String PropertyIsNotDefinedOrIsEmpty = parameters.getValue ( "PropertyIsNotDefinedOrIsEmpty" );
+	if ( (PropertyIsNotDefinedOrIsEmpty != null) && (PropertyIsNotDefinedOrIsEmpty.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		PropertyIsNotDefinedOrIsEmpty = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyIsNotDefinedOrIsEmpty);
+	}
 	String TSExists = parameters.getValue ( "TSExists" );
 	if ( (TSExists != null) && (TSExists.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
 		TSExists = TSCommandProcessorUtil.expandParameterValue(processor, this, TSExists);
@@ -182,7 +201,7 @@ throws CommandWarningException, CommandException
 	try {
 	    boolean conditionEval = false;
 	    setConditionEval ( conditionEval );
-	    if ( (Condition != null) && !Condition.equals("") ) {
+	    if ( (Condition != null) && !Condition.isEmpty() ) {
     	    // TODO SAM 2013-12-07 Figure out if there is a more elegant way to do this
     	    // Currently only Value1 Operator Value2 is allowed.  Brute force split by finding the operator
     	    int pos, pos1 = -1, pos2 = -1;
@@ -242,16 +261,42 @@ throws CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Make sure condition operator is supported - refer to command editor and documentation." ) );
             }
-            value1 = TSCommandProcessorUtil.expandParameterValue(
-                this.getCommandProcessor(),this,Condition.substring(0,pos1).trim() );
-            value2 = TSCommandProcessorUtil.expandParameterValue(
-                this.getCommandProcessor(),this,Condition.substring(pos2).trim() );
+    	    String arg1 = Condition.substring(0,pos1).trim();
+    	    if ( Message.isDebugOn ) {
+    	    	Message.printStatus(2, routine, "Left side: " + arg1 );
+    	    }
+    	    if ( arg1.indexOf("${") >= 0 ) {
+    	    	value1 = TSCommandProcessorUtil.expandParameterValue(this.getCommandProcessor(),this,arg1 );
+    	    	if ( Message.isDebugOn ) {
+    	    		Message.printStatus(2, routine, "Left side after expansion: " + value1 );
+    	    	}
+    	    }
+    	    else {
+    	    	value1 = arg1;
+    	    }
+    	    String arg2 = Condition.substring(pos2).trim();
+    	    if ( Message.isDebugOn ) {
+    	    	Message.printStatus(2, routine, "Right side:" + arg2 );
+    	    }
+    	    if ( arg2.indexOf("${") >= 0 ) {
+    	    	value2 = TSCommandProcessorUtil.expandParameterValue(this.getCommandProcessor(),this,arg2 );
+    	    	if ( Message.isDebugOn ) {
+    	    		Message.printStatus(2, routine, "Right side after expansion: " + value2 );
+    	    	}
+    	    }
+    	    else {
+    	    	value2 = arg2;
+    	    }
+    	    // If the arguments are quoted, then all of the following will be false
             boolean isValue1Integer = StringUtil.isInteger(value1);
             boolean isValue2Integer = StringUtil.isInteger(value2);
             boolean isValue1Double = StringUtil.isDouble(value1);
             boolean isValue2Double = StringUtil.isDouble(value2);
             boolean isValue1Boolean = StringUtil.isBoolean(value1);
             boolean isValue2Boolean = StringUtil.isBoolean(value2);
+            // Strip surrounding double quotes for comparisons below - do after above checks for type
+            value1 = value1.replace("\"", "");
+            value2 = value2.replace("\"", "");
             if ( !compareAsStrings && isValue1Integer && isValue2Integer ) {
             	// Do an integer comparison
 	    	    int ivalue1 = Integer.parseInt(value1);
@@ -397,7 +442,7 @@ throws CommandWarningException, CommandException
  	    	    }
             }
             else {
-	            message = "Data types to left and right are not consistent to evaluate condition \"" + Condition + "\"";
+	            message = "Left and right have different type - cannot evaluate condition \"" + Condition + "\"";
 	            Message.printWarning(3,
 	                MessageUtil.formatMessageTag( command_tag, ++warning_count),
 	                routine, message );
@@ -409,15 +454,48 @@ throws CommandWarningException, CommandException
     	        // Show the original
     	        status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.SUCCESS,
-                        Condition + " (showing properties) evaluates to " + conditionEval, "See also matching EndIf()" ) );
+                        Condition + " (showing ${Property} notation) evaluates to " + conditionEval, "See also matching EndIf()" ) );
     	    }
-    	    // Always show the expanded
+    	    // Always also show the expanded
     	    status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.SUCCESS,
                     value1 + " " + op + " " + value2 + " evaluates to " + conditionEval, "See also matching EndIf()" ) );
     	    setConditionEval(conditionEval);
 	    }
-	    if ( (TSExists != null) && !TSExists.equals("") ) {
+	    if ( (PropertyIsNotDefinedOrIsEmpty != null) && !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
+	    	// Check to see whether the specified property exists
+	    	Object o = processor.getPropContents(PropertyIsNotDefinedOrIsEmpty);
+	    	conditionEval = false; // Assume property is defined and is not null
+	    	if ( o == null ) {
+	    		// Property is null so condition evaluates to true
+	    		conditionEval = true;
+	    	}
+	    	else {
+		    	if ( o instanceof String ) {
+		    		String s = (String)o;
+		    		if ( s.isEmpty() ) {
+		    			// Property is empty string so condition evaluates to true
+		    			conditionEval = true;
+		    		}
+		    	}
+		    	else if ( o instanceof Double ) {
+		    		Double d = (Double)o;
+		    		if ( d.isNaN() ) {
+		    			// Property is Double NaN so condition evaluates to true
+		    			conditionEval = true;
+		    		}
+		    	}
+		    	else if ( o instanceof Float ) {
+		    		Float f = (Float)o;
+		    		if ( f.isNaN() ) {
+		    			// Property is Float NaN so condition evaluates to true
+		    			conditionEval = true;
+		    		}
+		    	}
+	    	}
+            setConditionEval(conditionEval);
+	    }
+	    if ( (TSExists != null) && !TSExists.isEmpty() ) {
 	        // Want to check whether a time series exists - this is ANDed to the condition
 	        // Get the time series to process.  The time series list is searched backwards until the first match...
 	        TS ts = null;
@@ -483,36 +561,8 @@ private void setConditionEval ( boolean conditionEval )
 Return the string representation of the command.
 */
 public String toString ( PropList props )
-{   if ( props == null ) {
-        return getCommandName() + "()";
-    }
-    String Name = props.getValue( "Name" );
-    String Condition = props.getValue( "Condition" );
-    String CompareAsStrings = props.getValue( "CompareAsStrings" );
-    String TSExists = props.getValue( "TSExists" );
-    StringBuffer b = new StringBuffer ();
-    if ( (Name != null) && (Name.length() > 0) ) {
-        b.append ( "Name=\"" + Name + "\"" );
-    }
-    if ( (Condition != null) && (Condition.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Condition=\"" + Condition + "\"" );
-    }
-    if ( (CompareAsStrings != null) && !CompareAsStrings.isEmpty() ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "CompareAsStrings=" + CompareAsStrings );
-    }
-    if ( (TSExists != null) && (TSExists.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSExists=\"" + TSExists + "\"" );
-    }
-    return getCommandName() + "(" + b.toString() + ")";
+{   String [] order = { "Name", "Condition", "CompareAsStrings", "PropertyIsNotDefinedOrIsEmpty", "TSExists" };
+	return super.toString(props,order);
 }
 
 }

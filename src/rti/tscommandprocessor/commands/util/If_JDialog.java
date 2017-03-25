@@ -46,6 +46,7 @@ private JTextField __Name_JTextField = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextArea __Condition_JTextArea = null;
 private SimpleJComboBox __CompareAsStrings_JComboBox = null;
+private JTextField __PropertyIsNotDefinedOrIsEmpty_JTextField = null;
 private JTextField __TSExists_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -91,6 +92,7 @@ private void checkInput ()
     String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().trim();
     String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
+    String PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
     String TSExists = __TSExists_JTextField.getText().trim();
     if ( Name.length() > 0 ) {
         props.set ( "Name", Name );
@@ -100,6 +102,9 @@ private void checkInput ()
     }
     if ( CompareAsStrings.length() > 0 ) {
         props.set ( "CompareAsStrings", CompareAsStrings );
+    }
+    if ( PropertyIsNotDefinedOrIsEmpty.length() > 0 ) {
+        props.set ( "PropertyIsNotDefinedOrIsEmpty", PropertyIsNotDefinedOrIsEmpty );
     }
     if ( TSExists.length() > 0 ) {
         props.set ( "TSExists", TSExists );
@@ -121,10 +126,12 @@ private void commitEdits ()
 {   String Name = __Name_JTextField.getText().trim();
     String Condition = __Condition_JTextArea.getText().replace('\n', ' ').replace('\t', ' ').trim();
     String CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
+    String PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
     String TSExists = __TSExists_JTextField.getText().trim();
     __command.setCommandParameter ( "Name", Name );
     __command.setCommandParameter ( "Condition", Condition );
     __command.setCommandParameter ( "CompareAsStrings", CompareAsStrings );
+    __command.setCommandParameter ( "PropertyIsNotDefinedOrIsEmpty", PropertyIsNotDefinedOrIsEmpty );
     __command.setCommandParameter ( "TSExists", TSExists );
 }
 
@@ -222,11 +229,37 @@ private void initialize ( JFrame parent, If_Command command )
         "Optional - compare values as strings (default = " + __command._False + ")."), 
         3, yCond, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Panel whether time series exists
+    // Panel for whether property has been defined
+    int yPropDefined = -1;
+    JPanel propDefined_JPanel = new JPanel();
+    propDefined_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Property Defined?", propDefined_JPanel );
+    
+    JGUIUtil.addComponent(propDefined_JPanel, new JLabel (
+        "This parameter, if specified, checks whether the specified property name is defined (not null) or is empty."),
+        0, ++yPropDefined, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(propDefined_JPanel, new JLabel (
+        "Double is considered empty if value is NaN."),
+        0, ++yPropDefined, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(propDefined_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yPropDefined, 7, 1, 0, 0, insetsNONE, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(propDefined_JPanel, new JLabel ( "If property is not defined or is empty:" ), 
+        0, ++yPropDefined, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyIsNotDefinedOrIsEmpty_JTextField = new JTextField ( 20 );
+    __PropertyIsNotDefinedOrIsEmpty_JTextField.setToolTipText("Specify a property name to check.");
+    __PropertyIsNotDefinedOrIsEmpty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(propDefined_JPanel, __PropertyIsNotDefinedOrIsEmpty_JTextField,
+        1, yPropDefined, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(propDefined_JPanel, new JLabel(
+        "Optional - If() will be true if the specified property is not defined or is empty."), 
+        3, yPropDefined, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for whether time series exists
     int yTs = -1;
     JPanel ts_JPanel = new JPanel();
     ts_JPanel.setLayout( new GridBagLayout() );
-    __main_JTabbedPane.addTab ( "Time Series Exists", ts_JPanel );
+    __main_JTabbedPane.addTab ( "Time Series Exists?", ts_JPanel );
     
     JGUIUtil.addComponent(ts_JPanel, new JLabel (
         "The TSExists parameter, if specified, checks whether a time series with the specified TSID or alias exists."),
@@ -320,6 +353,7 @@ private void refresh ()
 	String Name = "";
 	String Condition = "";
 	String CompareAsStrings = "";
+	String PropertyIsNotDefinedOrIsEmpty = "";
 	String TSExists = "";
 	__error_wait = false;
 	PropList props = __command.getCommandParameters();
@@ -328,6 +362,7 @@ private void refresh ()
 		Name = props.getValue( "Name" );
 		Condition = props.getValue( "Condition" );
 		CompareAsStrings = props.getValue( "CompareAsStrings" );
+		PropertyIsNotDefinedOrIsEmpty = props.getValue( "PropertyIsNotDefinedOrIsEmpty" );
 		TSExists = props.getValue( "TSExists" );
 		if ( Name != null ) {
 		    __Name_JTextField.setText( Name );
@@ -353,10 +388,16 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( PropertyIsNotDefinedOrIsEmpty != null ) {
+            __PropertyIsNotDefinedOrIsEmpty_JTextField.setText( PropertyIsNotDefinedOrIsEmpty );
+            if ( !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
+            	__main_JTabbedPane.setSelectedIndex(1);
+            }
+        }
         if ( TSExists != null ) {
             __TSExists_JTextField.setText( TSExists );
             if ( !TSExists.isEmpty() ) {
-            	__main_JTabbedPane.setSelectedIndex(1);
+            	__main_JTabbedPane.setSelectedIndex(2);
             }
         }
 	}
@@ -364,11 +405,13 @@ private void refresh ()
 	Name = __Name_JTextField.getText().trim();
 	Condition = __Condition_JTextArea.getText().trim();
 	CompareAsStrings = __CompareAsStrings_JComboBox.getSelected();
+	PropertyIsNotDefinedOrIsEmpty = __PropertyIsNotDefinedOrIsEmpty_JTextField.getText().trim();
     TSExists = __TSExists_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Name=" + Name );
     props.set ( "Condition", Condition ); // May contain = so handle differently
     props.add ( "CompareAsStrings=" + CompareAsStrings );
+    props.add ( "PropertyIsNotDefinedOrIsEmpty=" + PropertyIsNotDefinedOrIsEmpty );
     props.add ( "TSExists=" + TSExists );
     __command_JTextArea.setText( __command.toString(props) );
 }

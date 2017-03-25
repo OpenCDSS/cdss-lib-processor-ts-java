@@ -545,13 +545,14 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
     }
     // Now loop through and determine the column data type from the data row
     // and add columns to the table
-    columnIndex = -1;
+    columnIndex = -1; // 0+ count of columns
     //CellStyle style = null;
     boolean columnTypeSet = false;
-    for ( int iCol = colStart; iCol <= colEnd; iCol++ ) {
+    for ( int iCol = colStart; iCol <= colEnd; iCol++ ) { // iCol is referenced to spreadsheet block of columns
         columnTypeSet = false;
         ++columnIndex;
         if ( readAllAsText ) {
+        	Message.printStatus(2,routine,"Creating requested table column type " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.STRING);
             table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
             continue;
         }
@@ -561,18 +562,18 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
                 for ( int i = 0; i < excelDoubleColumns.length; i++ ) {
                     if ( columnNames[columnIndex].equalsIgnoreCase(excelDoubleColumns[i]) ) {
                         // Treat as a double
-                        Message.printStatus(2,routine,"Creating requested table column [" + iCol + "]=" + TableColumnType.DOUBLE);
+                        Message.printStatus(2,routine,"Creating requested table column type " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.DOUBLE);
                         table.addField ( new TableField(TableField.DATA_TYPE_DOUBLE, columnNames[columnIndex], -1, precisionForFloats), null );
                         columnTypeSet = true;
                         break;
                     }
                 }
             }
-            if ( excelIntegerColumns != null ) {
+            if ( !columnTypeSet && (excelIntegerColumns != null) ) {
                 for ( int i = 0; i < excelIntegerColumns.length; i++ ) {
                     if ( columnNames[columnIndex].equalsIgnoreCase(excelIntegerColumns[i]) ) {
                         // Treat as an integer
-                        Message.printStatus(2,routine,"Creating requested table column [" + iCol + "]=" + TableColumnType.INT);
+                        Message.printStatus(2,routine,"Creating requested table column type " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.INT);
                         table.addField ( new TableField(TableField.DATA_TYPE_INT, columnNames[columnIndex], -1, -1), null );
                         columnTypeSet = true;
                         break;
@@ -583,7 +584,7 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
                 for ( int i = 0; i < excelDateTimeColumns.length; i++ ) {
                     if ( columnNames[columnIndex].equalsIgnoreCase(excelDateTimeColumns[i]) ) {
                         // Treat as a date
-                        Message.printStatus(2,routine,"Creating requested table column [" + iCol + "]=" + TableColumnType.DateTime);
+                        Message.printStatus(2,routine,"Creating requested table column type " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.DateTime);
                         table.addField ( new TableField(TableField.DATA_TYPE_DATETIME, columnNames[columnIndex], -1, -1), null );
                         columnTypeSet = true;
                         break;
@@ -594,7 +595,7 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
                 for ( int i = 0; i < excelTextColumns.length; i++ ) {
                     if ( columnNames[columnIndex].equalsIgnoreCase(excelTextColumns[i]) ) {
                         // Treat as a string
-                        Message.printStatus(2,routine,"Creating requested table column [" + iCol + "]=" + TableColumnType.STRING);
+                        Message.printStatus(2,routine,"Creating requested table column type " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.STRING);
                         table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
                         columnTypeSet = true;
                         break;
@@ -604,11 +605,11 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
             if ( columnTypeSet ) {
                 continue;
             }
-            // If not specified by the user...
+            // If not specified by the user determine the column type from contents...
             // Look forward to other rows as much as needed to see if there is a non-null value
             // that can be used to determine the type
             Row dataRow;
-            Message.printStatus(2,routine,"Checking data to determine colum type for rows " + firstDataRow + " to " + rowEnd );
+            Message.printStatus(2,routine,"Checking data to determine column type for rows " + firstDataRow + " to " + rowEnd );
             for ( int iRowSearch = firstDataRow; iRowSearch <= rowEnd; iRowSearch++ ) {
                 if ( isRowComment ( sheet, iRowSearch, comment ) ) {
                     continue;
@@ -647,7 +648,7 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
                 // Now evaluate the cell type (may have come from formula evaluation above)
                 if ( cellType == Cell.CELL_TYPE_STRING ) {
                     Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is STRING." );
-                    Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.STRING);
+                    Message.printStatus(2,routine,"Creating table column " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.STRING);
                     table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
                     columnTypeSet = true;
                 }
@@ -656,7 +657,7 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
                     if (DateUtil.isCellDateFormatted(cell)) {
                         // TODO SAM 2013-05-12 Evaluate whether to use DATA_TYPE_DATETIME
                         //table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
-                        Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.DATE);
+                        Message.printStatus(2,routine,"Creating table column " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.DATE);
                         table.addField ( new TableField(TableField.DATA_TYPE_DATE, columnNames[columnIndex], -1, -1), null );
                         columnTypeSet = true;
                     }
@@ -667,7 +668,7 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
                         //style = cell.getCellStyle();
                         //short format = style.getDataFormat();
                         //CellStyle style2 = wb.getCellStyleAt(format);
-                        Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.DOUBLE);
+                        Message.printStatus(2,routine,"Creating table column " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.DOUBLE);
                         table.addField ( new TableField(TableField.DATA_TYPE_DOUBLE, columnNames[columnIndex], -1, precisionForFloats), null );
                         columnTypeSet = true;
                     }
@@ -675,7 +676,7 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
                 else if ( cellType == Cell.CELL_TYPE_BOOLEAN ) {
                     Message.printStatus(2,routine,"Table column [" + iCol + "] cell type from Excel is BOOLEAN.  Treat as integer 0/1.");
                     // Use integer for boolean
-                    Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.INT);
+                    Message.printStatus(2,routine,"Creating table column " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.INT);
                     table.addField ( new TableField(TableField.DATA_TYPE_INT, columnNames[columnIndex], -1, -1), null );
                     columnTypeSet = true;
                 }
@@ -690,7 +691,7 @@ protected Object [] createTableColumns ( DataTable table, Workbook wb, Sheet she
             if ( !columnTypeSet ){
                 // Default is to treat as a string
                 Message.printStatus(2,routine,"Table column [" + iCol + "] cell type is unknown.  Treating as string.");
-                Message.printStatus(2,routine,"Creating table column [" + iCol + "]=" + TableColumnType.STRING);
+                Message.printStatus(2,routine,"Creating table column " + columnNames[columnIndex] + "[" + iCol + "]=" + TableColumnType.STRING);
                 table.addField ( new TableField(TableField.DATA_TYPE_STRING, columnNames[columnIndex], -1, -1), null );
             }
         }

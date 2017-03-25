@@ -494,8 +494,8 @@ private void initialize ( JFrame parent, ReadTableFromExcel_Command command )
     keepChoices.add("");
     keepChoices.add(__command._False);
     keepChoices.add(__command._True);
-    __KeepOpen_JComboBox.select ( 0 );
     __KeepOpen_JComboBox.setData(keepChoices);
+    __KeepOpen_JComboBox.select ( 0 );
     __KeepOpen_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(excel_JPanel, __KeepOpen_JComboBox,
         1, yExcel, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

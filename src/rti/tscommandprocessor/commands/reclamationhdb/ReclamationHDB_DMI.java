@@ -858,7 +858,7 @@ Open the database connection.
 */
 @Override
 public void open ()
-{   String routine = getClass().getName() + ".open";
+{   String routine = getClass().getSimpleName() + ".open";
     // This will have been set in the constructor
     String databaseServer = getDatabaseServer();
     String databaseName = getDatabaseName();
@@ -870,14 +870,25 @@ public void open ()
     }
     // Use the reclamation connection object
     String sourceDBType = "OracleHDB";
+    // See:  http://stackoverflow.com/questions/18192521/ora-12505-tnslistener-does-not-currently-know-of-sid-given-in-connect-descript
+    // - use a colon for an SID
+    // - use / for a net service
+    // http://www.dba-oracle.com/t_oracle_sid_instance_name_service_name.htm
     String sourceUrl = "jdbc:oracle:thin:@" + databaseServer + ":" + port + ":" + databaseName;
+    //String sourceUrl = "jdbc:oracle:thin:@" + databaseServer + ":" + port + "/" + databaseName;
     String sourceUserName = systemLogin;
     String sourcePassword = systemPassword;
+    Message.printStatus(2, routine, "Attempting to open the HDB database connection using URL \"" + sourceUrl + "\"" );
     __hdbConnection = new JavaConnections(sourceDBType, sourceUrl, sourceUserName, sourcePassword );
-    // Set the connection in the base class so it can be used with utility code
-    setConnection ( __hdbConnection.ourConn );
-    Message.printStatus(2, routine, "Opened the database connection." );
-    readGlobalData();
+    if ( __hdbConnection == null ) {
+    	Message.printWarning(2, routine, "Unable to open HDB database connection." );
+    }
+    else {
+        // Set the connection in the base class so it can be used with utility code
+        setConnection ( __hdbConnection.ourConn );
+	    Message.printStatus(2, routine, "Opened the HDB database connection." );
+	    readGlobalData();
+    }
     // Start a "keep alive" thread to make sure the database connection is not lost
     //startKeepAliveThread();
 }

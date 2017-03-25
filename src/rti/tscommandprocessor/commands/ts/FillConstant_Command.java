@@ -32,7 +32,7 @@ import RTi.Util.Time.DateTime;
 /**
 This class initializes, checks, and runs the FillConstant() command.
 */
-public class FillConstant_Command extends AbstractCommand implements Command
+public class FillConstant_Command extends AbstractCommand
 {
 
 /**
@@ -281,26 +281,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         TSList = TSListType.ALL_TS.toString();
     }
 	String TSID = parameters.getValue ( "TSID" );
-	if ( (TSID != null) && (TSID.indexOf("${") >= 0) ) {
+	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) ) {
+	if ( (EnsembleID != null) && (EnsembleID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		EnsembleID = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleID);
 	}
 	String ConstantValue = parameters.getValue("ConstantValue");
-	if ( (ConstantValue != null) && (ConstantValue.indexOf("${") >= 0) ) {
+	if ( (ConstantValue != null) && (ConstantValue.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		ConstantValue = TSCommandProcessorUtil.expandParameterValue(processor, this, ConstantValue);
 	}
 	double ConstantValue_double = StringUtil.atod ( ConstantValue );
 	String FillStart = parameters.getValue("FillStart"); // Properties are handled in processor
 	String FillEnd = parameters.getValue("FillEnd"); // Properties are handled in processor
 	String FillFlag = parameters.getValue("FillFlag");
-	if ( (FillFlag != null) && (FillFlag.indexOf("${") >= 0) ) {
+	if ( (FillFlag != null) && (FillFlag.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		FillFlag = TSCommandProcessorUtil.expandParameterValue(processor, this, FillFlag);
 	}
     String FillFlagDesc = parameters.getValue("FillFlagDesc");
-	if ( (FillFlagDesc != null) && (FillFlagDesc.indexOf("${") >= 0) ) {
+	if ( (FillFlagDesc != null) && (FillFlagDesc.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		FillFlagDesc = TSCommandProcessorUtil.expandParameterValue(processor, this, FillFlagDesc);
 	}
 

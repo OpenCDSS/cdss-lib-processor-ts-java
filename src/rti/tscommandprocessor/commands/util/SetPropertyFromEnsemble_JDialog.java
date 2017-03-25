@@ -1,0 +1,383 @@
+package rti.tscommandprocessor.commands.util;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.util.List;
+
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
+import RTi.Util.GUI.JGUIUtil;
+import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
+
+/**
+Editor for SetPropertyFromEnsemble() command.
+*/
+@SuppressWarnings("serial")
+public class SetPropertyFromEnsemble_JDialog extends JDialog
+implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
+{
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SetPropertyFromEnsemble_Command __command = null;
+private JTextArea __command_JTextArea=null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JTextField __PropertyName_JTextField = null;
+private JTextField __PropertyValue_JTextField = null;
+private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
+
+/**
+Command dialog constructor.
+@param parent JFrame class instantiating this class.
+@param command Command to edit.
+*/
+public SetPropertyFromEnsemble_JDialog ( JFrame parent, SetPropertyFromEnsemble_Command command )
+{	super(parent, true);
+	initialize ( parent, command );
+}
+
+/**
+Responds to ActionEvents.
+@param event ActionEvent object
+*/
+public void actionPerformed( ActionEvent event )
+{	Object o = event.getSource();
+
+	if ( o == __cancel_JButton ) {
+		response ( false );
+	}
+	else if ( o == __ok_JButton ) {
+		refresh ();
+		checkInput();
+		if ( !__error_wait ) {
+			response ( true );
+		}
+	}
+}
+
+//Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+//...End event handlers for DocumentListener
+
+/**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    __EnsembleID_JComboBox.setEnabled(true);
+    __EnsembleID_JLabel.setEnabled ( true );
+
+}
+
+/**
+Check the input.  If errors exist, warn the user and set the __error_wait flag
+to true.  This should be called before response() is allowed to complete.
+*/
+private void checkInput ()
+{	// Put together a list of parameters to check...
+	PropList parameters = new PropList ( "" );
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String PropertyName = __PropertyName_JTextField.getText().trim();
+    String PropertyValue = __PropertyValue_JTextField.getText().trim();
+	__error_wait = false;
+
+    if ( EnsembleID.length() > 0 ) {
+        parameters.set ( "EnsembleID", EnsembleID );
+    }
+	if ( PropertyName.length() > 0 ) {
+	    parameters.set ( "PropertyName", PropertyName );
+	}
+	if ( PropertyValue.length() > 0 ) {
+	    parameters.set ( "PropertyValue", PropertyValue );
+	}
+	try {
+	    // This will warn the user...
+		__command.checkCommandParameters ( parameters, null, 1 );
+	}
+	catch ( Exception e ) {
+		// The warning would have been printed in the check code.
+		__error_wait = true;
+	}
+}
+
+/**
+Commit the edits to the command.  In this case the command parameters have
+already been checked and no errors were detected.
+*/
+private void commitEdits ()
+{	String EnsembleID = __EnsembleID_JComboBox.getSelected();   
+    String PropertyName = __PropertyName_JTextField.getText().trim();
+    String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
+    __command.setCommandParameter ( "PropertyName", PropertyName );
+    __command.setCommandParameter ( "PropertyValue", PropertyValue );
+}
+
+/**
+Instantiates the GUI components.
+@param parent JFrame class instantiating this class.
+@param title Dialog title.
+@param command The command to edit.
+*/
+private void initialize ( JFrame parent, SetPropertyFromEnsemble_Command command )
+{	__command = command;
+
+	addWindowListener( this );
+
+    Insets insetsTLBR = new Insets(2,2,2,2);
+
+	JPanel main_JPanel = new JPanel();
+	main_JPanel.setLayout( new GridBagLayout() );
+	getContentPane().add ( "North", main_JPanel );
+	int y = 0;
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Set a processor property from time series ensemble." ), 
+		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"One processor property can be set for each ensemble that is processed (but currently the property name is constant)."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"This command is useful when setting a processor property in a For() loop."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID:");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    __EnsembleID_JComboBox.setToolTipText("Select an ensemble identifier from the list or specify with ${Property} notation");
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyName_JTextField = new JTextField ( 20 );
+    __PropertyName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required - do not use spaces $, { or } in name."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Property value:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyValue_JTextField = new JTextField ( 20 );
+    __PropertyValue_JTextField.setToolTipText("Use ${tsensemble:Property}, ${Property}.");
+    __PropertyValue_JTextField.addKeyListener ( this );
+    __PropertyValue_JTextField.getDocument().addDocumentListener(this);
+    JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use ${tsensemble:Property}."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__command_JTextArea = new JTextArea ( 4, 55 );
+	__command_JTextArea.setLineWrap ( true );
+	__command_JTextArea.setWrapStyleWord ( true );
+	__command_JTextArea.setEditable ( false );
+	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
+		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+	// Refresh the contents...
+    checkGUIState();
+	refresh ();
+
+	// South Panel: North
+	JPanel button_JPanel = new JPanel();
+	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+
+	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
+	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+
+	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+	setResizable ( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
+}
+
+/**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{	checkGUIState();
+    refresh();
+}
+
+/**
+Respond to KeyEvents.
+*/
+public void keyPressed ( KeyEvent event )
+{	int code = event.getKeyCode();
+
+	if ( code == KeyEvent.VK_ENTER ) {
+		refresh ();
+		checkInput();
+		if ( !__error_wait ) {
+			response ( true );
+		}
+	}
+	else {
+	    // Combo box...
+		refresh();
+	}
+}
+
+public void keyReleased ( KeyEvent event )
+{	refresh();
+}
+
+public void keyTyped ( KeyEvent event ) {;}
+
+/**
+Indicate if the user pressed OK (cancel otherwise).
+@return true if the edits were committed, false if the user canceled.
+*/
+public boolean ok ()
+{	return __ok;
+}
+
+/**
+Refresh the command from the other text field contents.
+*/
+private void refresh ()
+{	String routine = getClass().getSimpleName() + ".refresh";
+    String EnsembleID = "";
+    String PropertyName = "";
+    String PropertyValue = "";
+	PropList props = __command.getCommandParameters();
+	if ( __first_time ) {
+		__first_time = false;
+		// Get the parameters from the command...
+        EnsembleID = props.getValue ( "EnsembleID" );
+        PropertyName = props.getValue ( "PropertyName" );
+        PropertyValue = props.getValue ( "PropertyValue" );
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+	    if ( PropertyName != null ) {
+	         __PropertyName_JTextField.setText ( PropertyName );
+	    }
+	    if ( PropertyValue != null ) {
+	         __PropertyValue_JTextField.setText ( PropertyValue );
+	    }
+	}
+	// Regardless, reset the command from the fields...
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
+    PropertyName = __PropertyName_JTextField.getText().trim();
+    PropertyValue = __PropertyValue_JTextField.getText().trim();
+	props = new PropList ( __command.getCommandName() );
+    props.add ( "EnsembleID=" + EnsembleID );
+	props.add ( "PropertyName=" + PropertyName );
+	props.add ( "PropertyValue=" + PropertyValue );
+	__command_JTextArea.setText( __command.toString ( props ) );
+}
+
+/**
+React to the user response.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
+*/
+private void response ( boolean ok )
+{	__ok = ok;	// Save to be returned by ok()
+	if ( ok ) {
+		// Commit the changes...
+		commitEdits ();
+		if ( __error_wait ) {
+			// Not ready to close out!
+			return;
+		}
+	}
+	// Now close out...
+	setVisible( false );
+	dispose();
+}
+
+/**
+Responds to WindowEvents.
+@param event WindowEvent object
+*/
+public void windowClosing( WindowEvent event )
+{	response ( false );
+}
+
+public void windowActivated( WindowEvent evt ){;}
+public void windowClosed( WindowEvent evt ){;}
+public void windowDeactivated( WindowEvent evt ){;}
+public void windowDeiconified( WindowEvent evt ){;}
+public void windowIconified( WindowEvent evt ){;}
+public void windowOpened( WindowEvent evt ){;}
+
+}

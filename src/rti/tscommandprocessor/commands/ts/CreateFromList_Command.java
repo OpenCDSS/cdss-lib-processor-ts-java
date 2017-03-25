@@ -41,12 +41,13 @@ public class CreateFromList_Command extends AbstractCommand implements CommandDi
 protected final String _Default = "Default";
 protected final String _Ignore = "Ignore";
 protected final String _Warn = "Warn";
+protected final String _Fail = "Fail";
 
 /**
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discovery_TS_List = null;
 
 /**
 Constructor.
@@ -165,13 +166,14 @@ throws InvalidCommandParameterException
 	if ( (IfNotFound != null) && !IfNotFound.equals("") &&
 	        !IfNotFound.equalsIgnoreCase(_Ignore) &&
             !IfNotFound.equalsIgnoreCase(_Default) &&
+            !IfNotFound.equalsIgnoreCase(_Fail) &&
             !IfNotFound.equalsIgnoreCase(_Warn) ) {
             message = "Invalid IfNotFound flag \"" + IfNotFound + "\".";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify the IfNotFound as " + _Default + ", " +
-                            _Ignore + ", or (default) " + _Warn + "." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify IfNotFound as " + _Default + ", " +
+                    _Ignore + ", " + _Fail + ", or " + _Warn + " (default)." ) );
                             
 	}
 
@@ -229,7 +231,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discovery_TS_List;
 }
 
 /**
@@ -271,7 +273,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     String HandleMissingTSHow = parameters.getValue("HandleMissingTSHow");
     String IfNotFound = _Warn; // Default
     if ( HandleMissingTSHow != null ) {
-        // Convert to IfNotFound
+        // Convert legacy to IfNotFound
         parameters.unSet( "HandleMissingTSHow" );
         if ( HandleMissingTSHow.equalsIgnoreCase("DefaultMissingTS")) {
             IfNotFound = _Default;
@@ -321,10 +323,8 @@ command could produce some results).
 parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-       CommandWarningException,
-       CommandException
-{	String routine = "CreateFromList_Command.runCommand", message;
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
     //int log_level = 3;
 	String command_tag = "" + command_number;
@@ -333,8 +333,20 @@ throws InvalidCommandParameterException,
     // Get and clear the status and clear the run log...
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(commandPhase);
     CommandProcessor processor = getCommandProcessor();
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
@@ -457,13 +469,18 @@ throws InvalidCommandParameterException,
                     message = "Time series could not be found using identifier \"" + TSID + "\".";
                     if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
                         status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Verify that the identifier information is correct." ) );
+                    }
+                    else if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+                        status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that the identifier information is correct." ) );
                     }
                     else {
                         // Non-fatal - ignoring or defaulting time series.
                         message += "  Non-fatal because IfNotFound=" + IfNotFound;
-                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.INFO,
                             message, "Verify that the identifier information is correct." ) );
                     }
                     ts = null;
@@ -490,18 +507,23 @@ throws InvalidCommandParameterException,
                         message = "Time series could not be found using identifier \"" + TSID + "\".";
                         if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
                             status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.WARNING,
+                                    message, "Verify that the identifier information is correct." ) );
+                        }
+                        else if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+                            status.addToLog ( commandPhase,
                                 new CommandLogRecord(CommandStatusType.FAILURE,
                                     message, "Verify that the identifier information is correct." ) );
                         }
                         else {
                             // Non-fatal - ignoring or defaulting time series.
                             message += "  Non-fatal because IfNotFound=" + IfNotFound;
-                            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.INFO,
                                 message, "Verify that the identifier information is correct." ) );
                         }
                     }
                     // Always check for output period because required for default time series.
-                    if ( IfNotFound.equalsIgnoreCase(_Default) &&
+                    if ( (commandPhase == CommandPhaseType.RUN) && IfNotFound.equalsIgnoreCase(_Default) &&
                         ((processor.getPropContents("OutputStart") == null) ||
                         (processor.getPropContents("OutputEnd") == null)) ) {
                         message = "Time series could not be found using identifier \"" + TSID + "\"." +
@@ -587,7 +609,7 @@ Set the list of time series read in discovery phase.
 */
 private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discovery_TS_List = discovery_TS_Vector;
 }
 
 /**

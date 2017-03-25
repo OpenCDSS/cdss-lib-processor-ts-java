@@ -248,26 +248,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__ListFile_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__IfNotFound_JComboBox = null;
-	__DataType_JTextField = null;
-	__Interval_JTextField = null;
-	__DefaultUnits_JTextField = null;
-	__browse_JButton = null;
-	__ok_JButton = null;
-	__path_JButton = null;
-	__working_dir = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -424,8 +404,9 @@ private void initialize ( JFrame parent, Command command )
 	notFoundChoices.add ( __command._Default );
 	notFoundChoices.add ( __command._Ignore );
 	notFoundChoices.add ( __command._Warn );
-	__IfNotFound_JComboBox.select ( __command._Warn );
+	notFoundChoices.add ( __command._Fail );
 	__IfNotFound_JComboBox.setData(notFoundChoices);
+	__IfNotFound_JComboBox.select ( __command._Warn );
 	__IfNotFound_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

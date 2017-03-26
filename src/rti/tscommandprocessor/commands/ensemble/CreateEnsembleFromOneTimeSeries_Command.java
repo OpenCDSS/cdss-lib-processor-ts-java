@@ -484,14 +484,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
     }
     catch ( Exception e ) {
-        message = "Unexpected error creating traces from time series \"" + ts.getIdentifier() + "\" (" + e + ").";
-        Message.printWarning ( warning_level, 
-                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-        Message.printWarning ( 3, routine, e );
-        status.addToLog ( commandPhase,
-			new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "Check log file for details." ) );
-        throw new CommandException ( message );
+    	if ( commandPhase == CommandPhaseType.RUN ) {
+	    	if ( ts == null ) {
+	    		message = "Unexpected error creating traces from time series, time series is null (" + e + ").";
+	    	}
+	    	else {
+	    		message = "Unexpected error creating traces from time series \"" + ts.getIdentifier() + "\" (" + e + ").";
+	    	}
+	        Message.printWarning ( warning_level, 
+	                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+	        Message.printWarning ( 3, routine, e );
+	        status.addToLog ( commandPhase,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Check log file for details." ) );
+	        throw new CommandException ( message );
+    	}
     }
     
     int size = 0;

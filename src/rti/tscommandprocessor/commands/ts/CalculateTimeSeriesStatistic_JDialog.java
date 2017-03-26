@@ -589,7 +589,7 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     
     JGUIUtil.addComponent(prop_JPanel, new JLabel("Time series property:"),
         0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TimeSeriesProperty_JTextField = new JTextField ( "", 20 );
+    __TimeSeriesProperty_JTextField = new JTextField ( "", 40 );
     __TimeSeriesProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(prop_JPanel, __TimeSeriesProperty_JTextField,
         1, yProp, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

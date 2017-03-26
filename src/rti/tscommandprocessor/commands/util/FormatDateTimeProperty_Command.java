@@ -4,13 +4,13 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -32,8 +32,16 @@ import RTi.Util.Time.TimeUtil;
 /**
 This class initializes, checks, and runs the FormatDateTimeProperty() command.
 */
-public class FormatDateTimeProperty_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class FormatDateTimeProperty_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
+	
+/**
+Possible value for PropertyType.
+*/
+protected final String _DateTime = "DateTime";
+protected final String _Double = "Double";
+protected final String _Integer = "Integer";
+protected final String _String = "String";
 
 /**
 Property set during discovery.
@@ -62,6 +70,7 @@ throws InvalidCommandParameterException
     String DateTimePropertyName = parameters.getValue ( "DateTimePropertyName" );
 	String FormatterType = parameters.getValue ( "FormatterType" );
 	String Format = parameters.getValue ( "Format" );
+    String PropertyType = parameters.getValue ( "PropertyType" );
 	String warning = "";
     String message;
     
@@ -109,14 +118,24 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Provide a format." ) );
     }
+    if ( (PropertyType != null) && !PropertyType.isEmpty() && !PropertyType.equalsIgnoreCase(_DateTime) &&
+    	!PropertyType.equalsIgnoreCase(_Double) && !PropertyType.equalsIgnoreCase(_Integer) && !PropertyType.equalsIgnoreCase(_String) ) {
+		message = "The property type is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the property type as " + _DateTime + ", " + _Double + ", " +
+                	_Integer + ", or " + _String + " (default)." ) );
+    }
     
     // Check for invalid parameters...
-	List<String> valid_Vector = new Vector<String>();
-    valid_Vector.add ( "PropertyName" );
-    valid_Vector.add ( "DateTimePropertyName" );
-    valid_Vector.add ( "FormatterType" );
-    valid_Vector.add ( "Format" );
-    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	List<String> validList = new ArrayList<String>(5);
+    validList.add ( "PropertyName" );
+    validList.add ( "DateTimePropertyName" );
+    validList.add ( "FormatterType" );
+    validList.add ( "Format" );
+    validList.add ( "PropertyType" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -222,7 +241,7 @@ Run the command.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "FormatDateTimeProperty_Command.runCommand", message;
+{	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -258,30 +277,50 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     DateTimeFormatterType formatterType = DateTimeFormatterType.valueOfIgnoreCase(FormatterType);
 	String Format = parameters.getValue ( "Format" );
+    String PropertyType = parameters.getValue ( "PropertyType" );
+    String propertyType = _String; // default
+    if ( (PropertyType != null) && !PropertyType.isEmpty() ) {
+    	propertyType = PropertyType;
+    }
 	
 	try {
 		if ( commandPhase == CommandPhaseType.RUN ) {
 		    // Get the original property...
 		    Object dateTimeProperty = processor.getPropContents(DateTimePropertyName);
 		    // Format the new property...
-		    Object Property_Object = null;
+		    String stringProp = null;
 		    if ( dateTimeProperty != null ) {
 		        DateTime dt = (DateTime)dateTimeProperty;
 		        if ( formatterType == DateTimeFormatterType.C ) {
-		            Property_Object = TimeUtil.formatDateTime(dt, Format);
+		            stringProp = TimeUtil.formatDateTime(dt, Format);
 		        }
 		    }
+    		// Create an output property of the requested type
+    		Object propObject = null;
+    		if ( propertyType.equalsIgnoreCase(_DateTime) ) {
+    			propObject = DateTime.parse(stringProp);
+    		}
+    		else if ( propertyType.equalsIgnoreCase(_Double) ) {
+    			propObject = new Double(stringProp);
+    		}
+    		else if ( propertyType.equalsIgnoreCase(_Integer) ) {
+    			propObject = new Integer(stringProp);
+    		}
+    		else {
+    			// Default
+    			propObject = stringProp;
+    		}
 		    
 	    	// Set the new property in the processor
 	    
 	    	PropList request_params = new PropList ( "" );
 	    	request_params.setUsingObject ( "PropertyName", PropertyName );
-	    	request_params.setUsingObject ( "PropertyValue", Property_Object );
+	    	request_params.setUsingObject ( "PropertyValue", propObject );
 	    	try {
 	            processor.processRequest( "SetProperty", request_params);
 	            // Set the 
 	            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	                setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
+	                setDiscoveryProp ( new Prop(PropertyName,stringProp,"" + stringProp ) );
 	            }
 	    	}
 	    	catch ( Exception e ) {
@@ -296,10 +335,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 			// Set a property that will be listed for choices
-            Prop prop = new Prop();
-            prop.setKey ( PropertyName );
+			// Set a property that will be listed for choices
+			Object propertyObject = null;
+    		if ( propertyType.equalsIgnoreCase(_DateTime) ) {
+    			propertyObject = new DateTime(DateTime.DATE_CURRENT);
+    		}
+    		else if ( propertyType.equalsIgnoreCase(_Double) ) {
+    			propertyObject = new Double(1.0);
+    		}
+    		else if ( propertyType.equalsIgnoreCase(_Integer) ) {
+    			propertyObject = new Integer(1);
+    		}
+    		else {
+    			propertyObject = "";
+    		}
+    		Prop prop = new Prop(PropertyName, propertyObject, "");
             prop.setHowSet(Prop.SET_UNKNOWN);
-            setDiscoveryProp ( prop );
+    		setDiscoveryProp ( prop );
 		}
 	}
 	catch ( Exception e ) {
@@ -344,6 +396,7 @@ public String toString ( PropList props )
     String DateTimePropertyName = props.getValue( "DateTimePropertyName" );
 	String FormatterType = props.getValue( "FormatterType" );
     String Format = props.getValue( "Format" );
+    String PropertyType = props.getValue( "PropertyType" );
 	StringBuffer b = new StringBuffer ();
     if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -369,6 +422,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "Format=\"" + Format + "\"" );
 	}
+    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PropertyType=" + PropertyType );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

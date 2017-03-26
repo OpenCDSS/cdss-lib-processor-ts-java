@@ -11,7 +11,6 @@ import java.util.Vector;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -31,7 +30,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 This class initializes, checks, and runs the SetProperty() command.
 */
-public class SetProperty_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class SetProperty_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -319,8 +318,7 @@ private Prop getDiscoveryProp ()
 Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
-{
-    Prop discovery_Prop = getDiscoveryProp ();
+{   Prop discovery_Prop = getDiscoveryProp ();
     if ( discovery_Prop == null ) {
         return null;
     }
@@ -593,10 +591,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	    	}
 	    	else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 	    		// TODO sam 2017-03-18 evaluate whether this is appropriate for discovery mode
-	    		// -the problem is is ${Property} notation breaks conversions above
+	    		// -the problem is ${Property} notation breaks conversions above
 	    		//setDiscoveryProp ( new Prop(PropertyName,Property_Object,"" + Property_Object ) );
-	    		// For now just set the value string
-	    		Prop prop = new Prop(PropertyName,PropertyValue);
+	    		// Set the property type according to the request so that code that asks for discovery
+	    		// objects and then filters on type will have the correct type
+	    		if ( PropertyType.equalsIgnoreCase(_Boolean) ) {
+	    			Property_Object = new Boolean(true);
+	    		}
+	    		else if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
+	    			Property_Object = new DateTime(DateTime.DATE_CURRENT);
+	    		}
+	    		else if ( PropertyType.equalsIgnoreCase(_Double) ) {
+	    			Property_Object = new Double(1.0);
+	    		}
+	    		else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
+	    			Property_Object = new Integer(1);
+	    		}
+	    		else {
+	    			Property_Object = "";
+	    		}
+	    		Prop prop = new Prop(PropertyName, Property_Object, PropertyValue);
 	            prop.setHowSet(Prop.SET_UNKNOWN);
 	    		setDiscoveryProp ( prop );
 	    	}
@@ -698,13 +712,13 @@ public String toString ( PropList props )
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "Add=" + Add );
+		b.append ( "Add=\"" + Add + "\"" ); // Need quotes because string could have whitespace
 	}
 	if ( (Subtract != null) && (Subtract.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "Subtract=" + Subtract );
+		b.append ( "Subtract=\"" + Subtract + "\"" ); // Need quotes because string could have whitespace
 	}
 	if ( (Multiply != null) && (Multiply.length() > 0) ) {
 		if ( b.length() > 0 ) {

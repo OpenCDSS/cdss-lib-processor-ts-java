@@ -12,7 +12,6 @@ import java.util.Vector;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -26,12 +25,21 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the FormatStringProperty() command.
 */
-public class FormatStringProperty_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class FormatStringProperty_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
+	
+/**
+Possible value for PropertyType.
+*/
+protected final String _DateTime = "DateTime";
+protected final String _Double = "Double";
+protected final String _Integer = "Integer";
+protected final String _String = "String";
 	
 /**
 Property set during discovery.
@@ -58,6 +66,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {   String Format = parameters.getValue ( "Format" );
     String OutputProperty = parameters.getValue ( "OutputProperty" );
+    String PropertyType = parameters.getValue ( "PropertyType" );
     String warning = "";
     String message;
     
@@ -77,12 +86,22 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide a property name for output." ) );
     }
+    if ( (PropertyType != null) && !PropertyType.isEmpty() && !PropertyType.equalsIgnoreCase(_DateTime) &&
+    	!PropertyType.equalsIgnoreCase(_Double) && !PropertyType.equalsIgnoreCase(_Integer) && !PropertyType.equalsIgnoreCase(_String) ) {
+		message = "The property type is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the property type as " + _DateTime + ", " + _Double + ", " +
+                	_Integer + ", or " + _String + " (default)." ) );
+    }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>();
+    List<String> validList = new ArrayList<String>(4);
     validList.add ( "InputProperties" );
     validList.add ( "Format" );
     validList.add ( "OutputProperty" );
+    validList.add ( "PropertyType" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -167,7 +186,7 @@ public List getObjectList ( Class c )
     Prop prop = new Prop();
     // Check for TS request or class that matches the data...
     if ( c == prop.getClass() ) {
-        List v = new Vector (1);
+        List<Prop> v = new Vector<Prop> (1);
         v.add ( discovery_Prop );
         return v;
     }
@@ -214,7 +233,7 @@ Run the command.
 */
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{   String message, routine = getCommandName() + "_Command.runCommand";
+{   String message, routine = getCommandName() + "_Command.runCommandInternal";
     int warning_level = 2;
     String command_tag = "" + command_number;
     int warning_count = 0;
@@ -222,7 +241,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
     PropList parameters = getCommandParameters();
     
 	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -247,6 +278,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String Format = parameters.getValue ( "Format" );
     String OutputProperty = parameters.getValue ( "OutputProperty" );
+    String PropertyType = parameters.getValue ( "PropertyType" );
+    String propertyType = _String; // default
+    if ( (PropertyType != null) && !PropertyType.isEmpty() ) {
+    	propertyType = PropertyType;
+    }
     
     if ( warning_count > 0 ) {
         // Input error...
@@ -259,7 +295,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     // Now process...
 
-    List<String> problems = new Vector<String>();
+    List<String> problems = new ArrayList<String>();
     try {
     	if ( commandPhase == CommandPhaseType.RUN ) {
     		String stringProp = format ( (TSCommandProcessor)processor, inputPropertyNames, Format, OutputProperty, problems );
@@ -267,10 +303,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		if ( stringProp != null ) {
     			stringProp = stringProp.replace("\\n","\n");
     		}
+    		// Create an output property of the requested type
+    		Object propObject = null;
+    		if ( propertyType.equalsIgnoreCase(_DateTime) ) {
+    			propObject = DateTime.parse(stringProp);
+    		}
+    		else if ( propertyType.equalsIgnoreCase(_Double) ) {
+    			propObject = new Double(stringProp);
+    		}
+    		else if ( propertyType.equalsIgnoreCase(_Integer) ) {
+    			propObject = new Integer(stringProp);
+    		}
+    		else {
+    			// Default
+    			propObject = stringProp;
+    		}
 	    	// Set the new property in the processor
     	    PropList request_params = new PropList ( "" );
 	    	request_params.setUsingObject ( "PropertyName", OutputProperty );
-	    	request_params.setUsingObject ( "PropertyValue", stringProp );
+	    	request_params.setUsingObject ( "PropertyValue", propObject );
 	    	try {
 	            processor.processRequest( "SetProperty", request_params);
 	    	}
@@ -286,10 +337,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
 		else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 			// Set a property that will be listed for choices
-            Prop prop = new Prop();
-            prop.setKey ( OutputProperty );
+			Object propertyObject = null;
+    		if ( propertyType.equalsIgnoreCase(_DateTime) ) {
+    			propertyObject = new DateTime(DateTime.DATE_CURRENT);
+    		}
+    		else if ( propertyType.equalsIgnoreCase(_Double) ) {
+    			propertyObject = new Double(1.0);
+    		}
+    		else if ( propertyType.equalsIgnoreCase(_Integer) ) {
+    			propertyObject = new Integer(1);
+    		}
+    		else {
+    			propertyObject = "";
+    		}
+    		Prop prop = new Prop(OutputProperty, propertyObject, "");
             prop.setHowSet(Prop.SET_UNKNOWN);
-            setDiscoveryProp ( prop );
+    		setDiscoveryProp ( prop );
 		}
     }
     catch ( Exception e ) {
@@ -360,6 +423,7 @@ public String toString ( PropList parameters )
     String InputProperties = parameters.getValue( "InputProperties" );
     String Format = parameters.getValue( "Format" );
     String OutputProperty = parameters.getValue( "OutputProperty" );
+    String PropertyType = parameters.getValue( "PropertyType" );
         
     StringBuffer b = new StringBuffer ();
     
@@ -380,6 +444,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "OutputProperty=\"" + OutputProperty + "\"" );
+    }
+    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PropertyType=" + PropertyType );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

@@ -12,8 +12,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -27,12 +27,14 @@ import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
@@ -51,6 +53,7 @@ private JTextField __PropertyName_JTextField = null;
 private SimpleJComboBox __DateTimePropertyName_JComboBox = null;
 //private SimpleJComboBox __FormatterType_JComboBox = null;
 private DateTimeFormatterSpecifiersJPanel __Format_JPanel = null;
+private SimpleJComboBox __PropertyType_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -137,6 +140,7 @@ private void checkInput ()
     }
     String FormatterType = __Format_JPanel.getSelectedFormatterType().trim();
 	String Format = __Format_JPanel.getText().trim();
+	String PropertyType = __PropertyType_JComboBox.getSelected();
 
 	__error_wait = false;
 
@@ -152,6 +156,9 @@ private void checkInput ()
 	if ( Format.length() > 0 ) {
 		parameters.set ( "Format", Format );
 	}
+    if ( PropertyType.length() > 0 ) {
+        parameters.set ( "PropertyType", PropertyType );
+    }
 
 	try {
 	    // This will warn the user...
@@ -175,24 +182,12 @@ private void commitEdits ()
     }
     String FormatterType = __Format_JPanel.getSelectedFormatterType().trim(); 
 	String Format = __Format_JPanel.getText().trim();
+	String PropertyType = __PropertyType_JComboBox.getSelected();
 	__command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "DateTimePropertyName", DateTimePropertyName );
     __command.setCommandParameter ( "FormatterType", FormatterType );
     __command.setCommandParameter ( "Format", Format );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__Format_JPanel = null;
-	__PropertyName_JTextField = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
+    __command.setCommandParameter ( "PropertyType", PropertyType );
 }
 
 /**
@@ -239,22 +234,24 @@ private void initialize ( JFrame parent, FormatDateTimeProperty_Command command 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time property name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateTimePropertyName_JComboBox = new SimpleJComboBox(false);
-    List<String> propertyList = new Vector<String>(TSCommandProcessorUtil.getPropertyNameList(processor));
+    List<Prop> propertyList = TSCommandProcessorUtil.getDiscoveryPropFromCommandsBeforeCommand((TSCommandProcessor)processor,__command);
+    List<String> propertyNameList = new ArrayList<String>();
     // Remove all but DateTime instances
     Object property;
-    for ( int i = 0; i < propertyList.size(); i++ ) {
+    for ( Prop prop: propertyList ) {
         try {
-            property = processor.getPropContents(propertyList.get(i));
+        	// TODO SAM 2017-03-26 this was problematic because it used runtime data
+            //property = processor.getPropContents(propertyNameList.get(i));
+        	property = prop.getContents();
         }
         catch ( Exception e ) {
             property = null;
         }
-        if ( (property == null) || !(property instanceof DateTime) ) {
-            propertyList.remove(i);
-            --i;
+        if ( (property != null) && (property instanceof DateTime) ) {
+            propertyNameList.add(prop.getKey());
         }
     }
-    __DateTimePropertyName_JComboBox.setData ( propertyList );
+    __DateTimePropertyName_JComboBox.setData ( propertyNameList );
     __DateTimePropertyName_JComboBox.addItemListener (this);
     JGUIUtil.addComponent(main_JPanel, __DateTimePropertyName_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -274,6 +271,24 @@ private void initialize ( JFrame parent, FormatDateTimeProperty_Command command 
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - format string for formatter."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property type:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyType_JComboBox = new SimpleJComboBox ( false );
+    List<String> typeChoices = new ArrayList<String>();
+    typeChoices.add ( "" ); // Default is string
+    typeChoices.add ( __command._DateTime );
+    typeChoices.add ( __command._Double );
+    typeChoices.add ( __command._Integer );
+    typeChoices.add ( __command._String );
+    __PropertyType_JComboBox.setData(typeChoices);
+    __PropertyType_JComboBox.select ( __command._String );
+    __PropertyType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - output property type (default=" + __command._String + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -351,11 +366,12 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String PropertyName = "";
     String DateTimePropertyName = "";
     String FormatterType = "";
 	String Format = "";
+    String PropertyType = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -364,6 +380,7 @@ private void refresh ()
 		DateTimePropertyName = props.getValue ( "DateTimePropertyName" );
         FormatterType = props.getValue ( "FormatterType" );
 		Format = props.getValue ( "Format" );
+		PropertyType = props.getValue ( "PropertyType" );
 	    if ( PropertyName != null ) {
 	         __PropertyName_JTextField.setText ( PropertyName );
 	    }
@@ -406,6 +423,21 @@ private void refresh ()
 		if ( Format != null ) {
 		    __Format_JPanel.setText ( Format );
 		}
+        if ( PropertyType == null ) {
+            // Select default...
+            __PropertyType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __PropertyType_JComboBox,PropertyType, JGUIUtil.NONE, null, null ) ) {
+                __PropertyType_JComboBox.select ( PropertyType );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nPropertyType value \"" + PropertyType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	PropertyName = __PropertyName_JTextField.getText().trim();
@@ -415,11 +447,13 @@ private void refresh ()
     }
     FormatterType = __Format_JPanel.getSelectedFormatterType().trim();
 	Format = __Format_JPanel.getText().trim();
+	PropertyType = __PropertyType_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "PropertyName=" + PropertyName );
 	props.add ( "DateTimePropertyName=" + DateTimePropertyName );
     props.add ( "FormatterType=" + FormatterType );
 	props.add ( "Format=" + Format );
+	props.add ( "PropertyType=" + PropertyType );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

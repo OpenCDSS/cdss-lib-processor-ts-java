@@ -8,6 +8,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -18,14 +20,18 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
 import RTi.Util.String.StringFormatterSpecifiersJPanel;
 
 @SuppressWarnings("serial")
@@ -39,6 +45,7 @@ private JTextArea __command_JTextArea = null;
 private JTextField __InputProperties_JTextField = null;
 private StringFormatterSpecifiersJPanel __Format_JPanel = null;
 private JTextField __OutputProperty_JTextField = null;
+private SimpleJComboBox __PropertyType_JComboBox = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -119,6 +126,7 @@ private void checkInput ()
     String InputProperties = __InputProperties_JTextField.getText().trim();
     String Format = __Format_JPanel.getText().trim();
     String OutputProperty = __OutputProperty_JTextField.getText().trim();
+	String PropertyType = __PropertyType_JComboBox.getSelected();
 	PropList parameters = new PropList ( "" );
 
 	__error_wait = false;
@@ -131,6 +139,9 @@ private void checkInput ()
     }
     if ( OutputProperty.length() > 0 ) {
         parameters.set ( "OutputProperty", OutputProperty );
+    }
+    if ( PropertyType.length() > 0 ) {
+        parameters.set ( "PropertyType", PropertyType );
     }
 
 	try {
@@ -151,9 +162,11 @@ private void commitEdits ()
 {	String InputProperties = __InputProperties_JTextField.getText().trim();
     String Format = __Format_JPanel.getText().trim();
     String OutputProperty = __OutputProperty_JTextField.getText().trim();
+	String PropertyType = __PropertyType_JComboBox.getSelected();
     __command.setCommandParameter ( "InputProperties", InputProperties );
     __command.setCommandParameter ( "Format", Format );
     __command.setCommandParameter ( "OutputProperty", OutputProperty );
+    __command.setCommandParameter ( "PropertyType", PropertyType );
 }
 
 /**
@@ -195,9 +208,10 @@ private void initialize ( JFrame parent, FormatStringProperty_Command command )
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
        "  %f, %8.2f, %#8.2f, %-8.0f, %08.1f - include float, use width of 8 and 2 decimals, force decimal point, left-justify, pad with zeros on left" ), 
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-	       "  \\n - newline" ), 
-	       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel ("  \\n - newline" ), 
+	    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input properties:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -223,11 +237,29 @@ private void initialize ( JFrame parent, FormatStringProperty_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output property:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputProperty_JTextField = new JTextField ( 10 );
+    __OutputProperty_JTextField = new JTextField ( 30 );
     __OutputProperty_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputProperty_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - name of output property."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output property type:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyType_JComboBox = new SimpleJComboBox ( false );
+    List<String> typeChoices = new ArrayList<String>();
+    typeChoices.add ( "" ); // Default is string
+    typeChoices.add ( __command._DateTime );
+    typeChoices.add ( __command._Double );
+    typeChoices.add ( __command._Integer );
+    typeChoices.add ( __command._String );
+    __PropertyType_JComboBox.setData(typeChoices);
+    __PropertyType_JComboBox.select ( __command._String );
+    __PropertyType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - output property type (default=" + __command._String + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -305,10 +337,11 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	//String routine = getClass().getName() + ".refresh";
+{	String routine = getClass().getSimpleName() + ".refresh";
     String InputProperties = "";
     String Format = "";
     String OutputProperty = "";
+    String PropertyType = "";
 
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -317,6 +350,7 @@ private void refresh ()
         InputProperties = props.getValue ( "InputProperties" );
         Format = props.getValue ( "Format" );
 		OutputProperty = props.getValue ( "OutputProperty" );
+		PropertyType = props.getValue ( "PropertyType" );
         if ( InputProperties != null ) {
             __InputProperties_JTextField.setText ( InputProperties );
         }
@@ -326,15 +360,32 @@ private void refresh ()
         if ( OutputProperty != null ) {
             __OutputProperty_JTextField.setText ( OutputProperty );
         }
+        if ( PropertyType == null ) {
+            // Select default...
+            __PropertyType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __PropertyType_JComboBox,PropertyType, JGUIUtil.NONE, null, null ) ) {
+                __PropertyType_JComboBox.select ( PropertyType );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nPropertyType value \"" + PropertyType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	InputProperties = __InputProperties_JTextField.getText();
 	Format = __Format_JPanel.getText().trim();
     OutputProperty = __OutputProperty_JTextField.getText();
+    PropertyType = __PropertyType_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "InputProperties=" + InputProperties );
     props.add ( "Format=" + Format );
     props.add ( "OutputProperty=" + OutputProperty );
+    props.add ( "PropertyType=" + PropertyType );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

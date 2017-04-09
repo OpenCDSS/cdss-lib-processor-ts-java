@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.List;
 
 import RTi.Util.IO.Command;
+import RTi.Util.IO.PropList;
 
 /**
 This class allows a commands file to be be run.  For example, it can be
@@ -75,6 +76,18 @@ throws Exception
 	__processor.runCommands(
 			null, // Subset of Command instances to run - just run all
 			null ); // Properties to control run
+}
+
+/**
+Run the commands.
+@param runProps properties to pass to the processor
+*/
+public void runCommands ( PropList runProps )
+throws Exception
+{
+	__processor.runCommands(
+			null, // Subset of Command instances to run - just run all commands
+			runProps ); // Properties to control run
 }
 
 /**

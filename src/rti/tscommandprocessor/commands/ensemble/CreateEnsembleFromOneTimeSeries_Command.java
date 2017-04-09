@@ -187,7 +187,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(10);
+    List<String> validList = new ArrayList<String>(11);
     validList.add ( "TSID" );
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
@@ -195,6 +195,7 @@ throws InvalidCommandParameterException
     validList.add ( "EnsembleName" );
     validList.add ( "Alias" );
 	validList.add ( "TraceLength" );
+	validList.add ( "TraceDescription" );
 	validList.add ( "ReferenceDate" );
 	validList.add ( "OutputYearType" );
     validList.add ( "ShiftDataHow" );
@@ -353,6 +354,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	DateTime InputEnd_DateTime = null;
     String TraceLength = parameters.getValue ( "TraceLength" );
+    String TraceDescription = parameters.getValue ( "TraceDescription" ); // Expanded below like alias
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
 	if ( (commandPhase == CommandPhaseType.RUN) && (ReferenceDate != null) && (ReferenceDate.indexOf("${") >= 0) ) {
 		ReferenceDate = TSCommandProcessorUtil.expandParameterValue(processor, this, ReferenceDate);
@@ -473,7 +475,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     try {
         TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
         tslist = util.getTracesFromTS ( ts, TraceLength, ReferenceDate_DateTime,
-            outputYearType, ShiftDataHow, InputStart_DateTime, InputEnd_DateTime, Alias, createData );
+            outputYearType, ShiftDataHow, InputStart_DateTime, InputEnd_DateTime, Alias, TraceDescription, createData );
         // The above code does not recognize ${Properties} from the processor so reset the alias if necessary
         if ( (Alias != null) && Alias.indexOf("${") >= 0 ) {
         	for ( TS ts2 : tslist ) {
@@ -569,6 +571,7 @@ public String toString ( PropList parameters )
 	}
     String TSID = parameters.getValue ( "TSID" );
     String TraceLength = parameters.getValue ( "TraceLength" );
+    String TraceDescription = parameters.getValue ( "TraceDescription" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
@@ -583,12 +586,6 @@ public String toString ( PropList parameters )
 			b.append ( "," );
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( (TraceLength != null) && (TraceLength.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TraceLength=" + TraceLength );
 	}
     if ( (InputStart != null) && (InputStart.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -620,6 +617,18 @@ public String toString ( PropList parameters )
         }
         b.append ( "Alias=\"" + Alias + "\"" );
     }
+	if ( (TraceLength != null) && (TraceLength.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "TraceLength=" + TraceLength );
+	}
+	if ( (TraceDescription != null) && (TraceDescription.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "TraceDescription=\"" + TraceDescription + "\"" );
+	}
     if ( (ReferenceDate != null) && (ReferenceDate.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

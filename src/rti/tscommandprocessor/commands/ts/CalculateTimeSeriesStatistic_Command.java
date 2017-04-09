@@ -254,7 +254,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(17);
+    List<String> validList = new ArrayList<String>(18);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -272,6 +272,7 @@ throws InvalidCommandParameterException
     validList.add ( "TableStatisticColumn" );
     validList.add ( "TableStatisticDateTimeColumn" );
     validList.add ( "TimeSeriesProperty" );
+    validList.add ( "StatisticValueProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -309,11 +310,12 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    List v = null;
+    List<DataTable> v = null;
     if ( (table != null) && (c == table.getClass()) ) {
-        v = new Vector();
+        v = new Vector<DataTable>();
         v.add ( table );
     }
+    // TODO sam 2017-04-01 need to evaluate whether to return Prop with processor property name
     return v;
 }
 
@@ -464,6 +466,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
     int statisticDateTimeColumnNum = -1;
     String TimeSeriesProperty = parameters.getValue ( "TimeSeriesProperty" );
+    String StatisticValueProperty = parameters.getValue ( "StatisticValueProperty" );
+    if ( (StatisticValueProperty != null) && (StatisticValueProperty.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+    	StatisticValueProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, StatisticValueProperty);
+	}
 
     // Figure out the dates to use for the analysis.
     // Default of null means to analyze the full period.
@@ -747,8 +753,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     tsu.calculateTimeSeriesStatistic();
                     // Set the statistic as a property on the time series
                     if ( (TimeSeriesProperty != null) && !TimeSeriesProperty.isEmpty() ) {
+                    	// TODO sam 2017-03-25 why is the following not using tsu.getStatisticResult()?
                     	setProperty ( ts, TimeSeriesProperty, tsu );
                     }
+	                if ( (StatisticValueProperty != null) && !StatisticValueProperty.isEmpty() ) {
+	                	String propName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(processor, ts, StatisticValueProperty, status, commandPhase);
+	                	PropList request_params = new PropList ( "" );
+	                    request_params.setUsingObject ( "PropertyName", propName );
+	                    request_params.setUsingObject ( "PropertyValue", tsu.getStatisticResult() );
+	                    try {
+	                        processor.processRequest( "SetProperty", request_params);
+	                    }
+	                    catch ( Exception e ) {
+	                        message = "Error requesting SetProperty(Property=\"" + StatisticValueProperty + "\") from processor.";
+	                        Message.printWarning(log_level,
+	                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                            routine, message );
+	                        status.addToLog ( CommandPhaseType.RUN,
+	                            new CommandLogRecord(CommandStatusType.FAILURE,
+	                                message, "Report the problem to software support." ) );
+	                    }
+	                }
                     // Now set the statistic value(s) in the table by matching the row (via TSID) and column
                     // (via statistic column name)
                     if ( doTable ) {
@@ -948,6 +973,7 @@ public String toString ( PropList parameters )
     String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
     String TableStatisticDateTimeColumn = parameters.getValue ( "TableStatisticDateTimeColumn" );
     String TimeSeriesProperty = parameters.getValue ( "TimeSeriesProperty" );
+    String StatisticValueProperty = parameters.getValue ( "StatisticValueProperty" );
         
     StringBuffer b = new StringBuffer ();
 
@@ -1058,6 +1084,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TimeSeriesProperty=\"" + TimeSeriesProperty + "\"" );
+    }
+    if ( (StatisticValueProperty != null) && (StatisticValueProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "StatisticValueProperty=\"" + StatisticValueProperty + "\"" );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

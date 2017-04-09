@@ -2681,8 +2681,14 @@ throws Exception
 			AppendResults_boolean = false;
 		}
 	}
+	String AppendResults = appPropList.getValue ( "AppendResults" );
+	if ( (AppendResults != null) && AppendResults.equalsIgnoreCase("True") ) {
+		AppendResults_boolean = true;
+	}
 	Message.printStatus(2, routine,"Recursive=" + __processor_PropList.getValue("Recursive") +
 			" => " + Recursive_boolean );
+	Message.printStatus(2, routine,"AppendResults=" + __processor_PropList.getValue("AppendResults") +
+			" => " + AppendResults_boolean );
 
 	int size = commandList.size();
 	Message.printStatus ( 1, routine, "Processing " + size + " commands..." );
@@ -3573,7 +3579,8 @@ Process a list of time series to produce an output product.
 The time series are typically generated from a previous call to
 processCommands() or processTimeSeriesCommands().
 @param ts_indices List of time series indices to process from the internal
-time series list.  If null, all are processed.  The indices do not have to be in order.
+time series list.  If null, all are processed.
+The indices do not have to be in order.
 @param proplist List of properties to define the output:
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
@@ -3608,12 +3615,6 @@ throws IOException
 
     List<TS> tslist_output = null;
 
-	// Define a local proplist to better deal with null...
-	PropList props = proplist;
-	if ( props == null ) {
-		props = new PropList ( "" );
-	}
-
     if ( (__tslist == null) || (__tslist.size() == 0) ) {
 		message = "No time series to process.";
 		Message.printWarning ( 1, routine, message );
@@ -3621,7 +3622,7 @@ throws IOException
 	} 
 	Message.printStatus ( 1, routine, "Creating output from previously queried time series..." );
 
-	// Put together the Vector to output, given the requested ts_indices.
+	// Put together the list of time series to process/output, given the requested ts_indices.
 	// Need to do more work if BinaryTS, but hopefully if BinaryTS
 	// batch mode will be used?!  Use a member __tslist_output so we can
 	// manage memory and not leave used if an exception occurs (clean up the next time).
@@ -3641,6 +3642,29 @@ throws IOException
 				tslist_output.add ( __tslist.get(ts_indices[i]) );
 			}
 		}
+	}
+	// Now call the overloaded method that takes a list of time series
+	processTimeSeries ( tslist_output, proplist );
+}
+
+/**
+Process a list of time series to produce an output product.
+The time series are typically generated from a previous call to
+processCommands() or processTimeSeriesCommands().
+However, the list of time series may also originate in an application like TSTool,
+for example when a single time series is converted to a time series ensemble
+on the fly and is then processed here, independent of time series maintained with
+the processor.
+*/
+protected void processTimeSeries ( List<TS> tslist_output, PropList proplist )
+throws IOException {
+	String message = null; // Message string
+	String routine = "TSEngine.processTimeSeries";
+
+	// Define a local proplist to better deal with null...
+	PropList props = proplist;
+	if ( props == null ) {
+		props = new PropList ( "" );
 	}
 
 	// Figure out the output.  This method is going to be called with
@@ -4292,8 +4316,8 @@ throws IOException
     		PropList graphprops = new PropList ( "Graph" );
     		graphprops.set ( "ExtendedLegend", "true" );
     		graphprops.set ( "HelpKey", "TSTool.GraphMenu" );
-    		graphprops.set ( "DataUnits", ((TS)tslist.get(0)).getDataUnits() );
-    		graphprops.set ( "YAxisLabelString",((TS)tslist.get(0)).getDataUnits() );
+    		graphprops.set ( "DataUnits", tslist.get(0).getDataUnits() );
+    		graphprops.set ( "YAxisLabelString",tslist.get(0).getDataUnits() );
     		graphprops.set ( "CalendarType", "" + getOutputYearType() );
     		// Set the total size of the graph window...
     		graphprops.set ( "TotalWidth", "600" );
@@ -4369,7 +4393,7 @@ throws IOException
     		}
             else if ( output_format == OUTPUT_EXCEEDANCE_PROBABILITY_GRAPH ) {
                 graphprops.set("GraphType=ExceedanceProbability");
-                // TODO SAM 2011-11-24 Need to set default propertie here? 
+                // TODO SAM 2011-11-24 Need to set default properties here? 
             }
     		else if ( output_format == OUTPUT_LINELOGYGRAPH ) {
     			graphprops.set("YAxisType=Log");
@@ -5234,7 +5258,7 @@ throws Exception
 
 		if ( !is_template ) {
 			for ( int i = 0; i < size; i++ ) {
-				ts = (TS)__tslist.get(i);
+				ts = __tslist.get(i);
 				if ( ts == null ) {
 					continue;
 				}
@@ -5249,7 +5273,7 @@ throws Exception
 
 		int match_count = 0;
 		for ( int i = 0; i < size; i++ ) {
-			ts = (TS)__tslist.get(i);
+			ts = __tslist.get(i);
 			if ( ts == null ) {
 				continue;
 			}

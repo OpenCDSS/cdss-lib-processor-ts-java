@@ -71,6 +71,7 @@ private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format 
 private JTextField __TableStatisticColumn_JTextField = null;
 private JTextField __TableStatisticDateTimeColumn_JTextField = null;
 private JTextField __TimeSeriesProperty_JTextField = null;
+private JTextField __StatisticValueProperty_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -194,6 +195,7 @@ private void checkInput ()
 	String TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
 	String TableStatisticDateTimeColumn = __TableStatisticDateTimeColumn_JTextField.getText().trim();
 	String TimeSeriesProperty = __TimeSeriesProperty_JTextField.getText().trim();
+	String StatisticValueProperty = __StatisticValueProperty_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -258,6 +260,9 @@ private void checkInput ()
     if ( TimeSeriesProperty.length() > 0 ) {
         parameters.set ( "TimeSeriesProperty", TimeSeriesProperty );
     }
+    if ( StatisticValueProperty.length() > 0 ) {
+        parameters.set ( "StatisticValueProperty", StatisticValueProperty );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -288,6 +293,7 @@ private void commitEdits ()
     String TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
     String TableStatisticDateTimeColumn = __TableStatisticDateTimeColumn_JTextField.getText().trim();
     String TimeSeriesProperty = __TimeSeriesProperty_JTextField.getText().trim();
+	String StatisticValueProperty = __StatisticValueProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -320,6 +326,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableStatisticColumn", TableStatisticColumn );
     __command.setCommandParameter ( "TableStatisticDateTimeColumn", TableStatisticDateTimeColumn );
     __command.setCommandParameter ( "TimeSeriesProperty", TimeSeriesProperty );
+    __command.setCommandParameter ( "StatisticValueProperty", StatisticValueProperty );
 }
 
 /**
@@ -570,7 +577,13 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     __main_JTabbedPane.addTab ( "Output Property", prop_JPanel );
     
 	JGUIUtil.addComponent(prop_JPanel, new JLabel (
-		"The calculated statistic can be set as a time series property.  It can be referenced later in some commands with ${ts:Property}." ), 
+		"The calculated statistic can be set as a time series and processor property." ), 
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"The time series property can be referenced later in commands using ${ts:Property} syntax." ), 
+		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(prop_JPanel, new JLabel (
+		"The processor property can be referenced later in commands using ${Property} syntax." ), 
 		0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
         0, ++yProp, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -594,6 +607,16 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     JGUIUtil.addComponent(prop_JPanel, __TimeSeriesProperty_JTextField,
         1, yProp, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Optional - time series property to set as statistic value." ),
+        3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(prop_JPanel, new JLabel("Statistic value property:"),
+        0, ++yProp, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __StatisticValueProperty_JTextField = new JTextField ( "", 40 );
+    __StatisticValueProperty_JTextField.setToolTipText("Name of processor property to set to statistic value, can include ${Property}");
+    __StatisticValueProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(prop_JPanel, __StatisticValueProperty_JTextField,
+        1, yProp, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(prop_JPanel, new JLabel ( "Optional - processor property to set as statistic value." ),
         3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -689,6 +712,7 @@ private void refresh ()
 	String TableStatisticColumn = "";
 	String TableStatisticDateTimeColumn = "";
 	String TimeSeriesProperty = "";
+	String StatisticValueProperty = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -710,6 +734,7 @@ private void refresh ()
 		TableStatisticColumn = props.getValue ( "TableStatisticColumn" );
 		TableStatisticDateTimeColumn = props.getValue ( "TableStatisticDateTimeColumn" );
 		TimeSeriesProperty = props.getValue ( "TimeSeriesProperty" );
+		StatisticValueProperty = props.getValue ( "StatisticValueProperty" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -849,6 +874,9 @@ private void refresh ()
         if ( TimeSeriesProperty != null ) {
             __TimeSeriesProperty_JTextField.setText ( TimeSeriesProperty );
         }
+        if ( StatisticValueProperty != null ) {
+            __StatisticValueProperty_JTextField.setText ( StatisticValueProperty );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	checkGUIState();
@@ -867,6 +895,7 @@ private void refresh ()
     TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
     TableStatisticDateTimeColumn = __TableStatisticDateTimeColumn_JTextField.getText().trim();
     TimeSeriesProperty = __TimeSeriesProperty_JTextField.getText().trim();
+    StatisticValueProperty = __StatisticValueProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
@@ -898,6 +927,7 @@ private void refresh ()
     props.add ( "TableStatisticColumn=" + TableStatisticColumn );
     props.add ( "TableStatisticDateTimeColumn=" + TableStatisticDateTimeColumn );
     props.add ( "TimeSeriesProperty=" + TimeSeriesProperty );
+    props.add ( "StatisticValueProperty=" + StatisticValueProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

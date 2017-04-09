@@ -49,19 +49,20 @@ public class CreateEnsembleFromOneTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton __cancel_JButton = null; // Cancel Button
-private SimpleJButton __ok_JButton = null; // Ok Button
-private CreateEnsembleFromOneTimeSeries_Command __command = null;// Command to edit
-private JTextArea __command_JTextArea=null;// Command as JTextField
-private SimpleJComboBox __TSID_JComboBox = null;// Field for time series IDs
-private JTextField __InputStart_JTextField;// Text fields for query period, both versions.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private CreateEnsembleFromOneTimeSeries_Command __command = null;
+private JTextArea __command_JTextArea=null;
+private SimpleJComboBox __TSID_JComboBox = null;
+private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private JTextField __EnsembleID_JTextField;
 private JTextField __EnsembleName_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-private JTextField __TraceLength_JTextField=null; // Total period length.
-private SimpleJComboBox __ShiftDataHow_JComboBox = null;// Indicates how to handle shift.
-private JTextField __ReferenceDate_JTextField = null; // Reference date.
+private JTextField __TraceLength_JTextField = null;
+private JTextField __TraceDescription_JTextField = null;
+private SimpleJComboBox __ShiftDataHow_JComboBox = null;
+private JTextField __ReferenceDate_JTextField = null;
 private SimpleJComboBox __OutputYearType_JComboBox = null;
 
 private boolean __error_wait = false;
@@ -142,6 +143,7 @@ private void checkInput ()
     String EnsembleName = __EnsembleName_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
     String TraceLength = __TraceLength_JTextField.getText().trim();
+    String TraceDescription = __TraceDescription_JTextField.getText().trim();
     String ReferenceDate = __ReferenceDate_JTextField.getText().trim();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
@@ -168,6 +170,9 @@ private void checkInput ()
     }
     if ( TraceLength.length() > 0 ) {
         parameters.set ( "TraceLength", TraceLength );
+    }
+    if ( TraceDescription.length() > 0 ) {
+        parameters.set ( "TraceDescription", TraceDescription );
     }
     if ( ReferenceDate.length() > 0 ) {
         parameters.set ( "ReferenceDate", ReferenceDate );
@@ -200,6 +205,7 @@ private void commitEdits ()
     String EnsembleName = __EnsembleName_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
     String TraceLength = __TraceLength_JTextField.getText().trim();
+    String TraceDescription = __TraceDescription_JTextField.getText().trim();
     String ReferenceDate = __ReferenceDate_JTextField.getText().trim();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
@@ -211,25 +217,10 @@ private void commitEdits ()
     __command.setCommandParameter ( "EnsembleName", EnsembleName );
     __command.setCommandParameter ( "Alias", Alias );
     __command.setCommandParameter ( "TraceLength", TraceLength );
+    __command.setCommandParameter ( "TraceDescription", TraceDescription );
     __command.setCommandParameter ( "ReferenceDate", ReferenceDate );
     __command.setCommandParameter ( "OutputYearType", OutputYearType );
     __command.setCommandParameter ( "ShiftDataHow", ShiftDataHow );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__ReferenceDate_JTextField = null;
-	__TraceLength_JTextField = null;
-	__command = null;
-	__TSID_JComboBox = null;
-	__ShiftDataHow_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
 }
 
 /**
@@ -257,7 +248,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
 		"Each trace will start on the reference date within the year and will be as long as specified (TraceLength)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Each trace will have the properties of the original time series with sequence numbers set to the input year."),
+		"Each trace will have the properties of the original time series with sequence numbers set to the input year for the year type."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Specify the period to limit the number of traces generated from the original time series."),
@@ -346,11 +337,21 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Trace length:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TraceLength_JTextField = new JTextField ( "1Year", 10 );
-	__TraceLength_JTextField.setToolTipText("Trace length using time series interval notation");
+	__TraceLength_JTextField.setToolTipText("Trace length using time series interval notation (1Year, 1Month, etc.)");
 	__TraceLength_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __TraceLength_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=1Year)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Trace description:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__TraceDescription_JTextField = new JTextField ( 10 );
+	__TraceDescription_JTextField.setToolTipText("Trace description, can use %L, etc.");
+	__TraceDescription_JTextField.addKeyListener ( this );
+	JGUIUtil.addComponent(main_JPanel, __TraceDescription_JTextField,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=%z trace: %D)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Reference date:" ), 
@@ -476,6 +477,7 @@ private void refresh ()
     String EnsembleName = "";
     String Alias = "";
 	String TraceLength = "";
+	String TraceDescription = "";
 	String ReferenceDate = "";
 	String OutputYearType = "";
 	String ShiftDataHow = "";
@@ -491,6 +493,7 @@ private void refresh ()
         EnsembleName = parameters.getValue ( "EnsembleName" );
         Alias = parameters.getValue("Alias");
         TraceLength = parameters.getValue("TraceLength");
+        TraceDescription = parameters.getValue("TraceDescription");
         ReferenceDate = parameters.getValue("ReferenceDate");
         OutputYearType = parameters.getValue ( "OutputYearType" );
         ShiftDataHow = parameters.getValue("ShiftDataHow");
@@ -533,6 +536,9 @@ private void refresh ()
         if ( TraceLength != null ) {
             __TraceLength_JTextField.setText ( TraceLength );
         }
+        if ( TraceDescription != null ) {
+            __TraceDescription_JTextField.setText ( TraceDescription );
+        }
         if ( ReferenceDate != null ) {
             __ReferenceDate_JTextField.setText ( ReferenceDate );
         }
@@ -574,6 +580,7 @@ private void refresh ()
     EnsembleName = __EnsembleName_JTextField.getText().trim();
     Alias = __Alias_JTextField.getText().trim();
     TraceLength = __TraceLength_JTextField.getText().trim();
+    TraceDescription = __TraceDescription_JTextField.getText().trim();
     ReferenceDate = __ReferenceDate_JTextField.getText().trim();
     OutputYearType = __OutputYearType_JComboBox.getSelected();
     ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
@@ -585,6 +592,7 @@ private void refresh ()
     parameters.add ( "EnsembleName=" + EnsembleName );
     parameters.add ( "Alias=" + Alias );
     parameters.add ( "TraceLength=" + TraceLength );
+    parameters.add ( "TraceDescription=" + TraceDescription );
     parameters.add ( "ReferenceDate=" + ReferenceDate );
     parameters.add ( "OutputYearType=" + OutputYearType );
     parameters.add ( "ShiftDataHow=" + ShiftDataHow );

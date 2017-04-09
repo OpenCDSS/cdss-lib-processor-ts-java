@@ -20,6 +20,7 @@ import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.SimpleSequence;
 import freemarker.template.Template;
+import freemarker.template.Version;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -303,7 +304,7 @@ public List getObjectList ( Class c )
     Prop prop = new Prop();
     // Check for TS request or class that matches the data...
     if ( c == prop.getClass() ) {
-        List v = new Vector (1);
+        List<Prop> v = new Vector<Prop> (1);
         v.add ( discovery_Prop );
         return v;
     }
@@ -509,7 +510,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         }
         else if ( commandPhase == CommandPhaseType.RUN ) {
             // Call the FreeMarker API...
-            Configuration config = new Configuration();
+        	// TODO sam 2017-04-08 figure out whether can re-use a singleton
+        	// Configuration is intended to be a shared singleton but templates can exist in many folders.
+            Configuration config = new Configuration(new Version(2,3,0));
             // TODO SAM 2009-10-07 Not sure what configuration is needed for TSTool since most
             // templates will be located with command files and user data
             //config.setSharedVariable("shared", "avoid global variables");
@@ -681,7 +684,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     catch ( Exception e1 ) {
                         message = "Freemarker error expanding command template file \"" + InputFile_full +
                             "\" + (" + e1 + ") template text (with internal inserts at ends) =\n" +
-                            formatTemplateForWarning(templateLines,nl);;
+                            formatTemplateForWarning(templateLines,nl);
                         Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
                         Message.printWarning ( 3, routine, e1 );

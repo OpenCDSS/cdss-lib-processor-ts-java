@@ -378,7 +378,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     				int size = tslist.size();
     				TS ts;
     				for ( int i = 0; i < size; i++ ) {
-    					ts = (TS)tslist.get(i);
+    					ts = tslist.get(i);
     					request_params.setUsingObject( "TS", ts );
     					processor.processRequest( "AppendTimeSeries", request_params );
     				}

@@ -16,7 +16,6 @@ import RTi.TS.TrendType;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -35,7 +34,7 @@ import RTi.Util.Time.DateTime;
 /**
 This class initializes, checks, and runs the Delta() command.
 */
-public class Delta_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class Delta_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
     
 /**

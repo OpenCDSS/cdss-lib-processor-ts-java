@@ -105,7 +105,7 @@ throws InvalidCommandParameterException
 							message, "Software error - report problem to support." ) );
 		}
 		// Expand for ${} properties...
-		working_dir = TSCommandProcessorUtil.expandParameterValue(processor, this, working_dir);
+		OutputFile = TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFile);
 		try {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
 			File f = new File ( adjusted_path );

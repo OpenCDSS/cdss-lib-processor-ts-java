@@ -13,7 +13,6 @@ import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -31,8 +30,19 @@ import RTi.Util.Time.TimeInterval;
 /**
 This class initializes, checks, and runs the WriteReclamationHDB() command.
 */
-public class WriteReclamationHDB_Command extends AbstractCommand implements Command
+public class WriteReclamationHDB_Command extends AbstractCommand
 {
+	/**
+	 * Possible values for WriteProcedure.
+	 */
+	protected final String _OLD_WRITE_TO_HDB = "OLD_WRITE_TO_HDB";
+	protected final String _WRITE_DATA = "WRITE_DATA";
+	
+	/**
+	 * Possible values for SqlDateType.
+	 */
+	protected final String _JavaTimestamp = "JavaTimestamp";
+	protected final String _OffsetDateTime = "OffsetDateTime";
 
 /**
 Constructor.
@@ -74,7 +84,10 @@ throws InvalidCommandParameterException
     String DataFlags = parameters.getValue ( "DataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String Agency = parameters.getValue ( "Agency" );
 	String TimeZone = parameters.getValue ( "TimeZone" );
+	String WriteProcedure = parameters.getValue ( "WriteProcedure" );
+	String SqlDateType = parameters.getValue ( "SqlDateType" );
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//String IntervalOverride = parameters.getValue ( "IntervalOverride" );
 	String warning = "";
@@ -382,15 +395,43 @@ throws InvalidCommandParameterException
 	*/
 	
     if ( (TimeZone == null) || TimeZone.equals("") ) {
-        message = "The time zone for the time series must be specified to ensure proper data loading.";
+        message = "The time zone default for the time series must be specified to ensure proper data loading"
+        		+ " (used for hourly and instantaneous interval when time series does not have a time zone).";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the time zone." ) );
     }
     
+    if ( (WriteProcedure != null) && !WriteProcedure.isEmpty() &&
+    	!WriteProcedure.equalsIgnoreCase(_OLD_WRITE_TO_HDB) && !WriteProcedure.equalsIgnoreCase(_WRITE_DATA) ) {
+        message = "The WriteProcedure parameter (" + WriteProcedure + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify WriteProcedure as " + _OLD_WRITE_TO_HDB + " or " + _WRITE_DATA + " (default)." ) );
+    }
+    
+    if ( (Agency == null) || Agency.equals("") && ((WriteProcedure == null) ||
+    	WriteProcedure.isEmpty() || WriteProcedure.equalsIgnoreCase(_WRITE_DATA))) {
+        message = "The agency must be specified when using WriteProcedure=" + _WRITE_DATA + ".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the time zone." ) );
+    }
+    
+    if ( (SqlDateType != null) && !SqlDateType.isEmpty() &&
+        	!SqlDateType.equalsIgnoreCase(_JavaTimestamp) && !SqlDateType.equalsIgnoreCase(_OffsetDateTime) ) {
+            message = "The SqlDateType parameter (" + SqlDateType + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify SqlDateType as " + _JavaTimestamp + " or " + _OffsetDateTime + " (default)." ) );
+        }
+    
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(28);
+	List<String> validList = new ArrayList<String>(33);
 	validList.add ( "DataStore" );
     validList.add ( "TSList" );
     validList.add ( "TSID" );
@@ -413,13 +454,18 @@ throws InvalidCommandParameterException
     validList.add ( "NewEnsembleModelRunDate" );
     validList.add ( "EnsembleModelRunID" );
     validList.add ( "Agency" );
+    validList.add ( "CollectionSystem" );
+    validList.add ( "Computation" );
+    validList.add ( "Method" );
     validList.add ( "ValidationFlag" );
     validList.add ( "OverwriteFlag" );
     validList.add ( "DataFlags" );
     validList.add ( "TimeZone" );
 	validList.add ( "OutputStart" );
 	validList.add ( "OutputEnd" );
+    validList.add ( "WriteProcedure" );
 	validList.add ( "EnsembleIDProperty" );
+	validList.add ( "SqlDateType" );
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//valid_Vector.add ( "IntervalOverride" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -541,10 +587,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
     String NewEnsembleModelRunDate = parameters.getValue ( "NewEnsembleModelRunDate" );
     String Agency = parameters.getValue ( "Agency" );
+    String CollectionSystem = parameters.getValue ( "CollectionSystem" );
+    String Computation = parameters.getValue ( "Computation" );
+    String Method = parameters.getValue ( "Method" );
     String ValidationFlag = parameters.getValue ( "ValidationFlag" );
     String OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
     String DataFlags = parameters.getValue ( "DataFlags" );
     String TimeZone = parameters.getValue ( "TimeZone" );
+    String WriteProcedure = parameters.getValue ( "WriteProcedure" );
+    if ( (WriteProcedure == null) || WriteProcedure.isEmpty() ) {
+    	WriteProcedure = _WRITE_DATA; // default is new WRITE_REAL_DATA and WRITE_MODEL_DATA stored procedure
+    }
+    String SqlDateType = parameters.getValue ( "SqlDateType" );
+    if ( (SqlDateType == null) || SqlDateType.isEmpty() ) {
+    	SqlDateType = _OffsetDateTime; // default is Java 8 OffsetDateTime
+    }
     String EnsembleIDProperty = parameters.getValue ( "EnsembleIDProperty" );
     if ( (EnsembleIDProperty != null) && (commandPhase == CommandPhaseType.RUN) && EnsembleIDProperty.indexOf("${") >= 0 ) {
     	EnsembleIDProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, EnsembleIDProperty);
@@ -738,6 +795,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         boolean doEnsemble = false; // Default is single time series
         int traceNumber = 0;
         int its = 0;
+        List<String> problems = new ArrayList<String>();
         if ( doWrite && (tslist != null) ) {
             // Update the progress
             for ( TS ts : tslist ) {
@@ -764,6 +822,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             "\" - not writing trace.";
                         Message.printWarning ( warning_level, 
                             MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                        Message.printWarning(warning_level, routine, e);
                         status.addToLog ( CommandPhaseType.RUN,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that trace number is available in the time series." ) );
@@ -834,6 +893,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             "\" and model run date " + modelRunDate + " - not writing trace (" + e + ").";
                             Message.printWarning ( warning_level, 
                                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                            Message.printWarning(warning_level, routine, e);
                             status.addToLog ( CommandPhaseType.RUN,
                                 new CommandLogRecord(CommandStatusType.FAILURE,
                                     message, "Verify that command parameters are correct." ) );
@@ -859,12 +919,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 // Now write the trace time series using the model run ID
                 // The SDI will be used before using the site common name, etc. (which likely have not been specified)
                 String hydrologicIndicator = null;
-                dmi.writeTimeSeries ( ts, loadingApp,
-                    SiteCommonName, DataTypeCommonName, siteDataTypeID,
-                    ModelName, ModelRunName, ModelRunDate, hydrologicIndicator, modelRunID,
-                    Agency, ValidationFlag, OverwriteFlag, DataFlags,
-                    TimeZone, OutputStart_DateTime, OutputEnd_DateTime );//, intervalOverride );
-                    // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+                if ( WriteProcedure.equalsIgnoreCase(_OLD_WRITE_TO_HDB) ) {
+	                dmi.writeTimeSeries ( ts, loadingApp,
+	                    SiteCommonName, DataTypeCommonName, siteDataTypeID,
+	                    ModelName, ModelRunName, ModelRunDate, hydrologicIndicator, modelRunID,
+	                    Agency, ValidationFlag, OverwriteFlag, DataFlags,
+	                    TimeZone, OutputStart_DateTime, OutputEnd_DateTime );//, intervalOverride );
+	                    // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
+                }
+                else {
+                	dmi.writeTimeSeriesUsingWriteData ( ts, loadingApp,
+	                    SiteCommonName, DataTypeCommonName, siteDataTypeID,
+	                    ModelName, ModelRunName, ModelRunDate, hydrologicIndicator, modelRunID,
+	                    Agency, CollectionSystem, Computation, Method, ValidationFlag, OverwriteFlag, DataFlags,
+	                    TimeZone, OutputStart_DateTime, OutputEnd_DateTime, SqlDateType, problems );
+                }
                 // If the EnsembleIDProperty is set, also set as a processor property.
                 // This is a slight performance hit but likely will only be used in testing when the ensemble ID is used to read data directly
                 if ( doEnsemble && (EnsembleIDProperty != null) && !EnsembleIDProperty.isEmpty() ) {
@@ -919,6 +988,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
             }
         }
+        for ( String problem : problems ) {
+        	// Print as warnings because exceptions would be caught and handled separately
+        	message = "Problem writing to HDB: " + problem;
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                    message, "Non-fatal warning writing time series." ) );
+        }
     }
     catch ( Exception e ) {
         message = "Unexpected error writing time series to Reclamation HDB data store \"" +
@@ -965,13 +1044,18 @@ public String toString ( PropList parameters )
     String NewEnsembleModelRunDate = parameters.getValue( "NewEnsembleModelRunDate" );
     String EnsembleModelRunID = parameters.getValue( "EnsembleModelRunID" );
     String Agency = parameters.getValue( "Agency" );
+    String CollectionSystem = parameters.getValue( "CollectionSystem" );
+    String Computation = parameters.getValue( "Computation" );
+    String Method = parameters.getValue( "Method" );
     String ValidationFlag = parameters.getValue( "ValidationFlag" );
     String OverwriteFlag = parameters.getValue( "OverwriteFlag" );
     String DataFlags = parameters.getValue( "DataFlags" );
     String TimeZone = parameters.getValue( "TimeZone" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String WriteProcedure = parameters.getValue( "WriteProcedure" );
 	String EnsembleIDProperty = parameters.getValue ( "EnsembleIDProperty" );
+	String SqlDateType = parameters.getValue ( "SqlDateType" );
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//String IntervalOverride = parameters.getValue ( "IntervalOverride" );
 	StringBuffer b = new StringBuffer ();
@@ -1109,6 +1193,24 @@ public String toString ( PropList parameters )
         }
         b.append ( "Agency=\"" + Agency + "\"");
     }
+    if ( (CollectionSystem != null) && (CollectionSystem.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CollectionSystem=\"" + CollectionSystem + "\"");
+    }
+    if ( (Computation != null) && (Computation.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Computation=\"" + Computation + "\"");
+    }
+    if ( (Method != null) && (Method.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Method=\"" + Method + "\"");
+    }
     if ( (ValidationFlag != null) && (ValidationFlag.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -1145,11 +1247,23 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
     }
+    if ( (WriteProcedure != null) && (WriteProcedure.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteProcedure=\"" + WriteProcedure + "\"" );
+    }
     if ( (EnsembleIDProperty != null) && (EnsembleIDProperty.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "EnsembleIDProperty=\"" + EnsembleIDProperty + "\"" );
+    }
+    if ( (SqlDateType != null) && (SqlDateType.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SqlDateType=\"" + SqlDateType + "\"" );
     }
     // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
     /*

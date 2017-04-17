@@ -317,7 +317,8 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __EnsembleName_JTextField = new JTextField ( "", 30 );
-    __EnsembleName_JTextField.setToolTipText("New ensemble name, can specify with ${Property} notation");
+    __EnsembleName_JTextField.setToolTipText("New ensemble name, can specify with ${Property} notation, "
+    	+ "also ${ts:Property} and % formats using original time series");
     __EnsembleName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

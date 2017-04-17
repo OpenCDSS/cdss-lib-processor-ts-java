@@ -1188,6 +1188,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 message, "Verify that all time seres being the same is OK." ) );
 		throw new CommandException ( message );
 	}
+	
+	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

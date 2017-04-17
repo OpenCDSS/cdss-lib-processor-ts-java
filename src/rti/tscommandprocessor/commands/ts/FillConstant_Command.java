@@ -12,7 +12,6 @@ import RTi.TS.TS;
 import RTi.TS.TSUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;

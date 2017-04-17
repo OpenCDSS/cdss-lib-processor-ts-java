@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.security.InvalidParameterException;
+import java.sql.Array;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
@@ -9,6 +10,12 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -60,6 +67,16 @@ Agencies from HDB_AGEN.
 private List<ReclamationHDB_Agency> __agencyList = new ArrayList<ReclamationHDB_Agency>();
 
 /**
+Collection systems from HDB_COLLECTION_SYSTEM.
+*/
+private List<ReclamationHDB_CollectionSystem> __collectionSystemList = new ArrayList<ReclamationHDB_CollectionSystem>();
+
+/**
+Computations from CP_COMPUTATION.
+*/
+private List<ReclamationHDB_CP_Computation> __computationList = new ArrayList<ReclamationHDB_CP_Computation>();
+
+/**
 Data types from HDB_DATATYPE.
 */
 private List<ReclamationHDB_DataType> __dataTypeList = new ArrayList<ReclamationHDB_DataType>();
@@ -107,6 +124,11 @@ private boolean __readNHourEndDateTime = false; // Default, because WRITE_TO_HDB
 Loading applications from HDB_LOADING_APPLICATION.
 */
 private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new ArrayList<ReclamationHDB_LoadingApplication>();
+
+/**
+Loading applications from HDB_METHOD.
+*/
+private List<ReclamationHDB_Method> __methodList = new ArrayList<ReclamationHDB_Method>();
 
 /**
 Models from HDB_MODEL.
@@ -169,14 +191,19 @@ with time series.
 @param intervalBase the TimeInterval interval base for the data
 @param intervalMult the TimeInterval multiplier for the data
 @param dateTime if null, create a DateTime and return; if not null, reuse the instance
-@param timeZone the string time zone (e.g., MST for HDB time series)
+@param timeZone the string time zone (e.g., MST for HDB time series) - only use for intervals less than day
 */
 private DateTime convertHDBDateTimesToInternal ( DateTime startDateTime, DateTime endDateTime,
         int intervalBase, int intervalMult, DateTime dateTime, String timeZone )
 {   if ( dateTime == null ) {
         // Create a new instance with precision that matches the interval and HDB time zone.
         dateTime = new DateTime(intervalBase);
-        dateTime.setTimeZone ( timeZone ); // If time zone is not set will default to internal, usually local time
+        if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
+        	dateTime.setTimeZone ( timeZone ); // If time zone is not set will default to internal, usually local time
+        }
+        else {
+        	dateTime.setTimeZone("");
+        }
     }
     if ( (intervalBase == TimeInterval.HOUR) && (intervalMult != 1) ) {
         // NHour data - only case where a shift from the HDB start_date_time to the TSTool recording time is needed
@@ -440,6 +467,24 @@ public List<ReclamationHDB_Agency> getAgencyList ()
 }
 
 /**
+Return the list of collection systems (global data initialized when database connection is opened).
+@return the list of collection systems 
+*/
+public List<ReclamationHDB_CollectionSystem> getCollectionSystemList ()
+{
+    return __collectionSystemList;
+}
+
+/**
+Return the list of computation (global data initialized when database connection is opened).
+@return the list of computation
+*/
+public List<ReclamationHDB_CP_Computation> getComputationList ()
+{
+    return __computationList;
+}
+
+/**
 Indicate whether the database supports ensembles in the design.
 */
 public boolean getDatabaseHasEnsembles ()
@@ -471,11 +516,68 @@ public List<ReclamationHDB_DataType> getDataTypeList ()
 }
 
 /**
+ * Return the default ReclamationHDB_CollectionSystem to be used when WriteReclamationHDB command does not specify.
+ */
+public ReclamationHDB_CollectionSystem getDefaultCollectionSystem () {
+	List<ReclamationHDB_CollectionSystem> collectionSystemList = getCollectionSystemList();
+	for ( ReclamationHDB_CollectionSystem collectionSystem : collectionSystemList ) {
+		// Email from Andrew Gilmore on 2017-04-10 indicated to use method id 13, which is "see loading application"
+		if ( collectionSystem.getCollectionSystemName().equalsIgnoreCase("See loading application") ) {
+			return collectionSystem;
+		}
+	}
+	return null;
+}
+
+/**
+ * Return the default ReclamationHDB_CP_Computation to be used when WriteReclamationHDB command does not specify.
+ */
+public ReclamationHDB_CP_Computation getDefaultComputation () {
+	List<ReclamationHDB_CP_Computation> computationList = getComputationList();
+	for ( ReclamationHDB_CP_Computation computation : computationList ) {
+		// Email from Andrew Gilmore on 2017-04-10 indicated to use computation id 1 ("unknown") or 2 ("N/A")
+		if ( computation.getComputationName().equalsIgnoreCase("unknown") ) {
+			return computation;
+		}
+		else if ( computation.getComputationName().equalsIgnoreCase("N/A") ) {
+			return computation;
+		}
+	}
+	return null;
+}
+
+/**
+ * Return the default ReclamationHDB_Method to be used when WriteReclamationHDB command does not specify.
+ */
+public ReclamationHDB_Method getDefaultMethod () {
+	List<ReclamationHDB_Method> methodList = getMethodList();
+	for ( ReclamationHDB_Method method : methodList ) {
+		// Email from Andrew Gilmore on 2017-04-10 indicated to use method id 18, which is "unknown" (and 13 is "N/A")
+		if ( method.getMethodName().equalsIgnoreCase("unknown") ) {
+			return method;
+		}
+		else if ( method.getMethodName().equalsIgnoreCase("N/A") ) {
+			return method;
+		}
+	}
+	return null;
+}
+
+/**
 Return the list of loading applications.
 */
 private List<ReclamationHDB_LoadingApplication> getLoadingApplicationList ()
 {
     return __loadingApplicationList;
+}
+
+/**
+Return the list of methods (global data initialized when database connection is opened).
+@return the list of computation
+*/
+public List<ReclamationHDB_Method> getMethodList ()
+{
+    return __methodList;
 }
 
 /**
@@ -729,6 +831,53 @@ private String getWhereClauseStringFromInputFilter ( DMI dmi, InputFilter_JPanel
 }
 
 /**
+ * Return the HDB (Oracle) time zone string given a ZoneOffset object.
+ * The value can be passed to HDB procedures where data TimeZone is offered.
+ * See conversion information in SHORT_IDS discussion:  https://docs.oracle.com/javase/8/docs/api/java/time/ZoneId.html
+ * See oracle supported 3-char timezones:  https://docs.oracle.com/cd/B19306_01/server.102/b14200/functions092.htm
+ */
+private String getHdbTimeZoneForZoneOffset ( ZoneOffset reqZoneOffset ) {
+	// Requested zone offset may be from any original string source ("MST", etc.)
+	// but need to find a matching "MST" version.  The following is somewhat hard-coded given
+	// the java.time time zone data.
+	// Use the numerical zones to force standard time, and named to allow daylight savings
+	String [] oracleTZ = {
+		"GMT",
+		"AST", "ADT",
+		"EST", "EDT",
+		"CST", "CDT",
+		"MST", "MDT",
+		"PST", "PDT",
+		"YST", "YDT",
+		"HST", "HDT"
+	};
+	String [] javaTZ = {
+		"+00:00",
+		"-04:00", "-03:00", // AST, ADT
+		"-05:00", "-04:00", // EST, EDT
+		"-06:00", "-05:00", // CST, CDT
+		"-07:00", "-06:00", // MST, MDT
+		"-08:00", "-07:00", // PST, PDT
+		"-09:00", "-08:00", // YST, YDT
+		"-10:00", "-09:30" // HST, HDT
+	};
+	// Loop through the equivalent time zones to find a match
+	for ( int itz = 0; itz < javaTZ.length; itz++ ) {
+		try {
+			ZoneOffset zos = getTimeZoneOffset(javaTZ[itz]);
+			if ( zos.equals(reqZoneOffset) ) {
+				return oracleTZ[itz];
+			}
+		}
+		catch ( DateTimeException e1 ) {
+			// Time zone abbreviation is not recognized
+			continue;
+		}
+	}
+	return null;
+}
+
+/**
 Return the list of global validation flags.
 */
 public List<ReclamationHDB_Validation> getHdbValidationList()
@@ -750,6 +899,40 @@ Return the list of supported time zones.
 public List<String> getTimeZoneList()
 {
     return __timeZoneList;
+}
+
+/**
+ * Get the time zone ID for a time zone, for use with OffsetDateTime.of().
+ * @param timeZone time zone string like "MST" or "America/Denver".
+ * @return the zone ID, or null if it can't be found.
+ */
+private ZoneId getTimeZoneId(String timeZone) {
+	try {
+		ZoneId zone = ZoneId.of(timeZone,ZoneId.SHORT_IDS);
+		return zone;
+	}
+	catch ( DateTimeException e1 ) {
+		// Time zone abbreviation is not recognized
+		return null;
+	}
+}
+
+/**
+ * Get the time zone offset for a time zone, for use with OffsetDateTime.of().
+ * @param timeZone time zone string like "MST" or "America/Denver".
+ * @return the zone offset, or null if it can't be found.
+ */
+private ZoneOffset getTimeZoneOffset(String timeZone) {
+	try {
+		LocalDateTime dt = LocalDateTime.now();
+		ZoneId zone = ZoneId.of(timeZone,ZoneId.SHORT_IDS);
+		ZonedDateTime zdt = dt.atZone(zone);
+		return zdt.getOffset();
+	}
+	catch ( DateTimeException e1 ) {
+		// Time zone abbreviation is not recognized
+		return null;
+	}
 }
 
 /**
@@ -780,13 +963,47 @@ public ReclamationHDB_Agency lookupAgency ( List<ReclamationHDB_Agency> agencyLi
 Lookup the ReclamationHDB_Agency given the internal agency ID.
 @return the matching agency object, or null if not found
 @param agencyList a list of ReclamationHDB_Agency to search
-@param agenAbbrev the agency abbreviation (case-insensitive)
+@param agenAbbrev the agency abbreviation (case-insensitive) or agency name.
 */
 public ReclamationHDB_Agency lookupAgency ( List<ReclamationHDB_Agency> agencyList, String agenAbbrev )
 {
     for ( ReclamationHDB_Agency a: agencyList ) {
-        if ( (a != null) && (a.getAgenAbbrev() != null) && a.getAgenAbbrev().equalsIgnoreCase(agenAbbrev) ) {
+        if ( (a != null) && (a.getAgenAbbrev() != null) &&
+        	(a.getAgenAbbrev().equalsIgnoreCase(agenAbbrev) || a.getAgenName().equalsIgnoreCase(agenAbbrev)) ) {
             return a;
+        }
+    }
+    return null;
+}
+
+/**
+Lookup the ReclamationHDB_CollectionSystem given the internal collection system name.
+@return the matching agency object, or null if not found
+@param collectionSystemList a list of ReclamationHDB_Agency to search
+@param collectionSystemName the agency abbreviation (case-insensitive)
+*/
+public ReclamationHDB_CollectionSystem lookupCollectionSystem (
+	List<ReclamationHDB_CollectionSystem> collectionSystemList, String collectionSystemName )
+{
+    for ( ReclamationHDB_CollectionSystem c: collectionSystemList ) {
+        if ( (c != null) && (c.getCollectionSystemName() != null) && c.getCollectionSystemName().equalsIgnoreCase(collectionSystemName) ) {
+            return c;
+        }
+    }
+    return null;
+}
+
+/**
+Lookup the ReclamationHDB_CP_Computation given the internal computation name.
+@return the matching agency object, or null if not found
+@param collectionSystemList a list of ReclamationHDB_Agency to search
+@param collectionSystemName the agency abbreviation (case-insensitive)
+*/
+public ReclamationHDB_CP_Computation lookupComputation (
+	List<ReclamationHDB_CP_Computation> computationList, String computationName ) {
+    for ( ReclamationHDB_CP_Computation c: computationList ) {
+        if ( (c != null) && (c.getComputationName() != null) && c.getComputationName().equalsIgnoreCase(computationName) ) {
+            return c;
         }
     }
     return null;
@@ -802,6 +1019,22 @@ public ReclamationHDB_DataType lookupDataType ( int dataTypeID )
     for ( ReclamationHDB_DataType dt: __dataTypeList ) {
         if ( (dt != null) && (dt.getDataTypeID() == dataTypeID) ) {
             return dt;
+        }
+    }
+    return null;
+}
+
+/**
+Lookup the ReclamationHDB_Method given the internal method name.
+@return the matching method object, or null if not found
+@param methodList a list of ReclamationHDB_Agency to search
+@param methodName the method name (case-insensitive)
+*/
+public ReclamationHDB_Method lookupMethod (
+	List<ReclamationHDB_Method> methodList, String methodName ) {
+    for ( ReclamationHDB_Method m: methodList ) {
+        if ( (m != null) && (m.getMethodName() != null) && m.getMethodName().equalsIgnoreCase(methodName) ) {
+            return m;
         }
     }
     return null;
@@ -1045,6 +1278,22 @@ public void readGlobalData()
         Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading agencies (" + e + ").");
     }
+    // Collection systems
+    try {
+        __collectionSystemList = readHdbCollectionSystemList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
+        Message.printWarning(3,routine,"Error reading collection systems (" + e + ").");
+    }
+    // Computations
+    try {
+        __computationList = readHdbComputationList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
+        Message.printWarning(3,routine,"Error reading computations (" + e + ").");
+    }
     // Database properties include database timezone for hourly date/times
     try {
         __databaseParameterList = readRefDbParameterList();
@@ -1068,6 +1317,14 @@ public void readGlobalData()
     catch ( SQLException e ) {
         Message.printWarning(3,routine,e);
         Message.printWarning(3,routine,"Error reading loading applications (" + e + ").");
+    }
+    // Methods
+    try {
+        __methodList = readHdbMethodList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,e);
+        Message.printWarning(3,routine,"Error reading methods (" + e + ").");
     }
     // Overwrite flags are used when writing time series
     try {
@@ -1179,6 +1436,126 @@ throws SQLException
     }
     catch (SQLException e) {
         Message.printWarning(3, routine, "Error getting agency data from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        if ( stmt != null ) {
+            stmt.close();
+        }
+    }
+    
+    return results;
+}
+
+/**
+Read the HDB_COLLECTION_SYSTEM table.
+@return the list of agency data
+*/
+private List<ReclamationHDB_CollectionSystem> readHdbCollectionSystemList ( )
+throws SQLException
+{   String routine = getClass().getSimpleName() + ".readHdbCollectionSystemList";
+    List<ReclamationHDB_CollectionSystem> results = new ArrayList<ReclamationHDB_CollectionSystem>();
+    String sqlCommand = "select HDB_COLLECTION_SYSTEM.COLLECTION_SYSTEM_ID, HDB_COLLECTION_SYSTEM.COLLECTION_SYSTEM_NAME, HDB_COLLECTION_SYSTEM.CMMNT from HDB_COLLECTION_SYSTEM " +
+        "order by HDB_COLLECTION_SYSTEM.COLLECTION_SYSTEM_NAME";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(__resultSetFetchSize);
+        int i;
+        String s;
+        int col;
+        ReclamationHDB_CollectionSystem data;
+        while (rs.next()) {
+            data = new ReclamationHDB_CollectionSystem();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setCollectionSystemID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCollectionSystemName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting collection system data from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        if ( stmt != null ) {
+            stmt.close();
+        }
+    }
+    
+    return results;
+}
+
+/**
+Read the CP_COMPUTATION table.
+@return the list of computation
+*/
+private List<ReclamationHDB_CP_Computation> readHdbComputationList ( )
+throws SQLException
+{   String routine = getClass().getSimpleName() + ".readHdbComputationList";
+    List<ReclamationHDB_CP_Computation> results = new ArrayList<ReclamationHDB_CP_Computation>();
+    String sqlCommand = "select CP_COMPUTATION.COMPUTATION_ID, CP_COMPUTATION.COMPUTATION_NAME, CP_COMPUTATION.CMMNT from CP_COMPUTATION " +
+        "order by CP_COMPUTATION.COMPUTATION_NAME";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(__resultSetFetchSize);
+        int i;
+        String s;
+        int col;
+        ReclamationHDB_CP_Computation data;
+        while (rs.next()) {
+            data = new ReclamationHDB_CP_Computation();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setComputationID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setComputationName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting computation data from HDB \"" +
             getDatabaseName() + "\" (" + e + ")." );
         Message.printWarning(3, routine, e );
     }
@@ -1333,6 +1710,66 @@ throws SQLException
             rs.close();
         }
         stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the HDB_METHOD table.
+@return the list of method
+*/
+private List<ReclamationHDB_Method> readHdbMethodList ( )
+throws SQLException
+{   String routine = getClass().getSimpleName() + ".readHdbMethodList";
+    List<ReclamationHDB_Method> results = new ArrayList<ReclamationHDB_Method>();
+    String sqlCommand = "select HDB_METHOD.METHOD_ID, HDB_METHOD.METHOD_NAME, HDB_METHOD.CMMNT from HDB_METHOD " +
+        "order by HDB_METHOD.METHOD_NAME";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        if ( __readTimeout >= 0 ) {
+            stmt.setQueryTimeout(__readTimeout);
+        }
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(__resultSetFetchSize);
+        int i;
+        String s;
+        int col;
+        ReclamationHDB_Method data;
+        while (rs.next()) {
+            data = new ReclamationHDB_Method();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setMethodID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setMethodName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting method data from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        if ( stmt != null ) {
+            stmt.close();
+        }
     }
     
     return results;
@@ -2740,7 +3177,7 @@ This method may be called multiple times to return the full list of real and mod
 private List<ReclamationHDB_SiteTimeSeriesMetadata> readSiteTimeSeriesMetadataListHelper (
     String timeStep, String whereString, boolean isReal, boolean isEnsembleTrace )
 throws SQLException
-{   String routine = getClass().getName() + ".readSiteTimeSeriesMetadataListHelper";
+{   String routine = getClass().getSimpleName() + ".readSiteTimeSeriesMetadataListHelper";
     String tsTableName = getTimeSeriesTableFromInterval ( timeStep, isReal );
     List<ReclamationHDB_SiteTimeSeriesMetadata> results = new ArrayList<ReclamationHDB_SiteTimeSeriesMetadata>();
     String tsType = "Real";
@@ -3411,6 +3848,7 @@ throws Exception
                     derivationFlags = rs.getString(col++);
                 }
                 // Set the data in the time series - note that these dates may get modified during the set
+                // - time zone is only used if hour or irregular interval
                 dateTime = convertHDBDateTimesToInternal ( startDateTime, endDateTime, intervalBase, intervalMult, dateTime, hdbTimeZone );
                 if ( Message.isDebugOn ) {
                 	Message.printStatus(2, routine, "Sample start from query = " + startDateTime + " dateTime after adjusting=" + dateTime + " value=" + value);
@@ -3999,6 +4437,8 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
 //@param intervalOverride if true, then irregular time series will use this hourly interval to write the data
 /**
 Write a single time series to the database.  A real, model, or single ensemble trace are written depending on input.
+This method uses the slower legacy write procedure WRITE_TO_HDB, which writes one value at a time.
+The writeTimeSeriesUsingWriteData() method should be used to write an array of values in one call.
 @param ts time series to write
 @param loadingApp the application name - must match HDB_LOADING_APPLICATION (e.g., "TSTool")
 @param siteCommonName site common name, to determine site_datatype_id
@@ -4446,5 +4886,774 @@ throws SQLException
     Message.printStatus(2,routine,"Wrote " + writeTryCount + " values to HDB for SDI=" + siteDataTypeID +
         " MRI=" + modelRunID + ".");
 }
+
+/**
+Write a single time series to the database.  A real, model, or single ensemble trace are written depending on input.
+The WRITE_REAL_DATA and WRITE_MODEL_DATA procedures are used.
+@param ts time series to write
+@param loadingApp the application name - must match HDB_LOADING_APPLICATION (e.g., "TSTool")
+@param siteCommonName site common name, to determine site_datatype_id
+@param dataTypeCommonName data type common name, to determine site_datatype_id
+@param sideDataTypeID if not null, will be used instead of that determined from above
+@param modelName model name, to determine model_run_id
+@param modelRunName model run name, to determine model_run_id
+@param modelRunDate model run date, to determine model_run_id
+@param hydrologicIndicator, to determine model_run_id
+@param modelRunID if not null, will be used instead of that determined from above
+@param agency agency abbreviation (can be null or blank to use default)
+@param collectionSystem collection system name (null or blank to use default)
+@param computation name (null or blank to use default)
+@param method name (null or blank to use default)
+@param validationFlag validation flag for value (can be null or blank to use default)
+@param overwriteFlag overwrite flag for value (can be null or blank to use default)
+@param dataFlags user-specified data flags (can be null or blank to use default)
+@param tsTimeZoneDefault time zone of the time series data (if null or blank use the time series time zone) - should
+only be specified when time series does not have time zone defined.
+@param outputStartReq requested start of period to write (if null write full period).
+@param outputEndReq requested end of period to write (if null write full period).
+@param sqlDateType the data type used internally for SQL ("JavaTimestamp" or "OffsetDateTime"),
+used during development to confirm functionality (default is OffsetDateTime if not specified)
+@param problems list of non-fatal problems (warnings) - major problems will cause exception
+*/
+public void writeTimeSeriesUsingWriteData ( TS ts, String loadingApp,
+    String siteCommonName, String dataTypeCommonName, Long siteDataTypeID,
+    String modelName, String modelRunName, String modelRunDate, String hydrologicIndicator, Long modelRunID,
+    String agency, String collectionSystem, String computation, String method, String validationFlag,
+    String overwriteFlag, String dataFlags,
+    String tsTimeZoneDefault, DateTime outputStartReq, DateTime outputEndReq, String sqlDateType, List<String> problems ) //, TimeInterval intervalOverride )
+throws SQLException
+{   String routine = getClass().getSimpleName() + ".writeTimeSeriesUsingWriteData";
+    if ( ts == null ) {
+        return;
+    }
+    if ( !ts.hasData() ) {
+        return;
+    }
+    boolean doOffsetDateTime = false; // Convenience boolean for logic
+    boolean doTimestamp = false; // Convenience boolean for logic
+    if ( (sqlDateType == null) || sqlDateType.isEmpty() ) {
+    	// Although it is desirable to use the new OffsetDateTime,
+    	// it is not clear that it is supported given the poor level of documentation
+    	// - Therefore use the old Timestamp approach that is consistent with the WriteTimeSeries() method
+    	sqlDateType = "OffsetDateTime";
+    }
+    if ( sqlDateType.equalsIgnoreCase("OffsetDateTime") ) {
+    	doOffsetDateTime = true;
+    }
+    else if ( sqlDateType.equalsIgnoreCase("JavaTimestamp") ) {
+    	// Can't yet use the old way because need to handle the time zone offset
+    	//doTimestamp = true;
+    }
+    // Put in checks to make sure logic problem does not creep in
+    if ( doTimestamp ) {
+    	throw new RuntimeException ( "Code problem - doTimestamp is not supported" );
+    }
+    if ( doOffsetDateTime && doTimestamp ) {
+    	throw new RuntimeException ( "Code problem - both doTimestamp and doOffsetDateTime are true" );
+    }
+    if ( !doOffsetDateTime && !doTimestamp ) {
+    	throw new RuntimeException ( "Code problem - neither doTimestamp or doOffsetDateTime are true" );
+    }
+    int intervalBase = ts.getDataIntervalBase(); // TimeInterval.HOUR, etc., matched with HDB tables
+    // Interval override can only be used with irregular time series
+    TimeInterval outputInterval = new TimeInterval(ts.getDataIntervalBase(),ts.getDataIntervalMult());
+    if ( (ts.getDataIntervalBase() == TimeInterval.HOUR) && (ts.getDataIntervalMult() == 24) ) {
+   	 	throw new IllegalArgumentException("Cannot write 24Hour time series \"" +
+   	 		ts.getIdentifierString() + "\" to HDB. Instead, convert to Day interval and then write as day interval time series.");
+    }
+    int outputIntervalBase = outputInterval.getBase();
+    int outputIntervalMult = outputInterval.getMultiplier();
+    if ( outputIntervalBase == TimeInterval.HOUR ) {
+        // Hourly data - only case where a shift from the TSTool recording time to the HDB start_date_time
+        // Need to have the hour shifted by one hour because start date passed as SAMPLE_DATE_TIME
+        // is start of interval.  The offset is in milliseconds
+        // Offset is calculated in the helper method
+    }
+    else if ( (outputIntervalBase != TimeInterval.IRREGULAR) && (outputIntervalMult != 1) ) {
+        // Not able to handle multipliers for non-hourly
+        throw new IllegalArgumentException( "Data interval must be 1 for intervals other than hour." );
+    }
+
+    // Convert method parameters into HDB versions - the following is alphabetized
+
+    if ( (agency == null) || agency.isEmpty() ) {
+        // For new procedures agency cannot be null
+    	throw new IllegalArgumentException("Agency must be specified." );
+    }
+    Integer agenID = null;
+    if ( (agency != null) && !agency.isEmpty() ) {
+        // Lookup the agency from the abbreviation (or name)
+    	ReclamationHDB_Agency a = lookupAgency(getAgencyList(), agency);
+    	if ( a != null ) {
+    		agenID = a.getAgenID();
+    	}
+    }
+    if ( agenID == null ) {
+    	// Was not able to find agency ID
+    	throw new IllegalArgumentException("Unable to match agency \"" + agency + "\" and no default." );
+    }
+
+    ReclamationHDB_CollectionSystem collectionSystem2 = null;
+    Integer collectionSystemID = null;
+    if ( (collectionSystem == null) || collectionSystem.isEmpty() ) {
+    	collectionSystem2 = getDefaultCollectionSystem();
+    }
+    else {
+        // Lookup the collection system from the name
+    	collectionSystem2 = lookupCollectionSystem(getCollectionSystemList(), collectionSystem);
+    }
+    if ( collectionSystem2 == null ) {
+    	// Was not able to find collection system ID
+    	throw new IllegalArgumentException("Unable to match collection system \"" + collectionSystem + "\" or determine default." );
+    }
+    else {
+    	collectionSystemID = collectionSystem2.getCollectionSystemID();
+    }
+    
+    ReclamationHDB_CP_Computation comp = null;
+    Integer computationID = null;
+    if ( (computation == null) || computation.isEmpty() ) {
+    	comp = getDefaultComputation();
+    }
+    else {
+        // Lookup the computation from the name
+    	comp = lookupComputation(getComputationList(), computation);
+    }
+    if ( comp == null ) {
+    	// Was not able to find collection system ID
+    	throw new IllegalArgumentException("Unable to match computation \"" + computation + "\" or determine default." );
+    }
+    else {
+    	computationID = comp.getComputationID();
+    }
+    
+    if ( (dataFlags != null) && dataFlags.equals("") ) {
+        // Set to null to use default
+        dataFlags = null;
+    }
+    
+    ReclamationHDB_Method method2 = null;
+    Integer methodID = null;
+    if ( (method == null) || method.isEmpty() ) {
+    	method2 = getDefaultMethod();
+    }
+    else {
+        // Lookup the method from the name
+    	method2 = lookupMethod(getMethodList(), method);
+    }
+    if ( method2 == null ) {
+    	// Was not able to find collection system ID
+    	throw new IllegalArgumentException("Unable to match method \"" + method + "\" or determine default." );
+    }
+    else {
+    	methodID = method2.getMethodID();
+    }
+    
+    // Determine the loading application
+    List<ReclamationHDB_LoadingApplication> loadingApplicationList =
+        findLoadingApplication ( getLoadingApplicationList(), loadingApp );
+    if ( loadingApplicationList.size() != 1 ) {
+        throw new IllegalArgumentException("Unable to match loading application \"" + loadingApp + "\"" );
+    }
+    int loadingAppID = loadingApplicationList.get(0).getLoadingApplicationID();
+    
+    if ( (overwriteFlag != null) && overwriteFlag.equals("") ) {
+        // Set to null to use default
+        overwriteFlag = null;
+    }
+
+    // Get the site_datatype_id - some of this is legacy since new WriteToReclamationHDB focuses on SDI
+    if ( siteDataTypeID == null ) {
+        // Try to get from the parts
+        // TODO SAM 2012-03-28 Evaluate whether this should be cached
+        List<ReclamationHDB_SiteDataType> siteDataTypeList = readHdbSiteDataTypeList();
+        List<ReclamationHDB_SiteDataType> matchedList = findSiteDataType(
+            siteDataTypeList, siteCommonName, dataTypeCommonName);
+        if ( matchedList.size() == 1 ) {
+            siteDataTypeID = new Long(matchedList.get(0).getSiteDataTypeID());
+        }
+        else {
+            throw new IllegalArgumentException("Unable to determine site_datatype_id from SiteCommonName=\"" +
+                siteCommonName + "\", DataTypeCommonName=\"" + dataTypeCommonName + "\"" );
+        }
+    }
+    if ( modelRunID == null ) {
+        modelRunID = new Long(-1);
+        if ( (modelName != null) && !modelName.equals("") ) {
+            // Try to get from the parts
+            List<ReclamationHDB_Model> modelList = readHdbModelList(modelName);
+            if ( modelList.size() != 1 ) {
+                throw new IllegalArgumentException("Model name \"" + modelName + "\" matches " + modelList.size() +
+                    " records in HDB.  Expecting exactly 1.");
+            }
+            ReclamationHDB_Model model = modelList.get(0);
+            if ( (modelRunName != null) && !modelRunName.equals("") ) {
+                DateTime runDate = null;
+                if ( modelRunDate != null ) {
+                    runDate = DateTime.parse(modelRunDate);
+                }
+                List<ReclamationHDB_ModelRun> modelRunList = readHdbModelRunList(
+                    model.getModelID(), null, modelRunName, hydrologicIndicator, runDate) ;
+                if ( modelRunList.size() != 1 ) {
+                    throw new IllegalArgumentException("Model run name \"" + modelRunName + "\", hydrologic indicator=\"" +
+                        hydrologicIndicator + "\", run date=\"" + runDate + "\" matches " + modelRunList.size() +
+                        " records in HDB.  Expecting exactly 1.");
+                }
+                ReclamationHDB_ModelRun modelRun = modelRunList.get(0);
+                modelRunID = new Long(modelRun.getModelRunID());
+            }
+        }
+    }
+    
+    // Calendar is associated with time zone
+    
+    // Calendar is used when creating TimeStamp to load data, for example "MST", makes sure to avoid daylight savings shift
+    // Have to make sure that timeZone is valid because TimeZone.getTimeZone() will return GMT if it is not recognized
+    Calendar calendarForTimeZone = null; // Used with legacy Timestamp approach
+    if ( doTimestamp ) {
+	    if ( !TimeUtil.isValidTimeZone(tsTimeZoneDefault) ) {
+	    	throw new IllegalArgumentException("Time zone ID \"" + tsTimeZoneDefault + "\" is not recognized.  Can't use SqlDateType=JavaTimestep." );
+	    }
+	    calendarForTimeZone = Calendar.getInstance(TimeZone.getTimeZone(tsTimeZoneDefault));
+	    Message.printStatus(2,routine,"Using specified time zone \"" + tsTimeZoneDefault +
+	    	"\" for writing time series, Java Calendar used with SQL timestamps is: " + calendarForTimeZone );
+    }
+    
+    // Time zone must be determined one way other in order to avoid issues.
+    // - If requested time zone is not specified, get from the time series start date.
+    // - If time series time zone is specified, the requested time series time zone is ignored
+    // - Specify time zone only for instantaneous and hourly data, not day, month, year interval
+    
+    String tsTimeZone = ts.getDate1().getTimeZoneAbbreviation();
+    DateTime tsStartDateTime = ts.getDate1();
+    OffsetDateTime tsStartOffsetDateTime = null;
+    OffsetDateTime tsEndOffsetDateTime = null;
+    ZoneId tsZoneId;
+    ZoneOffset tsZoneOffset;
+    if ( (tsTimeZone == null) || tsTimeZone.isEmpty() ) {
+    	// Use the default time zone if available
+    	if ( (tsTimeZoneDefault == null) || tsTimeZoneDefault.isEmpty() ) {
+    		throw new IllegalArgumentException("Time zone is not defined in time series and no default supplied - "
+    			+ "time zone must be specified for data loader to work." );
+    	}
+    	else {
+    		// Use the time series default
+	    	Message.printStatus(2,routine,"Time series did not have time zone."
+		    	+ "  Defaulting to provided time zone \"" + tsTimeZoneDefault + "\".");
+	    	tsZoneId = getTimeZoneId(tsTimeZoneDefault);
+	    	if ( tsZoneId == null ) {
+	    		throw new IllegalArgumentException("Time zone default \"" + tsTimeZoneDefault + "\" cannot be converted to zone ID - "
+	        		+ " valid time zone must be specified for data loader to work." );
+	    	}
+	    	tsZoneOffset = getTimeZoneOffset(tsTimeZoneDefault);
+	    	if ( tsZoneOffset == null ) {
+	    		throw new IllegalArgumentException("Time zone default \"" + tsTimeZoneDefault + "\" cannot be converted to offset - "
+	        		+ " valid time zone must be specified for data loader to work." );
+	    	}
+	    	tsStartOffsetDateTime = OffsetDateTime.of(tsStartDateTime.getYear(),
+	    		tsStartDateTime.getMonth(), tsStartDateTime.getDay(),
+	    		tsStartDateTime.getHour(), tsStartDateTime.getMinute(),
+	    		tsStartDateTime.getSecond(), tsStartDateTime.getHSecond()*10000000, tsZoneOffset);
+    	}
+    }
+    else {
+    	// Time zone is available in the time series.  Do checks.
+    	// If time zone default was specified print a message that it is ignored
+    	// (command parameter should be changed to not specify).
+    	if ( (tsTimeZoneDefault != null) && !tsTimeZoneDefault.isEmpty() ) {
+    		Message.printStatus(2,routine,"Time series uses time zone \"" + tsTimeZone
+    			+ "\" and default time zone also specified \"" + tsTimeZoneDefault + "\" - using time series time zone.");
+    	}
+    	tsZoneId = getTimeZoneId(tsTimeZoneDefault);
+    	if ( tsZoneId == null ) {
+    		throw new IllegalArgumentException("Time zone from time series \"" + tsTimeZone + "\" cannot be converted to zone ID - "
+        		+ " valid time zone must be specified for data loader to work." );
+    	}
+    	tsZoneOffset = getTimeZoneOffset(tsTimeZone);
+    	if ( tsZoneOffset == null ) {
+    		throw new IllegalArgumentException("Time zone from time series \"" + tsTimeZone + "\" cannot be converted to offset - "
+        		+ " valid time zone must be specified for data loader to work." );
+    	}
+    	tsStartOffsetDateTime = OffsetDateTime.of(tsStartDateTime.getYear(),
+    		tsStartDateTime.getMonth(), tsStartDateTime.getDay(),
+    		tsStartDateTime.getHour(), tsStartDateTime.getMinute(),
+    		tsStartDateTime.getSecond(), tsStartDateTime.getHSecond()*10000000, tsZoneOffset);
+    }
+    // Make sure the time zone is one the HDB recognizes "MST", etc.
+    // - see: https://docs.oracle.com/cd/B19306_01/server.102/b14200/functions092.htm
+    // - do so by comparing offsets
+    String tsTimeZoneCompatibleWithHDB = getHdbTimeZoneForZoneOffset(tsZoneOffset);
+    if ( tsTimeZoneCompatibleWithHDB == null ) {
+		throw new IllegalArgumentException("Time zone from time series \"" + tsTimeZone +
+			"\" cannot be matched with time zone that HDB supports (MST, etc.)." );
+    }
+    
+    if ( (validationFlag != null) && validationFlag.equals("") ) {
+        // Set to null to use default
+        validationFlag = null;
+    }
+    
+    // Get the data and date arrays - initial array size passed in is the maximum possible from the time series but will resize
+	// below to the actual number written
+    int maxDataSize = ts.getDataSize();
+    double [] valueArrayAllValues = new double[maxDataSize];
+    OffsetDateTime [] offsetDateTimeArrayAllValues = new OffsetDateTime[maxDataSize];
+    Timestamp[] timestampArrayAllValues = new Timestamp[maxDataSize]; // Need this even when OffsetDateTime is used
+    int totalNumValuesToWrite = writeTimeSeriesUsingWriteDataArrayHelper ( ts, doTimestamp, doOffsetDateTime,
+    	outputStartReq, outputEndReq, outputInterval,
+    	tsTimeZoneDefault, tsZoneId, tsZoneOffset, valueArrayAllValues,
+    	offsetDateTimeArrayAllValues, timestampArrayAllValues );
+    Message.printStatus(2, routine, "Have " + totalNumValuesToWrite + " total values to write" );
+    if ( totalNumValuesToWrite == 0 ) {
+    	// No need to do anything;
+    	return;
+    }
+	// Maximum records in a commit, as per email from Ismail Ozdemir (2017-04-12)
+	// - "If you think you will write about million records then I would say commit every 100K. We can start with 100K."
+	int maxRecordsInOneCommit = 100000;
+    
+    CallableStatement cs = null; // Callable statement used to call the procedure, will be either for REAL or MODEL
+    int errorCount = 0; // If any errors occurred during processing
+    int totalNumValuesWritten = 0; // Total number of values written (this is the number attempted from the full list of values to write)
+	String realOrModelString = "UNKNOWN";
+	try {
+	    // Initialize stored procedure setup using a callable procedure
+		if ( modelRunID < 0 ) {
+	    	// Writing to REAL tables
+			realOrModelString = "REAL";
+	    	// From Andrew Gilmore December 27, 2016 (Steve added number to left and description in parentheses to right to help understand)
+	    	//
+	    	//procedure WRITE_REAL_DATA
+	    	//(
+	    	// 1: sdi IN NUMBER (site datatype identifier (SDI))
+	    	// 2: INTERVAL IN hdb_interval.interval_name%TYPE (hdb_interval.interval_name has:  instant, other, hour, day, month, year, wy, table interval)
+	    	// 3: dates IN date_array
+	    	// 4: ts_values IN number_array
+	    	// 5: agen_id NUMBER
+	    	// 6: overwrite_flag VARCHAR2
+	    	// 7: VALIDATION CHAR
+	    	// 8: COLLECTION_SYSTEM_ID NUMBER
+	    	// 9: LOADING_APPLICATION_ID NUMBER
+	    	//10: METHOD_ID NUMBER
+	    	//11: computation_id NUMBER
+	    	//12: do_update_y_n VARCHAR2
+	    	//13: data_flags IN VARCHAR2 DEFAULT NULL
+	    	//14: TIME_ZONE IN VARCHAR2 DEFAULT NULL
+	    	//);
+	    	//
+	    	// Turn off auto-commit to improve performance
+
+	        
+	        // Now transfer the data into the stored procedure
+	        getConnection().setAutoCommit(false);
+	        // 14 parameters for the procedure
+	        //cs = getConnection().prepareCall("{call WRITE_REAL_DATA (?,?,?,?,?,?,?,?,?,?,?,?,?,?)}");
+	        cs = getConnection().prepareCall("{call TS_XFER.WRITE_REAL_DATA (?,?,?,?,?,?,?,?,?,?,?,?,?,?)}");
+		}
+		else {
+	    	// Writing a MODEL or MODEL ensemble time series
+			realOrModelString = "MODEL";
+	    	// From Andrew Gilmore December 27, 2016 (Steve added number to left and description in parentheses to right)
+	    	//
+	    	//procedure WRITE_MODEL_DATA
+	    	//(
+	    	//1: sdi IN NUMBER (site datatype identifier (SDI))
+	    	//2: INTERVAL IN hdb_interval.interval_name%TYPE (hdb_interval.interval_name has:  instant, other, hour, day, month, year, wy, table interval)
+	    	//3: dates IN date_array
+	    	//4: ts_values IN number_array
+	    	//5: model_run_id IN NUMBER (model run ID, uniquely identifies the model)
+	    	//6: do_update_y_n IN VARCHAR2 (whether or not to update, in addition to insert)
+	    	//);
+	    	//
+	    	// Turn off auto-commit to improve performance
+	        getConnection().setAutoCommit(false);
+	        // 6 parameters for the procedure
+	        cs = getConnection().prepareCall("{call TS_XFER.WRITE_MODEL_DATA (?,?,?,?,?,?)}");
+		}
+	    
+	    int batchNumValuesToWrite = 0; // How many values in one batch will be written
+	    double [] valueArrayBatch = null; // Data values
+	    OffsetDateTime [] offsetDateTimeArrayBatch = null; // Date/time when using OffsetDateTime
+	    Timestamp [] timestampArrayBatch = null; // Date/time when using Timestamp
+	    while ( totalNumValuesWritten < totalNumValuesToWrite ) {
+        	// Transfer data from the large array from the time series to the batch that fits within maxRecordsInOneCommit chunks
+        	if ( (totalNumValuesToWrite - totalNumValuesWritten) < maxRecordsInOneCommit ) {
+        		// Only need to do one batch or working on the last batch with remaining values
+        		batchNumValuesToWrite = totalNumValuesToWrite;
+        	}
+        	else {
+        		// The batch size is the maximum batch size
+        		batchNumValuesToWrite = maxRecordsInOneCommit;
+        	}
+        	// Create arrays of objects for the transfer
+        	// - create each batch to make sure values are new values to insert and not left over from previous batch
+	        valueArrayBatch = new double[batchNumValuesToWrite];
+	        if ( doOffsetDateTime ) {
+		        if ( (outputIntervalBase == TimeInterval.HOUR) || (outputIntervalBase == TimeInterval.IRREGULAR) ) {
+		        	// Have to use timestamps
+			        timestampArrayBatch = new Timestamp[batchNumValuesToWrite];
+		        	System.arraycopy(timestampArrayAllValues, totalNumValuesWritten, timestampArrayBatch, 0, batchNumValuesToWrite);
+		        }
+		        else {
+		        	// OffsetDateTime gets converted to database DATE, rather than Timestamp, OK for Day+
+		        	offsetDateTimeArrayBatch = new OffsetDateTime[batchNumValuesToWrite];
+			        System.arraycopy(offsetDateTimeArrayAllValues, totalNumValuesWritten, offsetDateTimeArrayBatch, 0, batchNumValuesToWrite);
+		        }
+	        }
+	        else if ( doTimestamp ) {
+	        	timestampArrayBatch = new Timestamp[batchNumValuesToWrite];
+	        	System.arraycopy(timestampArrayAllValues, totalNumValuesWritten, timestampArrayBatch, 0, batchNumValuesToWrite);
+	        }
+	        /* TODO sam 2017-04-12 use this if need Double[] but for now use double[]
+	        Double [] valueArrayBatch = new Double[batchNumValuesToWrite];
+        	for ( int iBatch = 0, iTotal = totalNumValuesWritten; iBatch < batchNumValuesToWrite; iBatch++, iTotal++ ) {
+        		// Transfer data objects from the full list to the current batch
+        		// - move from int to Integer since objects are needed in the Array below
+	        	valueArrayBatch[iBatch] = new Double(valueArrayAllValues[iTotal]);
+	        }
+	        */
+	        System.arraycopy(valueArrayAllValues, totalNumValuesWritten, valueArrayBatch, 0, batchNumValuesToWrite);
+
+	        // TODO sam 2017-04-12 confirm that synonyms are defined for NUMBER_ARRAY and DATEARRAY so schema is not used here.
+	        // The NUMBER_ARRAY is a user defined type (array of NUMBER) that is visible as a "table" in the stored procedure
+	        //Array valueArray = ((oracle.jdbc.OracleConnection)getConnection()).createOracleArray("ECODBA.NUMBER_ARRAY",valueArrayBatch);
+	        Array valueArray = ((oracle.jdbc.OracleConnection)getConnection()).createOracleArray("NUMBER_ARRAY",valueArrayBatch);
+	        // The DATEARRAY is a user defined type (array of DATE) that is visible as a "table" in the stored procedure
+	        //Array dateTimeArray = ((oracle.jdbc.OracleConnection)getConnection()).createOracleArray("ECODBA.DATEARRAY",dateTimeArrayBatch);
+	        Array dateTimeArray = null;
+	        if ( doOffsetDateTime ) {
+	        	if ( (outputIntervalBase == TimeInterval.HOUR) || (outputIntervalBase == TimeInterval.IRREGULAR) ) {
+	        		// Have to do this to get TimeStamp SQL type
+	        		dateTimeArray = ((oracle.jdbc.OracleConnection)getConnection()).createOracleArray("DATEARRAY",timestampArrayBatch);
+	        	}
+	        	else {
+	        		// Works for Date SQL type
+	        		dateTimeArray = ((oracle.jdbc.OracleConnection)getConnection()).createOracleArray("DATEARRAY",offsetDateTimeArrayBatch);
+	        	}
+	        }
+	        else if ( doTimestamp ) {
+	        	dateTimeArray = ((oracle.jdbc.OracleConnection)getConnection()).createOracleArray("DATEARRAY",timestampArrayBatch);
+	        }
+	        
+	        // Debug
+	        //Message.printStatus(2,routine,"Array base type is "+dateTimeArray.getBaseTypeName());
+	        //Message.printStatus(2,routine,"timestampArrayBatch.length=" + timestampArrayBatch.length);
+	        //for ( int i = 0; i < timestampArrayBatch.length; i++ ) {
+	        //	Message.printStatus(2, routine, "Writing timestamp " + timestampArrayBatch[i] + " value=" + valueArrayBatch[i] );
+	        //}
+        	
+        	// Now transfer data into the stored procedure
+	        int iParam = 0; // JDBC is 1-based so increment below to start with 1
+	        if ( modelRunID < 0 ) {
+		    	// Writing to REAL tables
+		        cs.setInt(++iParam,siteDataTypeID.intValue()); // Parameter 1 = sdi
+		        cs.setString(++iParam,getSampleIntervalFromInterval(intervalBase)); // Parameter 2 = INTERVAL
+		        cs.setArray(++iParam,dateTimeArray); // Parameter 3 = dates
+		        cs.setArray(++iParam,valueArray); // Parameter 4 = ts_values
+	            if ( agenID == null ) { // Parameter 5 = agen_id
+	                cs.setNull(++iParam,java.sql.Types.INTEGER);
+	            }
+	            else {
+	                cs.setInt(++iParam,agenID);
+	            }
+	            if ( overwriteFlag == null ) { // Parameter 6 = overwrite_flag
+	                cs.setNull(++iParam,java.sql.Types.VARCHAR);
+	            }
+	            else {
+	                cs.setString(++iParam,overwriteFlag);
+	            }
+	            if ( validationFlag == null ) { // Parameter 7 = VALIDATION
+	                cs.setNull(++iParam,java.sql.Types.CHAR);
+	            }
+	            else {
+	                cs.setString(++iParam,validationFlag);
+	            }
+	            cs.setInt(++iParam,collectionSystemID); // Parameter 8 = COLLECTION_SYSTEM_ID
+	            cs.setInt(++iParam,loadingAppID); // Parameter 9 = LOADING_APPLICATION_ID
+	            cs.setInt(++iParam,methodID); // Parameter 10 = METHOD_ID
+	            cs.setInt(++iParam,computationID); // Parameter 11 = COMPUTATION_ID
+	            cs.setString(++iParam,"y"); // Parameter 12 = do_update_y_n
+	            if ( dataFlags == null ) { // Parameter 13 = DATA_FLAGS
+	                cs.setNull(++iParam,java.sql.Types.VARCHAR);
+	            }
+	            else {
+	                cs.setString(++iParam,dataFlags);
+	            }
+	            if ( doOffsetDateTime ) {
+		            if ( (outputIntervalBase == TimeInterval.HOUR) || (outputIntervalBase == TimeInterval.IRREGULAR) ) {
+		            	// Could not use OffsetDateTime to pass to the procedures because apparently the ojdbc8 driver is not JDBC 4.2 compliant
+		            	// - therefore had to resort to Timestamp using a conversion of Instant, so in GMT
+		            	//cs.setString(++iParam,"GMT"); // Parameter 14 = TIME_ZONE
+		            	// The following must be coupled with the conversion of OffsetDateTime to Timestamp in the WriteTimeSeriesUsingWRiteDataArrayHelper() method
+		            	//cs.setString(++iParam,"MST");
+		            	cs.setString(++iParam,tsTimeZoneCompatibleWithHDB);
+		            }
+		            else {
+		            	cs.setNull(++iParam,java.sql.Types.VARCHAR); // Parameter 14 = TIME_ZONE
+		            }
+	            }
+	            else if ( doTimestamp ) {
+	            	// Passing array of timestamp so don't have opportunity to specify timezone so use GMT
+	            	cs.setString(++iParam,"GMT"); // Parameter 14 = TIME_ZONE
+	            }
+	        }
+	        else {
+		        cs.setInt(++iParam,siteDataTypeID.intValue()); // Parameter 1 = sdi
+		        cs.setString(++iParam,getSampleIntervalFromInterval(intervalBase)); // Parameter 2 = INTERVAL
+		        cs.setArray(++iParam,dateTimeArray); // Parameter 3 = dates
+		        cs.setArray(++iParam,valueArray); // Parameter 4 = ts_values
+		        cs.setInt(++iParam,modelRunID.intValue()); // Parameter 5 = model_run_id
+		        cs.setString(++iParam,"y"); // Parameter 6 = do_update_y_n
+	        }
+	        
+	        // Add the procedure call to the batch
+            cs.addBatch();
+            Message.printStatus(2, routine, "Calling executeBatch to write " + valueArrayBatch.length + " " + realOrModelString +
+            	" values, HDB interval=" + getSampleIntervalFromInterval(intervalBase) );
+            int [] updateCounts = cs.executeBatch();
+            if ( updateCounts != null ) {
+                for ( int iu = 0; iu < updateCounts.length; iu++ ) {
+                    if ( updateCounts[iu] == Statement.EXECUTE_FAILED ) {
+                        Message.printWarning(3,routine,"Error executing batch callable statement." );
+                        ++errorCount;
+                    }
+                    else if ( updateCounts[iu] == Statement.SUCCESS_NO_INFO ) {
+                        Message.printWarning(3,routine,"Executing batch callable statement was successful but no information available." );
+                    }
+                    else {
+                    	if ( modelRunID < 0 ) {
+                    		Message.printStatus(2,routine,"Wrote " + updateCounts[iu] + " " + realOrModelString + " values to HDB for SDI=" + siteDataTypeID );
+                    	}
+                    	else {
+                    		Message.printStatus(2,routine,"Wrote " + updateCounts[iu] + " " + realOrModelString + " values to HDB for SDI=" + siteDataTypeID +
+                                " MRI=" + modelRunID + ".");
+                    	}
+                    	// Make sure that the number committed is the number that should have been committed
+                    	if ( batchNumValuesToWrite != updateCounts[iu] ) {
+                    		problems.add("Tried to write " + batchNumValuesToWrite + " but " + updateCounts[iu] + " records were updated.");
+                    	}
+                    }
+                }
+            }
+            // Explicitly commit statements to apply changes
+            cs.getConnection().commit();
+            // Now clear the batch commands for the next inserts
+            cs.clearBatch();
+            // Increment the counter
+            totalNumValuesWritten = totalNumValuesWritten + batchNumValuesToWrite;
+        }
+	}
+    catch ( Exception e ) {
+    	++errorCount;
+    	Message.printWarning(3,routine,"Error writing " + realOrModelString + " values to HDB (" + e + ").");
+    	Message.printWarning(3,routine,e);
+    }
+    finally {
+        if ( cs != null ) {
+            try {
+                cs.close();
+            }
+            catch ( SQLException e2 ) {
+                // Should not happen
+            }
+        }
+        getConnection().setAutoCommit(true);
+    	// Make sure that the number committed is the number that should have been committed (logic bust check)
+    	if ( totalNumValuesToWrite != totalNumValuesWritten ) {
+    		problems.add("Tried to write " + totalNumValuesToWrite + " but " + totalNumValuesWritten + " records were attempted written.");
+    	}
+	    if ( errorCount > 0 ) {
+	        throw new RuntimeException ( "Had " + errorCount + " errors writing " + realOrModelString + " data." );
+	    }
+    }
+}
+    
+    /**
+     * Helper method to fill out the array data for writing
+     * @param ts time series to write
+     * @param doOffsetDateTime if true use OffsetDateTime for data array.
+     * @param doTimestamp if true use Timestamp for data array.
+     * @param outputStartReq requested output start - if null write all the time series data
+     * @param outputEndReq requested output end - if null write all the time series data
+     * @param outputInterval output interval
+     * @param tsZoneOffset the time zone offset when converting time series date/times into OffsetDateTime
+     * @param valueArray the double values to write to the database, no missing values are included
+     * @param offsetDateTimeArrayAllValues the date/times to write to the database as OffsetDateTime, corresponding to valueArray
+     * @param timestampArrayAllValues Timestamp array corresponding to valueArray
+     */
+    private int writeTimeSeriesUsingWriteDataArrayHelper ( TS ts, boolean doTimestamp, boolean doOffsetDateTime,
+    	DateTime outputStartReq, DateTime outputEndReq, TimeInterval outputInterval,
+    	String tsTimeZoneDefault, ZoneId tsZoneId, ZoneOffset tsZoneOffset, double[] valueArray,
+    	OffsetDateTime [] offsetDateTimeArrayAllValues, Timestamp[] timestampArrayAllValues ) {
+    	String routine = getClass().getSimpleName() + ".writeTimeSeriesUsingWriteDataArrayHelper";
+    	
+        int timeOffsetTsToHdbStartMs = 0;
+        int timeOffsetTsToHdbStartHours = 0; // Units are hours
+        int outputIntervalBase = outputInterval.getBase();
+        int outputIntervalMult = outputInterval.getMultiplier();
+        if ( outputIntervalBase == TimeInterval.HOUR ) {
+            // Hourly data - only case where a shift from the TSTool recording time to the HDB start_date_time
+            // Need to have the hour shifted by one hour because start date passed as SAMPLE_DATE_TIME
+            // is start of interval.
+            //timeOffsetTsToHdbStart = -1000*3600*outputIntervalMult;
+            timeOffsetTsToHdbStartMs = -1000*3600*outputIntervalMult;
+            timeOffsetTsToHdbStartHours = -outputIntervalMult;
+        }
+    	
+    	// Get the output period for time series iteration
+        DateTime outputStart = new DateTime(ts.getDate1());
+        if ( outputStartReq != null ) {
+            // Make sure that the requested time aligns with time series period
+            if ( outputInterval.isRegularInterval() && !TimeUtil.dateTimeIntervalsAlign(outputStartReq,ts.getDate1(),outputInterval) ) {
+            	 throw new IllegalArgumentException("Requested output start \"" + outputStartReq +
+            		"\" does not align with time series start \"" + ts.getDate1() + "\" data interval - cannot write.  Change the requested start.");
+            }
+            outputStart = new DateTime(outputStartReq);
+        }
+        DateTime outputEnd = new DateTime(ts.getDate2());
+        if ( outputEndReq != null ) {
+        	// Make sure that the requested time aligns with time series period
+            if ( outputInterval.isRegularInterval() && !TimeUtil.dateTimeIntervalsAlign(outputEndReq,ts.getDate2(),outputInterval) ) {
+              	 throw new IllegalArgumentException("Requested output end \"" + outputStartReq +
+              		"\" does not align with time series end \"" + ts.getDate2() + "\" data interval - cannot write.  Change the requested start.");
+            }
+            outputEnd = new DateTime(outputEndReq);
+        }
+        Message.printStatus(2, routine, "Requested output period is " + outputStart + " to " + outputEnd );
+        TSIterator tsi = null;
+        try {
+        	// TODO SAM 2016-05-02 The following checks are redundant with the above (were in place before above)
+        	// but use the above for now to force users to understand how they are dealing with offsets.
+        	// There is too much potential for issues.
+            // Make sure that for NHour data the output start and end align with the time series period
+        	// If 1 hour it should not matter because any hour will align
+            if ( (outputInterval.getBase() == TimeInterval.HOUR) && (outputInterval.getMultiplier() > 1) ) {
+                DateTime date1 = ts.getDate1();
+                if ( ((outputStart.getHour() - date1.getHour() ) % outputInterval.getMultiplier()) != 0 ) {
+                    // The requested start is offset from the actual data so adjust the time series period to that
+                    // of the data.  For example this may be due to:
+                    // 1) User does not specify output period for appropriate time zone
+                    // 2) Data are being output through "current", which will typically will not match data interval exactly
+                    // Set the hour to the smallest in the day that aligns with the data records
+                    outputStart = new DateTime(outputStart);
+                    outputStart.setHour(date1.getHour()%outputInterval.getMultiplier());
+                }
+                DateTime date2 = ts.getDate2();
+                if ( ((outputEnd.getHour() - date2.getHour() ) % outputInterval.getMultiplier()) != 0 ) {
+                    // Set the hour to the largest in the day that aligns with the data records
+                    outputEnd = new DateTime(outputEnd);
+                    outputEnd.setHour(24 - outputInterval.getMultiplier() + date2.getHour()%outputInterval.getMultiplier());
+                }
+            }
+            tsi = ts.iterator(outputStart,outputEnd);
+        }
+        catch ( Exception e ) {
+            throw new RuntimeException("Unable to initialize iterator for period " + outputStart + " to " + outputEnd + " (" + e + ").");
+        }
+        Message.printStatus(2, routine, "Requested output period after checking for NHour alignment is " + outputStart + " to " + outputEnd );
+        
+        int valuesToWrite = 0; // Used as array index and incremented at end of loop
+        double value;
+        TSData tsdata;
+        DateTime dateTime;
+        // Used for Timestamp approach
+        long startTimeStampMsPrev = 0; // Was used for daylight savings check but not used now?
+        long startTimeStampBeforeShiftMs;
+        long startTimeStampMs;
+        while ( true ) {
+            tsdata = tsi.next();
+            if ( tsdata == null ) {
+            	// No more data to process
+            	break;
+            }
+            // Set the information in the write statement
+            dateTime = tsdata.getDate(); // This is TSTool date/time
+            value = tsdata.getDataValue();
+            //Message.printStatus(2, routine, "Processing " + dateTime + " value " + value);
+            if ( ts.isDataMissing(value) ) {
+                // TODO SAM 2012-03-27 Evaluate whether should have option to write.
+            	// HDB does not have way to write missing because it assumes missing if no records in the database.
+            	if ( Message.isDebugOn ) {
+            		Message.printStatus(2, routine, "Time series value at offsetDateTime=" + dateTime + " is missing" );
+            	}
+                continue;
+            }
+            valueArray[valuesToWrite] = value;
+            if ( doOffsetDateTime ) {
+            	// Use new Java 8 OffsetDateTime
+	            // TODO sam 2017-04-11 Could streamline this if we knew for user if daylight savings zone was used for time series
+            	// TODO sam 2017-04-13 need to discuss with Reclamation how to handle local time zones
+            	// - if the time zone allows switching between standard and local over time, the loading won't work without
+            	//   breaking up the period into runs of standard time offset and daylight savings offset
+	            boolean zoneHasDaylightSavings = false;
+	            // Iterating through data the offset may change because of local time zone.
+	            if ( zoneHasDaylightSavings ) {
+	            	ZonedDateTime zonedDateTime = ZonedDateTime.of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay(),
+		            	dateTime.getHour(), dateTime.getMinute(), dateTime.getSecond(), dateTime.getHSecond()*10000000, tsZoneId);
+	            	// Convert to an OffsetDateTime
+	            	offsetDateTimeArrayAllValues[valuesToWrite] = zonedDateTime.toOffsetDateTime();
+		            // Apply the shift for hourly data
+		            if ( timeOffsetTsToHdbStartHours != 0 ) {
+		            	// The offset is calculated as negative so use plusHours()
+		            	offsetDateTimeArrayAllValues[valuesToWrite] = offsetDateTimeArrayAllValues[valuesToWrite].plusHours(timeOffsetTsToHdbStartHours);
+		            }
+	            }
+	            else {
+	            	// Offset will always be the same
+		            offsetDateTimeArrayAllValues[valuesToWrite] = OffsetDateTime.of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay(),
+		            	dateTime.getHour(), dateTime.getMinute(), dateTime.getSecond(), dateTime.getHSecond()*10000000, tsZoneOffset);
+		            // Apply the shift for hourly data
+		            if ( timeOffsetTsToHdbStartHours != 0 ) {
+		            	// The offset is calculated as negative so use plusHours()
+		            	offsetDateTimeArrayAllValues[valuesToWrite] = offsetDateTimeArrayAllValues[valuesToWrite].plusHours(timeOffsetTsToHdbStartHours);
+		            }
+	            }
+	            if ( (outputIntervalBase == TimeInterval.HOUR) || (outputIntervalBase == TimeInterval.IRREGULAR) ) {
+	            	// Also fill in the array of timestamps because apparently OffsetDateTime are converted to Date by the JDBC driver
+	            	// -see:  http://stackoverflow.com/questions/30651210/convert-offsetdatetime-to-utc-timestamp/30651410#30651410
+	            	// The following timestamp will be in the GMT because that is what Instant uses
+	            	// -therefore when calling the WRITE_REAL_DATA and WRITE_MODEL_DATA pass GMT as the time zone
+	            	// The following converts to local time somhow and there is a 1-hour shift when daylight savings time is in effect
+	            	//timestampArrayAllValues[valuesToWrite] = new Timestamp(offsetDateTimeArrayAllValues[valuesToWrite].toInstant().getEpochSecond()*1000);
+	            	// See:  http://stackoverflow.com/questions/30651210/convert-offsetdatetime-to-utc-timestamp
+	            	// The following keeps the entire conversion in UTC, but later when inserting Timestamp does not seem to handle daylight saving time well
+	            	//timestampArrayAllValues[valuesToWrite] = Timestamp.valueOf(offsetDateTimeArrayAllValues[valuesToWrite].atZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
+	            	// The following, when coupled with specifying the same time zone to the HDB procedure results in the times aligning properly, but one hour is lost when daylight savings switches
+	            	// For the following ZoneId.of("-07:00") in place of tsZoneId worked
+	            	timestampArrayAllValues[valuesToWrite] = Timestamp.valueOf(offsetDateTimeArrayAllValues[valuesToWrite].atZoneSameInstant(tsZoneId).toLocalDateTime());
+	            	if ( Message.isDebugOn ) {
+		            	Message.printStatus(2, routine, "offsetDateTime=" +offsetDateTimeArrayAllValues[valuesToWrite] + " timestamp=" + timestampArrayAllValues[valuesToWrite]);
+	            	}
+	            }
+            }
+            else if ( doTimestamp ) {
+            	// Use Java 7 Timestamp, which has worked relatively well other than daylight savings issues
+                // Format the date/time as a string consistent with the database engine
+                //x Old comment leave for now
+                //x sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
+                //x writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
+                // The offset is negative in order to shift to the start of the interval
+                // Database timestamp is in GMT but corresponds to MST from time series.
+                // In other words, MST time zone will shift times by 7 hours to GMT
+                startTimeStampBeforeShiftMs = dateTime.getDate(tsTimeZoneDefault).getTime(); // UNIX GMT time reflecting that date/time is in the specified time zone such as MST
+                startTimeStampMs = startTimeStampBeforeShiftMs + timeOffsetTsToHdbStartMs; // UNIX GMT, will be non-zero only for hourly data
+                //startTimeStampMsDelta = startTimeStampMs - startTimeStampMsPrev; // Delta to see if incrementing evenly over daylight savings
+                startTimeStampMsPrev = startTimeStampMs; // Reset previous value, for log messages
+                // Version to create Timestamp from date/time parts is deprecated so use millisecond version
+                timestampArrayAllValues[valuesToWrite] = new Timestamp(startTimeStampMs);
+                // TODO sam 2017-04-13 legacy WriteTimeSeries also calculated endTime but new stored procedure does not use
+            }
+            if ( Message.isDebugOn ) {
+	            if ( (outputIntervalBase == TimeInterval.HOUR) || (outputIntervalBase == TimeInterval.IRREGULAR) ) {
+	            	Message.printStatus(2, routine, "Time series offsetDateTime=" + offsetDateTimeArrayAllValues[valuesToWrite] + " timestamp=" + timestampArrayAllValues[valuesToWrite] + " value="+valueArray[valuesToWrite]);
+	            }
+	            else {
+	            	Message.printStatus(2, routine, "Time series offsetDateTime=" + offsetDateTimeArrayAllValues[valuesToWrite] + " value="+valueArray[valuesToWrite]);
+	            }
+            }
+            ++valuesToWrite;
+        }
+        return valuesToWrite;
+    }
     
 }

@@ -519,8 +519,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TSCommandProcessorUtil.appendTimeSeriesListToResultsList(processor, this, tslist);
             
             // Create an ensemble and add to the processor...
-            
-            TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
+            String ensembleName = EnsembleName;
+            if ( ts != null ) {
+            	ensembleName = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                    processor, ts, EnsembleName, status, commandPhase);
+            }
+            TSEnsemble ensemble = new TSEnsemble ( EnsembleID, ensembleName, tslist );
             TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
         }
     }

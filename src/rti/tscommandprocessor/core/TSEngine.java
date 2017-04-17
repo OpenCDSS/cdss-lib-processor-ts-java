@@ -2294,7 +2294,7 @@ protected static List<String> getTraceIdentifiersFromCommands ( List<String> com
 	for ( int i = 0; i < size; i++ ) {
 		command = commands.get(i).trim();
 		if ( (command == null) || command.startsWith("#") || (command.length() == 0) ) {
-			// Make sure comments are ignored...
+			// Make sure comments are ignored (but set the status to success).
 			continue;
 		}
 		tokens = StringUtil.breakStringList( command," =(),", StringUtil.DELIM_SKIP_BLANKS );
@@ -2700,7 +2700,7 @@ throws Exception
 	Command command = null;	// The command to process
 	CommandStatus commandStatus = null; // Put outside of main try to be able to use in catch.
 
-    // Turn off interactive warnings to pretent overload on user in loops.
+    // Turn off interactive warnings to prevent overload on user in loops.
     Message.setPropValue ( "ShowWarningDialog=false" );
     
     // Clear any settings that may have been left over from the previous run and which
@@ -2738,7 +2738,7 @@ throws Exception
     int runtimeTotal = 0;
     boolean needToInterrupt = false; // Will set to true if need to break out of running (e.g., no for loop end)
     // Loop through the commands and reset any For() commands to make sure they don't think they are complete.
-    // Nexted for loops will be handled when processed by resetting when a for loop is totally complete.
+    // Nested for loops will be handled when processed by resetting when a for loop is totally complete.
     For_Command forCommand = null;
     CommandStatusProvider commandStatusProvider = null;
     for ( i = 0; i < size; i++ ) {
@@ -2820,7 +2820,13 @@ throws Exception
     			continue;
     		}
     		commandString = commandString.trim();
-    		// All commands will implement CommandStatusProvider so get it...
+    		// All commands implement CommandStatusProvider via AbstractCommand so get an instance of CommandStatusProvider
+    		commandStatusProvider = null;
+    		commandStatus = null;
+            if ( command instanceof CommandStatusProvider ) {
+            	// The command status provider is used below as needed so get an instance that does not need to be recast later
+            	commandStatusProvider = (CommandStatusProvider)command;
+            }
     		commandStatus = commandStatusProvider.getCommandStatus();
     		// Clear the run status (internally will set to UNKNOWN).
     		if ( commandsShouldClearRunStatus ) {
@@ -2841,6 +2847,7 @@ throws Exception
     		if ( command instanceof Comment_Command ) {
     			// Comment.  Mark as processing successful.
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.DISCOVERY,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
                 commandProfile.setEndTime(System.currentTimeMillis());
                 commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
@@ -2849,6 +2856,7 @@ throws Exception
     		else if ( command instanceof CommentBlockStart_Command ) {
     			inComment = true;
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.DISCOVERY,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
                 commandProfile.setEndTime(System.currentTimeMillis());
                 commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
@@ -2857,6 +2865,7 @@ throws Exception
     		else if ( command instanceof CommentBlockEnd_Command ) {
     			inComment = false;
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+    			commandStatus.refreshPhaseSeverity(CommandPhaseType.DISCOVERY,CommandStatusType.SUCCESS);
     			commandStatus.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
                 commandProfile.setEndTime(System.currentTimeMillis());
                 commandProfile.setEndHeap(Runtime.getRuntime().totalMemory());
@@ -3062,6 +3071,8 @@ throws Exception
                                 "Confirm that matching If() and EndIf() commands are specified.") );
     	                }
     	                else {
+    	                	// Run the command so the status is set to success
+    	                	endifCommand.runCommand(i_for_message);
     	                    ifCommandStack.remove(ifCommand);
     	                }
     	                // Re-evalute if stack

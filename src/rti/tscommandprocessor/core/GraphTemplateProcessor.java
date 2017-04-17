@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import RTi.TS.TS;
+import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
 import RTi.TS.TSSupplier;
 import RTi.Util.IO.CommandProcessor;
@@ -103,12 +104,21 @@ public class GraphTemplateProcessor implements TSSupplier {
 	/**
 	 * Expand the template given a model.
 	 * @param tslist list of time series available to the template
+	 * @param tsensembleList list of ensembles 
 	 * @param processor1 main command processor, for example original TSTool command processor
 	 * @param processor2 secondary command processor, for example if the template contains TemplatePreprocessCommandFile
 	 * @param outputFile output file for the expanded template
 	 */
-	public void expandTemplate ( List<TS> tslist, CommandProcessor processor1, CommandProcessor processor2, File outputFile )
+	public void expandTemplate ( List<TS> tslist, List<TSEnsemble> tsensembleList,
+		CommandProcessor processor1, CommandProcessor processor2, File outputFile )
 		throws FileNotFoundException {
+		// Create empty lists if null to simplify error handling
+		if ( tslist == null ) {
+			tslist = new ArrayList<TS>();
+		}
+		if ( tsensembleList == null ) {
+			tsensembleList = new ArrayList<TSEnsemble>();
+		}
 		this.tslist = tslist;
 		String message, routine = getClass().getSimpleName() + ".expandTemplate";
         // Expand the template to the output file
@@ -180,6 +190,15 @@ public class GraphTemplateProcessor implements TSSupplier {
             model.put("TemplateTSLocationIDList", TSLocationIDList);
             model.put("TemplateTSDescriptionList", TSDescriptionList);
             model.put("TemplateTSUnitsList", TSUnitsList);
+            // Similarly add ensemble list
+            List<String> EnsembleIDList = new ArrayList<String>();
+            List<String> EnsembleNameList = new ArrayList<String>();
+            for ( TSEnsemble tsensemble : tsensembleList ) {
+            	EnsembleIDList.add(tsensemble.getEnsembleID());
+            	EnsembleNameList.add(tsensemble.getEnsembleName());
+            }
+            model.put("TemplateTSEnsembleIDList", EnsembleIDList);
+            model.put("TemplateTSEnsembleNameList", EnsembleNameList);
             // Now process the template with the model to create the output file.
             template.process (model, out);
         }

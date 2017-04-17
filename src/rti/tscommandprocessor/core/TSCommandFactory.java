@@ -149,6 +149,7 @@ import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
 import rti.tscommandprocessor.commands.table.CreateTimeSeriesEventTable_Command;
 import rti.tscommandprocessor.commands.table.DeleteTableColumns_Command;
+import rti.tscommandprocessor.commands.table.DeleteTableRows_Command;
 import rti.tscommandprocessor.commands.table.FormatTableDateTime_Command;
 import rti.tscommandprocessor.commands.table.FormatTableString_Command;
 import rti.tscommandprocessor.commands.table.FreeTable_Command;
@@ -199,6 +200,7 @@ import rti.tscommandprocessor.commands.ts.ChangeIntervalRegularToIrregular_Comma
 import rti.tscommandprocessor.commands.ts.ChangeIntervalSmaller_Command;
 import rti.tscommandprocessor.commands.ts.ChangeInterval_Command;
 import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
+import rti.tscommandprocessor.commands.ts.ChangeTimeZone_Command;
 import rti.tscommandprocessor.commands.ts.CompareTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ComputeErrorTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ConvertDataUnits_Command;
@@ -463,9 +465,6 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("CalculateTimeSeriesStatistic") ) {
         return new CalculateTimeSeriesStatistic_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ChangePeriod") ) {
-        return new ChangePeriod_Command ();
-    }
 	else if ( commandName.equalsIgnoreCase("ChangeInterval") ) {
 		return new ChangeInterval_Command ();
 	}
@@ -481,6 +480,12 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("ChangeIntervalSmaller") ) {
 		return new ChangeIntervalSmaller_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("ChangePeriod") ) {
+        return new ChangePeriod_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ChangeTimeZone") ) {
+        return new ChangeTimeZone_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("CheckTimeSeries") ) {
         return new CheckTimeSeries_Command ();
     }
@@ -554,6 +559,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("DeleteTableColumns") ) {
         return new DeleteTableColumns_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("DeleteTableRows") ) {
+        return new DeleteTableRows_Command ();
     }
     else if ( commandName.equalsIgnoreCase("Delta") ) {
         return new Delta_Command ();

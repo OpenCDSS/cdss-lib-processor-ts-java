@@ -896,7 +896,8 @@ public List<DataStore> getDataStoresByType ( Class dataStoreClass, boolean activ
 /**
 Return an Ensemble matching the requested identifier, or null if not found.
 This method is meant to be used internally without going through the request mechanism.
-@param EnsembleID Ensemble ID to match.
+@param EnsembleID Ensemble ID to match, * wildcard is special value to match first ensemble,
+*pattern will match the first matching TSID.
 */
 protected TSEnsemble getEnsemble ( String EnsembleID )
 {   if ( (EnsembleID == null) || EnsembleID.equals("") ) {
@@ -904,14 +905,30 @@ protected TSEnsemble getEnsemble ( String EnsembleID )
     }
     int size = __TSEnsembleList.size();
     TSEnsemble tsensemble = null, tsensemble2;
+    String ensembleIDPattern = null;
+    if ( EnsembleID.indexOf("*") >= 0 ) {
+    	ensembleIDPattern = EnsembleID.replace("*", ".*").toUpperCase();
+    }
     for ( int i = 0; i < size; i++ ) {
         tsensemble2 = __TSEnsembleList.get(i);
         if ( tsensemble2 == null ) {
             continue;
         }
-        if ( tsensemble2.getEnsembleID().equalsIgnoreCase(EnsembleID) ) {
-            tsensemble = tsensemble2;
-            break;
+        // See if the ensemble ID matches the requested expression
+        if ( ensembleIDPattern == null ) {
+        	// Do a simple comparison as per legacy code
+        	// This guards against someone having perhaps used special characters for ensemble ID
+	        if ( tsensemble2.getEnsembleID().equalsIgnoreCase(EnsembleID) ) {
+	            tsensemble = tsensemble2;
+	            break;
+	        }
+        }
+        else {
+        	// Do a regular expression match
+	        if ( tsensemble2.getEnsembleID().toUpperCase().matches(ensembleIDPattern) ) {
+	            tsensemble = tsensemble2;
+	            break;
+	        }
         }
     }
     return tsensemble;

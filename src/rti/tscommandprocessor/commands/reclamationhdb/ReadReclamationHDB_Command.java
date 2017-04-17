@@ -35,7 +35,7 @@ import RTi.Util.Time.TimeInterval;
 /**
 This class initializes, checks, and runs the ReadReclamationHDB() command.
 */
-public class ReadReclamationHDB_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadReclamationHDB_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
 
 /**

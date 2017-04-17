@@ -73,8 +73,8 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private WriteReclamationHDB_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private JTabbedPane __sdi_JTabbedPane = null;
-private SimpleJComboBox __SiteCommonName_JComboBox = null;
-private SimpleJComboBox __DataTypeCommonName_JComboBox = null;
+//private SimpleJComboBox __SiteCommonName_JComboBox = null; // TODO sam 2017-04-16 obsolete - fully remove after a time in production
+//private SimpleJComboBox __DataTypeCommonName_JComboBox = null; // TODO sam 2017-04-16 obsolete - fully remove after a time in production
 private JLabel __selectedSiteID_JLabel = null;
 private JLabel __selectedSiteDataTypeID_JLabel = null;
 private SimpleJComboBox __SiteDataTypeID_JComboBox = null;
@@ -99,6 +99,9 @@ private JLabel __selectedEnsembleModelID_JLabel = null;
 private JLabel __selectedEnsembleModelRunID_JLabel = null;
 private SimpleJComboBox __EnsembleModelRunID_JComboBox = null;
 private SimpleJComboBox __Agency_JComboBox = null;
+private SimpleJComboBox __CollectionSystem_JComboBox = null;
+private SimpleJComboBox __Computation_JComboBox = null;
+private SimpleJComboBox __Method_JComboBox = null;
 private SimpleJComboBox __ValidationFlag_JComboBox = null;
 private SimpleJComboBox __OverwriteFlag_JComboBox = null;
 private JTextField __DataFlags_JTextField = null;
@@ -106,7 +109,9 @@ private SimpleJComboBox __TimeZone_JComboBox = null;
 private JLabel __TimeZone_JLabel = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
+private SimpleJComboBox __WriteProcedure_JComboBox = null;
 private JTextField __EnsembleIDProperty_JTextField = null;
+private SimpleJComboBox __SqlDateType_JComboBox = null;
 //TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 //private SimpleJComboBox __IntervalOverride_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -168,7 +173,7 @@ private void actionPerformedDataStoreSelected ( )
     setDMIForSelectedDataStore();
     //Message.printStatus(2, "", "Selected datastore " + __dataStore + " __dmi=" + __dmi );
     // Now populate the data type choices corresponding to the datastore
-    populateSiteCommonNameChoices ( __dmi );
+    //populateSiteCommonNameChoices ( __dmi );
     populateSiteDataTypeIDChoices ( __dmi );
     // Model run time series can be determined once the interval and site_datatype_id are selected
     // Once the MRI list is determined, the model names start the cascade
@@ -180,6 +185,9 @@ private void actionPerformedDataStoreSelected ( )
     populateEnsembleNameChoices ( __dmi );
     populateEnsembleModelNameChoices ( __dmi );
     populateAgencyChoices ( __dmi );
+    populateCollectionSystemChoices ( __dmi );
+    populateComputationChoices ( __dmi );
+    populateMethodChoices ( __dmi );
     populateValidationFlagChoices ( __dmi );
     populateOverwriteFlagChoices ( __dmi );
     populateTimeZoneChoices ( __dmi );
@@ -189,6 +197,7 @@ private void actionPerformedDataStoreSelected ( )
 /**
 Refresh the query choices for the currently selected ReclamationHDB data type common name.
 */
+/*
 private void actionPerformedDataTypeCommonNameSelected ( )
 {
     if ( __DataTypeCommonName_JComboBox.getSelected() == null ) {
@@ -198,7 +207,7 @@ private void actionPerformedDataTypeCommonNameSelected ( )
     // No further action needed to populate choices but show selected site_datatype_id for those who
     // are familiar with the database internals.  Also select the SiteDataTypeID since that is the new convention.
     updateSiteIDTextFields();
-}
+}*/
 
 /**
 Refresh the query choices for the currently selected ReclamationHDB ensemble name.
@@ -319,6 +328,7 @@ private void actionPerformedModelRunNameSelected ( )
 /**
 Refresh the query choices for the currently selected ReclamationHDB site common name.
 */
+/*
 private void actionPerformedSiteCommonNameSelected ( )
 {
     if ( __SiteCommonName_JComboBox.getSelected() == null ) {
@@ -328,7 +338,7 @@ private void actionPerformedSiteCommonNameSelected ( )
     // Now populate the data type choices corresponding to the site common name
     populateDataTypeCommonNameChoices ( __dmi );
     updateSiteIDTextFields();
-}
+}*/
 
 /**
 Refresh the query choices for the currently selected ReclamationHDB site common name.
@@ -416,8 +426,8 @@ private void checkInput ()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String SiteCommonName = __SiteCommonName_JComboBox.getSelected();
-    String DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
+    //String SiteCommonName = __SiteCommonName_JComboBox.getSelected();
+    //String DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
     String SiteDataTypeID = getSelectedSiteDataTypeID();
 //    String IntervalHint = __IntervalHint_JComboBox.getSelected();
     String ModelName = __ModelName_JComboBox.getSelected();
@@ -434,13 +444,18 @@ private void checkInput ()
     String NewEnsembleModelRunDate = __NewEnsembleModelRunDate_JTextField.getText().trim();
     String EnsembleModelRunID = getSelectedEnsembleModelRunID();
     String Agency = getSelectedAgency();
+    String CollectionSystem = getSelectedCollectionSystem();
+    String Computation = getSelectedComputation();
+    String Method = getSelectedMethod();
     String ValidationFlag = getSelectedValidationFlag();
     String OverwriteFlag = getSelectedOverwriteFlag();
     String DataFlags = __DataFlags_JTextField.getText().trim();
     String TimeZone = __TimeZone_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String WriteProcedure = __WriteProcedure_JComboBox.getSelected();
 	String EnsembleIDProperty = __EnsembleIDProperty_JTextField.getText().trim();
+	String SqlDateType = __SqlDateType_JComboBox.getSelected();
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//String IntervalOverride = __IntervalOverride_JComboBox.getSelected();
 
@@ -458,12 +473,12 @@ private void checkInput ()
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
-    if ( (SiteCommonName != null) && (SiteCommonName.length() > 0) ) {
-        parameters.set ( "SiteCommonName", SiteCommonName );
-    }
-    if ( (DataTypeCommonName != null) && (DataTypeCommonName.length() > 0) ) {
-        parameters.set ( "DataTypeCommonName", DataTypeCommonName );
-    }
+    //if ( (SiteCommonName != null) && (SiteCommonName.length() > 0) ) {
+    //    parameters.set ( "SiteCommonName", SiteCommonName );
+    //}
+    //if ( (DataTypeCommonName != null) && (DataTypeCommonName.length() > 0) ) {
+    //    parameters.set ( "DataTypeCommonName", DataTypeCommonName );
+    //}
     if ( (SiteDataTypeID != null) && (SiteDataTypeID.length() > 0) ) {
         parameters.set ( "SiteDataTypeID", SiteDataTypeID );
     }
@@ -512,6 +527,15 @@ private void checkInput ()
     if ( (Agency != null) && (Agency.length() > 0) ) {
         parameters.set ( "Agency", Agency );
     }
+    if ( (CollectionSystem != null) && (CollectionSystem.length() > 0) ) {
+        parameters.set ( "CollectionSystem", CollectionSystem );
+    }
+    if ( (Computation != null) && (Computation.length() > 0) ) {
+        parameters.set ( "Computation", Computation );
+    }
+    if ( (Method != null) && (Method.length() > 0) ) {
+        parameters.set ( "Method", Method );
+    }
     if ( (ValidationFlag != null) && (ValidationFlag.length() > 0) ) {
         parameters.set ( "ValidationFlag", ValidationFlag );
     }
@@ -530,8 +554,14 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );
 	}
+    if ( WriteProcedure.length() > 0 ) {
+        parameters.set ( "WriteProcedure", WriteProcedure );
+    }
 	if ( EnsembleIDProperty.length() > 0 ) {
 		parameters.set ( "EnsembleIDProperty", EnsembleIDProperty );
+	}
+	if ( SqlDateType.length() > 0 ) {
+		parameters.set ( "SqlDateType", SqlDateType );
 	}
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
     //if ( IntervalOverride.length() > 0 ) {
@@ -557,8 +587,8 @@ private void commitEdits ()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String SiteCommonName = __SiteCommonName_JComboBox.getSelected();
-    String DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
+    //String SiteCommonName = __SiteCommonName_JComboBox.getSelected();
+    //String DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
     String SiteDataTypeID = getSelectedSiteDataTypeID();
     //String IntervalHint = __IntervalHint_JComboBox.getSelected();
     String ModelName = __ModelName_JComboBox.getSelected();
@@ -575,20 +605,25 @@ private void commitEdits ()
     String NewEnsembleModelRunDate = __NewEnsembleModelRunDate_JTextField.getText().trim();
     String EnsembleModelRunID = getSelectedEnsembleModelRunID();
     String Agency = getSelectedAgency();
+    String CollectionSystem = getSelectedCollectionSystem();
+    String Computation = getSelectedComputation();
+    String Method = getSelectedMethod();
     String ValidationFlag = getSelectedValidationFlag();
     String OverwriteFlag = getSelectedOverwriteFlag();
     String DataFlags = __DataFlags_JTextField.getText().trim();
     String TimeZone = __TimeZone_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String WriteProcedure = __WriteProcedure_JComboBox.getSelected();
 	String EnsembleIDProperty = __EnsembleIDProperty_JTextField.getText().trim();
+	String SqlDateType = __SqlDateType_JComboBox.getSelected();
 	//String IntervalOverride = __IntervalOverride_JComboBox.getSelected();
 	__command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-    __command.setCommandParameter ( "SiteCommonName", SiteCommonName );
-    __command.setCommandParameter ( "DataTypeCommonName", DataTypeCommonName );
+    //__command.setCommandParameter ( "SiteCommonName", SiteCommonName );
+    //__command.setCommandParameter ( "DataTypeCommonName", DataTypeCommonName );
     __command.setCommandParameter ( "SiteDataTypeID", SiteDataTypeID );
     //__command.setCommandParameter ( "IntervalHint", IntervalHint );
     __command.setCommandParameter ( "ModelName", ModelName );
@@ -605,13 +640,18 @@ private void commitEdits ()
     __command.setCommandParameter ( "NewEnsembleModelRunDate", NewEnsembleModelRunDate );
     __command.setCommandParameter ( "EnsembleModelRunID", EnsembleModelRunID );
     __command.setCommandParameter ( "Agency", Agency );
+    __command.setCommandParameter ( "CollectionSystem", CollectionSystem );
+    __command.setCommandParameter ( "Computation", Computation );
+    __command.setCommandParameter ( "Method", Method );
     __command.setCommandParameter ( "ValidationFlag", ValidationFlag );
     __command.setCommandParameter ( "OverwriteFlag", OverwriteFlag );
     __command.setCommandParameter ( "DataFlags", DataFlags );
     __command.setCommandParameter ( "TimeZone", TimeZone );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
+	__command.setCommandParameter ( "WriteProcedure", WriteProcedure );
 	__command.setCommandParameter ( "EnsembleIDProperty", EnsembleIDProperty );
+	__command.setCommandParameter ( "SqlDateType", SqlDateType );
 	//__command.setCommandParameter ( "IntervalOverride", IntervalOverride );
 }
 
@@ -635,10 +675,51 @@ private String getSelectedAgency ()
         return "";
     }
     else if ( agency.indexOf("-") > 0 ) {
-        return agency.substring(0,agency.indexOf("-")).trim();
+    	// Split the parts and return the non-? part
+        String agencyAbbrev = agency.substring(0,agency.indexOf("-")).trim();
+        String agencyName = agency.substring(agency.indexOf("-") + 1).trim();
+        if ( !agencyAbbrev.equals("?") ) {
+        	return agencyAbbrev;
+        }
+        else if ( !agencyName.equals("?") ) {
+        	return agencyName;
+        }
+        else {
+        	return ""; // Should not happen
+        }
     }
     else {
         return agency.trim();
+    }
+}
+
+/**
+Return the selected collection system name, used to provide intelligent parameter choices.
+The displayed format is:  "CollectionSystemName"
+@return the selected collection system, or "" if nothing selected
+*/
+private String getSelectedCollectionSystem ()
+{   String collectionSystem = __CollectionSystem_JComboBox.getSelected();
+    if ( collectionSystem == null ) {
+        return "";
+    }
+    else {
+        return collectionSystem.trim();
+    }
+}
+
+/**
+Return the selected computation name, used to provide intelligent parameter choices.
+The displayed format is:  "ComputationName"
+@return the selected computation, or "" if nothing selected
+*/
+private String getSelectedComputation ()
+{   String computation = __Computation_JComboBox.getSelected();
+    if ( computation == null ) {
+        return "";
+    }
+    else {
+        return computation.trim();
     }
 }
 
@@ -700,6 +781,21 @@ private String getSelectedEnsembleName()
         }
     }
    	return EnsembleName;
+}
+
+/**
+Return the selected method, used to provide intelligent parameter choices.
+The displayed format is:  "Method"
+@return the selected method, or "" if nothing selected
+*/
+private String getSelectedMethod ()
+{   String method = __Method_JComboBox.getSelected();
+    if ( method == null ) {
+        return "";
+    }
+    else {
+        return method.trim();
+    }
 }
 
 // TODO SAM 2017-03-13 Determine why the following is not called
@@ -900,6 +996,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         3, ysdi, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Panel to control site_datatype_id selection
+    /* TODO SAM 2017-04-16 remove after a period of production use
     int ySiteCommonName = -1;
     JPanel siteCommon_JPanel = new JPanel();
     siteCommon_JPanel.setLayout( new GridBagLayout() );
@@ -946,6 +1043,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(siteCommon_JPanel, new JLabel (
         "Information - useful when comparing to database contents."),
         3, ySiteCommonName, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        */
     
     __model_JTabbedPane = new JTabbedPane ();
     __model_JTabbedPane.setBorder(
@@ -1204,6 +1302,38 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     JGUIUtil.addComponent(general_JPanel, new JLabel ("Optional - agency supplying data (default=no agency)."),
         3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Collection system:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CollectionSystem_JComboBox = new SimpleJComboBox ( false );
+    __CollectionSystem_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(general_JPanel, __CollectionSystem_JComboBox,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Optional - collection system supplying data (default=See loading application)."),
+    	//getReclamationHDB_DMI().getDefaultCollectionSystem().getCollectionSystemName() + ")."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Computation:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Computation_JComboBox = new SimpleJComboBox ( false );
+    __Computation_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(general_JPanel, __Computation_JComboBox,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // Andrew Gilmore email of 2017-04-10 recommended 1 (unknown) or 2 (N/A).
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Optional - computation that generated data (default=unknown)."),
+    	//getReclamationHDB_DMI().getDefaultComputation().getComputationName()+")."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Method:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Method_JComboBox = new SimpleJComboBox ( false );
+    __Method_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(general_JPanel, __Method_JComboBox,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // Andrew Gilmore email of 2017-04-10 recommended 18 (unknown)
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Optional - method used to generate data (default=unknown)."),
+    	//getReclamationHDB_DMI().getDefaultMethod().getMethodName()+")."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(general_JPanel, new JLabel ("Validation flag:"), 
         0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValidationFlag_JComboBox = new SimpleJComboBox ( false );
@@ -1236,7 +1366,8 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeZone_JComboBox = new SimpleJComboBox ( false );
     __TimeZone_JComboBox.addItemListener (this);
-    __TimeZone_JComboBox.setToolTipText ( "Use this parameter to tell the database the time zone for time zone data." );
+    __TimeZone_JComboBox.setToolTipText ( "Use this parameter to tell the database the time zone for time series data if time series does not specify. "
+    	+ "Required if using WriteProcedure=" + __command._OLD_WRITE_TO_HDB );
     JGUIUtil.addComponent(general_JPanel, __TimeZone_JComboBox,
         1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __TimeZone_JLabel = new JLabel ("");
@@ -1265,6 +1396,20 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
 		"Optional - override the global output end (default=write all data)."),
 		3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Write procedure:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WriteProcedure_JComboBox = new SimpleJComboBox ( false );
+    __WriteProcedure_JComboBox.add("");
+    __WriteProcedure_JComboBox.add(__command._OLD_WRITE_TO_HDB);
+    __WriteProcedure_JComboBox.add(__command._WRITE_DATA);
+    __WriteProcedure_JComboBox.addItemListener (this);
+    __WriteProcedure_JComboBox.setToolTipText ( "Indicates how to write to the database." );
+    JGUIUtil.addComponent(general_JPanel, __WriteProcedure_JComboBox,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel (
+		"Optional - use new (fast) or old (slow) write procedure (default=" + __command._WRITE_DATA + ")."),
+		3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     // Panel for output properties (mainly needed to help with screen real estate problems)
     int yProp = -1;
     JPanel prop_JPanel = new JPanel();
@@ -1289,6 +1434,35 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
         1, yProp, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(prop_JPanel, new JLabel ("Optional - name of property for ensemble ID."),
         3, yProp, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for developer properties
+    int yDev = -1;
+    JPanel dev_JPanel = new JPanel();
+    dev_JPanel.setLayout( new GridBagLayout() );
+    __sdi_JTabbedPane.addTab ( "Developer", dev_JPanel );
+    
+    JGUIUtil.addComponent(dev_JPanel, new JLabel (
+		"Developer properties are used by software developers to test the software." ),
+		0, ++yDev, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dev_JPanel, new JLabel (
+		"The JavaTimestamp approach for handling SQL dates is known to work whereas new Java 8 OffsetDateTime needs evaluation." ),
+		0, ++yDev, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dev_JPanel, new JSeparator (SwingConstants.HORIZONTAL ),
+		0, ++yDev, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(dev_JPanel, new JLabel ("SQL date type:"), 
+        0, ++yDev, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SqlDateType_JComboBox = new SimpleJComboBox ( false );
+    __SqlDateType_JComboBox.add("");
+    __SqlDateType_JComboBox.add(__command._JavaTimestamp);
+    __SqlDateType_JComboBox.add(__command._OffsetDateTime);
+    __SqlDateType_JComboBox.addItemListener (this);
+    __SqlDateType_JComboBox.setToolTipText ( "Indicates internal date type to use." );
+    JGUIUtil.addComponent(dev_JPanel, __SqlDateType_JComboBox,
+        1, yDev, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(dev_JPanel, new JLabel (
+		"Optional - used to test date type (default=" + __command._OffsetDateTime + ")."),
+		3, yDev, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
     /*
@@ -1347,7 +1521,7 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     refresh ();
     __ignoreEvents = false; // After initialization of components let events happen to dynamically cause cascade
     checkGUIState(); // Do this again because it may not have happened due to the special event handling
-    updateSiteIDTextFields();
+    //updateSiteIDTextFields();
     updateModelIDTextFields();
     
 	setResizable ( true ); // TODO SAM 2010-12-10 Resizing causes some problems
@@ -1372,14 +1546,14 @@ public void itemStateChanged (ItemEvent e)
         // User has selected a datastore.
         actionPerformedDataStoreSelected ();
     }
-    else if ( (source == __SiteCommonName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-        // User has selected a site common name.
-        actionPerformedSiteCommonNameSelected ();
-    }
-    else if ( (source == __DataTypeCommonName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-        // User has selected a data type common name.
-        actionPerformedDataTypeCommonNameSelected ();
-    }
+    //else if ( (source == __SiteCommonName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+    //    // User has selected a site common name.
+    //    actionPerformedSiteCommonNameSelected ();
+    //}
+    //else if ( (source == __DataTypeCommonName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+    //    // User has selected a data type common name.
+    //    actionPerformedDataTypeCommonNameSelected ();
+    //}
     else if ( (source == __SiteDataTypeID_JComboBox) && (sc == ItemEvent.SELECTED) ) {
         // User has selected a data type common name.
         actionPerformedSiteDataTypeIDSelected ();
@@ -1456,6 +1630,8 @@ public boolean ok ()
 
 /**
 Populate the agency list based on the selected datastore.
+The format is "Abbreviation - Name".  If the abbreviation is null in the database use ? for the abbreviation.
+It appears from inspection that the agency name is always n
 */
 private void populateAgencyChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getSimpleName() + ".populateAgencyChoices";
@@ -1473,16 +1649,24 @@ private void populateAgencyChoices ( ReclamationHDB_DMI rdmi )
         for ( ReclamationHDB_Agency agency: agencyList ) {
             agencyAbbrev = agency.getAgenAbbrev();
             agencyName = agency.getAgenName();
-            if ( agencyAbbrev.length() > 0 ) {
-                if ( agencyName.length() > 0 ) {
-                    agencyStrings.add ( agencyAbbrev + " - " + agencyName );
-                }
-                else {
-                    agencyStrings.add ( agencyAbbrev );
-                }
+            if ( (agencyAbbrev == null) || agencyAbbrev.isEmpty() ) {
+            	agencyAbbrev = "?";
+            }
+            if ( (agencyName == null) || agencyName.isEmpty() ) {
+            	agencyName = "?";
+            }
+        	// Always display the same - parse out the abbreviation or name
+            if ( agencyAbbrev.equals("?") && agencyName.equals("?") ) {
+                // Skip since no valid data
+            	continue;
+            }
+            else {
+            	agencyStrings.add ( agencyAbbrev + " - " + agencyName );
             }
         }
-        Collections.sort(agencyStrings,String.CASE_INSENSITIVE_ORDER);
+        // The following will sort by the abbreviation, may or may not be an issue if lots of agencies
+        // For now leave the original order from the database query, which should be sort by name
+        //Collections.sort(agencyStrings,String.CASE_INSENSITIVE_ORDER);
     }
     catch ( Exception e ) {
         Message.printWarning(3, routine, "Error getting HDB agency list (" + e + ")." );
@@ -1499,8 +1683,83 @@ private void populateAgencyChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
+Populate the collection system list based on the selected datastore.
+*/
+private void populateCollectionSystemChoices ( ReclamationHDB_DMI rdmi )
+{   String routine = getClass().getSimpleName() + ".populateCollectionSystemChoices";
+    if ( (rdmi == null) || (__CollectionSystem_JComboBox == null) ) {
+        // Initialization
+        return;
+    }
+    //Message.printStatus(2,routine,"Start populating collection system choices at " + new DateTime(DateTime.DATE_CURRENT));
+    List<String> collectionSystemStrings = new ArrayList<String>();
+    try {
+        List<ReclamationHDB_CollectionSystem> collectionSystemList = rdmi.getCollectionSystemList();
+        collectionSystemStrings.add(""); // No collection system will be used
+        String collectionSystemName;
+        for ( ReclamationHDB_CollectionSystem collectionSystem: collectionSystemList ) {
+            collectionSystemName = collectionSystem.getCollectionSystemName();
+            if ( (collectionSystemName != null) && !collectionSystemName.isEmpty() ) {
+            	collectionSystemStrings.add ( collectionSystemName );
+            }
+        }
+        Collections.sort(collectionSystemStrings,String.CASE_INSENSITIVE_ORDER);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error getting HDB collection system list (" + e + ")." );
+        collectionSystemStrings = new ArrayList<String>();
+    }
+    __CollectionSystem_JComboBox.removeAll ();
+    __CollectionSystem_JComboBox.setData(collectionSystemStrings);
+    //Message.printStatus(2,routine,"End populating collection system choices at " + new DateTime(DateTime.DATE_CURRENT));
+    // Select first choice (may get reset from existing parameter values).
+    __CollectionSystem_JComboBox.select ( null );
+    if ( __CollectionSystem_JComboBox.getItemCount() > 0 ) {
+        __CollectionSystem_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Populate the computation list based on the selected datastore.
+*/
+private void populateComputationChoices ( ReclamationHDB_DMI rdmi )
+{   String routine = getClass().getSimpleName() + ".populateComputationChoices";
+    if ( (rdmi == null) || (__Computation_JComboBox == null) ) {
+        // Initialization
+        return;
+    }
+    //Message.printStatus(2,routine,"Start populating computation choices at " + new DateTime(DateTime.DATE_CURRENT));
+    List<String> computationStrings = new ArrayList<String>();
+    try {
+        List<ReclamationHDB_CP_Computation> computationList = rdmi.getComputationList();
+        computationStrings.add(""); // No collection system will be used
+        String computationName;
+        for ( ReclamationHDB_CP_Computation computation: computationList ) {
+            computationName = computation.getComputationName();
+            if ( (computationName != null) && !computationName.isEmpty() ) {
+            	computationStrings.add ( computationName );
+            }
+        }
+        Collections.sort(computationStrings,String.CASE_INSENSITIVE_ORDER);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error getting HDB computation list (" + e + ")." );
+        computationStrings = new ArrayList<String>();
+    }
+    __Computation_JComboBox.removeAll ();
+    __Computation_JComboBox.setData(computationStrings);
+    //Message.printStatus(2,routine,"End populating computation choices at " + new DateTime(DateTime.DATE_CURRENT));
+    // Select first choice (may get reset from existing parameter values).
+    __Computation_JComboBox.select ( null );
+    if ( __Computation_JComboBox.getItemCount() > 0 ) {
+        __Computation_JComboBox.select ( 0 );
+    }
+}
+
+/**
 Populate the data type choice list based on the selected site common name.
 */
+/*
 private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
 {   //String routine = getClass().getSimpleName() + ".populateDataTypeCommonNameChoices";
     if ( (rdmi == null) || (__DataTypeCommonName_JComboBox == null) ) {
@@ -1520,6 +1779,7 @@ private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
         }
         Collections.sort(dataTypeCommonNameStrings,String.CASE_INSENSITIVE_ORDER);
     }
+    / *
     __DataTypeCommonName_JComboBox.removeAll ();
     __DataTypeCommonName_JComboBox.setData(dataTypeCommonNameStrings);
     //Message.printStatus(2,routine,"End populating data type common name choices at " + new DateTime(DateTime.DATE_CURRENT));
@@ -1527,8 +1787,8 @@ private void populateDataTypeCommonNameChoices ( ReclamationHDB_DMI rdmi )
     __DataTypeCommonName_JComboBox.select ( null );
     if ( __DataTypeCommonName_JComboBox.getItemCount() > 0 ) {
         __DataTypeCommonName_JComboBox.select ( 0 );
-    }
-}
+    }* /
+}*/
 
 /**
 Populate the model name list based on the selected datastore.
@@ -1742,6 +2002,43 @@ private void populateIntervalHintChoices ()
     __IntervalHint_JComboBox.select ( 0 );
 }
 */
+
+/**
+Populate the method list based on the selected datastore.
+*/
+private void populateMethodChoices ( ReclamationHDB_DMI rdmi )
+{   String routine = getClass().getSimpleName() + ".populateMethodChoices";
+    if ( (rdmi == null) || (__Method_JComboBox == null) ) {
+        // Initialization
+        return;
+    }
+    //Message.printStatus(2,routine,"Start populating method choices at " + new DateTime(DateTime.DATE_CURRENT));
+    List<String> methodStrings = new ArrayList<String>();
+    try {
+        List<ReclamationHDB_Method> methodList = rdmi.getMethodList();
+        methodStrings.add(""); // No collection system will be used
+        String methodName;
+        for ( ReclamationHDB_Method method: methodList ) {
+            methodName = method.getMethodName();
+            if ( (methodName != null) && !methodName.isEmpty() ) {
+            	methodStrings.add ( methodName );
+            }
+        }
+        Collections.sort(methodStrings,String.CASE_INSENSITIVE_ORDER);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error getting HDB method list (" + e + ")." );
+        methodStrings = new ArrayList<String>();
+    }
+    __Method_JComboBox.removeAll ();
+    __Method_JComboBox.setData(methodStrings);
+    //Message.printStatus(2,routine,"End populating method choices at " + new DateTime(DateTime.DATE_CURRENT));
+    // Select first choice (may get reset from existing parameter values).
+    __Method_JComboBox.select ( null );
+    if ( __Method_JComboBox.getItemCount() > 0 ) {
+        __Method_JComboBox.select ( 0 );
+    }
+}
 
 /**
 Populate the model name list based on the selected datastore.
@@ -2054,6 +2351,7 @@ private void populateOverwriteFlagChoices ( ReclamationHDB_DMI rdmi )
 /**
 Populate the site common name list based on the selected datastore.
 */
+/*
 private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getSimpleName() + ".populateSiteCommonNameChoices";
     if ( (rdmi == null) || (__SiteCommonName_JComboBox == null) ) {
@@ -2084,10 +2382,10 @@ private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
     if ( __SiteCommonName_JComboBox.getItemCount() > 0 ) {
         __SiteCommonName_JComboBox.select ( 0 );
     }
-}
+}*/
 
 /**
-Populate the site common name list based on the selected datastore.
+Populate the site data type ID list based on the selected datastore.
 */
 private void populateSiteDataTypeIDChoices ( ReclamationHDB_DMI rdmi )
 {   String routine = getClass().getSimpleName() + ".populateSiteDataTypeIDChoices";
@@ -2194,7 +2492,7 @@ Populate the time zone label, which uses the HDB default time zone.
 private void populateTimeZoneLabel ( ReclamationHDB_DMI rdmi )
 {
     String defaultTZ = __dmi.getDatabaseTimeZone();
-    __TimeZone_JLabel.setText("Required - time zone for instantaneous and hourly data (HDB=" + defaultTZ + ").");
+    __TimeZone_JLabel.setText("Optional - time series time zone default for instantaneous and hourly data (HDB=" + defaultTZ + ") - see popup help.");
 }
 
 /**
@@ -2340,13 +2638,18 @@ private void refresh ()
     String NewEnsembleModelRunDate = "";
     String EnsembleModelRunID = "";
     String Agency = "";
+    String CollectionSystem = "";
+    String Computation = "";
+    String Method = "";
     String ValidationFlag = "";
     String OverwriteFlag = "";
     String TimeZone = "";
     String DataFlags = "";
 	String OutputStart = "";
 	String OutputEnd = "";
+	String WriteProcedure = "";
 	String EnsembleIDProperty = "";
+	String SqlDateType = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -2357,8 +2660,8 @@ private void refresh ()
         TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
-        SiteCommonName = parameters.getValue ( "SiteCommonName" );
-        DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
+        //SiteCommonName = parameters.getValue ( "SiteCommonName" );
+        //DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
         SiteDataTypeID = parameters.getValue ( "SiteDataTypeID" );
         //IntervalHint = parameters.getValue ( "IntervalHint" );
         ModelName = parameters.getValue ( "ModelName" );
@@ -2375,13 +2678,18 @@ private void refresh ()
         NewEnsembleModelRunDate = parameters.getValue ( "NewEnsembleModelRunDate" );
         EnsembleModelRunID = parameters.getValue ( "EnsembleModelRunID" );
         Agency = parameters.getValue ( "Agency" );
+        CollectionSystem = parameters.getValue ( "CollectionSystem" );
+        Computation = parameters.getValue ( "Computation" );
+        Method = parameters.getValue ( "Method" );
         ValidationFlag = parameters.getValue ( "ValidationFlag" );
         OverwriteFlag = parameters.getValue ( "OverwriteFlag" );
         DataFlags = parameters.getValue ( "DataFlags" );
         TimeZone = parameters.getValue ( "TimeZone" );
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
+		WriteProcedure = parameters.getValue ( "WriteProcedure" );
 		EnsembleIDProperty = parameters.getValue ( "EnsembleIDProperty" );
+		SqlDateType = parameters.getValue ( "SqlDateType" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( DataStore );
             if ( __ignoreEvents ) {
@@ -2529,6 +2837,7 @@ private void refresh ()
             }
         }
         // First populate the choices...
+        /*
         populateSiteCommonNameChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__SiteCommonName_JComboBox, SiteCommonName, JGUIUtil.NONE, null, null ) ) {
             __SiteCommonName_JComboBox.select ( SiteCommonName );
@@ -2549,8 +2858,9 @@ private void refresh ()
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "SiteCommonName parameter \"" + SiteCommonName + "\".  Select a different value or Cancel." );
             }
-        }
+        }*/
         // First populate the choices...
+        /*
         populateDataTypeCommonNameChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataTypeCommonName_JComboBox, DataTypeCommonName, JGUIUtil.NONE, null, null ) ) {
             __DataTypeCommonName_JComboBox.select ( DataTypeCommonName );
@@ -2567,7 +2877,7 @@ private void refresh ()
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataTypeCommonName parameter \"" + DataTypeCommonName + "\".  Select a different value or Cancel." );
             }
-        }
+        }*/
         // First populate the choices - do before any model parameters
         /*
         populateIntervalHintChoices();
@@ -2784,9 +3094,13 @@ private void refresh ()
                   "EnsembleModelRunID parameter \"" + EnsembleModelRunID + "\".  Select a different value or Cancel." );
             }
         }
-        // First populate the choices...
+        // First populate the choices, may be either abbreviation or name
+        // (abbreviation preferred but may be null in the database)
         populateAgencyChoices(getReclamationHDB_DMI() );
-        if ( JGUIUtil.isSimpleJComboBoxItem(__Agency_JComboBox, Agency, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, true ) ) {
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Agency_JComboBox, Agency, JGUIUtil.CHECK_SUBSTRINGS, "-", 0, index, true ) ) {
+            __Agency_JComboBox.select ( index[0] );
+        }
+        else if ( JGUIUtil.isSimpleJComboBoxItem(__Agency_JComboBox, Agency, JGUIUtil.CHECK_SUBSTRINGS, "-", 1, index, true ) ) {
             __Agency_JComboBox.select ( index[0] );
         }
         else {
@@ -2800,6 +3114,60 @@ private void refresh ()
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "Agency parameter \"" + Agency + "\".  Select a different value or Cancel." );
+            }
+        }
+        // First populate the choices...
+        populateCollectionSystemChoices(getReclamationHDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__CollectionSystem_JComboBox, CollectionSystem, JGUIUtil.NONE, "", 0, index, true ) ) {
+            __CollectionSystem_JComboBox.select ( index[0] );
+        }
+        else {
+            if ( (CollectionSystem == null) || CollectionSystem.equals("") ) {
+                // New command...select the default...
+                if ( __CollectionSystem_JComboBox.getItemCount() > 0 ) {
+                    __CollectionSystem_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "CollectionSystem parameter \"" + CollectionSystem + "\".  Select a different value or Cancel." );
+            }
+        }
+        // First populate the choices...
+        populateComputationChoices(getReclamationHDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Computation_JComboBox, Computation, JGUIUtil.NONE, "", 0, index, true ) ) {
+            __Computation_JComboBox.select ( index[0] );
+        }
+        else {
+            if ( (Computation == null) || Computation.equals("") ) {
+                // New command...select the default...
+                if ( __Computation_JComboBox.getItemCount() > 0 ) {
+                    __Computation_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "Computation parameter \"" + Computation + "\".  Select a different value or Cancel." );
+            }
+        }
+        // First populate the choices...
+        populateMethodChoices(getReclamationHDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Method_JComboBox, Method, JGUIUtil.NONE, "", 0, index, true ) ) {
+            __Method_JComboBox.select ( index[0] );
+        }
+        else {
+            if ( (Method == null) || Method.equals("") ) {
+                // New command...select the default...
+                if ( __Method_JComboBox.getItemCount() > 0 ) {
+                    __Method_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "Method parameter \"" + Method + "\".  Select a different value or Cancel." );
             }
         }
         // First populate the choices...
@@ -2868,9 +3236,41 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__WriteProcedure_JComboBox, WriteProcedure, JGUIUtil.NONE, null, null ) ) {
+            __WriteProcedure_JComboBox.select ( WriteProcedure );
+        }
+        else {
+            if ( (WriteProcedure == null) || WriteProcedure.equals("") ) {
+                // New command...select the default...
+                if ( __WriteProcedure_JComboBox.getItemCount() > 0 ) {
+                    __WriteProcedure_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "WriteProcedure parameter \"" + WriteProcedure + "\".  Select a different value or Cancel." );
+            }
+        }
 		if ( EnsembleIDProperty != null ) {
 			__EnsembleIDProperty_JTextField.setText (EnsembleIDProperty);
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__SqlDateType_JComboBox, SqlDateType, JGUIUtil.NONE, null, null ) ) {
+            __SqlDateType_JComboBox.select ( SqlDateType );
+        }
+        else {
+            if ( (SqlDateType == null) || SqlDateType.equals("") ) {
+                // New command...select the default...
+                if ( __SqlDateType_JComboBox.getItemCount() > 0 ) {
+                    __SqlDateType_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "SqlDateType parameter \"" + SqlDateType + "\".  Select a different value or Cancel." );
+            }
+        }
 		// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 		/*
         if ( JGUIUtil.isSimpleJComboBoxItem(__IntervalOverride_JComboBox, IntervalOverride, JGUIUtil.NONE, null, null ) ) {
@@ -2902,7 +3302,7 @@ private void refresh ()
 		// Make sure choices labels are also updated
 		updateEnsembleIDTextFields();
 		updateModelIDTextFields();
-		updateSiteIDTextFields();
+		//updateSiteIDTextFields();
 	}
 	// Regardless, reset the command from the fields...
 	DataStore = __DataStore_JComboBox.getSelected();
@@ -2917,6 +3317,7 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     // FIXME SAM 2011-10-03 Should be able to remove check for null if events and list population are
     // implemented correctly
+    /*
     SiteCommonName = __SiteCommonName_JComboBox.getSelected();
     if ( SiteCommonName == null ) {
         SiteCommonName = "";
@@ -2924,7 +3325,7 @@ private void refresh ()
     DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
     if ( DataTypeCommonName == null ) {
         DataTypeCommonName = "";
-    }
+    }*/
     SiteDataTypeID = getSelectedSiteDataTypeID();
     //IntervalHint = __IntervalHint_JComboBox.getSelected().trim();
     ModelName = __ModelName_JComboBox.getSelected();
@@ -2962,6 +3363,9 @@ private void refresh ()
     NewEnsembleModelRunDate = __NewEnsembleModelRunDate_JTextField.getText().trim();
     EnsembleModelRunID = getSelectedEnsembleModelRunID();
     Agency = getSelectedAgency();
+    CollectionSystem = getSelectedCollectionSystem();
+    Computation = getSelectedComputation();
+    Method = getSelectedMethod();
     ValidationFlag = getSelectedValidationFlag();
     OverwriteFlag = getSelectedOverwriteFlag();
     DataFlags = __DataFlags_JTextField.getText().trim();
@@ -2971,7 +3375,9 @@ private void refresh ()
     }
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
+	WriteProcedure = __WriteProcedure_JComboBox.getSelected();
 	EnsembleIDProperty = __EnsembleIDProperty_JTextField.getText().trim();
+	SqlDateType = __SqlDateType_JComboBox.getSelected();
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	/*
     IntervalOverride = __IntervalOverride_JComboBox.getSelected();
@@ -3003,13 +3409,18 @@ private void refresh ()
     parameters.add ( "NewEnsembleModelRunDate=" + NewEnsembleModelRunDate );
     parameters.add ( "EnsembleModelRunID=" + EnsembleModelRunID );
     parameters.add ( "Agency=" + Agency );
+    parameters.add ( "CollectionSystem=" + CollectionSystem );
+    parameters.add ( "Computation=" + Computation );
+    parameters.add ( "Method=" + Method );
     parameters.add ( "ValidationFlag=" + ValidationFlag );
     parameters.add ( "OverwriteFlag=" + OverwriteFlag );
     parameters.add ( "DataFlags=" + DataFlags );
     parameters.add ( "TimeZone=" + TimeZone );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
+	parameters.add ( "WriteProcedure=" + WriteProcedure );
 	parameters.add ( "EnsembleIDProperty=" + EnsembleIDProperty );
+	parameters.add ( "SqlDateType=" + SqlDateType );
 	// TODO SAM 2013-04-20 Current thought is irregular data is OK to instantaneous table - remove later
 	//parameters.add ( "IntervalOverride=" + IntervalOverride );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
@@ -3182,6 +3593,7 @@ private void updateModelIDTextFields ()
 /**
 Update the model information text fields.
 */
+/*
 private void updateSiteIDTextFields ()
 {
     List<ReclamationHDB_SiteDataType> stdList = null;
@@ -3201,7 +3613,7 @@ private void updateSiteIDTextFields ()
     else {
         __selectedSiteID_JLabel.setText ( "" + stdList.size() + " matches" );
     }
-
+    / *
     try {
         stdList = __dmi.findSiteDataType(__siteDataTypeList,
             __SiteCommonName_JComboBox.getSelected(), __DataTypeCommonName_JComboBox.getSelected() );
@@ -3209,7 +3621,7 @@ private void updateSiteIDTextFields ()
     catch ( Exception e ) {
         // Generally at startup with a bad datastore configuration
         stdList = null;
-    }
+    }* /
     if ( (stdList == null) || (stdList.size() == 0) ) {
         __selectedSiteDataTypeID_JLabel.setText ( "No matches" );
     }
@@ -3233,7 +3645,7 @@ private void updateSiteIDTextFields ()
     else {
         __selectedSiteDataTypeID_JLabel.setText ( "" + stdList.size() + " matches" );
     }
-}
+}*/
 
 /**
 Responds to WindowEvents.

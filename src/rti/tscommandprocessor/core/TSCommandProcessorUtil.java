@@ -1,16 +1,20 @@
 package rti.tscommandprocessor.core;
 
 import java.awt.Desktop;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.lang.StringBuffer;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import rti.tscommandprocessor.commands.ts.ReadTimeSeries_Command;
@@ -42,6 +46,11 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeRange;
+import freemarker.cache.FileTemplateLoader;
+import freemarker.template.Configuration;
+import freemarker.template.SimpleSequence;
+import freemarker.template.Template;
+import freemarker.template.Version;
 
 /**
 This class contains static utility methods to support TSCommandProcessor.  These methods
@@ -429,6 +438,151 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         }
     }
     return parameterValue;
+}
+
+/**
+ * Expand a template file into output file.  This code was taken from ExpandTemplateFile().runCommand() but is simpler for more basic use.
+ * A template file uses FreeMarker markup.  This method passes the following to the FreeMarker template engine:
+ * <ul>
+ * <li>Any processor properties are passed using the property name and object contents</li>
+ * <li>Each one-column table is passed with table name and list of object contents</li>
+ * </ul>
+ * @param processor the command processor that is processing commands
+ * @param inputFile the name of the input file to process
+ * @param outputFile the output file to create by expanding the template
+ * @param useTables indicates if one-column tables should be passed to FreeMarker
+ * @param status CommandStatus instance to accumulate command logging
+ * @param commandTag command tag generated in command to indicate command position in command list
+ * @param warningLevel the warning level for logging messages
+ * @param warningCount starting warning count, will be added to and returned if any warnings
+ * @return the warningCount, incremented with warnings generated in the method
+ */
+public static int expandTemplateFile ( CommandProcessor processor, String inputFile, String outputFile, boolean useTables,
+	CommandStatus status, String commandTag, int warningLevel, int warningCount ) throws FileNotFoundException, IOException, Exception {
+	String message, routine = "TSCommandProcessorUtil.expandTemplateFile";
+	// Call the FreeMarker API...
+	// TODO sam 2017-04-08 figure out whether can re-use a singleton
+	// Configuration is intended to be a shared singleton but templates can exist in many folders.
+    Configuration config = new Configuration(new Version(2,3,0));
+    // TODO SAM 2009-10-07 Not sure what configuration is needed for TSTool since most
+    // templates will be located with command files and user data
+    //config.setSharedVariable("shared", "avoid global variables");
+    // See comment below on why this is used.
+    config.setSharedVariable("normalizeNewlines", new freemarker.template.utility.NormalizeNewlines());
+    config.setTemplateLoader(new FileTemplateLoader(new File(".")));
+
+    // In some apps, use config to load templates as it provides caching
+    //Template template = config.getTemplate("some-template.ftl");
+
+    // Manipulate the template file into an in-memory string so it can be manipulated...
+    StringBuffer b = new StringBuffer();
+    // Prepend any extra FreeMarker content that should be handled transparently.
+    // "normalizeNewlines" is used to ensure that output has line breaks consistent with the OS (e.g., so that
+    // results can be edited in Notepad on Windows).
+    String nl = System.getProperty("line.separator");
+    b.append("<@normalizeNewlines>" + nl );
+    List<String> templateLines = new ArrayList<String>();
+    if ( inputFile != null ) {
+        templateLines = IOUtil.fileToStringList(inputFile);
+    }
+    b.append(StringUtil.toString(templateLines,nl));
+    b.append(nl + "</@normalizeNewlines>" );
+    Template template = null;
+    boolean error = false;
+    try {
+        template = new Template("template", new StringReader(b.toString()), config);
+    }
+    catch ( Exception e1 ) {
+        message = "Freemarker error expanding command template file \"" + inputFile +
+            "\" + (" + e1 + ") template text (with internal inserts at ends) =" + nl +
+            formatTemplateForWarning(templateLines,nl);
+        Message.printWarning ( warningLevel, 
+        MessageUtil.formatMessageTag(commandTag, ++warningCount),routine, message );
+        Message.printWarning ( 3, routine, e1 );
+        status.addToLog(CommandPhaseType.RUN,
+        new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Check template file syntax for Freemarker markup errors."));
+        error = true;
+    }
+    if ( !error ) {
+        // Create a model
+        Map<String,Object> model = new HashMap<String,Object>();
+        TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
+        if ( processor instanceof TSCommandProcessor ) {
+            // Add properties from the processor
+            Collection<String> propertyNames = tsprocessor.getPropertyNameList(true,true);
+            for ( String propertyName : propertyNames ) {
+                model.put(propertyName, tsprocessor.getPropContents(propertyName) );
+            }
+            // Add single column tables from the processor, using the table ID as the object key
+            if ( useTables ) {
+                @SuppressWarnings("unchecked")
+				List<DataTable> tables = (List<DataTable>)tsprocessor.getPropContents ( "TableResultsList" );
+                Object tableVal;
+                for ( DataTable table: tables ) {
+                    if ( table.getNumberOfFields() == 1 ) {
+                        // One-column table so add as a hash (list) property in the data model
+                        int numRecords = table.getNumberOfRecords();
+                        SimpleSequence list = new SimpleSequence();
+                        for ( int irec = 0; irec < numRecords; irec++ ) {
+                            // Check for null because this fouls up the template
+                            tableVal = table.getFieldValue(irec, 0);
+                            if ( tableVal == null ) {
+                                tableVal = "";
+                            }
+                            list.add ( tableVal );
+                        }
+                        if ( Message.isDebugOn ) {
+                            Message.printStatus(2, routine, "Passing 1-column table \"" + table.getTableID() +
+                                "\" (" + numRecords + " rows) to template model.");
+                        }
+                        model.put(table.getTableID(), list );
+                    }
+                }
+            }
+        }
+        if ( outputFile != null ) {
+            // Expand the template to the output file
+            FileOutputStream fos = new FileOutputStream( outputFile );
+            PrintWriter out = new PrintWriter ( fos );
+            try {
+                template.process (model, out);
+            }
+            catch ( Exception e1 ) {
+                message = "Freemarker error expanding command template file \"" + inputFile +
+                    "\" + (" + e1 + ") template text (with internal inserts at ends) =\n" +
+                    formatTemplateForWarning(templateLines,nl);
+                Message.printWarning ( warningLevel, 
+                MessageUtil.formatMessageTag(commandTag, ++warningCount),routine, message );
+                Message.printWarning ( 3, routine, e1 );
+                status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Check template file syntax for Freemarker markup errors."));
+            }
+            finally {
+                out.close();
+            }
+        }
+    }
+    return warningCount;
+}
+
+/**
+Format the template for a warning message.  Add line numbers before.
+@param templateLines template file as a list of String
+@param nl newline character
+*/
+private static StringBuffer formatTemplateForWarning ( List<String> templateLines, String nl )
+{   StringBuffer templateFormatted = new StringBuffer();
+    new StringBuffer();
+    int lineNumber = 1;
+    // Don't use space after number because HTML viewer may split and make harder to read
+    templateFormatted.append ( StringUtil.formatString(lineNumber++,"%d") + ":<@normalizeNewlines>" + nl );
+    for ( String line : templateLines ) {
+        templateFormatted.append ( StringUtil.formatString(lineNumber++,"%d") + ":" + line + nl );
+    }
+    templateFormatted.append ( StringUtil.formatString(lineNumber,"%d") + ":</@normalizeNewlines>" + nl );
+    return templateFormatted;
 }
 
 /**

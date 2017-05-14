@@ -236,10 +236,13 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Process a time series product definition file (typically named *.tsp) to create a graph product." ),
+		"Process a time series product file (TSP file, typically named *.tsp) to create a graph product." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify paths relative to the working directory, or use an absolute path."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"If the TSP file contains a comment #@template then the file will be expanded similar to ExpandTemplateFile() and then used."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (

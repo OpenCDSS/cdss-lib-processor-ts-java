@@ -98,6 +98,11 @@ Position in the iterator object list for processing.
 private int iteratorObjectListIndex = -1;
 
 /**
+ * List that is reused to pass problems back from next() function.
+ */
+private List<String> nextProblems = new ArrayList<String>();
+
+/**
 Constructor.
 */
 public For_Command ()
@@ -407,7 +412,14 @@ public boolean next ()
 	            	Message.printDebug(1, routine, "Initialized iterator object to: " + this.iteratorObject );
 	            }
 	            // Also need to set properties
-	            nextSetPropertiesFromTable();
+	            nextSetPropertiesFromTable(this.nextProblems);
+        		if ( this.nextProblems.size() > 0 ) {
+        			StringBuilder b = new StringBuilder();
+	        		for ( String problem : this.nextProblems ) {
+	        			b.append(problem + "\n");
+	        		}
+	                throw new RuntimeException ( b.toString() );
+        		}
 	            return true;
 	        }
 	        catch ( Exception e ) {
@@ -442,7 +454,14 @@ public boolean next ()
 	        	// If properties were requested, set.  The column number is looked up each time because columns may be added
 	        	// in the loop.
 	        	if ( this.tablePropertyMap != null ) {
-	        		nextSetPropertiesFromTable();
+	        		nextSetPropertiesFromTable(this.nextProblems);
+	        		if ( this.nextProblems.size() > 0 ) {
+	        			StringBuilder b = new StringBuilder();
+		        		for ( String problem : this.nextProblems ) {
+		        			b.append(problem + "\n");
+		        		}
+		                throw new RuntimeException ( b.toString() );
+	        		}
 	        	}
 	            return true;
 	        }
@@ -487,10 +506,13 @@ public boolean next ()
 }
 
 /**
-Set properties from the table.
+Set processor properties from the table using the TablePropertyMap command parameter.
+@param problems non-null list of problems to populate.  If any issues occur looking up the table column,
+then the problems list will have non-zero length upon return and the list can be populated.
 */
-private void nextSetPropertiesFromTable() {
+private void nextSetPropertiesFromTable ( List<String> problems) {
 	String message, routine = getClass().getSimpleName() + ".nextSetPropertiesFromTable";
+	problems.clear();
 	TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
 	Hashtable<String,String> map = this.tablePropertyMap;
 	int propertyColumnNum = -1;
@@ -506,8 +528,9 @@ private void nextSetPropertiesFromTable() {
 	        propertyColumnNum = table.getFieldIndex(key);
 	    }
 	    catch ( Exception e ) {
-	    	message = "Column \"" + key + "\" not found in table (" + e + ").  Cannot set corresponding property.";
+	    	message = "Column \"" + key + "\" not found in table (" + e + ").  Cannot set corresponding property \"" + propertyName + "\".";
 	        Message.printWarning(3, routine, message);
+	        problems.add(message);
 	        continue;
 	    }
 	    Object o = null;
@@ -519,7 +542,8 @@ private void nextSetPropertiesFromTable() {
 	    	o = table.getFieldValue(this.iteratorObjectListIndex, propertyColumnNum);
 	    }
 	    catch ( Exception e ) {
-	    	message = "Error getting property value from table (" + e + ").";
+	    	message = "Error getting property value from table for property \"" + propertyName + "\" (" + e + ").";
+	    	problems.add(message);
 	        Message.printWarning(3, routine, message);
 	        continue;
 	    }
@@ -539,8 +563,9 @@ private void nextSetPropertiesFromTable() {
 	                new CommandLogRecord(CommandStatusType.FAILURE,
 	                        message, "Report the problem to software support." ) );
 	        */
-	    	message = "Error setting property value (" + e + ").";
+	    	message = "Error setting property \"" + propertyName + " value (" + e + ").";
 	        Message.printWarning(3, routine, message);
+	        problems.add(message);
 	        continue;
 		}
 	}

@@ -4663,6 +4663,7 @@ throws Exception
 	// series.  Always check the new convention first.
 
 	TS ts = null;
+	try {
 	if ((dataStore != null) && (dataStore instanceof ColoradoWaterHBGuestDataStore) ) {
         // New style TSID~dataStore
         ColoradoWaterHBGuestDataStore cwds = (ColoradoWaterHBGuestDataStore)dataStore;
@@ -4983,6 +4984,7 @@ throws Exception
             ts = pds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
         }
         catch ( Exception te ) {
+        	// If there is an issue with plugin jars, a NoClassDefFoundError may be thrown, which will be caught outside this
             Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 +
                 "\" from plugin data store \"" + dataStore.getName() + "\" (" + te + ")." );
             Message.printWarning ( 3, routine, te );
@@ -5183,6 +5185,14 @@ throws Exception
 	    Message.printWarning( 3, routine, message );
 	    throw new TimeSeriesNotFoundException ( message );
 	}
+	}
+	catch ( NoClassDefFoundError nce ) {
+		String message = "Error loading class to handle \"" + tsidentString + "\" (" + nce +
+		    ") - check log file and confirm datastore plugin configuration.";
+	    Message.printWarning ( 2, routine, message );
+        Message.printWarning ( 3, routine, nce );
+        throw new TimeSeriesNotFoundException ( message );
+	}
 	return ts;
 }
 
@@ -5224,65 +5234,25 @@ throws Exception
 		full_tsid_check = true;
 	}
 
-	// If the tsident_string contains a [, then assume that the TSID is
-	// actually a template TSID and a wildcard array is being used.  This
-	// "trick" is used to avoid requiring another argument to the TSSupplier
-	// interface, although an argument may be added at some point.
-
-	// FIXME SAM 2007-06-21 This is a problem because TSIDs allow sequence numbers for ensembles.
-	// TSIDs with sequence number have a [] at the end so do a
-	// fix - if 3 "." are before the [], the assume the [] is for ensembles.
-	boolean is_template = false;
-	int pos = tsident_string.indexOf("[");
-	int period_count = 0;
-	for ( int i = 0; i < pos; i++ ) {
-		if ( tsident_string.charAt(i) == '.' ) {
-			++period_count;
-		}
-	}
-	int array_index = -1;	// Indicates an array index of * (implement later).
-	if ( (pos >= 0) && (period_count <3) ) {
-		is_template = true;
-		Message.printStatus ( 2, routine, "Requested TSID \"" + tsident_string + " is a template.");
-		// Figure out the array position...
-		String array_index_string = StringUtil.getToken ( tsident_string.substring(pos + 1), "]", 0, 0 );
-		if ( array_index_string.equals("*") ) {
-			array_index = -1;
-		}
-		else if ( StringUtil.isInteger(array_index_string) ) {
-			array_index = StringUtil.atoi(array_index_string);
-		}
-		else {
-            // Invalid...
-			Message.printWarning ( 2, routine, "TSID \"" + tsident_string + "\" array index is invalid" );
-			throw new Exception ( "TSID \"" + tsident_string + "\" array index is invalid" );
-		}
-		// Strip off the array information because it will confuse the following code...
-		tsident_string = tsident_string.substring(0,pos);
-	}
-
 	if ( size != 0 ) {
 		TS ts = null;
 		TSIdent tsident = null;
 
 		//  First try the aliases (not supported for templates)...
 
-		if ( !is_template ) {
-			for ( int i = 0; i < size; i++ ) {
-				ts = __tslist.get(i);
-				if ( ts == null ) {
-					continue;
-				}
-				if ( ts.getAlias().equalsIgnoreCase( tsident_string) ) {
-					Message.printStatus ( 2, routine,"Matched alias." );
-					return ts;
-				}
+		for ( int i = 0; i < size; i++ ) {
+			ts = __tslist.get(i);
+			if ( ts == null ) {
+				continue;
+			}
+			if ( ts.getAlias().equalsIgnoreCase( tsident_string) ) {
+				Message.printStatus ( 2, routine,"Matched alias." );
+				return ts;
 			}
 		}
 
 		// Now try the TSIDs, including the input fields if necessary...
 
-		int match_count = 0;
 		for ( int i = 0; i < size; i++ ) {
 			ts = __tslist.get(i);
 			if ( ts == null ) {
@@ -5292,44 +5262,18 @@ throws Exception
 			if ( Message.isDebugOn ) {
 				Message.printDebug ( 2, routine, "Checking tsid \"" + tsident.toString(true) + "\"" );
 			}
-			if ( is_template ) {
-				if ( tsident.matches(tsident_string, true, full_tsid_check)){
-					Message.printStatus ( 2, routine, "Matched TSID for template." );
-					// See if this is the one we want - both are zero initial value...
-					if ( (array_index < 0) || (match_count == array_index) ) {
-						// TODO - need way to track * matches to not return the same TS each match
-						return ts;
-					}
-					// Else increment...
-					++match_count;
-				}
-			}
-			else {
-			    // Check the identifier strings using full identifiers.
-				// The TSID being requested controls the level of comparison.
-				// If it has the input fields, then they will be checked.
-				if ( tsident.equals(tsident_string,full_tsid_check) ) {
-					Message.printStatus ( 1, routine,"Matched TSID using TSID with input fields." );
-					return ts;
-				}
+		    // Check the identifier strings using full identifiers.
+			// The TSID being requested controls the level of comparison.
+			// If it has the input fields, then they will be checked.
+			if ( tsident.equals(tsident_string,full_tsid_check) ) {
+				Message.printStatus ( 1, routine,"Matched TSID using TSID with input fields." );
+				return ts;
 			}
 		}
 	}
 
-	if ( is_template ) {
-		// If a matching time series was not found, there has been
-		// an error because there is no way to easily read a list of
-		// time series with wildcards and get the list back in the order
-		// that is expected by the template.  The calling code should
-		// handle the exception and use a null time series if needed.
-		Message.printWarning ( 2, routine,
-		"TSID \"" + tsident_string + "\" could not be matched." );
-		throw new Exception ( "TSID \"" + tsident_string + "\" could not be matched." );
-	}
-	else {
-	    Message.printStatus ( 2, routine,
-			"TSID \"" + tsident_string + "\" could not be matched in memory.  Trying to read using TSID." );
-	}
+    Message.printStatus ( 2, routine,
+    		"TSID \"" + tsident_string + "\" could not be matched in memory.  Trying to read using TSID." );
 
 	// If not found, try reading from a persistent source.  If called with
 	// an alias, this will fail.  If called with a TSID, this should succeed...

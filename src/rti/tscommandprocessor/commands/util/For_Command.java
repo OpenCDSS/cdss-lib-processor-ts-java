@@ -637,6 +637,10 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		this.iteratorIsList = true;
 	}
 	String SequenceStart = parameters.getValue ( "SequenceStart" );
+	if ( (SequenceStart != null) && (SequenceStart.indexOf("${") >= 0) ) {
+		// Can specify with property
+		SequenceStart = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceStart);
+	}
 	Double sequenceStartD = null;
 	Integer sequenceStartI = null;
 	if ( (SequenceStart != null) && !SequenceStart.isEmpty() ) {
@@ -651,6 +655,10 @@ throws CommandWarningException, CommandException, InvalidCommandParameterExcepti
 		this.iteratorIsSequence = true;
 	}
 	String SequenceEnd = parameters.getValue ( "SequenceEnd" );
+	if ( (SequenceEnd != null) && (SequenceEnd.indexOf("${") >= 0) ) {
+		// Can specify with property
+		SequenceEnd = TSCommandProcessorUtil.expandParameterValue(processor, this, SequenceEnd);
+	}
 	Double sequenceEndD = null;
 	Integer sequenceEndI = null;
 	if ( (SequenceEnd != null) && !SequenceEnd.isEmpty() ) {

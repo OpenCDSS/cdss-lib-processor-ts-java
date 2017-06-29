@@ -181,6 +181,7 @@ throws InvalidCommandParameterException
     validList.add ( "IntegerColumns" );
     validList.add ( "TextColumns" );
     validList.add ( "Top" );
+    validList.add ( "RowCountProperty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -324,6 +325,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		TextColumns = TSCommandProcessorUtil.expandParameterValue(processor, this, TextColumns);
 	}
 	String Top = parameters.getValue ( "Top" );
+    String RowCountProperty = parameters.getValue ( "RowCountProperty" );
+    if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() && (commandPhase == CommandPhaseType.RUN) && RowCountProperty.indexOf("${") >= 0 ) {
+    	RowCountProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, RowCountProperty);
+    }
 
     /* FIXME enable the code
  	if ((__Columns_intArray == null) || (__Columns_intArray.length == 0)) {
@@ -447,13 +452,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		throw new CommandWarningException ( message );
     	}
     	
-    	if ( warning_count > 0 ) {
-    		message = "There were " + warning_count + " warnings processing the command.";
-    		Message.printWarning ( warning_level,
-    			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
-    		throw new CommandWarningException ( message );
-    	}
-        
         // Set the table in the processor...
 
         PropList request_params = new PropList ( "" );
@@ -470,6 +468,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
         }
+        
+	    // Set the property indicating the number of rows in the table
+        if ( (RowCountProperty != null) && !RowCountProperty.isEmpty() ) {
+            int rowCount = table.getNumberOfRecords();
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", RowCountProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(rowCount) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + RowCountProperty + "\") from processor.";
+                Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Create an empty table and set the ID
@@ -477,6 +495,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         table.setTableID ( TableID );
         setDiscoveryTable ( table );
     }
+    
+	if ( warning_count > 0 ) {
+		message = "There were " + warning_count + " warnings processing the command.";
+		Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
+		throw new CommandWarningException ( message );
+	}
 
     status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
@@ -507,6 +532,7 @@ public String toString ( PropList props )
 	String IntegerColumns = props.getValue("IntegerColumns");
 	String TextColumns = props.getValue("TextColumns");
 	String Top = props.getValue("Top");
+	String RowCountProperty = props.getValue( "RowCountProperty" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -574,6 +600,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "Top=" + Top );
 	}
+    if ( (RowCountProperty != null) && (RowCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RowCountProperty=\"" + RowCountProperty + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

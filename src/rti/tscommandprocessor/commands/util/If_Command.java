@@ -62,6 +62,7 @@ throws InvalidCommandParameterException
 	String Condition = parameters.getValue ( "Condition" );
 	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
 	String PropertyIsNotDefinedOrIsEmpty = parameters.getValue ( "PropertyIsNotDefinedOrIsEmpty" );
+	String PropertyIsDefined = parameters.getValue ( "PropertyIsDefined" );
 	String TSExists = parameters.getValue ( "TSExists" );
 	String warning = "";
 	String message;
@@ -82,6 +83,9 @@ throws InvalidCommandParameterException
 	if ( (PropertyIsNotDefinedOrIsEmpty != null) && !PropertyIsNotDefinedOrIsEmpty.isEmpty() ) {
 		propertyDefinedProvided = true;
 	}
+	if ( (PropertyIsDefined != null) && !PropertyIsDefined.isEmpty() ) {
+		propertyDefinedProvided = true;
+	}
 
     if ( (Name == null) || Name.equals("") ) {
         message = "A name for the If() block must be specified";
@@ -90,7 +94,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the name." ) );
     }
     if ( !conditionProvided && !tsexistsProvided && !propertyDefinedProvided ) {
-        message = "A condition, PropertyIsNotDefinedOrIsEmpty, or TSExists must be specified";
+        message = "A condition, PropertyIsNotDefinedOrIsEmpty, PropertyIsDefined, or TSExists must be specified";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE, message, "Specify the condition." ) );
@@ -105,11 +109,12 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(5);
+    List<String> validList = new ArrayList<String>(6);
 	validList.add ( "Name" );
 	validList.add ( "Condition" );
 	validList.add ( "CompareAsStrings" );
 	validList.add ( "PropertyIsNotDefinedOrIsEmpty" );
+	validList.add ( "PropertyIsDefined" );
 	validList.add ( "TSExists" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 	
@@ -192,6 +197,10 @@ throws CommandWarningException, CommandException
 	String PropertyIsNotDefinedOrIsEmpty = parameters.getValue ( "PropertyIsNotDefinedOrIsEmpty" );
 	if ( (PropertyIsNotDefinedOrIsEmpty != null) && (PropertyIsNotDefinedOrIsEmpty.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
 		PropertyIsNotDefinedOrIsEmpty = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyIsNotDefinedOrIsEmpty);
+	}
+	String PropertyIsDefined = parameters.getValue ( "PropertyIsDefined" );
+	if ( (PropertyIsDefined != null) && (PropertyIsDefined.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
+		PropertyIsDefined = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyIsDefined);
 	}
 	String TSExists = parameters.getValue ( "TSExists" );
 	if ( (TSExists != null) && (TSExists.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN)) {
@@ -495,6 +504,32 @@ throws CommandWarningException, CommandException
 	    	}
             setConditionEval(conditionEval);
 	    }
+	    if ( (PropertyIsDefined != null) && !PropertyIsDefined.isEmpty() ) {
+	    	// Check to see whether the specified property exists
+	    	Object o = processor.getPropContents(PropertyIsDefined);
+	    	conditionEval = true; // Assume property is defined and is not null
+	    	if ( o == null ) {
+	    		// Property is null so condition evaluates to false
+	    		conditionEval = false;
+	    	}
+	    	else {
+		    	if ( o instanceof Double ) {
+		    		Double d = (Double)o;
+		    		if ( d.isNaN() ) {
+		    			// Property is Double NaN so condition evaluates to false
+		    			conditionEval = false;
+		    		}
+		    	}
+		    	else if ( o instanceof Float ) {
+		    		Float f = (Float)o;
+		    		if ( f.isNaN() ) {
+		    			// Property is Float NaN so condition evaluates to false
+		    			conditionEval = false;
+		    		}
+		    	}
+	    	}
+            setConditionEval(conditionEval);
+	    }
 	    if ( (TSExists != null) && !TSExists.isEmpty() ) {
 	        // Want to check whether a time series exists - this is ANDed to the condition
 	        // Get the time series to process.  The time series list is searched backwards until the first match...
@@ -559,9 +594,10 @@ private void setConditionEval ( boolean conditionEval )
 
 /**
 Return the string representation of the command.
+@param props list of properties to format for output
 */
 public String toString ( PropList props )
-{   String [] order = { "Name", "Condition", "CompareAsStrings", "PropertyIsNotDefinedOrIsEmpty", "TSExists" };
+{   String [] order = { "Name", "Condition", "CompareAsStrings", "PropertyIsNotDefinedOrIsEmpty", "PropertyIsDefined", "TSExists" };
 	return super.toString(props,order);
 }
 

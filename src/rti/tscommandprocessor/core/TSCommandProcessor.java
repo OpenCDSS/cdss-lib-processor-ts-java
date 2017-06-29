@@ -44,6 +44,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
+
+import org.openwaterfoundation.network.NodeNetwork;
+
 import java.awt.event.WindowListener; // To know when graph window closes to close entire application
 
 import RTi.Util.IO.Command;
@@ -223,6 +226,11 @@ private volatile boolean __cancel_processing_requested = false;
 List of DataTable objects maintained by the processor.
 */
 List<DataTable> __TableList = new Vector<DataTable>();
+
+/**
+List of NodeNetwork objects maintained by the processor.
+*/
+List<NodeNetwork> __NodeNetworkList = new Vector<NodeNetwork>();
 
 /**
 List of TimeSeriesView objects maintained by the processor.
@@ -1181,6 +1189,9 @@ public Object getPropContents ( String propName ) throws Exception
 	else if ( propName.equalsIgnoreCase("InputStart") ) {
 		return getPropContents_InputStart();
 	}
+    else if ( propName.equalsIgnoreCase("NetworkResultsList") ) {
+        return getPropContents_NetworkResultsList();
+    }
 	else if ( propName.equalsIgnoreCase("OutputComments") ) {
 		return getPropContents_OutputComments();
 	}
@@ -1385,6 +1396,15 @@ Handle the InputStart property request.
 private DateTime getPropContents_InputStart()
 {
 	return __tsengine.getInputStart();
+}
+
+/**
+Handle the NetworkResultsList property request.
+@return The network results list, as a List of NodeNetwork.
+*/
+private List<NodeNetwork> getPropContents_NetworkResultsList()
+{
+    return __NodeNetworkList;
 }
 
 /**
@@ -2228,6 +2248,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("GetHydroBaseDMI") ) {
 		return processRequest_GetHydroBaseDMI ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("GetNetwork") ) {
+        return processRequest_GetNetwork ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("GetNwsrfsDMI") ) {
         return processRequest_GetNwsrfsDMI ( request, request_params );
     }
@@ -2301,6 +2324,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("SetHydroBaseDMI") ) {
 		return processRequest_SetHydroBaseDMI ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("SetNetwork") ) {
+        return processRequest_SetNetwork ( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("SetNWSRFSFS5FilesDMI") ) {
 		return processRequest_SetNWSRFSFS5FilesDMI ( request, request_params );
 	}
@@ -2530,6 +2556,44 @@ throws Exception
 	// This will be set in the bean because the PropList is a reference...
 	results.setUsingObject("HydroBaseDMI", dmi );
 	return bean;
+}
+
+/**
+Process the GetNetwork request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetNetwork (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "NetworkID" );
+    if ( o == null ) {
+            String warning = "Request GetNetwork() does not provide a NetworkID parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String NetworkID = (String)o;
+    int size = 0;
+    if ( __NodeNetworkList != null ) {
+        size = __NodeNetworkList.size();
+    }
+    NodeNetwork network = null;
+    boolean found = false;
+    for ( int i = 0; i < size; i++ ) {
+        network = (NodeNetwork)__NodeNetworkList.get(i);
+        if ( network.getNetworkId().equalsIgnoreCase(NetworkID) ) {
+            found = true;
+            break;
+        }
+    }
+    if ( !found ) {
+        network = null;
+    }
+    PropList results = bean.getResultsPropList();
+    // This will be set in the bean because the PropList is a reference...
+    results.setUsingObject("Network", network );
+    return bean;
 }
 
 /**
@@ -3418,6 +3482,40 @@ throws Exception
 	__tsengine.setHydroBaseDMI( dmi, true );
 	// No results need to be returned.
 	return bean;
+}
+
+/**
+Process the SetNetwork request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetNetwork (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "Network" );
+    if ( o == null ) {
+            String warning = "Request SetNetwork() does not provide a Network parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ("This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    NodeNetwork o_Network = (NodeNetwork)o;
+    // Loop through the networks in memory.  If a matching network ID is found, reset.  Otherwise, add at the end.
+    int size = __NodeNetworkList.size();
+    NodeNetwork nodeNetwork;
+    boolean found = false;
+    for ( int i = 0; i < size; i++ ) {
+        nodeNetwork = (NodeNetwork)__NodeNetworkList.get(i);
+        if ( nodeNetwork.getNetworkId().equalsIgnoreCase(o_Network.getNetworkId())) {
+        	__NodeNetworkList.set(i,o_Network);
+            found = true;
+        }
+    }
+    if ( !found ) {
+    	__NodeNetworkList.add ( o_Network );
+    }
+    // No data are returned in the bean.
+    return bean;
 }
 
 /**

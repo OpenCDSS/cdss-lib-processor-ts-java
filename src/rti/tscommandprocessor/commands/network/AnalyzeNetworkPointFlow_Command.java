@@ -39,9 +39,9 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
-This class initializes, checks, and runs the CopyTable() command.
+This class initializes, checks, and runs the AnalyzeNetworkPointFlow() command.
 */
-public class AnalyzeNetworkPointFlow_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class AnalyzeNetworkPointFlow_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
 
 /**

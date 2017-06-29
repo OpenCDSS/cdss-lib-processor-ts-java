@@ -95,11 +95,11 @@ throws InvalidCommandParameterException
 						message, "Specify the remote FTP site."));
 	}
     if ( (DestinationFolder == null) || (DestinationFolder.length() == 0) ) {
-        message = "The destination folder: \"" + DestinationFolder + "\" must be specified.";
+        message = "The destination folder must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a destination folder." ) );
+                        message, "Specify a destination folder (for example . to indicate working folder)." ) );
     }
     else {
         String working_dir = null;

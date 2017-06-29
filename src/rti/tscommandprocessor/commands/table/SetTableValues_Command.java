@@ -140,13 +140,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	ColumnFilters = TSCommandProcessorUtil.expandParameterValue(processor, this, ColumnFilters);
     }
     Hashtable<String,String> columnFilters = new Hashtable<String,String>();
+    Message.printStatus(2, routine, "Processing ColumnFilters \"" + ColumnFilters + "\"");
     if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
         // First break map pairs by comma
         List<String>pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );
-        // Now break pairs and put in hashtable
+        // Now break pairs and put in hashtable.  Right side could contain colon if dynamic data so split manually
         for ( String pair : pairs ) {
-            String [] parts = pair.split(":");
-            columnFilters.put(parts[0].trim(), parts[1].trim() );
+        	int pos = pair.indexOf(":");
+        	if ( pos > 0 ) {
+        		columnFilters.put(pair.substring(0,pos).trim(), pair.substring(pos + 1).trim() );
+        	}
         }
     }
     String ColumnValues = parameters.getValue ( "ColumnValues" );

@@ -214,6 +214,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String URI = parameters.getValue ( "URI" );
 	if ( URI != null ) {
 	    URI = TSCommandProcessorUtil.expandParameterValue(processor,this,URI);
+	    Message.printStatus(2, routine, "URI after expanding is \"" + URI + "\"");
 	}
     String LocalFile = parameters.getValue ( "LocalFile" );
     boolean doOutputFile = false;
@@ -221,8 +222,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		LocalFile = TSCommandProcessorUtil.expandParameterValue(processor,this,LocalFile);
 		doOutputFile = true;
 	}
-	String LocalFile_full = IOUtil.verifyPathForOS(
-        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LocalFile) );
+	String LocalFile_full = LocalFile;
+	if ( (LocalFile != null) && !LocalFile.isEmpty() ) {
+		LocalFile_full = IOUtil.verifyPathForOS(
+	        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LocalFile) );
+	}
 	boolean doOutputProperty = false;
 	String OutputProperty = parameters.getValue ( "OutputProperty" );
 	if ( (OutputProperty != null) && !OutputProperty.isEmpty() ) {

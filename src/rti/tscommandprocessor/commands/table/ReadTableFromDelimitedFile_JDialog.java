@@ -62,6 +62,7 @@ private JTextField __DoubleColumns_JTextField = null;
 private JTextField __IntegerColumns_JTextField = null;
 private JTextField __TextColumns_JTextField = null;
 private JTextField __Top_JTextField = null;
+private JTextField __RowCountProperty_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
@@ -158,6 +159,7 @@ private void checkInput ()
 	String IntegerColumns  = __IntegerColumns_JTextField.getText().trim();
 	String TextColumns  = __TextColumns_JTextField.getText().trim();
 	String Top  = __Top_JTextField.getText().trim();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -193,6 +195,9 @@ private void checkInput ()
     if ( Top.length() > 0 ) {
         props.set ( "Top", Top );
     }
+    if ( RowCountProperty.length() > 0 ) {
+        props.set ( "RowCountProperty", RowCountProperty );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -220,6 +225,7 @@ private void commitEdits ()
 	String IntegerColumns  = __IntegerColumns_JTextField.getText().trim();
 	String TextColumns  = __TextColumns_JTextField.getText().trim();
 	String Top  = __Top_JTextField.getText().trim();
+	String RowCountProperty = __RowCountProperty_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "Delimiter", Delimiter );
@@ -231,6 +237,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "IntegerColumns", IntegerColumns );
 	__command.setCommandParameter ( "TextColumns", TextColumns );
 	__command.setCommandParameter ( "Top", Top );
+	__command.setCommandParameter ( "RowCountProperty", RowCountProperty );
 }
 
 /**
@@ -418,6 +425,16 @@ private void initialize ( JFrame parent, ReadTableFromDelimitedFile_Command comm
     JGUIUtil.addComponent(main_JPanel,
         new JLabel ("Optional - only process top N rows."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Row count property:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RowCountProperty_JTextField = new JTextField ( "", 20 );
+    __RowCountProperty_JTextField.setToolTipText("Specify the property name for the copied table row count, can use ${Property} notation");
+    __RowCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RowCountProperty_JTextField,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - processor property to set as output table row count." ),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -509,6 +526,7 @@ private void refresh ()
 	String IntegerColumns = "";
 	String TextColumns = "";
 	String Top = "";
+    String RowCountProperty = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
@@ -523,6 +541,7 @@ private void refresh ()
 		IntegerColumns = props.getValue ( "IntegerColumns" );
 		TextColumns = props.getValue ( "TextColumns" );
 		Top = props.getValue ( "Top" );
+		RowCountProperty = props.getValue ( "RowCountProperty" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
         }
@@ -556,6 +575,9 @@ private void refresh ()
         if ( Top != null ) {
             __Top_JTextField.setText ( Top );
         }
+        if ( RowCountProperty != null ) {
+            __RowCountProperty_JTextField.setText ( RowCountProperty );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TableID = __TableID_JTextField.getText().trim();
@@ -569,6 +591,7 @@ private void refresh ()
 	IntegerColumns = __IntegerColumns_JTextField.getText().trim();
 	TextColumns = __TextColumns_JTextField.getText().trim();
 	Top = __Top_JTextField.getText().trim();
+	RowCountProperty = __RowCountProperty_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
@@ -581,6 +604,7 @@ private void refresh ()
 	props.add ( "IntegerColumns=" + IntegerColumns );
 	props.add ( "TextColumns=" + TextColumns );
 	props.add ( "Top=" + Top );
+	props.add ( "RowCountProperty=" + RowCountProperty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {

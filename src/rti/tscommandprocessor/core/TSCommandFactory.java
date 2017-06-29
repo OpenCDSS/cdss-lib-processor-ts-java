@@ -74,6 +74,7 @@ import rti.tscommandprocessor.commands.modsim.ReadMODSIM_Command;
 
 // Network commands
 import rti.tscommandprocessor.commands.network.AnalyzeNetworkPointFlow_Command;
+import rti.tscommandprocessor.commands.network.CreateNetworkFromTable_Command;
 
 // NRCS commands
 import rti.tscommandprocessor.commands.nrcs.awdb.ReadNrcsAwdb_Command;
@@ -541,6 +542,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("CreateFromList") ) {
         return new CreateFromList_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("CreateNetworkFromTable") ) {
+        return new CreateNetworkFromTable_Command ();
     }
     else if ( commandName.equalsIgnoreCase("CreateTimeSeriesEventTable") ) {
         return new CreateTimeSeriesEventTable_Command ();

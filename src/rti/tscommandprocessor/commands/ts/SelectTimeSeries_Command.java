@@ -28,6 +28,8 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
+import cdss.domain.hydrology.network.HydrologyNode;
+import cdss.domain.hydrology.network.HydrologyNodeNetwork;
 
 /**
 This class initializes, checks, and runs the SelectTimeSeries() command.
@@ -220,7 +222,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(10);
+	List<String> validList = new ArrayList<String>(13);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -231,6 +233,9 @@ throws InvalidCommandParameterException
     validList.add ( "PropertyName" );
     validList.add ( "PropertyCriterion" );
     validList.add ( "PropertyValue" );
+    validList.add ( "NetworkID" );
+    validList.add ( "DownstreamNodeID" );
+    validList.add ( "UpstreamNodeIDs" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -359,6 +364,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (PropertyValue != null) && (PropertyValue.indexOf("${") >= 0) ) {
 		PropertyValue = TSCommandProcessorUtil.expandParameterValue(processor, this, PropertyValue);
 	}
+    String NetworkID = parameters.getValue ( "NetworkID" );
+	if ( (NetworkID != null) && (NetworkID.indexOf("${") >= 0) ) {
+		NetworkID = TSCommandProcessorUtil.expandParameterValue(processor, this, NetworkID);
+	}
+    String DownstreamNodeID = parameters.getValue ( "DownstreamNodeID" );
+	if ( (DownstreamNodeID != null) && (DownstreamNodeID.indexOf("${") >= 0) ) {
+		DownstreamNodeID = TSCommandProcessorUtil.expandParameterValue(processor, this, DownstreamNodeID);
+	}
+    String UpstreamNodeIDs = parameters.getValue ( "UpstreamNodeIDs" );
+	if ( (UpstreamNodeIDs != null) && (UpstreamNodeIDs.indexOf("${") >= 0) ) {
+		UpstreamNodeIDs = TSCommandProcessorUtil.expandParameterValue(processor, this, UpstreamNodeIDs);
+	}
+	List<String> upstreamNodeIds = null;
+	if ( (UpstreamNodeIDs != null) && !UpstreamNodeIDs.isEmpty() ) {
+		String [] parts = UpstreamNodeIDs.split(",");
+		upstreamNodeIds = new ArrayList<String>();
+		for ( int i = 0; i < parts.length; i++ ) {
+			upstreamNodeIds.add(parts[i].trim());
+		}
+	}
 	
 	// If necessary, get the list of all time series...
 	List<TS> tslistAll = new Vector<TS>();
@@ -481,6 +506,98 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		command_tag,++warning_count), routine, message );
 		throw new CommandException ( message );
 	}
+	
+	// Get the network
+	
+	HydrologyNodeNetwork network = null;
+	List<HydrologyNode> foundNetworkNodes = null;
+	if ( (NetworkID != null) && !NetworkID.equals("") ) {
+	    request_params = null;
+	    bean = null;
+        // Get the table to be updated
+        request_params = new PropList ( "" );
+        request_params.set ( "NetworkID", NetworkID );
+        try {
+            bean = processor.processRequest( "GetNetwork", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetNetwork(NetworkID=\"" + NetworkID + "\") from processor.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        }
+        bean_PropList = bean.getResultsPropList();
+        Object o_Network = bean_PropList.getContents ( "Network" );
+        if ( o_Network == null ) {
+            message = "Unable to find network to process using NetworkID=\"" + NetworkID + "\".";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that a network exists with the requested ID." ) );
+        }
+        else {
+        	if ( o_Network instanceof HydrologyNodeNetwork ) {
+        		network = (HydrologyNodeNetwork)o_Network;
+        	}
+        }
+        if ( network != null ) {
+    		// First find the requested node
+        	HydrologyNode downstreamNode = null;
+        	if ( DownstreamNodeID.startsWith("-") ) {
+        		downstreamNode = network.findNode(DownstreamNodeID.substring(1));
+        	}
+        	else {
+        		downstreamNode = network.findNode(DownstreamNodeID);
+        	}
+        	// Also check the upstream nodes to make sure they exist in the network
+        	if ( upstreamNodeIds != null ) {
+	        	for ( String upstreamNodeId : upstreamNodeIds ) {
+	        		HydrologyNode upstreamNode = null;
+	            	if ( upstreamNodeId.startsWith("-") ) {
+	            		upstreamNode = network.findNode(upstreamNodeId.substring(1));
+	            	}
+	            	else {
+	            		upstreamNode = network.findNode(upstreamNodeId);
+	            	}
+	        		if ( upstreamNode == null ) {
+	        			message = "UpstreamNodeID \"" + upstreamNodeId + "\" was not found in the network.";
+	        			Message.printWarning(warning_level,
+	    					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	    					routine, message );
+	                    status.addToLog ( CommandPhaseType.RUN,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message,
+	                            "Verify that the upstream node is in the network." ) );
+	        		}
+	        	}
+        	}
+    		if ( downstreamNode == null ) {
+    			message = "DownstreamNodeID \"" + DownstreamNodeID + "\" was not found in the network.";
+    			Message.printWarning(warning_level,
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+					routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message,
+                        "Verify that the downstream node is in the network." ) );
+    		}
+    		else {
+	    		// Get the nodes upstream of the requested node
+    			// - upstream nodes will limit the search if specified
+	    		foundNetworkNodes = new ArrayList<HydrologyNode>();
+	    		boolean addFirstNode = true;
+	    		if ( DownstreamNodeID.startsWith("-") ) {
+	    			addFirstNode = false;
+	    		}
+	    		network.findUpstreamNodes(foundNetworkNodes, downstreamNode, addFirstNode, upstreamNodeIds);
+	    		Message.printStatus(2, routine, "For downstream node \"" + downstreamNode.getCommonID() + "\" found " + foundNetworkNodes.size() + " nodes");
+	    		for ( HydrologyNode node : foundNetworkNodes ) {
+	    			Message.printStatus(2, routine, "For downstream node \"" + downstreamNode.getCommonID() + "\" found node \"" + node.getCommonID() + "\"");
+	    		}
+    		}
+        }
+	}
 
 	// Now process the time series returned for the initial selection (nts could be zero if ignoring no match)...
 
@@ -506,9 +623,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		
 		try {
 		    boolean selected = false;
+		    int filterCount = 0;
 		    // Further filter based on the property (property selection is additive to above selection)
 		    if ( (PropertyName != null) && !PropertyName.equals("") ) {
 		        // Have a property to check
+		    	++filterCount;
 		        Object property = ts.getProperty(PropertyName);
 		        if ( property != null ) {
 		            // Check the property by type
@@ -522,10 +641,21 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		            }
 		        }
 		    }
-		    else {
-		        // TSList criteria were used to filter to matching time series
-		        Message.printStatus ( 2, routine, "Selecting \"" + ts.getIdentifier() +
-		            "\" based on TSList parameter." );
+		    if ( (NetworkID != null) && !NetworkID.equals("") && (network != null) ) {
+		        // Match nodes in the network
+		    	++filterCount;
+		    	if ( (DownstreamNodeID != null) && !DownstreamNodeID.equals("") && (foundNetworkNodes != null) ) {
+		    		for ( HydrologyNode node : foundNetworkNodes ) {
+		    			if ( node.getCommonID().equalsIgnoreCase(ts.getLocation()) ) {
+		    				// Matched the location so select
+		    				selected = true;
+		    			}
+		    		}
+		    	}
+		    }
+		    if ( filterCount == 0 ) {
+		        // Only TSList criteria were used to filter to matching time series
+		        Message.printStatus ( 2, routine, "Selecting \"" + ts.getIdentifier() + "\" based on TSList parameter." );
 		        selected = true;
 		    }
 	        // Do the selection...
@@ -617,6 +747,9 @@ public String toString ( PropList props )
     String PropertyName = props.getValue( "PropertyName" );
     String PropertyCriterion = props.getValue( "PropertyCriterion" );
     String PropertyValue = props.getValue( "PropertyValue" );
+    String NetworkID = props.getValue( "NetworkID" );
+    String DownstreamNodeID = props.getValue( "DownstreamNodeID" );
+    String UpstreamNodeIDs = props.getValue( "UpstreamNodeIDs" );
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -677,6 +810,24 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
+    }
+    if ( (NetworkID != null) && (NetworkID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NetworkID=\"" + NetworkID + "\"" );
+    }
+    if ( (DownstreamNodeID != null) && (DownstreamNodeID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DownstreamNodeID=\"" + DownstreamNodeID + "\"" );
+    }
+    if ( (UpstreamNodeIDs != null) && (UpstreamNodeIDs.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "UpstreamNodeIDs=\"" + UpstreamNodeIDs + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

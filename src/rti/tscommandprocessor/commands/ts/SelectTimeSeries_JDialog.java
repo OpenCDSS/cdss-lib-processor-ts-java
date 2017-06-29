@@ -61,6 +61,9 @@ private JTextField __TSPosition_JTextField = null;
 private JTextField __PropertyName_JTextField = null;
 private SimpleJComboBox __PropertyCriterion_JComboBox = null;
 private JTextField __PropertyValue_JTextField = null;
+private JTextField __NetworkID_JTextField = null;
+private JTextField __DownstreamNodeID_JTextField = null;
+private JTextField __UpstreamNodeIDs_JTextField = null;
 private SimpleJComboBox	__DeselectAllFirst_JComboBox = null;
 private SimpleJComboBox __IfNotFound_JComboBox = null;
 private JTextField __SelectCountProperty_JTextField = null;
@@ -149,6 +152,9 @@ private void checkInput ()
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyCriterion = __PropertyCriterion_JComboBox.getSelected();
     String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    String NetworkID = __NetworkID_JTextField.getText().trim();
+    String DownstreamNodeID = __DownstreamNodeID_JTextField.getText().trim();
+    String UpstreamNodeIDs = __UpstreamNodeIDs_JTextField.getText().trim();
     __error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -181,6 +187,15 @@ private void checkInput ()
     if ( PropertyValue.length() > 0 ) {
         parameters.set ( "PropertyValue", PropertyValue );
     }
+    if ( NetworkID.length() > 0 ) {
+        parameters.set ( "NetworkID", NetworkID );
+    }
+    if ( DownstreamNodeID.length() > 0 ) {
+        parameters.set ( "DownstreamNodeID", DownstreamNodeID );
+    }
+    if ( UpstreamNodeIDs.length() > 0 ) {
+        parameters.set ( "UpstreamNodeIDs", UpstreamNodeIDs );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -206,6 +221,9 @@ private void commitEdits ()
     String PropertyName = __PropertyName_JTextField.getText().trim();
     String PropertyCriterion = __PropertyCriterion_JComboBox.getSelected();
     String PropertyValue = __PropertyValue_JTextField.getText().trim();
+    String NetworkID = __NetworkID_JTextField.getText().trim();
+    String DownstreamNodeID = __DownstreamNodeID_JTextField.getText().trim();
+    String UpstreamNodeIDs = __UpstreamNodeIDs_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -216,6 +234,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "PropertyName", PropertyName );
     __command.setCommandParameter ( "PropertyCriterion", PropertyCriterion );
     __command.setCommandParameter ( "PropertyValue", PropertyValue );
+    __command.setCommandParameter ( "NetworkID", NetworkID );
+    __command.setCommandParameter ( "DownstreamNodeID", DownstreamNodeID );
+    __command.setCommandParameter ( "UpstreamNodeIDs", UpstreamNodeIDs );
 }
 
 /**
@@ -393,6 +414,54 @@ private void initialize ( JFrame parent, SelectTimeSeries_Command command )
         "2) Select time series with the property using the parameters in the Match Property tab of this command."),
         0, ++yStat, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    // Panel for network
+    
+    int yNet = -1;
+    JPanel net_JPanel = new JPanel();
+    net_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Using Network", net_JPanel );
+
+    JGUIUtil.addComponent(net_JPanel, new JLabel (
+        "Time series can be selected by first matching nodes in a network and then finding time series with location ID that match the selected network node IDs."),
+        0, ++yNet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(net_JPanel, new JLabel (
+        "Network checks are additive to the TSList parameter."),
+        0, ++yNet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(net_JPanel, new JLabel ("Comparisons are case-independent."),
+        0, ++yNet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(net_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+        0, ++yNet, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(net_JPanel, new JLabel ( "Network ID:" ), 
+        0, ++yNet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NetworkID_JTextField = new JTextField ( 20 );
+    __NetworkID_JTextField.setToolTipText("Specify the property name to compare, can use ${Property} notation");
+    __NetworkID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(net_JPanel, __NetworkID_JTextField,
+        1, yNet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(net_JPanel, new JLabel("Required - property name to match."), 
+        3, yNet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(net_JPanel, new JLabel ( "Downstream node ID:" ), 
+        0, ++yNet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DownstreamNodeID_JTextField = new JTextField ( 20 );
+    __DownstreamNodeID_JTextField.setToolTipText("Specify the downstream node ID to begin network search, can use ${Property} notation, prefix with - to not include in result");
+    __DownstreamNodeID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(net_JPanel, __DownstreamNodeID_JTextField,
+        1, yNet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(net_JPanel, new JLabel("Optional - downstream node to bound search."), 
+        3, yNet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(net_JPanel, new JLabel ( "Upstream node ID(s):" ), 
+        0, ++yNet, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __UpstreamNodeIDs_JTextField = new JTextField ( 20 );
+    __UpstreamNodeIDs_JTextField.setToolTipText("Specify the upstream node ID(s) to bound network search, can use ${Property} notation, prefix with - to not include in result");
+    __UpstreamNodeIDs_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(net_JPanel, __UpstreamNodeIDs_JTextField,
+        1, yNet, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(net_JPanel, new JLabel("Optional - upstream nodes to bound search."), 
+        3, yNet, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     // Remaining general parameters
 
     List<String> select_all_first = new Vector<String> ( 3 );
@@ -526,6 +595,9 @@ private void refresh ()
     String PropertyName = "";
     String PropertyCriterion = "";
     String PropertyValue = "";
+    String NetworkID = "";
+    String DownstreamNodeID = "";
+    String UpstreamNodeIDs = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -540,6 +612,9 @@ private void refresh ()
         PropertyName = props.getValue ( "PropertyName" );
         PropertyCriterion = props.getValue ( "PropertyCriterion" );
         PropertyValue = props.getValue ( "PropertyValue" );
+        NetworkID = props.getValue ( "NetworkID" );
+        DownstreamNodeID = props.getValue ( "DownstreamNodeID" );
+        UpstreamNodeIDs = props.getValue ( "UpstreamNodeIDs" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -642,6 +717,15 @@ private void refresh ()
         if ( PropertyValue != null ) {
             __PropertyValue_JTextField.setText ( PropertyValue );
         }
+        if ( NetworkID != null ) {
+            __NetworkID_JTextField.setText ( NetworkID );
+        }
+        if ( DownstreamNodeID != null ) {
+            __DownstreamNodeID_JTextField.setText ( DownstreamNodeID );
+        }
+        if ( UpstreamNodeIDs != null ) {
+            __UpstreamNodeIDs_JTextField.setText ( UpstreamNodeIDs );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -654,6 +738,9 @@ private void refresh ()
     PropertyName = __PropertyName_JTextField.getText().trim();
     PropertyCriterion = __PropertyCriterion_JComboBox.getSelected();
     PropertyValue = __PropertyValue_JTextField.getText().trim();
+    NetworkID = __NetworkID_JTextField.getText().trim();
+    DownstreamNodeID = __DownstreamNodeID_JTextField.getText().trim();
+    UpstreamNodeIDs = __UpstreamNodeIDs_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -665,6 +752,9 @@ private void refresh ()
     props.add ( "PropertyName=" + PropertyName );
     props.add ( "PropertyCriterion=" + PropertyCriterion );
     props.add ( "PropertyValue=" + PropertyValue );
+    props.add ( "NetworkID=" + NetworkID );
+    props.add ( "DownstreamNodeID=" + DownstreamNodeID );
+    props.add ( "UpstreamNodeIDs=" + UpstreamNodeIDs );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

@@ -2835,7 +2835,7 @@ throws Exception
     		commandProfile = command.getCommandProfile(CommandPhaseType.RUN);
     		// Don't use routine in messages... keep log messages shorter
     		if ( !inComment && ifStackOkToRun ) {
-    			Message.printStatus ( 2, "", "-> Start processing command " + (i + 1) + " of " + size + ": \"" + commandString + "\" " );
+    			Message.printStatus ( 2, "", "-> Start processing command " + (i + 1) + " of " + size + ": \"" + commandString + "\"" );
     		}
             stopWatch.clear();
             stopWatch.start();

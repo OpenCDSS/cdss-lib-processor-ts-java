@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.waterml;
+package rti.tscommandprocessor.commands.waterml2;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -22,6 +22,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -45,24 +46,28 @@ import RTi.Util.Message.Message;
 import RTi.Util.Time.TimeInterval;
 
 /**
-Editor for the ReadWaterML() command.
+Editor for the ReadWaterML2() command.
 */
 @SuppressWarnings("serial")
-public class ReadWaterML_JDialog extends JDialog
+public class ReadWaterML2_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null; // Convert between relative and absolute path.
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
-private ReadWaterML_Command __command = null;
+private ReadWaterML2_Command __command = null;
+private JTabbedPane __main_JTabbedPane = null;
 private String __working_dir = null;
-private TSFormatSpecifiersJPanel __Alias_JTextField = null;
-private JTextField __InputStart_JTextField;
-private JTextField __InputEnd_JTextField;
 private JTextField __InputFile_JTextField = null;
+private SimpleJComboBox __ReadMethod_JComboBox = null;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private JTextField __InputStart_JTextField = null;
+private JTextField __InputEnd_JTextField = null;
 private SimpleJComboBox __Interval_JComboBox = null;
 private SimpleJComboBox __RequireDataToMatchInterval_JComboBox = null;
+private JTextField __OutputTimeZoneOffset_JTextField = null;
+private JTextField __OutputTimeZone_JTextField = null;
 //private JTextField __NewUnits_JTextField = null;
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -76,7 +81,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadWaterML_JDialog ( JFrame parent, ReadWaterML_Command command )
+public ReadWaterML2_JDialog ( JFrame parent, ReadWaterML2_Command command )
 {   super(parent, true);
 	initialize ( parent, command );
 }
@@ -91,10 +96,12 @@ public void actionPerformed( ActionEvent event )
 	if ( o == __browse_JButton ) {
 		// Browse for the file to read...
 		JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle( "Select WaterML Time Series File");
-        SimpleFileFilter sff = new SimpleFileFilter("xml","WaterML Time Series File");
+        fc.setDialogTitle( "Select WaterML2 Time Series File");
+        SimpleFileFilter sff = new SimpleFileFilter("xml","WaterML2 Time Series File");
         fc.addChoosableFileFilter(sff);
-        sff = new SimpleFileFilter("waterml","WaterML Time Series File");
+        sff = new SimpleFileFilter("waterml","WaterML2 Time Series File");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("wml","WaterML2 Time Series File");
         fc.addChoosableFileFilter(sff);
 		
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -186,6 +193,9 @@ private void checkInput () {
 	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
+	String ReadMethod  = __ReadMethod_JComboBox.getSelected();
+	String OutputTimeZoneOffset = __OutputTimeZoneOffset_JTextField.getText().trim();
+	String OutputTimeZone = __OutputTimeZone_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
@@ -201,6 +211,9 @@ private void checkInput () {
 	if (InputFile.length() > 0) {
 		props.set("InputFile", InputFile);
 	}
+	if (ReadMethod.length() > 0) {
+		props.set("ReadMethod", ReadMethod);
+	}
 	if (InputStart.length() > 0) {
 		props.set("InputStart", InputStart);
 	}
@@ -213,6 +226,12 @@ private void checkInput () {
     if (RequireDataToMatchInterval.length() > 0) {
         props.set("RequireDataToMatchInterval", RequireDataToMatchInterval);
     }
+	if (OutputTimeZoneOffset.length() > 0) {
+		props.set("OutputTimeZoneOffset", OutputTimeZoneOffset);
+	}
+	if (OutputTimeZone.length() > 0) {
+		props.set("OutputTimeZone", OutputTimeZone);
+	}
 	//if (NewUnits.length() > 0 && !NewUnits.equals("*")) {
 	//	props.set("NewUnits", NewUnits);
 	//}
@@ -234,40 +253,25 @@ already been checked and no errors were detected.
 private void commitEdits() {
     String Alias = __Alias_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
+	String ReadMethod  = __ReadMethod_JComboBox.getSelected();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String Interval  = __Interval_JComboBox.getSelected();
 	String RequireDataToMatchInterval  = __RequireDataToMatchInterval_JComboBox.getSelected();
+	String OutputTimeZoneOffset = __OutputTimeZoneOffset_JTextField.getText().trim();
+	String OutputTimeZone = __OutputTimeZone_JTextField.getText().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
 
     __command.setCommandParameter("Alias", Alias);
 	__command.setCommandParameter("InputFile", InputFile);
+	__command.setCommandParameter("ReadMethod", ReadMethod);
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
 	__command.setCommandParameter("Interval", Interval);
 	__command.setCommandParameter("RequireDataToMatchInterval", RequireDataToMatchInterval);
+	__command.setCommandParameter("OutputTimeZoneOffset", OutputTimeZoneOffset);
+	__command.setCommandParameter("OutputTimeZone", OutputTimeZone);
 	//__command.setCommandParameter("NewUnits", NewUnits);
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable {
-	__browse_JButton = null;
-	__path_JButton = null;
-	__cancel_JButton = null;
-	__ok_JButton = null;
-	__command = null;
-	__working_dir = null;
-	__Alias_JTextField = null;
-	__InputStart_JTextField = null;
-	__InputEnd_JTextField = null;
-	__InputFile_JTextField = null;
-	//__NewUnits_JTextField = null;
-	__Command_JTextArea = null;
-
-	super.finalize();
 }
 
 /**
@@ -276,7 +280,7 @@ Instantiates the GUI components.
 @param app_PropList Properties from application.
 @param command Command to edit.
 */
-private void initialize(JFrame parent, ReadWaterML_Command command) {
+private void initialize(JFrame parent, ReadWaterML2_Command command) {
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
@@ -291,50 +295,82 @@ private void initialize(JFrame parent, ReadWaterML_Command command) {
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Read all the time series from a WaterML file, using " +
-        "information in the file to assign the time series identifier.  WaterML 1.1 is currently supported."),
+        "Read all the time series from a WaterML 2 file, using " +
+        "information in the file to assign the time series identifier.  WaterML 2.0 is currently supported."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full path or relative path (relative to the working " +
-		"directory) for a WaterML file to read." ), 
+        "It is assumed that data in the file have the same interval so that command parameters can be specified for one interval."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "WaterML 2.0 implementations for different data providers vary and software changes may be needed to support a WaterML 2 \"flavor\"."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Specify a full path or relative path (relative to the working directory) for a WaterML 2 file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-
+	
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying the input period will limit data that are " +
-		"available for fill commands but can increase performance." ), 
+		"Specifying the input period will limit data that are available for other commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    __main_JTabbedPane = new JTabbedPane ();
+    JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for general parameters
+    int yGeneral = -1;
+    JPanel general_JPanel = new JPanel();
+    general_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "General", general_JPanel );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"WaterML file to read:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel (	"WaterML 2 file to read:" ), 
+		0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.setToolTipText ("Specify path to input file, can use ${Property}");
 	__InputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
-		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(general_JPanel, __InputFile_JTextField,
+		1, yGeneral, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        JGUIUtil.addComponent(general_JPanel, __browse_JButton,
+		6, yGeneral, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel( "Read method:"),
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ReadMethod_JComboBox = new SimpleJComboBox ( false );
+    __ReadMethod_JComboBox.setToolTipText(__command._API + " will use objects generated from WaterML 2 XML schema, " +
+    	__command._ParseDOM + " will parse XML document directly.");
+    __ReadMethod_JComboBox.add("");
+    __ReadMethod_JComboBox.add(__command._API);
+    __ReadMethod_JComboBox.add(__command._ParseDOM);
+    // Select a default...
+    __ReadMethod_JComboBox.select ( 0 );
+    __ReadMethod_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(general_JPanel, __ReadMethod_JComboBox,
+        1, yGeneral, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Optional - how to read (default=" + __command._ParseDOM + ")."),
+        3, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(general_JPanel, new JLabel("Alias to assign:"),
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.setToolTipText("Specify the time series alias, can use %L, ${Property}, ${ts:property}");
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener(this);
-    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(general_JPanel, __Alias_JTextField,
+        1, yGeneral, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Optional - use %L for location, etc."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Interval:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel( "Interval:"),
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox ( false );
+    __Interval_JComboBox.setToolTipText("Specify the time series interval (see tabs for more information).");
     List<String> intervalChoices = TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR,false,-1);
     intervalChoices.add ( "Irregular" );
     __Interval_JComboBox.setData ( intervalChoices );
@@ -342,53 +378,121 @@ private void initialize(JFrame parent, ReadWaterML_Command command) {
     // Select a default...
     __Interval_JComboBox.select ( 0 );
     __Interval_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval for data."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, __Interval_JComboBox,
+        1, yGeneral, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Required - data interval for data."),
+        3, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Require data to match interval?:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel( "Require data to match interval?:"),
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __RequireDataToMatchInterval_JComboBox = new SimpleJComboBox ( false );
+    __RequireDataToMatchInterval_JComboBox.setToolTipText("Indicate whether data timesteps should align with interval, helps with instantaneous measurements.");
     __RequireDataToMatchInterval_JComboBox.add("");
     __RequireDataToMatchInterval_JComboBox.add(__command._False);
     __RequireDataToMatchInterval_JComboBox.add(__command._True);
     // Select a default...
     __RequireDataToMatchInterval_JComboBox.select ( 0 );
     __RequireDataToMatchInterval_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __RequireDataToMatchInterval_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - require data/interval alignment (default=" + __command._True + ")."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+    JGUIUtil.addComponent(general_JPanel, __RequireDataToMatchInterval_JComboBox,
+        1, yGeneral, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Optional - require data/interval alignment (default=" + __command._True + ")."),
+        3, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel("Units to convert to:"),
+		0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewUnits_JTextField = new JTextField ( "", 10 );
 	__NewUnits_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - request units different from input."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	JGUIUtil.addComponent(general_JPanel, __NewUnits_JTextField,
+		1, yGeneral, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Optional - request units different from input."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     */
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Input start:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.setToolTipText("Specify the input start using YYYY-MM-DD or similar, can use ${Property}");
     __InputStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(general_JPanel, __InputStart_JTextField,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Optional - overrides the global input start."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
-        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Input end:"), 
+        0, ++yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.setToolTipText("Specify the input end using YYYY-MM-DD or similar, can use ${Property}");
     __InputEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(general_JPanel, __InputEnd_JTextField,
+        1, yGeneral, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Optional - overrides the global input end."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Output time zone as offset:"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputTimeZoneOffset_JTextField = new JTextField (20);
+    __OutputTimeZoneOffset_JTextField.setToolTipText("Specify time zone offset such as -07:00 for all data, can use ${Property}");
+    __OutputTimeZoneOffset_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(general_JPanel, __OutputTimeZoneOffset_JTextField,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Optional - shift all times to offset."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(general_JPanel, new JLabel ("Output time zone (text):"), 
+        0, ++yGeneral, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputTimeZone_JTextField = new JTextField (20);
+    __OutputTimeZone_JTextField.setToolTipText("Specify time zone label to use (after shift), \\b for blank, can use ${Property}");
+    __OutputTimeZone_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(general_JPanel, __OutputTimeZone_JTextField,
+        1, yGeneral, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(general_JPanel, new JLabel ( "Optional - time zone to set (after shifting to offset)."),
+        3, yGeneral, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Panel for instantaneous interval parameters
+    int yInst = -1;
+    JPanel inst_JPanel = new JPanel();
+    inst_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Instantaneous Data", inst_JPanel );
+    
+    JGUIUtil.addComponent(inst_JPanel, new JLabel (
+		"If the WaterML 2 file contains instantaneous data (e.g., USGS NWIS instantaneous value web service),"), 
+		0, ++yInst, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inst_JPanel, new JLabel (
+		"the interval can be specified as " + TimeInterval.getName(TimeInterval.IRREGULAR, 0) + " or a regular interval, as appropriate."), 
+		0, ++yInst, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inst_JPanel, new JLabel (
+		"For example, USGS NWIS instantaneous data are typically published with an interval of 15" + TimeInterval.getName(TimeInterval.MINUTE, 0) + "."), 
+		0, ++yInst, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inst_JPanel, new JLabel (
+		"Using an irregular interval limits how data can be processed with other commands because timesteps may not align and timezone can vary."), 
+		0, ++yInst, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inst_JPanel, new JLabel (
+		"The RequireDataToMatchInterval parameter can be used to ensure that instantaneous data do in fact align with regular interval boundary."), 
+		0, ++yInst, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inst_JPanel, new JLabel (
+		"Time zone will be set in the internal date/time objects and the date/time parts from the WaterML 2 content will be used for time series data values."), 
+		0, ++yInst, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inst_JPanel, new JLabel (
+		"The WaterML 2 date/time parts may be for local time, GMT, +HH:MM offset, or a standard time zone, depending on how the file was generated."), 
+		0, ++yInst, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inst_JPanel, new JLabel (
+		"TSTool date/times for regular interval data should be set to a time zone that applies to entire period to avoid time alignment issues."), 
+		0, ++yInst, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(inst_JPanel, new JLabel (
+		"Therefore, if necessary, specify an output time zone offset consistent with other time series being processed (\\b to set to blank)."), 
+		0, ++yInst, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Panel for daily web service parameters
+    int yDay = -1;
+    JPanel day_JPanel = new JPanel();
+    day_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "Daily Data", day_JPanel );
+    
+    JGUIUtil.addComponent(day_JPanel, new JLabel (
+		"If the WaterML 2 file contains daily data (e.g., USGS NWIS daily value web service), specify the interval as " +
+			TimeInterval.getName(TimeInterval.DAY, 0)+ "." ), 
+		0, ++yDay, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -473,14 +577,17 @@ public boolean ok() {
 Refresh the command from the other text field contents.
 */
 private void refresh()
-{   String routine = getClass().getName() + ".refresh";
-	String InputFile = "",
-	       InputStart = "",
-	       InputEnd = "",
-	       //NewUnits = "",
-	       Alias = "",
-	       Interval = "",
-	       RequireDataToMatchInterval = "";
+{   String routine = getClass().getSimpleName() + ".refresh";
+	String InputFile = "";
+	String ReadMethod = "";
+	//String NewUnits = "";
+	String Alias = "";
+	String Interval = "";
+	String RequireDataToMatchInterval = "";
+	String OutputTimeZoneOffset = "";
+	String OutputTimeZone = "";
+	String InputStart = "";
+	String InputEnd = "";
 
 	PropList props = null;
 
@@ -491,10 +598,13 @@ private void refresh()
 		props = __command.getCommandParameters();
         Alias = props.getValue("Alias");
 		InputFile = props.getValue("InputFile");
+		ReadMethod = props.getValue("ReadMethod");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		Interval = props.getValue("Interval");
 		RequireDataToMatchInterval = props.getValue("RequireDataToMatchInterval");
+		OutputTimeZoneOffset = props.getValue("OutputTimeZoneOffset");
+		OutputTimeZone = props.getValue("OutputTimeZone");
 		//NewUnits = props.getValue("NewUnits");
 		// Set the control fields
 		if (Alias != null) {
@@ -503,12 +613,19 @@ private void refresh()
 		if (InputFile != null) {
 			__InputFile_JTextField.setText(InputFile);
 		}
-		if (InputStart != null) {
-			__InputStart_JTextField.setText(InputStart);
-		}
-		if (InputEnd != null) {
-			__InputEnd_JTextField.setText(InputEnd);
-		}
+        if ( ReadMethod == null || ReadMethod.equals("") ) {
+            // Select a default...
+            __ReadMethod_JComboBox.select ( 0 );
+        } 
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ReadMethod_JComboBox, ReadMethod, JGUIUtil.NONE, null, null ) ) {
+                __ReadMethod_JComboBox.select ( ReadMethod );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid ReadMethod \"" +
+                	ReadMethod + "\".  Select a different choice or Cancel." );
+            }
+        }
         if ( Interval == null || Interval.equals("") ) {
             // Select a default...
             __Interval_JComboBox.select ( 0 );
@@ -535,6 +652,18 @@ private void refresh()
                     RequireDataToMatchInterval + "\".  Select a different choice or Cancel." );
             }
         }
+		if ( OutputTimeZoneOffset != null) {
+			__OutputTimeZoneOffset_JTextField.setText(OutputTimeZoneOffset);
+		}
+		if ( OutputTimeZone != null) {
+			__OutputTimeZone_JTextField.setText(OutputTimeZone);
+		}
+		if (InputStart != null) {
+			__InputStart_JTextField.setText(InputStart);
+		}
+		if (InputEnd != null) {
+			__InputEnd_JTextField.setText(InputEnd);
+		}
 		//if (NewUnits != null) {
 		//	__NewUnits_JTextField.setText(NewUnits);
 		//}
@@ -543,21 +672,27 @@ private void refresh()
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
-	InputStart = __InputStart_JTextField.getText().trim();
-	InputEnd = __InputEnd_JTextField.getText().trim();
+	ReadMethod = __ReadMethod_JComboBox.getSelected();
 	//NewUnits = __NewUnits_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
 	Interval = __Interval_JComboBox.getSelected();
 	RequireDataToMatchInterval = __RequireDataToMatchInterval_JComboBox.getSelected();
+	OutputTimeZoneOffset = __OutputTimeZoneOffset_JTextField.getText().trim();
+	OutputTimeZone = __OutputTimeZone_JTextField.getText().trim();
+	InputStart = __InputStart_JTextField.getText().trim();
+	InputEnd = __InputEnd_JTextField.getText().trim();
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
-	props.add("InputStart=" + InputStart);
-	props.add("InputEnd=" + InputEnd);
+	props.add("ReadMethod=" + ReadMethod);
 	//props.add("NewUnits=" + NewUnits);
 	props.add("Alias=" + Alias);
 	props.add("Interval=" + Interval);
 	props.add("RequireDataToMatchInterval=" + RequireDataToMatchInterval);
+	props.add("OutputTimeZoneOffset=" + OutputTimeZoneOffset);
+	props.add("OutputTimeZone=" + OutputTimeZone);
+	props.add("InputStart=" + InputStart);
+	props.add("InputEnd=" + InputEnd);
 	__Command_JTextArea.setText( __command.toString(props) );
 
 	// Refresh the Path Control text.

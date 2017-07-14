@@ -8,13 +8,17 @@ selections in user interfaces.
 public enum WaterMLVersion
 {
     /**
-    Matches specification.
+    Matches specification (CUAHSI specification).
     */
     STANDARD_1_0("1.0"),
     /**
-    Matches specification.
+    Matches specification (CUAHSI specification).
     */
     STANDARD_1_1("1.1"),
+    /**
+    Matches specification (OGC specification).
+    */
+    STANDARD_2_0("2.0"),
     /**
     USGS and other variations are handled with specific checks.
     */

@@ -7,9 +7,6 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -34,6 +31,7 @@ import RTi.TS.TSDataFlagMetadata;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
 import RTi.Util.IO.ReaderInputStream;
+import RTi.Util.IO.XmlToolkit;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
@@ -59,22 +57,27 @@ private static final String WATERML_1_1_NS = "http://www.cuahsi.org/waterML/1.1/
 /**
 WaterML content as string.
 */
-private String __waterMLString = "";
+private String waterMLString = "";
 
 /**
 URL used to read the WaterML.
 */
-private String __url = "";
+private String url = "";
 
 /**
 File path from which WaterML is being read.
 */
-private File __file = null;
+private File file = null;
 
 /**
 List of problems encountered during read - a simple list of strings.
 */
-private List<String> __problems = new Vector();
+private List<String> problems = new ArrayList<String>();
+
+/**
+ * XML toolkit that is used to process XML.
+ */
+private XmlToolkit xmlToolkit = new XmlToolkit();
 
 /**
 Constructor.
@@ -87,10 +90,9 @@ will be enhanced in the future as more is understood about WaterML
 */
 public WaterMLReader ( String waterMLString, String url, File file )
 {
-    __waterMLString = waterMLString;
-    __url = url;
-    __file = file;
-    
+    this.waterMLString = waterMLString;
+    this.url = url;
+    this.file = file;
 }
 
 /**
@@ -138,149 +140,12 @@ throws IOException
     return version;
 }
 
-//The following methods might bet better in a DOMUtil class or similar.  They are called by the ReadTimeSeries
-//method that processes DOM elements
-//TODO SAM 2011-01-11 Clean up this code, javadoc, etc.
-
-/**
-Get a list of element text values.
-Return the list of element text values.
-@param parentElement parent element
-@param name name of element to match
-*/
-private List<String> getElementValues(Element parentElement, String name) throws IOException {
-    NodeList nodes = parentElement.getElementsByTagNameNS("*",name);
-    ArrayList<String> vals = new ArrayList<String>(nodes.getLength());
-    for (int i = 0; i < nodes.getLength(); i++) {
-        vals.add(((Element) nodes.item(i)).getTextContent().trim());
-    }
-    return vals;
-}
-
-/**
-Find an element (given a parent element) that matches the given element name.
-@param parentElement parent element to process
-@param elementName the element name to match
-@param attributeName the attribute name to match (if null, don't try to match the attribute name)
-@return the first matched element, or null if none are matched
-@throws IOException
-*/
-private Element findSingleElement(Element parentElement, String elementName ) throws IOException {
-    return findSingleElement ( parentElement, elementName, null );
-}
-
-/**
-Find an element (given a parent element) that matches the given element name.
-@param parentElement parent element to process
-@param elementName the element name to match
-@return the first matched element, or null if none are matched
-@throws IOException
-*/
-private Element findSingleElement(Element parentElement, String elementName,
-    String attributeName ) throws IOException {
-    NodeList nodes = parentElement.getElementsByTagNameNS("*",elementName);
-    if ( nodes.getLength() == 0 ) {
-        return null;
-    }
-    else {
-        if ( (attributeName != null) && !attributeName.equals("") ) {
-            // Want to search to see if the node has a matching attribute name
-            for ( int i = 0; i < nodes.getLength(); i++ ) {
-                Node node = nodes.item(i);
-                NamedNodeMap nodeMap = node.getAttributes();
-                if ( nodeMap.getNamedItem(attributeName) != null ) {
-                    // Found the node of interest
-                    return (Element)node;
-                }
-            }
-            // No node had the requested attribute
-            return null;
-        }
-        else {
-            return nodes.getLength() > 0 ? (Element) nodes.item(0) : null;
-        }
-    }
-}
-
-/**
-Find an element (given a parent element) that matches the given element name and return its string content.
-@param parentElement parent element to process
-@param elementName the element name to match
-@return the first string text of the first matched element, or null if none are matched
-@throws IOException
-*/
-private String findSingleElementValue(Element parentElement, String elementName) throws IOException {
-    Element el = findSingleElement(parentElement, elementName);
-    return el == null ? null : el.getTextContent().trim();
-}
-
 /**
 Return the list of problems from the read.
 */
 public List<String> getProblems ()
 {
-    return __problems;
-}
-
-/**
-Return the text value of the element.
-@param parentElement parent element to process
-@param elementName the element name to match
-@return the first string text of the first matched element, or null if none are matched
-@throws IOException
-*/
-private String getSingleElementValue(Element parent, String elementName)
-throws IOException {
-    return getSingleElement(parent, elementName).getTextContent().trim();
-}
-
-/**
-Get the single element matching the given name from a parent element
-@param parentElement parent element to process
-@param elementName the element name to match
-@return the element matching elementName, or null if not matched
-@throws IOException
-*/
-private Element getSingleElement(Element parentElement, String name) throws IOException {
-    NodeList nodes = parentElement.getElementsByTagNameNS("*",name);
-    if (nodes.getLength() != 1) {
-        throw new IOException("Expected to find child \"" + name + "\" in \"" + parentElement.getTagName() + "\"");
-    }
-    return (Element) nodes.item(0);
-}
-
-private String grepValue(List<String> items, String regex) {
-    Pattern p = Pattern.compile(regex);
-    String match = null;
-    for (String s : items) {
-        Matcher m = p.matcher(s);
-        if (m.find()) {
-            match = m.group(m.groupCount());
-            break;
-        }
-    }
-    return match;
-}
-
-/**
-Determine whether the WaterML is for USGS NWIS, in which case some additional information is present
-beyond the WaterML namespace.
-*/
-private boolean isUsgsNwis ( Document dom, WaterMLVersion watermlVersion )
-{
-    // Further check to see if USGS version, something like:
-    // <ns2:queryURL>http://waterservices.usgs.gov/nwis/dv</ns2:queryURL>
-    if ( watermlVersion == WaterMLVersion.STANDARD_1_1) {
-        NodeList nodes = dom.getDocumentElement().getElementsByTagNameNS("*","queryURL");
-        Node node;
-        for ( int i = 0; i < nodes.getLength(); i++ ) {
-            node = nodes.item(i);
-            if ( node.getTextContent().toUpperCase().indexOf("USGS") >= 0 ) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return this.problems;
 }
 
 /**
@@ -315,9 +180,9 @@ throws IOException
         variableTag = "variable"; // Information about data type
         valuesTag = "values"; // Data values and information about flags
     }
-    Element sourceInfoElement = getSingleElement(timeSeriesElement, sourceInfoTag);
-    Element variableElement = getSingleElement(timeSeriesElement, variableTag);
-    Element valuesElement = getSingleElement(timeSeriesElement, valuesTag);
+    Element sourceInfoElement = this.xmlToolkit.getSingleElement(timeSeriesElement, sourceInfoTag);
+    Element variableElement = this.xmlToolkit.getSingleElement(timeSeriesElement, variableTag);
+    Element valuesElement = this.xmlToolkit.getSingleElement(timeSeriesElement, valuesTag);
 
     // Get the time series identifier for the time series in order to initialize the time series
     if ( Message.isDebugOn ) {
@@ -348,7 +213,7 @@ throws IOException
         ts.setDataUnits(readTimeSeries_ParseUnits(watermlVersion,variableElement));
         ts.setDataUnitsOriginal(ts.getDataUnits());
         // Description - set to site name
-        Element siteName = getSingleElement(timeSeriesElement, "siteName");
+        Element siteName = this.xmlToolkit.getSingleElement(timeSeriesElement, "siteName");
         if ( siteName != null ) {
             ts.setDescription(siteName.getTextContent());
         }
@@ -388,7 +253,7 @@ throws IOException
             }
             // Also extract creation information from the WaterML (probably a file).
             ts.addToGenesis("Query information extracted from WaterML (as XML elements):  " );
-            Element queryInfoElement = getSingleElement(domElement, "queryInfo");
+            Element queryInfoElement = this.xmlToolkit.getSingleElement(domElement, "queryInfo");
             if ( queryInfoElement != null ) {
                 // Just pass through the information
                 ts.addToGenesis ( queryInfoElement.toString() );
@@ -406,8 +271,8 @@ throws IOException
         NodeList nodes = valuesElement.getElementsByTagNameNS("*","qualifier");
         for ( int i = 0; i < nodes.getLength(); i++ ) {
             Element qualifierElement = (Element)nodes.item(i);
-            String qualifierCode = getSingleElementValue(qualifierElement,"qualifierCode");
-            String qualifierDescription = getSingleElementValue(qualifierElement,"qualifierDescription");
+            String qualifierCode = this.xmlToolkit.getSingleElementValue(qualifierElement,"qualifierCode");
+            String qualifierDescription = this.xmlToolkit.getSingleElementValue(qualifierElement,"qualifierDescription");
             if ( (qualifierCode != null) && !qualifierCode.equals("") ) {
                 ts.addDataFlagMetadata(new TSDataFlagMetadata(qualifierCode,qualifierDescription));
             }
@@ -419,7 +284,7 @@ throws IOException
     
     // Set the time series period and optionally read the data
 
-    String noDataValue = getSingleElementValue(variableElement, "noDataValue" );
+    String noDataValue = this.xmlToolkit.getSingleElementValue(variableElement, "noDataValue" );
     Message.printStatus(2,routine,"noDataValue string is \"" + noDataValue + "\"");
     if ( Message.isDebugOn ) {
         Message.printDebug(1,routine,"Parsing values...");
@@ -456,10 +321,10 @@ throws IOException
         siteCodeTag = "siteCode";
         variableCodeTag = "variableCode";
     }
-    ident.setLocation(getSingleElementValue(sourceInfoElement, siteCodeTag));
+    ident.setLocation(this.xmlToolkit.getSingleElementValue(sourceInfoElement, siteCodeTag));
 
     boolean useDataTypePrefix = false; // TODO SAM 2012-03-04 evaluate whether need this for clarity
-    String dataType = getSingleElementValue(variableElement, variableCodeTag);
+    String dataType = this.xmlToolkit.getSingleElementValue(variableElement, variableCodeTag);
     if ( useDataTypePrefix ) {
         dataType = "VariableCode:" + dataType;
     }
@@ -470,7 +335,7 @@ throws IOException
         //     <ns1:option name="Statistic" optionCode="00006">Sum</ns1:option>
         //</ns1:options>
         // To be bulletproof and avoid periods that would cause a problem in the TSID, use the code
-        Element optionsElement = findSingleElement(variableElement,"options");
+        Element optionsElement = this.xmlToolkit.findSingleElement(variableElement,"options");
         if ( optionsElement != null ) {
             NodeList optionElements = optionsElement.getElementsByTagNameNS("*", "option");
             if ( optionElements != null ) {
@@ -526,7 +391,7 @@ throws IOException
         */
     if (watermlVersion == WaterMLVersion.STANDARD_1_1) {
         try {
-            Element siteCodeElement = getSingleElement(sourceInfoElement, "siteCode");
+            Element siteCodeElement = this.xmlToolkit.getSingleElement(sourceInfoElement, "siteCode");
             if ( siteCodeElement != null ) {
                 String agencyCode = siteCodeElement.getAttribute("agencyCode");
                 if ( agencyCode != null ) {
@@ -550,16 +415,16 @@ throws IOException
 }
 
 private String readTimeSeries_ParseInterval(Element variable) throws IOException {
-    Element timeSupport = getSingleElement(variable, "timeSupport");
+    Element timeSupport = this.xmlToolkit.getSingleElement(variable, "timeSupport");
     boolean regular = timeSupport.getAttribute("isRegular").equalsIgnoreCase("true");
     String interval = "IRREGULAR";
     if (regular) {
-        Element unit = getSingleElement(timeSupport, "unit");
-        String type = findSingleElementValue(unit, "UnitName");
+        Element unit = this.xmlToolkit.getSingleElement(timeSupport, "unit");
+        String type = this.xmlToolkit.findSingleElementValue(unit, "UnitName");
         if (type == null) {
-            type = findSingleElementValue(unit, "UnitDescription");
+            type = this.xmlToolkit.findSingleElementValue(unit, "UnitDescription");
         }
-        String amt = getSingleElementValue(timeSupport, "timeInterval");
+        String amt = this.xmlToolkit.getSingleElementValue(timeSupport, "timeInterval");
         interval = amt + type;
     }
     return interval;
@@ -577,7 +442,7 @@ throws IOException
     if ( watermlVersion == WaterMLVersion.STANDARD_1_1 ) {
         unitsTag = "unitCode";
     }
-    String units = findSingleElementValue(variableElement, unitsTag);
+    String units = this.xmlToolkit.findSingleElementValue(variableElement, unitsTag);
     if ( units == null ) {
         units = "";
     }
@@ -711,7 +576,7 @@ throws IOException
                 if ( requireDataToMatchInterval ) {
                     // Do a check to see if the date/time aligns exactly with the interval
                     if ( TimeUtil.compareDateTimePrecisionToTimeInterval(dateTime, interval, requireDataToMatchInterval ) != 0 ) {
-                        __problems.add("Date/time " + dateTime + " is not aligned with time series interval " +
+                        this.problems.add("Date/time " + dateTime + " is not aligned with time series interval " +
                             intervalString );
                         // Even though not aligned, set the values below
                     }
@@ -768,7 +633,7 @@ throws MalformedURLException, IOException, Exception
     // do full validation with setValidating(true)
     dbf.setNamespaceAware(true);
     Document dom = dbf.newDocumentBuilder().parse(
-        new ReaderInputStream(new StringReader(__waterMLString)));
+        new ReaderInputStream(new StringReader(waterMLString)));
     WaterMLVersion watermlVersion= determineWaterMLVersion(dom);
     List<TS> tsList = new ArrayList<TS>();
     String timeSeriesTag = "";
@@ -790,7 +655,7 @@ throws MalformedURLException, IOException, Exception
                 ", namespace=" + node.getNamespaceURI() + ", name=" + node.getNodeName());
         }
         tsList.add(readTimeSeries(watermlVersion, dom.getDocumentElement(), (Element)timeSeries.item(i),
-            interval, __url, __file, readStart, readEnd, readData, requireDataToMatchInterval ));
+            interval, url, file, readStart, readEnd, readData, requireDataToMatchInterval ));
     }
     return tsList;
 }
@@ -808,7 +673,7 @@ If the element is not in the DOM, don't set as a time series property.
 private void setTimeSeriesPropertyToElementValue ( TS ts, Element timeSeriesElement, String elementName )
 {
     try {
-        Element el = getSingleElement(timeSeriesElement, elementName);
+        Element el = this.xmlToolkit.getSingleElement(timeSeriesElement, elementName);
         if ( el != null ) {
             String text = el.getTextContent();
             ts.setProperty(elementName, (text == null) ? "" : text );
@@ -834,7 +699,7 @@ private void setTimeSeriesPropertyToElementAttributeValue ( TS ts, Element timeS
     String attributeName, String propertyName )
 {
     try {
-        Element el = getSingleElement(timeSeriesElement, elementName);
+        Element el = this.xmlToolkit.getSingleElement(timeSeriesElement, elementName);
         if ( el != null ) {
             NodeList nodes = timeSeriesElement.getElementsByTagNameNS("*",elementName);
             if ( nodes.getLength() == 0 ) {

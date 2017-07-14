@@ -317,7 +317,7 @@ import rti.tscommandprocessor.commands.view.NewTreeView_Command;
 // WaterML commands
 import rti.tscommandprocessor.commands.waterml.ReadWaterML_Command;
 import rti.tscommandprocessor.commands.waterml.WriteWaterML_Command;
-
+import rti.tscommandprocessor.commands.waterml2.ReadWaterML2_Command;
 // WaterOneFlow commands
 import rti.tscommandprocessor.commands.wateroneflow.ws.ReadWaterOneFlow_Command;
 
@@ -914,6 +914,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadWaterML") ) {
         return new ReadWaterML_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadWaterML2") ) {
+        return new ReadWaterML2_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadWaterOneFlow") ) {
         return new ReadWaterOneFlow_Command ();

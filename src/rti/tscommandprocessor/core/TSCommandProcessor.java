@@ -36,6 +36,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -4002,7 +4003,16 @@ throws Exception
     __propertyHashmap.clear();
     // Define some standard properties
     __propertyHashmap.put ( "ComputerName", InetAddress.getLocalHost().getHostName() ); // Useful for messages
-    __propertyHashmap.put ( "ComputerTimezone", TimeUtil.getLocalTimeZoneAbbr(TimeUtil.LOOKUP_TIME_ZONE_ALWAYS) ); // America/Denver, etc.
+    boolean newTZ = true;
+    if ( newTZ ) {
+        // Use new time zone class
+    	ZonedDateTime now = ZonedDateTime.now();
+    	__propertyHashmap.put ( "ComputerTimezone", now.getZone().getId() ); // America/Denver, etc.
+    }
+    else {
+    	// Use old time zone approach
+    	__propertyHashmap.put ( "ComputerTimezone", TimeUtil.getLocalTimeZoneAbbr(TimeUtil.LOOKUP_TIME_ZONE_ALWAYS) ); // America/Denver, etc.
+    }
     __propertyHashmap.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
     __propertyHashmap.put ( "InstallDirURL", "file:///" + IOUtil.getApplicationHomeDir().replace("\\", "/") );
     // Temporary directory useful in some cases

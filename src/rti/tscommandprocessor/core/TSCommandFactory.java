@@ -318,6 +318,7 @@ import rti.tscommandprocessor.commands.view.NewTreeView_Command;
 import rti.tscommandprocessor.commands.waterml.ReadWaterML_Command;
 import rti.tscommandprocessor.commands.waterml.WriteWaterML_Command;
 import rti.tscommandprocessor.commands.waterml2.ReadWaterML2_Command;
+import rti.tscommandprocessor.commands.waterml2.WriteWaterML2_Command;
 // WaterOneFlow commands
 import rti.tscommandprocessor.commands.wateroneflow.ws.ReadWaterOneFlow_Command;
 
@@ -1243,6 +1244,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteWaterML") ) {
         return new WriteWaterML_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteWaterML2") ) {
+        return new WriteWaterML2_Command ();
     }
     
     // TODO SAM 2016-04-02 Figure out more elegant approach for getting command name

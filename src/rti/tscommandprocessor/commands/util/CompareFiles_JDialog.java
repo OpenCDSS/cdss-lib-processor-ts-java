@@ -46,6 +46,8 @@ private final String __VisualDiff = "Visual Diff";
 private final String __RemoveWorkingDirectoryFile1 = "Remove Working Directory (File 1)";
 private final String __RemoveWorkingDirectoryFile2 = "Remove Working Directory (File 2)";
 
+private final String visualDiffLabel = "Run program to visually compare output files (see TSTool DiffProgram configuration property).";
+
 private SimpleJButton __browse1_JButton = null;
 private SimpleJButton __browse2_JButton = null;
 private SimpleJButton __path1_JButton = null;
@@ -452,7 +454,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 		button_JPanel.add ( __path2_JButton );
 	}
 	button_JPanel.add(__visualDiff_JButton = new SimpleJButton(__VisualDiff, this));
-	__visualDiff_JButton.setToolTipText("Run program to visually compare output files (see TSTool DiffProgram configuration property).");
+	__visualDiff_JButton.setToolTipText(this.visualDiffLabel);
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 	
@@ -636,9 +638,19 @@ private void refresh ()
 			IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile1_JTextField.getText())) &&
 			IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile2_JTextField.getText())) ) {
 			__visualDiff_JButton.setEnabled(true);
+			__visualDiff_JButton.setToolTipText(this.visualDiffLabel);
 		}
-		else {
+		else if ( !IOUtil.fileExists(__diffProgram)) {
 			__visualDiff_JButton.setEnabled(false);
+			__visualDiff_JButton.setToolTipText(this.visualDiffLabel + " - disabled because diff program not configured.");
+		}
+		else if ( !IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile1_JTextField.getText())) ) {
+			__visualDiff_JButton.setEnabled(false);
+			__visualDiff_JButton.setToolTipText(this.visualDiffLabel + " - disabled because first file does not exist.");
+		}
+		else if ( !IOUtil.fileExists(IOUtil.toAbsolutePath(__working_dir,__InputFile2_JTextField.getText())) ) {
+			__visualDiff_JButton.setEnabled(false);
+			__visualDiff_JButton.setToolTipText(this.visualDiffLabel + " - disabled because second file does not exist.");
 		}
 	}
 }

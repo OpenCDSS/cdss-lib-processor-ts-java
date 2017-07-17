@@ -250,7 +250,7 @@ public List<String> getWarningMessages ()
  * @param gmlTimePeriodType GML TimePeriodType object
  * @return DateTimeRange with begin and end of the period.
  */
-private DateTimeRange parseGMLTimePeriodType ( net.opengis.gml._3.TimePeriodType gmlTimePeriodType ) {
+private DateTimeRange parseGMLTimePeriodType ( net.opengis.gml._3.TimePeriodType gmlTimePeriodType ) throws Exception {
 	// Parse the begin date/time
 	TimePositionType beginTimePosition = gmlTimePeriodType.getBeginPosition();
 	List<String> beginTimePositionList = beginTimePosition.getValue();
@@ -259,7 +259,7 @@ private DateTimeRange parseGMLTimePeriodType ( net.opengis.gml._3.TimePeriodType
 		// TODO SAM 2017-06-30 not sure what to do if multiple parts - check instantaneous data
 		beginString.append(s);
 	}
-	DateTime beginDateTime = DateTime.parse(beginString.toString());
+	DateTime beginDateTime = DateTime.parse(beginString.toString(),DateTime.FORMAT_ISO_8601);
 	// Parse the end date/time
 	TimePositionType endTimePosition = gmlTimePeriodType.getEndPosition();
 	List<String> endTimePositionList = endTimePosition.getValue();
@@ -268,7 +268,7 @@ private DateTimeRange parseGMLTimePeriodType ( net.opengis.gml._3.TimePeriodType
 		// TODO SAM 2017-06-30 not sure what to do if multiple parts - check instantaneous data
 		endString.append(s);
 	}
-	DateTime endDateTime = DateTime.parse(endString.toString());
+	DateTime endDateTime = DateTime.parse(endString.toString(),DateTime.FORMAT_ISO_8601);
 	// The following seems to return null sometimes?  TODO SAM 2017-06-30 not sure if can use
 	//TimeInstantPropertyType beginTimeInstant = gmlTimePeriodType.getBegin();
 	return new DateTimeRange ( beginDateTime, endDateTime );
@@ -318,12 +318,14 @@ throws MalformedURLException, IOException, Exception
     // Create the time series from the WaterML...
 	List<TS> tsList = new ArrayList<TS>();
 	if ( readUsingApi ) {
-		Message.printStatus(2, routine, "Read WaterML 2 time series using API.");
-		this.failureMessages.add("API implementation is incomplete.  Use ParseDOM instead.");
+		Message.printStatus(2, routine, "Reading WaterML 2 time series using API.");
+		//this.failureMessages.add("API implementation is incomplete.  Use ParseDOM instead.");
+		tsList = readTimeSeriesListUsingApi ( WaterMLVersion.STANDARD_2_0, interval, readStart, readEnd,
+			readData, requireDataToMatchInterval, outputTimeZoneOffset, outputTimeZone, this.url, this.watermlFile );
 	}
 	else {
 		// Read by parsing the DOM
-		Message.printStatus(2, routine, "Read WaterML 2 time series by parsing the DOM.");
+		Message.printStatus(2, routine, "Reading WaterML 2 time series by parsing the DOM.");
 	    // The following can allow conflicts in class path parsers to occur...
 	    //javax.xml.parsers.DocumentBuilderFactory dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance();
 	    // Specify the class that should be used for the DocumentBuilderFactory implementation (use internal Java factory).
@@ -375,10 +377,14 @@ in the file that indicates that data are daily values, etc.
 allow the date/time to truncate
 */
 public List<TS> readTimeSeriesListUsingApi ( WaterMLVersion watermlVersion, TimeInterval interval, DateTime readStart, DateTime readEnd,
-    boolean readData, boolean requireDataToMatchInterval )
+    boolean readData, boolean requireDataToMatchInterval, String outputTimeZoneOffset, String outputTimeZone, String url, File file )
 throws MalformedURLException, IOException, Exception
 {   String routine = getClass().getSimpleName() + ".readTimeSeriesList";
 	List<TS> tsList = new ArrayList<TS>();
+	if ( watermlVersion != WaterMLVersion.STANDARD_2_0 ) {
+		this.failureMessages.add("Request is to parse WaterML version " + watermlVersion + " but only " + WaterMLVersion.STANDARD_2_0 + " is supported.");
+		return tsList;
+	}
 	try {
 		JAXBContext context = JAXBContext.newInstance("net.opengis.waterml._2");
 		StringReader stringReader = new StringReader(this.watermlString);
@@ -495,6 +501,13 @@ throws MalformedURLException, IOException, Exception
 					for ( OMObservationPropertyType wmlOMObservationProperty : wmlOMObservationPropertyList ) { // Observation member
 						// These are essentially time series
 						OMObservationType omOMObservation = wmlOMObservationProperty.getOMObservation();
+						// Properties that will be set for use in defining the time series
+						Double latitude = null;
+						Double longitude = null;
+						Double x = null;
+						Double y = null;
+						String siteName = null;
+						String statistic = null;
 						// Phenomenon time (such as period of reading data from sensor), USGS NWIS daily example:
 				        //  <om:phenomenonTime>
 				        //    <gml:TimePeriod gml:id="sample_time.USGS.09070500.00060.18624.00003">
@@ -559,10 +572,15 @@ throws MalformedURLException, IOException, Exception
 							Message.printStatus(2, routine, "Process type is " + wmlProcessType + " " + wmlProcessType.getClass().getName() );
 							List<NamedValuePropertyType> omParameterNameList = wmlObservationProcess.getParameter();
 							for ( NamedValuePropertyType namedValue: omParameterNameList ) {
+								String parameterTitle = namedValue.getAtitle();
+								Message.printStatus(2, routine, "Parameter titel is " + parameterTitle );
 								NamedValueType omNamedValue = namedValue.getNamedValue();
 								Message.printStatus(2, routine, "Named value is " + omNamedValue + " " + omNamedValue.getClass().getName() );
 								// Following returns "Mean", suitable for statistic name
 								ReferenceType omNamedValueName = omNamedValue.getName();
+								if ( parameterTitle.equalsIgnoreCase("statistic") ) {
+									statistic = omNamedValueName.getAtitle();
+								}
 								Message.printStatus(2, routine, "Named value name is " + omNamedValueName.getAtitle());
 								// Following returns "0003", the raw statistic code
 								Object omNamedValueValue = omNamedValue.getValue();
@@ -594,6 +612,8 @@ throws MalformedURLException, IOException, Exception
 							JAXBElement jaxbFeatureOfInterest = gmlFeatureOfInterest.getAbstractFeature();
 							Object o2 = jaxbFeatureOfInterest.getValue();
 							Message.printStatus(2, routine, "Feature of interest is " + o2 + " " + o2.getClass().getName() );
+							// Site name from featureOfInterest xlink:title
+							siteName = gmlFeatureOfInterest.getAtitle();
 							if ( o2 instanceof MonitoringPointType ) {
 								MonitoringPointType wmlMonitoringPoint = (MonitoringPointType)o2;
 								if ( wmlMonitoringPoint != null ) {
@@ -677,8 +697,12 @@ throws MalformedURLException, IOException, Exception
 												// If coordinate system is EPSG 4326, can treat as geographic for station properties
 												// - otherwise treat as x, y
 												if ( (srsName.indexOf("EPSG") >= 0) && (srsName.indexOf("4326") >= 0) ) {
-													Double latitude = posValues.get(1);
-													Double longitude = posValues.get(0);
+													latitude = posValues.get(0);
+													longitude = posValues.get(1);
+												}
+												else {
+													y = posValues.get(0);
+													x = posValues.get(1);
 												}
 											}
 										}
@@ -691,10 +715,11 @@ throws MalformedURLException, IOException, Exception
 				        //    <wml2:MeasurementTimeseries gml:id="TS.USGS.09070500.00060.18624.00003">
 						String wmlMeasurementTimeSeriesId = omOMObservation.getId();
 						Message.printStatus(2, routine, "MeasurementTimeSeries ID=" + wmlMeasurementTimeSeriesId);
-						String [] idParts = wmlMeasurementTimeSeriesId.split(".");
+						String [] idParts = wmlMeasurementTimeSeriesId.split(Pattern.quote("."));
+						String source = idParts[1];
 						String siteId = idParts[2];
 						String dataType = idParts[3];
-						String statistic = idParts[5];
+						String statisticCode = idParts[5]; // For USGS similar to 00003
 						// Not sure if this is used
 						List<NamedValuePropertyType> omParameterList = omOMObservation.getParameter();
 						if ( omParameterList != null ) {
@@ -728,7 +753,7 @@ throws MalformedURLException, IOException, Exception
 						}
 						// Create the time series.
 					    TS ts;
-					    TSIdent ident = new TSIdent(siteId+".."+ dataType + "-" + statistic + "." + interval);
+					    TSIdent ident = new TSIdent(siteId+"." + source + "."+ dataType + "-" + statisticCode + "." + interval);
 					    try {
 					        // Create the time series and set basic time series properties
 					        ts = TSUtil.newTimeSeries(ident.toString(), true);
@@ -744,37 +769,52 @@ throws MalformedURLException, IOException, Exception
 					        // Missing data value
 					        ts.setMissing ( Double.NaN );
 					        // Data units
-					        /*
-					        ts.setDataUnits(readTimeSeries_ParseUnits(watermlVersion,variableElement));
+					        //ts.setDataUnits(readTimeSeries_ParseUnits(watermlVersion,variableElement));
 					        ts.setDataUnitsOriginal(ts.getDataUnits());
-					        // Description - set to site name
-					        Element siteName = getSingleElement(timeSeriesElement, "siteName");
+					        // Description depends on what data are available
 					        if ( siteName != null ) {
-					            ts.setDescription(siteName.getTextContent());
+							    String statistic2 = statistic;
+							    if ( statistic2 == null ) {
+							    	statistic2 = statisticCode;
+							    }
+					        	if ( (observedPropertyTitle != null) && !observedPropertyTitle.isEmpty() ) {
+					        		siteName = siteName + ", " + observedPropertyTitle;
+					        	}
+					        	if ( (statistic2 != null) && !statistic2.isEmpty() ) {
+					        		siteName = siteName + ", " + statistic2;
+					        	}
+					            ts.setDescription(siteName);
 					        }
 					        // Also set properties by passing through XML elements
 					        boolean setPropertiesFromMetadata = true;
 					        if ( setPropertiesFromMetadata ) {
 					            // Set time series properties from the timeSeries elements
 					            // From sourceInfo
-					            setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"siteName");
-					            setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"siteCode");
-					            setTimeSeriesPropertyToElementAttributeValue(ts,timeSeriesElement,"siteCode","network","network");
-					            setTimeSeriesPropertyToElementAttributeValue(ts,timeSeriesElement,"siteCode","agencyCode","agencyCode");
-					            setTimeSeriesPropertyToElementAttributeValue(
-					                ts,timeSeriesElement,"timeZoneInfo","siteUsesDaylightSavingsTime","siteUsesDaylightSavingsTime");
-					            setTimeSeriesPropertyToElementAttributeValue(
-					                ts,timeSeriesElement,"defaultTimeZone","zoneAbbreviation","defaultTimeZone");
-					            setTimeSeriesPropertyToElementAttributeValue(
-					                ts,timeSeriesElement,"daylightSavingsTimeZone","zoneAbbreviation","dayligthSavingsTimeZone");
+					            //setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"siteName");
+					            //setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"siteCode");
+					            //setTimeSeriesPropertyToElementAttributeValue(ts,timeSeriesElement,"siteCode","network","network");
+					            //setTimeSeriesPropertyToElementAttributeValue(ts,timeSeriesElement,"siteCode","agencyCode","agencyCode");
+					            //setTimeSeriesPropertyToElementAttributeValue(
+					            //    ts,timeSeriesElement,"timeZoneInfo","siteUsesDaylightSavingsTime","siteUsesDaylightSavingsTime");
+					            //setTimeSeriesPropertyToElementAttributeValue(
+					            //    ts,timeSeriesElement,"defaultTimeZone","zoneAbbreviation","defaultTimeZone");
+					            //setTimeSeriesPropertyToElementAttributeValue(
+					            //    ts,timeSeriesElement,"daylightSavingsTimeZone","zoneAbbreviation","dayligthSavingsTimeZone");
 					            // From geoLocation
-					            setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"latitude");
-					            setTimeSeriesPropertyToElementValue(ts,timeSeriesElement,"longitude");
+					            ts.setProperty("latitude",latitude);
+					            ts.setProperty("longitude",longitude);
+					            // Alternative coordinates if latitude and longitude are not know
+					            if ( x != null ) {
+					            	ts.setProperty("x", x);
+					            }
+					            if ( x != null ) {
+					            	ts.setProperty("y", y);
+					            }
 					            // Other site properties (USGS only?)
-					            setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","siteTypeCd");
-					            setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","hucCd");
-					            setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","stateCd");
-					            setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","countyCd");
+					            //setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","siteTypeCd");
+					            //setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","hucCd");
+					            //setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","stateCd");
+					            //setTimeSeriesPropertyFromGenericPropertyElement(ts,timeSeriesElement,"siteProperty","name","countyCd");
 					        }
 					        // History
 					        if ( (url != null) && !url.equals("") ) {
@@ -787,21 +827,18 @@ throws MalformedURLException, IOException, Exception
 					                ts.addToGenesis("Create time series from contents of file:  " + file.getAbsolutePath() );
 					            }
 					            // Also extract creation information from the WaterML (probably a file).
-					            ts.addToGenesis("Query information extracted from WaterML (as XML elements):  " );
-					            Element queryInfoElement = getSingleElement(domElement, "queryInfo");
-					            if ( queryInfoElement != null ) {
-					                // Just pass through the information
-					                ts.addToGenesis ( queryInfoElement.toString() );
-					            }
+					            ts.addToGenesis("Read time series by using WaterML 2 API." );
 					        }
-					        */
 					    }
 					    catch (Exception ex) {
 					        throw new IOException("Error setting time series properties ", ex);
 					    }
+					    
+					    // Add the time series to the list
+					    tsList.add(ts);
 						
 						// Try to process "result", but following code gets into generic XML objects rather than API classes.
-						// Why is the result unmarshalling to DOM rather than JAXB objects?
+						// Why is the result unmarshalling (deserializing) to DOM elements rather than JAXB objects?
 						// -see:  https://www.greenbird.com/2016/05/10/jaxb-unmarshalling-and-avoiding-the-dom/
 						// -see:  https://stackoverflow.com/questions/5122296/jaxb-not-unmarshalling-xml-any-element-to-jaxbelement
 						// -see:  https://stackoverflow.com/questions/26439184/why-is-the-objectfactory-not-used-during-unmarshalling
@@ -812,6 +849,7 @@ throws MalformedURLException, IOException, Exception
 							// Parsing with built-in internal Xerces
 							ElementNSImpl resultElement = (ElementNSImpl)resultObject;
 							// User data does not seem like what is used
+							/*
 							userData = resultElement.getUserData();
 							if ( userData != null ) {
 								Message.printStatus(2, routine, "userData=" + userData + " " + userData.getClass().getName());
@@ -819,6 +857,7 @@ throws MalformedURLException, IOException, Exception
 							else {
 								Message.printStatus(2, routine, "userData is null");
 							}
+							*/
 							// Child nodes appears to be what is used, lacking effort to change the bindings to get JAXB objects
 							NodeList nodeList = resultElement.getChildNodes();
 							if ( nodeList != null ) {
@@ -826,14 +865,22 @@ throws MalformedURLException, IOException, Exception
 								for ( int i = 0; i < nodeList.getLength(); i++ ) {
 									Node node = nodeList.item(i);
 									Message.printStatus(2, routine, "Node name =" + node.getNodeName() );
+									//NodeList pointList = resultElement.getElementsByTagName("wml2:point");
+									//if ( pointList != null ) {
+									//	Message.printStatus(2, routine, "Have " + pointList.getLength() + " points");
+									//}
+									if ( node.getNodeName().toUpperCase().indexOf("MEASUREMENTTIMESERIES") >= 0 ) {
+										// Call the DOM parsing method since dealing with the same objects
+										Element measurementTimeSeriesElement = (Element)node;
+										String noDataValue = null;
+										readTimeSeriesUsingDOM_ParseValues(watermlVersion, ts, measurementTimeSeriesElement,
+										    noDataValue, readStart, readEnd, outputTimeZoneOffset, outputTimeZone,
+										    readData, requireDataToMatchInterval );
+									}
 								}
 							}
 							else {
 								Message.printStatus(2, routine, "Result node list is null");
-							}
-							NodeList pointList = resultElement.getElementsByTagName("wml2:point");
-							if ( pointList != null ) {
-								Message.printStatus(2, routine, "Have " + pointList.getLength() + " points");
 							}
 						}
 						else {
@@ -880,19 +927,6 @@ throws MalformedURLException, IOException, Exception
 	catch ( JAXBException e ) {
 		System.out.println(e);
 	}
-	/*
-    //Node node;
-    for (int i = 0; i < timeSeries.getLength(); i++) {
-        // Uncomment for troubleshooting...
-        if ( Message.isDebugOn ) {
-            Node node = timeSeries.item(i);
-            Message.printDebug(1, routine, "NodeLocalName=" + node.getLocalName() +
-                ", namespace=" + node.getNamespaceURI() + ", name=" + node.getNodeName());
-        }
-        tsList.add(readTimeSeries(watermlVersion, dom.getDocumentElement(), (Element)timeSeries.item(i),
-            interval, url, outputFile, readStart, readEnd, readData, requireDataToMatchInterval ));
-    }
-    */
     return tsList;
 }
 

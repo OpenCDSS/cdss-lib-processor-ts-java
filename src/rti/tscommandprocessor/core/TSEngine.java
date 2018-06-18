@@ -747,6 +747,7 @@ import RTi.Util.Time.StopWatch;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 import RTi.Util.Time.YearType;
+import cdss.dmi.hydrobase.rest.ColoradoHydroBaseRestDataStore;
 
 public class TSEngine implements TSSupplier, WindowListener
 {
@@ -4664,7 +4665,31 @@ throws Exception
 
 	TS ts = null;
 	try {
-	if ((dataStore != null) && (dataStore instanceof ColoradoWaterHBGuestDataStore) ) {
+	if ((dataStore != null) && (dataStore instanceof ColoradoHydroBaseRestDataStore) ) {
+        // New style TSID~dataStore
+		ColoradoHydroBaseRestDataStore ds = (ColoradoHydroBaseRestDataStore)dataStore;
+        if ( Message.isDebugOn ) {
+            Message.printDebug ( 10, routine, "Reading time series..." +
+            tsidentString + "," + readStart + "," + readEnd);
+        }
+        try {
+            ts = ds.readTimeSeries ( tsidentString, readStart, readEnd, readData );
+            if ( Message.isDebugOn ) {
+                Message.printStatus ( 10, routine, "...done reading time series." );
+            }
+            // Update the header comments.
+            if ( ts != null ) {
+                //FIXME SAM 2010-08-15 Need to implement for web services
+                //updateHydroBaseComments(ts);
+            }
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, "Error from ColoradoHydroBaseRestDataStore.readTimeSeries (" + e + ").");
+            Message.printWarning ( 3, routine, e );
+            ts = null;
+        }
+    }
+	else if ((dataStore != null) && (dataStore instanceof ColoradoWaterHBGuestDataStore) ) {
         // New style TSID~dataStore
         ColoradoWaterHBGuestDataStore cwds = (ColoradoWaterHBGuestDataStore)dataStore;
         if ( Message.isDebugOn ) {

@@ -266,6 +266,7 @@ protected List<TSFunctionType> getFunctionChoices()
 /**
 Return the list of data objects read by this object in discovery mode.
 */
+@SuppressWarnings("rawtypes")
 public List getObjectList ( Class c )
 {
     List<TS> discovery_TS_Vector = getDiscoveryTSList ();

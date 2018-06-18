@@ -189,6 +189,10 @@ throws CommandWarningException, CommandException
 	
 	//String Name = parameters.getValue ( "Name" );
 	String Condition = parameters.getValue ( "Condition" );
+	String conditionUpper = null;
+	if ( Condition != null ) {
+		conditionUpper = Condition.toUpperCase();
+	}
 	String CompareAsStrings = parameters.getValue ( "CompareAsStrings" );
 	boolean compareAsStrings = false;
 	if ( (CompareAsStrings != null) && CompareAsStrings.equalsIgnoreCase(_True) ) {
@@ -251,6 +255,21 @@ throws CommandWarningException, CommandException
                 op = "!=";
                 pos1 = pos;
                 pos2 = pos + 2;
+            }
+            else if ( conditionUpper.indexOf("!CONTAINS") > 0 ) {
+            	// Put this before the next "CONTAINS" operator
+                pos = conditionUpper.indexOf("!CONTAINS");
+                op = "!CONTAINS";
+                pos1 = pos;
+                pos2 = pos + 9;
+                compareAsStrings = true; // "!contains" is only used on strings
+            }
+            else if ( conditionUpper.indexOf("CONTAINS") > 0 ) {
+                pos = conditionUpper.indexOf("CONTAINS");
+                op = "CONTAINS";
+                pos1 = pos;
+                pos2 = pos + 8;
+                compareAsStrings = true; // "contains" is only used on strings
             }
             else if ( Condition.indexOf("=") > 0 ) {
                 message = "Bad use of = in condition.";
@@ -418,36 +437,48 @@ throws CommandWarningException, CommandException
             else if ( compareAsStrings || (!isValue1Integer && !isValue2Integer &&
             	!isValue1Double && !isValue2Double && !isValue1Boolean && !isValue2Boolean) ) {
             	// Always compare the string values or the input is not other types so assume strings
-            	int comp = value1.compareTo(value2);
-            	if ( op.equals("<=") ) {
- 	    	        if ( comp <= 0 ) {
- 	    	            conditionEval = true;
- 	    	        }
+ 	    	    if ( op.equals("CONTAINS") ) {
+ 	    	    	if ( value1.indexOf(value2) >= 0 ) {
+ 	    	    	     conditionEval = true;
+ 	    	    	}
  	    	    }
- 	    	    else if ( op.equals("<") ) {
- 	                if ( comp < 0 ) {
- 	                    conditionEval = true;
- 	                } 
+ 	    	    else if ( op.equals("!CONTAINS") ) {
+ 	    	    	if ( value1.indexOf(value2) < 0 ) {
+ 	    	    	     conditionEval = true;
+ 	    	    	}
  	    	    }
- 	    	    else if ( op.equals(">=") ) {
- 	                if ( comp >= 0 ) {
- 	                    conditionEval = true;
- 	                }
- 	    	    }
- 	    	    else if ( op.equals(">") ) {
- 	                if ( comp > 0 ) {
- 	                    conditionEval = true;
- 	                }
- 	    	    }
- 	    	    else if ( op.equals("==") ) {
- 	                if ( comp == 0 ) {
- 	                    conditionEval = true;
- 	                }
- 	    	    }
- 	    	    else if ( op.equals("!=") ) {
- 	                if ( comp != 0 ) {
- 	                    conditionEval = true;
- 	                }
+ 	    	    else {
+ 	    	    	int comp = value1.compareTo(value2);
+	            	if ( op.equals("<=") ) {
+	 	    	        if ( comp <= 0 ) {
+	 	    	            conditionEval = true;
+	 	    	        }
+	 	    	    }
+	 	    	    else if ( op.equals("<") ) {
+	 	                if ( comp < 0 ) {
+	 	                    conditionEval = true;
+	 	                } 
+	 	    	    }
+	 	    	    else if ( op.equals(">=") ) {
+	 	                if ( comp >= 0 ) {
+	 	                    conditionEval = true;
+	 	                }
+	 	    	    }
+	 	    	    else if ( op.equals(">") ) {
+	 	                if ( comp > 0 ) {
+	 	                    conditionEval = true;
+	 	                }
+	 	    	    }
+	 	    	    else if ( op.equals("==") ) {
+	 	                if ( comp == 0 ) {
+	 	                    conditionEval = true;
+	 	                }
+	 	    	    }
+	 	    	    else if ( op.equals("!=") ) {
+	 	                if ( comp != 0 ) {
+	 	                    conditionEval = true;
+	 	                }
+	 	    	    }
  	    	    }
             }
             else {

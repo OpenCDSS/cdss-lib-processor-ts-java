@@ -16,7 +16,6 @@ import RTi.TS.TSUtil_CheckTimeSeries;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -302,6 +301,7 @@ private DataTable getDiscoveryTable()
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
+@SuppressWarnings("rawtypes")
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
     List<DataTable> v = null;

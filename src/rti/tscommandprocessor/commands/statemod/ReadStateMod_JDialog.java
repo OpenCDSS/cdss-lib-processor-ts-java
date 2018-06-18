@@ -56,6 +56,10 @@ Editor for ReadStateMod() command.
 public class ReadStateMod_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
+	
+private final String __ADD_WORKING_DIR = "Add Working Directory";
+private final String __REMOVE_WORKING_DIR = "Remove Working Directory";
+
 private SimpleJButton __browse_JButton = null;// File browse button
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -122,7 +126,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__InputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__InputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"ReadStateMod_JDialog", "Error converting file to relative path." );
+				}
 		        checkGUIState(); // To enable/disable parameters
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
@@ -140,10 +150,10 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if ( __path_JButton.getText().equals("Add Working Directory") ) {
+		if ( __path_JButton.getText().equals(__ADD_WORKING_DIR) ) {
 			__InputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir, __InputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals("Remove Working Directory") ) {
+		else if ( __path_JButton.getText().equals(__REMOVE_WORKING_DIR) ) {
 			try {
 			    __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir, __InputFile_JTextField.getText() ) );
 			}
@@ -521,7 +531,7 @@ private void initialize ( JFrame parent, ReadStateMod_Command command )
 
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton(	"Remove Working Directory",this);
+		__path_JButton = new SimpleJButton(	__REMOVE_WORKING_DIR,this);
 		button_JPanel.add ( __path_JButton );
 	}
 	button_JPanel.add (__cancel_JButton = new SimpleJButton("Cancel",this));
@@ -672,10 +682,10 @@ private void refresh ()
 		__path_JButton.setEnabled ( true );
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
-			__path_JButton.setText ( "Remove Working Directory" );
+			__path_JButton.setText ( __REMOVE_WORKING_DIR );
 		}
 		else {
-		    __path_JButton.setText ( "Add Working Directory" );
+		    __path_JButton.setText ( __ADD_WORKING_DIR );
 		}
 	}
 }

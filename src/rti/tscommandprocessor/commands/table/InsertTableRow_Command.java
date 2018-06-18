@@ -6,6 +6,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import RTi.Util.Message.Message;
@@ -24,11 +25,13 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.DataTableValueStringProvider;
+import RTi.Util.Table.TableRecord;
 
 /**
 This class initializes, checks, and runs the InsertTableRow() command.
 */
-public class InsertTableRow_Command extends AbstractCommand implements Command
+public class InsertTableRow_Command extends AbstractCommand
 {
     
 /**
@@ -101,12 +104,11 @@ throws InvalidCommandParameterException
     }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(3);
+	List<String> validList = new ArrayList<String>(4);
     validList.add ( "TableID" );
     validList.add ( "InsertRow" );
     validList.add ( "InsertCount" );
-    //validList.add ( "ColumnFilters" );
-    //validList.add ( "ColumnValues" );
+    validList.add ( "ColumnValues" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -162,18 +164,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (InsertCount != null) && !InsertCount.equals("") ) {
         insertCount = new Integer(InsertCount);
     }
-    /*
-    String ColumnFilters = parameters.getValue ( "ColumnFilters" );
-    Hashtable columnFilters = new Hashtable();
-    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) && (ColumnFilters.indexOf(":") > 0) ) {
-        // First break map pairs by comma
-        List<String>pairs = StringUtil.breakStringList(ColumnFilters, ",", 0 );
-        // Now break pairs and put in hashtable
-        for ( String pair : pairs ) {
-            String [] parts = pair.split(":");
-            columnFilters.put(parts[0].trim(), parts[1].trim() );
-        }
-    }
     String ColumnValues = parameters.getValue ( "ColumnValues" );
     // Used LinkedHashMap because want insert order to be retained in new columns, if columns are created
     LinkedHashMap<String,String> columnValues = new LinkedHashMap<String,String>();
@@ -186,7 +176,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             columnValues.put(parts[0].trim(), parts[1].trim() );
         }
     }
-    */
     
     // Get the table to process.
 
@@ -235,17 +224,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        insertCount = 1;
 	    }
 	    int nRows = table.getNumberOfRecords();
+        List<TableRecord> addedRecords = new ArrayList<TableRecord>();
         if ( insertRow == null ) {
             // Add the end of the table
             for ( int i = 0; i < insertCount; i++ ) {
-                table.addRecord(table.emptyRecord());
+                TableRecord addedRecord = table.addRecord(table.emptyRecord());
+                if ( columnValues != null ) {
+                    addedRecords.add(addedRecord);
+                }
             }
         }
         else if ( insertRow < nRows ) {
             int row0 = insertRow - 1; // convert from 1-index to 0-index
             for ( int i = 0; i < insertCount; i++ ) {
                 // OK to keep inserting at the same point
-                table.insertRecord(row0,table.emptyRecord(),false);
+                TableRecord addedRecord = table.emptyRecord();
+                table.insertRecord(row0,addedRecord,false);
+                if ( columnValues != null ) {
+                    addedRecords.add(addedRecord);
+                }
             }
         }
         else {
@@ -254,6 +251,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Omit the InsertRow parameter to append to the end of the table." ) );
             throw new CommandWarningException ( message );
+        }
+        if ( columnValues != null ) {
+        	// Set values in the table records that were added.
+        	// At this point the records will have been set in the table, and table record references should be consistent.
+    		final Command thisCommand = this; // for anonymous class below
+    		// TODO SAM 2016-08-25 Why is the DataTableValueStringProvider needed?  The ColumnValues parameter
+    		// is expanded above before parsing the parameter to allow ${xx:Property} to be expanded
+    		DataTableValueStringProvider tableValueGetter = new DataTableValueStringProvider () {
+    			public String getTableCellValueAsString ( String valueFormat ) {
+    				// The value in the table can actually contain ${Property}
+    				if ( (valueFormat == null) || valueFormat.isEmpty() || valueFormat.indexOf("${") < 0 ) {
+    					return valueFormat;
+    				}
+    				else {
+    					return TSCommandProcessorUtil.expandParameterValue(processor, thisCommand, valueFormat);
+    				}
+    			}
+    		};
+    	    table.setTableRecordValues ( addedRecords, columnValues, tableValueGetter, false );
         }
  	}
 	catch ( Exception e ) {
@@ -285,8 +301,7 @@ public String toString ( PropList props )
     String TableID = props.getValue( "TableID" );
     String InsertRow = props.getValue( "InsertRow" );
     String InsertCount = props.getValue( "InsertCount" );
-	//String ColumnFilters = props.getValue( "ColumnFilters" );
-	//String ColumnValues = props.getValue( "ColumnValues" );
+	String ColumnValues = props.getValue( "ColumnValues" );
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -306,19 +321,12 @@ public String toString ( PropList props )
         }
         b.append ( "InsertCount=" + InsertCount );
     }
-    /*
-    if ( (ColumnFilters != null) && (ColumnFilters.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ColumnFilters=\"" + ColumnFilters + "\"" );
-    }
     if ( (ColumnValues != null) && (ColumnValues.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "ColumnValues=\"" + ColumnValues + "\"" );
-    }*/
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

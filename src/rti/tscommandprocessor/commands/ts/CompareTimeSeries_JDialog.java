@@ -58,6 +58,8 @@ private JTextField __AnalysisStart_JTextField;
 private JTextField __AnalysisEnd_JTextField;
 private JTextField __DiffFlag_JTextField = null;
 private SimpleJComboBox	__CreateDiffTS_JComboBox = null;
+private SimpleJComboBox __TableID_JComboBox = null;
+private JTextField __DiffCountProperty_JTextField = null;
 private SimpleJComboBox	__WarnIfDifferent_JComboBox = null;
 private SimpleJComboBox	__WarnIfSame_JComboBox = null;
 private JTextArea __command_JTextArea = null;
@@ -70,10 +72,11 @@ private boolean __ok = false; // Indicates whether user has pressed OK to close 
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param tableIDChoices choices for TableID value.
 */
-public CompareTimeSeries_JDialog ( JFrame parent, CompareTimeSeries_Command command )
+public CompareTimeSeries_JDialog ( JFrame parent, CompareTimeSeries_Command command, List<String> tableIDChoices )
 {	super(parent, true);
-	initialize ( parent, command );
+	initialize ( parent, command, tableIDChoices );
 }
 
 /**
@@ -148,6 +151,8 @@ private void checkInput ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String DiffFlag = __DiffFlag_JTextField.getText().trim();
 	String CreateDiffTS = __CreateDiffTS_JComboBox.getSelected();
+	String TableID = __TableID_JComboBox.getSelected();
+	String DiffCountProperty = __DiffCountProperty_JTextField.getText().trim();
 	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	__error_wait = false;
@@ -187,6 +192,12 @@ private void checkInput ()
 	if ( CreateDiffTS.length() > 0 ) {
 		props.set ( "CreateDiffTS", CreateDiffTS );
 	}
+    if ( TableID.length() > 0 ) {
+    	props.set ( "TableID", TableID );
+    }
+    if ( DiffCountProperty.length() > 0 ) {
+    	props.set ( "DiffCountProperty", DiffCountProperty );
+    }
 	if ( WarnIfDifferent.length() > 0 ) {
 		props.set ( "WarnIfDifferent", WarnIfDifferent );
 	}
@@ -219,6 +230,8 @@ private void commitEdits ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String DiffFlag = __DiffFlag_JTextField.getText().trim();
 	String CreateDiffTS = __CreateDiffTS_JComboBox.getSelected();
+    String TableID = __TableID_JComboBox.getSelected();
+	String DiffCountProperty = __DiffCountProperty_JTextField.getText().trim();
 	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSID1", TSID1 );
@@ -233,6 +246,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "DiffFlag", DiffFlag );
 	__command.setCommandParameter ( "CreateDiffTS", CreateDiffTS );
+    __command.setCommandParameter ( "TableID", TableID );
+    __command.setCommandParameter ( "DiffCountProperty", DiffCountProperty );
 	__command.setCommandParameter ( "WarnIfDifferent", WarnIfDifferent );
 	__command.setCommandParameter ( "WarnIfSame", WarnIfSame );
 }
@@ -241,8 +256,9 @@ private void commitEdits ()
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param tableIDChoices list of choices for table identifiers
 */
-private void initialize ( JFrame parent, CompareTimeSeries_Command command )
+private void initialize ( JFrame parent, CompareTimeSeries_Command command, List<String> tableIDChoices )
 {	__command = command;
 
 	addWindowListener( this );
@@ -284,6 +300,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     JGUIUtil.addComponent(ts2_JPanel, new JLabel ( "First time series to compare:" ), 
 		0, ++yts2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID1_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+    __TSID1_JComboBox.setToolTipText("Specify the TSID for the first time series, can use ${Property}");
     List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     if ( tsids.size() == 0 ) {
@@ -301,6 +318,7 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     JGUIUtil.addComponent(ts2_JPanel, new JLabel ( "Second time series compare:" ), 
 		0, ++yts2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID2_JComboBox = new SimpleJComboBox ( true ); // Allow edit
+    __TSID2_JComboBox.setToolTipText("Specify the TSID for the second time series, can use ${Property}");
     __TSID2_JComboBox.setData ( tsids );
     __TSID2_JComboBox.addItemListener ( this );
     __TSID2_JComboBox.getJTextComponent().getDocument().addDocumentListener ( this );
@@ -505,6 +523,9 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     JGUIUtil.addComponent(out_JPanel, new JLabel (
 		"Indicate whether output time series should be created indicating the difference between time series." ),
 		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel (
+		"An output table containing time series differences can also be created (or appended to)." ),
+		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
 		0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST); 
     
@@ -522,7 +543,31 @@ private void initialize ( JFrame parent, CompareTimeSeries_Command command )
     		1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel, new JLabel(
 		"Optional - create a time series TS2 - TS1? (default=" + __command._False + ")."), 
-		3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST); 
+		3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Table ID:" ), 
+        0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true ); // Allow edit
+    __TableID_JComboBox.setToolTipText("Specify the table ID for comparison output or use ${Property} notation");
+    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox.setData ( tableIDChoices );
+    __TableID_JComboBox.addItemListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(out_JPanel, __TableID_JComboBox,
+        1, yOut, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel( "Optional - table to receive difference output."), 
+        3, yOut, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(out_JPanel, new JLabel ( "Difference count property:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DiffCountProperty_JTextField = new JTextField ( "", 20 );
+    __DiffCountProperty_JTextField.setToolTipText("Property name to set difference count (use to check non-zero count).");
+    __DiffCountProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(out_JPanel, __DiffCountProperty_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(out_JPanel, new JLabel(
+        "Optional - property to set to difference count (default=don't set)."),
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -604,6 +649,8 @@ private void refresh ()
 	String AnalysisEnd = "";
 	String DiffFlag = "";
 	String CreateDiffTS = "";
+	String TableID = "";
+	String DiffCountProperty = "";
 	String WarnIfDifferent = "";
 	String WarnIfSame = "";
 	PropList props = __command.getCommandParameters();
@@ -621,6 +668,8 @@ private void refresh ()
 		AnalysisEnd = props.getValue("AnalysisEnd");
 		DiffFlag = props.getValue ( "DiffFlag" );
 		CreateDiffTS = props.getValue ( "CreateDiffTS" );
+        TableID = props.getValue ( "TableID" );
+        DiffCountProperty = props.getValue ( "DiffCountProperty" );
 		WarnIfDifferent = props.getValue ( "WarnIfDifferent" );
 		WarnIfSame = props.getValue ( "WarnIfSame" );
         // Select the item in the list.  If not a match, print a warning.
@@ -751,6 +800,27 @@ private void refresh ()
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+        if ( TableID == null ) {
+            // Select default...
+            __TableID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TableID_JComboBox,TableID, JGUIUtil.NONE, null, null ) ) {
+                __TableID_JComboBox.select ( TableID );
+            }
+            else {
+            	// OK to add to list since does not need to exist
+            	__TableID_JComboBox.add(TableID);
+            	__TableID_JComboBox.select(TableID);
+                //Message.printWarning ( 1, routine,
+                //"Existing command references an invalid\nTableID value \"" + TableID +
+                //"\".  Select a different value or Cancel.");
+                //__error_wait = true;
+            }
+        }
+		if ( DiffCountProperty != null ) {
+			__DiffCountProperty_JTextField.setText ( DiffCountProperty );
+		}
 		if ( JGUIUtil.isSimpleJComboBoxItem(__WarnIfDifferent_JComboBox, WarnIfDifferent, JGUIUtil.NONE, null, null ) ) {
 			__WarnIfDifferent_JComboBox.select ( WarnIfDifferent );
 		}
@@ -795,6 +865,8 @@ private void refresh ()
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	DiffFlag = __DiffFlag_JTextField.getText().trim();
 	CreateDiffTS = __CreateDiffTS_JComboBox.getSelected();
+    TableID = __TableID_JComboBox.getSelected();
+    DiffCountProperty = __DiffCountProperty_JTextField.getText().trim();
 	WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
@@ -810,6 +882,8 @@ private void refresh ()
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "DiffFlag=" + DiffFlag );
 	props.add ( "CreateDiffTS=" + CreateDiffTS );
+    props.add ( "TableID=" + TableID );
+    props.add ( "DiffCountProperty=" + DiffCountProperty );
 	props.add ( "WarnIfDifferent=" + WarnIfDifferent );
 	props.add ( "WarnIfSame=" + WarnIfSame );
 	__command_JTextArea.setText( __command.toString(props) );

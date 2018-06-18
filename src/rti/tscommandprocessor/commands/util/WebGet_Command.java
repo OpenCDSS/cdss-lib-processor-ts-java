@@ -128,10 +128,11 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(3);
+	List<String> validList = new ArrayList<String>(4);
 	validList.add ( "URI" );
 	validList.add ( "LocalFile" );
 	validList.add ( "OutputProperty" );
+	validList.add ( "ResponseCodeProperty" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -231,6 +232,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String OutputProperty = parameters.getValue ( "OutputProperty" );
 	if ( (OutputProperty != null) && !OutputProperty.isEmpty() ) {
 		doOutputProperty = true;
+	}
+	boolean doResponseCodeProperty = false;
+	String ResponseCodeProperty = parameters.getValue ( "ResponseCodeProperty" );
+	if ( (ResponseCodeProperty != null) && !ResponseCodeProperty.isEmpty() ) {
+		doResponseCodeProperty = true;
 	}
 
 	if ( warning_count > 0 ) {
@@ -365,6 +371,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             }
             if ( urlConnection != null ) {
             	urlConnection.disconnect();
+            	int code = urlConnection.getResponseCode();
+                // If requested, set response code as a property
+                if ( doResponseCodeProperty ) {
+                    PropList request_params = new PropList ( "" );
+                    request_params.setUsingObject ( "PropertyName", ResponseCodeProperty );
+                    request_params.setUsingObject ( "PropertyValue", new Integer(code) );
+                    try {
+                        processor.processRequest( "SetProperty", request_params);
+                    }
+                    catch ( Exception e ) {
+                        message = "Error requesting SetProperty(Property=\"" + ResponseCodeProperty + "\") from processor.";
+                        Message.printWarning(log_level,
+                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                            routine, message );
+                        status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+                    }
+                }
             }
         }
 	}
@@ -400,6 +425,7 @@ public String toString ( PropList parameters )
     String URI = parameters.getValue ( "URI" );
     String LocalFile = parameters.getValue ( "LocalFile" );
     String OutputProperty = parameters.getValue ( "OutputProperty" );
+    String ResponseCodeProperty = parameters.getValue ( "ResponseCodeProperty" );
 	StringBuffer b = new StringBuffer ();
 	if ( (URI != null) && (URI.length() > 0) ) {
 		b.append ( "URI=\"" + URI + "\"" );
@@ -415,6 +441,12 @@ public String toString ( PropList parameters )
 			b.append ( "," );
 		}
 		b.append ( "OutputProperty=\"" + OutputProperty + "\"" );
+	}
+	if ( (ResponseCodeProperty != null) && (ResponseCodeProperty.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "ResponseCodeProperty=\"" + ResponseCodeProperty + "\"" );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

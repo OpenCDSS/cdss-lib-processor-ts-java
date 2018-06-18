@@ -48,6 +48,7 @@ private SimpleJButton __ok_JButton = null;
 private JTextArea __URI_JTextArea = null;
 private JTextField __LocalFile_JTextField = null;
 private JTextField __OutputProperty_JTextField = null;
+private JTextField __ResponseCodeProperty_JTextField = null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null;
 private boolean __error_wait = false;
@@ -144,6 +145,7 @@ private void checkInput ()
 	String URI = __URI_JTextArea.getText().trim();
 	String LocalFile = __LocalFile_JTextField.getText().trim();
 	String OutputProperty = __OutputProperty_JTextField.getText().trim();
+	String ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	__error_wait = false;
 	if ( URI.length() > 0 ) {
 		props.set ( "URI", URI );
@@ -153,6 +155,9 @@ private void checkInput ()
     }
     if ( OutputProperty.length() > 0 ) {
         props.set ( "OutputProperty", OutputProperty );
+    }
+    if ( ResponseCodeProperty.length() > 0 ) {
+        props.set ( "ResponseCodeProperty", ResponseCodeProperty );
     }
 	try {
 	    // This will warn the user...
@@ -172,22 +177,11 @@ private void commitEdits ()
 {	String URI = __URI_JTextArea.getText().trim();
     String LocalFile = __LocalFile_JTextField.getText().trim();
     String OutputProperty = __OutputProperty_JTextField.getText().trim();
+    String ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	__command.setCommandParameter ( "URI", URI );
 	__command.setCommandParameter ( "LocalFile", LocalFile );
 	__command.setCommandParameter ( "OutputProperty", OutputProperty );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__LocalFile_JTextField = null;
-	__ok_JButton = null;
-	super.finalize ();
+	__command.setCommandParameter ( "ResponseCodeProperty", ResponseCodeProperty );
 }
 
 /**
@@ -259,6 +253,16 @@ private void initialize ( JFrame parent, WebGet_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - property name for output (default=not set)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Response code property:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ResponseCodeProperty_JTextField = new JTextField (10);
+    __ResponseCodeProperty_JTextField.setToolTipText("Name of processor property to assign retrieved URI content.");
+    __ResponseCodeProperty_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ResponseCodeProperty_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - property name for response code (default=not set)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 6, 60 );
@@ -327,6 +331,7 @@ private void refresh ()
     String URI = "";
     String LocalFile = "";
     String OutputProperty = "";
+    String ResponseCodeProperty = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -334,6 +339,7 @@ private void refresh ()
         URI = parameters.getValue ( "URI" );
         LocalFile = parameters.getValue ( "LocalFile" );
         OutputProperty = parameters.getValue ( "OutputProperty" );
+        ResponseCodeProperty = parameters.getValue ( "ResponseCodeProperty" );
 		if ( URI != null ) {
 			__URI_JTextArea.setText ( URI );
 		}
@@ -343,16 +349,21 @@ private void refresh ()
         if ( OutputProperty != null ) {
             __OutputProperty_JTextField.setText ( OutputProperty );
         }
+        if ( ResponseCodeProperty != null ) {
+            __ResponseCodeProperty_JTextField.setText ( ResponseCodeProperty );
+        }
 	}
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
 	URI = __URI_JTextArea.getText().trim();
     LocalFile = __LocalFile_JTextField.getText().trim();
     OutputProperty = __OutputProperty_JTextField.getText().trim();
+    ResponseCodeProperty = __ResponseCodeProperty_JTextField.getText().trim();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "URI=" + URI );
 	props.add ( "LocalFile=" + LocalFile );
 	props.add ( "OutputProperty=" + OutputProperty );
+	props.add ( "ResponseCodeProperty=" + ResponseCodeProperty );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

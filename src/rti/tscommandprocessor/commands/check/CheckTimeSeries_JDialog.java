@@ -395,7 +395,7 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command, List<S
 		"Check time series data values for critical values (see also the CheckTimeSeriesStatistic() command)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Check results can be saved to a table for output or further processing." ), 
+        "Check results can be saved to a table for output for further processing." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Or, use the WriteCheckFile() command to save the results of all checks from command status messages." ), 

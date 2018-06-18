@@ -199,7 +199,10 @@ private void initialize ( JFrame parent, If_Command command )
         "   Value1 operator Value2"),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
-        "where operator is <, <=, >, >=, ==, or !=, and values are integers, floating point numbers, booleans, or strings."),
+        "where operator is <, <=, >, >=, ==, or != and values are integers, floating point numbers, booleans, or strings."),
+        0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(cond_JPanel, new JLabel (
+        "String evaluations can also use the contains and !contains operators (comparisons are case-specific)."),
         0, ++yCond, 7, 1, 0, 0, insetsNONE, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(cond_JPanel, new JLabel (
         "Values can use ${Property} processor property syntax."),

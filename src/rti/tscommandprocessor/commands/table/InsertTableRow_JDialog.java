@@ -5,8 +5,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -24,7 +26,7 @@ import java.awt.event.WindowListener;
 
 import java.util.List;
 
-//import RTi.Util.GUI.DictionaryJDialog;
+import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -42,13 +44,11 @@ private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __InsertRow_JTextField = null;
 private JTextField __InsertCount_JTextField = null;
-// TODO SAM 2014-02-04 Later enable a way to set column values with a map
-//private JTextArea __ColumnFilters_JTextArea = null;
-//private JTextArea __ColumnValues_JTextArea = null;
+private JTextArea __ColumnValues_JTextArea = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private InsertTableRow_Command __command = null;
-//private JFrame __parent = null;
+private JFrame __parent = null;
 private boolean __ok = false;
 
 /**
@@ -80,21 +80,6 @@ public void actionPerformed(ActionEvent event)
 			response ( true );
 		}
 	}
-    /*
-	else if ( event.getActionCommand().equalsIgnoreCase("EditColumnFilters") ) {
-        // Edit the dictionary in the dialog.  It is OK for the string to be blank.
-        String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
-        String [] notes = { "Filter to indicate which rows should be modified",
-            "Column to Filter - table column to check for values (currently can only be columns containing strings)",
-            "Filter Value - value in columns to match, to determine rows to set values"
-        };
-        String columnFilters = (new DictionaryJDialog ( __parent, true, ColumnFilters, "Edit ColumnFilters Parameter",
-            notes, "Column to Filter", "Filter Value (can include * wildcards)",10)).response();
-        if ( columnFilters != null ) {
-            __ColumnFilters_JTextArea.setText ( columnFilters );
-            refresh();
-        }
-    }
     else if ( event.getActionCommand().equalsIgnoreCase("EditColumnValues") ) {
         // Edit the dictionary in the dialog.  It is OK for the string to be blank.
         String ColumnValues = __ColumnValues_JTextArea.getText().trim();
@@ -106,7 +91,6 @@ public void actionPerformed(ActionEvent event)
             refresh();
         }
     }
-    */
 }
 
 /**
@@ -119,8 +103,7 @@ private void checkInput ()
 	String TableID = __TableID_JComboBox.getSelected();
 	String InsertRow = __InsertRow_JTextField.getText().trim();
 	String InsertCount = __InsertCount_JTextField.getText().trim();
-	//String ColumnFilters = __ColumnFilters_JTextArea.getText().trim().replace("\n"," ");
-	//String ColumnValues = __ColumnValues_JTextArea.getText().trim().replace("\n"," ");
+	String ColumnValues = __ColumnValues_JTextArea.getText().trim().replace("\n"," ");
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -132,14 +115,9 @@ private void checkInput ()
     if ( InsertCount.length() > 0 ) {
         props.set ( "InsertCount", InsertCount );
     }
-    /*
-    if ( ColumnFilters.length() > 0 ) {
-        props.set ( "ColumnFilters", ColumnFilters );
-    }
     if ( ColumnValues.length() > 0 ) {
         props.set ( "ColumnValues", ColumnValues );
     }
-    */
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -159,13 +137,11 @@ private void commitEdits ()
 {	String TableID = __TableID_JComboBox.getSelected();
     String InsertRow = __InsertRow_JTextField.getText().trim();
     String InsertCount = __InsertCount_JTextField.getText().trim();
-    //String ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
-    //String ColumnValues = __ColumnValues_JTextArea.getText().trim();
+    String ColumnValues = __ColumnValues_JTextArea.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "InsertRow", InsertRow );
     __command.setCommandParameter ( "InsertCount", InsertCount );
-	//__command.setCommandParameter ( "ColumnValues", ColumnValues );
-	//__command.setCommandParameter ( "ColumnFilters", ColumnFilters );
+	__command.setCommandParameter ( "ColumnValues", ColumnValues );
 }
 
 /**
@@ -174,7 +150,7 @@ Instantiates the GUI components.
 @param command Command to edit and possibly run.
 */
 private void initialize ( JFrame parent, InsertTableRow_Command command, List<String> tableIDChoices )
-{	//__parent = parent;
+{	__parent = parent;
     __command = command;
 
 	addWindowListener(this);
@@ -186,7 +162,7 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
 	getContentPane().add ("North", main_JPanel);
-	int y = 0;
+	int y = -1;
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
@@ -201,12 +177,11 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     JGUIUtil.addComponent(paragraph, new JLabel (
         "In the future a row selection filter will be added to specify the insert position."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(paragraph, new JLabel (
-        "Currently only blank rows can be added but in the future specifying column values will be enabled."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -238,21 +213,6 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - number of rows to insert (default=1)." ),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column filter(s):"),
-        0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ColumnFilters_JTextArea = new JTextArea (3,35);
-    __ColumnFilters_JTextArea.setLineWrap ( true );
-    __ColumnFilters_JTextArea.setWrapStyleWord ( true );
-    __ColumnFilters_JTextArea.setToolTipText("ColumnName1:FilterPattern1,ColumnName2:FilterPattern2");
-    __ColumnFilters_JTextArea.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnFilters_JTextArea),
-        1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - select rows by matching column pattern (default=modify all rows)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnFilters",this),
-        3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column(s) and value(s) to set:"),
         0, ++y, 1, 2, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnValues_JTextArea = new JTextArea (6,35);
@@ -262,11 +222,10 @@ private void initialize ( JFrame parent, InsertTableRow_Command command, List<St
     __ColumnValues_JTextArea.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__ColumnValues_JTextArea),
         1, y, 2, 2, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - column(s) and associated value(s) to set."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - column(s) and associated value(s) to set."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new SimpleJButton ("Edit","EditColumnValues",this),
         3, ++y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        */
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -346,16 +305,15 @@ private void refresh ()
     String TableID = "";
     String InsertRow = "";
     String InsertCount = "";
-    //String ColumnFilters = "";
-    //String ColumnValues = "";
+    String ColumnValues = "";
+
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
         InsertRow = props.getValue ( "InsertRow" );
         InsertCount = props.getValue ( "InsertCount" );
-        //ColumnFilters = props.getValue ( "ColumnFilters" );
-        //ColumnValues = props.getValue ( "ColumnValues" );
+        ColumnValues = props.getValue ( "ColumnValues" );
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -377,27 +335,20 @@ private void refresh ()
         if ( InsertCount != null ) {
             __InsertCount_JTextField.setText ( InsertCount );
         }
-        /*
-        if ( ColumnFilters != null ) {
-            __ColumnFilters_JTextArea.setText ( ColumnFilters );
-        }
         if ( ColumnValues != null ) {
             __ColumnValues_JTextArea.setText ( ColumnValues );
         }
-        */
 	}
 	// Regardless, reset the command from the fields...
 	TableID = __TableID_JComboBox.getSelected();
     InsertRow = __InsertRow_JTextField.getText().trim();
     InsertCount = __InsertCount_JTextField.getText().trim();
-	//ColumnFilters = __ColumnFilters_JTextArea.getText().trim();
-	//ColumnValues = __ColumnValues_JTextArea.getText().trim();
+	ColumnValues = __ColumnValues_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
     props.add ( "InsertRow=" + InsertRow );
     props.add ( "InsertCount=" + InsertCount );
-    //props.add ( "ColumnFilters=" + ColumnFilters );
-	//props.add ( "ColumnValues=" + ColumnValues );
+	props.add ( "ColumnValues=" + ColumnValues );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

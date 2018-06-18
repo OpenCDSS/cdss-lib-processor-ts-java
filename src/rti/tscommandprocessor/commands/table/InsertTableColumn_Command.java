@@ -7,6 +7,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -23,6 +24,7 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.DataTableFunctionType;
 import RTi.Util.Table.TableColumnType;
 import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
@@ -56,6 +58,7 @@ throws InvalidCommandParameterException
     String ColumnType = parameters.getValue ( "ColumnType" );
     String ColumnWidth = parameters.getValue ( "ColumnWidth" );
     String ColumnPrecision = parameters.getValue ( "ColumnPrecision" );
+    String InitialFunction = parameters.getValue ( "InitialFunction" );
 	String warning = "";
     String message;
     
@@ -110,14 +113,49 @@ throws InvalidCommandParameterException
                     message, "Specify the column precision as an integer." ) );
         }
     }
+    
+    if ( (InitialFunction != null) && !InitialFunction.isEmpty() ) {
+        // Make sure that the statistic is known in general
+        boolean supported = false;
+        DataTableFunctionType functionType = null;
+        try {
+            functionType = DataTableFunctionType.valueOfIgnoreCase(InitialFunction);
+            supported = true;
+        }
+        catch ( Exception e ) {
+            message = "The function (" + InitialFunction + ") is not recognized.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Select a supported function using the command editor." ) );
+        }
+        
+        // Make sure that it is in the supported list for this command
+        
+        if ( supported ) {
+            supported = false;
+            List<DataTableFunctionType> functionTypes = getFunctionChoices();
+            for ( int i = 0; i < functionTypes.size(); i++ ) {
+                if ( functionType == functionTypes.get(i) ) {
+                    supported = true;
+                }
+            }
+            if ( !supported ) {
+                message = "The function (" + InitialFunction + ") is not supported by this command.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Select a supported function using the command editor." ) );
+            }
+        }
+    }
  
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(7);
+	List<String> validList = new ArrayList<String>(8);
     validList.add ( "TableID" );
     validList.add ( "InsertColumn" );
     validList.add ( "InsertBeforeColumn" );
     validList.add ( "ColumnType" );
     validList.add ( "InitialValue" );
+    validList.add ( "InitialFunction" );
     validList.add ( "ColumnWidth" );
     validList.add ( "ColumnPrecision" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );    
@@ -141,6 +179,17 @@ public boolean editCommand ( JFrame parent )
         (TSCommandProcessor)getCommandProcessor(), this);
     // The command will be modified if changed...
 	return (new InsertTableColumn_JDialog ( parent, this, tableIDChoices )).ok();
+}
+
+/**
+Return the list of supported functions for the InitialFunction parameter.
+*/
+protected List<DataTableFunctionType> getFunctionChoices()
+{
+    List<DataTableFunctionType> functionTypes = new Vector<DataTableFunctionType>();
+    functionTypes.add ( DataTableFunctionType.ROW );
+    functionTypes.add ( DataTableFunctionType.ROW0 );
+    return functionTypes;
 }
 
 // Use base class parseCommand()
@@ -196,6 +245,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String InitialValue = parameters.getValue ( "InitialValue" );
     if ( (InitialValue != null) && (InitialValue.indexOf("${") >= 0) ) {
     	InitialValue = TSCommandProcessorUtil.expandParameterValue(processor, this, InitialValue);
+	}
+	String InitialFunction = parameters.getValue ( "InitialFunction" );
+	DataTableFunctionType initialFunction = null;
+	if ( InitialFunction != null ) {
+	    initialFunction = DataTableFunctionType.valueOfIgnoreCase(InitialFunction);
 	}
     String ColumnWidth = parameters.getValue ( "ColumnWidth" );
     int columnWidth = -1;
@@ -357,11 +411,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
 	                message, "Verify the column name." ) );
 	        }
-            table.addField(col,new TableField(columnType,InsertColumn,columnWidth,columnPrecision), initValue);
+            table.addField(col,new TableField(columnType,InsertColumn,columnWidth,columnPrecision), initValue, initialFunction);
 	    }
         else {
             // Insert the column at the end of the table
-            table.addField(new TableField(TableField.lookupDataType(ColumnType),InsertColumn,columnWidth,columnPrecision), initValue);
+            table.addField(-1,new TableField(TableField.lookupDataType(ColumnType),InsertColumn,columnWidth,columnPrecision), initValue, initialFunction);
         }
  	}
 	catch ( Exception e ) {
@@ -395,6 +449,7 @@ public String toString ( PropList props )
     String InsertBeforeColumn = props.getValue( "InsertBeforeColumn" );
     String ColumnType = props.getValue( "ColumnType" );
     String InitialValue = props.getValue( "InitialValue" );
+    String InitialFunction = props.getValue( "InitialFunction" );
     String ColumnWidth = props.getValue( "ColumnWidth" );
     String ColumnPrecision = props.getValue( "ColumnPrecision" );
 	StringBuffer b = new StringBuffer ();
@@ -427,6 +482,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "InitialValue=\"" + InitialValue + "\"" );
+    }
+    if ( (InitialFunction != null) && (InitialFunction.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InitialFunction=\"" + InitialFunction + "\"" );
     }
     if ( (ColumnWidth != null) && (ColumnWidth.length() > 0) ) {
         if ( b.length() > 0 ) {

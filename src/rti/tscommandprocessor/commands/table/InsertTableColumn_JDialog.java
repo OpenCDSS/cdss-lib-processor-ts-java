@@ -33,6 +33,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Table.DataTableFunctionType;
 import RTi.Util.Table.TableColumnType;
 
 @SuppressWarnings("serial")
@@ -48,6 +49,7 @@ private JTextField __InsertColumn_JTextField = null;
 private JTextField __InsertBeforeColumn_JTextField = null;
 private SimpleJComboBox __ColumnType_JComboBox = null;
 private JTextField __InitialValue_JTextField = null;
+private SimpleJComboBox __InitialFunction_JComboBox = null;
 private JTextField __ColumnWidth_JTextField = null;
 private JTextField __ColumnPrecision_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
@@ -98,6 +100,7 @@ private void checkInput ()
 	String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
 	String ColumnType = __ColumnType_JComboBox.getSelected();
 	String InitialValue = __InitialValue_JTextField.getText().trim();
+	String InitialFunction = __InitialFunction_JComboBox.getSelected();
 	String ColumnWidth = __ColumnWidth_JTextField.getText().trim();
 	String ColumnPrecision = __ColumnPrecision_JTextField.getText().trim();
 	__error_wait = false;
@@ -116,6 +119,9 @@ private void checkInput ()
     }
     if ( InitialValue.length() > 0 ) {
         props.set ( "InitialValue", InitialValue );
+    }
+    if ( (InitialFunction != null) && (InitialFunction.length() > 0) ) {
+        props.set ( "InitialFunction", InitialFunction );
     }
     if ( ColumnWidth.length() > 0 ) {
         props.set ( "ColumnWidth", ColumnWidth );
@@ -144,6 +150,7 @@ private void commitEdits ()
     String InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
     String ColumnType = __ColumnType_JComboBox.getSelected();
     String InitialValue = __InitialValue_JTextField.getText().trim();
+	String InitialFunction = __InitialFunction_JComboBox.getSelected();
     String ColumnWidth = __ColumnWidth_JTextField.getText().trim();
     String ColumnPrecision = __ColumnPrecision_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
@@ -151,6 +158,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "InsertBeforeColumn", InsertBeforeColumn );
     __command.setCommandParameter ( "ColumnType", ColumnType );
     __command.setCommandParameter ( "InitialValue", InitialValue );
+    __command.setCommandParameter ( "InitialFunction", InitialFunction );
     __command.setCommandParameter ( "ColumnWidth", ColumnWidth );
     __command.setCommandParameter ( "ColumnPrecision", ColumnPrecision );
 }
@@ -182,7 +190,7 @@ private void initialize ( JFrame parent, InsertTableColumn_Command command, List
         "This command inserts a new column into a table."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The column is initialized with blank (null) values unless an initial value is provided."),
+        "The column is initialized with blank (null) values unless an initial value or function is provided."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -254,6 +262,21 @@ private void initialize ( JFrame parent, InsertTableColumn_Command command, List
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - initial value (default=null)." ),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial function:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InitialFunction_JComboBox = new SimpleJComboBox(false);
+    List<DataTableFunctionType> functionTypes = __command.getFunctionChoices();
+    __InitialFunction_JComboBox.add ( "" );
+    for ( DataTableFunctionType functionType : functionTypes ) {
+        __InitialFunction_JComboBox.add ( "" + functionType );
+    }
+    __InitialFunction_JComboBox.select ( 0 );
+    __InitialFunction_JComboBox.addActionListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InitialFunction_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - function to initialize data (default=initial value)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
     JGUIUtil.addComponent(main_JPanel, new JLabel("Column width (if string):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ColumnWidth_JTextField = new JTextField ( "", 10 );
@@ -352,6 +375,7 @@ private void refresh ()
     String InsertBeforeColumn = "";
     String ColumnType = "";
     String InitialValue = "";
+    String InitialFunction = "";
     String ColumnWidth = "";
     String ColumnPrecision = "";
 	PropList props = __command.getCommandParameters();
@@ -362,6 +386,7 @@ private void refresh ()
         InsertBeforeColumn = props.getValue ( "InsertBeforeColumn" );
         ColumnType = props.getValue ( "ColumnType" );
         InitialValue = props.getValue ( "InitialValue" );
+        InitialFunction = props.getValue ( "InitialFunction" );
         ColumnWidth = props.getValue ( "ColumnWidth" );
         ColumnPrecision = props.getValue ( "ColumnPrecision" );
         if ( TableID == null ) {
@@ -404,6 +429,21 @@ private void refresh ()
         if ( InitialValue != null ) {
             __InitialValue_JTextField.setText ( InitialValue );
         }
+        if ( InitialFunction == null ) {
+            // Select default...
+            __InitialFunction_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __InitialFunction_JComboBox, InitialFunction, JGUIUtil.NONE, null, null ) ) {
+                __InitialFunction_JComboBox.select ( InitialFunction );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nInitialFunction value \"" +
+                InitialFunction + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( ColumnWidth != null ) {
             __ColumnWidth_JTextField.setText ( ColumnWidth );
         }
@@ -417,6 +457,7 @@ private void refresh ()
     InsertBeforeColumn = __InsertBeforeColumn_JTextField.getText().trim();
     ColumnType = __ColumnType_JComboBox.getSelected();
     InitialValue = __InitialValue_JTextField.getText().trim();
+    InitialFunction = __InitialFunction_JComboBox.getSelected();
     ColumnWidth = __ColumnWidth_JTextField.getText().trim();
     ColumnPrecision = __ColumnPrecision_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
@@ -425,6 +466,7 @@ private void refresh ()
     props.add ( "InsertBeforeColumn=" + InsertBeforeColumn );
     props.add ( "ColumnType=" + ColumnType );
     props.add ( "InitialValue=" + InitialValue );
+    props.add ( "InitialFunction=" + InitialFunction );
     props.add ( "ColumnWidth=" + ColumnWidth );
     props.add ( "ColumnPrecision=" + ColumnPrecision );
 	__command_JTextArea.setText( __command.toString ( props ) );

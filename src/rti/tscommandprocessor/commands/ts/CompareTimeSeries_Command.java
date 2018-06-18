@@ -2,9 +2,11 @@ package rti.tscommandprocessor.commands.ts;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TS;
 import RTi.TS.TSData;
@@ -12,7 +14,7 @@ import RTi.TS.TSEnsemble;
 import RTi.TS.TSIterator;
 import RTi.TS.TSUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -22,17 +24,20 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableField;
+import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 
 /**
 This class initializes, checks, and runs the CompareTimeSeries() command.
 */
-public class CompareTimeSeries_Command extends AbstractCommand
-implements Command
+public class CompareTimeSeries_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -42,11 +47,79 @@ protected final String _False = "False";
 protected final String _True = "True";
 
 /**
+The table that is created for discovery mode.
+*/
+private DataTable __discoveryTable = null;
+
+/**
+ * Output table columns.
+ */
+private int __tableDateTimeColumnNum = -1;
+private int __tableTSID1ColumnNum = -1;
+private int __tableTSID2ColumnNum = -1;
+private int __tableValue1ColumnNum = -1;
+private int __tableValue2ColumnNum = -1;
+private int __tableDiffColumnNum = -1;
+private int __tableDiffPercentColumnNum = -1;
+private int __tableCommentColumnNum = -1;
+
+/**
 Constructor.
 */
 public CompareTimeSeries_Command ()
 {	super();
 	setCommandName ( "CompareTimeSeries" );
+}
+
+
+/**
+Add a table record for output difference.
+*/
+private void addTableRecord ( DataTable table, DateTime dt, TS ts1, TS ts2, double value1, double value2, double diff, String comment ) {
+	// Save the results to the table
+	// Add a record to the table
+	TableRecord rec = table.emptyRecord();
+	try {
+		if ( __tableDateTimeColumnNum >= 0 ) {
+			// Make a copy since iterating
+			rec.setFieldValue(__tableDateTimeColumnNum, new DateTime(dt));
+		}
+		if ( __tableTSID1ColumnNum >= 0 ) {
+			String tsid1 = ts1.getAlias();
+			if ( tsid1.isEmpty() ) {
+				tsid1 = ts1.getIdentifierString();
+			}
+			rec.setFieldValue(__tableTSID1ColumnNum, tsid1);
+		}
+		if ( __tableTSID2ColumnNum >= 0 ) {
+			String tsid2 = ts2.getAlias();
+			if ( tsid2.isEmpty() ) {
+				tsid2 = ts2.getIdentifierString();
+			}
+			rec.setFieldValue(__tableTSID2ColumnNum, tsid2);
+		}
+		if ( __tableValue1ColumnNum >= 0 ) {
+			rec.setFieldValue(__tableValue1ColumnNum, value1);
+		}
+		if ( __tableValue2ColumnNum >= 0 ) {
+			rec.setFieldValue(__tableValue2ColumnNum, value2);
+		}
+		if ( __tableDiffColumnNum >= 0 ) {
+			rec.setFieldValue(__tableDiffColumnNum, diff);
+		}
+		if ( __tableDiffPercentColumnNum >= 0 ) {
+			if ( !ts1.isDataMissing(value1) && !ts2.isDataMissing(value2) ) {
+				rec.setFieldValue(__tableDiffPercentColumnNum, 100*(value2 - value1)/value1);
+			}
+		}
+		if ( __tableCommentColumnNum >= 0 ) {
+			rec.setFieldValue(__tableCommentColumnNum, comment);
+		}
+		table.addRecord(rec);
+	}
+	catch ( Exception e ) {
+		// For now swallow
+	}
 }
 
 /**
@@ -212,7 +285,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(14);
+	List<String> validList = new ArrayList<String>(16);
 	validList.add ( "TSID1" );
 	validList.add ( "TSID2" );
 	validList.add ( "EnsembleID1" );
@@ -225,6 +298,8 @@ throws InvalidCommandParameterException
 	validList.add ( "AnalysisEnd" );
 	validList.add ( "DiffFlag" );
 	validList.add ( "CreateDiffTS" );
+    validList.add ( "TableID" );
+    validList.add ( "DiffCountProperty" );
 	validList.add ( "WarnIfDifferent" );
 	validList.add ( "WarnIfSame" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -246,8 +321,32 @@ Edit the command.
 not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	return (new CompareTimeSeries_JDialog ( parent, this )).ok();
+{   // The command will be modified if changed...
+    List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)getCommandProcessor(), this);
+    return (new CompareTimeSeries_JDialog ( parent, this, tableIDChoices )).ok();
+}
+
+/**
+Return the table that is read by this class when run in discovery mode.
+*/
+private DataTable getDiscoveryTable()
+{
+    return __discoveryTable;
+}
+
+/**
+Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+*/
+@SuppressWarnings("rawtypes")
+public List getObjectList ( Class c )
+{   DataTable table = getDiscoveryTable();
+    List<DataTable> v = null;
+    if ( (table != null) && (c == table.getClass()) ) {
+        v = new Vector<DataTable>();
+        v.add ( table );
+    }
+    return v;
 }
 
 /**
@@ -258,6 +357,31 @@ Run the command.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
@@ -266,7 +390,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int size = 0;
 	
 	CommandProcessor processor = getCommandProcessor();
-	CommandPhaseType commandPhase = CommandPhaseType.RUN;
     CommandStatus status = getCommandStatus();
     Boolean clearStatus = new Boolean(true); // default
     try {
@@ -311,6 +434,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		DiffFlag = null;
 	}
 	String CreateDiffTS = parameters.getValue ( "CreateDiffTS" );
+	String TableID = parameters.getValue ( "TableID" );
+	if ( (TableID != null) && (TableID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
+		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
+	}
+	String DiffCountProperty = parameters.getValue ( "DiffCountProperty" );
 	String WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
 	String WarnIfSame = parameters.getValue ( "WarnIfSame" );
 	int Precision_int = 0; // The number of digits after the decimal to use for
@@ -338,13 +466,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	double [] Tolerance_double = null;
 	String value_format = "%.6f";	// Default
-	if ( Precision != null ) {
+	if ( (Precision != null) && !Precision.isEmpty() ) {
 		Precision_int = Integer.parseInt ( Precision );
 		value_format = "%." + Precision_int + "f";
 	}
 	int Tolerance_count = 0;
 	List<String> Tolerance_tokens = null;
-	if ( Tolerance != null ) {
+	if ( (Tolerance != null) && !Tolerance.isEmpty() ) {
 		// The parameter has been specified as a list of one or more numbers...
 		Tolerance_tokens = StringUtil.breakStringList(Tolerance,", ",0);
 		if ( Tolerance_tokens != null ) {
@@ -355,7 +483,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		// Get each tolerance as a number...
 		for ( int it = 0; it < Tolerance_count; it++ ) {
-			Tolerance_double[it] = Double.parseDouble((String)Tolerance_tokens.get(it) );
+			Tolerance_double[it] = Double.parseDouble(Tolerance_tokens.get(it) );
 		}
 	}
 	else {
@@ -389,257 +517,299 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			++warning_count;
 		}
     }
+    
+    // Get the table to process.  If null will create below.
+
+    DataTable table = null;
+    boolean doTable = false;
+    if ( (TableID != null) && !TableID.equals("") ) {
+        // Get the table to be used as input
+    	doTable = true;
+    	PropList request_params = new PropList ( "" );
+        request_params.set ( "TableID", TableID );
+        CommandProcessorRequestResultsBean bean = null;
+        try {
+            bean = processor.processRequest( "GetTable", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        }
+        PropList bean_PropList = bean.getResultsPropList();
+        Object o_Table = bean_PropList.getContents ( "Table" );
+        if ( o_Table != null ) {
+            table = (DataTable)o_Table;
+        }
+    }
+    
+    if ( warning_count > 0 ) {
+        // Input error...
+        message = "Insufficient data to run command.";
+        status.addToLog ( commandPhase,
+        new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
+        Message.printWarning(3, routine, message );
+        throw new CommandException ( message );
+    }
 	
+    // Now process
+    
 	List<TS> tslist = new ArrayList<TS>();
 	List<TS> tslist2 = null; // Used when comparing 2 ensembles
 	boolean do2Ts = false;
 	boolean do2Ensembles = false;
-	if ( (TSID1 != null) && !TSID1.isEmpty() && (TSID2 != null) && !TSID2.isEmpty() ) {
-		do2Ts = true;
-		TS ts = null;
-		try {	PropList request_params = new PropList ( "" );
-				request_params.set ( "CommandTag", command_tag );
-				request_params.set ( "TSID", TSID1 );
-				CommandProcessorRequestResultsBean bean = null;
-				try {
-				    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
-				}
-				catch ( Exception e ) {
-					message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID1 + "\") from processor.";
-					Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-					Message.printWarning(log_level, routine, e );
-	                status.addToLog ( CommandPhaseType.RUN,
-	                        new CommandLogRecord(CommandStatusType.FAILURE,
-	                                message, "Report the problem to software support." ) );
-				}
-				PropList bean_PropList = bean.getResultsPropList();
-				Object o_TS = bean_PropList.getContents ( "TS");
-				if ( o_TS == null ) {
-					message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID1 + "\") from processor.";
-					Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-	                status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-				}
-				else {
-					ts = (TS)o_TS;
-				}
-		}
-		catch ( Exception e ) {
-			ts = null;
-		}
-		if ( ts == null ) {
-			message = "Unable to find time series to process using TSID \"" + TSID1 + "\".";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message );
-	        status.addToLog ( CommandPhaseType.RUN,
-	            new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-			throw new CommandWarningException ( message );
-		}
-		else {
-			tslist.add(ts);
-		}
-		// Get the second time series
-		try {
-			PropList request_params = new PropList ( "" );
-				request_params.set ( "CommandTag", command_tag );
-				request_params.set ( "TSID", TSID2 );
-				CommandProcessorRequestResultsBean bean = null;
-				try {
-				    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
-				}
-				catch ( Exception e ) {
-					message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID2 + "\") from processor.";
-					Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-					Message.printWarning(log_level, routine, e );
-		            status.addToLog ( CommandPhaseType.RUN,
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		if ( (TSID1 != null) && !TSID1.isEmpty() && (TSID2 != null) && !TSID2.isEmpty() ) {
+			do2Ts = true;
+			TS ts = null;
+			try {	PropList request_params = new PropList ( "" );
+					request_params.set ( "CommandTag", command_tag );
+					request_params.set ( "TSID", TSID1 );
+					CommandProcessorRequestResultsBean bean = null;
+					try {
+					    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+					}
+					catch ( Exception e ) {
+						message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID1 + "\") from processor.";
+						Message.printWarning(log_level,
+						MessageUtil.formatMessageTag( command_tag, ++warning_count),
+						routine, message );
+						Message.printWarning(log_level, routine, e );
+		                status.addToLog ( commandPhase,
+		                        new CommandLogRecord(CommandStatusType.FAILURE,
+		                                message, "Report the problem to software support." ) );
+					}
+					PropList bean_PropList = bean.getResultsPropList();
+					Object o_TS = bean_PropList.getContents ( "TS");
+					if ( o_TS == null ) {
+						message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID1 + "\") from processor.";
+						Message.printWarning(log_level,
+						MessageUtil.formatMessageTag( command_tag, ++warning_count),
+						routine, message );
+		                status.addToLog ( commandPhase,
 		                    new CommandLogRecord(CommandStatusType.FAILURE,
-		                            message, "Report the problem to software support." ) );
-				}
-				PropList bean_PropList = bean.getResultsPropList();
-				Object o_TS = bean_PropList.getContents ( "TS");
-				if ( o_TS == null ) {
-					message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID2 + "\") from processor.";
-					Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-		            status.addToLog ( CommandPhaseType.RUN,
-		                new CommandLogRecord(CommandStatusType.FAILURE,
-		                    message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-				}
-				else {
-					ts = (TS)o_TS;
-				}
+		                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+					}
+					else {
+						ts = (TS)o_TS;
+					}
+			}
+			catch ( Exception e ) {
+				ts = null;
+			}
+			if ( ts == null ) {
+				message = "Unable to find time series to process using TSID \"" + TSID1 + "\".";
+				Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag(
+				command_tag,++warning_count), routine, message );
+		        status.addToLog ( commandPhase,
+		            new CommandLogRecord(CommandStatusType.FAILURE,
+		                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+				throw new CommandWarningException ( message );
+			}
+			else {
+				tslist.add(ts);
+			}
+			// Get the second time series
+			try {
+				PropList request_params = new PropList ( "" );
+					request_params.set ( "CommandTag", command_tag );
+					request_params.set ( "TSID", TSID2 );
+					CommandProcessorRequestResultsBean bean = null;
+					try {
+					    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+					}
+					catch ( Exception e ) {
+						message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID2 + "\") from processor.";
+						Message.printWarning(log_level,
+						MessageUtil.formatMessageTag( command_tag, ++warning_count),
+						routine, message );
+						Message.printWarning(log_level, routine, e );
+			            status.addToLog ( commandPhase,
+			                    new CommandLogRecord(CommandStatusType.FAILURE,
+			                            message, "Report the problem to software support." ) );
+					}
+					PropList bean_PropList = bean.getResultsPropList();
+					Object o_TS = bean_PropList.getContents ( "TS");
+					if ( o_TS == null ) {
+						message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID2 + "\") from processor.";
+						Message.printWarning(log_level,
+						MessageUtil.formatMessageTag( command_tag, ++warning_count),
+						routine, message );
+			            status.addToLog ( commandPhase,
+			                new CommandLogRecord(CommandStatusType.FAILURE,
+			                    message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+					}
+					else {
+						ts = (TS)o_TS;
+					}
+			}
+			catch ( Exception e ) {
+				ts = null;
+			}
+			if ( ts == null ) {
+				message = "Unable to find time series to process using TSID \"" + TSID2 + "\".";
+				Message.printWarning ( warning_level,
+				MessageUtil.formatMessageTag(
+				command_tag,++warning_count), routine, message );
+			    status.addToLog ( commandPhase,
+			        new CommandLogRecord(CommandStatusType.FAILURE,
+			            message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+				throw new CommandWarningException ( message );
+			}
+			else {
+				tslist.add(ts);
+			}
 		}
-		catch ( Exception e ) {
-			ts = null;
-		}
-		if ( ts == null ) {
-			message = "Unable to find time series to process using TSID \"" + TSID2 + "\".";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message );
-		    status.addToLog ( CommandPhaseType.RUN,
-		        new CommandLogRecord(CommandStatusType.FAILURE,
-		            message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-			throw new CommandWarningException ( message );
+		else if ( (EnsembleID1 != null) && !EnsembleID1.isEmpty() && (EnsembleID2 != null) && !EnsembleID2.isEmpty() ) {
+			// Get the two ensembles
+			TSEnsemble tsensemble1 = null, tsensemble2 = null;
+	        PropList request_params = new PropList ( "" );
+	        request_params.set ( "CommandTag", command_tag );
+	        request_params.set ( "EnsembleID", EnsembleID1 );
+	        CommandProcessorRequestResultsBean bean = null;
+	        try {
+	            bean = processor.processRequest( "GetEnsemble", request_params );
+	        }
+	        catch ( Exception e ) {
+	            message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID1 + "\") from processor.";
+	            Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	            status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Report the problem to software support." ) );
+	        }
+	        PropList bean_PropList = bean.getResultsPropList();
+	        Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
+	        if ( o_TSEnsemble == null ) {
+	            message = "Null ensemble requesting GetEnsemble(EnsembleID=\"" + EnsembleID1 + "\") from processor.";
+	            Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	            status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+	        }
+	        else {
+	            tsensemble1 = (TSEnsemble)o_TSEnsemble;
+	        }
+	        if ( tsensemble1 == null ) {
+	            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID1 + "\".";
+	            Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag(
+	            command_tag,++warning_count), routine, message );
+	            status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+	            throw new CommandWarningException ( message );
+	        }
+	        // Get the second ensemble
+	        request_params.set ( "CommandTag", command_tag );
+	        request_params.set ( "EnsembleID", EnsembleID2 );
+	        try {
+	            bean = processor.processRequest( "GetEnsemble", request_params );
+	        }
+	        catch ( Exception e ) {
+	            message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID2 + "\") from processor.";
+	            Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	            status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Report the problem to software support." ) );
+	        }
+	        bean_PropList = bean.getResultsPropList();
+	        o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
+	        if ( o_TSEnsemble == null ) {
+	            message = "Null ensemble requesting GetEnsemble(EnsembleID=\"" + EnsembleID2 + "\") from processor.";
+	            Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	            status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+	        }
+	        else {
+	            tsensemble2 = (TSEnsemble)o_TSEnsemble;
+	        }
+	        
+	        if ( tsensemble2 == null ) {
+	            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID2 + "\".";
+	            Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag(
+	            command_tag,++warning_count), routine, message );
+	            status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+	            throw new CommandWarningException ( message );
+	        }
+			// Add the time series from the ensemble - then iterate through the list and get the matching time series from the second ensemble
+			tslist = tsensemble1.getTimeSeriesList(false);
+			tslist2 = tsensemble2.getTimeSeriesList(false);
+			// Number of time series in ensembles must be the same
+			if ( tslist.size() != tslist2.size() ) {
+	            message = "Number of time series in first ensemble \"" + EnsembleID1 + "\" (" + tslist.size() +
+	            	") is different from the second ensemble \"" + EnsembleID2 + "\" (" + tslist2.size() + ").";
+	            Message.printWarning ( warning_level,
+	            MessageUtil.formatMessageTag(
+	            command_tag,++warning_count), routine, message );
+	            status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Verify that ensembles have the same number of time series." ) );
+	            throw new CommandWarningException ( message );
+			}
+			do2Ensembles = true;
 		}
 		else {
-			tslist.add(ts);
+			// Get all the time series
+			try {
+			    Object o = processor.getPropContents( "TSResultsList" );
+				@SuppressWarnings("unchecked")
+				List<TS> tslist0 = (List<TS>)o;
+				tslist = tslist0;
+			}
+			catch ( Exception e ){
+				message = "Error requesting TSResultsList from processor.";
+				Message.printWarning ( warning_level,
+					MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
+		        status.addToLog ( commandPhase,
+		            new CommandLogRecord(CommandStatusType.FAILURE,
+		                message, "Report to software support." ) );
+			}
 		}
-	}
-	else if ( (EnsembleID1 != null) && !EnsembleID1.isEmpty() && (EnsembleID2 != null) && !EnsembleID2.isEmpty() ) {
-		// Get the two ensembles
-		TSEnsemble tsensemble1 = null, tsensemble2 = null;
-        PropList request_params = new PropList ( "" );
-        request_params.set ( "CommandTag", command_tag );
-        request_params.set ( "EnsembleID", EnsembleID1 );
-        CommandProcessorRequestResultsBean bean = null;
-        try {
-            bean = processor.processRequest( "GetEnsemble", request_params );
-        }
-        catch ( Exception e ) {
-            message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID1 + "\") from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-        }
-        PropList bean_PropList = bean.getResultsPropList();
-        Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
-        if ( o_TSEnsemble == null ) {
-            message = "Null ensemble requesting GetEnsemble(EnsembleID=\"" + EnsembleID1 + "\") from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
-        }
-        else {
-            tsensemble1 = (TSEnsemble)o_TSEnsemble;
-        }
-        if ( tsensemble1 == null ) {
-            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID1 + "\".";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
-            throw new CommandWarningException ( message );
-        }
-        // Get the second ensemble
-        request_params.set ( "CommandTag", command_tag );
-        request_params.set ( "EnsembleID", EnsembleID2 );
-        try {
-            bean = processor.processRequest( "GetEnsemble", request_params );
-        }
-        catch ( Exception e ) {
-            message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID2 + "\") from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-        }
-        bean_PropList = bean.getResultsPropList();
-        o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
-        if ( o_TSEnsemble == null ) {
-            message = "Null ensemble requesting GetEnsemble(EnsembleID=\"" + EnsembleID2 + "\") from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
-        }
-        else {
-            tsensemble2 = (TSEnsemble)o_TSEnsemble;
-        }
-        
-        if ( tsensemble2 == null ) {
-            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID2 + "\".";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
-            throw new CommandWarningException ( message );
-        }
-		// Add the time series from the ensemble - then iterate through the list and get the matching time series from the second ensemble
-		tslist = tsensemble1.getTimeSeriesList(false);
-		tslist2 = tsensemble2.getTimeSeriesList(false);
-		// Number of time series in ensembles must be the same
-		if ( tslist.size() != tslist2.size() ) {
-            message = "Number of time series in first ensemble \"" + EnsembleID1 + "\" (" + tslist.size() +
-            	") is different from the second ensemble \"" + EnsembleID2 + "\" (" + tslist2.size() + ").";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that ensembles have the same number of time series." ) );
-            throw new CommandWarningException ( message );
+		
+		if ( (tslist == null) || (tslist.size() < 2) ) {
+			message = "Number of matched time series is < 2.  Not comparing.";
+			Message.printWarning ( warning_level, 
+			MessageUtil.formatMessageTag(command_tag, ++warning_count),
+			routine, message );
+	        status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.WARNING,
+	                message, "Verify that specified time series exist." ) );
+			throw new CommandException ( message );
 		}
-		do2Ensembles = true;
-	}
-	else {
-		// Get all the time series
-		try {
-		    Object o = processor.getPropContents( "TSResultsList" );
-			tslist = (List)o;
+		// Check to make sure that the intervals are the same...
+		List<TS> tslist2Check = new ArrayList<TS>();
+		tslist2Check.addAll(tslist);
+		if ( do2Ensembles ) {
+			tslist2Check.addAll(tslist2);
 		}
-		catch ( Exception e ){
-			message = "Error requesting TSResultsList from processor.";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
-	        status.addToLog ( CommandPhaseType.RUN,
-	            new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Report to software support." ) );
+		if ( !TSUtil.areIntervalsSame(tslist2Check) ) {
+			message = "Time series intervals are not consistent.  Not able to compare time series.";
+			Message.printWarning ( warning_level, 
+			MessageUtil.formatMessageTag(command_tag, ++warning_count),
+			routine, message );
+	        status.addToLog ( commandPhase,
+	              new CommandLogRecord(CommandStatusType.FAILURE,
+	                     message, "Verify that the time series intervals are consistent." ) );
+			throw new CommandException ( message );
 		}
 	}
 	
-	if ( (tslist == null) || (tslist.size() < 2) ) {
-		message = "Number of matched time series is < 2.  Not comparing.";
-		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
-		routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.WARNING,
-                message, "Verify that specified time series exist." ) );
-		throw new CommandException ( message );
-	}
-	// Check to make sure that the intervals are the same...
-	List<TS> tslist2Check = new ArrayList<TS>();
-	tslist2Check.addAll(tslist);
-	if ( do2Ensembles ) {
-		tslist2Check.addAll(tslist2);
-	}
-	if ( !TSUtil.areIntervalsSame(tslist2Check) ) {
-		message = "Time series intervals are not consistent.  Not able to compare time series.";
-		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
-		routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-              new CommandLogRecord(CommandStatusType.FAILURE,
-                     message, "Verify that the time series intervals are consistent." ) );
-		throw new CommandException ( message );
-	}
-	
-	int [] diffcount; // Count of differences for each tolerance.
+	int [] diffcount = null; // Count of differences for each tolerance.
 	double [] difftotal = new double[Tolerance_count]; // Total difference for each tolerance.
 	double [] difftotalabs = new double[Tolerance_count]; // Total difference for each tolerance, absolute values.
 	double [] diffabsavg = null;
@@ -660,6 +830,44 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	List<TS> difftsList = new ArrayList<TS>(); // Output time series if CreateDiffTS=True
 	int tsComparisonsTried = 0; // Count of the number of comparisons tried - warn if 0
 	try {
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+           	if ( doTable ) {
+	            if ( table == null ) {
+	                // Did not find table so is being created in this command
+	                // Create an empty table and set the ID
+	                table = new DataTable();
+	                table.setTableID ( TableID );
+	                setDiscoveryTable ( table );
+	            }
+        	}
+        }
+        else if ( commandPhase == CommandPhaseType.RUN ) {
+        	if ( doTable ) {
+	            if ( table == null ) {
+	                // Did not find the table above so create it
+	                table = new DataTable( /*columnList*/ );
+	                table.setTableID ( TableID );
+	                setupOutputTable(table);
+	                Message.printStatus(2, routine, "Was not able to match existing table \"" + TableID + "\" so created new table.");
+	                
+	                // Set the table in the processor...
+	                PropList request_params = null;
+	                request_params = new PropList ( "" );
+	                request_params.setUsingObject ( "Table", table );
+	                try {
+	                    processor.processRequest( "SetTable", request_params);
+	                }
+	                catch ( Exception e ) {
+	                    message = "Error requesting SetTable(Table=...) from processor.";
+	                    Message.printWarning(warning_level,
+	                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                            routine, message );
+	                    status.addToLog ( commandPhase,
+	                            new CommandLogRecord(CommandStatusType.FAILURE,
+	                               message, "Report problem to software support." ) );
+	                }
+	            }
+        	}
 	    // Loop through the time series.  For each time series, find its
 		// matching time series, by location, ignoring itself.  When a match is found, do the comparison.
 		TS ts1, ts2;
@@ -873,6 +1081,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
 							" TS1 = missing " + flag1 +
 							" TS2 = " + StringUtil.formatString(value2,value_format) + " " + flag2 );
+						if ( doTable ) {
+							addTableRecord ( table, date, ts1, ts2, value1_orig, value2_orig, Double.NaN, "TS1 missing, TS2 not missing" );
+						}
 						// Indicate as missing at all levels...
 						is_diff = true;
 						for ( it = 0; it < Tolerance_count; it++ ) {
@@ -887,6 +1098,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 						Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
 							" TS1 = " + StringUtil.formatString(value1,value_format) + " " + flag1 +
 							" TS2 = missing " + flag2);
+						if ( doTable ) {
+							addTableRecord ( table, date, ts1, ts2, value1_orig, value2_orig, Double.NaN, "TS1 not missing, TS2 missing" );
+						}
 						// Indicate as missing at all levels...
 						is_diff = true;
 						for ( it = 0; it < Tolerance_count; it++ ) {
@@ -921,6 +1135,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     							") has difference TS2-TS1 of " + StringUtil.formatString(diff,value_format) +
     							" on " + date + " TS2 = " + StringUtil.formatString(value2,value_format) + " " + flag1 +
     							" TS1 = " + StringUtil.formatString(value1,value_format) + " " + flag2 );
+    							if ( doTable ) {
+    								addTableRecord ( table, date, ts1, ts2, value1, value2, diff, "Diff > tolerance " + Tolerance_double[it] );
+    							}
     							difftotal[it] += diff;
     							difftotalabs[it] += diffabs;
     							++diffcount[it];
@@ -992,7 +1209,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		TS ts = null;
 		// Figure out the length for some of the string columns...
 		for ( int i = 0; i < size; i++ ) {
-			ts = (TS)compare_tslist.get(i);
+			ts = compare_tslist.get(i);
 			if ( ts.getIdentifier().getLocation().length() > location_length ) {
 				location_length = ts.getIdentifier().getLocation().length();
 			}
@@ -1042,7 +1259,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		double [] diffabsavg_array;
 		double [] diffavg_array;
 		for ( int i = 0; i < size; i++ ) {
-			ts = (TS)compare_tslist.get(i);
+			ts = compare_tslist.get(i);
 			is_diff = false;
 			// Check for difference here so that difference-only summary report can be completed...
 			diffcount_array = (int[])compare_diffcount.get(i);
@@ -1062,9 +1279,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					b2.append ( "|" + StringUtil.formatString(ts.getIdentifier().getType(),datatype_format) );
 				}
 			}
-			b.append ( "|" + StringUtil.formatString(((Integer)compare_numvalues.get(i)).intValue(),int_format) );
+			b.append ( "|" + StringUtil.formatString(compare_numvalues.get(i).intValue(),int_format) );
 			if ( is_diff ) {
-				b2.append ( "|" + StringUtil.formatString(((Integer)compare_numvalues.get(i)).intValue(),int_format) );
+				b2.append ( "|" + StringUtil.formatString(compare_numvalues.get(i).intValue(),int_format) );
 			}
 			diffabsavg_array=(double[])compare_diffabsavg.get(i);
 			diffavg_array=(double[])compare_diffavg.get(i);
@@ -1091,16 +1308,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				}
 			}
 			if ( is_diff ) {
-				b.append ( "|" + StringUtil.formatString(((Double)compare_diffmax.get(i)).doubleValue(), double_format) );
-				b2.append ( "|" + StringUtil.formatString(((Double)compare_diffmax.get(i)).doubleValue(),double_format) );
-				date = (DateTime)compare_diffmaxdate.get(i);
+				b.append ( "|" + StringUtil.formatString(compare_diffmax.get(i).doubleValue(), double_format) );
+				b2.append ( "|" + StringUtil.formatString(compare_diffmax.get(i).doubleValue(),double_format) );
+				date = compare_diffmaxdate.get(i);
 				if ( date == null ) {
 					b.append ( "|" + StringUtil.formatString( "", date_format) );
 					b2.append ( "|" + StringUtil.formatString( "", date_format) );
 				}
 				else {
-				    b.append ( "|" +StringUtil.formatString(((DateTime)compare_diffmaxdate.get(i)).toString(),date_format) );
-					b2.append ( "|" +StringUtil.formatString(((DateTime)compare_diffmaxdate.get(i)).toString(),date_format) );
+				    b.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(i).toString(),date_format) );
+					b2.append ( "|" +StringUtil.formatString(compare_diffmaxdate.get(i).toString(),date_format) );
 				}
 			}
 			else {
@@ -1121,7 +1338,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		if ( doCreateDiffTS ) {
 			try {
 			    Object o = processor.getPropContents ( "TSResultsList" );
-				tslist = (List<TS>)o;
+			    @SuppressWarnings("unchecked")
+				List<TS> tslist0 = (List<TS>)o;
+				tslist = tslist0;
 			}
 			catch ( Exception e ) {
 				// Not fatal, but of use to developers.
@@ -1131,7 +1350,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			// Add the difference time series...
 			int diffsize = difftsList.size();
 			for ( int i = 0; i < diffsize; i++ ) {
-				tslist.add ( (TS)difftsList.get(i) );
+				tslist.add ( difftsList.get(i) );
 			}
 			try {
 			    processor.setPropContents ( "TSResultsList", tslist );
@@ -1141,7 +1360,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				Message.printWarning ( warning_level, 
 					MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 				Message.printWarning ( 3, routine, e );
-                   status.addToLog ( CommandPhaseType.RUN,
+                   status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 				throw new CommandException ( message );
@@ -1154,42 +1373,177 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		    message = "No time series comparisons were done based on the input parameters.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that the location, data type, etc. " +
                     	"parameters result in pairs of time series to compare." ) );
 		}
+	    // Set the property indicating the number of rows in the table
+        if ( (DiffCountProperty != null) && !DiffCountProperty.isEmpty() && (diffcount != null) ) {
+            int diffCountTotal = 0;
+            for ( int i = 0; i < diffcount.length; i++ ) {
+            	diffCountTotal += diffcount[i];
+            }
+            PropList request_params = new PropList ( "" );
+            request_params.setUsingObject ( "PropertyName", DiffCountProperty );
+            request_params.setUsingObject ( "PropertyValue", new Integer(diffCountTotal) );
+            try {
+                processor.processRequest( "SetProperty", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetProperty(Property=\"" + DiffCountProperty + "\") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+            }
+        }
+    }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error comparing time series (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		Message.printWarning ( 3, routine, e );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Report the problem to software support." ) );
 		throw new CommandException ( message );
 	}
-	if ( WarnIfDifferent_boolean && (tsdiff_count > 0) ) {
-		message = "" + tsdiff_count + " of " + size + " time series had differences.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that time series being different is OK." ) );
-		throw new CommandException ( message );
-	}
-	if ( WarnIfSame_boolean && (tsdiff_count == 0) ) {
-		message = "All " + size + " time series are the same.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that all time seres being the same is OK." ) );
-		throw new CommandException ( message );
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		if ( WarnIfDifferent_boolean && (tsdiff_count > 0) ) {
+			message = "" + tsdiff_count + " of " + size + " time series had differences.";
+			Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify that time series being different is OK." ) );
+			throw new CommandException ( message );
+		}
+		if ( WarnIfSame_boolean && (tsdiff_count == 0) ) {
+			message = "All " + size + " time series are the same.";
+			Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+	        status.addToLog ( commandPhase,
+	            new CommandLogRecord(CommandStatusType.FAILURE,
+	                message, "Verify that all time seres being the same is OK." ) );
+			throw new CommandException ( message );
+		}
 	}
 	
-	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+	status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the table that is read by this class in discovery mode.
+*/
+private void setDiscoveryTable ( DataTable table )
+{
+    __discoveryTable = table;
+}
+
+/**
+Check that the output table is set up.  The following columns are included
+(might also include flags later):
+<ol>
+<li>DateTime</li>
+<li>TSID1</li>
+<li>TSID2</li>
+<li>Value1</li>
+<li>Value2</li>
+<li>Diff</li>
+<li>DiffPercent/</li>
+</ol>
+@param table table to set up
+@return true if table is being used, false if not.
+*/
+private boolean setupOutputTable ( DataTable table )
+{	if ( table == null ) {
+		return false;
+	}
+	String tableDateTimeColumn = "DateTime";
+	String tableTSID1Column = "TSID1";
+	String tableTSID2Column = "TSID2";
+	String tableValue1Column = "Value1";
+	String tableValue2Column = "Value2";
+	String tableDiffColumn = "Diff";
+	String tableDiffPercentColumn = "DiffPercent";
+	String tableCommentColumn = "Comment";
+	try {
+		if ( (tableDateTimeColumn != null) && !tableDateTimeColumn.isEmpty() ) {
+			__tableDateTimeColumnNum = table.getFieldIndex(tableDateTimeColumn);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it
+		__tableDateTimeColumnNum = table.addField(1, new TableField(TableField.DATA_TYPE_DATETIME, tableDateTimeColumn, -1, -1), "");
+	}
+	try {
+		if ( (tableTSID1Column != null) && !tableTSID1Column.isEmpty() ) {
+			__tableTSID1ColumnNum = table.getFieldIndex(tableTSID1Column);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it
+		__tableTSID1ColumnNum = table.addField(0, new TableField(TableField.DATA_TYPE_STRING, tableTSID1Column, -1, -1), "");
+	}
+	try {
+		if ( (tableTSID2Column != null) && !tableTSID2Column.isEmpty() ) {
+			__tableTSID2ColumnNum = table.getFieldIndex(tableTSID2Column);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it
+		__tableTSID2ColumnNum = table.addField(0, new TableField(TableField.DATA_TYPE_STRING, tableTSID2Column, -1, -1), "");
+	}
+	try {
+		if ( (tableValue1Column != null) && !tableValue1Column.isEmpty() ) {
+			__tableValue1ColumnNum = table.getFieldIndex(tableValue1Column);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it - use 4 digits of precision for the check output
+		__tableValue1ColumnNum = table.addField(2, new TableField(TableField.DATA_TYPE_DOUBLE, tableValue1Column, -1, 4), "");
+	}
+	try {
+		if ( (tableValue2Column != null) && !tableValue2Column.isEmpty() ) {
+			__tableValue2ColumnNum = table.getFieldIndex(tableValue2Column);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it - use 4 digits of precision for the check output
+		__tableValue2ColumnNum = table.addField(2, new TableField(TableField.DATA_TYPE_DOUBLE, tableValue2Column, -1, 4), "");
+	}
+	try {
+		if ( (tableDiffColumn != null) && !tableDiffColumn.isEmpty() ) {
+			__tableDiffColumnNum = table.getFieldIndex(tableDiffColumn);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it - use 4 digits of precision for the check output
+		__tableDiffColumnNum = table.addField(2, new TableField(TableField.DATA_TYPE_DOUBLE, tableDiffColumn, -1, 4), "");
+	}
+	try {
+		if ( (tableDiffPercentColumn != null) && !tableDiffPercentColumn.isEmpty() ) {
+			__tableDiffPercentColumnNum = table.getFieldIndex(tableDiffPercentColumn);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it - use 4 digits of precision for the check output
+		__tableDiffPercentColumnNum = table.addField(2, new TableField(TableField.DATA_TYPE_DOUBLE, tableDiffPercentColumn, -1, 4), "");
+	}
+	try {
+		if ( (tableCommentColumn != null) && !tableCommentColumn.isEmpty() ) {
+			__tableCommentColumnNum = table.getFieldIndex(tableCommentColumn);
+		}
+	}
+	catch ( Exception e ) {
+		// Not found so create it
+		__tableCommentColumnNum = table.addField(0, new TableField(TableField.DATA_TYPE_STRING, tableCommentColumn, -1, -1), "");
+	}
+	return true;
 }
 
 /**
@@ -1211,6 +1565,8 @@ public String toString ( PropList props )
 	String AnalysisEnd = props.getValue("AnalysisEnd");
 	String DiffFlag = props.getValue("DiffFlag");
 	String CreateDiffTS = props.getValue("CreateDiffTS");
+	String TableID = props.getValue ( "TableID" );
+	String DiffCountProperty = props.getValue ( "DiffCountProperty" );
 	String WarnIfDifferent = props.getValue("WarnIfDifferent");
 	String WarnIfSame = props.getValue("WarnIfSame");
 	StringBuffer b = new StringBuffer ();
@@ -1286,6 +1642,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "CreateDiffTS=" + CreateDiffTS );
 	}
+    if ( (TableID != null) && (TableID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableID=\"" + TableID + "\"" );
+    }
+    if ( (DiffCountProperty != null) && (DiffCountProperty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DiffCountProperty=\"" + DiffCountProperty + "\"" );
+    }
 	if ( (WarnIfDifferent != null) && (WarnIfDifferent.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

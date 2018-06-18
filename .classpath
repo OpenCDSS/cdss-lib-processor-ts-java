@@ -31,5 +31,6 @@
 	<classpathentry kind="lib" path="lib/javax-mail/javax.mail.jar"/>
 	<classpathentry kind="lib" path="lib/Oracle_JDBC/ojdbc8.jar"/>
 	<classpathentry kind="lib" path="lib/WaterML2.0/waterml20.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cdss-lib-dmi-hydrobase-rest-java"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

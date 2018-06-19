@@ -385,7 +385,9 @@ throws UnknownCommandException
 	// Parse out arguments for TS alias = foo() commands to be able to handle nulls here
 
 	String token0 = StringUtil.getToken(commandString,"( =",StringUtil.DELIM_SKIP_BLANKS,0);
-    if ( (token0 != null) && token0.equalsIgnoreCase( "TS") ) {
+	String commandStringUpper = commandString.toUpperCase();
+
+	if ( (token0 != null) && token0.equalsIgnoreCase( "TS") ) {
 		// This allows aliases with spaces...
 		commandName = StringUtil.getToken(commandString,"(=",StringUtil.DELIM_SKIP_BLANKS,1);
 		if ( commandName == null ) {
@@ -415,10 +417,15 @@ throws UnknownCommandException
 	// The following checks for a match for specific command name and if so an appropriate
 	// command instance is created and returned.  If nothing is matched and the command string is a TSID,
 	// a TSID command instance will be returned.
+
+	if ( commandStringUpper.startsWith("TSID") ) {
+		// New command is blank TSID (as indicated by TSID menu in TSTool)
+		return new TSID_Command();
+	}
 	
 	// Comment commands...
 	
-    if ( commandString.startsWith("#") ) {
+	else if ( commandString.startsWith("#") ) {
         return new Comment_Command ();
     }
     else if ( commandString.startsWith("/*") ) {

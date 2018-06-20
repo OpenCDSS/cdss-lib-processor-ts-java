@@ -16,7 +16,7 @@ import cdss.dmi.hydrobase.rest.dao.ReferenceTablesWaterDistrict;
 import cdss.dmi.hydrobase.rest.dao.ReferenceTablesWaterDivision;
 
 @SuppressWarnings("serial")
-public class ColoradoHydroBaseRest_Structure_InputFilter_JPanel
+public class ColoradoHydroBaseRest_Station_InputFilter_JPanel
 extends InputFilter_JPanel
 implements MouseListener
 {
@@ -27,54 +27,37 @@ Datastore for this panel
 private ColoradoHydroBaseRestDataStore datastore = null;
 
 /**
-Create an InputFilter_JPanel for ColoradoHydroBaseRest web services structure queries.
+Create an InputFilter_JPanel for ColoradoHydroBaseRest web services historical station queries.
 This is used by TSTool.
 Default filter panel properties are used (e.g., 3 filter groups).
-@return a JPanel containing InputFilter instances for ?? queries.
+@return a JPanel containing InputFilter instances for historical station queries.
 @param dataStore ColoradoHydroBaseRestDataStore instance.
-@param include_SFUT If true, include a filter for the SFUT.
 @exception Exception if there is an error.
 */
-public ColoradoHydroBaseRest_Structure_InputFilter_JPanel (
-		ColoradoHydroBaseRestDataStore dataStore, boolean include_SFUT )
+public ColoradoHydroBaseRest_Station_InputFilter_JPanel ( ColoradoHydroBaseRestDataStore dataStore )
 throws Exception
-{	this ( dataStore, include_SFUT, -1, -1 );
+{	this ( dataStore, -1, -1 );
 }
 
 /**
-Create an InputFilter_JPanel for ColoradoHydroBaseRest web services structure queries.
+Create an InputFilter_JPanel for ColoradoHydroBaseRest web services historical station queries.
 This is used by TSTool.
-@return a JPanel containing InputFilter instances for ?? queries.
-@param datastore ColoradoHydroBaseRestDataStore instance.
-@param include_SFUT If true, include a filter for the SFUT.
+@return a JPanel containing InputFilter instances for historical station queries.
+@param dataStore ColoradoHydroBaseRestDataStore instance.
 @param numFilterGroups the number of filter groups to display
 @param numWhereChoicesToDisplay the number of where choices to display in each filter
 @exception Exception if there is an error.
 */
-public ColoradoHydroBaseRest_Structure_InputFilter_JPanel (
-    ColoradoHydroBaseRestDataStore datastore, boolean include_SFUT,
-    int numFilterGroups, int numWhereChoicesToDisplay )
+public ColoradoHydroBaseRest_Station_InputFilter_JPanel (
+		ColoradoHydroBaseRestDataStore datastore, int numFilterGroups, int numWhereChoicesToDisplay )
 throws Exception
 {	this.datastore = datastore;
-
+	
 	// Now define the input filters
 
 	List<InputFilter> input_filters = new Vector<InputFilter>(8);
 	input_filters.add ( new InputFilter ("", "",
 	    StringUtil.TYPE_STRING, null, null, true ) ); // Blank to disable filter
-
-	/* Not enabled yet
-	List v1 = new Vector();
-	List v2 = new Vector();
-	List cius = hbdmi.getCIUVector();
-	size = cius.size();
-	HydroBase_RefCIU ciu = null;
-	for (int i = 0; i < size; i++) {
-		ciu = (HydroBase_RefCIU)cius.get(i);
-		v1.add(ciu.getCode() + " - " + ciu.getDescription());
-		v2.add(ciu.getCode());
-	}
-	*/
 
 	InputFilter filter;
     // Fill in the county for input filters...
@@ -166,8 +149,10 @@ throws Exception
 		StringUtil.TYPE_STRING, null, null, true ) );
 		*/
 	
+	/*
     input_filters.add ( new InputFilter ( "Structure WDID", "wdid", "wdid",
-        StringUtil.TYPE_STRING, null, null, true ) );
+        StringUtil.TYPE_INTEGER, null, null, true ) );
+        */
 
 	/* Not enabled yet
 	if ( include_SFUT ) {
@@ -189,13 +174,13 @@ throws Exception
 		numFilterGroups = 3;
 		numWhereChoicesToDisplay = input_filters.size();
 	}
-	setToolTipText ( "<html>ColoradoHydroBaseRest structure queries can be filtered based on structure data.</html>" );
+	setToolTipText ( "<html>ColoradoHydroBaseRest telemetry station queries can be filtered based on station data.</html>" );
 	setInputFilters ( input_filters, numFilterGroups, numWhereChoicesToDisplay );
 }
 
 public ColoradoHydroBaseRestDataStore getColoradoHydroBaseRestDataStore ()
 {
-    return datastore;
+    return this.datastore;
 }
 
 public void mouseClicked(MouseEvent event) {}

@@ -2,27 +2,27 @@ package cdss.dmi.hydrobase.rest.commands;
 
 import java.util.List;
 
-import DWR.DMI.HydroBaseDMI.HydroBase_StructureGeolocStructMeasType;
 import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
+import DWR.DMI.HydroBaseDMI.HydroBase_GroundWaterWellsView;
 
 import RTi.DMI.DMIUtil;
 import RTi.Util.GUI.JWorksheet;
 import RTi.Util.GUI.JWorksheet_AbstractRowTableModel;
 import RTi.Util.String.StringUtil;
-import cdss.dmi.hydrobase.rest.dao.Structure;
 
 /**
-This class is a table model for time series header information for HydroBase structure time series.
+This class is a table model for time series header information for HydroBase well time series that are not stored
+with structures.
 By default the sheet will contain row and column numbers.
 */
-public class ColoradoHydroBaseRest_Structure_TableModel
+public class ColoradoHydroBaseRest_Well_TableModel
 extends JWorksheet_AbstractRowTableModel
 {
 
 /**
 Number of columns in the table model, including the row number.
 */
-private final int __COLUMNS = 22;
+private final int __COLUMNS = 19;
 
 public final int COL_ID = 0;
 public final int COL_NAME = 1;
@@ -42,10 +42,7 @@ public final int COL_LONG = 14;
 public final int COL_LAT = 15;
 public final int COL_UTM_X = 16;
 public final int COL_UTM_Y = 17;
-public final int COL_STR_TYPE = 18;
-public final int COL_STRTYPE = 19;
-public final int COL_WDID = 20;
-public final int COL_INPUT_TYPE = 21;
+public final int COL_INPUT_TYPE = 18;
 
 private int __wdid_length = 7; // The length to use when formatting WDIDs in IDs.
 
@@ -65,7 +62,7 @@ that will be displayed in the table (null is allowed - see setData()).
 when using the class to display data from the ColoradoWaterSMS database.
 @throws Exception if an invalid results passed in.
 */
-public ColoradoHydroBaseRest_Structure_TableModel ( JWorksheet worksheet, List<Structure> data )
+public ColoradoHydroBaseRest_Well_TableModel ( JWorksheet worksheet, List data )
 throws Exception
 {
     this ( worksheet, -1, data, null );
@@ -81,12 +78,12 @@ that will be displayed in the table (null is allowed - see setData()).
 when using the class to display data from the ColoradoWaterSMS database.
 @throws Exception if an invalid results passed in.
 */
-public ColoradoHydroBaseRest_Structure_TableModel ( JWorksheet worksheet, int wdid_length, List<Structure> data, String inputType )
+public ColoradoHydroBaseRest_Well_TableModel ( JWorksheet worksheet, int wdid_length, List data, String inputType )
 throws Exception
 {	if ( wdid_length <= 0 ) {
 		wdid_length = 7;
-    }
-    __wdid_length = wdid_length;
+	}
+	__wdid_length = wdid_length;
 	if ( data == null ) {
 		_rows = 0;
 	}
@@ -146,9 +143,6 @@ public String getColumnName(int columnIndex) {
         case COL_LAT: return "Latitude";
 		case COL_UTM_X: return "UTM X";
 		case COL_UTM_Y: return "UTM Y";
-		case COL_STR_TYPE: return "DSS Structure Type";
-		case COL_STRTYPE: return "Structure Type";
-		case COL_WDID: return "WDID";
 		case COL_INPUT_TYPE: return "Data Store/Input Type";
 		default: return "";
 	}
@@ -160,8 +154,8 @@ Returns an array containing the column widths (in number of characters).
 */
 public String[] getColumnToolTips() {
     String[] tips = new String[__COLUMNS];
-    tips[COL_ID] = "Structure identifier from primary data provider";
-    tips[COL_NAME] = "Structure name";
+    tips[COL_ID] = "Well identifier from primary data provider";
+    tips[COL_NAME] = "Well name";
     tips[COL_DATA_SOURCE] = "Organization/agency abbreviation";
     tips[COL_DATA_TYPE] = "Data type";
     tips[COL_TIME_STEP] = "Time step";
@@ -178,11 +172,6 @@ public String[] getColumnToolTips() {
     tips[COL_LAT] = "Latitude decimal degrees";
     tips[COL_UTM_X] = "UTM X, meters";
     tips[COL_UTM_Y] = "UTM Y, meters";
-    tips[COL_STR_TYPE] = "Type of structure in broad DSS categories.";
-    tips[COL_STRTYPE] = "A means to describe an administrative structure's " +
-    	"physical diversion point in detail or a way to define a group of structures " +
-    	"(e.g., augmentation plan, well field).";
-    tips[COL_WDID] = "Water district identifier";
     tips[COL_INPUT_TYPE] = "Input type or data store name";
     return tips;
 }
@@ -211,9 +200,6 @@ public int[] getColumnWidths() {
     widths[COL_LAT] = 8;
     widths[COL_UTM_X] = 8;
     widths[COL_UTM_Y] = 8;
-    widths[COL_STR_TYPE] = 13;
-    widths[COL_STRTYPE] = 10;
-    widths[COL_WDID] = 5;
     widths[COL_INPUT_TYPE] = 15;
     return widths;
 }
@@ -251,34 +237,34 @@ public Object getValueAt(int row, int col)
 	int i; // Use for integer data.
 	double d; // Use for double data
 
-	HydroBase_StructureGeolocStructMeasType mt = (HydroBase_StructureGeolocStructMeasType)_data.get(row);
+	HydroBase_GroundWaterWellsView wv = (HydroBase_GroundWaterWellsView) _data.get(row);
+
 	switch (col) {
 		// case 0 handled above.
-		case COL_ID:
-            if ( mt.getCommon_id().length() > 0 ) {
+		case COL_ID:		
+			if ( wv.getIdentifier().length() > 0 ) {
 				// Well with a different identifier to display.
 				return
-				mt.getCommon_id();
+				wv.getIdentifier();
 			}
 			else {
 			    // A structure other than wells...
-				return
-				HydroBase_WaterDistrict.formWDID (__wdid_length, mt.getWD(), mt.getID() );
+				return HydroBase_WaterDistrict.formWDID (__wdid_length, wv.getWD(), wv.getID() );
 			}
-		case COL_NAME: return mt.getStr_name();
-		case COL_DATA_SOURCE: return mt.getData_source();
+		case COL_NAME: return wv.getWell_name();
+		case COL_DATA_SOURCE: return wv.getData_source();
 		case COL_DATA_TYPE:
 		    // TSTool translates to values from the TSTool interface...
-			return mt.getMeas_type();
+			return "WellLevel";
 		case COL_TIME_STEP:
 		    // TSTool translates HydroBase values to nicer values...
-			return mt.getTime_step();
+			return wv.getTime_step();
 		case COL_UNITS:
 		    // The units are not in HydroBase.meas_type but are set by TSTool...
-			return mt.getData_units();
+			return wv.getData_units();
 		case COL_START:
-		    //return new Integer(mt.getStart_year() );
-			i = mt.getStart_year();
+		    //return new Integer(wv.getStart_year() );
+			i = wv.getStart_year();
 			if ( DMIUtil.isMissing(i) ) {
 				return "";
 			}
@@ -286,8 +272,8 @@ public Object getValueAt(int row, int col)
 			    return "" + i;
 			}
 		case COL_END:
-		    //return new Integer ( mt.getEnd_year() );
-			i = mt.getEnd_year();
+		    //return new Integer (wv.getEnd_year() );
+			i = wv.getEnd_year();
 			if ( DMIUtil.isMissing(i) ) {
 				return "";
 			}
@@ -295,7 +281,7 @@ public Object getValueAt(int row, int col)
 			    return "" + i;
 			}
 		case COL_MEAS_COUNT:
-		    i = mt.getMeas_count();
+		    i = wv.getMeas_count();
 			if ( DMIUtil.isMissing(i) ) {
 				return "";
 			}
@@ -303,8 +289,8 @@ public Object getValueAt(int row, int col)
 			    return "" + i;
 			}
 		case COL_DIV:
-		    //return new Integer ( mt.getDiv() );
-			i = mt.getDiv();
+		    //return new Integer ( wv.getDiv() );
+			i = wv.getDiv();
 			if ( DMIUtil.isMissing(i) ) {
 				return "";
 			}
@@ -312,19 +298,19 @@ public Object getValueAt(int row, int col)
 			    return "" + i;
 			}
 		case COL_DIST:
-		    //return new Integer ( mt.getWD() );
-			i = mt.getWD();
+		    //return new Integer ( wv.getWD() );
+			i = wv.getWD();
 			if ( DMIUtil.isMissing(i) ) {
 				return "";
 			}
 			else {
 			    return "" + i;
 			}
-		case COL_COUNTY: return mt.getCounty();
-		case COL_STATE: return mt.getST();
-		case COL_HUC: return mt.getHUC();
+		case COL_COUNTY: return wv.getCounty();
+		case COL_STATE: return wv.getST();
+		case COL_HUC: return wv.getHUC();
         case COL_LONG:
-            d = mt.getLongdecdeg();
+            d = wv.getLongdecdeg();
             if ( DMIUtil.isMissing(d) ) {
                 return "";
             }
@@ -332,7 +318,7 @@ public Object getValueAt(int row, int col)
                 return "" + StringUtil.formatString(d,"%.6f");
             }
         case COL_LAT:
-            d = mt.getLatdecdeg();
+            d = wv.getLatdecdeg();
             if ( DMIUtil.isMissing(d) ) {
                 return "";
             }
@@ -340,7 +326,7 @@ public Object getValueAt(int row, int col)
                 return "" + StringUtil.formatString(d,"%.6f");
             }
         case COL_UTM_X:
-            d = mt.getUtm_x();
+            d = wv.getUtm_x();
             if ( DMIUtil.isMissing(d) ) {
                 return "";
             }
@@ -348,16 +334,13 @@ public Object getValueAt(int row, int col)
                 return "" + StringUtil.formatString(d,"%.3f");
             }
         case COL_UTM_Y:
-            d = mt.getUtm_y();
+            d = wv.getUtm_y();
             if ( DMIUtil.isMissing(d) ) {
                 return "";
             }
             else {
                 return "" + StringUtil.formatString(d,"%.3f");
             }
-        case COL_STR_TYPE: return mt.getStr_type();
-        case COL_STRTYPE: return mt.getSTRTYPE();
-        case COL_WDID: return mt.getWDID();
 		case COL_INPUT_TYPE: return __inputType;
 		default: return "";
 	}

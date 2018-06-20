@@ -2,52 +2,47 @@ package cdss.dmi.hydrobase.rest.commands;
 
 import java.util.List;
 
-import DWR.DMI.HydroBaseDMI.HydroBase_StructureGeolocStructMeasType;
-import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
+import DWR.DMI.HydroBaseDMI.HydroBase_StationGeolocMeasType;
+import DWR.DMI.HydroBaseDMI.HydroBase_Util;
 
 import RTi.DMI.DMIUtil;
 import RTi.Util.GUI.JWorksheet;
 import RTi.Util.GUI.JWorksheet_AbstractRowTableModel;
 import RTi.Util.String.StringUtil;
-import cdss.dmi.hydrobase.rest.dao.Structure;
 
 /**
-This class is a table model for time series header information for HydroBase structure time series.
+This class is a table model for time series header information for HydroBase station time series.
 By default the sheet will contain row and column numbers.
 */
-public class ColoradoHydroBaseRest_Structure_TableModel
-extends JWorksheet_AbstractRowTableModel
+@SuppressWarnings("serial")
+public class ColoradoHydroBaseRest_TelemetryStation_TableModel<T> extends JWorksheet_AbstractRowTableModel<T>
 {
 
 /**
 Number of columns in the table model, including the row number.
 */
-private final int __COLUMNS = 22;
+private final int __COLUMNS = 20;
 
 public final int COL_ID = 0;
-public final int COL_NAME = 1;
-public final int COL_DATA_SOURCE = 2;
-public final int COL_DATA_TYPE = 3;
-public final int COL_TIME_STEP = 4;
-public final int COL_UNITS = 5;
-public final int COL_START = 6;
-public final int COL_END = 7;
-public final int COL_MEAS_COUNT = 8;
-public final int COL_DIV = 9;
-public final int COL_DIST = 10;
-public final int COL_COUNTY = 11;
-public final int COL_STATE = 12;
-public final int COL_HUC = 13;
-public final int COL_LONG = 14;
-public final int COL_LAT = 15;
-public final int COL_UTM_X = 16;
-public final int COL_UTM_Y = 17;
-public final int COL_STR_TYPE = 18;
-public final int COL_STRTYPE = 19;
-public final int COL_WDID = 20;
-public final int COL_INPUT_TYPE = 21;
-
-private int __wdid_length = 7; // The length to use when formatting WDIDs in IDs.
+public final int COL_ABBREV = 1;
+public final int COL_NAME = 2;
+public final int COL_DATA_SOURCE = 3;
+public final int COL_DATA_TYPE = 4;
+public final int COL_TIME_STEP = 5;
+public final int COL_UNITS = 6;
+public final int COL_START = 7;
+public final int COL_END = 8;
+public final int COL_MEAS_COUNT = 9;
+public final int COL_DIV = 10;
+public final int COL_DIST = 11;
+public final int COL_COUNTY = 12;
+public final int COL_STATE = 13;
+public final int COL_HUC = 14;
+public final int COL_LONG = 15;
+public final int COL_LAT = 16;
+public final int COL_UTM_X = 17;
+public final int COL_UTM_Y = 18;
+public final int COL_INPUT_TYPE = 19;
 
 /**
 Input type for time series identifier (default to "HydroBase" but can be set to allow class to be used
@@ -59,34 +54,30 @@ private String __inputType = "HydroBase";
 Constructor.  This builds the model for displaying the given HydroBase time series data.
 The input type defaults to "HydroBase".
 @param worksheet the JWorksheet that displays the data from the table model.
-@param data the list of HydroBase_StationGeolocMeasType or HydroBase_StructureGeolocStructMeasType
-that will be displayed in the table (null is allowed - see setData()).
+@param data the list of HydroBase_StationGeolocMeasType that will be displayed in the table
+(null is allowed - see setData()).
 @inputName input name for time series (default if not specified is "HydroBase").  Use this, for example,
 when using the class to display data from the ColoradoWaterSMS database.
 @throws Exception if an invalid results passed in.
 */
-public ColoradoHydroBaseRest_Structure_TableModel ( JWorksheet worksheet, List<Structure> data )
+public ColoradoHydroBaseRest_TelemetryStation_TableModel ( JWorksheet worksheet, List<T> data )
 throws Exception
 {
-    this ( worksheet, -1, data, null );
+    this ( worksheet, data, null );
 }
 
 /**
 Constructor.  This builds the model for displaying the given HydroBase time series data.
 @param worksheet the JWorksheet that displays the data from the table model.
-@param wdid_length Total length to use when formatting WDIDs.
 @param data the list of HydroBase_StationGeolocMeasType or HydroBase_StructureGeolocStructMeasType
 that will be displayed in the table (null is allowed - see setData()).
 @inputType input type for time series (default if null or blank is "HydroBase").  Use this, for example,
 when using the class to display data from the ColoradoWaterSMS database.
 @throws Exception if an invalid results passed in.
 */
-public ColoradoHydroBaseRest_Structure_TableModel ( JWorksheet worksheet, int wdid_length, List<Structure> data, String inputType )
+public ColoradoHydroBaseRest_TelemetryStation_TableModel ( JWorksheet worksheet, List<T> data, String inputType )
 throws Exception
-{	if ( wdid_length <= 0 ) {
-		wdid_length = 7;
-    }
-    __wdid_length = wdid_length;
+{
 	if ( data == null ) {
 		_rows = 0;
 	}
@@ -103,7 +94,7 @@ throws Exception
 From AbstractTableModel.  Returns the class of the data stored in a given column.
 @param columnIndex the column for which to return the data class.
 */
-public Class getColumnClass (int columnIndex) {
+public Class<?> getColumnClass (int columnIndex) {
 	switch (columnIndex) {
 		// FIXME - can't seem to handle missing...
 		//case COL_START:		return Integer.class;
@@ -129,6 +120,7 @@ From AbstractTableMode.  Returns the name of the column at the given position.
 public String getColumnName(int columnIndex) {
 	switch (columnIndex) {
 		case COL_ID: return "ID";
+		case COL_ABBREV: return "CO Abbrev.";
 		case COL_NAME: return "Name/Description";
 		case COL_DATA_SOURCE: return "Data Source";
 		case COL_DATA_TYPE: return "Data Type";
@@ -146,9 +138,6 @@ public String getColumnName(int columnIndex) {
         case COL_LAT: return "Latitude";
 		case COL_UTM_X: return "UTM X";
 		case COL_UTM_Y: return "UTM Y";
-		case COL_STR_TYPE: return "DSS Structure Type";
-		case COL_STRTYPE: return "Structure Type";
-		case COL_WDID: return "WDID";
 		case COL_INPUT_TYPE: return "Data Store/Input Type";
 		default: return "";
 	}
@@ -160,8 +149,10 @@ Returns an array containing the column widths (in number of characters).
 */
 public String[] getColumnToolTips() {
     String[] tips = new String[__COLUMNS];
-    tips[COL_ID] = "Structure identifier from primary data provider";
-    tips[COL_NAME] = "Structure name";
+    tips[COL_ID] = "Station identifier from primary data provider";
+    tips[COL_ABBREV] =
+        "Station abbreviation used with Satellite Monitoring System (River3+Place3+State2, like \"PLAKERCO\").";
+    tips[COL_NAME] = "Station name";
     tips[COL_DATA_SOURCE] = "Organization/agency abbreviation";
     tips[COL_DATA_TYPE] = "Data type";
     tips[COL_TIME_STEP] = "Time step";
@@ -178,11 +169,6 @@ public String[] getColumnToolTips() {
     tips[COL_LAT] = "Latitude decimal degrees";
     tips[COL_UTM_X] = "UTM X, meters";
     tips[COL_UTM_Y] = "UTM Y, meters";
-    tips[COL_STR_TYPE] = "Type of structure in broad DSS categories.";
-    tips[COL_STRTYPE] = "A means to describe an administrative structure's " +
-    	"physical diversion point in detail or a way to define a group of structures " +
-    	"(e.g., augmentation plan, well field).";
-    tips[COL_WDID] = "Water district identifier";
     tips[COL_INPUT_TYPE] = "Input type or data store name";
     return tips;
 }
@@ -194,6 +180,7 @@ Returns an array containing the column widths (in number of characters).
 public int[] getColumnWidths() {
     int[] widths = new int[__COLUMNS];
     widths[COL_ID] = 12;
+    widths[COL_ABBREV] = 7;
     widths[COL_NAME] = 20;
     widths[COL_DATA_SOURCE] = 10;
     widths[COL_DATA_TYPE] = 15;
@@ -211,9 +198,6 @@ public int[] getColumnWidths() {
     widths[COL_LAT] = 8;
     widths[COL_UTM_X] = 8;
     widths[COL_UTM_Y] = 8;
-    widths[COL_STR_TYPE] = 13;
-    widths[COL_STRTYPE] = 10;
-    widths[COL_WDID] = 5;
     widths[COL_INPUT_TYPE] = 15;
     return widths;
 }
@@ -251,22 +235,15 @@ public Object getValueAt(int row, int col)
 	int i; // Use for integer data.
 	double d; // Use for double data
 
-	HydroBase_StructureGeolocStructMeasType mt = (HydroBase_StructureGeolocStructMeasType)_data.get(row);
+	HydroBase_StationGeolocMeasType mt = (HydroBase_StationGeolocMeasType)_data.get(row);
 	switch (col) {
 		// case 0 handled above.
-		case COL_ID:
-            if ( mt.getCommon_id().length() > 0 ) {
-				// Well with a different identifier to display.
-				return
-				mt.getCommon_id();
-			}
-			else {
-			    // A structure other than wells...
-				return
-				HydroBase_WaterDistrict.formWDID (__wdid_length, mt.getWD(), mt.getID() );
-			}
-		case COL_NAME: return mt.getStr_name();
-		case COL_DATA_SOURCE: return mt.getData_source();
+		case COL_ID: return mt.getStation_id();
+		case COL_ABBREV: return mt.getAbbrev();
+		case COL_NAME: return mt.getStation_name();
+		case COL_DATA_SOURCE:
+		    // Station also has source but want the meas_type source.
+			return mt.getData_source();
 		case COL_DATA_TYPE:
 		    // TSTool translates to values from the TSTool interface...
 			return mt.getMeas_type();
@@ -275,7 +252,12 @@ public Object getValueAt(int row, int col)
 			return mt.getTime_step();
 		case COL_UNITS:
 		    // The units are not in HydroBase.meas_type but are set by TSTool...
-			return mt.getData_units();
+			//return mt.getData_units();
+		    String units = HydroBase_Util.getTimeSeriesDataUnits(null, mt.getMeas_type(), mt.getTime_step());
+		    if ( units == null ) {
+		        units = "";
+		    }
+		    return units;
 		case COL_START:
 		    //return new Integer(mt.getStart_year() );
 			i = mt.getStart_year();
@@ -286,7 +268,7 @@ public Object getValueAt(int row, int col)
 			    return "" + i;
 			}
 		case COL_END:
-		    //return new Integer ( mt.getEnd_year() );
+		    //return new Integer (mt.getEnd_year() );
 			i = mt.getEnd_year();
 			if ( DMIUtil.isMissing(i) ) {
 				return "";
@@ -295,7 +277,7 @@ public Object getValueAt(int row, int col)
 			    return "" + i;
 			}
 		case COL_MEAS_COUNT:
-		    i = mt.getMeas_count();
+            i = mt.getMeas_count();
 			if ( DMIUtil.isMissing(i) ) {
 				return "";
 			}
@@ -355,9 +337,6 @@ public Object getValueAt(int row, int col)
             else {
                 return "" + StringUtil.formatString(d,"%.3f");
             }
-        case COL_STR_TYPE: return mt.getStr_type();
-        case COL_STRTYPE: return mt.getSTRTYPE();
-        case COL_WDID: return mt.getWDID();
 		case COL_INPUT_TYPE: return __inputType;
 		default: return "";
 	}
@@ -370,14 +349,6 @@ multiple purposes.
 public void setInputType ( String inputType )
 {
     __inputType = inputType;
-}
-
-/**
-Set the width of WDIDs, which controls formatting of the ID column for structures.
-@param wdid_length WDID length for formatting the ID.
-*/
-public void setWDIDLength ( int wdid_length )
-{	__wdid_length = wdid_length;
 }
 
 }

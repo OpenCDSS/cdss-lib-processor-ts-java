@@ -14,7 +14,7 @@ import RTi.Util.IO.UnknownCommand;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
-
+import cdss.dmi.hydrobase.rest.commands.ReadColoradoHydroBaseRest_Command;
 // Data checks (for now keep separate from logging and data tests)
 import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
@@ -797,6 +797,9 @@ throws UnknownCommandException
 
 	// "R" commands...
 
+	else if ( commandName.equalsIgnoreCase("ReadColoradoHydroBaseRest") ) {
+		return new ReadColoradoHydroBaseRest_Command ();
+	}
     else if ( commandName.equalsIgnoreCase("ReadDateValue") ) {
         return new ReadDateValue_Command ();
     }

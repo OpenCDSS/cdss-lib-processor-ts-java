@@ -63,14 +63,13 @@ import DWR.DMI.HydroBaseDMI.HydroBase_WISSheetNameWISFormat;
 This class initializes, checks, and runs the ReadHydroBase() command.
 */
 public class ReadColoradoHydroBaseRest_Command extends AbstractCommand
-implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
+implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
-Number of where clauses shown in the editor and available as parameters - the HydroBase SPFlex maximum minus
-2 (data type and interval).
+Number of where clauses shown in the editor and available as parameters.
 */
-private int __numWhere = (HydroBaseDMI.getSPFlexMaxParameters() - 2);
+private int __numWhere = 6;
 
 /**
 Data values for boolean parameters.
@@ -95,7 +94,7 @@ Constructor.
 */
 public ReadColoradoHydroBaseRest_Command ()
 {	super();
-	setCommandName ( "ReadHydroBase" );
+	setCommandName ( "ReadColoradoHydroBaseRest" );
 }
 
 /**
@@ -114,21 +113,11 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    String InputName = parameters.getValue ( "InputName" );
     String DataStore = parameters.getValue ( "DataStore" );
     String TSID = parameters.getValue ( "TSID" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
 
-    if ( (InputName != null) && !InputName.equals("") && (DataStore != null) && !DataStore.equals("")) {
-        // Check the parts of the TSID...
-        message = "InputName and DataStore cannot both be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify InputName or DataStore but not both." ) );
-    }
-    
 	if ( (TSID != null) && !TSID.equals("") ) {
 	    // Check the parts of the TSID...
 		TSIdent tsident = null;
@@ -144,13 +133,6 @@ throws InvalidCommandParameterException
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a location for the time series identifier." ) );
-			}
-			if ( DataSource.length() == 0 ) {
-                message = "The data source part of the TSID must be specified.";
-				warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a data source for the time series identifier." ) );
 			}
 			if ( DataType.length() == 0 ) {
                 message = "The data type must be specified.";
@@ -233,10 +215,11 @@ throws InvalidCommandParameterException
 
 	// Used with both versions of the command...
 
-	if (	(InputStart != null) && !InputStart.equals("") &&
+	if ( (InputStart != null) && !InputStart.equals("") &&
 		!InputStart.equalsIgnoreCase("InputStart") &&
 		!InputStart.equalsIgnoreCase("InputEnd") ) {
-		try {	DateTime.parse(InputStart);
+		try {
+			DateTime.parse(InputStart);
 		}
 		catch ( Exception e ) {
             message = "The input start date/time \"" + InputStart + "\" is not a valid date/time.";
@@ -246,10 +229,11 @@ throws InvalidCommandParameterException
                             message, "Specify a date/time or InputStart." ) );
 		}
 	}
-	if (	(InputEnd != null) && !InputEnd.equals("") &&
+	if ( (InputEnd != null) && !InputEnd.equals("") &&
 		!InputEnd.equalsIgnoreCase("InputStart") &&
 		!InputEnd.equalsIgnoreCase("InputEnd") ) {
-		try {	DateTime.parse( InputEnd );
+		try {
+			DateTime.parse( InputEnd );
 		}
 		catch ( Exception e ) {
             message = "The input end date/time \"" + InputEnd + "\" is not a valid date/time.";
@@ -260,21 +244,7 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	/* TODOD SAM 2006-04-27 As per Ray Bennett always do this.
-	String FillDailyDiv = parameters.getValue ( "FillDailyDiv" );
-	if ( (FillDailyDiv != null) && !FillDailyDiv.equals("") ) {
-		if (	!FillDailyDiv.equalsIgnoreCase(_True) &&
-			!FillDailyDiv.equalsIgnoreCase(_False) ) {
-			warning +=
-				"The FillDailyDiv parameter must be True " +
-				"(blank) or False";
-		}
-	}
-	String FillDailyDivFlag = parameters.getValue ( "FillDailyDivFlag" );
-	if ( (FillDailyDivFlag != null) && (FillDailyDivFlag.length() != 1) ) {
-		warning += "\nThe FillDailyDivFlag must be 1 character long.";
-	}
-	*/
+	/*
 	String FillUsingDivComments = parameters.getValue ( "FillUsingDivComments" );
 	if ((FillUsingDivComments != null) && !FillUsingDivComments.equals("")){
 		if (	!FillUsingDivComments.equalsIgnoreCase(_True) &&
@@ -295,6 +265,7 @@ throws InvalidCommandParameterException
                   new CommandLogRecord(CommandStatusType.FAILURE,
                           message, "Specify a 1-character flag, or blank to not use flag." ) );
 	}
+	*/
 	String IfMissing = parameters.getValue ( "IfMissing" );
     if ( (IfMissing != null) && !IfMissing.equals("") &&
             !IfMissing.equalsIgnoreCase(_Warn) && !IfMissing.equalsIgnoreCase(_Ignore) ) {
@@ -309,7 +280,6 @@ throws InvalidCommandParameterException
     
     // Check for invalid parameters...
     List<String> validList = new ArrayList<String>();
-    validList.add ( "InputName" );
     validList.add ( "DataStore" );
     validList.add ( "Alias" );
     validList.add ( "TSID" );
@@ -321,8 +291,8 @@ throws InvalidCommandParameterException
     }
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
-    validList.add ( "FillUsingDivComments" );
-    validList.add ( "FillUsingDivCommentsFlag" );
+    //validList.add ( "FillUsingDivComments" );
+    //validList.add ( "FillUsingDivCommentsFlag" );
     validList.add ( "IfMissing" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -347,6 +317,7 @@ private List<TS> getDiscoveryTSList ()
 /**
 Return the list of data objects read by this object in discovery mode.
 */
+@SuppressWarnings("rawtypes")
 public List getObjectList ( Class c )
 {
 	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
@@ -372,106 +343,10 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	//return (new ReadColoradoHydroBaseRest_JDialog ( parent, this )).ok();
-	return true;
+	return (new ReadColoradoHydroBaseRest_JDialog ( parent, this )).ok();
 }
 
-/**
-Parse the command string into a PropList of parameters.
-@param commandString A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String commandString )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "ReadHydroBase_Command.parseCommand", message;
-	int warning_level = 2;
-	int warning_count = 0;
-
-    if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
-        // New style syntax using simple parameter=value notation
-        super.parseCommand(commandString);
-    }
-    else {
-        CommandStatus status = getCommandStatus();
-    	
-        List<String> tokens = StringUtil.breakStringList ( commandString, "()", 0 );
-    	if ( tokens == null ) {
-    		// Must have at least the command name and something to indicate the read...
-    		message = "Syntax error in \"" + commandString + "\".";
-    		Message.printWarning ( warning_level, routine, message);
-    		++warning_count;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Edit the command in the command editor." ) );
-    		throw new InvalidCommandSyntaxException ( message );
-    	}
-    
-    	// Parse everything after the (, which should be command parameters...
-    	
-    	try {
-            setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-    			tokens.get(1), routine, "," ) );
-    	}
-    	catch ( Exception e ) {
-    		message = "Syntax error in \"" + commandString + "\".";
-    		Message.printWarning ( warning_level, routine, message);
-    		++warning_count;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Edit the command in the command editor." ) );
-    		throw new InvalidCommandSyntaxException ( message );
-    	}
-    	PropList parameters = getCommandParameters();
-    
-    	// Evaluate whether the command is a TS Alias version...
-    
-    	String Alias = null;
-    	if (StringUtil.startsWithIgnoreCase(commandString, "TS ")) {
-    		// There is an alias specified.  Extract the alias from the full command...
-    		String str = commandString.substring(3);	
-    		int index = str.indexOf("=");
-    		int index2 = str.indexOf("(");
-    		if (index2 < index) {
-    			// No alias specified -- badly-formed command
-    			message = "No alias was specified, although the command started with \"TS ...\"";
-    			Message.printWarning(warning_level, routine, message);
-    			++warning_count;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Edit the command in the command editor - specify an alias." ) );
-    			throw new InvalidCommandSyntaxException(message);
-    		}
-    
-    		Alias = str.substring(0, index);
-    	}
-    	else {
-    		Alias = null;
-    	}
-    
-    	if ( Alias != null ) {
-    		parameters.set ( "Alias", Alias.trim() );
-    	}
-    
-    	// Convert QueryStart and QueryEnd to new syntax InputStart and InputEnd...
-    	String QueryStart = parameters.getValue ( "QueryStart" );
-    	if ( (QueryStart != null) && (QueryStart.length() > 0) ) {
-    		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-    		parameters.set ( "InputStart", QueryStart );
-    		parameters.unSet ( QueryStart );
-    		parameters.setHowSet ( Prop.SET_UNKNOWN );
-    	}
-    	String QueryEnd = parameters.getValue ( "QueryEnd" );
-    	if ( (QueryEnd != null) && (QueryEnd.length() > 0) ) {
-    		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-    		parameters.set ( "InputEnd", QueryEnd );
-    		parameters.unSet ( QueryStart );
-    		parameters.setHowSet ( Prop.SET_UNKNOWN );
-    	}
-    }
-}
+// parseCommand is in parent class
 
 /**
 Run the command.
@@ -630,14 +505,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 	}
 
-	/* TODO SAM 2006-04-27 As per Ray Bennett always do this.
-	String FillDailyDiv = _parameters.getValue ( "FillDailyDiv" );
-	if (	(FillDailyDiv == null) || FillDailyDiv.equals("") ) {
-		FillDailyDiv = _True;		// Default is to fill
-	}
-	String FillDailyDivFlag =
-		_parameters.getValue ( "FillDailyDivFlag" );
-	*/
 	String FillUsingDivComments = parameters.getValue ("FillUsingDivComments" );
 	if ( (FillUsingDivComments == null) ||FillUsingDivComments.equals("") ) {
 		FillUsingDivComments = _False;	// Default is NOT to fill
@@ -1240,34 +1107,11 @@ Return the string representation of the command.
 @param props parameters for the command
 */
 public String toString ( PropList props )
-{
-    return toString ( props, 10 );
-}
-
-/**
-Return the string representation of the command.
-@param props parameters for the command
-@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
-allowing command files to be saved for older software.
-*/
-public String toString ( PropList props, int majorVersion )
 {   if ( props == null ) {
-        if ( majorVersion < 10 ) {
-            return "TS Alias = " + getCommandName() + "()";
-        }
-        else {
-            return getCommandName() + "()";
-        }
+        return getCommandName() + "()";
     }
 	StringBuffer b = new StringBuffer ();
 	String Alias = props.getValue("Alias"); // Alias added at end
-    String InputName = props.getValue("InputName");
-    if ( (InputName != null) && (InputName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InputName=\"" + InputName + "\"" );
-    }
     String DataStore = props.getValue("DataStore");
     if ( (DataStore != null) && (DataStore.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -1309,14 +1153,11 @@ public String toString ( PropList props, int majorVersion )
     		b.append ( "Where" + i + "=\"" + where + "\"" );
     	}
     }
-    if ( majorVersion >= 10 ) {
-        // Add as a parameter
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.append ( "," );
-            }
-            b.append ( "Alias=\"" + Alias + "\"" );
+    if ( (Alias != null) && (Alias.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
         }
+        b.append ( "Alias=\"" + Alias + "\"" );
     }
 	String InputStart = props.getValue("InputStart");
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {
@@ -1332,22 +1173,6 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "InputEnd=\"" + InputEnd + "\"" );
 	}
-	/* TODO SAM 2006-04-27 Code cleanup. As per Ray Bennett always do this so no optional parameter.
-	String FillDailyDiv = props.getValue("FillDailyDiv");
-	if ( (FillDailyDiv != null) && (FillDailyDiv.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillDailyDiv=" + FillDailyDiv );
-	}
-	String FillDailyDivFlag = props.getValue("FillDailyDivFlag");
-	if ( (FillDailyDivFlag != null) && (FillDailyDivFlag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillDailyDivFlag=\"" + FillDailyDivFlag + "\"" );
-	}
-	*/
 	String FillUsingDivComments = props.getValue("FillUsingDivComments");
 	if ( (FillUsingDivComments != null) && (FillUsingDivComments.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -1369,16 +1194,7 @@ public String toString ( PropList props, int majorVersion )
         }
         b.append ( "IfMissing=" + IfMissing );
     }
-    if ( majorVersion < 10 ) {
-        // Old syntax...
-        if ( (Alias == null) || Alias.equals("") ) {
-            Alias = "Alias";
-        }
-        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
-    }
-    else {
-        return getCommandName() + "("+ b.toString()+")";
-    }
+    return getCommandName() + "("+ b.toString()+")";
 }
 
 }

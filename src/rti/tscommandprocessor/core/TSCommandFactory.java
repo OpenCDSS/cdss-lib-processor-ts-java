@@ -417,11 +417,6 @@ throws UnknownCommandException
 	// The following checks for a match for specific command name and if so an appropriate
 	// command instance is created and returned.  If nothing is matched and the command string is a TSID,
 	// a TSID command instance will be returned.
-
-	if ( commandStringUpper.startsWith("TSID") ) {
-		// New command is blank TSID (as indicated by TSID menu in TSTool)
-		return new TSID_Command();
-	}
 	
 	// Comment commands...
 	

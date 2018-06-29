@@ -12,7 +12,6 @@ import RTi.TS.TS;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -32,7 +31,7 @@ import RTi.Util.IO.PropList;
 This class initializes, checks, and runs the TSID command.
 </p>
 */
-public class TSID_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class TSID_Command extends AbstractCommand implements CommandDiscoverable, ObjectListProvider
 {
     
 /**
@@ -146,10 +145,10 @@ parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{
-	// The entire command string is the time series identifier
+{	// The entire command string is the time series identifier
 	String TSID = command;
 	PropList parameters = getCommandParameters();
+	// Since the a command name is not used in output, an internal parameter matching the TSID is tracked and used by toString()
 	parameters.set ( "TSID", TSID );
 }
 
@@ -393,6 +392,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Confirm that the TSID is a valid format." ) );
+                Message.printWarning(3,routine,e);   
             }
         }
         //else {

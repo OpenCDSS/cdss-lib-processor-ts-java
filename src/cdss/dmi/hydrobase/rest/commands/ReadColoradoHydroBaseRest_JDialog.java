@@ -1,6 +1,7 @@
 package cdss.dmi.hydrobase.rest.commands;
 
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -13,6 +14,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -46,17 +48,6 @@ import cdss.dmi.hydrobase.rest.ui.ColoradoHydroBaseRest_Station_InputFilter_JPan
 import cdss.dmi.hydrobase.rest.ui.ColoradoHydroBaseRest_Structure_InputFilter_JPanel;
 import cdss.dmi.hydrobase.rest.ui.ColoradoHydroBaseRest_TelemetryStation_InputFilter_JPanel;
 import cdss.dmi.hydrobase.rest.ui.ColoradoHydroBaseRest_Well_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_CUPopulation_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_GroundWater_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_Util;
 
 /**
 Editor for the ReadHydroBase() command.
@@ -68,7 +59,7 @@ implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowLi
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private ReadColoradoHydroBaseRest_Command __command = null;
-private SimpleJComboBox __InputName_JComboBox; // Legacy
+private SimpleJButton __dataStoreDocumentation_JButton = null;
 private SimpleJComboBox __DataStore_JComboBox = null; // New approach
 private SimpleJComboBox __DataType_JComboBox;
 private SimpleJComboBox __Interval_JComboBox;
@@ -122,6 +113,16 @@ public void actionPerformed( ActionEvent event )
     
     if ( o == __cancel_JButton ) {
         response ( false );
+    }
+    else if ( o == __dataStoreDocumentation_JButton ) {
+        try {
+            Desktop desktop = Desktop.getDesktop();
+            desktop.browse ( new URI(__dataStoreDocumentation_JButton.getActionCommand()) );
+        }
+        catch ( Exception e ) {
+            Message.printWarning(1, null, "Unable to display HydroBase REST web service documentation using \"" +
+                __dataStoreDocumentation_JButton.getActionCommand() + "\"" );
+        }
     }
     else if ( o == __ok_JButton ) {
         refresh ();
@@ -233,9 +234,8 @@ private void checkGUIState()
 		// Should not need to hard-code these data types but there
 		// is no better way to do it at the moment.
 		if ( DataType.equalsIgnoreCase("DivTotal") ||
-			DataType.equalsIgnoreCase("DivClass") ||
-			DataType.equalsIgnoreCase("RelTotal") ||
-			DataType.equalsIgnoreCase("RelClass") ) {
+			DataType.equalsIgnoreCase("WaterClass") ||
+			DataType.equalsIgnoreCase("RelTotal") ) {
 			/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
 			if ( Interval.equalsIgnoreCase("Day") ) {
@@ -248,8 +248,11 @@ private void checkGUIState()
 					__FillDailyDivFlag_JTextField, false );
 			}
 			*/
-			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, true );
-			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, true );
+			// TODO smalers 2018-06-30 Allow setting when sure how diversion comments are working
+			//JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, true );
+			//JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, true );
+			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, false );
+			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, false );
 		}
 		else {
 		    /* TODO SAM 2006-04-28 Review code
@@ -262,6 +265,18 @@ private void checkGUIState()
 			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, false );
 		}
 	}
+    // If data store is selected and has property for help, enable the button
+	ColoradoHydroBaseRestDataStore dataStore = getSelectedDataStore();
+    if ( dataStore != null ) {
+        String urlString = dataStore.getProperty ( "ServiceApiDocumentationUri" );
+        if ( urlString == null ) {
+            __dataStoreDocumentation_JButton.setEnabled(false);
+        }
+        else {
+            __dataStoreDocumentation_JButton.setActionCommand(urlString);
+            __dataStoreDocumentation_JButton.setEnabled(true);
+        }
+    }
 }
 
 /**
@@ -472,10 +487,11 @@ Return the "WhereN" parameter for the requested input filter.
 private String getWhere ( int ifg )
 {
 	String delim = ";";	// To separate input filter parts
-	InputFilter_JPanel filter_panel = getVisibleInputFilterPanel();
+	InputFilter_JPanel filterPanel = getVisibleInputFilterPanel();
     String where = "";
-    if ( filter_panel != null ) {
-        where = filter_panel.toString(ifg,delim).trim();
+    if ( filterPanel != null ) {
+    	// Use the internal value for where
+        where = filterPanel.toString(ifg,delim,1).trim();
     }
 	return where;
 }
@@ -498,21 +514,24 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command is under development.</b></html>kj"),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Read 1+ time series from a Colorado HydroBase REST web services, using options from the parameter groups below."),
+    	"Read 1+ time series from a Colorado HydroBase REST web services datastore, using options from the choices below."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     //JGUIUtil.addComponent(main_JPanel, new JLabel (
     //    "<html><b>If the Where parameter values do not properly display, resize the dialog larger - this is a display bug.</b></html>"),
     //    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Refer to the HydroBase documentation for information about data types." ), 
+		"Refer to the HydroBase REST web services documentation for information about data types." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the period will limit data that are available " +
 		"for later commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __dataStoreDocumentation_JButton = new SimpleJButton ("Web Service Documentation",this);
+    JGUIUtil.addComponent(main_JPanel, __dataStoreDocumentation_JButton, 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __dataStoreDocumentation_JButton.setEnabled(false);
+    __dataStoreDocumentation_JButton.setToolTipText("Show the web service documentation in a browser - " +
+        "useful for explaining query parameters.");
    	
    	__ignoreEvents = true; // So that a full pass of initialization can occur
    	
@@ -521,9 +540,8 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( ColoradoHydroBaseRestDataStore.class );
-    // Add a blank because the data store is not required
+    // Datastore is required, so no blank
     List<String> datastoreChoices = new ArrayList<String>();
-    datastoreChoices.add ( "" );
     for ( DataStore dataStore: dataStoreList ) {
     	datastoreChoices.add ( dataStore.getName() );
     }
@@ -532,7 +550,7 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - HydroBase web service datastore."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - HydroBase web service datastore."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
     //JGUIUtil.addComponent(main_JPanel, inputFilterJPanel,
@@ -545,7 +563,7 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
 	__DataType_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data type for time series"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data type for time series."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"),
@@ -574,7 +592,7 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
         __Location_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(singleTS_JPanel, __Location_JTextField,
         1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ( "For example, station ID or structure WDID."),
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ( "Required - for example, station ID or structure WDID."),
         3, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ( "Data source:"),
@@ -583,7 +601,7 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
         __DataSource_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(singleTS_JPanel, __DataSource_JTextField,
         1, ySingle, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ( "For example: USGS, DWR."),
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ( "Optional - for example: USGS, DWR."),
         3, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ( "TSID (full):"),
@@ -652,24 +670,26 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
 	FillUsingDivComments_Vector.add ( __command._False );
 	FillUsingDivComments_Vector.add ( __command._True );
 	__FillUsingDivComments_JComboBox = new SimpleJComboBox ( false );
+	__FillUsingDivComments_JComboBox.setEnabled(false);
 	__FillUsingDivComments_JComboBox.setData ( FillUsingDivComments_Vector);
 	__FillUsingDivComments_JComboBox.select ( 0 );
 	__FillUsingDivComments_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(divJPanel, __FillUsingDivComments_JComboBox,
 		1, ydiv, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(divJPanel, new JLabel (
-		"Optional - whether to use diversion comments to fill more zero values (default=" + __command._False + ")."),
+		"Optional - whether to use diversion comments to fill more zero values (default=" + __command._True + ")."),
 		3, ydiv, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(divJPanel, new JLabel ( "Fill using diversion comments flag:"),
 		0, ++ydiv, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillUsingDivCommentsFlag_JTextField = new JTextField ( "", 5 );
+	__FillUsingDivCommentsFlag_JTextField.setEnabled(false);
 	__FillUsingDivCommentsFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(divJPanel,
 		__FillUsingDivCommentsFlag_JTextField,
 		1, ydiv, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(divJPanel, new JLabel (
-		"Optional - string to flag filled diversion comment values."),
+		"Optional - string to flag filled diversion comment values (default=\"not in use\" flag)."),
 		3, ydiv, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If missing:"),
@@ -923,7 +943,7 @@ This code matches the TSTool main interface code
 */
 private void populateIntervalChoices ( ColoradoHydroBaseRestDataStore datastore )
 {   String selectedDataType = getSelectedDataType();
-    //Message.printStatus ( 2, "", "Populating intervals for selected data type \"" + selectedDataType + "\"" );
+    Message.printStatus ( 2, "", "Populating intervals for selected data type \"" + selectedDataType + "\"" );
 	List<String> timeSteps = null;
 	if ( datastore == null ) {
 		timeSteps = new ArrayList<String>();
@@ -1059,7 +1079,6 @@ private void refresh ()
 				}
 				__DataType_JComboBox.setText ( tsident.getType() );
 				__Interval_JComboBox.setText ( tsident.getInterval() );
-				__InputName_JComboBox.select ( tsident.getInputName() );
 			    // Make the single time series tab visible
 			    __tsInfo_JTabbedPane.setSelectedIndex(0);
 			}
@@ -1164,7 +1183,8 @@ private void refresh ()
 	b.append ( Interval );
 	b.append ( "~" + getInputNameForTSID() );
 	TSID = b.toString();
-	if ( Location.equals("") || DataSource.equals("") || (DataType == null) || DataType.equals("") ||
+	if ( Location.equals("") // || DataSource.equals("") // data source is optional now since does not help with identification
+		|| (DataType == null) || DataType.equals("") ||
 	    (Interval == null) || Interval.equals("")) {
 	    // Not enough information so assume using the where filters
 	    TSID = "";
@@ -1175,7 +1195,9 @@ private void refresh ()
     props.add ( "DataStore=" + DataStore );
 	props.add ( "Alias=" + Alias );
 	props.add ( "TSID=" + TSID );
-    props.add ( "DataType=" + DataType );
+	if ( (DataType != null) && !DataType.isEmpty() ) {
+		props.add ( "DataType=" + DataType );
+	}
 	props.add ( "Interval=" + Interval );
 	// Set the where clauses...
 	// Since numbers may cause problems, first unset and then set
@@ -1184,7 +1206,7 @@ private void refresh ()
     	int nfg = filterPanel.getNumFilterGroups();
     	String where;
     	for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-    		where = filterPanel.toString(ifg,filterDelim).trim();
+    		where = filterPanel.toString(ifg,filterDelim,1).trim();
     		// Make sure there is a field that is being checked in a where clause...
     		props.unSet("Where" + (ifg + 1) );
     		if ( (where.length() > 0) && !where.startsWith(filterDelim) ) {
@@ -1248,131 +1270,53 @@ private void selectInputFilter ( ColoradoHydroBaseRestDataStore dataStore )
     // The following lookups are currently hard coded and not read from HydroBase
     String selectedDataType = getSelectedDataType();
     String selectedTimeStep = __Interval_JComboBox.getSelected();
-    String [] hb_mt = HydroBase_Util.convertToHydroBaseMeasType( selectedDataType, selectedTimeStep );
-    String hbMeasType = hb_mt[0];
     List<InputFilter_JPanel> inputFilterJPanelList = getInputFilterJPanelList();
     // Loop through all available input filters and match the data store name, type (whether legacy or new design),
     // and filter for the data type.  If matched, set to visible and otherwise not visible.
     boolean matched;
     int matchCount = 0;
-    HydroBaseDMI hbdmi;
     Message.printStatus(2, routine, "Trying to set visible the input filter given selected datastore name \"" + dataStoreName +
-        "\" selectedDataType=\"" + selectedDataType + "\" hbMeasType=\"" + hbMeasType + "\" selectedTimeStep=\"" +
-        selectedTimeStep + "\"" );
+        "\" selectedDataType=\"" + selectedDataType + "\" selectedTimeStep=\"" + selectedTimeStep + "\"" );
     for ( InputFilter_JPanel panel : inputFilterJPanelList ) {
         matched = false; // Does selected data store name match the filter data store & does data type match
-        if ( panel instanceof HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel ) {
-            // Station time series
-            HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if ( hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) ) {
-                if ( HydroBase_Util.isGroundWaterWellTimeSeriesDataType ( hbdmi, hbMeasType) &&
-                    selectedTimeStep.equalsIgnoreCase("Irregular")) {
-                    matched = true;
-                    Message.printStatus(2, routine, "Setting station (groundwater) input filter panel visible.");
-                }
-                else if ( HydroBase_Util.isStationTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                    matched = true;
-                    Message.printStatus(2, routine, "Setting station input filter panel visible.");
-                }
-            }
-        }
-        else if ( panel instanceof HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel ) {
-            HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if ( hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) ) {
-                //Message.printStatus(2, routine, "Panel includeSFUT=" + hbpanel.getIncludeSFUT());
-                if ( !hbpanel.getIncludeSFUT() && HydroBase_Util.isStructureTimeSeriesDataType ( hbdmi, hbMeasType) &&
-                    !HydroBase_Util.isStructureSFUTTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                    // Normal structure time series (not SFUT)
-                    matched = true;
-                    Message.printStatus(2, routine, "Setting structure (no SFUT) input filter panel visible.");
-                }
-                else if ( hbpanel.getIncludeSFUT() && HydroBase_Util.isStructureSFUTTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                    // SFUT time series
-                    matched = true;
-                    Message.printStatus(2, routine, "Setting structure SFUT input filter panel visible.");
-                }
-            }
-        }
-        else if ( panel instanceof HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel ) {
-            // CASS crop time series
-            HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if (hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) &&
-                HydroBase_Util.isAgriculturalCASSCropStatsTimeSeriesDataType ( hbdmi, hbMeasType) ) {
+        if ( (panel instanceof ColoradoHydroBaseRest_Station_InputFilter_JPanel) ) {
+            // This type of filter uses a DataStore
+            ColoradoHydroBaseRestDataStore datastore =
+                ((ColoradoHydroBaseRest_Station_InputFilter_JPanel)panel).getColoradoHydroBaseRestDataStore();
+            if ( datastore.getName().equalsIgnoreCase(dataStoreName) && datastore.isStationTimeSeriesDataType(selectedDataType) ) {
+                // Have a match in the datastore name so return the panel
                 matched = true;
-                Message.printStatus(2, routine, "Setting CASS crop stats input filter panel visible.");
             }
         }
-        else if ( panel instanceof HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel ) {
-            // CASS livestock time series
-            HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if (hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) &&
-                HydroBase_Util.isAgriculturalCASSLivestockStatsTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                matched = true;
-                Message.printStatus(2, routine, "Setting CASS livestock stats input filter panel visible.");
+        else if ( (panel instanceof ColoradoHydroBaseRest_Structure_InputFilter_JPanel) ) {
+            // This type of filter uses a DataStore
+        	Message.printStatus(1, routine, "Checking ColoradoHydroBaseRest structure input panel...");
+            ColoradoHydroBaseRestDataStore datastore =
+                ((ColoradoHydroBaseRest_Structure_InputFilter_JPanel)panel).getColoradoHydroBaseRestDataStore();
+            Message.printStatus(1, routine, "Panel datastore name is \"" + datastore.getName() + "\"");
+            if ( datastore.getName().equalsIgnoreCase(dataStoreName) && datastore.isStructureTimeSeriesDataType(selectedDataType) ) {
+                // Have a match in the datastore name so return the panel
+            	Message.printStatus(1, routine, "Have matching datastore and structure input panel...");
+            	matched = true;
+            }
+        	Message.printStatus(1, routine, "Did not match datastore and structure input panel.");
+        }
+        else if ( (panel instanceof ColoradoHydroBaseRest_TelemetryStation_InputFilter_JPanel) ) {
+            // This type of filter uses a DataStore
+            ColoradoHydroBaseRestDataStore datastore =
+                ((ColoradoHydroBaseRest_TelemetryStation_InputFilter_JPanel)panel).getColoradoHydroBaseRestDataStore();
+            if ( datastore.getName().equalsIgnoreCase(dataStoreName) && datastore.isTelemetryStationTimeSeriesDataType(selectedDataType)) {
+                // Have a match in the datastore name so return the panel
+            	matched = true;
             }
         }
-        else if ( panel instanceof HydroBase_GUI_CUPopulation_InputFilter_JPanel ) {
-            // CU population time series
-            HydroBase_GUI_CUPopulation_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_CUPopulation_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if (hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) &&
-                HydroBase_Util.isCUPopulationTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                matched = true;
-                Message.printStatus(2, routine, "Setting CU population input filter panel visible.");
-            }
-        }
-        else if ( panel instanceof HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel ) {
-            // NASS time series
-            HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if (hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) &&
-                HydroBase_Util.isAgriculturalNASSCropStatsTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                matched = true;
-                Message.printStatus(2, routine, "Setting NASS crop stats input filter panel visible.");
-            }
-        }
-        else if ( panel instanceof HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel ) {
-            // Irrig summary time series
-            HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if (hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) &&
-                HydroBase_Util.isIrrigSummaryTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                matched = true;
-                Message.printStatus(2, routine, "Setting irrig summary input filter panel visible.");
-            }
-        }
-        else if ( panel instanceof HydroBase_GUI_GroundWater_InputFilter_JPanel ) {
-            // Groundwater wells time series
-            // Note that irregular data are matched under the station time series above
-            HydroBase_GUI_GroundWater_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_GroundWater_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if (hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) &&
-                HydroBase_Util.isGroundWaterWellTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                matched = true;
-                Message.printStatus(2, routine, "Setting groundwater wells input filter panel visible.");
-            }
-        }
-        else if ( panel instanceof HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel ) {
-            // Water Information Sheet time series
-            HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel hbpanel =
-                (HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel)panel;
-            hbdmi = (HydroBaseDMI)hbpanel.getDataStore().getDMI();
-            if (hbpanel.getDataStore().getName().equalsIgnoreCase(dataStoreName) &&
-                HydroBase_Util.isWISTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                matched = true;
-                Message.printStatus(2, routine, "Setting WIS input filter panel visible.");
+        else if ( (panel instanceof ColoradoHydroBaseRest_Well_InputFilter_JPanel) ) {
+            // This type of filter uses a DataStore
+        	ColoradoHydroBaseRestDataStore datastore =
+                ((ColoradoHydroBaseRest_Well_InputFilter_JPanel)panel).getColoradoHydroBaseRestDataStore();
+            if ( datastore.getName().equalsIgnoreCase(dataStoreName) && datastore.isWellTimeSeriesDataType(selectedDataType)) {
+                // Have a match in the datastore name so return the panel
+            	matched = true;
             }
         }
         // If the panel was matched, set it visible...

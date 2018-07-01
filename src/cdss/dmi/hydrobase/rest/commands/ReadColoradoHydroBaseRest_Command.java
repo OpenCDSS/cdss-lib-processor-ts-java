@@ -18,16 +18,12 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
-import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.MissingObjectEvent;
 import RTi.Util.IO.ObjectListProvider;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
@@ -36,28 +32,15 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.InvalidTimeIntervalException;
 import RTi.Util.Time.TimeInterval;
-import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
-import DWR.DMI.HydroBaseDMI.HydroBaseDataStore;
-import DWR.DMI.HydroBaseDMI.HydroBase_AgriculturalCASSCropStats;
-import DWR.DMI.HydroBaseDMI.HydroBase_AgriculturalCASSLivestockStats;
-import DWR.DMI.HydroBaseDMI.HydroBase_AgriculturalNASSCropStats;
-import DWR.DMI.HydroBaseDMI.HydroBase_CUPopulation;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_CUPopulation_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_GroundWater_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GroundWaterWellsView;
-import DWR.DMI.HydroBaseDMI.HydroBase_StationGeolocMeasType;
-import DWR.DMI.HydroBaseDMI.HydroBase_StructureGeolocStructMeasType;
-import DWR.DMI.HydroBaseDMI.HydroBase_StructureIrrigSummaryTS;
-import DWR.DMI.HydroBaseDMI.HydroBase_Util;
-import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
-import DWR.DMI.HydroBaseDMI.HydroBase_WISSheetNameWISFormat;
+import cdss.dmi.hydrobase.rest.ColoradoHydroBaseRestDataStore;
+import cdss.dmi.hydrobase.rest.dao.DiversionWaterClass;
+import cdss.dmi.hydrobase.rest.dao.Station;
+import cdss.dmi.hydrobase.rest.dao.TelemetryStationDataTypes;
+import cdss.dmi.hydrobase.rest.dao.WaterLevelsWell;
+import cdss.dmi.hydrobase.rest.ui.ColoradoHydroBaseRest_Station_InputFilter_JPanel;
+import cdss.dmi.hydrobase.rest.ui.ColoradoHydroBaseRest_Structure_InputFilter_JPanel;
+import cdss.dmi.hydrobase.rest.ui.ColoradoHydroBaseRest_TelemetryStation_InputFilter_JPanel;
+import cdss.dmi.hydrobase.rest.ui.ColoradoHydroBaseRest_Well_InputFilter_JPanel;
 
 /**
 This class initializes, checks, and runs the ReadHydroBase() command.
@@ -117,6 +100,14 @@ throws InvalidCommandParameterException
     String TSID = parameters.getValue ( "TSID" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
+    
+	if ( (DataStore == null) || DataStore.isEmpty() ) {
+        message = "The datastore must be specified.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the datastore." ) );
+	}
 
 	if ( (TSID != null) && !TSID.equals("") ) {
 	    // Check the parts of the TSID...
@@ -124,7 +115,6 @@ throws InvalidCommandParameterException
 		try {
             tsident = new TSIdent ( TSID );
 			String Location = tsident.getLocation();
-			String DataSource = tsident.getSource();
 			String DataType = tsident.getType();
 			String Interval = tsident.getInterval();
 			if ( Location.length() == 0 ) {
@@ -180,7 +170,6 @@ throws InvalidCommandParameterException
                     message, "Verify the time series identifier." ) );
 		}
 	}
-	// InputName is optional.
 	if ( (TSID == null) || TSID.equals("") ) {
     	String DataType = parameters.getValue ( "DataType" );
     	if ( (DataType == null) || (DataType.length() == 0) ) {
@@ -210,14 +199,11 @@ throws InvalidCommandParameterException
     		}
     	}
 	}
-	// InputName is optional.
 	// TODO SAM 2006-04-24 Need to check the WhereN parameters.
-
-	// Used with both versions of the command...
 
 	if ( (InputStart != null) && !InputStart.equals("") &&
 		!InputStart.equalsIgnoreCase("InputStart") &&
-		!InputStart.equalsIgnoreCase("InputEnd") ) {
+		!InputStart.equalsIgnoreCase("InputEnd") && (InputStart.indexOf("${") < 0)) {
 		try {
 			DateTime.parse(InputStart);
 		}
@@ -231,7 +217,7 @@ throws InvalidCommandParameterException
 	}
 	if ( (InputEnd != null) && !InputEnd.equals("") &&
 		!InputEnd.equalsIgnoreCase("InputStart") &&
-		!InputEnd.equalsIgnoreCase("InputEnd") ) {
+		!InputEnd.equalsIgnoreCase("InputEnd") && (InputEnd.indexOf("${") < 0)) {
 		try {
 			DateTime.parse( InputEnd );
 		}
@@ -285,7 +271,7 @@ throws InvalidCommandParameterException
     validList.add ( "TSID" );
     validList.add ( "DataType" );
     validList.add ( "Interval" );
-    int numFilters = HydroBaseDMI.getSPFlexMaxParameters() - 2; // Maximum minus data type and interval
+    int numFilters = 5; // TODO smalers 2018-06-30 Should this be dynamic?
     for ( int i = 1; i <= numFilters; i++ ) { 
         validList.add ( "Where" + i );
     }
@@ -380,7 +366,7 @@ Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = getClass().getSimpleName() + ".runCommandInternal", message;
 	int warning_level = 2;
@@ -391,120 +377,36 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	CommandProcessor processor = getCommandProcessor();
 	TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
+    status.clearLog(commandPhase);
     
-    boolean read_data = true;
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    Boolean clearStatus = new Boolean(true); // default
+    try {
+    	Object o = processor.getPropContents("CommandsShouldClearRunStatus");
+    	if ( o != null ) {
+    		clearStatus = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
+    if ( clearStatus ) {
+		status.clearLog(commandPhase);
+	}
+    
+    boolean readData = true;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
-        read_data = false;
+        readData = false;
     }
     
-	String InputStart = parameters.getValue ( "InputStart" );
-	DateTime InputStart_DateTime = null;
-	if ( (InputStart != null) && (InputStart.length() > 0) ) {
-		PropList request_params = new PropList ( "" );
-		request_params.set ( "DateTime", InputStart );
-		CommandProcessorRequestResultsBean bean = null;
-		try {
-            bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputStart + ") from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                   message, "Report problem to software support." ) );
-		}
-		PropList bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + InputStart + "\") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a valid InputStart string has been specified." ) );
-		}
-		else {
-		    InputStart_DateTime = (DateTime)prop_contents;
-		}
+	String InputStart = parameters.getValue("InputStart");
+	if ( (InputStart == null) || InputStart.isEmpty() ) {
+		InputStart = "${InputStart}";
 	}
-	else {
-	    // Get from the processor...
-		try {
-            Object o = processor.getPropContents ( "InputStart" );
-			if ( o != null ) {
-				InputStart_DateTime = (DateTime)o;
-			}
-		}
-		catch ( Exception e ) {
-			message = "Error requesting InputStart from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report problem to software support." ) );
-		}
+    String InputEnd = parameters.getValue("InputEnd");
+	if ( (InputEnd == null) || InputEnd.isEmpty() ) {
+		InputEnd = "${InputEnd}";
 	}
-	String InputEnd = parameters.getValue ( "InputEnd" );
-	DateTime InputEnd_DateTime = null;
-	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
-		PropList request_params = new PropList ( "" );
-		request_params.set ( "DateTime", InputEnd );
-		CommandProcessorRequestResultsBean bean = null;
-		try {
-            bean = processor.processRequest( "DateTime", request_params);
-		}
-		catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputEnd + ") from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report problem to software support." ) );
-		}
-		PropList bean_PropList = bean.getResultsPropList();
-		Object prop_contents = bean_PropList.getContents ( "DateTime" );
-		if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + InputEnd + ") returned from processor.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a valid InputEnd has been specified." ) );
-		}
-		else {
-		    InputEnd_DateTime = (DateTime)prop_contents;
-		}
-	}
-	else {
-	    // Get from the processor...
-		try { Object o = processor.getPropContents ( "InputEnd" );
-			if ( o != null ) {
-				InputEnd_DateTime = (DateTime)o;
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting InputEnd from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-                status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report problem to software support." ) );
-		}
-	}
-
 	String FillUsingDivComments = parameters.getValue ("FillUsingDivComments" );
 	if ( (FillUsingDivComments == null) ||FillUsingDivComments.equals("") ) {
 		FillUsingDivComments = _False;	// Default is NOT to fill
@@ -516,6 +418,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (IfMissing != null) && IfMissing.equalsIgnoreCase(_Ignore) ) {
         IfMissingWarn = false;  // Ignore when time series are not found
     }
+    
+    DateTime InputStart_DateTime = null;
+    DateTime InputEnd_DateTime = null;
+	if ( commandPhase == CommandPhaseType.RUN ) {
+		try {
+			InputStart_DateTime = TSCommandProcessorUtil.getDateTime ( InputStart, "InputStart", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+		try {
+			InputEnd_DateTime = TSCommandProcessorUtil.getDateTime ( InputEnd, "InputEnd", processor,
+				status, warning_level, command_tag );
+		}
+		catch ( InvalidCommandParameterException e ) {
+			// Warning will have been added above...
+			++warning_count;
+		}
+	}
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -548,467 +471,306 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
         String Alias = parameters.getValue ( "Alias" );
         String TSID = parameters.getValue ( "TSID" );
-        if ( (TSID != null) && !TSID.equals("") ) {
-			// Version that reads a single time series using the TSID
-
-			Message.printStatus ( 2, routine,"Reading HydroBase time series \"" + TSID + "\"" );
-			TS ts = null;
-			TSIdent tsident = new TSIdent ( TSID );
-			// Find the HydroBaseDMI to use, first checking the datastore and next the legacy input type.
-			HydroBaseDMI hbdmi = null;
-			String DataStore = parameters.getValue ( "DataStore" );
-			if ( (DataStore != null) && !DataStore.equals("") ) {
-			    // User has indicated that a datastore should be used...
-    		    HydroBaseDataStore dataStore = (HydroBaseDataStore)((TSCommandProcessor)
-    	            getCommandProcessor()).getDataStoreForName( DataStore, HydroBaseDataStore.class );
-    	        if ( dataStore != null ) {
-    	            Message.printStatus(2, routine, "Selected data store is \"" + dataStore.getName() + "\"." );
-    	            hbdmi = (HydroBaseDMI)dataStore.getDMI();
-    	        }
-    	        else {
-                    message = "Cannot get HydroBase data store for \"" + DataStore + "\".";
-                    Message.printWarning ( 2, routine, message );
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that a HydroBase datastore is properly configured." ) );
-                    throw new RuntimeException ( message );
-    	        }
-			}
-			else {
-    			// Try to get the input type...
-    			Object o = processor.getPropContents ("HydroBaseDMIList" );
-    			if ( o == null ) {
-    				message = "Could not get list of HydroBase connections to query data.";
-    				Message.printWarning ( 2, routine, message );
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that a HydroBase database connection has been opened." ) );
-    				throw new RuntimeException ( message );
-    			}
-    			@SuppressWarnings("unchecked")
-				List<HydroBaseDMI> hbdmiList = (List<HydroBaseDMI>)o;
-    			hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmiList, tsident.getInputName() );
-    			if ( hbdmi == null ) {
-    				message = "Could not find HydroBase connection with input name \"" +
-                    tsident.getInputName() + "\" to query data.";
-    				Message.printWarning ( 2, routine, message );
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that a HydroBase connection with the given name has been opened." ) );
-    				throw new RuntimeException ( message );
-    			}
-			}
-			try {
-                ts = hbdmi.readTimeSeries (	TSID, InputStart_DateTime,InputEnd_DateTime, null,read_data, HydroBase_props );
-			}
-			catch ( Exception e ) {
-			    ts = null;
-				message = "Unexpected error reading HydroBase time series \"" + TSID + "\" (" + e + ").";
-				Message.printWarning ( 2, routine, message );
-				Message.printWarning ( 2, routine, e );
-				if ( IfMissingWarn ) {
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify the time series identifier." ) );
-                   throw new RuntimeException ( message );
-				}
-				else {
-				    // Just show for info purposes
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.INFO,
-                            message, "Verify the time series identifier." ) );
-				}
-			}
-			finally {
-			    if ( ts == null ) {
-			        // Generate an event for listeners
-			        notifyCommandProcessorEventListeners(
-				        new MissingObjectEvent(TSID,Class.forName("RTi.TS.TS"),"Time Series", this));
-			    }
-			}
-			if ( ts != null ) {
-				// Set the alias...
-			    if ( Alias != null ) {
-			        ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-		                    processor, ts, Alias, status, command_phase) );
-			    }
-				tslist.add ( ts );
-			}
-		}
-		else {
-            // Read 1+ time series...
-			// Get the input needed to process the file...
-			String DataType = parameters.getValue ( "DataType" );
-			String Interval = parameters.getValue ( "Interval" );
-			String InputName = parameters.getValue ( "InputName" );
-			if ( InputName == null ) {
-				InputName = "";
-			}
-			List<String> whereNList = new ArrayList<String> ( 6 );
-			String WhereN;
-			int nfg = 0; // Used below.
-			// User may have skipped where and left a blank so loop over a sufficiently large number of where parameters
-			for ( int ifg = 0; ifg < 25; ifg++ ) {
-				WhereN = parameters.getValue ( "Where" + (ifg + 1) );
-				if ( WhereN != null ) {
-					++nfg;
-					whereNList.add ( WhereN );
-				}
-			}
-		
-			// Find the HydroBaseDMI to use...
-			HydroBaseDMI hbdmi = null;
-			HydroBaseDataStore hbDataStore = null;
-			// First try to get from the DataStore list...
-			String DataStore = parameters.getValue ( "DataStore" );
-			DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
-		         DataStore, HydroBaseDataStore.class );
-	        if ( dataStore != null ) {
-	            // Found a datastore so use it...
-	            hbDataStore = (HydroBaseDataStore)dataStore;
-	            hbdmi = (HydroBaseDMI)hbDataStore.getDMI();
-	            //Message.printStatus(2,routine,"Using \"HydroBase\" datastore.");
+        String DataStore = parameters.getValue ( "DataStore" );
+        ColoradoHydroBaseRestDataStore dataStore = null;
+		if ( (DataStore != null) && !DataStore.equals("") ) {
+		    // User has indicated that a datastore should be used...
+		    DataStore dataStore0 = ((TSCommandProcessor)getCommandProcessor()).getDataStoreForName( DataStore, ColoradoHydroBaseRestDataStore.class );
+	        if ( dataStore0 != null ) {
+	            Message.printStatus(2, routine, "Selected data store is \"" + dataStore0.getName() + "\"." );
+				dataStore = (ColoradoHydroBaseRestDataStore)dataStore0;
 	        }
-	        else {
-    			// Also try to get DMI from legacy list...
-    			Object o = processor.getPropContents ( "HydroBaseDMIList" );
-    			if ( o == null ) {
-    				message = "Could not get list of legacy HydroBase connections to query data.";
-    				Message.printWarning ( 2, routine, message );
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that a HydroBase database connection has been opened." ) );
-    				throw new Exception ( message );
-    			}
-    			//Message.printStatus(2,routine,"Using HydroBase input type.");
-    			@SuppressWarnings("unchecked")
-				List<HydroBaseDMI> hbdmi_Vector = (List<HydroBaseDMI>)o;
-    			hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, InputName );
-    			// Create a temporary data store to pass to following code
-    			hbDataStore = new HydroBaseDataStore ( InputName, "State of Colorado HydroBase", hbdmi );
-			}
-			if ( hbdmi == null ) {
-				message ="Could not find HydroBase data store or input name connection using \"" + InputName +
-				    "\" to query data.";
-				Message.printWarning ( 2, routine, message );
-                status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that a HydroBase database connection has been opened." ) );
-				throw new Exception ( message );
-			}
-
-			// Initialize an input filter based on the data type...
-
-			InputFilter_JPanel filterPanel = null;
-			boolean is_Station = false;
-			boolean is_Structure = false;
-			boolean is_StructureSFUT = false;
-	        boolean is_CASSCrops = false;
-            boolean is_CASSLivestock = false;
-            boolean is_cuPop = false;
-            boolean is_NASS = false;
-			boolean is_StructureIrrigSummaryTS = false;
-			boolean is_Well = false;
-			boolean is_WIS = false;
-
-			int wdid_length = HydroBase_Util.getPreferredWDIDLength();
-
-			// Create the input filter panel...
-			// Get the HydroBase "meas type" that corresponds to the time series data type
-		    String [] hb_mt = HydroBase_Util.convertToHydroBaseMeasType( DataType, Interval );
-		    String hbMeasType = hb_mt[0];
-
-			if ( HydroBase_Util.isStationTimeSeriesDataType ( hbdmi, hbMeasType ) ){
-				// Stations...
-				is_Station = true;
-				filterPanel = new HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel ( hbDataStore );
-				Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for station." );
-			}
-			else if ( HydroBase_Util.isStructureSFUTTimeSeriesDataType ( hbdmi, hbMeasType ) ) {
-				// Structures (with SFUT)...
-				is_StructureSFUT = true;
-				Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for structure SFUT." );
-				filterPanel = new HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-				        hbDataStore, true, 6, -1 );
-			}
-			else if ( HydroBase_Util.isStructureTimeSeriesDataType (hbdmi, hbMeasType ) ) {
-				// Structures (no SFUT)...
-				is_Structure = true;
-				filterPanel = new HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-				        hbDataStore, false, 6, -1 );
-				Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for structure (no SFUT)." );
-			}
-            else if ( HydroBase_Util.isAgriculturalCASSCropStatsTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                is_CASSCrops = true;
-                filterPanel = new HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel ( hbDataStore );
-                Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for CASS crops." );
-            }
-            else if ( HydroBase_Util.isAgriculturalCASSLivestockStatsTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                is_CASSLivestock = true;
-                filterPanel = new HydroBase_GUI_AgriculturalCASSLivestockStats_InputFilter_JPanel ( hbDataStore );
-                Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for CASS livestock." );
-            }
-            else if ( HydroBase_Util.isCUPopulationTimeSeriesDataType ( hbdmi, hbMeasType) ) {
-                is_cuPop = true;
-                filterPanel = new HydroBase_GUI_CUPopulation_InputFilter_JPanel ( hbDataStore );
-                Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for CU population" );
-            }
-            else if ( HydroBase_Util.isAgriculturalNASSCropStatsTimeSeriesDataType ( hbdmi, hbMeasType ) ) {
-                // Data from agricultural_NASS_crop_statistics...
-                is_NASS = true;
-                filterPanel = new HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel ( hbDataStore );
-                Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for NASS." );
-            }
-			else if ( HydroBase_Util.isIrrigSummaryTimeSeriesDataType(hbdmi, hbMeasType ) ) {
-				// Irrig summary TS...
-				is_StructureIrrigSummaryTS = true;
-				filterPanel = new HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel ( hbDataStore );
-				Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for structure irrig summary ts." );
-			}
-            else if( HydroBase_Util.isGroundWaterWellTimeSeriesDataType (hbdmi, hbMeasType ) ) {
-                // Well...
-                is_Well = true;
-                filterPanel = new HydroBase_GUI_GroundWater_InputFilter_JPanel ( hbDataStore, null, true );
-                Message.printStatus ( 2, routine,"Data type \"" + DataType + "\" is for a well." );
-            }
-			else if( HydroBase_Util.isWISTimeSeriesDataType (hbdmi, hbMeasType ) ) {
-				// WIS...
-				is_WIS = true;
-				filterPanel = new HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel ( hbDataStore );
-				Message.printStatus ( 2, routine,"Data type \"" + DataType + "\" is for WIS." );
-			}
-			else {
-                message = "Data type \"" + DataType + "\" is not recognized as a HydroBase data type.";
-				Message.printWarning ( 2, routine, message );
-                status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the datatype can be used with HydroBase (see documentation)." ) );
-				throw new Exception ( message );
-			}
-
-			// Populate with the where information from the command...
-
-			String filter_delim = ";";
-			for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-				WhereN = whereNList.get(ifg);
-                if ( WhereN.length() == 0 ) {
-                    continue;
-                }
-				// Set the filter...
+	    }
+		if ( dataStore == null ) {
+            message = "Cannot get ColoradoHydroBaseRestDataStore for \"" + DataStore + "\".";
+            Message.printWarning ( 2, routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that a ColoradoHydroBaseRestDataStore datastore is properly configured." ) );
+            throw new RuntimeException ( message );
+        }
+        else { 
+	        if ( (TSID != null) && !TSID.equals("") ) {
+				// Version that reads a single time series using the TSID
+				Message.printStatus ( 2, routine,"Reading HydroBase REST web service time series \"" + TSID + "\"" );
+				TS ts = null;
 				try {
-                    filterPanel.setInputFilter( ifg, WhereN, filter_delim );
+	                ts = dataStore.readTimeSeries ( TSID, InputStart_DateTime, InputEnd_DateTime, readData );
 				}
 				catch ( Exception e ) {
-                    message = "Error setting where information using \""+WhereN+"\"";
-					Message.printWarning ( 2, routine,message);
-					Message.printWarning ( 3, routine, e );
-					++warning_count;
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support - also see the log file." ) );
-				}
-			}
-		
-			// Read the list of objects from which identifiers can be obtained.  This code is similar to that in
-			// TSTool_JFrame.readHydroBaseHeaders...
-		
-			Message.printStatus ( 2, routine, "Getting the list of time series..." );
-		
-			List tsHeaderList = HydroBase_Util.readTimeSeriesHeaderObjects ( hbdmi, DataType, Interval, filterPanel );
-			// Make sure that size is set...
-			int size = 0;
-			if ( tsHeaderList != null ) {
-				size = tsHeaderList.size();
-			}
-		
-       		if ( (tsHeaderList == null) || (size == 0) ) {
-				Message.printStatus ( 2, routine,"No HydroBase time series were found." );
-		        // Warn if nothing was retrieved (can be overridden to ignore).
-	            if ( IfMissingWarn ) {
-	                message = "No time series were read from HydroBase.";
-	                Message.printWarning ( warning_level, 
-	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Data may not be in database." +
-                            	"  Previous messages may provide more information." ) );
-	            }
-	            else {
-	                // Ignore the problem.  Call it a success if no other problems occurred.
-	                status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
-	            }
-	            // Generate an event for listeners
-	            // FIXME SAM 2008-08-20 Need to put together a more readable id for reporting
-                notifyCommandProcessorEventListeners(
-                    new MissingObjectEvent(DataType + ", " + Interval + ", see command for user-specified criteria",
-                        Class.forName("RTi.TS.TS"),"Time Series", this));
-				return;
-       		}
-		
-			// Else, convert each header object to a TSID string and read the time series...
-
-			Message.printStatus ( 2, "", "Reading " + size + " time series..." );
-
-			String tsident_string = null; // TSIdent string
-			TS ts; // Time series to read.
-	        HydroBase_StationGeolocMeasType sta;
-            HydroBase_StructureGeolocStructMeasType str;
-			HydroBase_AgriculturalCASSCropStats cassCrops;
-			HydroBase_AgriculturalCASSLivestockStats cassLivestock;
-			HydroBase_CUPopulation cuPop;
-			HydroBase_AgriculturalNASSCropStats nass;
-            HydroBase_StructureIrrigSummaryTS irrigts;
-            HydroBase_GroundWaterWellsView well;
-			HydroBase_WISSheetNameWISFormat wis;
-			String inputName = "";	// Input name to add to identifiers, if it has been
-						// requested (this includes the tilde character).
-			if ( (DataStore != null) && !DataStore.equals("") ) {
-			    // Use the datastore for the time series input name (will not include "HydroBase" since
-			    // datastore has the connection information)
-			    inputName = "~" + DataStore;
-			}
-			else {
-			    // Use the input name
-    			if ( (InputName != null) && (InputName.length() > 0) ) {
-    				// Include the input name in the returned TSIdent...
-    				inputName = "~HydroBase~" + InputName;
-    			}
-    			else {
-    			    inputName = "~HydroBase"; // No input name so use default legacy DMI connection
-    			}
-			}
-			for ( int i = 0; i < size; i++ ) {
-				// Check to see if reading time series should be canceled because the command has
-				// been canceled.
-				if ( tsprocessor.getCancelProcessingRequested() ) {
-					// The user has requested that command processing should be canceled.
-					// Check here in this command because a very large query could take a long time before a single command finishes.
-					Message.printStatus(2, routine, "Cancel processing based on user request.");
-					break;
-				}
-				// List in order of likelihood to improve performance...
-				if ( is_Station ) {
-					// Station TS...
-					sta = (HydroBase_StationGeolocMeasType)tsHeaderList.get(i);
-					tsident_string = sta.getStation_id()
-						+ "." + sta.getData_source()
-						+ "." + DataType
-						+ "." + Interval
-						+ inputName;
-				}
-				else if ( is_Structure ) {
-					str = (HydroBase_StructureGeolocStructMeasType)tsHeaderList.get(i);
-					tsident_string = HydroBase_WaterDistrict.formWDID( wdid_length,str.getWD(),str.getID())
-						+ "." + str.getData_source()
-						+ "." + DataType
-						+ "." + Interval
-						+ inputName;
-				}
-				else if ( is_StructureSFUT ) {
-					str = (HydroBase_StructureGeolocStructMeasType)tsHeaderList.get(i);
-					tsident_string = HydroBase_WaterDistrict.formWDID( wdid_length,str.getWD(),str.getID())
-						+ "." + str.getData_source()
-						+ "." + DataType + "-" + str.getIdentifier()
-						+ "." + Interval
-						+ inputName;
-				}
-                else if ( is_CASSCrops ) {
-                    cassCrops = (HydroBase_AgriculturalCASSCropStats)tsHeaderList.get(i);
-                    tsident_string = cassCrops.getCounty()
-                        + ".CASS" 
-                        + "." + DataType + "-" + cassCrops.getCommodity() + "-" + cassCrops.getPractice()
-                        + "." + Interval
-                        + inputName;
-                }
-                else if ( is_CASSLivestock ) {
-                    cassLivestock = (HydroBase_AgriculturalCASSLivestockStats)tsHeaderList.get(i);
-                    tsident_string = cassLivestock.getCounty()
-                        + ".CASS" 
-                        + "." + DataType + "-" + cassLivestock.getCommodity() + "-" + cassLivestock.getType()
-                        + "." + Interval
-                        + inputName;
-                }
-                else if ( is_cuPop ) {
-                    cuPop = (HydroBase_CUPopulation)tsHeaderList.get(i);
-                    tsident_string = cuPop.getArea_type() + "-" + cuPop.getArea_name()
-                        + "" // Blank 
-                        + "." + DataType + "-" + cuPop.getPop_type()
-                        + "." + Interval
-                        + inputName;
-                }
-                else if ( is_NASS ) {
-                    nass = (HydroBase_AgriculturalNASSCropStats)tsHeaderList.get(i);
-                    tsident_string = nass.getCounty()
-                        + ".NASS" 
-                        + "." + DataType + "-" + nass.getCommodity()
-                        + "." + Interval
-                        + inputName;
-                }
-				else if ( is_StructureIrrigSummaryTS ) {
-					// Irrig summary TS...
-					irrigts = (HydroBase_StructureIrrigSummaryTS)tsHeaderList.get(i);
-					tsident_string =HydroBase_WaterDistrict.formWDID( wdid_length,irrigts.getWD(),irrigts.getID())
-						+ ".CDSSGIS" 
-						+ "." + DataType + "-" + irrigts.getLand_use()
-						+ "." + Interval
-						+ inputName;
-				}
-                else if ( is_Well ) {
-                    // Well...
-                    well = (HydroBase_GroundWaterWellsView)tsHeaderList.get(i);
-                    String id;
-                    if ( well.getIdentifier().length() > 0 ) {
-                        // Well with a different identifier to display.
-                        id = well.getIdentifier();
-                    }
-                    else if ( (well.getWD() > 0) && (well.getID() > 0) ) {
-                        // A structure other than wells...
-                        id = HydroBase_WaterDistrict.formWDID (wdid_length, well.getWD(), well.getID() );
-                    }
-                    else {
-                        // A structure other than wells...
-                        id = well.formatLatLongID();
-                    }
-                    tsident_string = id 
-                        + "." + well.getData_source() 
-                        + "." + DataType
-                        + "." + Interval
-                        + inputName;
-                }
-				else if ( is_WIS ) {
-					// WIS TS...
-					wis = (HydroBase_WISSheetNameWISFormat)tsHeaderList.get(i);
-					tsident_string = wis.getIdentifier()
-						+ ".DWR" 
-						+ "." + DataType
-						+ "." + Interval
-						+ inputName;
-				}
-	            // Update the progress
-				message = "Reading HydroBase time series " + (i + 1) + " of " + size + " \"" + tsident_string + "\"";
-                notifyCommandProgressListeners ( i, size, (float)-1.0, message );
-				try {
-				    ts = hbdmi.readTimeSeries (
-						tsident_string,
-						InputStart_DateTime,
-						InputEnd_DateTime, null, read_data,
-						HydroBase_props );
-					// Add the time series to the temporary list.  It will be further processed below...
-	                if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
-	                    ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-	                        processor, ts, Alias, status, command_phase) );
-	                }
-	                // Allow null to be added here.
-					tslist.add ( ts );
-				}
-				catch ( Exception e ) {
-					message = "Unexpected error reading HydroBase time series \"" + tsident_string + "\" (" + e + ").";
+				    ts = null;
+					message = "Unexpected error reading HydroBase REST time series \"" + TSID + "\" (" + e + ").";
 					Message.printWarning ( 2, routine, message );
 					Message.printWarning ( 2, routine, e );
-					++warning_count;
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report the problem to software support - also see the log file." ) );
+					if ( IfMissingWarn ) {
+	                    status.addToLog ( commandPhase,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Verify the time series identifier." ) );
+	                   throw new RuntimeException ( message );
+					}
+					else {
+					    // Just show for info purposes
+	                    status.addToLog ( commandPhase,
+	                        new CommandLogRecord(CommandStatusType.INFO,
+	                            message, "Verify the time series identifier." ) );
+					}
+				}
+				finally {
+				    if ( ts == null ) {
+				        // Generate an event for listeners
+				        notifyCommandProcessorEventListeners(
+					        new MissingObjectEvent(TSID,Class.forName("RTi.TS.TS"),"Time Series", this));
+				    }
+				}
+				if ( ts != null ) {
+					// Set the alias...
+				    if ( Alias != null ) {
+				        ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+			                    processor, ts, Alias, status, commandPhase) );
+				    }
+					tslist.add ( ts );
+				}
+	        }
+			else {
+	            // Read 1+ time series using the input filters
+				// Get the input needed to process the file...
+				String DataType = parameters.getValue ( "DataType" );
+				String Interval = parameters.getValue ( "Interval" );
+				String InputName = parameters.getValue ( "InputName" );
+				if ( InputName == null ) {
+					InputName = "";
+				}
+				List<String> whereNList = new ArrayList<String>();
+				String WhereN;
+				int nfg = 0; // Used below.
+				// User may have skipped where and left a blank so loop over a sufficiently large number of where parameters
+				for ( int ifg = 0; ifg < 25; ifg++ ) {
+					WhereN = parameters.getValue ( "Where" + (ifg + 1) );
+					if ( WhereN != null ) {
+						++nfg;
+						whereNList.add ( WhereN );
+					}
+				}
+	
+				// Initialize an input filter based on the data type...
+	
+				InputFilter_JPanel filterPanel = null;
+				boolean isStation = false;
+				boolean isStructure = false;
+				boolean isTelemetryStation = false;
+				boolean isWell = false;
+	
+				// Create the input filter panel...
+				// Data type is the part after the dash (e.g., "Structure - DivTotal")
+				String dataType = "";
+			    if ( dataType.indexOf("-") > 0 ) {
+			        dataType = StringUtil.getToken(DataType,"-",0,1).trim();
+			    }
+			    else {
+			        dataType = DataType.trim();
+			    }
+	
+				if ( dataStore.isStationTimeSeriesDataType ( dataType ) ){
+					// Stations...
+					isStation = true;
+					filterPanel = new ColoradoHydroBaseRest_Station_InputFilter_JPanel ( dataStore );
+					Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for station." );
+				}
+				else if ( dataStore.isStructureTimeSeriesDataType ( dataType ) ){
+					// Structures...
+					isStructure = true;
+					boolean includeSFUT = true;
+					filterPanel = new ColoradoHydroBaseRest_Structure_InputFilter_JPanel ( dataStore, includeSFUT );
+					Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for structure." );
+				}
+				else if ( dataStore.isTelemetryStationTimeSeriesDataType ( dataType ) ){
+					// Telemetry stations...
+					isTelemetryStation = true;
+					filterPanel = new ColoradoHydroBaseRest_TelemetryStation_InputFilter_JPanel ( dataStore );
+					Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for telemetry station." );
+				}
+				else if ( dataStore.isWellTimeSeriesDataType ( dataType ) ){
+					// Wells...
+					isWell = true;
+					filterPanel = new ColoradoHydroBaseRest_Well_InputFilter_JPanel ( dataStore );
+					Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for well." );
+				}
+				else {
+	                message = "Data type \"" + dataType + "\" is not recognized as a ColoradoHydroBaseRest web services data type.";
+					Message.printWarning ( 2, routine, message );
+	                status.addToLog ( commandPhase,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                        message, "Verify that the datatype can be used with ColoradoHydroBaseRest web services (see documentation)." ) );
+					throw new Exception ( message );
+				}
+	
+				// Populate with the where information from the command...
+	
+				String filter_delim = ";";
+				for ( int ifg = 0; ifg < nfg; ifg ++ ) {
+					WhereN = whereNList.get(ifg);
+	                if ( WhereN.length() == 0 ) {
+	                    continue;
+	                }
+					// Set the filter...
+					try {
+	                    filterPanel.setInputFilter( ifg, WhereN, filter_delim );
+					}
+					catch ( Exception e ) {
+	                    message = "Error setting where information using \""+WhereN+"\"";
+						Message.printWarning ( 2, routine,message);
+						Message.printWarning ( 3, routine, e );
+						++warning_count;
+	                    status.addToLog ( commandPhase,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Report the problem to software support - also see the log file." ) );
+					}
+				}
+			
+				// Read the list of objects from which identifiers can be obtained.  This code is similar to that in
+				// TSTool_JFrame.readHydroBaseHeaders...
+			
+				Message.printStatus ( 2, routine, "Getting the list of time series..." );
+			
+				// Create empty lists for catalogs from each major data category
+				List<Station> stationCatalog = new ArrayList<Station>();
+				List<DiversionWaterClass> structureCatalog = new ArrayList<DiversionWaterClass>();
+				List<TelemetryStationDataTypes> telemetryStationCatalog = new ArrayList<TelemetryStationDataTypes>();
+				List<WaterLevelsWell> wellCatalog = new ArrayList<WaterLevelsWell>();
+				
+				// Read the catalog
+				int size = 0;
+				if ( isStation ) {
+					stationCatalog = dataStore.getStationTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Station_InputFilter_JPanel)filterPanel );
+					size = stationCatalog.size();
+				}
+				if ( isStructure ) {
+					structureCatalog = dataStore.getWaterClassesTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Structure_InputFilter_JPanel)filterPanel );
+					size = structureCatalog.size();
+				}
+				if ( isTelemetryStation ) {
+					telemetryStationCatalog = dataStore.getTelemetryStationTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_TelemetryStation_InputFilter_JPanel)filterPanel );
+					size = telemetryStationCatalog.size();
+				}
+				if ( isWell ) {
+					wellCatalog = dataStore.getWellTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Well_InputFilter_JPanel)filterPanel );
+					size = wellCatalog.size();
+				}
+				
+				// Make sure that size is set...
+	       		if ( size == 0 ) {
+					Message.printStatus ( 2, routine,"No HydroBase REST web service time series were found." );
+			        // Warn if nothing was retrieved (can be overridden to ignore).
+		            if ( IfMissingWarn ) {
+		                message = "No time series were read from HydroBase REST web service.";
+		                Message.printWarning ( warning_level, 
+		                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	                    status.addToLog ( commandPhase,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Data may not be in database." +
+	                            	"  Previous messages may provide more information." ) );
+		            }
+		            else {
+		                // Ignore the problem.  Call it a success if no other problems occurred.
+		                status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+		            }
+		            // Generate an event for listeners
+		            // FIXME SAM 2008-08-20 Need to put together a more readable id for reporting
+	                notifyCommandProcessorEventListeners(
+	                    new MissingObjectEvent(DataType + ", " + Interval + ", see command for user-specified criteria",
+	                        Class.forName("RTi.TS.TS"),"Time Series", this));
+					return;
+	       		}
+			
+				// Else, convert each header object to a TSID string and read the time series...
+	
+				Message.printStatus ( 2, "", "Reading " + size + " time series..." );
+	
+				String tsidentString = null; // TSIdent string
+				TS ts; // Time series to read.
+		        Station sta;
+	            DiversionWaterClass str;
+	            TelemetryStationDataTypes tsta;
+	            WaterLevelsWell well;
+				String inputName = "";	// Input name to add to identifiers, if it has been requested (this includes the tilde character).
+				if ( (DataStore != null) && !DataStore.equals("") ) {
+				    // Use the datastore for the time series input name (will not include "HydroBase" since
+				    // datastore has the connection information)
+				    inputName = "~" + DataStore;
+				}
+				for ( int i = 0; i < size; i++ ) {
+					// Check to see if reading time series should be canceled because the command has been canceled.
+					if ( tsprocessor.getCancelProcessingRequested() ) {
+						// The user has requested that command processing should be canceled.
+						// Check here in this command because a very large query could take a long time before a single command finishes.
+						Message.printStatus(2, routine, "Cancel processing based on user request.");
+						break;
+					}
+					// List in order of likelihood to improve performance...
+					tsidentString = null; // Do this in case there is no active match
+					// TODO smalers 2019-06-30 the follow is redundant with the table model getTimeSeriesIdentifier()
+					// - need to figure out if code can can be moved to datastore
+					if ( isStation ) {
+						// Station time series...
+						//sta = stationCatalog.get(i);
+						//tsidentString = sta.getStation_id()
+						//	+ "." + sta.getData_source()
+						//	+ "." + DataType
+						//	+ "." + Interval
+						//	+ inputName;
+					}
+					else if ( isStructure ) {
+						// Structure time series, but time series list uses generalized water classes
+						str = (DiversionWaterClass)structureCatalog.get(i);
+						tsidentString = str.getWdid()
+							+ "." + "DWR"
+							+ "." + DataType
+							+ "." + Interval
+							+ inputName;
+					}
+					else if ( isTelemetryStation ) {
+						// Telemetry station time series...
+						tsta = (TelemetryStationDataTypes)telemetryStationCatalog.get(i);
+						tsidentString = "abbrev:"+tsta.getAbbrev()
+							+ "." + tsta.getDataSourceAbbrev()
+							+ "." + DataType
+							+ "." + Interval
+							+ inputName;
+					}
+	                else if ( isWell ) {
+	                    // Well time series...
+	                    well = (WaterLevelsWell)wellCatalog.get(i);
+	                    tsidentString = "wellid:" + well.getWellId() 
+	                        + "." + well.getDataSource() 
+	                        + "." + DataType
+	                        + "." + Interval
+	                        + inputName;
+	                }
+		            // Update the progress
+					message = "Reading HydroBase REST web service time series " + (i + 1) + " of " + size + " \"" + tsidentString + "\"";
+	                notifyCommandProgressListeners ( i, size, (float)-1.0, message );
+					try {
+					    ts = dataStore.readTimeSeries (
+							tsidentString,
+							InputStart_DateTime,
+							InputEnd_DateTime, readData );
+						// Add the time series to the temporary list.  It will be further processed below...
+		                if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
+		                    ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+		                        processor, ts, Alias, status, commandPhase) );
+		                }
+		                // Allow null to be added here.
+						tslist.add ( ts );
+					}
+					catch ( Exception e ) {
+						message = "Unexpected error reading HydroBase REST web service time series \"" + tsidentString + "\" (" + e + ").";
+						Message.printWarning ( 2, routine, message );
+						Message.printWarning ( 2, routine, e );
+						++warning_count;
+	                    status.addToLog ( commandPhase,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                           message, "Report the problem to software support - also see the log file." ) );
+					}
 				}
 			}
 		}
@@ -1017,20 +779,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( tslist != null ) {
             size = tslist.size();
         }
-        Message.printStatus ( 2, routine, "Read " + size + " HydroBase time series." );
+        Message.printStatus ( 2, routine, "Read " + size + " HydroBase REST web service time series." );
 
-        if ( command_phase == CommandPhaseType.RUN ) {
+        if ( commandPhase == CommandPhaseType.RUN ) {
             if ( tslist != null ) {
                 // Further process the time series...
                 // This makes sure the period is at least as long as the output period...
 
                 int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
                 if ( wc > 0 ) {
-                    message = "Error post-processing HydroBase time series after read.";
+                    message = "Error post-processing HydroBase REST web service time series after read.";
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,
                         ++warning_count), routine, message );
-                        status.addToLog ( command_phase,
+                        status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
                     throw new CommandException ( message );
@@ -1040,27 +802,27 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 
                 int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
                 if ( wc2 > 0 ) {
-                    message = "Error adding HydroBase time series after read.";
+                    message = "Error adding HydroBase REST web service time series after read.";
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,
                         ++warning_count), routine, message );
-                        status.addToLog ( command_phase,
+                        status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
                     throw new CommandException ( message );
                 }
             }
         }
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             setDiscoveryTSList ( tslist );
         }
         // Warn if nothing was retrieved (can be overridden to ignore).
         if ( (tslist == null) || (size == 0) ) {
             if ( IfMissingWarn ) {
-                message = "No time series were read from HydroBase.";
+                message = "No time series were read from HydroBase REST web service.";
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Data may not be in database.  See previous messages." ) );
             }
@@ -1071,11 +833,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message ="Unexpected error reading time series from HydroBase (" + e + ").";
+		message ="Unexpected error reading time series from HydroBase REST web service (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
-        status.addToLog ( command_phase,
+        status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
                message, "Report the problem to software support - also see the log file." ) );
 		throw new CommandException ( message );
@@ -1091,7 +853,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**

@@ -5610,8 +5610,25 @@ protected void setDataStore ( DataStore dataStore, boolean closeOld )
         }
     }
 
-    // Add a new instance to the list...
-    __dataStoreList.add ( dataStore );
+    // Add a new instance to the list, alphabetized (ignore case)...
+    if ( __dataStoreList.size() == 0 ) {
+    	__dataStoreList.add ( dataStore );
+    }
+    else {
+        int insertPos = -1;
+        boolean added = false;
+	    for ( DataStore ds : __dataStoreList ) {
+	    	++insertPos;
+	    	if ( dataStore.getName().toUpperCase().compareTo(ds.getName().toUpperCase()) < 0 ) {
+	    		__dataStoreList.add(insertPos,dataStore);
+	    		added = true;
+	    		break;
+	    	}
+	    }
+	    if ( !added ) {
+	    	__dataStoreList.add ( dataStore );
+	    }
+	}
 }
 
 /**

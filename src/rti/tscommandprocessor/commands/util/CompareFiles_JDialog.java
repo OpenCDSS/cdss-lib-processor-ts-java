@@ -29,6 +29,7 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.ProcessManager;
@@ -40,12 +41,12 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 public class CompareFiles_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private final String __AddWorkingDirectoryFile1 = "Add Working Directory (File 1)";
-private final String __AddWorkingDirectoryFile2 = "Add Working Directory (File 2)";
-private final String __VisualDiff = "Visual Diff";
-private final String __RemoveWorkingDirectoryFile1 = "Remove Working Directory (File 1)";
-private final String __RemoveWorkingDirectoryFile2 = "Remove Working Directory (File 2)";
+private final String __AddWorkingDirectoryFile1 = "Abs";
+private final String __AddWorkingDirectoryFile2 = "Abs";
+private final String __RemoveWorkingDirectoryFile1 = "Rel";
+private final String __RemoveWorkingDirectoryFile2 = "Rel";
 
+private final String __VisualDiff = "Visual Diff";
 private final String visualDiffLabel = "Run program to visually compare output files (see TSTool DiffProgram configuration property).";
 
 private SimpleJButton __browse1_JButton = null;
@@ -55,6 +56,7 @@ private SimpleJButton __path2_JButton = null;
 private SimpleJButton __visualDiff_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private JTextField __InputFile1_JTextField = null; // First file
 private JTextField __InputFile2_JTextField = null; // Second file
 private JTextField __CommentLineChar_JTextField = null;
@@ -110,7 +112,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__InputFile1_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__InputFile1_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CompareFiles_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
 			}
@@ -137,7 +145,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__InputFile2_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__InputFile2_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CompareFiles_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
 			}
@@ -145,6 +159,9 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "CompareFiles");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -310,19 +327,19 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command compares text files.  Comment lines starting with # are ignored." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "A line by line comparison is made."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that file names are specified relative to the working directory, which is:"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    " + __working_dir),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "First file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -331,9 +348,16 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	__InputFile1_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile1_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse1_JButton = new SimpleJButton ( "Browse", this );
+	__browse1_JButton = new SimpleJButton ( "...", this );
+	__browse1_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(main_JPanel, __browse1_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path1_JButton = new SimpleJButton(__RemoveWorkingDirectoryFile1,this);
+	    JGUIUtil.addComponent(main_JPanel, __path1_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Second file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -342,9 +366,16 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	__InputFile2_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile2_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse2_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse2_JButton,
+	__browse2_JButton = new SimpleJButton ( "...", this );
+	__browse2_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(main_JPanel, __browse2_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path2_JButton = new SimpleJButton(__RemoveWorkingDirectoryFile2,this);
+	    JGUIUtil.addComponent(main_JPanel, __path2_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Comment line character:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -438,7 +469,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 	__command_JTextArea.addKeyListener ( this );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -446,22 +477,19 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the buttons to allow conversion to/from relative path...
-		__path1_JButton = new SimpleJButton(__RemoveWorkingDirectoryFile1,this);
-		button_JPanel.add ( __path1_JButton );
-		__path2_JButton = new SimpleJButton(__RemoveWorkingDirectoryFile2,this);
-		button_JPanel.add ( __path2_JButton );
-	}
+	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
 	button_JPanel.add(__visualDiff_JButton = new SimpleJButton(__VisualDiff, this));
 	__visualDiff_JButton.setToolTipText(this.visualDiffLabel);
-	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
-	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 	
 	// Refresh the contents (put after buttons because want to enable/disable...
 	refresh ();
 
-	setTitle ( "Edit " + __command.getCommandName() + "() command" );
+	setTitle ( "Edit " + __command.getCommandName() + " command" );
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
@@ -616,9 +644,11 @@ private void refresh ()
 		File f = new File ( InputFile1 );
 		if ( f.isAbsolute() ) {
 			__path1_JButton.setText (__RemoveWorkingDirectoryFile1);
+			__path1_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
 		    __path1_JButton.setText (__AddWorkingDirectoryFile1 );
+			__path1_JButton.setToolTipText("Change path to absolute");
 		}
 	}
 	if ( __path2_JButton != null ) {
@@ -626,9 +656,11 @@ private void refresh ()
 		File f = new File ( InputFile2 );
 		if ( f.isAbsolute() ) {
 			__path2_JButton.setText (__RemoveWorkingDirectoryFile2);
+			__path2_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
 		    __path2_JButton.setText (__AddWorkingDirectoryFile2 );
+			__path2_JButton.setToolTipText("Change path to absolute");
 		}
 	}
 	// Disable the Visual Diff button if the program file does not exist or

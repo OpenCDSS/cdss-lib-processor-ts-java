@@ -62,6 +62,7 @@ private JTextField __InputFile2_JTextField = null; // Second file
 private JTextField __CommentLineChar_JTextField = null;
 private SimpleJComboBox __MatchCase_JComboBox = null;
 private SimpleJComboBox __IgnoreWhitespace_JComboBox = null;
+private JTextField __ExcludeText_JTextField = null;
 private JTextField __AllowedDiff_JTextField = null;
 private SimpleJComboBox __IfDifferent_JComboBox =null;
 private SimpleJComboBox __IfSame_JComboBox =null;
@@ -241,6 +242,7 @@ private void checkInput ()
 	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
 	String MatchCase = __MatchCase_JComboBox.getSelected();
 	String IgnoreWhitespace = __IgnoreWhitespace_JComboBox.getSelected();
+	String ExcludeText = __ExcludeText_JTextField.getText().trim();
 	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
 	String IfSame = __IfSame_JComboBox.getSelected();
@@ -259,6 +261,9 @@ private void checkInput ()
     }
     if ( IgnoreWhitespace.length() > 0 ) {
         props.set ( "IgnoreWhitespace", IgnoreWhitespace );
+    }
+    if ( ExcludeText.length() > 0 ) {
+        props.set ( "ExcludeText", ExcludeText );
     }
     if ( AllowedDiff.length() > 0 ) {
         props.set ( "AllowedDiff", AllowedDiff );
@@ -288,6 +293,7 @@ private void commitEdits ()
 	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
 	String MatchCase = __MatchCase_JComboBox.getSelected();
 	String IgnoreWhitespace = __IgnoreWhitespace_JComboBox.getSelected();
+    String ExcludeText = __ExcludeText_JTextField.getText().trim();
 	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
 	String IfSame = __IfSame_JComboBox.getSelected();
@@ -296,6 +302,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "CommentLineChar", CommentLineChar );
 	__command.setCommandParameter ( "MatchCase", MatchCase );
 	__command.setCommandParameter ( "IgnoreWhitespace", IgnoreWhitespace );
+	__command.setCommandParameter ( "ExcludeText", ExcludeText );
 	__command.setCommandParameter ( "AllowedDiff", AllowedDiff );
 	__command.setCommandParameter ( "IfDifferent", IfDifferent );
 	__command.setCommandParameter ( "IfSame", IfSame );
@@ -328,7 +335,7 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command compares text files.  Comment lines starting with # are ignored." ),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "A line by line comparison is made."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "A line by line comparison is made, alt."),
 		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -417,6 +424,16 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - ignore whitespace at ends of lines (default=" + __command._False + ")"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Exclude text:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeText_JTextField = new JTextField ( 20 );
+    __ExcludeText_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ExcludeText_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - exclude lines matching regular expression (default=include all)"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Allowed # of different lines:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -532,6 +549,7 @@ private void refresh ()
 	String CommentLineChar = "";
 	String MatchCase = "";
 	String IgnoreWhitespace = "";
+	String ExcludeText = "";
 	String AllowedDiff = "";
 	String IfDifferent = "";
 	String IfSame = "";
@@ -544,6 +562,7 @@ private void refresh ()
 		CommentLineChar = parameters.getValue ( "CommentLineChar" );
 		MatchCase = parameters.getValue ( "MatchCase" );
 		IgnoreWhitespace = parameters.getValue ( "IgnoreWhitespace" );
+		ExcludeText = parameters.getValue ( "ExcludeText" );
 		AllowedDiff = parameters.getValue ( "AllowedDiff" );
 		IfDifferent = parameters.getValue ( "IfDifferent" );
 		IfSame = parameters.getValue ( "IfSame" );
@@ -584,6 +603,9 @@ private void refresh ()
 				"IgnoreWhitespace parameter \"" + IgnoreWhitespace + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+        if ( ExcludeText != null ) {
+            __ExcludeText_JTextField.setText ( ExcludeText );
+        }
         if ( AllowedDiff != null ) {
             __AllowedDiff_JTextField.setText ( AllowedDiff );
         }
@@ -625,6 +647,7 @@ private void refresh ()
 	CommentLineChar = __CommentLineChar_JTextField.getText().trim();
 	MatchCase = __MatchCase_JComboBox.getSelected();
 	IgnoreWhitespace = __IgnoreWhitespace_JComboBox.getSelected();
+	ExcludeText = __ExcludeText_JTextField.getText().trim();
 	AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	IfDifferent = __IfDifferent_JComboBox.getSelected();
 	IfSame = __IfSame_JComboBox.getSelected();
@@ -634,6 +657,7 @@ private void refresh ()
 	props.add ( "CommentLineChar=" + CommentLineChar );
 	props.add ( "MatchCase=" + MatchCase );
 	props.add ( "IgnoreWhitespace=" + IgnoreWhitespace );
+	props.add ( "ExcludeText=" + ExcludeText );
 	props.add ( "AllowedDiff=" + AllowedDiff );
 	props.add ( "IfDifferent=" + IfDifferent );
 	props.add ( "IfSame=" + IfSame );

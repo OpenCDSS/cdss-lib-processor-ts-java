@@ -8,7 +8,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -27,11 +26,11 @@ import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -39,8 +38,8 @@ import RTi.Util.Message.Message;
 public class SortTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton __help_JButton = null;
 private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JTabbedPane __main_JTabbedPane = null;
 private SimpleJComboBox __TSIDFormat_JComboBox = null;
@@ -70,11 +69,11 @@ Responds to ActionEvents.
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
-	if ( o == __help_JButton ) {
-		TSCommandProcessorUtil.displayCommandDocumentation(__command);
-	}
-	else if ( o == __cancel_JButton ) {
+	if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "SortTimeSeries");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -306,20 +305,18 @@ private void initialize ( JFrame parent, SortTimeSeries_Command command )
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
-    __help_JButton = new SimpleJButton("Help", "Help", this);
-    __help_JButton.setToolTipText("Show command documentation in web browser" );
-	button_JPanel.add ( __help_JButton );
-	if ( !Desktop.isDesktopSupported() ) {
-		__help_JButton.setEnabled(false);
-	}
-	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() command" );
+	setTitle ( "Edit " + __command.getCommandName() + " command" );
 
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	setResizable ( false );
     super.setVisible( true );
 }
 

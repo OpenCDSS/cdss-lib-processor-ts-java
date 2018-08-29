@@ -20,13 +20,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -40,29 +43,29 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 public class FTPGet_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private final String __AddWorkingDirectoryFile = "Add Working Directory to Destination Folder";
-private final String __RemoveWorkingDirectoryFile = "Remove Working Directory to Destination Folder";
+private final String __AddWorkingDirectoryFile = "Abs";
+private final String __RemoveWorkingDirectoryFile = "Rel";
 
-private SimpleJButton
-            __browse_JButton = null,
-			__path_JButton = null,
-			__cancel_JButton = null,	// Cancel Button
-			__ok_JButton = null;		// Ok Button
-private JTextField  __RemoteSite_JTextField = null;
-private JTextField  __Login_JTextField = null;
-private JTextField  __Password_JTextField = null;
-private JTextField  __RemoteFolder_JTextField = null;
-private JTextField  __FilePattern_JTextField = null;
-private JTextField	__DestinationFolder_JTextField = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
+private JTextField __RemoteSite_JTextField = null;
+private JTextField __Login_JTextField = null;
+private JTextField __Password_JTextField = null;
+private JTextField __RemoteFolder_JTextField = null;
+private JTextField __FilePattern_JTextField = null;
+private JTextField __DestinationFolder_JTextField = null;
 private SimpleJComboBox __TransferMode_JComboBox = null;
-private JTextField  __RetryCount_JTextField = null;
-private JTextField  __RetryWait_JTextField = null;
-private JTextArea	__command_JTextArea = null;
-private String		__working_dir = null;	// Working directory.
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
+private JTextField __RetryCount_JTextField = null;
+private JTextField __RetryWait_JTextField = null;
+private JTextArea __command_JTextArea = null;
+private String __working_dir = null;	// Working directory.
+private boolean __error_wait = false;
+private boolean __first_time = true;
 private FTPGet_Command __command = null;	// Command to edit
-private boolean		__ok = false; // Indicates whether OK pressed to close the dialog.
+private boolean __ok = false; // Indicates whether OK pressed to close the dialog.
 
 /**
 Command editor constructor.
@@ -99,7 +102,13 @@ public void actionPerformed( ActionEvent event )
                 return;
             }
             if (path != null) {
-                __DestinationFolder_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__DestinationFolder_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"FTPGet_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory(path );
                 refresh();
             }
@@ -107,6 +116,9 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "FTPGet");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -215,19 +227,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__DestinationFolder_JTextField = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -247,22 +246,25 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command uses file transfer protocol (FTP) to retrieve files from a remote site and " +
 		"save on the local file system." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The destination folder can be specified using ${Property} notation to utilize global properties."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the local folder name be relative to the working directory, which is:"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     	JGUIUtil.addComponent(main_JPanel, new JLabel ("    " + __working_dir),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
+    
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Remote site:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -315,9 +317,16 @@ private void initialize ( JFrame parent, Command command )
 	__DestinationFolder_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __DestinationFolder_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ( "Browse", this );
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for folder");
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectoryFile,this);
+	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transfer mode:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -360,7 +369,7 @@ private void initialize ( JFrame parent, Command command )
 	__command_JTextArea.addKeyListener ( this );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -368,23 +377,22 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the buttons to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton( __RemoveWorkingDirectoryFile,this);
-		button_JPanel.add ( __path_JButton );
-	}
-	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 	
 	// Refresh the contents...
     refresh ();
 
 	setTitle ( "Edit " + __command.getCommandName() + "() command" );
 
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	// Dialogs do not need to be resizable...
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -508,9 +516,11 @@ private void refresh ()
 		File f = new File ( DestinationFolder );
 		if ( f.isAbsolute() ) {
 			__path_JButton.setText (__RemoveWorkingDirectoryFile);
+			__path_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
             __path_JButton.setText (__AddWorkingDirectoryFile );
+            __path_JButton.setToolTipText("Change path to absolute");
 		}
 	}
 }

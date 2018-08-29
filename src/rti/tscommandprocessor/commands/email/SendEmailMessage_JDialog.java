@@ -6,7 +6,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -30,6 +29,7 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -40,10 +40,10 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 public class SendEmailMessage_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private final String __AddWorkingDirectoryFileInput = "Add Working Directory (Input)";
-private final String __AddWorkingDirectoryFileOutput = "Add Working Directory (Output)";
-private final String __RemoveWorkingDirectoryFileInput = "Remove Working Directory (Input)";
-private final String __RemoveWorkingDirectoryFileOutput = "Remove Working Directory (Output)";
+private final String __AddWorkingDirectoryFileInput = "Abs";
+private final String __AddWorkingDirectoryFileOutput = "Abs";
+private final String __RemoveWorkingDirectoryFileInput = "Rel)";
+private final String __RemoveWorkingDirectoryFileOutput = "Rel";
 
 private SimpleJButton __browseInput_JButton = null;
 private SimpleJButton __pathInput_JButton = null;
@@ -106,7 +106,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__AttachmentFiles_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__AttachmentFiles_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"SendEmailMessage_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
 			}
@@ -133,7 +139,13 @@ public void actionPerformed( ActionEvent event )
             }
     
             if (path != null) {
-                __MessageFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__MessageFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"SendEmailMessage_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory(directory);
                 refresh();
             }
@@ -143,7 +155,7 @@ public void actionPerformed( ActionEvent event )
 		response ( false );
 	}
 	else if ( o == __help_JButton ) {
-		TSCommandProcessorUtil.displayCommandDocumentation(__command);
+		HelpViewer.getInstance().showHelp("command", "SendEmailMessage");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -287,23 +299,23 @@ private void initialize ( JFrame parent, SendEmailMessage_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"<html><b>This command is under development - do not use in production.</b></html>" ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Send an email message." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The attachment file can be a single file, all files in a folder (*), or all files matching an extension (e.g., *.csv)." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the file name be relative to the working directory, which is:"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    " + __working_dir),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "From:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -380,9 +392,16 @@ private void initialize ( JFrame parent, SendEmailMessage_Command command )
 	__MessageFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __MessageFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browseMessage_JButton = new SimpleJButton ( "Browse", this );
+	__browseMessage_JButton = new SimpleJButton ( "...", this );
+	__browseMessage_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(main_JPanel, __browseMessage_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathMessage_JButton = new SimpleJButton(__RemoveWorkingDirectoryFileInput,this);
+	    JGUIUtil.addComponent(main_JPanel, __pathMessage_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Attachment file(s):" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -391,9 +410,16 @@ private void initialize ( JFrame parent, SendEmailMessage_Command command )
 	__AttachmentFiles_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __AttachmentFiles_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browseInput_JButton = new SimpleJButton ( "Browse", this );
+	__browseInput_JButton = new SimpleJButton ( "...", this );
+	__browseInput_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(main_JPanel, __browseInput_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathInput_JButton = new SimpleJButton(__RemoveWorkingDirectoryFileInput,this);
+	    JGUIUtil.addComponent(main_JPanel, __pathInput_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
     
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -420,7 +446,7 @@ private void initialize ( JFrame parent, SendEmailMessage_Command command )
 	__command_JTextArea.addKeyListener ( this );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -428,31 +454,22 @@ private void initialize ( JFrame parent, SendEmailMessage_Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the buttons to allow conversion to/from relative path...
-		__pathInput_JButton = new SimpleJButton( __RemoveWorkingDirectoryFileOutput,this);
-		button_JPanel.add ( __pathInput_JButton );
-       __pathMessage_JButton = new SimpleJButton( __RemoveWorkingDirectoryFileOutput,this);
-        button_JPanel.add ( __pathMessage_JButton );
-	}
-    __help_JButton = new SimpleJButton("Help", "Help", this);
-    __help_JButton.setToolTipText("Show command documentation in web browser" );
-	button_JPanel.add ( __help_JButton );
-	if ( !Desktop.isDesktopSupported() ) {
-		__help_JButton.setEnabled(false);
-	}
-	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() command" );
+	setTitle ( "Edit " + __command.getCommandName() + " command" );
 	
 	// Refresh the contents...
     refresh ();
 
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	// Dialogs do not need to be resizable...
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -575,9 +592,11 @@ private void refresh ()
 		File f = new File ( MessageFile );
 		if ( f.isAbsolute() ) {
 			__pathInput_JButton.setText (__RemoveWorkingDirectoryFileInput);
+			__pathInput_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
             __pathInput_JButton.setText (__AddWorkingDirectoryFileInput );
+            __pathInput_JButton.setToolTipText("Change path to absolute");
 		}
 	}
     if ( __pathMessage_JButton != null ) {
@@ -585,9 +604,11 @@ private void refresh ()
         File f = new File ( To );
         if ( f.isAbsolute() ) {
             __pathMessage_JButton.setText (__RemoveWorkingDirectoryFileOutput);
+			__pathMessage_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __pathMessage_JButton.setText (__AddWorkingDirectoryFileOutput );
+            __pathMessage_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

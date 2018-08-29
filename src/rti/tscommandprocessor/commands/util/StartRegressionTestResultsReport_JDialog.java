@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -28,20 +30,23 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+@SuppressWarnings("serial")
 public class StartRegressionTestResultsReport_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
     
-private final String __AddWorkingDirectory = "Add Working Directory";
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Abs";
+private final String __RemoveWorkingDirectory = "Rel";
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __path_JButton = null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __TestResultsTableID_JTextField = null;
@@ -91,7 +96,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__OutputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"StartRegressionTestResultsReport_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory );
 				refresh();
 			}
@@ -99,6 +110,9 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "StartRegressionTestResultsReport");
 	}
 	else if (o == __ok_JButton) {
 		refresh();
@@ -184,27 +198,30 @@ private void initialize ( JFrame parent, StartRegressionTestResultsReport_Comman
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"(Re)start the regression test results report file, written to by the RunCommands() command to summarize automated test results." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     /*
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A blank log file name will restart the current file."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     */
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The report file can be specified using a full or relative path (relative to the working directory)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
         	"The working directory is: " + __working_dir ), 
-        	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        	0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The text report is formatted to allow comparison with previous runs to see if problems are being resolved."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Report (output) file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -212,9 +229,16 @@ private void initialize ( JFrame parent, StartRegressionTestResultsReport_Comman
 	__OutputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Test results table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -233,7 +257,7 @@ private void initialize ( JFrame parent, StartRegressionTestResultsReport_Comman
 	__command_JTextArea.addKeyListener ( this );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -241,24 +265,22 @@ private void initialize ( JFrame parent, StartRegressionTestResultsReport_Comman
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
-		button_JPanel.add ( __path_JButton = new SimpleJButton(
-			__RemoveWorkingDirectory,
-			__RemoveWorkingDirectory, this) );
-	}
-	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() command" );
+	setTitle ( "Edit " + __command.getCommandName() + " command" );
 	
 	// Refresh the contents...
     refresh ();
 
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	// Dialogs do not need to be resizable...
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -310,6 +332,7 @@ private void refresh ()
 	// information that has not been committed in the command.
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	TestResultsTableID = __TestResultsTableID_JTextField.getText().trim();
+	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
 	parameters.add ( "TestResultsTableID=" + TestResultsTableID );
 	__command_JTextArea.setText( __command.toString(parameters) );
@@ -324,8 +347,11 @@ private void refresh ()
 		File f = new File ( OutputFile );
 		if ( f.isAbsolute() ) {
 			__path_JButton.setText ( __RemoveWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to relative to command file");
 		}
-		else {	__path_JButton.setText ( __AddWorkingDirectory );
+		else {
+			__path_JButton.setText ( __AddWorkingDirectory );
+            __path_JButton.setToolTipText("Change path to absolute");
 		}
 	}
 }

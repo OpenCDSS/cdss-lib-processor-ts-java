@@ -29,6 +29,7 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -41,7 +42,8 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __cancel_JButton = null;
-private SimpleJButton __ok_JButton = null;;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SetWorkingDir_Command __command = null;
 private String __working_dir = null; // Working directory.
 private JTextArea __command_JTextArea = null;
@@ -84,9 +86,11 @@ public void actionPerformed( ActionEvent event )
 			refresh ();
 		}
 	}
-
-	if ( o == __cancel_JButton ) {
+	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "SetWorkingDir");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -176,10 +180,10 @@ private void initialize ( JFrame parent, SetWorkingDir_Command command )
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is currently: " + __working_dir ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Working directory:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -188,8 +192,9 @@ private void initialize ( JFrame parent, SetWorkingDir_Command command )
 	__WorkingDir_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __WorkingDir_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for folder");
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run mode:" ), 
@@ -229,7 +234,7 @@ private void initialize ( JFrame parent, SetWorkingDir_Command command )
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable ( false );
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+        1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
 
 	// Refresh the contents...
 	refresh ();
@@ -240,15 +245,19 @@ private void initialize ( JFrame parent, SetWorkingDir_Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+    button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( true );
+    setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
+	setResizable ( false );
     super.setVisible( true );
 }
 

@@ -28,14 +28,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PrintUtil;
@@ -51,11 +53,11 @@ Editor for PrintTextFile command.
 public class PrintTextFile_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private final String __AddWorkingDirectoryInput = "Add Working Directory (Input)";
-private final String __RemoveWorkingDirectoryInput = "Remove Working Directory (Input)";
+private final String __AddWorkingDirectoryInput = "Abs";
+private final String __RemoveWorkingDirectoryInput = "Rel";
 
-private final String __AddWorkingDirectoryOutput = "Add Working Directory (Output)";
-private final String __RemoveWorkingDirectoryOutput = "Remove Working Directory (Output)";
+private final String __AddWorkingDirectoryOutput = "Abs";
+private final String __RemoveWorkingDirectoryOutput = "Rel";
 
 private SimpleJButton __browse_JButton = null; // input file
 private SimpleJButton __browse2_JButton = null; // output file
@@ -63,6 +65,7 @@ private SimpleJButton __path_JButton = null;
 private SimpleJButton __path2_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private JTextField __InputFile_JTextField = null;
 private SimpleJComboBox __PrinterName_JComboBox = null;
 private SimpleJComboBox __PaperSize_JComboBox = null;
@@ -135,7 +138,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__InputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__InputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"PrintTextFile_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
 			}
@@ -156,12 +165,21 @@ public void actionPerformed( ActionEvent event )
             String directory = fc.getSelectedFile().getParent();
             String path = fc.getSelectedFile().getPath(); 
             JGUIUtil.setLastFileDialogDirectory(directory);
-            __OutputFile_JTextField.setText(path);
+			// Convert path to relative path by default.
+			try {
+				__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,"PrintTextFile_JDialog", "Error converting file to relative path." );
+			}
             refresh();
         }   
     }
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "PrintTextFile");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -357,20 +375,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__InputFile_JTextField = null;
-	__IfNotFound_JComboBox = null;
-	__ok_JButton = null;
-	super.finalize ();
-}
-
-/**
 Return the short page size, including only the string before the note.
 */
 private String getShortPaperSize ( String longPaperSize )
@@ -396,8 +400,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (PrintTextFile_Command)command;
+private void initialize ( JFrame parent, PrintTextFile_Command command )
+{	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
@@ -411,26 +415,28 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command prints a text file using basic formatting." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Determining supported printer settings may take a few seconds." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The margins agree with the orientation (e.g., for letter size portrait orientation, " +
         "left margin is long edge; for landscape, left margin is for short edge)." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the file name is relative to the working directory, which is:"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    " + __working_dir),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("File to print:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -438,9 +444,16 @@ private void initialize ( JFrame parent, Command command )
 	__InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ( "Browse", this );
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectoryInput,this);
+	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Printer name:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -647,12 +660,19 @@ private void initialize ( JFrame parent, Command command )
     __OutputFile_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browse2_JButton = new SimpleJButton ("Browse", this);
+    __browse2_JButton = new SimpleJButton ("...", this);
+	__browse2_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(main_JPanel, __browse2_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - can use when printing to PDF or another file format."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path2_JButton = new SimpleJButton(__RemoveWorkingDirectoryOutput,this);
+	    JGUIUtil.addComponent(main_JPanel, __path2_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Show dialog?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -703,26 +723,22 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the buttons to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton( __RemoveWorkingDirectoryInput,this);
-		button_JPanel.add ( __path_JButton );
-       __path2_JButton = new SimpleJButton( __RemoveWorkingDirectoryOutput, this);
-        button_JPanel.add (__path2_JButton);
-	}
-	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() command" );
+	setTitle ( "Edit " + __command.getCommandName() + " command" );
 	
 	// Refresh the contents...
     checkGUIState();
     refresh ();
 
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	// Dialogs do not need to be resizable...
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -1033,9 +1049,11 @@ private void refresh ()
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
 			__path_JButton.setText (__RemoveWorkingDirectoryInput);
+			__path_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
             __path_JButton.setText (__AddWorkingDirectoryInput );
+            __path_JButton.setToolTipText("Change path to absolute");
 		}
 	}
     if ( __path2_JButton != null ) {
@@ -1043,9 +1061,11 @@ private void refresh ()
         File f = new File ( OutputFile );
         if ( f.isAbsolute() ) {
             __path2_JButton.setText (__RemoveWorkingDirectoryOutput);
+			__path2_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __path2_JButton.setText (__AddWorkingDirectoryOutput );
+            __path2_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

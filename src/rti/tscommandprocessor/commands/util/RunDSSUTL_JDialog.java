@@ -20,8 +20,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -45,24 +47,25 @@ public class RunDSSUTL_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
     
-private final String __AddWorkingDirectoryDssFile = "Add Working Directory (HEC-DSS)";
-private final String __RemoveWorkingDirectoryDssFile = "Remove Working Directory (HEC-DSS)";
+private final String __AddWorkingDirectoryDssFile = "Abs";
+private final String __RemoveWorkingDirectoryDssFile = "Rel";
 
-private final String __AddWorkingDirectoryInputFile = "Add Working Directory (Input)";
-private final String __RemoveWorkingDirectoryInputFile = "Remove Working Directory (Input)";
+private final String __AddWorkingDirectoryInputFile = "Abs";
+private final String __RemoveWorkingDirectoryInputFile = "Rel";
 
-private final String __AddWorkingDirectoryOutputFile = "Add Working Directory (Output)";
-private final String __RemoveWorkingDirectoryOutputFile = "Remove Working Directory (Output)";
+private final String __AddWorkingDirectoryOutputFile = "Abs";
+private final String __RemoveWorkingDirectoryOutputFile = "Rel";
 
-private final String __AddWorkingDirectoryDssutlProgram = "Add Working Directory (Program)";
-private final String __RemoveWorkingDirectoryDssutlProgram = "Remove Working Directory (Program)";
+private final String __AddWorkingDirectoryDssutlProgram = "Abs";
+private final String __RemoveWorkingDirectoryDssutlProgram = "Rel";
 
 private SimpleJButton __browseDssFile_JButton = null;
 private SimpleJButton __browseInputFile_JButton = null;
 private SimpleJButton __browseOutputFile_JButton = null;
 private SimpleJButton __browseDssutlProgram_JButton = null;
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __pathDssFile_JButton = null;
 private SimpleJButton __pathInputFile_JButton = null;
 private SimpleJButton __pathOutputFile_JButton = null;
@@ -165,7 +168,13 @@ private void actionPerformedBrowse( JTextField tf, String title, String ext, Str
         }
 
         if (path != null) {
-            tf.setText(path );
+			// Convert path to relative path by default.
+			try {
+				tf.setText(IOUtil.toRelativePath(__working_dir, path));
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,"RunDSSUTL_JDialog", "Error converting file to relative path." );
+			}
             JGUIUtil.setLastFileDialogDirectory(directory);
             refresh();
         }
@@ -246,22 +255,6 @@ private void commitEdits ()
 }
 
 /**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-throws Throwable
-{	__browseDssFile_JButton = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__DssFile_JTextField = null;
-	__command = null;
-	__ok_JButton = null;
-	__pathDssFile_JButton = null;
-	__working_dir = null;
-	super.finalize ();
-}
-
-/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
@@ -281,33 +274,35 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command runs the DSSUTL and other HEC-DSS utility programs, " +
 		"which have been developed by the US Army Corps of Engineers." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "DSSUTL processes data stored in a HEC-DSS binary database file, using DSSUTL commands in the input file." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The utility program location must be in the PATH environment variable, specified using an absolute" +
         "path, or specified using ${WorkingDir}, which is the location of the command file." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The HEC-DSS file must exist because otherwise the DSSUTL software prompts for the filename, and interaction " +
         "with utility programs from TSTool is not enabled." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The program will be run in TSTool's working directory (command file location)." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full or relative path to HEC-DSS, input, and output files (relative to working directory)." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel("The working directory is: " + __working_dir ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("HEC-DSS file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -315,10 +310,17 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
 	__DssFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __DssFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browseDssFile_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browseDssFile_JButton,
+	__browseDssFile_JButton = new SimpleJButton ( "...", this );
+	__browseDssFile_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(main_JPanel, __browseDssFile_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     __DssFile_JTextField.setToolTipText("Required for DSSUTL, DSPLAY.");
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathDssFile_JButton = new SimpleJButton(__RemoveWorkingDirectoryDssFile,this);
+	    JGUIUtil.addComponent(main_JPanel, __pathDssFile_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -326,10 +328,17 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
     __InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browseInputFile_JButton = new SimpleJButton ( "Browse", this );
+    __browseInputFile_JButton = new SimpleJButton ( "...", this );
+	__browseInputFile_JButton.setToolTipText("Browse for file");
         JGUIUtil.addComponent(main_JPanel, __browseInputFile_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     __InputFile_JTextField.setToolTipText("Required for all programs.");
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathInputFile_JButton = new SimpleJButton(__RemoveWorkingDirectoryInputFile,this);
+	    JGUIUtil.addComponent(main_JPanel, __pathInputFile_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -337,10 +346,17 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
     __OutputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browseOutputFile_JButton = new SimpleJButton ( "Browse", this );
+    __browseOutputFile_JButton = new SimpleJButton ( "...", this );
+	__browseOutputFile_JButton.setToolTipText("Browse for file");
         JGUIUtil.addComponent(main_JPanel, __browseOutputFile_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     __OutputFile_JTextField.setToolTipText("Optional for all programs.");
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathOutputFile_JButton = new SimpleJButton(__RemoveWorkingDirectoryOutputFile,this);
+	    JGUIUtil.addComponent(main_JPanel, __pathOutputFile_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("DSSUTL program:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -348,9 +364,16 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
     __DssutlProgram_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __DssutlProgram_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browseDssutlProgram_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browseDssutlProgram_JButton,
+    __browseDssutlProgram_JButton = new SimpleJButton ( "...", this );
+	__browseDssutlProgram_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(main_JPanel, __browseDssutlProgram_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathDssutlProgram_JButton = new SimpleJButton(__RemoveWorkingDirectoryDssutlProgram,this);
+	    JGUIUtil.addComponent(main_JPanel, __pathDssutlProgram_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
 
         /* TODO SAM 2009-04-09 Possibly enable later if canned arguments are not enough
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Arguments:"),
@@ -370,7 +393,7 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -378,26 +401,19 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the buttons to allow conversion to/from relative path...
-		__pathDssFile_JButton = new SimpleJButton(	__RemoveWorkingDirectoryDssFile, this );
-		button_JPanel.add ( __pathDssFile_JButton );
-        __pathInputFile_JButton = new SimpleJButton( __RemoveWorkingDirectoryInputFile, this );
-        button_JPanel.add ( __pathInputFile_JButton );
-        __pathOutputFile_JButton = new SimpleJButton( __RemoveWorkingDirectoryOutputFile, this );
-        button_JPanel.add ( __pathOutputFile_JButton );
-        __pathDssutlProgram_JButton = new SimpleJButton(  __RemoveWorkingDirectoryDssutlProgram, this );
-        button_JPanel.add ( __pathDssutlProgram_JButton );
-    }
-	button_JPanel.add (__cancel_JButton = new SimpleJButton("Cancel",this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add (__cancel_JButton = new SimpleJButton("Cancel",this));
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
+	setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
+	// Dialogs do not need to be resizable...
+	setResizable ( true );
     super.setVisible( true );
 }
 
@@ -501,9 +517,11 @@ private void refresh ()
 		File f = new File ( DssFile );
 		if ( f.isAbsolute() ) {
 			__pathDssFile_JButton.setText ( __RemoveWorkingDirectoryDssFile );
+			__pathDssFile_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
             __pathDssFile_JButton.setText ( __AddWorkingDirectoryDssFile );
+            __pathDssFile_JButton.setToolTipText("Change path to absolute");
 		}
 	}
     if ( __pathInputFile_JButton != null ) {
@@ -511,9 +529,11 @@ private void refresh ()
         File f = new File ( InputFile );
         if ( f.isAbsolute() ) {
             __pathInputFile_JButton.setText ( __RemoveWorkingDirectoryInputFile );
+            __pathInputFile_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __pathInputFile_JButton.setText ( __AddWorkingDirectoryInputFile );
+            __pathInputFile_JButton.setToolTipText("Change path to absolute");
         }
     }
     if ( __pathOutputFile_JButton != null ) {
@@ -521,9 +541,11 @@ private void refresh ()
         File f = new File ( OutputFile );
         if ( f.isAbsolute() ) {
             __pathOutputFile_JButton.setText ( __RemoveWorkingDirectoryOutputFile );
+            __pathOutputFile_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __pathOutputFile_JButton.setText ( __AddWorkingDirectoryOutputFile );
+            __pathOutputFile_JButton.setToolTipText("Change path to absolute");
         }
     }
     if ( __pathDssutlProgram_JButton != null ) {
@@ -531,9 +553,11 @@ private void refresh ()
         File f = new File ( DssutlProgram );
         if ( f.isAbsolute() ) {
             __pathDssutlProgram_JButton.setText ( __RemoveWorkingDirectoryDssutlProgram );
+            __pathDssutlProgram_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __pathDssutlProgram_JButton.setText ( __AddWorkingDirectoryDssutlProgram );
+            __pathDssutlProgram_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

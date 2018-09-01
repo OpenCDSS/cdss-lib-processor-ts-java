@@ -44,6 +44,7 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -146,11 +147,11 @@ public void actionPerformed( ActionEvent e )
         return; // Startup.
     }
     Object o = e.getSource();
-	if ( o == __help_JButton ) {
-		TSCommandProcessorUtil.displayCommandDocumentation(__command);
-	}
-	else if ( o == __cancel_JButton ) {
+	if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "WriteReclamationHDB");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -1503,18 +1504,17 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
     JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
-    __help_JButton = new SimpleJButton("Help", "Help", this);
-    __help_JButton.setToolTipText("Show command documentation in web browser" );
-	button_JPanel.add ( __help_JButton );
-	if ( !Desktop.isDesktopSupported() ) {
-		__help_JButton.setEnabled(false);
-	}
+
+	__ok_JButton = new SimpleJButton("OK", "OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", "OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 	
 	// Refresh the contents...
     checkGUIState();
@@ -1524,7 +1524,10 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     //updateSiteIDTextFields();
     updateModelIDTextFields();
     
-	setResizable ( true ); // TODO SAM 2010-12-10 Resizing causes some problems
+    // TODO SAM 2010-12-10 Resizing causes some problems
+    // Dialogs do not need to be resizable, but allow this given the dynamic nature of data that
+    // may overflow...
+	setResizable ( true ); 
     pack();
     JGUIUtil.center( this );
     super.setVisible( true );
@@ -2466,23 +2469,31 @@ private void populateTimeZoneChoices ( ReclamationHDB_DMI rdmi )
 {	//String routine = getClass().getSimpleName() + ".populteTimeZoneChoices";
 	//Message.printStatus(2,routine,"Start populating time zone choices at " + new DateTime(DateTime.DATE_CURRENT));
     __TimeZone_JComboBox.removeAll ();
-    List<String> timeZoneChoices = rdmi.getTimeZoneList();
-    // Remove (blank) because can lead to errors loading data
-    for ( int i = (timeZoneChoices.size() - 1); i >= 0; i-- ) {
-    	String tz = timeZoneChoices.get(i);
-    	if ( (tz == null) || tz.isEmpty() ) {
-    		timeZoneChoices.remove(i);
-    	}
+    if ( rdmi == null ) {
+    	// Used in testing when no database connection
+    	List<String> timeZoneChoices = new ArrayList<String>();
+	    timeZoneChoices.add(0,"");
+	    __TimeZone_JComboBox.setData(timeZoneChoices);
     }
-    // But do add one blank because don't want an assumed default that may be wrong
-    // Command checks will force something other than blank to be selected
-    timeZoneChoices.add(0,"");
-    __TimeZone_JComboBox.setData(timeZoneChoices);
-    //Message.printStatus(2,routine,"End populating time zone choices at " + new DateTime(DateTime.DATE_CURRENT));
-    // Select first choice (may get reset from existing parameter values).
-    __TimeZone_JComboBox.select ( null );
-    if ( __TimeZone_JComboBox.getItemCount() > 0 ) {
-        __TimeZone_JComboBox.select ( 0 );
+    else {
+	    List<String> timeZoneChoices = rdmi.getTimeZoneList();
+	    // Remove (blank) because can lead to errors loading data
+	    for ( int i = (timeZoneChoices.size() - 1); i >= 0; i-- ) {
+	    	String tz = timeZoneChoices.get(i);
+	    	if ( (tz == null) || tz.isEmpty() ) {
+	    		timeZoneChoices.remove(i);
+	    	}
+	    }
+	    // But do add one blank because don't want an assumed default that may be wrong
+	    // Command checks will force something other than blank to be selected
+	    timeZoneChoices.add(0,"");
+	    __TimeZone_JComboBox.setData(timeZoneChoices);
+	    //Message.printStatus(2,routine,"End populating time zone choices at " + new DateTime(DateTime.DATE_CURRENT));
+	    // Select first choice (may get reset from existing parameter values).
+	    __TimeZone_JComboBox.select ( null );
+	    if ( __TimeZone_JComboBox.getItemCount() > 0 ) {
+	        __TimeZone_JComboBox.select ( 0 );
+	    }
     }
 }
 
@@ -2491,8 +2502,14 @@ Populate the time zone label, which uses the HDB default time zone.
 */
 private void populateTimeZoneLabel ( ReclamationHDB_DMI rdmi )
 {
-    String defaultTZ = __dmi.getDatabaseTimeZone();
-    __TimeZone_JLabel.setText("Optional - time series time zone default for instantaneous and hourly data (HDB=" + defaultTZ + ") - see popup help.");
+	if ( __dmi == null ) {
+		// Use when no database connection
+		String defaultTZ = "";
+	}
+	else {
+	    String defaultTZ = __dmi.getDatabaseTimeZone();
+	    __TimeZone_JLabel.setText("Optional - time series time zone default for instantaneous and hourly data (HDB=" + defaultTZ + ") - see popup help.");
+	}
 }
 
 /**
@@ -2742,32 +2759,34 @@ private void refresh ()
                 }
             }
             else {
-                // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
-                // Select the first so at least something is visible to user
-                __DataStore_JComboBox.select ( 0 );
-                if ( __ignoreEvents ) {
-                    // Also need to make sure that the datastore and DMI are actually selected
-                    // Call manually because events are disabled at startup to allow cascade to work properly
-                    setDMIForSelectedDataStore();
-                }
-                if ( __ignoreEvents ) {
-                    // Also need to make sure that the __siteDataTypeList is populated
-                    // Call manually because events are disabled at startup to allow cascade to work properly
-                    readSiteDataTypeList(__dmi);
-                }
-                if ( __ignoreEvents ) {
-                    // Also need to make sure that the __modelList is populated
-                    // Call manually because events are disabled at startup to allow cascade to work properly
-                    // This is also used to populate the ensemble list
-                    try {
-                        readModelList(__dmi);
-                    }
-                    catch ( Exception e ) {
-                        // The above call will set the list to empty.
-                    }
-                }
+            	if ( __DataStore_JComboBox.getItemCount() > 0 ) {
+	                // Bad user command...
+	                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+	                  "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+	                // Select the first so at least something is visible to user
+	                __DataStore_JComboBox.select ( 0 );
+	                if ( __ignoreEvents ) {
+	                    // Also need to make sure that the datastore and DMI are actually selected
+	                    // Call manually because events are disabled at startup to allow cascade to work properly
+	                    setDMIForSelectedDataStore();
+	                }
+	                if ( __ignoreEvents ) {
+	                    // Also need to make sure that the __siteDataTypeList is populated
+	                    // Call manually because events are disabled at startup to allow cascade to work properly
+	                    readSiteDataTypeList(__dmi);
+	                }
+	                if ( __ignoreEvents ) {
+	                    // Also need to make sure that the __modelList is populated
+	                    // Call manually because events are disabled at startup to allow cascade to work properly
+	                    // This is also used to populate the ensemble list
+	                    try {
+	                        readModelList(__dmi);
+	                    }
+	                    catch ( Exception e ) {
+	                        // The above call will set the list to empty.
+	                    }
+	                }
+	            }
             }
         }
         if ( TSList == null ) {

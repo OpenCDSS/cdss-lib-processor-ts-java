@@ -33,6 +33,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -48,10 +49,10 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 // Used for button labels...
 
-private final String __AddWorkingDirectoryToFile = "Add Working Directory To File";
-private final String __RemoveWorkingDirectoryFromFile = "Remove Working Directory From File";
-private final String __AddWorkingDirectoryToNewFile = "Add Working Directory To New File";
-private final String __RemoveWorkingDirectoryFromNewFile = "Remove Working Directory From New File";
+private final String __AddWorkingDirectoryToFile = "Abs";
+private final String __RemoveWorkingDirectoryFromFile = "Rel";
+private final String __AddWorkingDirectoryToNewFile = "Abs";
+private final String __RemoveWorkingDirectoryFromNewFile = "Rel";
 
 private boolean __error_wait = false; // To track errors
 private boolean __first_time = true;
@@ -61,7 +62,8 @@ private JTextField __NewOutputFile_JTextField = null;
 private SimpleJComboBox __WriteFile_JComboBox = null;
 private SimpleJComboBox __RecalculateFormulasAtOpen_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
-private SimpleJButton __ok_JButton = null;	
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __browseNew_JButton = null;
 private SimpleJButton __path_JButton = null;
@@ -106,10 +108,22 @@ public void actionPerformed(ActionEvent event)
 			String directory = fc.getSelectedFile().getParent();
 			String path = fc.getSelectedFile().getPath();
 			if ( o == __browseNew_JButton ) {
-				__NewOutputFile_JTextField.setText(path);
+				// Convert path to relative path by default.
+				try {
+					__NewOutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CloseExcelWorkbook_JDialog", "Error converting file to relative path." );
+				}
 			}
 			else {
-				__OutputFile_JTextField.setText(path);
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CloseExcelWorkbook_JDialog", "Error converting file to relative path." );
+				}
 			}
 			JGUIUtil.setLastFileDialogDirectory(directory);
 			refresh ();
@@ -117,6 +131,9 @@ public void actionPerformed(ActionEvent event)
 	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "CloseExcelWorkbook");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -240,38 +257,38 @@ private void initialize ( JFrame parent, CloseExcelWorkbook_Command command )
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
     	"This command closes a Microsoft Excel workbook and optionally writes the file (*.xls, *.xlsx)." ),
-    	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    	0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
    	    "A workbook object is created in memory by commands that read and write Excel." ),
-   	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	    0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
    	    "The workbook is kept open in memory after processing a read/write command if the KeepOpen=True command parameter is used." ),
-   	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	    0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
    	    "This allows subsequent commands to read/write the same Excel workbook without initialization overhead." ),
-   	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	    0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
    	    "If KeepOpen=False (default for most commmands), the read or write operation is performed and the file is closed." ),
-   	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	    0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
    	    "By default, if the workbook was originally opened for reading, then this CloseExcelWorkbook command will close without writing the file." ),
-   	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	    0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
    	    "If the workbook was originally opened for writing, then this CloseExcelWorkbook command will write the file and close the workbook." ),
-   	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	    0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(paragraph, new JLabel (
    	    "Use the WriteFile parameter to control whether to override defaults for writing the file." ),
-   	    0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+   	    0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     if (__working_dir != null) {
         JGUIUtil.addComponent(paragraph, new JLabel (
         "The working directory is: " + __working_dir), 
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-   	   	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	   	0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Original workbook file (required):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -280,9 +297,16 @@ private void initialize ( JFrame parent, CloseExcelWorkbook_Command command )
 	__OutputFile_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ("Browse", this);
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+	__browse_JButton = new SimpleJButton ("...", this);
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectoryFromFile,this);
+	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("New output file (optional):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -291,9 +315,16 @@ private void initialize ( JFrame parent, CloseExcelWorkbook_Command command )
 	__NewOutputFile_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __NewOutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browseNew_JButton = new SimpleJButton ("Browse", this);
-        JGUIUtil.addComponent(main_JPanel, __browseNew_JButton,
+	__browseNew_JButton = new SimpleJButton ("...", this);
+	__browseNew_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(main_JPanel, __browseNew_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathNew_JButton = new SimpleJButton(__RemoveWorkingDirectoryFromNewFile,this);
+	    JGUIUtil.addComponent(main_JPanel, __pathNew_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Write file?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -328,7 +359,7 @@ private void initialize ( JFrame parent, CloseExcelWorkbook_Command command )
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable (false);
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh ();
@@ -339,25 +370,20 @@ private void initialize ( JFrame parent, CloseExcelWorkbook_Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if (__working_dir != null) {
-		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton(__RemoveWorkingDirectoryFromFile, this);
-		button_JPanel.add (__path_JButton);
-		__pathNew_JButton = new SimpleJButton(__RemoveWorkingDirectoryFromNewFile, this);
-		button_JPanel.add (__pathNew_JButton);
-	}
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add (__ok_JButton);
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add (__cancel_JButton);
-	__cancel_JButton.setToolTipText ( "Close window without saving changes." );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add (__ok_JButton);
-	__ok_JButton.setToolTipText ( "Close window and save changes to command." );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command");
-	setResizable (false);
+	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
 	refresh();	// Sets the __path_JButton status
+	setResizable (false);
     super.setVisible(true);
 }
 
@@ -457,9 +483,11 @@ private void refresh ()
 		File f = new File (NewOutputFile);
 		if (f.isAbsolute()) {
 			__pathNew_JButton.setText (__RemoveWorkingDirectoryFromNewFile);
+			__path_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
             __pathNew_JButton.setText (__AddWorkingDirectoryToNewFile);
+			__path_JButton.setToolTipText("Change path to absolute");
 		}
 	}
 }

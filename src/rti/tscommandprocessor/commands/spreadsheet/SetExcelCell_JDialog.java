@@ -7,9 +7,11 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -36,6 +38,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -51,8 +54,8 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 // Used for button labels...
 
-private final String __AddWorkingDirectoryToFile = "Add Working Directory To File";
-private final String __RemoveWorkingDirectoryFromFile = "Remove Working Directory From File";
+private final String __AddWorkingDirectoryToFile = "Abs";
+private final String __RemoveWorkingDirectoryFromFile = "Rel";
 
 private boolean __error_wait = false; // To track errors
 private boolean __first_time = true;
@@ -81,7 +84,8 @@ private JTextArea __ColumnWidths_JTextArea = null;
 private JTextArea __ColumnCellTypes_JTextArea = null;
 private JTextArea __ColumnDecimalPlaces_JTextArea = null;
 private SimpleJButton __cancel_JButton = null;
-private SimpleJButton __ok_JButton = null;	
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private String __working_dir = null;	
@@ -125,13 +129,22 @@ public void actionPerformed(ActionEvent event)
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
 			String path = fc.getSelectedFile().getPath();
-			__OutputFile_JTextField.setText(path);
+			// Convert path to relative path by default.
+			try {
+				__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,"SetExcelCell_JDialog", "Error converting file to relative path." );
+			}
 			JGUIUtil.setLastFileDialogDirectory(directory);
 			refresh ();
 		}
 	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "SetExcelCell");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -425,10 +438,13 @@ private void initialize ( JFrame parent, SetExcelCell_Command command, List<Stri
 
    	JGUIUtil.addComponent(paragraph, new JLabel (
     	"This command sets a single the value, comments, and formatting for one or more cells in a Microsoft Excel workbook file (*.xls, *.xlsx).  " ),
-    	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    	0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
@@ -477,9 +493,16 @@ private void initialize ( JFrame parent, SetExcelCell_Command command, List<Stri
 	__OutputFile_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(excelFile_JPanel, __OutputFile_JTextField,
 		1, yExcelFile, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ("Browse", this);
-        JGUIUtil.addComponent(excelFile_JPanel, __browse_JButton,
+	__browse_JButton = new SimpleJButton ("...", this);
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(excelFile_JPanel, __browse_JButton,
 		6, yExcelFile, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectoryFromFile,this);
+	    JGUIUtil.addComponent(excelFile_JPanel, __path_JButton,
+	    	7, yExcelFile, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(excelFile_JPanel, new JLabel ("Worksheet:"),
         0, ++yExcelFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -816,23 +839,20 @@ private void initialize ( JFrame parent, SetExcelCell_Command command, List<Stri
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if (__working_dir != null) {
-		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectoryFromFile, this);
-		button_JPanel.add (__path_JButton);
-	}
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add (__ok_JButton);
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add (__cancel_JButton);
-	__cancel_JButton.setToolTipText ( "Close window without saving changes." );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add (__ok_JButton);
-	__ok_JButton.setToolTipText ( "Close window and save changes to command." );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command");
-	setResizable (false);
+	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
 	refresh();	// Sets the __path_JButton status
+	setResizable (false);
     super.setVisible(true);
 }
 
@@ -1074,9 +1094,11 @@ private void refresh ()
 		File f = new File (OutputFile);
 		if (f.isAbsolute()) {
 			__path_JButton.setText (__RemoveWorkingDirectoryFromFile);
+			__path_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
             __path_JButton.setText (__AddWorkingDirectoryToFile);
+			__path_JButton.setToolTipText("Change path to absolute");
 		}
 	}
 }

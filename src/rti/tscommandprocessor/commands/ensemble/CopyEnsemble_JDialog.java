@@ -19,8 +19,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -32,6 +34,7 @@ import RTi.TS.TSIdent_JDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -44,21 +47,22 @@ public class CopyEnsemble_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel button
-			__ok_JButton = null;	// Ok button
-private JFrame		__parent_JFrame = null;	// parent JFrame
-private CopyEnsemble_Command	__command = null;	// Command to edit.
-private JTextArea	__command_JTextArea=null;// Command as JTextField
-private JTextField	__NewEnsembleID_JTextField = null;
-private JTextField  __NewEnsembleName_JTextField;
-private JTextField  __NewAlias_JTextField = null;
-private SimpleJComboBox	__EnsembleID_JComboBox = null;
-private JTextArea	__NewTSID_JTextArea = null;
-private SimpleJButton	__edit_JButton = null;	// Edit button
-private SimpleJButton	__clear_JButton = null;	// Clear NewTSID button
-private boolean		__error_wait = false;	// Is there an error to be cleared up?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Whether OK has been pressed.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
+private JFrame __parent_JFrame = null;
+private CopyEnsemble_Command __command = null;
+private JTextArea __command_JTextArea=null;
+private JTextField __NewEnsembleID_JTextField = null;
+private JTextField __NewEnsembleName_JTextField;
+private JTextField __NewAlias_JTextField = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JTextArea __NewTSID_JTextArea = null;
+private SimpleJButton __edit_JButton = null;
+private SimpleJButton __clear_JButton = null;
+private boolean __error_wait = false; // Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false; // Whether OK has been pressed.
 
 /**
 Command editor dialog constructor.
@@ -112,6 +116,9 @@ public void actionPerformed( ActionEvent event )
 			Message.printWarning ( 1, routine, "Error creating time series identifier from \"" + NewTSID + "\"." );
 			Message.printWarning ( 3, routine, e );
 		}
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "CopyEnsemble");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -231,6 +238,9 @@ private void initialize ( JFrame parent, Command command )
 		"This is highly recommended if there is any chance that the " +
 		"copy will be mistaken for the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New ensemble identifier:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -305,14 +315,18 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+    button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__ok_JButton.setToolTipText("Save changes to command");
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
-	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-    setTitle ( "Edit " + __command.getCommandName() + "() command" );
+    setTitle ( "Edit " + __command.getCommandName() + " command" );
 
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	setResizable ( false );
     super.setVisible( true );
 }
 

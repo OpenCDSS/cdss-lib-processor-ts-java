@@ -41,6 +41,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -51,8 +52,8 @@ public class ReadTableFromDataStore_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
     
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
-private final String __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Rel";
+private final String __AddWorkingDirectory = "Abs";
 
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
@@ -73,7 +74,8 @@ private JTextArea __Sql_JTextArea = null;
 private JTextField __SqlFile_JTextField = null;
 private SimpleJComboBox __DataStoreProcedure_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
-private SimpleJButton __ok_JButton = null;	
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private ReadTableFromDataStore_Command __command = null;
 private boolean __ok = false;
 private String __working_dir = null;
@@ -124,7 +126,13 @@ public void actionPerformed(ActionEvent event)
             }
     
             if (path != null) {
-                __SqlFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__SqlFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CompareFiles_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory( directory);
                 refresh();
             }
@@ -132,6 +140,9 @@ public void actionPerformed(ActionEvent event)
     }
     else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ReadTableFromDataStore");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -546,9 +557,16 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
     __SqlFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(file_JPanel, __SqlFile_JTextField,
         1, yFile, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(file_JPanel, __browse_JButton,
+    __browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(file_JPanel, __browse_JButton,
         6, yFile, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+	    JGUIUtil.addComponent(file_JPanel, __path_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     // Panel for procedure
     int yProc = -1;
@@ -614,17 +632,14 @@ private void initialize ( JFrame parent, ReadTableFromDataStore_Command command 
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-    if ( __working_dir != null ) {
-        // Add the button to allow conversion to/from relative path...
-        __path_JButton = new SimpleJButton( __RemoveWorkingDirectory, this);
-        button_JPanel.add ( __path_JButton );
-    }
-	__cancel_JButton = new SimpleJButton("Cancel", this);
-	button_JPanel.add (__cancel_JButton);
-	__cancel_JButton.setToolTipText ( "Close window without saving changes." );
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add (__ok_JButton);
-	__ok_JButton.setToolTipText ( "Close window and save changes to command." );
+	__ok_JButton.setToolTipText("Save changes to command");
+	__cancel_JButton = new SimpleJButton("Cancel", this);
+	button_JPanel.add (__cancel_JButton);
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command");
 	//setResizable (false);
@@ -690,6 +705,7 @@ public boolean ok ()
 Populate the database list based on the selected datastore.
 @param dmi DMI to use when selecting database list
 */
+@SuppressWarnings("unchecked")
 private void populateDataStoreCatalogChoices ( DMI dmi )
 {   String routine = getClass().getSimpleName() + ".populateDataStoreDatastoreChoices";
     List<String> catalogList = null;
@@ -733,8 +749,9 @@ private void populateDataStoreCatalogChoices ( DMI dmi )
 Populate the procedure list based on the selected database.
 @param dmi DMI to use when selecting procedure list
 */
+@SuppressWarnings("unchecked")
 private void populateDataStoreProcedureChoices ( DMI dmi )
-{   String routine = getClass().getName() + "populateDataStoreProcedureChoices";
+{   String routine = getClass().getSimpleName() + "populateDataStoreProcedureChoices";
     List<String> procList = null;
     List<String> notIncluded = new ArrayList<String>(); // TODO SAM 2012-01-31 need to omit system procedures
     if ( dmi == null ) {
@@ -773,6 +790,7 @@ private void populateDataStoreProcedureChoices ( DMI dmi )
 Populate the schema list based on the selected database.
 @param dmi DMI to use when selecting schema list
 */
+@SuppressWarnings("unchecked")
 private void populateDataStoreSchemaChoices ( DMI dmi )
 {   String routine = getClass().getName() + "populateDataStoreSchemaChoices";
     List<String> schemaList = null;
@@ -818,6 +836,7 @@ private void populateDataStoreSchemaChoices ( DMI dmi )
 Populate the table list based on the selected database.
 @param dmi DMI to use when selecting table list
 */
+@SuppressWarnings("unchecked")
 private void populateDataStoreTableChoices ( DMI dmi )
 {   String routine = getClass().getName() + "populateDataStoreTableChoices";
     List<String> tableList = null;
@@ -1078,9 +1097,11 @@ private void refreshPathControl()
         File f = new File ( SqlFile );
         if ( f.isAbsolute() ) {
             __path_JButton.setText( __RemoveWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __path_JButton.setText( __AddWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

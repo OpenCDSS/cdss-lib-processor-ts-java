@@ -43,6 +43,7 @@ import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -55,9 +56,9 @@ Editor for the ReadReclamationHDB() command.
 public class ReadReclamationHDB_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton __help_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private ReadReclamationHDB_Command __command = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private SimpleJComboBox __DataType_JComboBox = null;
@@ -129,12 +130,12 @@ public void actionPerformed( ActionEvent e )
         return; // Startup.
     }
     Object o = e.getSource();
-    if ( o == __help_JButton ) {
-		TSCommandProcessorUtil.displayCommandDocumentation(__command);
-	}
-	else if ( o == __cancel_JButton ) {
+    if ( o == __cancel_JButton ) {
         response ( false );
     }
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ReadReclamationHDB");
+	}
     else if ( o == __ok_JButton ) {
         refresh ();
         checkInput();
@@ -1223,16 +1224,14 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-    __help_JButton = new SimpleJButton("Help", "Help", this);
-    __help_JButton.setToolTipText("Show command documentation in web browser" );
-	button_JPanel.add ( __help_JButton );
-	if ( !Desktop.isDesktopSupported() ) {
-		__help_JButton.setEnabled(false);
-	}
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton( "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 
@@ -1243,7 +1242,8 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     checkGUIState(); // Do this again because it may not have happened due to the special event handling
     updateSiteIDTextFields();
     updateModelIDTextFields();
-    // Dialogs do not need to be resizable...
+    // Dialogs do not need to be resizable, but allow this given the dynamic nature of data that
+    // may overflow...
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
@@ -1988,8 +1988,11 @@ Populate the time zone label, which uses the HDB default time zone.
 */
 private void populateTimeZoneLabel ( ReclamationHDB_DMI rdmi )
 {
-    String defaultTZ = __dmi.getDatabaseTimeZone();
-    __TimeZone_JLabel.setText("Output time series for hourly and irregular (instantaneous) interval will be in HDB time zone " + defaultTZ + ".");
+	String defaultTZ = "";
+	if ( rdmi != null ) {
+	    defaultTZ = __dmi.getDatabaseTimeZone();
+	}
+	__TimeZone_JLabel.setText("Output time series for hourly and irregular (instantaneous) interval will be in HDB time zone " + defaultTZ + ".");
 }
 
 /**
@@ -2163,30 +2166,36 @@ private void refresh ()
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
-                // Select the first so at least something is visible to user
-                __DataStore_JComboBox.select ( 0 );
-                if ( __ignoreEvents ) {
-                    // Also need to make sure that the datastore and DMI are actually selected
-                    // Call manually because events are disabled at startup to allow cascade to work properly
-                    setDMIForSelectedDataStore();
+                if ( __DataStore_JComboBox.getItemCount() <= 0 ) {
+                	// Can happen if no datastore connections available
+	                __DataStore_JComboBox.select ( null );
                 }
-                if ( __ignoreEvents ) {
-                    // Also need to make sure that the __siteDataTypeList is populated
-                    // Call manually because events are disabled at startup to allow cascade to work properly
-                    readSiteDataTypeList(__dmi);
-                }
-                if ( __ignoreEvents ) {
-                    // Also need to make sure that the __modelList is populated
-                    // Call manually because events are disabled at startup to allow cascade to work properly
-                    try {
-                        readModelList(__dmi);
-                    }
-                    catch ( Exception e ) {
-                        // The above call will set the list to empty.
-                    }
-                }
+                else {
+	                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+	                  "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+	                // Select the first so at least something is visible to user
+	                __DataStore_JComboBox.select ( 0 );
+	                if ( __ignoreEvents ) {
+	                    // Also need to make sure that the datastore and DMI are actually selected
+	                    // Call manually because events are disabled at startup to allow cascade to work properly
+	                    setDMIForSelectedDataStore();
+	                }
+	                if ( __ignoreEvents ) {
+	                    // Also need to make sure that the __siteDataTypeList is populated
+	                    // Call manually because events are disabled at startup to allow cascade to work properly
+	                    readSiteDataTypeList(__dmi);
+	                }
+	                if ( __ignoreEvents ) {
+	                    // Also need to make sure that the __modelList is populated
+	                    // Call manually because events are disabled at startup to allow cascade to work properly
+	                    try {
+	                        readModelList(__dmi);
+	                    }
+	                    catch ( Exception e ) {
+	                        // The above call will set the list to empty.
+	                    }
+	                }
+	            }
             }
         }
         // Time zone label for information

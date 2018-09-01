@@ -34,6 +34,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -47,13 +48,19 @@ public class ProcessTSProduct_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
     
-private final String __AddWorkingDirectoryToTSP = "Add Working Directory to TSP";
-private final String __RemoveWorkingDirectoryFromTSP = "Remove Working Directory from TSP";
+private final String __AddWorkingDirectoryToTSP = "Abs";
+private final String __RemoveWorkingDirectoryFromTSP = "Rel";
+
+private final String __AddWorkingDirectoryToOutput = "Abs";
+private final String __RemoveWorkingDirectoryFromOutput = "Rel";
 
 private SimpleJButton __browse_JButton = null;
+private SimpleJButton __browseOutput_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __path_JButton = null; // Convert between relative and absolute paths
+private SimpleJButton __pathOutput_JButton = null;
 private ProcessTSProduct_Command __command = null;// Command to edit
 private String __working_dir = null; // Working directory.
 private JTextArea __command_JTextArea = null;
@@ -108,7 +115,48 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__TSProductFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__TSProductFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"ProcessTSProduct_JDialog", "Error converting file to relative path." );
+				}
+				JGUIUtil.setLastFileDialogDirectory( directory);
+				refresh();
+			}
+		}
+	}
+	else if ( o == __browseOutput_JButton ) {
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+		JFileChooser fc = null;
+		if ( last_directory_selected != null ) {
+			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
+		}
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
+		}
+		fc.setDialogTitle("Select Output Image File");
+		SimpleFileFilter sff = new SimpleFileFilter("png", "PNG Image File");
+		fc.addChoosableFileFilter(sff);
+		
+		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+			String directory = fc.getSelectedFile().getParent();
+			String filename = fc.getSelectedFile().getName(); 
+			String path = fc.getSelectedFile().getPath(); 
+	
+			if (filename == null || filename.equals("")) {
+				return;
+			}
+	
+			if (path != null) {
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"ProcessTSProduct_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory( directory);
 				refresh();
 			}
@@ -116,6 +164,9 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ProcessTSProduct");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -136,7 +187,24 @@ public void actionPerformed( ActionEvent event )
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1,
-				"processTSProduct_JDialog",	"Error converting file to relative path." );
+				"processTSProduct_JDialog",	"Error converting product file to relative path." );
+			}
+		}
+		refresh ();
+	}
+	else if ( o == __pathOutput_JButton ) {
+		if ( __pathOutput_JButton.getText().equals( __AddWorkingDirectoryToOutput) ) {
+			__OutputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,
+			__OutputFile_JTextField.getText() ) );
+		}
+		else if ( __pathOutput_JButton.getText().equals( __RemoveWorkingDirectoryFromOutput) ) {
+			try {
+				__OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
+						__OutputFile_JTextField.getText() ) );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,
+				"processTSProduct_JDialog",	"Error converting output file to relative path." );
 			}
 		}
 		refresh ();
@@ -237,20 +305,20 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Process a time series product file (TSP file, typically named *.tsp) to create a graph product." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify paths relative to the working directory, or use an absolute path."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If the TSP file contains a comment #@template then the file will be expanded similar to ExpandTemplateFile() and then used."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"TS product file (TSP):" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -259,9 +327,16 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 	__TSProductFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TSProductFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectoryFromTSP,this);
+	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run mode:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -293,14 +368,21 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField (30);
-	__OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
+	__OutputFile_JTextField.setToolTipText("Specify the path to the output PNG or JPG file, can use ${Property} notation");
 	__OutputFile_JTextField.addKeyListener ( this );
 	__OutputFile_JTextField.setEditable ( true );
 	JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ( "Optional - output file with *.png or *.jpg extension." ), 
-        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	__browseOutput_JButton = new SimpleJButton ( "...", this );
+	__browseOutput_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(main_JPanel, __browseOutput_JButton,
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathOutput_JButton = new SimpleJButton(__RemoveWorkingDirectoryFromOutput,this);
+	    JGUIUtil.addComponent(main_JPanel, __pathOutput_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default save file:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -343,7 +425,7 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
 
 	// Refresh the contents...
 	refresh();
@@ -354,21 +436,20 @@ private void initialize ( JFrame parent, ProcessTSProduct_Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton( __RemoveWorkingDirectoryFromTSP, this);
-		button_JPanel.add ( __path_JButton );
-	}
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( false );
+	setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -508,9 +589,23 @@ private void refresh ()
 		File f = new File ( TSProductFile );
 		if ( f.isAbsolute() ) {
 			__path_JButton.setText( __RemoveWorkingDirectoryFromTSP);
+			__path_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
 		    __path_JButton.setText (__AddWorkingDirectoryToTSP);
+			__path_JButton.setToolTipText("Change path to absolute");
+		}
+	}
+	if ( __pathOutput_JButton != null ) {
+		__pathOutput_JButton.setEnabled ( true );
+		File f = new File ( OutputFile );
+		if ( f.isAbsolute() ) {
+			__pathOutput_JButton.setText( __RemoveWorkingDirectoryFromOutput);
+			__pathOutput_JButton.setToolTipText("Change path to relative to command file");
+		}
+		else {
+		    __pathOutput_JButton.setText (__AddWorkingDirectoryToOutput);
+			__pathOutput_JButton.setToolTipText("Change path to absolute");
 		}
 	}
 }

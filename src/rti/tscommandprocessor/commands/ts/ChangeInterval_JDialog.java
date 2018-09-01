@@ -37,6 +37,7 @@ import RTi.TS.TSUtil_ChangeInterval;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
@@ -92,10 +93,9 @@ private JTextArea __Command_JTextArea   = null;
 private JScrollPane	__Command_JScrollPane = null;
 private SimpleJButton __cancel_JButton = null;
 private String __cancel_String  = "Cancel";
-private String __cancel_Tip = "Close the window, without returning the command.";
 private SimpleJButton __ok_JButton = null;
 private String __ok_String  = "OK";
-private String __ok_Tip = "Close the window, returning the command.";
+private SimpleJButton __help_JButton = null;
 				
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -124,6 +124,9 @@ public void actionPerformed( ActionEvent event )
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ChangeInterval");
 	}
 	else if ( o == __ok_JButton ) {		
 		refresh ();
@@ -850,24 +853,23 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	// Cancel button:
-	__cancel_JButton = new SimpleJButton( __cancel_String, this);
-	__cancel_JButton.setToolTipText( __cancel_Tip );
-	button_JPanel.add ( __cancel_JButton );
-
-	// OK button:
 	__ok_JButton = new SimpleJButton(__ok_String, this);
-	__ok_JButton .setToolTipText( __ok_Tip );
+	__ok_JButton.setToolTipText("Save changes to command");
 	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton = new SimpleJButton( __cancel_String, this);
+	button_JPanel.add ( __cancel_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 	
 	// Visualize it...
 	if ( title != null ) {
 		setTitle ( title );
 	}
 	
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	setResizable ( false );
     super.setVisible( true );   
 }
 

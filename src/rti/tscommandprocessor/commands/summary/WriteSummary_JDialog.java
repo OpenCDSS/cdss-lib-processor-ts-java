@@ -36,6 +36,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -47,13 +48,14 @@ public class WriteSummary_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private final String __AddWorkingDirectory = "Add Working Directory";
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Abs";
+private final String __RemoveWorkingDirectory = "Rel";
 	
-private SimpleJButton __browse_JButton = null;// Button to browse for file
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
-private SimpleJButton __path_JButton = null;	// Convert between relative and absolute paths.
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
+private SimpleJButton __path_JButton = null;
 private WriteSummary_Command __command = null;// Command to edit
 private JTextArea __command_JTextArea=null;// Command display
 private SimpleJComboBox __TSList_JComboBox = null;
@@ -114,7 +116,13 @@ public void actionPerformed( ActionEvent event )
 					// Enforce extension...
 					path = IOUtil.enforceFileExtension(path, "txt");
 				}
-				__OutputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"WriteSummary_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory( directory);
 				refresh();
 			}
@@ -122,6 +130,9 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "WriteSummary");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -282,29 +293,18 @@ private void initialize ( JFrame parent, WriteSummary_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a summary format file, which can be specified using a full or " +
 		"relative path (relative to the working directory)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
      	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify the file extension as \"html\" to write an HTML file (default is text)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Summary file to write:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	 __OutputFile_JTextField = new JTextField ( 50 );
-	 __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
-	 __OutputFile_JTextField.addKeyListener ( this );
-     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
-		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	 __browse_JButton = new SimpleJButton ( "Browse", this );
-     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-     
      __TSList_JComboBox = new SimpleJComboBox(false);
      y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
@@ -322,6 +322,24 @@ private void initialize ( JFrame parent, WriteSummary_Command command )
          (TSCommandProcessor)__command.getCommandProcessor(), __command );
      y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
          this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+     
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Summary file to write:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	 __OutputFile_JTextField = new JTextField ( 50 );
+	 __OutputFile_JTextField.setToolTipText("Specify the path to the output file or use ${Property} notation");
+	 __OutputFile_JTextField.addKeyListener ( this );
+     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
+		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	 __browse_JButton = new SimpleJButton ( "...", this );
+	 __browse_JButton.setToolTipText("Browse for file");
+     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+ 	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
      
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
     	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -365,7 +383,7 @@ private void initialize ( JFrame parent, WriteSummary_Command command )
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable ( false );
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-    	1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    	1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -373,23 +391,22 @@ private void initialize ( JFrame parent, WriteSummary_Command command )
     JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory, this);
-		button_JPanel.add ( __path_JButton );
-	}
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 	
     checkGUIState();
     refresh();
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( true );
+	setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -555,9 +572,11 @@ private void refresh ()
 		File f = new File ( OutputFile );
 		if ( f.isAbsolute() ) {
 			__path_JButton.setText ( __RemoveWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
 		    __path_JButton.setText ( __AddWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to absolute");
 		}
 	}
 }

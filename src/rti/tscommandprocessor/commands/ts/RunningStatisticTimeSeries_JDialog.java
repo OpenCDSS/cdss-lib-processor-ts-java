@@ -41,6 +41,7 @@ import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Math.DistributionType;
 import RTi.Util.Math.SortOrderType;
@@ -68,6 +69,7 @@ private final String __CUSTOM_BRACKET_BY_MONTH_LABEL = "Bracket range (by month)
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private RunningStatisticTimeSeries_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TSList_JComboBox = null;
@@ -124,6 +126,9 @@ public void actionPerformed( ActionEvent event )
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "RunningStatisticTimeSeries");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -873,16 +878,20 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
         JGUIUtil.addComponent(main_JPanel, button_Panel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_Panel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_Panel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_Panel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_Panel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( true );
+    setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
     __filler_JLabel.setVisible(false); // Use to get layout right but don't need after that
+	setResizable ( false );
     super.setVisible( true );
 }
 

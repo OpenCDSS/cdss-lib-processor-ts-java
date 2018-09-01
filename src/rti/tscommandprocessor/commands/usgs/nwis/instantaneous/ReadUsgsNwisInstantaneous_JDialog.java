@@ -47,6 +47,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -61,11 +62,12 @@ public class ReadUsgsNwisInstantaneous_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 
-private final String __AddWorkingDirectory = "Add Working Directory";
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Abs";
+private final String __RemoveWorkingDirectory = "Rel";
     
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private SimpleJButton __dataStoreDocumentation_JButton = null;
@@ -144,7 +146,13 @@ public void actionPerformed( ActionEvent event )
             }
     
             if (path != null) {
-                __OutputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"ReadUsgsNwisInstantaneous_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory(directory );
                 refresh();
             }
@@ -173,6 +181,9 @@ public void actionPerformed( ActionEvent event )
                 __dataStoreOnline_JButton.getActionCommand() + "\"");
         }
     }
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ReadUsgsNwisInstantaneous");
+	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
 		checkInput ();
@@ -424,51 +435,51 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Read one or more time series from the USGS NWIS instantaneous values web service.  " +
     	"First query the data from USGS NWIS.  Then transfer the returned data into time series."),
-    	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	0, ++yMain, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>WARNING - This command can be slow.  Constrain the query to improve performance.</b></html>"),
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yMain, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>Common choices are provided for convenience but may not apply (additional enhancements " +
         "to web services may improve intelligent choices in the future).</b></html>"),
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yMain, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Refer to the USGS NWIS Instantaneous Values Datastore documentation for more information." ), 
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    __dataStoreDocumentation_JButton = new SimpleJButton ("USGS NWIS Documentation",this);
-    JGUIUtil.addComponent(main_JPanel, __dataStoreDocumentation_JButton, 
-        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    __dataStoreDocumentation_JButton.setEnabled(false);
-    __dataStoreDocumentation_JButton.setToolTipText("Show the USGS NWIS web service documentation in a browser - " +
-        "useful for explaining query parameters.");
-    __dataStoreOnline_JButton = new SimpleJButton ("USGS NWIS Online",this);
-    JGUIUtil.addComponent(main_JPanel, __dataStoreOnline_JButton, 
-        1, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    __dataStoreOnline_JButton.setEnabled(false);
-    __dataStoreOnline_JButton.setToolTipText("Show the USGS NWIS web service web page in a browser - " +
-        "useful for testing queries.");
+        0, ++yMain, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"<html>Constrain the query by specifying time series metadata to match.  " +
     	"<b>A location constraint must be specified.</b></html>" ), 
-    	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	0, ++yMain, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the input period defaults to the input period from SetInputPeriod()."),
-		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yMain, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optionally, also write time series to a file," +
         " which can be specified using a full or relative path (relative to the working directory)." ),
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yMain, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The working directory is: " + __working_dir ), 
-        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yMain, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
+    __dataStoreDocumentation_JButton = new SimpleJButton ("USGS NWIS Documentation",this);
+    __dataStoreDocumentation_JButton.setEnabled(false);
+    __dataStoreDocumentation_JButton.setToolTipText("Show the USGS NWIS web service documentation in a browser - " +
+        "useful for explaining query parameters.");
+    JGUIUtil.addComponent(main_JPanel, __dataStoreDocumentation_JButton, 
+        1, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __dataStoreOnline_JButton = new SimpleJButton ("USGS NWIS Online",this);
+    __dataStoreOnline_JButton.setEnabled(false);
+    __dataStoreOnline_JButton.setToolTipText("Show the USGS NWIS web service web page in a browser - " +
+        "useful for testing queries.");
+    JGUIUtil.addComponent(main_JPanel, __dataStoreOnline_JButton, 
+        3, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator(), 
-        0, ++yMain, 7, 1, 1, 1, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++yMain, 8, 1, 1, 1, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
-        0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // Panel for query parameters
     int yQuery = -1;
@@ -495,7 +506,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(query_JPanel, __DataStore_JComboBox,
         1, yQuery, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(query_JPanel, new JLabel("Required - data store containing data."), 
-        3, yQuery, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yQuery, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for location
     int yLoc = -1;
@@ -505,7 +516,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
         BorderFactory.createLineBorder(Color.black),
         "Location constraint (specify only one constraint)" ));
     JGUIUtil.addComponent( query_JPanel, loc_JPanel,
-        0, ++yQuery, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yQuery, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Site number(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -515,7 +526,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(loc_JPanel, __Sites_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ site numbers separated by commas."),
-        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yLoc, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("State(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -525,7 +536,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(loc_JPanel, __States_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ state abbreviations separated by commas."),
-        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yLoc, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("HUC(s):"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -535,7 +546,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(loc_JPanel, __HUCs_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ (1 2-digit and/or up to 10 8-digit) HUCs separated by commas."),
-        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yLoc, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Bounding box:"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -545,7 +556,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(loc_JPanel, __BoundingBox_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Bounding box: WestLon,SouthLat,EastLon,NorthLat"),
-        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yLoc, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("FIPS counties:"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -562,7 +573,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(loc_JPanel, __Counties_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ counties separated by commas."),
-        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yLoc, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Parameters
     
@@ -576,7 +587,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(query_JPanel, __Parameters_JTextField,
         1, yQuery, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(query_JPanel, new JLabel ("Optional - list of parameter codes separated by commas (default=all)."),
-        3, yQuery, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yQuery, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Site status are hard-coded
     
@@ -591,7 +602,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(query_JPanel, __SiteStatus_JComboBox,
         1, yQuery, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(query_JPanel, new JLabel("Optional - site status (default=" + UsgsNwisSiteStatusType.ALL + ")."), 
-        3, yQuery, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yQuery, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Site types
     
@@ -603,7 +614,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(query_JPanel, __SiteTypes_JTextField,
         1, yQuery, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(query_JPanel, new JLabel ("Optional - list of site types separated by commas (default=all)."),
-        3, yQuery, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yQuery, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Agency code
     
@@ -615,7 +626,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(query_JPanel, __Agency_JTextField,
         1, yQuery, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(query_JPanel, new JLabel ("Optional - agency code (default=all)."),
-        3, yQuery, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yQuery, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(query_JPanel, new JLabel ("Input start:"), 
         0, ++yQuery, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -625,7 +636,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(query_JPanel, __InputStart_JTextField,
         1, yQuery, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(query_JPanel, new JLabel ("Optional - YYYY-MM-DD, override the global input start."),
-        3, yQuery, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yQuery, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(query_JPanel, new JLabel ( "Input end:"), 
         0, ++yQuery, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -635,7 +646,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(query_JPanel, __InputEnd_JTextField,
         1, yQuery, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(query_JPanel, new JLabel ( "Optional - YYYY-MM-DD, override the global input end."),
-        3, yQuery, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yQuery, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(query_JPanel, new JLabel("Alias to assign:"),
         0, ++yQuery, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -647,7 +658,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(query_JPanel, __Alias_JTextField,
         1, yQuery, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(query_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
-        3, yQuery, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yQuery, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(query_JPanel, new JLabel ( "Format:"),
         0, ++yQuery, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -660,7 +671,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(query_JPanel, __Format_JComboBox,
         1, yQuery, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(query_JPanel, new JLabel("Optional - data format (default=" + UsgsNwisFormatType.WATERML + ")."), 
-        3, yQuery, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yQuery, 5, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(query_JPanel, new JLabel ( "Output file to write:" ), 
         0, ++yQuery, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -670,9 +681,16 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
         "Optional output file to save time series data, which can be read by other commands, can use ${Property}");
     JGUIUtil.addComponent(query_JPanel, __OutputFile_JTextField,
         1, yQuery, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browse_JButton = new SimpleJButton ( "Browse", this );
+    __browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(query_JPanel, __browse_JButton,
         6, yQuery, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+	    JGUIUtil.addComponent(query_JPanel, __path_JButton,
+	    	7, yQuery, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
     
     // Panel for waterml parameters
     int yWaterml = -1;
@@ -740,7 +758,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, yMain, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		1, yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh ();
@@ -751,23 +769,22 @@ private void initialize ( JFrame parent, ReadUsgsNwisInstantaneous_Command comma
     JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-    if ( __working_dir != null ) {
-        // Add the button to allow conversion to/from relative path...
-        __path_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
-        button_JPanel.add ( __path_JButton );
-    }
+    __ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton( "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
+	// Dialogs do not need to be resizable...
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -1009,9 +1026,11 @@ private void refresh ()
         File f = new File ( OutputFile );
         if ( f.isAbsolute() ) {
             __path_JButton.setText ( __RemoveWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __path_JButton.setText ( __AddWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to absolute");
         }
     }
 

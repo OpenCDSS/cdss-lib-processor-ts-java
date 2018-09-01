@@ -508,10 +508,10 @@ private void initialize ( JFrame parent, CompareFiles_Command command, String di
 
 	setTitle ( "Edit " + __command.getCommandName() + " command" );
 
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	// Dialogs do not need to be resizable...
+	setResizable ( false );
     super.setVisible( true );
 }
 

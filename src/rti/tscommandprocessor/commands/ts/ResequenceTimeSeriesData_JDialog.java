@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -35,6 +37,7 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.YearType;
@@ -47,10 +50,11 @@ public class ResequenceTimeSeriesData_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private ResequenceTimeSeriesData_Command __command = null;// Command to edit
-private JTextArea __command_JTextArea=null;// Command as TextField
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
+private ResequenceTimeSeriesData_Command __command = null;
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -87,6 +91,9 @@ public void actionPerformed( ActionEvent event )
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ResequenceTimeSeriesData");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -289,11 +296,11 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Resequence time series data by \"shuffling\" the original years of data, creating new time series." ),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "An identifier for the table with the new year sequence must be specified, and each sequence of " +
         "years must be provided in a column with a unique column heading."),
@@ -305,6 +312,9 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "If not specified, the output start is taken from the global output start or the time series." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -442,16 +452,20 @@ private void initialize ( JFrame parent, ResequenceTimeSeriesData_Command comman
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+	__ok_JButton = new SimpleJButton("OK", "OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", "OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( true );
+	setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
 	refresh();
+	setResizable ( false );
     super.setVisible( true );
 }
 

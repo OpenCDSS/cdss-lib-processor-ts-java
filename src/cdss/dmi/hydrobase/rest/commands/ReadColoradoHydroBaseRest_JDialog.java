@@ -1,7 +1,6 @@
 package cdss.dmi.hydrobase.rest.commands;
 
 import java.awt.Color;
-import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -14,7 +13,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -25,9 +23,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -39,6 +39,7 @@ import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -58,8 +59,8 @@ implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowLi
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private ReadColoradoHydroBaseRest_Command __command = null;
-private SimpleJButton __dataStoreDocumentation_JButton = null;
 private SimpleJComboBox __DataStore_JComboBox = null; // New approach
 private SimpleJComboBox __DataType_JComboBox;
 private SimpleJComboBox __Interval_JComboBox;
@@ -114,16 +115,9 @@ public void actionPerformed( ActionEvent event )
     if ( o == __cancel_JButton ) {
         response ( false );
     }
-    else if ( o == __dataStoreDocumentation_JButton ) {
-        try {
-            Desktop desktop = Desktop.getDesktop();
-            desktop.browse ( new URI(__dataStoreDocumentation_JButton.getActionCommand()) );
-        }
-        catch ( Exception e ) {
-            Message.printWarning(1, null, "Unable to display HydroBase REST web service documentation using \"" +
-                __dataStoreDocumentation_JButton.getActionCommand() + "\"" );
-        }
-    }
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ReadColoradoHydroBaseRest");
+	}
     else if ( o == __ok_JButton ) {
         refresh ();
         checkInput ();
@@ -265,18 +259,6 @@ private void checkGUIState()
 			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, false );
 		}
 	}
-    // If data store is selected and has property for help, enable the button
-	ColoradoHydroBaseRestDataStore dataStore = getSelectedDataStore();
-    if ( dataStore != null ) {
-        String urlString = dataStore.getProperty ( "ServiceApiDocumentationUri" );
-        if ( urlString == null ) {
-            __dataStoreDocumentation_JButton.setEnabled(false);
-        }
-        else {
-            __dataStoreDocumentation_JButton.setActionCommand(urlString);
-            __dataStoreDocumentation_JButton.setEnabled(true);
-        }
-    }
 }
 
 /**
@@ -526,12 +508,9 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
 		"Specifying the period will limit data that are available " +
 		"for later commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    __dataStoreDocumentation_JButton = new SimpleJButton ("Web Service Documentation",this);
-    JGUIUtil.addComponent(main_JPanel, __dataStoreDocumentation_JButton, 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    __dataStoreDocumentation_JButton.setEnabled(false);
-    __dataStoreDocumentation_JButton.setToolTipText("Show the web service documentation in a browser - " +
-        "useful for explaining query parameters.");
+   	
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	
    	__ignoreEvents = true; // So that a full pass of initialization can occur
    	
@@ -726,14 +705,17 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton( "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 
-	setResizable ( true );
     // Because it is necessary to select the proper input filter during initialization (to transfer an old command's
     // parameter values), the selected input filter may not be desirable for dialog sizing.  Therefore, manually set
     // all panels to visible and then determine the preferred size as the maximum.  Then reselect the appropriate input
@@ -752,6 +734,7 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
     // Now refresh once more
 	refresh();
 	checkGUIState(); // Do this again because it may not have happened due to the special event handling
+	setResizable ( false );
     super.setVisible( true );
 }
 

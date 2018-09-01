@@ -6,8 +6,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -24,6 +26,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +35,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -45,8 +49,8 @@ public class CompareTables_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
     
-private final String __AddWorkingDirectory = "Add Working Directory";
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Abs";
+private final String __RemoveWorkingDirectory = "Rel";
 
 private boolean __error_wait = false; // To track errors
 private boolean __first_time = true; // Indicate first time display
@@ -67,6 +71,7 @@ private SimpleJComboBox __IfSame_JComboBox = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __path_JButton = null;
 private CompareTables_Command __command = null;
 private String __working_dir = null; // Working directory.
@@ -117,7 +122,13 @@ public void actionPerformed(ActionEvent event)
                     // Enforce extension...
                     path = IOUtil.enforceFileExtension(path, "html");
                 }
-                __OutputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CompareTables_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory( directory);
                 refresh();
             }
@@ -125,6 +136,9 @@ public void actionPerformed(ActionEvent event)
     }
     else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "CompareTables");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -293,30 +307,32 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout(new GridBagLayout());
 	getContentPane().add ("North", main_JPanel);
-	int y = 0;
+	int y = -1;
 
 	JPanel paragraph = new JPanel();
 	paragraph.setLayout(new GridBagLayout());
-	int yy = 0;
+	int yy = -1;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command compares two tables and optionally creates a new comparison table."),
-        0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "By default, all columns (and rows) from the specified tables are compared; however, the columns to " +
         "compare can be specified."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The table is compared by formatting cell values as strings.  If necessary, " +
         "specify precision and tolerance for floating point comparisons."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "The results table, if written as HTML, indicates differences as colored cells " +
         "(the simple table view will not color the differences)."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table1 ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -429,9 +445,16 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      __OutputFile_JTextField.addKeyListener ( this );
      JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-     __browse_JButton = new SimpleJButton ( "Browse", this );
+     __browse_JButton = new SimpleJButton ( "...", this );
+ 	 __browse_JButton.setToolTipText("Browse for file");
      JGUIUtil.addComponent(main_JPanel, __browse_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+ 	 if ( __working_dir != null ) {
+	 	 // Add the button to allow conversion to/from relative path...
+		 __path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+	     JGUIUtil.addComponent(main_JPanel, __path_JButton,
+	    	 7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	 }
      
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if different:"),
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -474,7 +497,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      __command_JTextArea.setWrapStyleWord ( true );
      __command_JTextArea.setEditable (false);
      JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+         1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh ();
@@ -485,23 +508,20 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
  
-    if ( __working_dir != null ) {
-        // Add the button to allow conversion to/from relative path...
-        __path_JButton = new SimpleJButton(__RemoveWorkingDirectory, this);
-        button_JPanel.add ( __path_JButton );
-    }
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add (__ok_JButton);
     __cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add (__cancel_JButton);
-	__cancel_JButton.setToolTipText ( "Close window without saving changes." );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add (__ok_JButton);
-	__ok_JButton.setToolTipText ( "Close window and save changes to command." );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command");
-	setResizable (false);
+	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
 	refresh();	// Sets the __path_JButton status
+	setResizable (false);
     super.setVisible(true);
 }
 
@@ -704,6 +724,19 @@ private void refresh ()
     props.add ( "IfDifferent=" + IfDifferent );
     props.add ( "IfSame=" + IfSame );
 	__command_JTextArea.setText( __command.toString ( props ) );
+	// Check the path and determine what the label on the path button should be...
+	if ( __path_JButton != null ) {
+		__path_JButton.setEnabled ( true );
+		File f = new File ( OutputFile );
+		if ( f.isAbsolute() ) {
+			__path_JButton.setText (__RemoveWorkingDirectory);
+			__path_JButton.setToolTipText("Change path to relative to command file");
+		}
+		else {
+		    __path_JButton.setText (__AddWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to absolute");
+		}
+	}
 }
 
 /**

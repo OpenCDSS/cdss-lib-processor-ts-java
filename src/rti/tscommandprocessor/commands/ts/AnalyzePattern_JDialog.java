@@ -25,9 +25,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -41,6 +43,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJList;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -80,12 +83,12 @@ private JScrollPane __Command_JScrollPane = null;
 // Cancel button
 private SimpleJButton __cancel_JButton = null;
 private String __cancel_String  = "Cancel";
-private String __cancel_Tip = "Close the window, without returning the command.";
 
 // OK button
 private SimpleJButton __ok_JButton = null;
 private String __ok_String  = "OK";
-private String __ok_Tip = "Close the window, returning the command.";
+
+private SimpleJButton __help_JButton = null;
 						
 private JTextField __statusJTextField = null;
 private boolean __error_wait = false;
@@ -152,6 +155,9 @@ public void actionPerformed( ActionEvent event )
 	// Cancel button - valid only under the command mode
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "AnalyzePattern");
 	}
 
 	// OK button - Active only under the command mode
@@ -333,12 +339,12 @@ private void initialize ( JFrame parent, AnalyzePattern_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	// Top comments
 	JGUIUtil.addComponent( main_JPanel,
 		new JLabel ( "This command creates the pattern file for use with the FillPattern() command."),
-			0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+			0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Only monthly time series can be processed." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -349,6 +355,9 @@ private void initialize ( JFrame parent, AnalyzePattern_Command command )
 		"The working directory is: " + __working_dir ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+	
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -478,16 +487,19 @@ private void initialize ( JFrame parent, AnalyzePattern_Command command )
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+        
+	// OK button: used only when running as a TSTool command.
+	__ok_JButton = new SimpleJButton(__ok_String, this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 
 	// Cancel button: used when running as a command
 	__cancel_JButton = new SimpleJButton( __cancel_String, this);
-	__cancel_JButton.setToolTipText( __cancel_Tip );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
 	button_JPanel.add ( __cancel_JButton );
 
-	// OK button: used only when running as a TSTool command.
-	__ok_JButton = new SimpleJButton(__ok_String, this);
-	__ok_JButton .setToolTipText( __ok_Tip );
-	button_JPanel.add ( __ok_JButton );
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	// Set up the status bar.
 	__statusJTextField = new JTextField();
@@ -504,9 +516,9 @@ private void initialize ( JFrame parent, AnalyzePattern_Command command )
 		setTitle ( title );
 	}
 
-	setResizable ( true );
     pack();
     JGUIUtil.center ( this );
+	setResizable ( false );
     super.setVisible( true );
 
     __statusJTextField.setText ( " Ready" );

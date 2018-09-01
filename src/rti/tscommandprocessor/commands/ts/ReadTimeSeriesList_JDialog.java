@@ -33,6 +33,7 @@ import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.TimeInterval;
@@ -47,6 +48,7 @@ implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowLi
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private ReadTimeSeriesList_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
@@ -98,6 +100,9 @@ public void actionPerformed( ActionEvent event )
 
     if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ReadTimeSeriesList");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -736,16 +741,20 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( true );
+	setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
+	setResizable ( false );
     super.setVisible( true );
 }
 

@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -30,6 +32,7 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -40,17 +43,18 @@ public class StateModMax_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
     
-private final String __AddWorkingDirectory1 = "Add Working Directory (File 1)";
-private final String __AddWorkingDirectory2 = "Add Working Directory (File 2)";
-private final String __RemoveWorkingDirectory1 = "Remove Working Directory (File 1)";
-private final String __RemoveWorkingDirectory2 = "Remove Working Directory (File 2)";
+private final String __AddWorkingDirectory1 = "Abs";
+private final String __AddWorkingDirectory2 = "Abs";
+private final String __RemoveWorkingDirectory1 = "Rel";
+private final String __RemoveWorkingDirectory2 = "Rel";
     
-private SimpleJButton	__browse1_JButton = null,	// File browse button
-			__browse2_JButton = null,	// Second file browse button
-			__cancel_JButton = null,	// Cancel Button
-			__ok_JButton = null,		// Ok Button
-			__path1_JButton = null,		// Buttons to convert relative/
-			__path2_JButton = null;		// absolute path.
+private SimpleJButton __browse1_JButton = null;
+private SimpleJButton __browse2_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
+private SimpleJButton __path1_JButton = null;
+private SimpleJButton __path2_JButton = null;
 private StateModMax_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private JTextField __InputFile1_JTextField = null;
@@ -102,6 +106,13 @@ public void actionPerformed( ActionEvent event )
 	
 			if (path != null) {
 				__InputFile1_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__InputFile1_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"StateModMax_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory );
 				refresh();
 			}
@@ -132,7 +143,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__InputFile2_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__InputFile2_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"StateModMax_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
 			}
@@ -140,6 +157,9 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "StateModMax");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -157,8 +177,7 @@ public void actionPerformed( ActionEvent event )
 				IOUtil.toRelativePath ( __working_dir, __InputFile1_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,"StateModMax_JDialog",
-				"Error converting file to relative path." );
+				Message.printWarning ( 1,"StateModMax_JDialog","Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -252,26 +271,29 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create a list of time series where each time series" +
 		" contains the maximum values for same-identifier time series from two StateMod files."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Typically all results are then written with other commands."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command is useful when computing StateMod demands as the"+
 		" maximum of historical diversions and (irrigation water requirement)/efficiency."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full or relative path (relative to working directory)." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " + __working_dir ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+	
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "First StateMod file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -279,9 +301,16 @@ private void initialize ( JFrame parent, Command command )
 	__InputFile1_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputFile1_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse1_JButton = new SimpleJButton ( "Browse", this );
+	__browse1_JButton = new SimpleJButton ( "...", this );
+	__browse1_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(main_JPanel, __browse1_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path1_JButton = new SimpleJButton(__RemoveWorkingDirectory1,this);
+	    JGUIUtil.addComponent(main_JPanel, __path1_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Second StateMod file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -289,9 +318,16 @@ private void initialize ( JFrame parent, Command command )
 	__InputFile2_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputFile2_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse2_JButton = new SimpleJButton ( "Browse", this );
+	__browse2_JButton = new SimpleJButton ( "...", this );
+	__browse2_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(main_JPanel, __browse2_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path2_JButton = new SimpleJButton(__RemoveWorkingDirectory2,this);
+	    JGUIUtil.addComponent(main_JPanel, __path2_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -300,7 +336,7 @@ private void initialize ( JFrame parent, Command command )
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable ( false );
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh ();
@@ -311,22 +347,20 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
-		__path1_JButton = new SimpleJButton( __RemoveWorkingDirectory1, this);
-		button_JPanel.add ( __path1_JButton );
-		__path2_JButton = new SimpleJButton( __RemoveWorkingDirectory2, this);
-		button_JPanel.add ( __path2_JButton );
-	}
+	__ok_JButton = new SimpleJButton( "OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton( "OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+    setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
 	refresh();	// Sets the _path_Button status
+	setResizable(false);
     super.setVisible( true );
 }
 
@@ -392,9 +426,11 @@ private void refresh ()
         File f = new File ( InputFile1 );
         if ( f.isAbsolute() ) {
             __path1_JButton.setText ( __RemoveWorkingDirectory1 );
+			__path1_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __path1_JButton.setText ( __AddWorkingDirectory1 );
+			__path1_JButton.setToolTipText("Change path to absolute");
         }
     }
     if ( __path2_JButton != null ) {
@@ -402,9 +438,11 @@ private void refresh ()
         File f = new File ( InputFile2 );
         if ( f.isAbsolute() ) {
             __path2_JButton.setText ( __RemoveWorkingDirectory2 );
+			__path2_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __path2_JButton.setText ( __AddWorkingDirectory2 );
+			__path2_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

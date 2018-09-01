@@ -16,11 +16,14 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 
@@ -28,18 +31,18 @@ import RTi.Util.IO.PropList;
 public class SetAveragePeriod_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private SetAveragePeriod_Command __command = null; // Command as Vector of String
-private JTextField	__AverageStart_JTextField = null,// Dates for period.
-			__AverageEnd_JTextField = null;
-private JTextArea __command_JTextArea = null;
-						// Command as JTextField
-private boolean		__error_wait = false;	// Is there an error that we
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
+private SetAveragePeriod_Command __command = null;
+private JTextField __AverageStart_JTextField = null;
+private JTextField __AverageEnd_JTextField = null;
+private JTextArea __command_JTextArea = null; // Command as JTextField
+private boolean __error_wait = false;	// Is there an error that we
 						// are waiting to be cleared up
 						// or Cancel?
-private boolean		__first_time = true;
-private boolean     __ok = false; // Indicates whether OK button has been pressed.
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command editor dialog constructor.
@@ -60,6 +63,9 @@ public void actionPerformed( ActionEvent event )
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "SetAveragePeriod");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -143,10 +149,8 @@ private void initialize ( JFrame parent, Command command )
 
 	// Main contents...
 	
-
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "Use SetAveragePeriod() to limit the period used to compute historical averages immediately " +
-    "after data are read."),
+    "Use SetAveragePeriod() to limit the period used to compute historical averages immediately after data are read."),
     0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -159,9 +163,11 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Enter dates as MM/YYYY or YYYY-MM (or YYYY for yearly).  " +
-		"Enter * to use all available data."), 
+		"Enter dates as MM/YYYY or YYYY-MM (or YYYY for yearly).  Enter * to use all available data."), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Average period start:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -196,16 +202,20 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );    
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 	
-    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+    setTitle ( "Edit " + __command.getCommandName() + " Command" );
 
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	setResizable ( false );
     super.setVisible( true );
 }
 

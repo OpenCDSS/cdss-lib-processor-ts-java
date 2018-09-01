@@ -40,6 +40,7 @@ import RTi.Util.GUI.DictionaryJDialog;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -54,6 +55,7 @@ implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowLi
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __dataStoreDocumentation_JButton = null;
 private SimpleJButton __dataStoreOnline_JButton = null;
 private ReadNrcsAwdb_Command __command = null;
@@ -127,6 +129,9 @@ public void actionPerformed( ActionEvent event )
                 __dataStoreOnline_JButton.getActionCommand() + "\"");
         }
     }
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ReadNrcsAwdb");
+	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
 		checkInput ();
@@ -421,8 +426,6 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the input period defaults to the input period from SetInputPeriod() (or read all data)."),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
    	// Put the buttons in vertical slots that are less width than content below, to conserve space
     __dataStoreDocumentation_JButton = new SimpleJButton ("NRCS AWDB Documentation",this);
@@ -438,6 +441,9 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     __dataStoreOnline_JButton.setToolTipText("Show the NRCS AWDB web service web page in a browser - " +
         "useful for testing queries.");
    	
+   	JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
+		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
    	// List available data stores of the correct type
    	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data store:"),
@@ -765,18 +771,22 @@ private void initialize ( JFrame parent, ReadNrcsAwdb_Command command )
     JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	__cancel_JButton = new SimpleJButton( "Cancel", this);
-	button_JPanel.add ( __cancel_JButton );
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
+	__ok_JButton.setToolTipText("Save changes to command");
+	__cancel_JButton = new SimpleJButton( "Cancel", this);
+	button_JPanel.add ( __cancel_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
+	// Dialogs do not need to be resizable...
+	setResizable ( false );
     super.setVisible( true );
 }
 

@@ -18,11 +18,14 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -35,14 +38,15 @@ public class SetAutoExtendPeriod_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SetAutoExtendPeriod_Command __command = null;
-private JTextArea	__command_JTextArea = null;
-private SimpleJComboBox	__AutoExtendPeriod_JComboBox = null;	// Field for true/false
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
-private boolean     __ok = false;       // Indicates whether OK button has been pressed.
+private JTextArea __command_JTextArea = null;
+private SimpleJComboBox __AutoExtendPeriod_JComboBox = null;	// Field for true/false
+private boolean __error_wait = false;
+private boolean __first_time = true;
+private boolean __ok = false;       // Indicates whether OK button has been pressed.
 
 /**
 Command editor dialog constructor.
@@ -63,6 +67,9 @@ public void actionPerformed( ActionEvent event )
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "SetAutoExtendPeriod");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -135,31 +142,30 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "This command controls whether the the time series period automatically is extended " +
         "to match the output period when reading data." ),
-        0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Setting the option to True results in the time series period" +
 		" automatically being extended" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"to include the output period, if SetOutputPeriod() is used prior to this command." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The default if SetAutoExtendPeriod() is not used is True, " +
         "allowing for data filling and manipulation for the output period."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Set the option to False to improve performance, when data " +
 		"filling and manipulation are not needed on the extended period." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Automatically extend period?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -188,15 +194,19 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( true );
+    setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
+	setResizable ( false );
     super.setVisible( true );
 }
 

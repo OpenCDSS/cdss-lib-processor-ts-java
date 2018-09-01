@@ -42,6 +42,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+// TODO smalers 2018-08-31 This code is not active or accurate - it was an initial start
 /**
 Command editor dialog for the WriteDelftFewsPiXml() command.
 */

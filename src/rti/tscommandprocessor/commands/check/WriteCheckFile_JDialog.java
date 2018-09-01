@@ -34,6 +34,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -49,6 +50,7 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 private boolean __error_wait = false;
 private boolean __first_time = true;
+private boolean __help_time = true;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private String __working_dir = null;    
@@ -57,7 +59,8 @@ private JTextField __Title_JTextField = null;
 private SimpleJComboBox __WriteHeaderComments_JComboBox = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJButton __cancel_JButton = null;
-private SimpleJButton __ok_JButton = null;  
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private WriteCheckFile_Command __command = null;
 private boolean __ok = false;
 
@@ -102,13 +105,22 @@ public void actionPerformed(ActionEvent event)
             String directory = fc.getSelectedFile().getParent();
             String path = fc.getSelectedFile().getPath(); 
             JGUIUtil.setLastFileDialogDirectory(directory);
-            __OutputFile_JTextField.setText(path);
+			// Convert path to relative path by default.
+			try {
+				__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,"WriteCheckFile_JDialog", "Error converting file to relative path." );
+			}
             refresh();
         }   
     }
     else if ( o == __cancel_JButton ) {
         response (false);
     }
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "WriteCheckFile");
+	}
     else if ( o == __ok_JButton ) {
         refresh ();
         checkInput ();
@@ -274,7 +286,7 @@ private void initialize ( JFrame parent, WriteCheckFile_Command command )
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable (false);
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y,86, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     // Refresh the contents...
     refresh ();
@@ -285,22 +297,21 @@ private void initialize ( JFrame parent, WriteCheckFile_Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-    if (__working_dir != null) {
-        // Add the button to allow conversion to/from relative path...
-        __path_JButton = new SimpleJButton("Remove Working Directory", this);
-        button_JPanel.add (__path_JButton);
-    }
+    __ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+    button_JPanel.add (__ok_JButton);
     __cancel_JButton = new SimpleJButton("Cancel", this);
     button_JPanel.add (__cancel_JButton);
-    __ok_JButton = new SimpleJButton("OK", this);
-    button_JPanel.add (__ok_JButton);
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-    // JDialogs do not need to be resizable...
-    setResizable ( false );
+    setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center(this);
     refresh();  // Sets the __path_JButton status
+    // JDialogs do not need to be resizable...
+    setResizable ( false );
     super.setVisible(true);
 }
 
@@ -399,9 +410,11 @@ private void refresh ()
         File f = new File (OutputFile);
         if (f.isAbsolute()) {
             __path_JButton.setText ("Remove Working Directory");
+			__path_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __path_JButton.setText ("Add Working Directory");
+			__path_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

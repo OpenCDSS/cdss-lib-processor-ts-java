@@ -31,6 +31,7 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -41,11 +42,11 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 public class ExpandTemplateFile_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private final String __AddWorkingDirectoryInputFile = "Add Working Directory (Input)";
-private final String __RemoveWorkingDirectoryInputFile = "Remove Working Directory (Input)";
+private final String __AddWorkingDirectoryInputFile = "Abs";
+private final String __RemoveWorkingDirectoryInputFile = "ReL";
 
-private final String __AddWorkingDirectoryOutputFile = "Add Working Directory (Output)";
-private final String __RemoveWorkingDirectoryOutputFile = "Remove Working Directory (Output)";
+private final String __AddWorkingDirectoryOutputFile = "Abs";
+private final String __RemoveWorkingDirectoryOutputFile = "Rel";
 
 private SimpleJButton __browseInput_JButton = null;
 private SimpleJButton __pathInput_JButton = null;
@@ -53,6 +54,7 @@ private SimpleJButton __browseOutput_JButton = null;
 private SimpleJButton __pathOutput_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextField __InputFile_JTextField = null;
 private JTextArea __InputText_JTextArea = null;
@@ -110,7 +112,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__InputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__InputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"ExpandTemplateFile_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
 			}
@@ -137,7 +145,13 @@ public void actionPerformed( ActionEvent event )
             }
     
             if (path != null) {
-                __OutputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"ExpandTemplateFile_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory(directory);
                 refresh();
             }
@@ -159,6 +173,9 @@ public void actionPerformed( ActionEvent event )
             refresh();
         }
     }
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ExpandTemplateFile");
+	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
 		checkInput();
@@ -304,27 +321,27 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command expands a template (file or text) into a fully-expanded file and/or processor property." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Template functionality is implemented using the FreeMarker package (freemarker.org)." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Template markup language can be applied to command files to implement conditional logic, loops, etc." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The template data model receives properties set with SetProperty() and one-column tables are passed " +
         "as a list using the table identifier as the list name." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that file names be relative to the working directory, which is:"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"    " + __working_dir),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
@@ -338,12 +355,12 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     
     JGUIUtil.addComponent(in_JPanel, new JLabel (
         "The template to be expanded can be specified with a file or text."),
-        0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yIn, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(in_JPanel, new JLabel (
         "Use a file when the template text conflicts with normal command syntax (quotes, etc.)."),
-        0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yIn, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(in_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-        0, ++yIn, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++yIn, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(in_JPanel, new JLabel ("Template file:" ), 
 		0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -352,9 +369,16 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 	__InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(in_JPanel, __InputFile_JTextField,
 		1, yIn, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browseInput_JButton = new SimpleJButton ( "Browse", this );
+	__browseInput_JButton = new SimpleJButton ( "...", this );
+	__browseInput_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(in_JPanel, __browseInput_JButton,
 		6, yIn, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathInput_JButton = new SimpleJButton(__RemoveWorkingDirectoryInputFile,this);
+	    JGUIUtil.addComponent(in_JPanel, __pathInput_JButton,
+	    	7, yIn, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
     
     JGUIUtil.addComponent(in_JPanel, new JLabel ("OR template text:"), 
         0, ++yIn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -448,9 +472,9 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     
     JGUIUtil.addComponent(out_JPanel, new JLabel (
         "The expanded output can be saved to a file and/or set to a processor property (access later with ${Property})."),
-        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yOut, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(out_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-        0, ++yOut, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++yOut, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(out_JPanel, new JLabel ("Expanded file:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -459,9 +483,16 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     __OutputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(out_JPanel, __OutputFile_JTextField,
         1, yOut, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browseOutput_JButton = new SimpleJButton ( "Browse", this );
+    __browseOutput_JButton = new SimpleJButton ( "...", this );
+    __browseOutput_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(out_JPanel, __browseOutput_JButton,
         6, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__pathOutput_JButton = new SimpleJButton(__RemoveWorkingDirectoryOutputFile,this);
+	    JGUIUtil.addComponent(out_JPanel, __pathOutput_JButton,
+	    	7, yOut, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
  
     JGUIUtil.addComponent(out_JPanel, new JLabel ( "Expanded property:" ), 
         0, ++yOut, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -511,7 +542,7 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 	__command_JTextArea.addKeyListener ( this );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -519,25 +550,22 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the buttons to allow conversion to/from relative path...
-		__pathInput_JButton = new SimpleJButton( __RemoveWorkingDirectoryInputFile,this);
-		button_JPanel.add ( __pathInput_JButton );
-        __pathOutput_JButton = new SimpleJButton( __RemoveWorkingDirectoryOutputFile,this);
-        button_JPanel.add ( __pathOutput_JButton );
-	}
-	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() command" );
+	setTitle ( "Edit " + __command.getCommandName() + " command" );
 	
 	// Refresh the contents...
     refresh ();
 
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	// Dialogs do not need to be resizable...
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -694,9 +722,11 @@ private void refresh ()
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
 			__pathInput_JButton.setText (__RemoveWorkingDirectoryInputFile);
+			__pathInput_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
             __pathInput_JButton.setText (__AddWorkingDirectoryInputFile );
+            __pathInput_JButton.setToolTipText("Change path to absolute");
 		}
 	}
    if ( __pathOutput_JButton != null ) {
@@ -704,9 +734,11 @@ private void refresh ()
         File f = new File ( OutputFile );
         if ( f.isAbsolute() ) {
             __pathOutput_JButton.setText (__RemoveWorkingDirectoryOutputFile);
+            __pathOutput_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __pathOutput_JButton.setText (__AddWorkingDirectoryOutputFile );
+            __pathOutput_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

@@ -42,6 +42,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PrintUtil;
@@ -56,8 +57,8 @@ public class CreateDataStoreDataDictionary_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
     
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
-private final String __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Rel";
+private final String __AddWorkingDirectory = "Abs";
 
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
@@ -81,7 +82,8 @@ private SimpleJComboBox __ERDiagramPageSize_JComboBox = null;
 private SimpleJComboBox __ERDiagramOrientation_JComboBox = null;
 private SimpleJComboBox	__ViewERDiagram_JComboBox = null;
 private SimpleJButton __cancel_JButton = null;
-private SimpleJButton __ok_JButton = null;	
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private CreateDataStoreDataDictionary_Command __command = null;
 private boolean __ok = false;
 private String __working_dir = null;
@@ -132,7 +134,13 @@ public void actionPerformed(ActionEvent event)
             }
     
             if (path != null) {
-                __OutputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CreateDataStoreDataDictionary_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory(directory );
                 refresh();
             }
@@ -140,6 +148,9 @@ public void actionPerformed(ActionEvent event)
     }
     else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "CreateDataStoreDataDictionary");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -355,18 +366,18 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
 	
    	JGUIUtil.addComponent(paragraph, new JLabel (
         "This command creates an HTML data dictionary for the specified database datastore."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Metadata such as column names, types, and descriptions are read from the database."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Some databases may not support features that allow metadata to be determined."),
-        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yy, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
-		0, ++y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     // List available data stores of the correct type
     
@@ -440,15 +451,15 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     
     JGUIUtil.addComponent(dict_JPanel, new JLabel (
         "Specify the output file and how to format content of the dictionary."),
-        0, ++yDict, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yDict, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(dict_JPanel, new JLabel (
         "If comments (remarks) are defined with surrounding <html> and </html> the content will be passed through to HTML output."),
-        0, ++yDict, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yDict, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(dict_JPanel, new JLabel (
         "Parameters are provided to format comment/remark content in HTML output."),
-        0, ++yDict, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        0, ++yDict, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(dict_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-        0, ++yDict, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++yDict, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(dict_JPanel, new JLabel ( "Output file:" ), 
         0, ++yDict, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -457,9 +468,16 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
     __OutputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(dict_JPanel, __OutputFile_JTextField,
         1, yDict, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(dict_JPanel, __browse_JButton,
+    __browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(dict_JPanel, __browse_JButton,
         6, yDict, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+	    JGUIUtil.addComponent(dict_JPanel, __path_JButton,
+	    	7, yDict, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(dict_JPanel, new JLabel ( "Surround with <pre></pre>?:" ), 
         0, ++yDict, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -627,7 +645,7 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable (false);
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh ();
@@ -638,23 +656,20 @@ private void initialize ( JFrame parent, CreateDataStoreDataDictionary_Command c
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-    if ( __working_dir != null ) {
-        // Add the button to allow conversion to/from relative path...
-        __path_JButton = new SimpleJButton( __RemoveWorkingDirectory, this);
-        button_JPanel.add ( __path_JButton );
-    }
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add (__ok_JButton);
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add (__cancel_JButton);
-	__cancel_JButton.setToolTipText ( "Close window without saving changes." );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add (__ok_JButton);
-	__ok_JButton.setToolTipText ( "Close window and save changes to command." );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command");
-	//setResizable (false);
+	setTitle ( "Edit " + __command.getCommandName() + " Command");
     pack();
     JGUIUtil.center(this);
 	refresh();
+	setResizable (false);
     super.setVisible(true);
 }
 
@@ -938,9 +953,11 @@ private void refreshPathControl()
         File f = new File ( OutputFile );
         if ( f.isAbsolute() ) {
             __path_JButton.setText( __RemoveWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __path_JButton.setText( __AddWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

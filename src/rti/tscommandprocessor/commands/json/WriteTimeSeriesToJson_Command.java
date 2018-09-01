@@ -199,7 +199,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new WriteTimeSeriesToJson_Dialog ( parent, this )).ok();
+	return (new WriteTimeSeriesToJson_JDialog ( parent, this )).ok();
 }
 
 /**

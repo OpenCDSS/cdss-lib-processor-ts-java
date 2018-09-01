@@ -40,6 +40,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -55,8 +56,8 @@ public class WriteTimeSeriesToDataStream_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
 
-private final String __AddWorkingDirectory = "Add Working Directory";
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Abs";
+private final String __RemoveWorkingDirectory = "Rel";
 
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __browseOutput_JButton = null;
@@ -64,6 +65,7 @@ private SimpleJButton __browseHeader_JButton = null;
 private SimpleJButton __browseFormat_JButton = null;
 private SimpleJButton __browseFooter_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __pathOutput_JButton = null;
 private SimpleJButton __pathHeader_JButton = null;
 private SimpleJButton __pathFormat_JButton = null;
@@ -138,7 +140,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__OutputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"WriteTimeSeriesToDataStream_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory(directory );
 				refresh();
 			}
@@ -169,7 +177,13 @@ public void actionPerformed( ActionEvent event )
             }
     
             if (path != null) {
-                __OutputFileHeaderFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFileHeaderFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"WriteTimeSeriesToDataStream_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory(directory );
                 refresh();
             }
@@ -200,7 +214,13 @@ public void actionPerformed( ActionEvent event )
             }
     
             if (path != null) {
-                __OutputLineFormatFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputLineFormatFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"WriteTimeSeriesToDataStream_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory(directory );
                 refresh();
             }
@@ -231,7 +251,13 @@ public void actionPerformed( ActionEvent event )
             }
     
             if (path != null) {
-                __OutputFileFooterFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__OutputFileFooterFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"WriteTimeSeriesToDataStream_JDialog", "Error converting file to relative path." );
+				}
                 JGUIUtil.setLastFileDialogDirectory(directory );
                 refresh();
             }
@@ -239,6 +265,9 @@ public void actionPerformed( ActionEvent event )
     }
 	else if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "WriteTimeSeriesToDataStream");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -612,14 +641,14 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 
     JGUIUtil.addComponent(file_JPanel, new JLabel (
 		"The output filename can be specified using ${Property} notation to utilize global properties."),
-		0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yFile, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(file_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
-		0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yFile, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(file_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-		0, ++yFile, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		0, ++yFile, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(file_JPanel, new JLabel ( "Data stream file to write:" ), 
 		0, ++yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -627,14 +656,15 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
 	__OutputFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(file_JPanel, __OutputFile_JTextField,
 		1, yFile, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browseOutput_JButton = new SimpleJButton ( "Browse", this );
+	__browseOutput_JButton = new SimpleJButton ( "...", this );
+	__browseOutput_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(file_JPanel, __browseOutput_JButton,
 		6, yFile, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
 		__pathOutput_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
 	    JGUIUtil.addComponent(file_JPanel, __pathOutput_JButton,
-            3, ++yFile, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+            7, yFile, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
     
     JGUIUtil.addComponent(file_JPanel, new JLabel ("Append to file?:"),
@@ -660,12 +690,12 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     
     JGUIUtil.addComponent(header_JPanel, new JLabel (
         "Header content can be added to the top of the file."),
-		0, ++yHeader, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yHeader, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(header_JPanel, new JLabel (
         "Use ${Property} notation to include processor properties in the header."),
-		0, ++yHeader, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yHeader, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(header_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-		0, ++yHeader, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		0, ++yHeader, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(header_JPanel, new JLabel ("Output file header (text):"),
         0, ++yHeader, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -686,14 +716,15 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     __OutputFileHeaderFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(header_JPanel, __OutputFileHeaderFile_JTextField,
         1, yHeader, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browseHeader_JButton = new SimpleJButton ( "Browse", this );
+    __browseHeader_JButton = new SimpleJButton ( "...", this );
+    __browseHeader_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(header_JPanel, __browseHeader_JButton,
         6, yHeader, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
 	    __pathHeader_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
 	    JGUIUtil.addComponent(header_JPanel, __pathHeader_JButton,
-            3, ++yHeader, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+            7, yHeader, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
     
     // Panel for time series data
@@ -704,27 +735,27 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "The data line format can contain literal text (commas, text, etc.) and the following:"),
-		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yData, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "   ${Property} - processor property"),
-		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yData, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "   ${ts:Property} - time series property"),
-		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yData, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "   %L, etc. - built-in time series properties (%L is location ID)"),
-		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yData, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "   ${tsdata:datetime} - date/time for data value, will be formatted using the date/time format specified below"),
-		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yData, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "   ${tsdata:value} - data value, formatted to precision specified below"),
-		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yData, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JLabel (
         "   ${tsdata:flag} - data flag"),
-		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yData, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(data_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-		0, ++yData, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		0, ++yData, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Data line format:"),
         0, ++yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -746,14 +777,15 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     __OutputLineFormatFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(data_JPanel, __OutputLineFormatFile_JTextField,
         1, yData, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browseFormat_JButton = new SimpleJButton ( "Browse", this );
+    __browseFormat_JButton = new SimpleJButton ( "...", this );
+    __browseFormat_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(data_JPanel, __browseFormat_JButton,
         6, yData, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
 	    __pathFormat_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
 	    JGUIUtil.addComponent(data_JPanel, __pathFormat_JButton,
-            3, ++yData, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+            7, yData, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
 	
     JGUIUtil.addComponent(data_JPanel, new JLabel ("Data line format (last line):"),
@@ -821,12 +853,12 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     
     JGUIUtil.addComponent(footer_JPanel, new JLabel (
         "Footer content can be added to the bottom of the file."),
-		0, ++yFooter, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yFooter, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(footer_JPanel, new JLabel (
         "Use ${Property} notation to include processor properties in the footer."),
-		0, ++yFooter, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yFooter, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(footer_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
-		0, ++yFooter, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		0, ++yFooter, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(footer_JPanel, new JLabel ("Output file footer:"),
         0, ++yFooter, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -847,14 +879,15 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     __OutputFileFooterFile_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(footer_JPanel, __OutputFileFooterFile_JTextField,
         1, yFooter, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __browseFooter_JButton = new SimpleJButton ( "Browse", this );
+    __browseFooter_JButton = new SimpleJButton ( "...", this );
+    __browseFooter_JButton.setToolTipText("Browse for file");
     JGUIUtil.addComponent(footer_JPanel, __browseFooter_JButton,
         6, yFooter, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
 	    __pathFooter_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
 	    JGUIUtil.addComponent(footer_JPanel, __pathFooter_JButton,
-            3, ++yFooter, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+            7, yFooter, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -864,7 +897,7 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable ( false );
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-    		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -872,20 +905,23 @@ private void initialize ( JFrame parent, WriteTimeSeriesToDataStream_Command com
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+	__ok_JButton = new SimpleJButton("OK", "OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", "OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 	
 	// Refresh the contents...
     checkGUIState();
     refresh ();
-    
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -1149,9 +1185,11 @@ private void refresh ()
 		File f = new File ( OutputFile );
 		if ( f.isAbsolute() ) {
 			__pathOutput_JButton.setText ( __RemoveWorkingDirectory );
+			__pathOutput_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
             __pathOutput_JButton.setText ( __AddWorkingDirectory );
+            __pathOutput_JButton.setToolTipText("Change path to absolute");
 		}
 	}
     if ( (OutputFileHeaderFile == null) || OutputFileHeaderFile.isEmpty() ) {
@@ -1164,9 +1202,11 @@ private void refresh ()
         File f = new File ( OutputFileHeaderFile );
         if ( f.isAbsolute() ) {
             __pathHeader_JButton.setText ( __RemoveWorkingDirectory );
+            __pathHeader_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __pathHeader_JButton.setText ( __AddWorkingDirectory );
+            __pathHeader_JButton.setToolTipText("Change path to absolute");
         }
     }
     if ( (OutputLineFormatFile == null) || (OutputLineFormatFile.length() == 0) ) {
@@ -1179,9 +1219,11 @@ private void refresh ()
         File f = new File ( OutputLineFormatFile );
         if ( f.isAbsolute() ) {
             __pathFormat_JButton.setText ( __RemoveWorkingDirectory );
+            __pathFormat_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __pathFormat_JButton.setText ( __AddWorkingDirectory );
+            __pathFormat_JButton.setToolTipText("Change path to absolute");
         }
     }
     if ( (OutputFileFooterFile == null) || (OutputFileFooterFile.length() == 0) ) {
@@ -1194,9 +1236,11 @@ private void refresh ()
         File f = new File ( OutputFileFooterFile );
         if ( f.isAbsolute() ) {
             __pathFooter_JButton.setText ( __RemoveWorkingDirectory );
+            __pathFooter_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __pathFooter_JButton.setText ( __AddWorkingDirectory );
+            __pathFooter_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

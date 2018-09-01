@@ -27,9 +27,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -42,6 +44,7 @@ import RTi.TS.TSUtil;
 import RTi.Util.GUI.GUIUtil;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandListUI;
@@ -123,6 +126,7 @@ Since there is no command in tool mode, this can't just be obtained from the com
 	private SimpleJButton __close_JButton = null;
 	private SimpleJButton __analyze_JButton = null;
 	private SimpleJButton __ok_JButton = null;
+	private SimpleJButton __help_JButton = null;
 	//private SimpleJButton __fillDependents_JButton = null;
 
 	private JTextField __statusJTextField = null;
@@ -135,12 +139,10 @@ Since there is no command in tool mode, this can't just be obtained from the com
 	// Close button: used when running as a TSTool tool.
 
 	private String __close_String = "Close";
-	private String __close_Tip = "Do not perform the analysis and close the window.";
 
 	// OK button: used only when running as a TSTool command.
 
 	private String __ok_String = "OK";
-	private String __ok_Tip = "Close the window, returning the command to TSTool.";
 
 	// Analyze button: used only when running as a TSTool tool.
 
@@ -254,6 +256,9 @@ Responds to ActionEvents.
 		// Close button - valid only under the tool mode
 		else if ( o == __close_JButton ) {
 			response ( false );
+		}
+		else if ( o == __help_JButton ) {
+			HelpViewer.getInstance().showHelp("command", "FillMixedStation");
 		}
 
 		// OK button - Active only under the command mode
@@ -761,6 +766,9 @@ Instantiates the GUI components.
 	JGUIUtil.addComponent( main_JPanel, mainNotes_JPanel,
 			0, yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.LINE_START);
 	
+	JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+			0, ++yMain, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	
 	// Tabbed pane for parameters
 	
     __main_JTabbedPane = new JTabbedPane ();
@@ -1178,14 +1186,17 @@ Instantiates the GUI components.
 		JGUIUtil.addComponent(main_JPanel, buttonMain_JPanel,
 				0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+		// OK button: used only when running as a TSTool command.
+		__ok_JButton = new SimpleJButton(__ok_String, this);
+		__ok_JButton.setToolTipText("Save changes to command");
+		buttonMain_JPanel.add ( __ok_JButton );
 		// Cancel button: used when running as a command
 		__cancel_JButton = new SimpleJButton( __cancel_String, this);
 		__cancel_JButton.setToolTipText( __cancel_Tip );
 		buttonMain_JPanel.add ( __cancel_JButton );
-		// OK button: used only when running as a TSTool command.
-		__ok_JButton = new SimpleJButton(__ok_String, this);
-		__ok_JButton.setToolTipText( __ok_Tip );
-		buttonMain_JPanel.add ( __ok_JButton );
+		__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+		buttonMain_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+		__help_JButton.setToolTipText("Show command documentation in web browser");
 
 	}
 	else {
@@ -1219,7 +1230,6 @@ Instantiates the GUI components.
 
 		// Close button: used when running as a tool
 		__close_JButton = new SimpleJButton( __close_String, this);
-		__close_JButton.setToolTipText( __close_Tip );
 		analysis_JPanel.add ( __close_JButton );
 	}
 
@@ -1238,9 +1248,9 @@ Instantiates the GUI components.
 	refresh();
 
 	// Visualize it...
-	setResizable ( true );
 	pack();
 	JGUIUtil.center ( this );
+	setResizable ( false );
 	super.setVisible( true );
 
 	__statusJTextField.setText ( " Ready" );

@@ -19,8 +19,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -32,7 +34,7 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -52,6 +54,7 @@ private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private ReadNwsrfsEspTraceEnsemble_Command __command = null;
 private String __working_dir = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
@@ -72,8 +75,8 @@ private boolean __isAliasVersion = false;
 			// Whether this dialog is being opened for the version
 			// of the command that returns an alias or not
 private boolean __ok = false;			
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
-private final String __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Rel";
+private final String __AddWorkingDirectory = "Abs";
 
 /**
 Command editor constructor.
@@ -139,7 +142,13 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
-				__InputFile_JTextField.setText(path );
+				// Convert path to relative path by default.
+				try {
+					__InputFile_JTextField.setText(IOUtil.toRelativePath(__working_dir, path));
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1,"CompareFiles_JDialog", "Error converting file to relative path." );
+				}
 				JGUIUtil.setLastFileDialogDirectory( directory);
 				refresh();
 			}
@@ -147,6 +156,9 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __cancel_JButton ) {
 		response(false);
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "ReadNwsrfsEspTraceEnsemble");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -319,26 +331,29 @@ private void initialize(JFrame parent, ReadNwsrfsEspTraceEnsemble_Command comman
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
 	if (__isAliasVersion) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Read a single time series from an NWSRFS ESP trace ensemble and assign an alias to the time series."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	else {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Read all the time series from an ESP trace ensemble file, using information in the file to assign the identifier and alias."),
-        0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Specify a full or relative path (relative to working directory)." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+	
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     /*
        	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -385,9 +400,16 @@ private void initialize(JFrame parent, ReadNwsrfsEspTraceEnsemble_Command comman
 	__InputFile_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+	__browse_JButton = new SimpleJButton ( "...", this );
+	__browse_JButton.setToolTipText("Browse for file");
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	if ( __working_dir != null ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble ID:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -465,7 +487,7 @@ private void initialize(JFrame parent, ReadNwsrfsEspTraceEnsemble_Command comman
 	__Command_JTextArea.setWrapStyleWord ( true );	
 	__Command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh ();
@@ -476,28 +498,27 @@ private void initialize(JFrame parent, ReadNwsrfsEspTraceEnsemble_Command comman
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory, this);
-		button_JPanel.add ( __path_JButton );
-	}
-	__cancel_JButton = new SimpleJButton("Cancel", this);
-	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
-
 	if (__isAliasVersion) {
 		setTitle("Edit TS Alias = ReadNwsrfsEspTraceEnsemble() Command");
 	}
 	else {
 		setTitle("Edit ReadNwsrfsEspTraceEnsemble() Command");
 	}
+	
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton = new SimpleJButton("Cancel", this);
+	button_JPanel.add ( __cancel_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-	setResizable ( true );
     pack();
     JGUIUtil.center( this );
     //	refresh();	// Sets the __path_JButton status
 	refreshPathControl();	// Sets the __path_JButton status
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -654,9 +675,11 @@ private void refreshPathControl()
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
 			__path_JButton.setText(	__RemoveWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to relative to command file");
 		}
 		else {
             __path_JButton.setText(	__AddWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to absolute");
 		}
 	}
 }

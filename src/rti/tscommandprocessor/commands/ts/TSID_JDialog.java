@@ -27,6 +27,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TSIdent;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.Help.HelpViewer;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -43,11 +44,12 @@ public class TSID_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
     
-private final String __RemoveWorkingDirectory = "Remove Working Directory";
-private final String __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Rel";
+private final String __AddWorkingDirectory = "Abs";
     
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null; // Ok Button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __help_JButton = null;
 private SimpleJButton __path_JButton = null;
 private TSID_Command __command = null;
 private JTextArea __command_JTextArea=null;
@@ -78,6 +80,9 @@ public void actionPerformed( ActionEvent event )
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+	else if ( o == __help_JButton ) {
+		HelpViewer.getInstance().showHelp("command", "TSID");
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -215,20 +220,20 @@ private void initialize ( JFrame parent, TSID_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command reads a single time series given a time series identifier (TDID) that includes " +
 		"the datastore (database, web service) or input name (database, file) information."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The TSID parts are generally consistent but do vary slightly between datastores based on requirements to uniquely identify time series."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"See also the ReadTimeSeries() command, which assigns an alias to a time series. " +
 		"The alias may be more convenient to use than the long time series identifier."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"More specific Read commands may also available for a datastore or input type and generally offer more options."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "See also the ReadTimeSeriesList() command, which creates TSIDs from a table and then reads each time series."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( identifierHasFilename(__tsident) ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
             "If the TSID requires a filename, specify a full path or relative path (relative to working directory) for the file to read." ), 
@@ -243,14 +248,22 @@ private void initialize ( JFrame parent, TSID_Command command )
 	        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     JGUIUtil.addComponent(main_JPanel, new JSeparator (SwingConstants.HORIZONTAL),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Time series identifier:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JTextField = new JTextField ( 60 );
 	__TSID_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+    // FIXME SAM 2009-01-15 Figure out how to not hard code here.  Basically only want to show the path button
+    // for input types that are for files (not databases).
+    if ( (__working_dir != null) && identifierHasFilename(__tsident) ) {
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory,this);
+	    JGUIUtil.addComponent(main_JPanel, __path_JButton,
+	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	}
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -259,7 +272,7 @@ private void initialize ( JFrame parent, TSID_Command command )
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable ( false );
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        1, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh();
@@ -273,23 +286,20 @@ private void initialize ( JFrame parent, TSID_Command command )
     // Refresh here so that the TSID text field is populated
     refresh();
 
-    // FIXME SAM 2009-01-15 Figure out how to not hard code here.  Basically only want to show the path button
-    // for input types that are for files (not databases).
-    if ( (__working_dir != null) && identifierHasFilename(__tsident) ) {
-        // Add the button to allow conversion to/from relative path...
-        __path_JButton = new SimpleJButton( __RemoveWorkingDirectory, this);
-        button_JPanel.add ( __path_JButton );
-    }
+	__ok_JButton = new SimpleJButton("OK", this);
+	__ok_JButton.setToolTipText("Save changes to command");
+	button_JPanel.add ( __ok_JButton );
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+	__cancel_JButton.setToolTipText("Cancel without saving changes to command");
+	button_JPanel.add ( __help_JButton = new SimpleJButton("Help", this) );
+	__help_JButton.setToolTipText("Show command documentation in web browser");
 
-    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( true );
+    setTitle ( "Edit " + __command.getCommandName() + " Command" );
     pack();
     JGUIUtil.center( this );
 	refreshPathControl();   // Sets the __path_JButton status
+	setResizable ( false );
     super.setVisible( true );
 }
 
@@ -373,9 +383,11 @@ private void refreshPathControl()
         File f = new File ( InputFile );
         if ( f.isAbsolute() ) {
             __path_JButton.setText( __RemoveWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to relative to command file");
         }
         else {
             __path_JButton.setText( __AddWorkingDirectory );
+			__path_JButton.setToolTipText("Change path to absolute");
         }
     }
 }

@@ -557,6 +557,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				InputFilter_JPanel filterPanel = null;
 				boolean isStation = false;
 				boolean isStructure = false;
+				boolean isWaterClass = false;
 				boolean isTelemetryStation = false;
 				boolean isWell = false;
 	
@@ -582,6 +583,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					boolean includeSFUT = true;
 					filterPanel = new ColoradoHydroBaseRest_Structure_InputFilter_JPanel ( dataStore, includeSFUT );
 					Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for structure." );
+					if( dataStore.isWaterClassStructure(dataType)){
+						isWaterClass = true;
+					}
 				}
 				else if ( dataStore.isTelemetryStationTimeSeriesDataType ( dataType ) ){
 					// Telemetry stations...
@@ -742,11 +746,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					else if ( isStructure ) {
 						// Structure time series, but time series list uses generalized water classes
 						str = (DiversionWaterClass)structureCatalog.get(i);
-						tsidentString = str.getWdid()
-							+ "." + "DWR"
-							+ "." + DataType
-							+ "." + Interval
-							+ inputName;
+						if( isWaterClass){
+							String wcIdentifier = str.getWcIdentifier();
+							tsidentString = str.getWdid()
+								+ "." + "DWR"
+								+ "." + DataType 
+								+ "-" + wcIdentifier
+								+ "." + Interval
+								+ inputName;
+						}else{
+							tsidentString = str.getWdid()
+								+ "." + "DWR"
+								+ "." + DataType 
+								+ "." + Interval
+								+ inputName;
+						}
+						
 					}
 					else if ( isTelemetryStation ) {
 						// Telemetry station time series...

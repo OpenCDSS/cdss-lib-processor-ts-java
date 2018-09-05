@@ -242,11 +242,8 @@ private void checkGUIState()
 					__FillDailyDivFlag_JTextField, false );
 			}
 			*/
-			// TODO smalers 2018-06-30 Allow setting when sure how diversion comments are working
-			//JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, true );
-			//JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, true );
-			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, false );
-			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, false );
+			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, true );
+			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, true );
 		}
 		else {
 		    /* TODO SAM 2006-04-28 Review code
@@ -472,8 +469,8 @@ private String getWhere ( int ifg )
 	InputFilter_JPanel filterPanel = getVisibleInputFilterPanel();
     String where = "";
     if ( filterPanel != null ) {
-    	// Use the internal value for where
-        where = filterPanel.toString(ifg,delim,1).trim();
+    	// Use the persistent value for where
+        where = filterPanel.toString(ifg,delim,3).trim();
     }
 	return where;
 }
@@ -1013,7 +1010,7 @@ private void refresh ()
         // Then set to the value from the command.
         int [] index = new int[1];
         //Message.printStatus(2,routine,"Checking to see if DataType=\"" + DataType + "\" is a choice.");
-        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.CHECK_SUBSTRINGS, " ", 2, index, true ) ) {
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.CHECK_SUBSTRINGS, "-", 1, index, true ) ) {
             // Existing command so select the matching choice
             //Message.printStatus(2,routine,"DataType=\"" + DataType + "\" was a choice, selecting index " + index[0] + "...");
             __DataType_JComboBox.select(index[0]);
@@ -1189,7 +1186,7 @@ private void refresh ()
     	int nfg = filterPanel.getNumFilterGroups();
     	String where;
     	for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-    		where = filterPanel.toString(ifg,filterDelim,1).trim();
+    		where = filterPanel.toString(ifg,filterDelim,3).trim();
     		// Make sure there is a field that is being checked in a where clause...
     		props.unSet("Where" + (ifg + 1) );
     		if ( (where.length() > 0) && !where.startsWith(filterDelim) ) {

@@ -271,14 +271,14 @@ throws InvalidCommandParameterException
     validList.add ( "TSID" );
     validList.add ( "DataType" );
     validList.add ( "Interval" );
-    int numFilters = 5; // TODO smalers 2018-06-30 Should this be dynamic?
+    int numFilters = 6; // TODO smalers 2018-06-30 Should this be dynamic?
     for ( int i = 1; i <= numFilters; i++ ) { 
         validList.add ( "Where" + i );
     }
     validList.add ( "InputStart" );
     validList.add ( "InputEnd" );
-    //validList.add ( "FillUsingDivComments" );
-    //validList.add ( "FillUsingDivCommentsFlag" );
+    validList.add ( "FillUsingDivComments" );
+    validList.add ( "FillUsingDivCommentsFlag" );
     validList.add ( "IfMissing" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
 
@@ -641,20 +641,40 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				// Read the catalog
 				int size = 0;
 				if ( isStation ) {
-					stationCatalog = dataStore.getStationTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Station_InputFilter_JPanel)filterPanel );
-					size = stationCatalog.size();
+					try {
+						stationCatalog = dataStore.getStationTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Station_InputFilter_JPanel)filterPanel );
+						size = stationCatalog.size();
+					}
+					catch ( Exception e ) {
+						// Probably no data
+					}
 				}
 				if ( isStructure ) {
-					structureCatalog = dataStore.getWaterClassesTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Structure_InputFilter_JPanel)filterPanel );
-					size = structureCatalog.size();
+					try {
+						structureCatalog = dataStore.getWaterClassesTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Structure_InputFilter_JPanel)filterPanel );
+						size = structureCatalog.size();
+					}
+					catch ( Exception e ) {
+						// Probably no data
+					}
 				}
 				if ( isTelemetryStation ) {
-					telemetryStationCatalog = dataStore.getTelemetryStationTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_TelemetryStation_InputFilter_JPanel)filterPanel );
-					size = telemetryStationCatalog.size();
+					try {
+						telemetryStationCatalog = dataStore.getTelemetryStationTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_TelemetryStation_InputFilter_JPanel)filterPanel );
+						size = telemetryStationCatalog.size();
+					}
+					catch ( Exception e ) {
+						// Probably no data
+					}
 				}
 				if ( isWell ) {
-					wellCatalog = dataStore.getWellTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Well_InputFilter_JPanel)filterPanel );
-					size = wellCatalog.size();
+					try {
+						wellCatalog = dataStore.getWellTimeSeriesCatalog ( dataType, Interval, (ColoradoHydroBaseRest_Well_InputFilter_JPanel)filterPanel );
+						size = wellCatalog.size();
+					}
+					catch ( Exception e ) {
+						// Probably no data
+					}
 				}
 				
 				// Make sure that size is set...

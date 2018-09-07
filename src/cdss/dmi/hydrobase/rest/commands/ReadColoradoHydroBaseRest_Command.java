@@ -100,6 +100,7 @@ throws InvalidCommandParameterException
     String TSID = parameters.getValue ( "TSID" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
+    String InputFiltersCheck = parameters.getValue ( "InputFiltersCheck" ); // Passed in from the editor, not an actual parameter
     
 	if ( (DataStore == null) || DataStore.isEmpty() ) {
         message = "The datastore must be specified.";
@@ -254,15 +255,20 @@ throws InvalidCommandParameterException
 	*/
 	String IfMissing = parameters.getValue ( "IfMissing" );
     if ( (IfMissing != null) && !IfMissing.equals("") &&
-            !IfMissing.equalsIgnoreCase(_Warn) && !IfMissing.equalsIgnoreCase(_Ignore) ) {
-            message = "The IfMissing parameter \"" + IfMissing +
-            "\" must be blank, " + _Ignore + ", or " + _Warn;
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify " + _Ignore + ", " + _Warn +
-                            ", or blank for default of " + _Warn + "." ) );
-        }
+        !IfMissing.equalsIgnoreCase(_Warn) && !IfMissing.equalsIgnoreCase(_Ignore) ) {
+        message = "The IfMissing parameter \"" + IfMissing +
+        "\" must be blank, " + _Ignore + ", or " + _Warn;
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify " + _Ignore + ", " + _Warn +
+                        ", or blank for default of " + _Warn + "." ) );
+    }
+    
+    // If any issues were detected in the input filter add to the message string
+    if ( (InputFiltersCheck != null) && !InputFiltersCheck.isEmpty() ) {
+    	warning += InputFiltersCheck;
+    }
     
     // Check for invalid parameters...
     List<String> validList = new ArrayList<String>();
@@ -271,7 +277,7 @@ throws InvalidCommandParameterException
     validList.add ( "TSID" );
     validList.add ( "DataType" );
     validList.add ( "Interval" );
-    int numFilters = 6; // TODO smalers 2018-06-30 Should this be dynamic?
+    int numFilters = 25; // Make a big number so all are allowed
     for ( int i = 1; i <= numFilters; i++ ) { 
         validList.add ( "Where" + i );
     }

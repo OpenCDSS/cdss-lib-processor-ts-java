@@ -84,12 +84,6 @@ private ColoradoHydroBaseRestDataStore __dataStore = null; // selected ColoradoH
 private boolean __error_wait = false; // Is there an error to be cleared up
 private boolean __first_time = true;
 private boolean __ok = false; // Was OK pressed when closing the dialog.
-/*
-Number of visible where fields to not overload stored procedure
-Number of filters is the maximum - 2 (data type and interval)
-*/
-private int __numWhere = 6;
-
 private boolean __ignoreEvents = false; // Used to ignore cascading events when initializing the components
 
 /**
@@ -291,9 +285,13 @@ private void checkInput ()
 		props.set ( "Interval", Interval );
 	}
 	InputFilter_JPanel filterPanel = getVisibleInputFilterPanel();
+	int whereCount = 0; // Number of non-empty Where parameters specified
 	if ( filterPanel != null ) {
     	for ( int i = 1; i <= filterPanel.getNumFilterGroups(); i++ ) {
     	    String where = getWhere ( i - 1 );
+    	    if ( !where.isEmpty() ) {
+    	    	++whereCount;
+    	    }
     	    if ( where.length() > 0 ) {
     	        props.set ( "Where" + i, where );
     	    }
@@ -320,6 +318,16 @@ private void checkInput ()
     String IfMissing = __IfMissing_JComboBox.getSelected();
     if ( IfMissing.length() > 0 ) {
         props.set ("IfMissing",IfMissing);
+    }
+    if ( whereCount > 0 ) {
+        // Input filters are specified so check.
+    	// - this is done in the input filter because that code is called from this command and main TSTool UI
+        InputFilter_JPanel ifp = getVisibleInputFilterPanel();
+        if ( ifp != null ) {
+        	// Set a property to pass to the general checkCommandParameters method so that the
+        	// results can be combined with the other command parameter checks
+        	props.set("InputFiltersCheck",ifp.checkInputFilters(false));
+        }
     }
 	try {
 	    // This will warn the user...
@@ -504,6 +512,9 @@ private void initialize ( JFrame parent, ReadColoradoHydroBaseRest_Command comma
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the period will limit data that are available " +
 		"for later commands but can increase performance." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Reading a single time series TSID takes precedence over reading multiple time series." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
     JGUIUtil.addComponent(main_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
@@ -764,7 +775,7 @@ private void initializeInputFilters ( JPanel parent_JPanel, int y, List<DataStor
 }
 
 /**
-Initialize input filters for one HydroBase datastore.
+Initialize input filters for one HydroBase rest datastore.
 @param parent_JPanel the panel to receive the input filter panels
 @param y for layout
 @param dataStore datastore to use with the filter
@@ -798,9 +809,7 @@ private void initializeInputFilters_OneFilter ( JPanel parent_JPanel, int y, Col
     try {
         // Structures...
         boolean enableSFUT = false;
-        ColoradoHydroBaseRest_Structure_InputFilter_JPanel panel = new
-        		ColoradoHydroBaseRest_Structure_InputFilter_JPanel ( dataStore, enableSFUT, __numWhere,
-                numVisibleChoices );
+        ColoradoHydroBaseRest_Structure_InputFilter_JPanel panel = new ColoradoHydroBaseRest_Structure_InputFilter_JPanel ( dataStore, enableSFUT );
         panel.setName(dataStore.getName() + ".Structure" );
         JGUIUtil.addComponent(parent_JPanel, panel,
             x, y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,

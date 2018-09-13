@@ -59,7 +59,9 @@ protected final String _True = "True";
 Big flow value used to constrain lookups in the tables.
 ResJ had 1000000.0 but this seems like it be exceeded.
 */
-private double __BIG_DATA_VALUE = Double.MAX_VALUE;
+//private double __BIG_DATA_VALUE = 1000000.0; // Legacy ResJ
+//private double __BIG_DATA_VALUE = Double.MAX_VALUE; // Up to TSTool 12.05.00, seems to cause issue with LagKBuilder use of 1000000.0 for table large bounding value
+private double BIG_DATA_VALUE = LagKBuilder.BIG_DATA_VALUE; // Make sure this agrees with use in LagKBuilder.__BIG_DATA_VALUE
     
 /**
 List of time series created during discovery.  This is the routed time series.
@@ -462,7 +464,7 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
     if ( originalTable == null ) {
         Table newTable = new Table();
         newTable.allocateDataSpace(1);
-        newTable.set(0, __BIG_DATA_VALUE, 0.0 );  // Meaning no Lag or no K despite what the input value
+        newTable.set(0, BIG_DATA_VALUE, 0.0 );  // Meaning no Lag or no K despite what the input value
         return newTable;
     }
     DataUnitsConversion unitsConversion = null;
@@ -578,6 +580,7 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
 /**
 Return the list of data objects read by this object in discovery mode.
 */
+@SuppressWarnings("rawtypes")
 public List getObjectList ( Class c )
 {
     List<TS> discoveryTSList = getDiscoveryTSList ();

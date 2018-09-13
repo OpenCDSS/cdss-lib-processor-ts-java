@@ -580,6 +580,7 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
 /**
 Return the list of data objects read by this object in discovery mode.
 */
+@SuppressWarnings("rawtypes")
 public List getObjectList ( Class c )
 {
     List<TS> discoveryTSList = getDiscoveryTSList ();

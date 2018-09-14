@@ -718,7 +718,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 				String tsidentString = null; // TSIdent string
 				TS ts; // Time series to read.
-		        Station sta;
 	            DiversionWaterClass str;
 	            TelemetryStationDataTypes tsta;
 	            WaterLevelsWell well;
@@ -752,22 +751,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					else if ( isStructure ) {
 						// Structure time series, but time series list uses generalized water classes
 						str = (DiversionWaterClass)structureCatalog.get(i);
-						if( isWaterClass){
+						if ( isWaterClass ) {
 							String wcIdentifier = str.getWcIdentifier();
-							tsidentString = str.getWdid()
-								+ "." + "DWR"
-								+ "." + DataType 
-								+ "-" + wcIdentifier
-								+ "." + Interval
-								+ inputName;
-						}else{
+							if ( wcIdentifier.indexOf(".") >= 0 ) {
+								// Water class includes a period for extended SFUT coding
+								// so add single quotes data type
+								tsidentString = str.getWdid()
+										+ "." + "DWR"
+										+ ".'" + DataType 
+										+ "-" + wcIdentifier
+										+ "'." + Interval
+										+ inputName;
+							} else {
+								tsidentString = str.getWdid()
+										+ "." + "DWR"
+										+ "." + DataType 
+										+ "-" + wcIdentifier
+										+ "." + Interval
+										+ inputName;	
+							}
+						} else {
 							tsidentString = str.getWdid()
 								+ "." + "DWR"
 								+ "." + DataType 
 								+ "." + Interval
 								+ inputName;
 						}
-						
 					}
 					else if ( isTelemetryStation ) {
 						// Telemetry station time series...

@@ -19,6 +19,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.TS.TS;
@@ -305,6 +306,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 setProcessorProperties(processor,runner_processor,false);
             }
             */
+            // Actually, need to share the StartLogEnabled property because it is used in troubleshooting
+            // to ensure all logging goes to the main log file.
+            Prop prop = processor.getProp("StartLogEnabled");
+            if ( prop != null ) {
+            	// Will be a Boolean
+            	runner.getProcessor().setPropContents("StartLogEnabled", prop.getContents());
+            }
     		runner.runCommands();
     	    // Total runtime for the commands
             long runTimeTotal = TSCommandProcessorUtil.getRunTimeTotal(runner.getProcessor().getCommands());

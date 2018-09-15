@@ -180,6 +180,13 @@ and each command must call getShouldCommandsClearLog() to check whether to clear
 private Boolean __commandsShouldClearRunStatus = new Boolean(true);
 
 /**
+Indicate whether StartLog commands should be enabled.
+If true, then new log files will be opened by this command (the default).
+If false, the main log file will be used throughout, useful for centralizing output for troubleshooting.
+*/
+private Boolean __StartLogEnabled_Boolean = new Boolean(true);
+
+/**
 The list of StringMonthTS, currently only read by ReadPatternFile() and used with FillPattern().
 */
 private List<StringMonthTS> __patternTSList = new Vector<StringMonthTS>();
@@ -992,7 +999,7 @@ Currently the following internal properties are handled:
 </tr>
 
 <td><b>CreateOutput</b></td>
-<td>indicate if output should be created, as Boolean.  If True, commands that create output
+<td>Indicate if output should be created, as Boolean.  If True, commands that create output
 should do so.  If False, the commands should be skipped.  This is used to
 speed performance during initial testing.
 </td>
@@ -1086,6 +1093,11 @@ open HydroBase connection information, if available.
 <tr>
 <td><b>PatternTSList</b></td>
 <td>The pattern time series as a List.</td>
+</tr>
+
+<tr>
+<td><b>StartLogEnabled</b></td>
+<td>Indicate whether StartLog commands are enabled, as Boolean.</td>
 </tr>
 
 <tr>
@@ -1210,6 +1222,9 @@ public Object getPropContents ( String propName ) throws Exception
 	}
     else if ( propName.equalsIgnoreCase("PatternTSList") ) {
         return getPropContents_PatternTSList();
+    }
+    else if ( propName.equalsIgnoreCase("StartLogEnabled") ) {
+        return getPropContents_StartLogEnabled();
     }
     else if ( propName.equalsIgnoreCase("TableResultsList") ) {
         return getPropContents_TableResultsList();
@@ -1472,6 +1487,15 @@ private List<StringMonthTS> getPropContents_PatternTSList()
 }
 
 /**
+Handle the StartLogEnabled property request.
+@return whether the StartLog command is enabled
+*/
+private Boolean getPropContents_StartLogEnabled()
+{
+    return __StartLogEnabled_Boolean;
+}
+
+/**
 Handle the TableResultsList property request.
 @return The table results list, as a List of DataTable.
 */
@@ -1581,6 +1605,7 @@ public Collection<String> getPropertyNameList ( boolean includeBuiltInProperties
     	v.add ( "OutputStart" );
     	v.add ( "OutputEnd" );
         v.add ( "OutputYearType" );
+        v.add ( "StartLogEnabled" );
         v.add ( "TSEnsembleResultsListSize" );   // Useful for testing when zero time series are expected
         v.add ( "TSResultsListSize" );   // Useful for testing when zero time series are expected
         v.add ( "WarningLevelLogFile" );
@@ -4231,7 +4256,7 @@ throws Exception
 }
 
 /**
-Set the data for a named property, required by the CommandProcessor
+Set the data for a built-in named property, required by the CommandProcessor
 interface.  See the getPropContents method for a list of properties that are
 handled.  This method simply calls setPropContents () using the information in the Prop instance.
 @param prop Property to set.
@@ -4333,6 +4358,13 @@ startup directory.
 </tr>
 
 <tr>
+<td><b>StartLogEnabled></b></td>
+<td>a Boolean indicating whether or not the StartLog command is enabled, useful to disable when troubleshooting
+so that all logging is in the main log file.
+</td>
+</tr>
+
+<tr>
 <td><b>TSResultsList</b></td>
 <td>The list of time series results, as a Vector of TS.
 </td>
@@ -4354,73 +4386,86 @@ application can close when the TSView window is closed.</td>
 </table>
 @exception Exception if there is an error setting the properties.
 */
-public void setPropContents ( String prop, Object contents ) throws Exception
-{	if ( prop.equalsIgnoreCase("AutoExtendPeriod" ) ) {
+public void setPropContents ( String propName, Object contents ) throws Exception
+{	if ( propName.equalsIgnoreCase("AutoExtendPeriod" ) ) {
         __tsengine.setAutoExtendPeriod ( ((Boolean)contents).booleanValue() );
     }
-    else if ( prop.equalsIgnoreCase("AverageEnd") ) {
+    else if ( propName.equalsIgnoreCase("AverageEnd") ) {
         __tsengine.setAverageEnd ( (DateTime)contents );
     }
-    else if ( prop.equalsIgnoreCase("AverageStart") ) {
+    else if ( propName.equalsIgnoreCase("AverageStart") ) {
         __tsengine.setAverageStart ( (DateTime)contents );
     }
-    else if ( prop.equalsIgnoreCase("CommandsShouldClearRunStatus") ) {
+    else if ( propName.equalsIgnoreCase("CommandsShouldClearRunStatus") ) {
         setCommandsShouldClearRunStatus((Boolean)contents);
     }
-    else if ( prop.equalsIgnoreCase("DataStore" ) ) {
+    else if ( propName.equalsIgnoreCase("DataStore" ) ) {
         __tsengine.setDataStore ( (DataStore)contents, true );
     }
-	else if ( prop.equalsIgnoreCase("HydroBaseDMIList" ) ) {
+	else if ( propName.equalsIgnoreCase("HydroBaseDMIList" ) ) {
 		@SuppressWarnings("unchecked")
 		List<HydroBaseDMI> contents2 = (List<HydroBaseDMI>)contents;
 		__tsengine.setHydroBaseDMIList ( contents2 );
 	}
-    else if ( prop.equalsIgnoreCase("IgnoreLEZero" ) ) {
+    else if ( propName.equalsIgnoreCase("IgnoreLEZero" ) ) {
         __tsengine.setIgnoreLEZero ( ((Boolean)contents).booleanValue() );
     }
-    else if ( prop.equalsIgnoreCase("IncludeMissingTS" ) ) {
+    else if ( propName.equalsIgnoreCase("IncludeMissingTS" ) ) {
         __tsengine.setIncludeMissingTS ( ((Boolean)contents).booleanValue() );
     }
-	else if ( prop.equalsIgnoreCase("InitialWorkingDir" ) ) {
+	else if ( propName.equalsIgnoreCase("InitialWorkingDir" ) ) {
 		setInitialWorkingDir ( (String)contents );
 	}
-	else if ( prop.equalsIgnoreCase("InputEnd") ) {
+	else if ( propName.equalsIgnoreCase("InputEnd") ) {
 		__tsengine.setInputEnd ( (DateTime)contents );
 	}
-	else if ( prop.equalsIgnoreCase("InputStart") ) {
+	else if ( propName.equalsIgnoreCase("InputStart") ) {
 		__tsengine.setInputStart ( (DateTime)contents );
 	}
-	else if ( prop.equalsIgnoreCase("OutputEnd") ) {
+	else if ( propName.equalsIgnoreCase("OutputEnd") ) {
 		__tsengine.setOutputEnd ( (DateTime)contents );
 	}
-	else if ( prop.equalsIgnoreCase("OutputFileList") ) {
+	else if ( propName.equalsIgnoreCase("OutputFileList") ) {
 		@SuppressWarnings("unchecked")
 		List<File> contents2 = (List<File>)contents;
 		setOutputFileList ( contents2 );
 	}
-	else if ( prop.equalsIgnoreCase("OutputStart") ) {
+	else if ( propName.equalsIgnoreCase("OutputStart") ) {
 		__tsengine.setOutputStart ( (DateTime)contents );
 	}
-    else if ( prop.equalsIgnoreCase("OutputYearType") ) {
+    else if ( propName.equalsIgnoreCase("OutputYearType") ) {
         YearType outputYearType = (YearType)contents;
         __tsengine.setOutputYearType ( outputYearType );
     }
-	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
+    else if ( propName.equalsIgnoreCase("StartLogEnabled") ) {
+    	// Use the built-in properties
+        setStartLogEnabled((Boolean)contents);
+    }
+	else if ( propName.equalsIgnoreCase("TSResultsList") ) {
 		@SuppressWarnings("unchecked")
 		List<TS> contents2 = (List<TS>)contents;
 		__tsengine.setTimeSeriesList ( contents2 );
 	}
-    else if ( prop.equalsIgnoreCase("TSViewWindowListener") ) {
+    else if ( propName.equalsIgnoreCase("TSViewWindowListener") ) {
         __tsengine.addTSViewWindowListener((WindowListener)contents );
     }
-    else if ( prop.equalsIgnoreCase("WorkingDir") ) {
+    else if ( propName.equalsIgnoreCase("WorkingDir") ) {
         setWorkingDir ( (String)contents );
     }
 	else {
 	    // Not recognized...
-		String message = "Unable to set data for unknown property \"" + prop + "\".";
+		String message = "Unable to set data for unknown property \"" + propName + "\".";
 		throw new UnrecognizedRequestException ( message );
 	}
+}
+
+/**
+Indicate whether StartLog commands should be enabled.
+@param StartLogEnabled_Boolean true if StartLog commands are enabled, false if not.
+*/
+protected void setStartLogEnabled ( Boolean StartLogEnabled_Boolean )
+{
+	__StartLogEnabled_Boolean = StartLogEnabled_Boolean;
 }
 
 /**

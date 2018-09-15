@@ -62,7 +62,7 @@ import rti.tscommandprocessor.commands.hydrobase.ReadHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrojson.WriteTimeSeriesToHydroJSON_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromJSON_Command;
 import rti.tscommandprocessor.commands.json.WriteTimeSeriesToJson_Command;
-
+import rti.tscommandprocessor.commands.logging.ConfigureLogging_Command;
 // Logging commands.
 import rti.tscommandprocessor.commands.logging.Message_Command;
 import rti.tscommandprocessor.commands.logging.SetDebugLevel_Command;
@@ -345,6 +345,7 @@ public TSCommandFactory ()
 /**
 Constructor.
 */
+@SuppressWarnings("rawtypes")
 public TSCommandFactory ( List<Class> pluginCommandClassList )
 {
     super();
@@ -420,7 +421,7 @@ throws UnknownCommandException
 	
 	// Comment commands...
 	
-	else if ( commandString.startsWith("#") ) {
+	if ( commandString.startsWith("#") ) {
         return new Comment_Command ();
     }
     else if ( commandString.startsWith("/*") ) {
@@ -513,6 +514,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("ComputeErrorTimeSeries") ) {
         return new ComputeErrorTimeSeries_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ConfigureLogging") ) {
+        return new ConfigureLogging_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ConvertDataUnits") ) {
         return new ConvertDataUnits_Command ();

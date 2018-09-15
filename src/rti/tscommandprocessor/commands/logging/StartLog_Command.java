@@ -200,7 +200,21 @@ throws CommandWarningException, CommandException
     if ( clearStatus ) {
 		status.clearLog(CommandPhaseType.RUN);
 	}
+    
+    // Check whether this command should be executed
+    // - the ConfigureLogging() command may turn off so all logging goes to the main log file
+    Boolean enabled = true; // default
+    try {
+    	Object o = processor.getPropContents("StartLogEnabled");
+    	if ( o != null ) {
+    		enabled = (Boolean)o;
+    	}
+    }
+    catch ( Exception e ) {
+    	// Should not happen
+    }
 	
+    if ( enabled ) {
 	String LogFile_full = null;	// File with path, used below and in final catch.
 	try {
 		String LogFile = parameters.getValue ( "LogFile" ); // Expanded below
@@ -265,6 +279,11 @@ throws CommandWarningException, CommandException
 			message, "Check the old log file or command window for details." ) );
 		throw new CommandException ( message );
 	}
+    } // enabled
+    else {
+    	Message.printStatus(2, routine, "StartLog command is disabled globally.  Log file is \"" + Message.getLogFile() + "\"");
+    }
+	
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 

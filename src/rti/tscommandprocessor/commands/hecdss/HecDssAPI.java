@@ -1582,7 +1582,7 @@ public static void writeTimeSeriesList ( File outputFile, List<TS> tslist, DateT
         String unitsReq, int precisionReq, String hecType, String A, String B, String C, String E, String F,
         boolean replaceTimeSeries, boolean closeFileAfterWrite )
 throws IOException, Exception
-{   String routine = "HecDssAPE.writeTimeSeriesList";
+{   String routine = "HecDssAPI.writeTimeSeriesList";
 
     if ( (tslist == null) || (tslist.size() == 0) ) {
         // Nothing in the list so return

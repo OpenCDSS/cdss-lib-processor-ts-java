@@ -229,6 +229,7 @@ private DataTable getDiscoveryTable()
 /**
 Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
 */
+@SuppressWarnings("rawtypes")
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
     List<DataTable> v = null;

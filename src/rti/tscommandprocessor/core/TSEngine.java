@@ -5005,6 +5005,9 @@ throws Exception
     else if ((dataStore != null) && (dataStore instanceof PluginDataStore) ) {
         // New style TSID~dataStore
         PluginDataStore pds = (PluginDataStore)dataStore;
+        if ( Message.isDebugOn ) {
+        	Message.printDebug(1, routine, "Reading time series using plugin datastore \"" + dataStore.getName() + "\"" );
+        }
         try {
             ts = pds.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
         }

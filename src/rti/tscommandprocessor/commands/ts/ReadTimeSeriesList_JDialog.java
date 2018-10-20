@@ -52,6 +52,7 @@ private SimpleJButton __help_JButton = null;
 private ReadTimeSeriesList_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TableID_JComboBox = null;
+private SimpleJComboBox __ReadData_JComboBox = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextField __LocationTypeColumn_JTextField = null;
 private JTextField __LocationType_JTextField = null;
@@ -182,6 +183,7 @@ private void checkInput ()
 {   // Put together a list of parameters to check...
     PropList parameters = new PropList ( "" );
     String TableID = __TableID_JComboBox.getSelected();
+    String ReadData = __ReadData_JComboBox.getSelected();
     String LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
     String LocationType = __LocationType_JTextField.getText().trim();
     String LocationColumn = __LocationColumn_JTextField.getText().trim();
@@ -210,6 +212,9 @@ private void checkInput ()
 
     if ( TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
+    }
+    if ( ReadData.length() > 0 ) {
+    	parameters.set ( "ReadData", ReadData );
     }
     if ( LocationTypeColumn.length() > 0 ) {
         parameters.set ( "LocationTypeColumn", LocationTypeColumn );
@@ -296,6 +301,7 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {   String TableID = __TableID_JComboBox.getSelected();
+	String ReadData = __ReadData_JComboBox.getSelected();
     String LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
     String LocationType = __LocationType_JTextField.getText().trim();
     String LocationColumn = __LocationColumn_JTextField.getText().trim();
@@ -320,6 +326,7 @@ private void commitEdits ()
     String TimeSeriesDefaultCountProperty = __TimeSeriesDefaultCountProperty_JTextField.getText().trim();
     String TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
+    __command.setCommandParameter ( "ReadData", ReadData );
     __command.setCommandParameter ( "DataTypeColumn", DataTypeColumn );
     __command.setCommandParameter ( "DataType", DataType );
     __command.setCommandParameter ( "LocationTypeColumn", LocationTypeColumn );
@@ -393,6 +400,38 @@ private void initialize ( JFrame parent, ReadTimeSeriesList_Command command, Lis
     __main_JTabbedPane = new JTabbedPane ();
     JGUIUtil.addComponent(main_JPanel, __main_JTabbedPane,
         0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    // Panel for General
+    int yGen = -1;
+    JPanel gen_JPanel = new JPanel();
+    gen_JPanel.setLayout( new GridBagLayout() );
+    __main_JTabbedPane.addTab ( "General", gen_JPanel );
+    
+    JGUIUtil.addComponent(gen_JPanel, new JLabel (
+        "The default is to read time series data."),
+        0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(gen_JPanel, new JLabel (
+        "However, it can be useful to not read data, such as when checking time series existence and properties."),
+        0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(gen_JPanel, new JSeparator(SwingConstants.HORIZONTAL),
+        0, ++yGen, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(gen_JPanel,new JLabel("Read data?:"),
+        0, ++yGen, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ReadData_JComboBox = new SimpleJComboBox ( false );
+    __ReadData_JComboBox.setToolTipText("Read data (true) or only read properties (false).");
+    List<String> readDataChoices = new ArrayList<String>();
+    readDataChoices.add ( "" );
+    readDataChoices.add ( __command._False );
+    readDataChoices.add ( __command._True );
+    __ReadData_JComboBox.setData(readDataChoices);
+    __ReadData_JComboBox.select ( __command._Warn );
+    __ReadData_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(gen_JPanel, __ReadData_JComboBox,
+        1, yGen, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(gen_JPanel, new JLabel (
+        "Optional - read data (default="+ __command._True + ")."),
+        3, yGen, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
      
     // Panel for TSID
     int yTsid = -1;
@@ -801,6 +840,7 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {   String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
+    String ReadData = "";
     String LocationTypeColumn = "";
     String LocationType = "";
     String LocationColumn = "";
@@ -865,6 +905,22 @@ private void refresh ()
                 "Existing command references an invalid\nTableID value \"" + TableID +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
+            }
+        }
+        if ( __ReadData_JComboBox != null ) {
+            if ( ReadData == null ) {
+                // Select default...
+                __ReadData_JComboBox.select ( __command._Warn );
+            }
+            else {  if (    JGUIUtil.isSimpleJComboBoxItem(
+                    __ReadData_JComboBox,
+                    ReadData, JGUIUtil.NONE, null, null ) ) {
+                    __ReadData_JComboBox.select ( ReadData );
+                }
+                else {  Message.printWarning ( 1, routine,
+                    "Existing command references an invalid\n"+
+                    "ReadData \"" + ReadData + "\".  Select a different value or Cancel." );
+                }
             }
         }
         if ( LocationTypeColumn != null ) {
@@ -963,6 +1019,7 @@ private void refresh ()
     }
     // Regardless, reset the command from the fields...
     TableID = __TableID_JComboBox.getSelected();
+    ReadData = __ReadData_JComboBox.getSelected();
     LocationTypeColumn = __LocationTypeColumn_JTextField.getText().trim();
     LocationType = __LocationType_JTextField.getText().trim();
     LocationColumn = __LocationColumn_JTextField.getText().trim();
@@ -988,6 +1045,7 @@ private void refresh ()
     TimeSeriesIndex1Property = __TimeSeriesIndex1Property_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
+    props.add ( "ReadData=" + ReadData );
     props.add ( "LocationTypeColumn=" + LocationTypeColumn );
     props.add ( "LocationType=" + LocationType );
     props.add ( "LocationColumn=" + LocationColumn );

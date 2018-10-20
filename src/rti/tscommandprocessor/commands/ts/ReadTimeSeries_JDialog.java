@@ -46,6 +46,7 @@ private ReadTimeSeries_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __TSID_JTextField=null;
+private SimpleJComboBox __ReadData_JComboBox = null;
 private SimpleJComboBox __IfNotFound_JComboBox = null;
 private JTextField __DefaultUnits_JTextField = null;
 private boolean __first_time = true;
@@ -124,6 +125,7 @@ private void checkInput ()
     PropList props = new PropList ( "" );
     String Alias = __Alias_JTextField.getText().trim();
     String TSID = __TSID_JTextField.getText().trim();
+    String ReadData = __ReadData_JComboBox.getSelected();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     __error_wait = false;
@@ -133,6 +135,9 @@ private void checkInput ()
     }
     if ( (TSID != null) && (TSID.length() > 0) ) {
         props.set ( "TSID", TSID );
+    }
+    if ( ReadData.length() > 0 ) {
+        props.set ( "ReadData", ReadData );
     }
     if ( IfNotFound.length() > 0 ) {
         props.set ( "IfNotFound", IfNotFound );
@@ -157,10 +162,12 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {   String Alias = __Alias_JTextField.getText().trim();
     String TSID = __TSID_JTextField.getText().trim();
+    String ReadData = __ReadData_JComboBox.getSelected();
     String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     __command.setCommandParameter ( "Alias", Alias );
     __command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "ReadData", ReadData );
     __command.setCommandParameter ( "IfNotFound", IfNotFound );
     __command.setCommandParameter ( "DefaultUnits", DefaultUnits );
 }
@@ -223,6 +230,23 @@ private void initialize ( JFrame parent, ReadTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel,new JLabel("Read data?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ReadData_JComboBox = new SimpleJComboBox ( false );
+    __ReadData_JComboBox.setToolTipText("Read data (true) or only read properties (false).");
+    List<String> readDataChoices = new ArrayList<String>();
+    readDataChoices.add ( "" );
+    readDataChoices.add ( __command._False );
+    readDataChoices.add ( __command._True );
+    __ReadData_JComboBox.setData(readDataChoices);
+    __ReadData_JComboBox.select ( __command._Warn );
+    __ReadData_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ReadData_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - read data (default="+ __command._True + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
@@ -329,6 +353,7 @@ private void refresh ()
 {   String routine = "ReadTimeSeries_JDialog.refresh";
     String Alias = "";
     String TSID = "";
+    String ReadData = "";
     String IfNotFound = "";
     String DefaultUnits = "";
     PropList props = __command.getCommandParameters();
@@ -337,6 +362,7 @@ private void refresh ()
         // Get the parameters from the command...
         Alias = props.getValue ( "Alias" );
         TSID = props.getValue ( "TSID" );
+        ReadData = props.getValue ( "ReadData" );
         IfNotFound = props.getValue ( "IfNotFound" );
         DefaultUnits = props.getValue ( "DefaultUnits" );
         if ( Alias != null ) {
@@ -344,6 +370,22 @@ private void refresh ()
         }
         if ( TSID != null ) {
             __TSID_JTextField.setText ( TSID );
+        }
+        if ( __ReadData_JComboBox != null ) {
+            if ( ReadData == null ) {
+                // Select default...
+                __ReadData_JComboBox.select ( __command._Warn );
+            }
+            else {  if (    JGUIUtil.isSimpleJComboBoxItem(
+                    __ReadData_JComboBox,
+                    ReadData, JGUIUtil.NONE, null, null ) ) {
+                    __ReadData_JComboBox.select ( ReadData );
+                }
+                else {  Message.printWarning ( 1, routine,
+                    "Existing command references an invalid\n"+
+                    "ReadData \"" + ReadData + "\".  Select a different value or Cancel." );
+                }
+            }
         }
         if ( __IfNotFound_JComboBox != null ) {
             if ( IfNotFound == null ) {
@@ -357,7 +399,7 @@ private void refresh ()
                 }
                 else {  Message.printWarning ( 1, routine,
                     "Existing command references an invalid\n"+
-                    "IfNotFound \"" + IfNotFound + "\".  Select a\ndifferent value or Cancel." );
+                    "IfNotFound \"" + IfNotFound + "\".  Select a different value or Cancel." );
                 }
             }
         }
@@ -368,11 +410,13 @@ private void refresh ()
     // Regardless, reset the command from the fields...
     Alias = __Alias_JTextField.getText().trim();
     TSID = __TSID_JTextField.getText().trim();
+    ReadData = __ReadData_JComboBox.getSelected();
     IfNotFound = __IfNotFound_JComboBox.getSelected();
     DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Alias=" + Alias );
     props.add ( "TSID=" + TSID );
+    props.add ( "ReadData=" + ReadData );
     props.add ( "IfNotFound=" + IfNotFound );
     props.add ( "DefaultUnits=" + DefaultUnits );
     __command_JTextArea.setText( __command.toString ( props ) );

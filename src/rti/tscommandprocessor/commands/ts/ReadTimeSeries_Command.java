@@ -36,6 +36,12 @@ This class initializes, checks, and runs the ReadTimeSeries() command.
 public class ReadTimeSeries_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
+	
+/**
+Values for ReadData parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 Values for IfNotFound parameter.
@@ -70,6 +76,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String Alias = parameters.getValue ( "Alias" );
 	String TSID = parameters.getValue ( "TSID" );
+	String ReadData = parameters.getValue("ReadData");
 	String IfNotFound = parameters.getValue("IfNotFound");
 	String warning = "";
     String message;
@@ -93,6 +100,17 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message,
                 "Provide a daily time series identifier."));
 	}
+    if ( (ReadData != null) && !ReadData.equals("") &&
+        !ReadData.equalsIgnoreCase(_False) &&
+        !ReadData.equalsIgnoreCase(_True) ) {
+        message = "Invalid ReadData flag \"" + ReadData + "\".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the ReadData as " + _False + " or " +
+                _True + " (default)." ) );
+                            
+    }
     if ( (IfNotFound != null) && !IfNotFound.equals("") &&
             !IfNotFound.equalsIgnoreCase(_Ignore) &&
             !IfNotFound.equalsIgnoreCase(_Default) &&
@@ -107,9 +125,10 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(4);
+    List<String> validList = new ArrayList<String>(5);
     validList.add ( "Alias" );
     validList.add ( "TSID" );
+    validList.add ( "ReadData" );
     validList.add ( "IfNotFound" );
     validList.add ( "DefaultUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( validList, this, warning );
@@ -146,6 +165,7 @@ private List<TS> getDiscoveryTSList ()
 /**
 Return the list of data objects read by this object in discovery mode.
 */
+@SuppressWarnings("rawtypes")
 public List getObjectList ( Class c )
 {
 	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
@@ -313,6 +333,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (TSID != null) && (TSID.indexOf("${") >= 0) && (commandPhase == CommandPhaseType.RUN) ) {
 		TSID = TSCommandProcessorUtil.expandParameterValue(processor, this, TSID);
 	}
+    String ReadData = parameters.getValue("ReadData");
+    boolean readData = true; // Default for run mode
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+    	readData = false; // Default - always
+    }
+    else {
+	    if ( (ReadData != null) && !ReadData.equals("") && ReadData.equalsIgnoreCase(_False) ) {
+            readData = false; // OK to ignore reading data in run mode
+        }
+    }
     String IfNotFound = parameters.getValue("IfNotFound");
     if ( (IfNotFound == null) || IfNotFound.equals("")) {
         IfNotFound = _Warn; // default
@@ -324,10 +354,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	TS ts = null;
 	try {
 	    boolean notFoundLogged = false;
-        boolean readData = true;
-        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            readData = false;
-        }
         if ( TSID.indexOf("${") < 0 ) {
 	        // Have a valid TSID - make a request to the processor...
 	        PropList request_params = new PropList ( "" );
@@ -509,6 +535,7 @@ public String toString ( PropList props, int majorVersion )
     }
 	String Alias = props.getValue( "Alias" );
 	String TSID = props.getValue( "TSID" );
+    String ReadData = props.getValue ( "ReadData" );
     String IfNotFound = props.getValue ( "IfNotFound" );
     String DefaultUnits = props.getValue ( "DefaultUnits" );
 	StringBuffer b = new StringBuffer ();
@@ -526,6 +553,12 @@ public String toString ( PropList props, int majorVersion )
             }
             b.append ( "Alias=\"" + Alias + "\"" );
         }
+    }
+    if ((ReadData != null) && (ReadData.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("ReadData=" + ReadData );
     }
     if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
         if (b.length() > 0) {

@@ -43,6 +43,12 @@ This class initializes, checks, and runs the ReadTimeSeriesList() command.
 public class ReadTimeSeriesList_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
+/**
+Values for ReadData parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+	
 protected final String _Default = "Default";
 protected final String _Ignore = "Ignore";
 protected final String _Warn = "Warn";
@@ -78,8 +84,9 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-	// Get the property values. 
+	// Get the property values.
 	String TableID = parameters.getValue("TableID");
+	String ReadData = parameters.getValue("ReadData");
     String LocationTypeColumn = parameters.getValue("LocationTypeColumn");
     String LocationType = parameters.getValue("LocationType");
 	String LocationColumn = parameters.getValue("LocationColumn");
@@ -91,7 +98,7 @@ throws InvalidCommandParameterException
 	String DataStore = parameters.getValue("DataStore");
 	String Interval = parameters.getValue("Interval");
 	String IfNotFound = parameters.getValue("IfNotFound");
-    
+
     if ( (TableID == null) || TableID.isEmpty() ) {
         message = "The table identifier must be specified.";
         warning += "\n" + message;
@@ -99,7 +106,17 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the table identifier." ) );
     }
-    
+    if ( (ReadData != null) && !ReadData.equals("") &&
+        !ReadData.equalsIgnoreCase(_False) &&
+        !ReadData.equalsIgnoreCase(_True) ) {
+        message = "Invalid ReadData flag \"" + ReadData + "\".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the ReadData as " + _False + " or " +
+                _True + " (default)." ) );
+                            
+    }
     if ( (LocationTypeColumn != null) && (LocationTypeColumn.length() > 0) &&
         (LocationType != null) && (LocationType.length() > 0)) {
         message = "LocationTypeColumn and LocationType cannot both be specified";
@@ -186,7 +203,8 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List<String> validList = new ArrayList<String>(24);
+	List<String> validList = new ArrayList<String>(25);
+	validList.add ( "ReadData" );
     validList.add ( "TableID" );
     validList.add ( "LocationTypeColumn" );
     validList.add ( "LocationType" );
@@ -249,6 +267,7 @@ private List<TS> getDiscoveryTSList ()
 /**
 Return the list of data objects read by this object in discovery mode.
 */
+@SuppressWarnings("rawtypes")
 public List getObjectList ( Class c )
 {
 	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
@@ -323,14 +342,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		status.clearLog(commandPhase);
 	}
 
-	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
+	// Get the command properties not already stored as members.
 	String TableID = parameters.getValue("TableID");
     if ( (TableID != null) && !TableID.isEmpty() && (commandPhase == CommandPhaseType.RUN) ) {
     	// In discovery mode want lists of tables to include ${Property}
     	if ( TableID.indexOf("${") >= 0 ) {
     		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
     	}
+    }
+    String ReadData = parameters.getValue("ReadData");
+    boolean readData = true; // Default for run mode
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+    	readData = false; // Default - always
+    }
+    else {
+	    if ( (ReadData != null) && !ReadData.equals("") && ReadData.equalsIgnoreCase(_False) ) {
+            readData = false; // OK to ignore reading data in run mode
+        }
     }
     String LocationTypeColumn = parameters.getValue ( "LocationTypeColumn" );
     String LocationType = parameters.getValue ( "LocationType" );
@@ -545,10 +574,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String dataSource;
     int defaultCount = 0; // Count of default time series
 	try {
-        boolean readData = true;
         if ( commandPhase == CommandPhaseType.DISCOVERY ){
         	// TODO SAM 2015-05-17 Not really doing much in discovery mode - not generating time series - too complex
-            readData = false;
         }
         else if ( commandPhase == CommandPhaseType.RUN ){
             // TODO SAM 2013-05-17 Need to determine whether to read table even in discovery mode
@@ -908,6 +935,7 @@ public String toString ( PropList props )
 	}
 
     String TableID = props.getValue ( "TableID" );
+    String ReadData = props.getValue ( "ReadData" );
     String LocationTypeColumn = props.getValue ( "LocationTypeColumn" );
     String LocationType = props.getValue ( "LocationType" );
     String LocationColumn = props.getValue ( "LocationColumn" );
@@ -934,7 +962,13 @@ public String toString ( PropList props )
 
 	StringBuffer b = new StringBuffer ();
 
+    if ((ReadData != null) && (ReadData.length() > 0)) {
+        b.append("ReadData=" + ReadData );
+    }
 	if ((TableID != null) && (TableID.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
 		b.append("TableID=\"" + TableID + "\"");
 	}
     if ((LocationTypeColumn != null) && (LocationTypeColumn.length() > 0)) {

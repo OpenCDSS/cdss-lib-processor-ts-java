@@ -1,3 +1,5 @@
+// WriteTableToDataStore_JDialog - editor dialog for WriteTableToDataStore command
+
 package rti.tscommandprocessor.commands.table;
 
 import javax.swing.JDialog;

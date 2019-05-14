@@ -47,6 +47,7 @@ import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -100,6 +101,7 @@ throws InvalidCommandParameterException
 	String Append = parameters.getValue ( "Append" );
     String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
     String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
+    String CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
     String WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
     String warning = "";
     String routine = getCommandName() + ".checkCommandParameters";
@@ -196,8 +198,16 @@ throws InvalidCommandParameterException
             message, "Specify the latitude column OR WKT geometry property." ) );
     }
 
+    if ( (CoordinatePrecision != null) && !CoordinatePrecision.isEmpty() &&
+        !StringUtil.isInteger(CoordinatePrecision) ) {
+        message = "The coordinate precision is not an integer.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify coordinate precision as an integer." ) );
+    }
+
     // Check for invalid parameters...
-    List<String> validList = new ArrayList<String>(14);
+    List<String> validList = new ArrayList<String>(15);
     validList.add ( "TSList" );
     validList.add ( "TSID" );
     validList.add ( "EnsembleID" );
@@ -205,6 +215,7 @@ throws InvalidCommandParameterException
     validList.add ( "Append" );
     validList.add ( "LongitudeProperty" );
     validList.add ( "LatitudeProperty" );
+    validList.add ( "CoordinatePrecision" );
     validList.add ( "ElevationProperty" );
     validList.add ( "WKTGeometryProperty" );
     validList.add ( "IncludeProperties" );
@@ -320,6 +331,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (LatitudeProperty != null) && (LatitudeProperty.indexOf("${") >= 0) ) {
 		LatitudeProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, LatitudeProperty);
 	}
+    String CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
+    int coordinatePrecision = -1;
+    if ( (CoordinatePrecision != null) && StringUtil.isInteger(CoordinatePrecision) ) {
+    	coordinatePrecision = Integer.parseInt(CoordinatePrecision);
+    }
     String ElevationProperty = parameters.getValue ( "ElevationProperty" );
 	if ( (commandPhase == CommandPhaseType.RUN) && (ElevationProperty != null) && (ElevationProperty.indexOf("${") >= 0) ) {
 		ElevationProperty = TSCommandProcessorUtil.expandParameterValue(processor, this, ElevationProperty);
@@ -419,7 +435,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printStatus ( 2, routine, "Writing GeoJSON file \"" + OutputFile_full + "\"" );
         List<String> errors = new ArrayList<String>();
         writeTimeSeriesToGeoJSON ( tslist, OutputFile_full, append, includeProperties, excludeProperties,
-            LongitudeProperty, LatitudeProperty, ElevationProperty, WKTGeometryProperty, JavaScriptVar, PrependText, AppendText, errors );
+            LongitudeProperty, LatitudeProperty, coordinatePrecision, ElevationProperty,
+            WKTGeometryProperty, JavaScriptVar, PrependText, AppendText, errors );
         for ( String error : errors ) {
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, error );
@@ -467,6 +484,7 @@ public String toString ( PropList parameters )
     String Append = parameters.getValue ( "Append" );
     String LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
     String LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
+    String CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
     String ElevationProperty = parameters.getValue ( "ElevationProperty" );
     String WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
     String IncludeProperties = parameters.getValue ( "IncludeProperties" );
@@ -517,6 +535,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "LatitudeProperty=\"" + LatitudeProperty + "\"" );
     }
+    if ( (CoordinatePrecision != null) && (CoordinatePrecision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CoordinatePrecision=" + CoordinatePrecision );
+    }
     if ( (ElevationProperty != null) && (ElevationProperty.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -564,14 +588,37 @@ public String toString ( PropList parameters )
 
 // TODO SAM 2013-7-01 Evaluate whether a separate package should be created - for now keep the code here
 // until there is time to split out
+/**
+ *  
+ * @param tslist
+ * @param outputFile
+ * @param append
+ * @param includeProperties
+ * @param excludeProperties
+ * @param longitudeProperty
+ * @param latitudeProperty
+ * @param coordinatePrecision if -1 use the data value precision, otherwise, format bbox and coordinates using precision.
+ * @param elevationProperty
+ * @param wktGeometryProperty
+ * @param javaScriptVar
+ * @param prependText
+ * @param appendText
+ * @param errors
+ * @throws IOException
+ */
 private void writeTimeSeriesToGeoJSON ( List<TS> tslist, String outputFile, boolean append, String [] includeProperties, String [] excludeProperties,
-    String longitudeProperty, String latitudeProperty, String elevationProperty, String wktGeometryProperty, String javaScriptVar,
+    String longitudeProperty, String latitudeProperty, int coordinatePrecision,
+    String elevationProperty, String wktGeometryProperty, String javaScriptVar,
     String prependText, String appendText, List<String> errors )
 throws IOException
 {   String routine = getClass().getSimpleName() + ".writeTimeSeriesToGeoJSON";
 	PrintWriter fout = null;
 	if ( appendText == null ) {
 		appendText = "";
+	}
+	String coordinateFormat = null;
+	if ( coordinatePrecision >= 0 ) {
+		coordinateFormat = "%." + coordinatePrecision + "f";
 	}
 	try {
 		// Open the output file
@@ -602,6 +649,12 @@ throws IOException
 	            doPoint = true;
 	        }
 	    }
+
+		// Get the overall bounding box extent.
+		// - the other option is to write output to a StringBuilder,
+		//   but this could take a lot of memory so use memory instead
+	    // - or write a feature processor that extracts shapes for bbox as well as full write
+		double [] bbox = writeTimeSeriesToGeoJSON_GetBBox( tslist, longitudeProperty, latitudeProperty, elevationProperty, wktGeometryProperty);
    
 	    // Output GeoJSON intro
 	    if ( (prependText != null) && !prependText.isEmpty() ) {
@@ -614,12 +667,43 @@ throws IOException
 	     	fout.print("{\n" );
 	    }
 	    fout.print( i1 + "\"type\": \"FeatureCollection\",\n");
+	    // Bounding box
+	    if ( !Double.isNaN(bbox[0]) && !Double.isNaN(bbox[1]) && !Double.isNaN(bbox[3]) && !Double.isNaN(bbox[4]) ) {
+	    	if ( !Double.isNaN(bbox[2]) && !Double.isNaN(bbox[5]) && doElevation ) {
+	    		// Write X, Y, Z coordinates
+	    		if ( coordinatePrecision < 0 ) {
+	    			fout.print ( i1 + "\"bbox\": [" + bbox[0] + ", " + bbox[1] + ", " + bbox[2] + ", " + bbox[3] + ", " + bbox[4] + ", " + bbox[5] + "],\n" );
+	    		}
+	    		else {
+	    			fout.print ( i1 + "\"bbox\": [" +
+	    				String.format(coordinateFormat, bbox[0]) + ", " +
+	    				String.format(coordinateFormat, bbox[1]) + ", " +
+	    				String.format(coordinateFormat, bbox[2]) + ", " +
+	    				String.format(coordinateFormat, bbox[3]) + ", " +
+	    				String.format(coordinateFormat, bbox[4]) + ", " +
+	    				String.format(coordinateFormat, bbox[5]) + "],\n" );
+	    		}
+	    	}
+	    	else {
+	    		// Write X, Y coordinates
+	    		if ( coordinatePrecision < 0 ) {
+	    			fout.print ( i1 + "\"bbox\": [" + bbox[0] + ", " + bbox[1] + ", " + bbox[3] + ", " + bbox[4] + "],\n" );
+	    		}
+	    		else {
+	    			fout.print ( i1 + "\"bbox\": [" +
+	    			    String.format(coordinateFormat, bbox[0]) + ", " +
+	    			    String.format(coordinateFormat, bbox[1]) + ", " +
+	    			    String.format(coordinateFormat, bbox[3]) + ", " +
+	    			    String.format(coordinateFormat, bbox[4]) + "],\n" );
+	    		}
+	    	}
+	    }
 	    fout.print( i1 + "\"features\": [\n");
 	
 	    Object latitudeO = null, longitudeO = null, elevationO = null; // Can be double, int, or string
 	    Object wkt0 = null;
 	    WKTGeometryParser wktParser = null;
-	    GeoJSONGeometryFormatter geoJSONFormatter = new GeoJSONGeometryFormatter(2);
+	    GeoJSONGeometryFormatter geoJSONFormatter = new GeoJSONGeometryFormatter(2, coordinatePrecision, -1);
 	    Gson gson = new Gson();
 	    String wkt = null;
 	    if ( doWkt ) {
@@ -634,6 +718,7 @@ throws IOException
 	    Object o = null; // Object from t
 	    TS ts = null;
 	    boolean haveElevation = false;
+	    double shapeZmin = 0.0, shapeZmax = 0.0;
 	    if ( Message.isDebugOn ) {
 	    	Message.printDebug(1,routine,"Processing " + nts + " time series into GeoJSON...");
 	    }
@@ -697,13 +782,23 @@ throws IOException
 	                if ( haveElevation ) {
 	                	shape = pointzm = new GRPointZM();
 	                	pointzm.x = x;
+	                	pointzm.xmin = x;
+	                	pointzm.xmax = x;
 	                	pointzm.y = y;
+	                	pointzm.ymin = y;
+	                	pointzm.ymax = y;
 	                	pointzm.z = z;
+	                	shapeZmin= z;
+	                	shapeZmax = z;
 	                }
 	                else {
 	                	shape = point = new GRPoint ();
 	                	point.x = x;
 	                	point.y = y;
+	                	point.xmin = x;
+	                	point.xmax = x;
+	                	point.ymin = y;
+	                	point.ymax = y;
 	                }
 	            }
 	            if ( doWkt ) {
@@ -723,6 +818,35 @@ throws IOException
 	            // If get to here it is OK to output the feature and table columns as related properties.
 	    	    fout.print( i2 + "{\n");
 	    	    fout.print( i3 + "\"type\": \"Feature\",\n");
+	    	    if ( haveElevation ) {
+	    		    // Write X, Y, Z coordinates
+	    	    	// TODO deal with Z when parsing WTK
+	    	    	if ( coordinatePrecision < 0 ) {
+ 				   	    fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shapeZmin + ", " + shape.xmax + ", " + shape.ymax + ", " + shapeZmax + "],\n" );
+	    	    	}
+	    	    	else {
+	    			    fout.print ( i3 + "\"bbox\": [" +
+	    				    String.format(coordinateFormat, shape.xmin) + ", " +
+	    				    String.format(coordinateFormat, shape.ymin) + ", " +
+	    				    String.format(coordinateFormat, shapeZmin) + ", " +
+	    				    String.format(coordinateFormat, shape.xmax) + ", " +
+	    				    String.format(coordinateFormat, shape.ymax) + ", " +
+	    				    String.format(coordinateFormat, shapeZmax) + "],\n" );
+	    	    	}
+	    	    }
+	    	    else {
+	    		    // Write X, Y coordinates
+	    	    	if ( coordinatePrecision < 0 ) {
+	    	    		fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
+	    	    	}
+	    	    	else {
+	    	    		fout.print ( i3 + "\"bbox\": [" +
+	    			      	String.format(coordinateFormat, bbox[0]) + ", " +
+	    			      	String.format(coordinateFormat, bbox[1]) + ", " +
+	    			      	String.format(coordinateFormat, bbox[3]) + ", " +
+	    			      	String.format(coordinateFormat, bbox[4]) + "],\n" );
+	    	    	}
+	        	}
 	    	    fout.print( i3 + "\"properties\": {\n");
 	    		// Get all the properties.  Then extract the properties that match the IncludeProperties list
 	    	    // - Do not output WKT property but do output latitude and longitude
@@ -807,6 +931,213 @@ throws IOException
 		catch ( Exception e ) {
 		}
 	}
+}
+
+/**
+ * Determine the bounding box for the top of the file by examining all the time series.
+ * This code is somewhat redundant with the main function.
+ * @return an array of 6 values: xmin, ymin, zmin, xmax, ymax, zmax (if any cannot be computed they will be Double.NaN)
+ */
+private double[] writeTimeSeriesToGeoJSON_GetBBox(List<TS> tslist,
+	String longitudeProperty, String latitudeProperty, String elevationProperty, String wktGeometryProperty) {
+	//String routine = "writeTimeSeriesToGeoJSON_GetBBox";
+	int nts = tslist.size();
+	TS ts;
+	Object latitudeO = null, longitudeO = null, elevationO = null; // Can be double, int, or string
+	Object wkt0 = null;
+	WKTGeometryParser wktParser = null;
+	boolean doPoint = false;
+	boolean doWkt = false;
+	boolean doElevation = false;
+	double x = Double.NaN, y = Double.NaN, z = Double.NaN;
+	double xmin = Double.NaN, ymin = Double.NaN, zmin = Double.NaN, xmax = Double.NaN, ymax = Double.NaN, zmax = Double.NaN;
+	GRShape shape = null;
+	String wkt = null;
+    // WKT trumps point data
+    if ( (wktGeometryProperty != null) && !wktGeometryProperty.isEmpty() ) {
+        doWkt = true;
+    }
+    else {
+        if ( (latitudeProperty != null) && !latitudeProperty.isEmpty() &&
+            (longitudeProperty != null) && !longitudeProperty.isEmpty()) {
+            doPoint = true;
+        }
+    }
+	for ( int its = 0; its < nts; its++ ) {
+	    try {
+	        ts = tslist.get(its);
+	        if ( ts == null ) {
+	            continue;
+	        }
+	        if ( Message.isDebugOn ) {
+	            //Message.printDebug(1,routine,"Processing \"" + ts.getIdentifierString() + "\"");
+	        }
+	        longitudeO = null;
+	        latitudeO = null;
+	        if ( doPoint ) {
+	            // Property columns can be any type because objects are treated as strings below
+	            longitudeO = ts.getProperty(longitudeProperty);
+	            if ( longitudeO == null ) {
+	                //Message.printStatus(2,routine,"Skipping because longitude property is null.");
+	            	x = Double.NaN;
+	            }
+	            else if ( longitudeO instanceof Double ) {
+	                x = (Double)longitudeO;
+	            }
+	            else if ( longitudeO instanceof Float ) {
+	                x = 0.0 + (Float)longitudeO;
+	            }
+	            else if ( latitudeO instanceof Integer ) {
+	                x = 0.0 + (Integer)latitudeO;
+	            }
+	            // Check the bounding X values
+	            if ( !Double.isNaN(x) ) {
+	            	if ( Double.isNaN(xmin) ) {
+	            		xmin = x;
+	            	}
+	            	else { 
+	            		if ( x < xmin ) {
+	            			xmin = x;
+	            		}
+	            	}
+	            	if ( Double.isNaN(xmax) ) {
+	            		xmax = x;
+	            	}
+	            	else { 
+	            		if ( x > xmax ) {
+	            			xmax = x;
+	            		}
+	            	}
+	            }
+	            latitudeO = ts.getProperty(latitudeProperty);
+	            if ( latitudeO == null ) {
+	                // Message.printStatus(2,routine,"Skipping because latitude property is null.");
+	                y = Double.NaN;
+	            }
+	            else if ( latitudeO instanceof Double ) {
+	                y = (Double)latitudeO;
+	            }
+	            else if ( latitudeO instanceof Float ) {
+	                y = 0.0 + (Float)latitudeO;
+	            }
+	            else if ( latitudeO instanceof Integer ) {
+	                y = 0.0 + (Integer)latitudeO;
+	            }
+	            // Check the bounding Y values
+	            if ( !Double.isNaN(y) ) {
+	            	if ( Double.isNaN(ymin) ) {
+	            		ymin = y;
+	            	}
+	            	else { 
+	            		if ( y < ymin ) {
+	            			ymin = y;
+	            		}
+	            	}
+	            	if ( Double.isNaN(ymax) ) {
+	            		ymax = y;
+	            	}
+	            	else { 
+	            		if ( y > ymax ) {
+	            			ymax = y;
+	            		}
+	            	}
+	            }
+	            if ( doElevation ) {
+	                elevationO = ts.getProperty(elevationProperty);
+	                if ( elevationO == null ) {
+	                	z = Double.NaN;
+	                }
+	                else if ( latitudeO instanceof Double ) {
+	                    z = (Double)elevationO;
+	                }
+	                else if ( latitudeO instanceof Float ) {
+	                    z = 0.0 + (Float)elevationO;
+	                }
+	                else if ( latitudeO instanceof Integer ) {
+	                    z = 0.0 + (Integer)elevationO;
+	                }
+	                // Check the bounding Z values
+	                if ( !Double.isNaN(z) ) {
+	            	    if ( Double.isNaN(zmin) ) {
+	            		    zmin = z;
+	            	    }
+	            	    else { 
+	            		    if ( z < zmin ) {
+	            			    zmin = z;
+	            		    }
+	            	    }
+	            	    if ( Double.isNaN(zmax) ) {
+	            		    zmax = z;
+	            	    }
+	            	    else { 
+	            		    if ( z > zmax ) {
+	            			    zmax = z;
+	            		    }
+	            	    }
+	                }
+	            }
+	        }
+	        if ( doWkt ) {
+	            // Extract shape from WKT string
+	            wkt0 = ts.getProperty(wktGeometryProperty);
+	            if ( wkt0 != null ) {
+	                wkt = (String)wkt0;
+		            // Parse WKT string needs to extract coordinates
+		            //Message.printStatus(2, "", "Parsing \"" + wkt + "\"." );
+		            shape = wktParser.parseWKT(wkt);
+		            if ( (shape != null) && shape.limits_found ) {
+	            		// Check the bounding X values
+	            		if ( Double.isNaN(xmin) ) {
+	            			xmin = shape.xmin;
+	            		}
+	            		else { 
+	            			if ( shape.xmin < xmin ) {
+	            				xmin = shape.xmin;
+	            			}
+	            		}
+	            		if ( Double.isNaN(xmax) ) {
+	            			xmax = shape.xmax;
+	            		}
+	            		else { 
+	            			if ( shape.xmax > xmax ) {
+	            				xmax = shape.xmax;
+	            			}
+	            		}
+	            		// Check the bounding Y values
+	            		if ( Double.isNaN(ymin) ) {
+	            			ymin = shape.ymin;
+	            		}
+	            		else { 
+	            			if ( shape.ymin < ymin ) {
+	            				ymin = shape.ymin;
+	            			}
+	            		}
+	            		if ( Double.isNaN(ymax) ) {
+	            			ymax = shape.ymax;
+	            		}
+	            		else { 
+	            			if ( shape.ymax > ymax ) {
+	            				ymax = shape.ymax;
+	            			}
+	            		}
+	            		// TODO smalers 2019-05-14 need to handle elevation/Z
+	            	}
+	            }
+	        }
+	    }
+		catch ( Exception e ) {
+			// Should not happen - just skip the time series
+	    }
+    }
+	// Return the array of values
+	double [] bbox = new double[6];
+	bbox[0] = xmin;
+	bbox[1] = ymin;
+	bbox[2] = zmin;
+	bbox[3] = xmax;
+	bbox[4] = ymax;
+	bbox[5] = zmax;
+	return bbox;
 }
 
 }

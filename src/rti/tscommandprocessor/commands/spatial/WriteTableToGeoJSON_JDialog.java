@@ -52,6 +52,7 @@ import java.io.File;
 import java.util.List;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import RTi.GIS.GeoView.GeoJSONVersionType;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -84,10 +85,12 @@ private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __Version_JComboBox = null;
 private SimpleJComboBox __Append_JComboBox = null;
 private JTabbedPane __main_JTabbedPane = null;
 private JTextField __LongitudeColumn_JTextField = null;
 private JTextField __LatitudeColumn_JTextField = null;
+private JTextField __CoordinatePrecision_JTextField = null;
 private JTextField __ElevationColumn_JTextField = null;
 private JTextField __WKTGeometryColumn_JTextField = null;
 private JTextArea __CRSText_JTextArea = null;
@@ -203,9 +206,11 @@ private void checkInput ()
     PropList parameters = new PropList ( "" );
     String TableID = __TableID_JComboBox.getSelected();
     String OutputFile = __OutputFile_JTextField.getText().trim();
+    String Version = __Version_JComboBox.getSelected();
     String Append = __Append_JComboBox.getSelected();
     String LongitudeColumn = __LongitudeColumn_JTextField.getText().trim();
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
+    String CoordinatePrecision = __CoordinatePrecision_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText().trim();
     String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
 	String CRSText = __CRSText_JTextArea.getText().trim();
@@ -225,6 +230,9 @@ private void checkInput ()
     if ( OutputFile.length() > 0 ) {
         parameters.set ( "OutputFile", OutputFile );
     }
+    if ( Version.length() > 0 ) {
+        parameters.set ( "Version", Version );
+    }
     if ( Append.length() > 0 ) {
         parameters.set ( "Append", Append );
     }
@@ -233,6 +241,9 @@ private void checkInput ()
     }
     if ( LatitudeColumn.length() > 0 ) {
         parameters.set ( "LatitudeColumn", LatitudeColumn );
+    }
+    if ( CoordinatePrecision.length() > 0 ) {
+        parameters.set ( "CoordinatePrecision", CoordinatePrecision );
     }
     if ( ElevationColumn.length() > 0 ) {
         parameters.set ( "ElevationColumn", ElevationColumn );
@@ -282,9 +293,11 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {   String TableID = __TableID_JComboBox.getSelected();
     String OutputFile = __OutputFile_JTextField.getText().trim();
+    String Version = __Version_JComboBox.getSelected();
     String Append = __Append_JComboBox.getSelected();
     String LongitudeColumn = __LongitudeColumn_JTextField.getText().trim();
     String LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
+    String CoordinatePrecision = __CoordinatePrecision_JTextField.getText().trim();
     String ElevationColumn = __ElevationColumn_JTextField.getText();
     String WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText();
     String CRSText = __CRSText_JTextArea.getText().trim();
@@ -300,9 +313,11 @@ private void commitEdits ()
     String AppendText = __AppendText_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "OutputFile", OutputFile );
+    __command.setCommandParameter ( "Version", Version );
     __command.setCommandParameter ( "Append", Append );
     __command.setCommandParameter ( "LongitudeColumn", LongitudeColumn );
     __command.setCommandParameter ( "LatitudeColumn", LatitudeColumn );
+    __command.setCommandParameter ( "CoordinatePrecision", CoordinatePrecision );
     __command.setCommandParameter ( "ElevationColumn", ElevationColumn );
     __command.setCommandParameter ( "WKTGeometryColumn", WKTGeometryColumn );
     __command.setCommandParameter ( "CRSText", CRSText );
@@ -379,6 +394,19 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
 	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Version:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Version_JComboBox = new SimpleJComboBox ( false ); // Allow edit
+    __Version_JComboBox.setToolTipText ( "GeoJSON version, if it is necessary to output an old version." );
+    __Version_JComboBox.add ( "" );
+    __Version_JComboBox.add ( "" + GeoJSONVersionType.RFC7946 );
+    __Version_JComboBox.add ( "" + GeoJSONVersionType.VERSION1 );
+    __Version_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Version_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - GeoJSON version (default=" + GeoJSONVersionType.RFC7946 + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append?:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Append_JComboBox = new SimpleJComboBox ( false ); // Allow edit
@@ -432,6 +460,16 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Required - column containing latitude, decimal degrees."),
         3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Coordinate precision:" ),
+        0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CoordinatePrecision_JTextField = new JTextField ( "", 20 );
+    __CoordinatePrecision_JTextField.setToolTipText("Coordinate precision, digits after decimal point.");
+    __CoordinatePrecision_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(point_JPanel, __CoordinatePrecision_JTextField,
+        1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Optional - digits after decimal (default=data precision)."),
+        3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Elevation (Z) column:" ),
         0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -478,7 +516,19 @@ private void initialize ( JFrame parent, WriteTableToGeoJSON_Command command, Li
     __main_JTabbedPane.addTab ( "Coordinate Reference System", crs_JPanel );
     
     JGUIUtil.addComponent(crs_JPanel, new JLabel (
-        "Coordinate reference system text can be specified using one-line syntax similar to the following (in this case for geographic coordinates)."),
+        "<html><b>Coordinate reference system (CRS) is only supported for older GeoJSON version 1.0 and is provided for compatibility.</b></html>"),
+        0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(crs_JPanel, new JLabel (
+        "<html><b>The CRS for current GeoJSON RFC7946 version is assumed to be WGS84 with longitude and latitude units of decimal degrees and elevation units of meters.</b></html>"),
+        0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(crs_JPanel, new JLabel (
+        "<html><b>In the absence of elevation values, positions should be interpreted as local ground or sea level.</b></html>"),
+        0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(crs_JPanel, new JLabel (
+        "  "),
+        0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(crs_JPanel, new JLabel (
+        "CRS text can be specified using one-line syntax similar to the following (in this case for geographic coordinates)."),
         0, ++ycrs, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(crs_JPanel, new JLabel (
         "The double quotes in the text will automatically be replaced with \\s in the command parameter value to escape from normal command quotes."),
@@ -739,9 +789,11 @@ private void refresh ()
 {   String routine = getClass().getSimpleName() + ".refresh";
     String TableID = "";
     String OutputFile = "";
+    String Version = "";
     String Append = "";
     String LongitudeColumn = "";
     String LatitudeColumn = "";
+    String CoordinatePrecision = "";
     String ElevationColumn = "";
     String WKTGeometryColumn = "";
     String CRSText = "";
@@ -760,9 +812,11 @@ private void refresh ()
         parameters = __command.getCommandParameters();
         TableID = parameters.getValue ( "TableID" );
         OutputFile = parameters.getValue ( "OutputFile" );
+        Version = parameters.getValue ( "Version" );
         Append = parameters.getValue ( "Append" );
         LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
         LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
+        CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
         ElevationColumn = parameters.getValue ( "ElevationColumn" );
         WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
         CRSText = parameters.getValue ( "CRSText" );
@@ -794,6 +848,21 @@ private void refresh ()
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText (OutputFile);
         }
+        if ( Version == null ) {
+            // Select default...
+            __Version_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Version_JComboBox, Version, JGUIUtil.NONE, null, null ) ) {
+                __Version_JComboBox.select ( Version );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nVersion value \"" + Version +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( Append == null ) {
             // Select default...
             __Append_JComboBox.select ( 0 );
@@ -814,6 +883,9 @@ private void refresh ()
         }
         if ( LatitudeColumn != null ) {
             __LatitudeColumn_JTextField.setText (LatitudeColumn);
+        }
+        if ( CoordinatePrecision != null ) {
+            __CoordinatePrecision_JTextField.setText (CoordinatePrecision);
         }
         if ( ElevationColumn != null ) {
             __ElevationColumn_JTextField.setText (ElevationColumn);
@@ -873,9 +945,11 @@ private void refresh ()
     // Regardless, reset the command from the fields...
     TableID = __TableID_JComboBox.getSelected();
     OutputFile = __OutputFile_JTextField.getText().trim();
+    Version = __Version_JComboBox.getSelected();
     Append = __Append_JComboBox.getSelected();
     LongitudeColumn = __LongitudeColumn_JTextField.getText().trim();
     LatitudeColumn = __LatitudeColumn_JTextField.getText().trim();
+    CoordinatePrecision = __CoordinatePrecision_JTextField.getText().trim();
     ElevationColumn = __ElevationColumn_JTextField.getText().trim();
     WKTGeometryColumn = __WKTGeometryColumn_JTextField.getText().trim();
     CRSText = __CRSText_JTextArea.getText().trim().replace("\"", "\\\""); // Escape double quotes for internal
@@ -889,9 +963,11 @@ private void refresh ()
     parameters = new PropList ( __command.getCommandName() );
     parameters.add ( "TableID=" + TableID );
     parameters.add ( "OutputFile=" + OutputFile );
+    parameters.add ( "Version=" + Version );
     parameters.add ( "Append=" + Append );
     parameters.add ( "LongitudeColumn=" + LongitudeColumn );
     parameters.add ( "LatitudeColumn=" + LatitudeColumn );
+    parameters.add ( "CoordinatePrecision=" + CoordinatePrecision );
     parameters.add ( "ElevationColumn=" + ElevationColumn );
     parameters.add ( "WKTGeometryColumn=" + WKTGeometryColumn );
     parameters.add ( "CRSText=" + CRSText );

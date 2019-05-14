@@ -358,7 +358,7 @@ CommandWarningException, CommandException
         setOutputFile ( new File(OutputFile_full));
     }
     catch ( Exception e ) {
-        message = "Unexpected error writing time series to shapefile \"" + OutputFile_full + "\" (" + e + ")";
+        message = "Unexpected error writing table to shapefile \"" + OutputFile_full + "\" (" + e + ")";
         Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );

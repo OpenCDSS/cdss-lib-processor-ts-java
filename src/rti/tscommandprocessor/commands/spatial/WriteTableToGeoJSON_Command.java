@@ -38,6 +38,7 @@ import com.google.gson.Gson;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.GIS.GeoView.GeoJSONGeometryFormatter;
+import RTi.GIS.GeoView.GeoJSONVersionType;
 import RTi.GIS.GeoView.UnrecognizedGeometryException;
 import RTi.GIS.GeoView.WKTGeometryParser;
 import RTi.GR.GRPoint;
@@ -46,6 +47,7 @@ import RTi.GR.GRShape;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -98,9 +100,11 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {   String TableID = parameters.getValue ( "TableID" );
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String Version = parameters.getValue ( "Version" );
     String Append = parameters.getValue ( "Append" );
     String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
+    String CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
     String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
     String IncludeBBox = parameters.getValue ( "IncludeBBox" );
     String IncludeFeatureBBox = parameters.getValue ( "IncludeFeatureBBox" );
@@ -166,6 +170,15 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( Version != null && !Version.equalsIgnoreCase(""+GeoJSONVersionType.VERSION1) && 
+        !Version.equalsIgnoreCase(""+GeoJSONVersionType.RFC7946) && !Version.isEmpty() ) {
+        message = "Version is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Version must be specified as " + GeoJSONVersionType.RFC7946 + " (default) or " + GeoJSONVersionType.VERSION1 ) );
+    }
+
     if ( Append != null && !Append.equalsIgnoreCase(_True) && 
         !Append.equalsIgnoreCase(_False) && !Append.isEmpty() ) {
         message = "Append is invalid.";
@@ -206,6 +219,14 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify the latitude column OR WKT geometry column." ) );
     }
+
+    if ( (CoordinatePrecision != null) && !CoordinatePrecision.isEmpty() &&
+        !StringUtil.isInteger(CoordinatePrecision) ) {
+        message = "The coordinate precision is not an integer.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify coordinate precision as an integer." ) );
+    }
     
     if ( IncludeBBox != null && !IncludeBBox.equalsIgnoreCase(_True) && 
         !IncludeBBox.equalsIgnoreCase(_False) && !IncludeBBox.isEmpty() ) {
@@ -229,9 +250,11 @@ throws InvalidCommandParameterException
     List<String> validList = new ArrayList<String>(15);
     validList.add ( "TableID" );
     validList.add ( "OutputFile" );
+    validList.add ( "Version" );
     validList.add ( "Append" );
     validList.add ( "LongitudeColumn" );
     validList.add ( "LatitudeColumn" );
+    validList.add ( "CoordinatePrecision" );
     validList.add ( "ElevationColumn" );
     validList.add ( "WKTGeometryColumn" );
     validList.add ( "CRSText" );
@@ -332,6 +355,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		TableID = TSCommandProcessorUtil.expandParameterValue(processor, this, TableID);
 	}
     String OutputFile = parameters.getValue ( "OutputFile" ); // Expanded below
+    String Version = parameters.getValue ( "Version" );
+    GeoJSONVersionType version = GeoJSONVersionType.RFC7946; // Default
+    if ( (Version != null) && Version.equalsIgnoreCase(""+ GeoJSONVersionType.VERSION1) ) {
+    	version = GeoJSONVersionType.VERSION1;
+    }
     String Append = parameters.getValue ( "Append" );
     boolean append = false;
     if ( (Append != null) && Append.equalsIgnoreCase(_True) ) {
@@ -345,6 +373,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (commandPhase == CommandPhaseType.RUN) && (LatitudeColumn != null) && (LatitudeColumn.indexOf("${") >= 0) ) {
 		LatitudeColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, LatitudeColumn);
 	}
+    String CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
+    int coordinatePrecision = -1;
+    if ( (CoordinatePrecision != null) && StringUtil.isInteger(CoordinatePrecision) ) {
+    	coordinatePrecision = Integer.parseInt(CoordinatePrecision);
+    }
     String ElevationColumn = parameters.getValue ( "ElevationColumn" );
 	if ( (commandPhase == CommandPhaseType.RUN) && (ElevationColumn != null) && (ElevationColumn.indexOf("${") >= 0) ) {
 		ElevationColumn = TSCommandProcessorUtil.expandParameterValue(processor, this, ElevationColumn);
@@ -464,8 +497,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         IOUtil.enforceFileExtension(OutputFile_full, "shp");
         Message.printStatus ( 2, routine, "Writing GeoJSON file \"" + OutputFile_full + "\"" );
         List<String> errors = new ArrayList<String>();
-        writeTableToGeoJSON ( table, OutputFile_full, append, includeColumns, excludeColumns,
-            LongitudeColumn, LatitudeColumn, ElevationColumn, WKTGeometryColumn, CRSText, includeBBox, includeFeatureBBox,
+        writeTableToGeoJSON ( table, OutputFile_full, version, append, includeColumns, excludeColumns,
+            LongitudeColumn, LatitudeColumn, coordinatePrecision,
+            ElevationColumn, WKTGeometryColumn, CRSText, includeBBox, includeFeatureBBox,
             JavaScriptVar, PrependText, AppendText, errors );
         for ( String error : errors ) {
             Message.printWarning ( warning_level,
@@ -509,9 +543,11 @@ public String toString ( PropList parameters )
     }
     String TableID = parameters.getValue( "TableID" );
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String Version = parameters.getValue ( "Version" );
     String Append = parameters.getValue ( "Append" );
     String LongitudeColumn = parameters.getValue ( "LongitudeColumn" );
     String LatitudeColumn = parameters.getValue ( "LatitudeColumn" );
+    String CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
     String ElevationColumn = parameters.getValue ( "ElevationColumn" );
     String WKTGeometryColumn = parameters.getValue ( "WKTGeometryColumn" );
     String CRSText = parameters.getValue ( "CRSText" );
@@ -535,6 +571,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputFile=\"" + OutputFile + "\"" );
     }
+    if ( (Version != null) && (Version.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Version=\"" + Version + "\"" );
+    }
     if ( (Append != null) && (Append.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -552,6 +594,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "LatitudeColumn=\"" + LatitudeColumn + "\"" );
+    }
+    if ( (CoordinatePrecision != null) && (CoordinatePrecision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CoordinatePrecision=" + CoordinatePrecision );
     }
     if ( (ElevationColumn != null) && (ElevationColumn.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -619,14 +667,18 @@ public String toString ( PropList parameters )
 // TODO SAM 2016-01-16 Need to evaluate GeoJSON Java toolkits once project is updated to use Maven.
 /**
 Write the table to a GeoJSON file.  This uses simple print statements.
+If the full GeoJSON bbox is requested, write to a StringBuffer and then output the buffer at the end.
+if the bbox is not requested, print directly (will be faster).
 @param fout open PrintWriter to write to
 @param table data table to write
 @param crsText text for full "crs" data in GeoJSON, to insert in the output
 @param includeBBox whether or not to include "bbox" in output at main level
 @param errors list of error strings to be propagated to calling code
 */
-private void writeTableToGeoJSON ( DataTable table, String outputFile, boolean append, String [] includeColumns, String [] excludeColumns,
-    String longitudeColumn, String latitudeColumn, String elevationColumn, String wktGeometryColumn, String crsText,
+private void writeTableToGeoJSON ( DataTable table, String outputFile, GeoJSONVersionType version,
+	boolean append, String [] includeColumns, String [] excludeColumns,
+    String longitudeColumn, String latitudeColumn, int coordinatePrecision,
+    String elevationColumn, String wktGeometryColumn, String crsText,
     boolean includeBBox, boolean includeFeatureBBox, String javaScriptVar,
     String prependText, String appendText, List<String> errors )
 throws IOException
@@ -649,6 +701,12 @@ throws IOException
 	    String i2 = "    ";
 	    String i3 = "      ";
 	    String i4 = "        ";
+	    // Precision for output
+	    String coordinateFormat = null;
+	    if ( coordinatePrecision >= 0 ) {
+		    // Format will be something like "%.6f"
+		    coordinateFormat = "%." + coordinatePrecision + "f";
+	    }
 		// Get the column numbers corresponding to the column names
 	    int errorCount = 0;
 	    boolean doPoint = false;
@@ -805,11 +863,14 @@ throws IOException
 	     	fout.print("{\n" );
 	    }
 	    fout.print( i1 + "\"type\": \"FeatureCollection\",\n");
-	    if ( (crsText != null) && !crsText.isEmpty() ) {
-	    	// TODO SAM 2016-07-19 Improve indentation when on multiple lines
-	    	fout.print ( i1 + crsText + "\n");
+	    if ( version == GeoJSONVersionType.VERSION1 ) {
+	    	// CRS was part of VERSION 1.0 specification but is not used in RFC7946
+	    	if ( (crsText != null) && !crsText.isEmpty() ) {
+	    		// TODO SAM 2016-07-19 Improve indentation when on multiple lines
+	    		fout.print ( i1 + crsText + "\n");
+	    	}
 	    }
-	    GeoJSONGeometryFormatter geoJSONFormatter = new GeoJSONGeometryFormatter(2);
+	    GeoJSONGeometryFormatter geoJSONFormatter = new GeoJSONGeometryFormatter(2, coordinatePrecision, -1);
 	    StringBuilder buffer = new StringBuilder(); // Need if "bbox" is requested to process all data
 	    if ( !includeBBox ) {
 	    	// Can print directly
@@ -920,15 +981,52 @@ throws IOException
 	            	buffer.append( i2 + "{\n");
 	            	buffer.append( i3 + "\"type\": \"Feature\",\n");
 	            	if ( includeFeatureBBox ) {
-	        	    	if ( dim == 2 ) {
-	        	    		buffer.append ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
-	        	    	}
-	        	    	else {
-	        	    		// TODO SAM 2016-07-20 - need to enable Z
-	        	    		fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", 0" + // shape.zmin + ", "
-	        	    				+ shape.xmax + ", " + shape.ymax + ", " // + shape.zmax
-	        	    				+ "0],\n" );
-	        	    	}
+	            		if ( version == GeoJSONVersionType.VERSION1 ) {
+	            			// Minimum values first, then maximum values
+	            			if ( dim == 2 ) {
+	            				if ( coordinatePrecision < 0 ) {
+	            					// Default precision is data precision
+	            					buffer.append ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
+	            				}
+	            				else {
+	            					buffer.append ( i3 + "\"bbox\": [" +
+	            						String.format(coordinateFormat, shape.xmin) + ", " +
+	            						String.format(coordinateFormat, shape.ymin) + ", " +
+	            						String.format(coordinateFormat, shape.xmax) + ", " +
+	            						String.format(coordinateFormat, shape.ymax) + "],\n" );
+	            				}
+	        	    		}
+	        	    		else {
+	        	    			// TODO SAM 2016-07-20 - need to enable Z
+	        	    			fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", 0" + // shape.zmin + ", "
+	        	    					+ shape.xmax + ", " + shape.ymax + ", " // + shape.zmax
+	        	    					+ "0],\n" );
+	        	    		}
+	            		}
+	            		else {
+	            			// RFC7946 lists most southwesterly x, y, z and then most northeasterly x, y, z
+	            			// - the logic is the same for normal locations other than when meridian is crossed (antimeridian)
+	            			// - TODO need to implement antimeridian logic
+	            			if ( dim == 2 ) {
+	            				if ( coordinatePrecision < 0 ) {
+	            					// Default precision is data precision
+	            					buffer.append ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
+	            				}
+	            				else {
+	            					buffer.append ( i3 + "\"bbox\": [" +
+	            						String.format(coordinateFormat, shape.xmin) + ", " +
+	            						String.format(coordinateFormat, shape.ymin) + ", " +
+	            						String.format(coordinateFormat, shape.xmax) + ", " +
+	            						String.format(coordinateFormat, shape.ymax) + "],\n" );
+	            				}
+	        	    		}
+	        	    		else {
+	        	    			// TODO SAM 2016-07-20 - need to enable Z
+	        	    			fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", 0" + // shape.zmin + ", "
+	        	    					+ shape.xmax + ", " + shape.ymax + ", " // + shape.zmax
+	        	    					+ "0],\n" );
+	        	    		}
+	            		}
 	        	    }
 	            	buffer.append( i3 + "\"properties\": {\n");
 	            }
@@ -936,16 +1034,52 @@ throws IOException
 		    	    fout.print( i2 + "{\n");
 		    	    fout.print( i3 + "\"type\": \"Feature\",\n");
 		    	    if ( includeFeatureBBox ) {
-	        	    	if ( dim == 2 ) {
-	        	    		fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
-	        	    	}
-	        	    	else {
-	        	    		// TODO SAM 2016-07-20 - need to enable Z
-	        	    		fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + // shape.zmin +
-	        	    		"0, " + shape.xmax + ", " + shape.ymax + ", " +
-	        	    		//shape.zmax +
-	        	    		"0],\n" );
-	        	    	}
+		    	    	if ( version == GeoJSONVersionType.VERSION1 ) {
+		    	    		if ( dim == 2 ) {
+	            				if ( coordinatePrecision < 0 ) {
+	            					// Default precision is data precision
+	            					fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
+	            				}
+	            				else {
+	            					buffer.append ( i3 + "\"bbox\": [" +
+	            						String.format(coordinateFormat, shape.xmin) + ", " +
+	            						String.format(coordinateFormat, shape.ymin) + ", " +
+	            						String.format(coordinateFormat, shape.xmax) + ", " +
+	            						String.format(coordinateFormat, shape.ymax) + "],\n" );
+	            				}
+		    	    		}
+		    	    		else {
+		    	    			// TODO SAM 2016-07-20 - need to enable Z
+		    	    			fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + // shape.zmin +
+		    	    				"0, " + shape.xmax + ", " + shape.ymax + ", " +
+		    	    				//shape.zmax +
+		    	    				"0],\n" );
+		    	    		}
+		    	    	}
+	            		else {
+	            			// RFC7946 lists most southwesterly x, y, z and then most northeasterly x, y, z
+	            			// - the logic is the same for normal locations other than when meridian is crossed (antimeridian)
+	            			// - TODO need to implement antimeridian logic
+	            			if ( dim == 2 ) {
+	            				if ( coordinatePrecision < 0 ) {
+	            					// Default precision is data precision
+	            					buffer.append ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", " + shape.xmax + ", " + shape.ymax + "],\n" );
+	            				}
+	            				else {
+	            					buffer.append ( i3 + "\"bbox\": [" +
+	            						String.format(coordinateFormat, shape.xmin) + ", " +
+	            						String.format(coordinateFormat, shape.ymin) + ", " +
+	            						String.format(coordinateFormat, shape.xmax) + ", " +
+	            						String.format(coordinateFormat, shape.ymax) + "],\n" );
+	            				}
+	        	    		}
+	        	    		else {
+	        	    			// TODO SAM 2016-07-20 - need to enable Z
+	        	    			fout.print ( i3 + "\"bbox\": [" + shape.xmin + ", " + shape.ymin + ", 0" + // shape.zmin + ", "
+	        	    					+ shape.xmax + ", " + shape.ymax + ", " // + shape.zmax
+	        	    					+ "0],\n" );
+	        	    		}
+	            		}
 	        	    }
 		    	    fout.print( i3 + "\"properties\": {\n");
 	            }
@@ -1032,14 +1166,56 @@ throws IOException
 	        }
 	    }
 	    if ( includeBBox ) {
-		    // Had to buffer so finish printing
-	    	if ( dim == 2 ) {
-	    		fout.print ( i1 + "\"bbox\": [" + xminAll + ", " + yminAll + ", " + xmaxAll + ", " + ymaxAll + "],\n" );
+		    // Had to buffer all the features so finish printing by printing the bounding box and then the features
+	    	if ( version == GeoJSONVersionType.VERSION1 ) {
+	    		if ( dim == 2 ) {
+       				if ( coordinatePrecision < 0 ) {
+       					// Default precision is data precision
+       					fout.print ( i1 + "\"bbox\": [" + xminAll + ", " + yminAll + ", " + xmaxAll + ", " + ymaxAll + "],\n" );
+       				}
+       				else {
+       					fout.print ( i1 + "\"bbox\": [" +
+       						String.format(coordinateFormat,xminAll) + ", " +
+       						String.format(coordinateFormat,yminAll) + ", " +
+       						String.format(coordinateFormat,xmaxAll) + ", " +
+       						String.format(coordinateFormat,ymaxAll) + "],\n" );
+       				}
+	    		}
+	    		else {
+	    			fout.print ( i1 + "\"bbox\": [" + xminAll + ", " + yminAll + ", " + zminAll + ", " + xmaxAll + ", " + ymaxAll + ", " + zmaxAll + "],\n" );
+	    		}
 	    	}
-	    	else {
-	    		fout.print ( i1 + "\"bbox\": [" + xminAll + ", " + yminAll + ", " + zminAll + ", " + xmaxAll + ", " + ymaxAll + ", " + zmaxAll + "],\n" );
-	    	}
+	        else {
+	           	// RFC7946 lists most southwesterly x, y, z and then most northeasterly x, y, z
+	           	// - the logic is the same for normal locations other than when meridian is crossed (antimeridian)
+	           	// - TODO need to implement antimeridian logic
+	           	if ( dim == 2 ) {
+       				if ( coordinatePrecision < 0 ) {
+       					// Default precision is data precision
+       					fout.print ( i1 + "\"bbox\": [" + xminAll + ", " + yminAll + ", " + xmaxAll + ", " + ymaxAll + "],\n" );
+       				}
+       				else {
+	            		fout.print ( i1 + "\"bbox\": [" +
+	            			String.format(coordinateFormat, xminAll) + ", " +
+	            			String.format(coordinateFormat, yminAll) + ", " +
+	            			String.format(coordinateFormat, xmaxAll) + ", " +
+	            			String.format(coordinateFormat, ymaxAll) + "],\n" );
+       				}
+	            }
+	            else {
+	            	// TODO SAM 2016-07-20 - need to enable Z
+	            	fout.print ( i3 + "\"bbox\": [" + xminAll + ", " + yminAll + ", 0" + // shape.zmin + ", "
+	            			+ xmaxAll + ", " + ymaxAll + ", " // + shape.zmax
+	            			+ "0],\n" );
+	            }
+	        }
 		    fout.print( i1 + "\"features\": [\n");
+		    // It is possible that the last table row had invalid geometry and if so,
+		    // remove the trailing comma from "}, ]"
+		    int index = buffer.lastIndexOf("}");
+		    if ( buffer.charAt(index + 1) == ',' ) {
+		    	buffer.deleteCharAt(index + 1);
+		    }
 		    fout.print( i1 + buffer);
 	    }
 	    fout.print( i1 + "]\n"); // End features

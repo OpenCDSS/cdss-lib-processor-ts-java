@@ -57,7 +57,6 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
-
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -98,6 +97,7 @@ private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __Append_JComboBox = null;
 private JTextField __LongitudeProperty_JTextField = null;
 private JTextField __LatitudeProperty_JTextField = null;
+private JTextField __CoordinatePrecision_JTextField = null;
 private JTextField __ElevationProperty_JTextField = null;
 private JTextField __WKTGeometryProperty_JTextField = null;
 private JTextField __IncludeProperties_JTextField = null;
@@ -264,6 +264,7 @@ private void checkInput ()
     String Append = __Append_JComboBox.getSelected();
     String LongitudeProperty = __LongitudeProperty_JTextField.getText().trim();
     String LatitudeProperty = __LatitudeProperty_JTextField.getText().trim();
+    String CoordinatePrecision = __CoordinatePrecision_JTextField.getText().trim();
     String ElevationProperty = __ElevationProperty_JTextField.getText().trim();
     String WKTGeometryProperty = __WKTGeometryProperty_JTextField.getText().trim();
     String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
@@ -294,6 +295,9 @@ private void checkInput ()
     }
     if ( LatitudeProperty.length() > 0 ) {
         parameters.set ( "LatitudeProperty", LatitudeProperty );
+    }
+    if ( CoordinatePrecision.length() > 0 ) {
+        parameters.set ( "CoordinatePrecision", CoordinatePrecision );
     }
     if ( ElevationProperty.length() > 0 ) {
         parameters.set ( "ElevationProperty", ElevationProperty );
@@ -339,6 +343,7 @@ private void commitEdits ()
     String Append = __Append_JComboBox.getSelected();
     String LongitudeProperty = __LongitudeProperty_JTextField.getText().trim();
     String LatitudeProperty = __LatitudeProperty_JTextField.getText().trim();
+    String CoordinatePrecision = __CoordinatePrecision_JTextField.getText().trim();
     String ElevationProperty = __ElevationProperty_JTextField.getText().trim();
     String WKTGeometryProperty = __WKTGeometryProperty_JTextField.getText().trim();
     String IncludeProperties = __IncludeProperties_JTextField.getText().trim();
@@ -353,6 +358,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "Append", Append );
     __command.setCommandParameter ( "LongitudeProperty", LongitudeProperty );
     __command.setCommandParameter ( "LatitudeProperty", LatitudeProperty );
+    __command.setCommandParameter ( "CoordinatePrecision", CoordinatePrecision );
     __command.setCommandParameter ( "ElevationProperty", ElevationProperty );
     __command.setCommandParameter ( "WKTGeometryProperty", WKTGeometryProperty );
     __command.setCommandParameter ( "IncludeProperties", IncludeProperties );
@@ -431,8 +437,6 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
 	    	7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	}
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append?:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Append_JComboBox = new SimpleJComboBox ( false ); // Allow edit
     __Append_JComboBox.add ( "" );
     __Append_JComboBox.add ( __command._False );
@@ -486,6 +490,16 @@ private void initialize ( JFrame parent, WriteTimeSeriesToGeoJSON_Command comman
     JGUIUtil.addComponent(point_JPanel, __LatitudeProperty_JTextField,
         1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Required - time series property containing latitude."),
+        3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Coordinate precision:" ),
+        0, ++yPoint, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CoordinatePrecision_JTextField = new JTextField ( "", 20 );
+    __CoordinatePrecision_JTextField.setToolTipText("Coordinate precision, digits after decimal point.");
+    __CoordinatePrecision_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(point_JPanel, __CoordinatePrecision_JTextField,
+        1, yPoint, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(point_JPanel, new JLabel ( "Optional - digits after decimal (default=data precision)."),
         3, yPoint, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(point_JPanel, new JLabel ( "Elevation (Z) property:" ),
@@ -727,6 +741,7 @@ private void refresh ()
     String Append = "";
     String LongitudeProperty = "";
     String LatitudeProperty = "";
+    String CoordinatePrecision = "";
     String ElevationProperty = "";
     String WKTGeometryProperty = "";
     String IncludeProperties = "";
@@ -747,6 +762,7 @@ private void refresh ()
         Append = parameters.getValue ( "Append" );
         LongitudeProperty = parameters.getValue ( "LongitudeProperty" );
         LatitudeProperty = parameters.getValue ( "LatitudeProperty" );
+        CoordinatePrecision = parameters.getValue ( "CoordinatePrecision" );
         ElevationProperty = parameters.getValue ( "ElevationProperty" );
         WKTGeometryProperty = parameters.getValue ( "WKTGeometryProperty" );
         IncludeProperties = parameters.getValue ( "IncludeProperties" );
@@ -823,6 +839,9 @@ private void refresh ()
         if ( LatitudeProperty != null ) {
             __LatitudeProperty_JTextField.setText (LatitudeProperty);
         }
+        if ( CoordinatePrecision != null ) {
+            __CoordinatePrecision_JTextField.setText (CoordinatePrecision);
+        }
         if ( ElevationProperty != null ) {
             __ElevationProperty_JTextField.setText (ElevationProperty);
         }
@@ -853,6 +872,7 @@ private void refresh ()
     Append = __Append_JComboBox.getSelected();
     LongitudeProperty = __LongitudeProperty_JTextField.getText().trim();
     LatitudeProperty = __LatitudeProperty_JTextField.getText().trim();
+    CoordinatePrecision = __CoordinatePrecision_JTextField.getText().trim();
     ElevationProperty = __ElevationProperty_JTextField.getText().trim();
     WKTGeometryProperty = __WKTGeometryProperty_JTextField.getText().trim();
     IncludeProperties = __IncludeProperties_JTextField.getText().trim();
@@ -868,6 +888,7 @@ private void refresh ()
     parameters.add ( "Append=" + Append );
     parameters.add ( "LongitudeProperty=" + LongitudeProperty );
     parameters.add ( "LatitudeProperty=" + LatitudeProperty );
+    parameters.add ( "CoordinatePrecision=" + CoordinatePrecision );
     parameters.add ( "ElevationProperty=" + ElevationProperty );
     parameters.add ( "WKTGeometryProperty=" + WKTGeometryProperty );
     parameters.add ( "IncludeProperties=" + IncludeProperties );

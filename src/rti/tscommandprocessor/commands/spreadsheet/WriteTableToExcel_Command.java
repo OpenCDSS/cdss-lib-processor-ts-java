@@ -1362,14 +1362,14 @@ throws FileNotFoundException, IOException
             }
         }
         // Write the table data
-        Object fieldValue;
-        Double fieldValueDouble;
-        Float fieldValueFloat;
-        Integer fieldValueInteger;
-        Long fieldValueLong;
-        String fieldValueString;
+        Object fieldValue = null;
+        Double fieldValueDouble = null;
+        Float fieldValueFloat = null;
+        Integer fieldValueInteger = null;
+        Long fieldValueLong = null;
+        String fieldValueString = null;
         String NaNValue = "";
-        String cellString;
+        String cellString = null;
         int rowOut = rowOutDataStart - 1; // -1 because incremented at the top of the loop below
         this.outputMinRow = rowOut;
         this.outputMaxRow = rowOutDataEnd;
@@ -1495,13 +1495,33 @@ throws FileNotFoundException, IOException
                     }
                     else if ( tableFieldType == TableField.DATA_TYPE_INT ) {
                     	// Set the Excel cell value
-                        fieldValueInteger = (Integer)fieldValue;
-                        if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
+                   		// Handle field value set to a String, perhaps by manipulation commands
+                   		// - handle some common cases
+                    	if ( fieldValue instanceof String && ((String)fieldValue).trim().isEmpty() ) {
+                    			// Trim because command may require a space to indicate blank/null
+                    			fieldValue = "";
+                    			fieldValueInteger = null;
+                    	}
+                    	else if ( fieldValue instanceof String && (StringUtil.isInteger((String)fieldValue)) ) {
+                    			fieldValueInteger = Integer.parseInt((String)fieldValue);
+                    	}
+                    	else {
+                    		// Assume an integer and allow exception to be thrown if not
+                    		fieldValueInteger = (Integer)fieldValue;
+                    	}
+                    	if ( excelColumnTypes[col] == Cell.CELL_TYPE_STRING ) {
                             cellString = "" + fieldValue;
                             wbCell.setCellValue(cellString);
                         }
                         else {
-                            wbCell.setCellValue(fieldValueInteger);
+                        	if ( fieldValueInteger == null ) {
+                        		cellString = "";
+                        		wbCell.setCellValue(cellString);
+                        	}
+                        	else {
+                        		// Setting a number (integer)
+                        		wbCell.setCellValue(fieldValueInteger);
+                        	}
                         }
                         // Set the Excel cell style
                         if ( styleManager == null ) {
@@ -1571,8 +1591,11 @@ throws FileNotFoundException, IOException
                 }
                 catch ( Exception e ) {
                     // Log but let the output continue
-                    Message.printWarning(3, routine, "Unexpected error writing table [" + row + "][" +
-                        includeColumnNumbers[col] + "] (" + e + ")." );
+                    String message = "Unexpected error writing table [" + row + "][" +
+                        includeColumnNumbers[col] + "], row=" + (row + 1) + ", column=" +
+                        (includeColumnNumbers[col] + 1) + ", value=" + fieldValue + " (" + e + ").";
+                    Message.printWarning(3, routine, message);
+                    problems.add(message);
                     Message.printWarning(3, routine, e);
                 }
             }
